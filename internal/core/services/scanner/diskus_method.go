@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/username/volumeviz/internal/core/interfaces"
-	"github.com/username/volumeviz/internal/core/models"
+	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/core/models"
 )
 
 // DiskusMethod implements fast directory scanning using diskus tool

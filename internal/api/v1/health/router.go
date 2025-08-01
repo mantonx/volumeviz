@@ -2,7 +2,7 @@ package health
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/username/volumeviz/internal/services"
+	"github.com/mantonx/volumeviz/internal/services"
 )
 
 // Router handles health-related routes

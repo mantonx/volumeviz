@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/username/volumeviz/internal/core/interfaces"
-	"github.com/username/volumeviz/internal/core/models"
+	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/core/models"
 )
 
 // Handler handles scan-related HTTP requests

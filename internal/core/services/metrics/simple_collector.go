@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/username/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/core/interfaces"
 )
 
 // SimpleMetricsCollector implements basic metrics collection with logging

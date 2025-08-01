@@ -7,8 +7,8 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/volume"
-	"github.com/username/volumeviz/internal/models"
-	"github.com/username/volumeviz/pkg/docker"
+	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/pkg/docker"
 )
 
 // DockerService handles Docker-related operations

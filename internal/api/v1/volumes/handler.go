@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/username/volumeviz/internal/models"
-	"github.com/username/volumeviz/internal/services"
+	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/services"
 )
 
 // Handler handles volume-related HTTP requests

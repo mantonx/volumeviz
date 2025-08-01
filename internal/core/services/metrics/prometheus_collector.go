@@ -5,7 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/username/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/core/interfaces"
 )
 
 // PrometheusMetricsCollector implements metrics collection using Prometheus

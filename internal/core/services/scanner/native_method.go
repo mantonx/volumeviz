@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/username/volumeviz/internal/core/interfaces"
-	"github.com/username/volumeviz/internal/core/models"
+	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/core/models"
 )
 
 // NativeMethod implements directory scanning using pure Go filepath.Walk

@@ -33,7 +33,7 @@ VolumeViz consists of:
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/volumeviz.git
+git clone https://github.com/mantonx/volumeviz.git
 cd volumeviz
 
 # Start the application

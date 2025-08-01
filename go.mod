@@ -1,4 +1,4 @@
-module github.com/username/volumeviz
+module github.com/mantonx/volumeviz
 
 go 1.24.5
 

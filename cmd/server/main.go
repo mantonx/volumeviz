@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	v1 "github.com/username/volumeviz/internal/api/v1"
-	"github.com/username/volumeviz/internal/config"
-	"github.com/username/volumeviz/internal/services"
+	v1 "github.com/mantonx/volumeviz/internal/api/v1"
+	"github.com/mantonx/volumeviz/internal/config"
+	"github.com/mantonx/volumeviz/internal/services"
 )
 
 func main() {

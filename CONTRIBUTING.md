@@ -20,7 +20,7 @@ By participating in this project, you agree to abide by our Code of Conduct:
    ```
 3. Add the upstream repository:
    ```bash
-   git remote add upstream https://github.com/username/volumeviz.git
+   git remote add upstream https://github.com/mantonx/volumeviz.git
    ```
 4. Create a new branch for your feature/fix:
    ```bash

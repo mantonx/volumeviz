@@ -2,7 +2,7 @@ package scan
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/username/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/core/interfaces"
 )
 
 // Router handles scan-related routes

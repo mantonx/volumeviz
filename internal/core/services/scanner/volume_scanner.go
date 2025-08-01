@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/username/volumeviz/internal/core/interfaces"
-	"github.com/username/volumeviz/internal/core/models"
-	"github.com/username/volumeviz/internal/services"
+	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/core/models"
+	"github.com/mantonx/volumeviz/internal/services"
 )
 
 // VolumeScanner implements the main volume scanning service
