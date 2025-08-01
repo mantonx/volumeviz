@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: volumeviz-db-dev
+    environment:
+      POSTGRES_USER: volumeviz
+      POSTGRES_PASSWORD: volumeviz
+      POSTGRES_DB: volumeviz
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - volumeviz-network-dev
+
+  backend:
+    image: cosmtrek/air
+    container_name: volumeviz-backend-dev
+    working_dir: /app
+    command: air
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: volumeviz
+      DB_PASSWORD: volumeviz
+      DB_NAME: volumeviz
+      SERVER_PORT: 8080
+      SERVER_HOST: 0.0.0.0
+      GIN_MODE: debug
+      DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - go_modules:/go/pkg/mod
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - volumeviz-network-dev
+
+  frontend:
+    image: node:18-alpine
+    container_name: volumeviz-frontend-dev
+    working_dir: /app
+    command: npm run dev -- --host 0.0.0.0
+    environment:
+      VITE_API_URL: http://localhost:8080
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - volumeviz-network-dev
+
+volumes:
+  postgres_data_dev:
+    driver: local
+  go_modules:
+    driver: local
+
+networks:
+  volumeviz-network-dev:
+    driver: bridge
