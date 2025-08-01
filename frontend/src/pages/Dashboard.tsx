@@ -12,7 +12,8 @@ export const Dashboard: React.FC = () => {
           Dashboard
         </h2>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Welcome to VolumeViz - Your Docker container visualization and monitoring tool
+          Welcome to VolumeViz - Your Docker container visualization and
+          monitoring tool
         </p>
       </div>
 
@@ -23,9 +24,7 @@ export const Dashboard: React.FC = () => {
         <p className="text-gray-500 dark:text-gray-400 mb-6">
           The dashboard is being built with our new component architecture.
         </p>
-        <Button variant="primary">
-          Get Started
-        </Button>
+        <Button variant="primary">Get Started</Button>
       </div>
     </div>
   );

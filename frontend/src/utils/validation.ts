@@ -9,8 +9,7 @@ export const isValidEmail = (email: string): boolean =>
 /**
  * Validate URL using the validator library.
  */
-export const isValidUrl = (url: string): boolean =>
-  validator.isURL(url);
+export const isValidUrl = (url: string): boolean => validator.isURL(url);
 
 /**
  * Validate Docker container name format.

@@ -8,14 +8,14 @@ export * from './format';
 export * from './validation';
 
 // Re-export commonly used lodash functions
-export { 
-  debounce, 
-  throttle, 
-  uniq, 
-  groupBy, 
-  pick, 
-  omit, 
+export {
+  debounce,
+  throttle,
+  uniq,
+  groupBy,
+  pick,
+  omit,
   cloneDeep,
   isEmpty,
-  chunk
+  chunk,
 } from 'lodash-es';

@@ -8,8 +8,10 @@ import { ButtonProps, ButtonVariant, ButtonSize } from './Button.types';
 const buttonVariants: Record<ButtonVariant, string> = {
   primary: 'bg-blue-600 hover:bg-blue-700 text-white',
   secondary: 'bg-gray-600 hover:bg-gray-700 text-white',
-  outline: 'border border-gray-300 hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-300',
-  ghost: 'hover:bg-gray-100 text-gray-700 dark:hover:bg-gray-800 dark:text-gray-300',
+  outline:
+    'border border-gray-300 hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-300',
+  ghost:
+    'hover:bg-gray-100 text-gray-700 dark:hover:bg-gray-800 dark:text-gray-300',
   destructive: 'bg-red-600 hover:bg-red-700 text-white',
 };
 
@@ -77,7 +79,7 @@ export const Button: React.FC<ButtonProps> = ({
         // Size styles
         buttonSizes[size],
         // Custom styles
-        className
+        className,
       )}
       disabled={isDisabled}
       aria-disabled={isDisabled}

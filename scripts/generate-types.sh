@@ -4,25 +4,20 @@
 
 echo "🔧 Generating TypeScript types from OpenAPI spec..."
 
-# Check if server is running
-if ! curl -s http://localhost:8080/swagger/doc.json > /dev/null 2>&1; then
-    echo "❌ Server not running. Please start the VolumeViz server first:"
-    echo "   go run ./cmd/server"
-    exit 1
-fi
-
 # Create output directory
 mkdir -p frontend/src/api/generated
 
-# Generate TypeScript types using openapi-generator
+# Generate TypeScript types using swagger-typescript-api
 cd frontend
-npx @openapitools/openapi-generator-cli generate \
-    -i http://localhost:8080/swagger/doc.json \
-    -g typescript-fetch \
+npx swagger-typescript-api generate \
+    -p ../docs/swagger.json \
     -o src/api/generated \
-    --additional-properties=typescriptThreePlus=true,supportsES6=true,npmName=volumeviz-api,npmVersion=1.0.0
+    -n volumeviz-api.ts \
+    --responses \
+    --union-enums
 
 echo "✅ TypeScript types generated in frontend/src/api/generated/"
 echo "📖 Import example:"
-echo "   import { DefaultApi, Configuration } from './api/generated'"
-echo "   const api = new DefaultApi(new Configuration({ basePath: 'http://localhost:8080/api/v1' }))"
+echo "   import { Api, VolumeListResponse, ScanResponse } from './api/generated/volumeviz-api'"
+echo "   const api = new Api({ baseUrl: 'http://localhost:8080/api/v1' })"
+echo "   const volumes = await api.volumes.volumesList()"

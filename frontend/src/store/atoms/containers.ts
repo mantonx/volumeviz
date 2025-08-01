@@ -55,7 +55,9 @@ export const filteredContainersAtom = atom<Container[]>((get) => {
 
     // Image filter
     if (filters.image) {
-      if (!container.image.toLowerCase().includes(filters.image.toLowerCase())) {
+      if (
+        !container.image.toLowerCase().includes(filters.image.toLowerCase())
+      ) {
         return false;
       }
     }
@@ -63,7 +65,9 @@ export const filteredContainersAtom = atom<Container[]>((get) => {
     // Network filter
     if (filters.network) {
       const hasNetwork = container.networks.some((network) =>
-        network.networkName.toLowerCase().includes(filters.network!.toLowerCase())
+        network.networkName
+          .toLowerCase()
+          .includes(filters.network!.toLowerCase()),
       );
       if (!hasNetwork) {
         return false;
@@ -86,7 +90,7 @@ export const filteredContainersAtom = atom<Container[]>((get) => {
   filtered.sort((a, b) => {
     const aValue = a[sortConfig.field];
     const bValue = b[sortConfig.field];
-    
+
     let comparison = 0;
     if (typeof aValue === 'string' && typeof bValue === 'string') {
       comparison = aValue.localeCompare(bValue);
@@ -107,20 +111,23 @@ export const filteredContainersAtom = atom<Container[]>((get) => {
  */
 export const containerStatsAtom = atom((get) => {
   const containers = get(containersAtom);
-  
+
   const stats = containers.reduce(
     (acc, container) => {
       acc.total += 1;
       if (container.status === 'running') {
         acc.running += 1;
-      } else if (container.status === 'stopped' || container.status === 'exited') {
+      } else if (
+        container.status === 'stopped' ||
+        container.status === 'exited'
+      ) {
         acc.stopped += 1;
       } else if (container.status === 'paused') {
         acc.paused += 1;
       }
       return acc;
     },
-    { total: 0, running: 0, stopped: 0, paused: 0 }
+    { total: 0, running: 0, stopped: 0, paused: 0 },
   );
 
   return stats;

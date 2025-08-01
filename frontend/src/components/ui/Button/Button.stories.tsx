@@ -98,7 +98,8 @@ export const Variants: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'All available button variants showcasing different visual styles.',
+        story:
+          'All available button variants showcasing different visual styles.',
       },
     },
   },
@@ -135,7 +136,8 @@ export const Loading: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Button in loading state shows a spinner and is automatically disabled.',
+        story:
+          'Button in loading state shows a spinner and is automatically disabled.',
       },
     },
   },
@@ -221,7 +223,8 @@ export const IconOnly: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Icon-only button without text. Remember to provide aria-label for accessibility.',
+        story:
+          'Icon-only button without text. Remember to provide aria-label for accessibility.',
       },
     },
   },
@@ -239,7 +242,8 @@ export const LoadingWithIcon: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'When loading, the left icon is hidden and replaced with a spinner.',
+        story:
+          'When loading, the left icon is hidden and replaced with a spinner.',
       },
     },
   },

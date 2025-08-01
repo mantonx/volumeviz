@@ -10,8 +10,4 @@ export {
 } from './atoms/containers';
 
 // Theme atoms
-export {
-  themeAtom,
-  resolvedThemeAtom,
-  systemThemeAtom,
-} from './atoms/theme';
+export { themeAtom, resolvedThemeAtom, systemThemeAtom } from './atoms/theme';

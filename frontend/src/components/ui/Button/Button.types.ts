@@ -3,7 +3,12 @@ import React from 'react';
 /**
  * Button component variant types
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'destructive';
 
 /**
  * Button component size types
@@ -13,7 +18,8 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 /**
  * Props for the Button component
  */
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Visual style variant of the button */
   variant?: ButtonVariant;
   /** Size of the button */

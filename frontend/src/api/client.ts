@@ -1,14 +1,20 @@
 /**
  * VolumeViz API Client
- * 
+ *
  * Pre-configured API client with type safety for VolumeViz backend
  */
 
-import { Api, type VolumeListResponse, type ScanResponse, type AsyncScanResponse } from './generated/volumeviz-api';
+import {
+  Api,
+  type VolumeListResponse,
+  type ScanResponse,
+  type AsyncScanResponse,
+} from './generated/volumeviz-api';
 
 // Create configured API client
 const volumeVizApi = new Api({
-  baseUrl: process.env.VITE_API_URL || 'http://localhost:8080/api/v1',
+  baseUrl:
+    (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080/api/v1',
   baseApiParams: {
     headers: {
       'Content-Type': 'application/json',
@@ -19,7 +25,11 @@ const volumeVizApi = new Api({
 // Export typed API methods
 export const volumeApi = {
   // Volume operations
-  async listVolumes(filters?: { driver?: string; label_key?: string; label_value?: string }) {
+  async listVolumes(filters?: {
+    driver?: string;
+    label_key?: string;
+    label_value?: string;
+  }) {
     const response = await volumeVizApi.volumes.volumesList(filters);
     return response.data as VolumeListResponse;
   },
@@ -31,12 +41,18 @@ export const volumeApi = {
 
   // Scan operations
   async getVolumeSize(id: string) {
-    const response = await volumeVizApi.volumes.volumesSize(id);
+    const response = await volumeVizApi.volumes.sizeList(id);
     return response.data as ScanResponse;
   },
 
-  async refreshVolumeSize(id: string, options?: { async?: boolean; method?: string }) {
-    const response = await volumeVizApi.volumes.volumesSizeRefresh(id, options);
+  async refreshVolumeSize(
+    id: string,
+    options?: { async?: boolean; method?: string },
+  ) {
+    const response = await volumeVizApi.volumes.sizeRefreshCreate(
+      id,
+      options || {},
+    );
     return response.data as ScanResponse | AsyncScanResponse;
   },
 
