@@ -6,8 +6,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
-	"github.com/mantonx/volumeviz/internal/core/models"
+	coremodels "github.com/mantonx/volumeviz/internal/core/models"
 )
 
 // Handler handles scan-related HTTP requests
@@ -23,15 +24,25 @@ func NewHandler(scanner interfaces.VolumeScanner) *Handler {
 }
 
 // GetVolumeSize returns volume size information
-// GET /api/v1/volumes/:id/size
+// @Summary Get volume size
+// @Description Get the current size and statistics of a Docker volume
+// @Tags scan
+// @Accept json
+// @Produce json
+// @Param id path string true "Volume ID"
+// @Success 200 {object} models.ScanResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /volumes/{id}/size [get]
 func (h *Handler) GetVolumeSize(c *gin.Context) {
 	volumeID := c.Param("id")
 
 	if volumeID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Volume ID is required",
-			"code":    "MISSING_VOLUME_ID",
-			"details": "Volume ID parameter is missing from the request",
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Volume ID is required",
+			Code:    "MISSING_VOLUME_ID",
+			Details: map[string]any{"message": "Volume ID parameter is missing from the request"},
 		})
 		return
 	}
@@ -42,15 +53,28 @@ func (h *Handler) GetVolumeSize(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"volume_id": volumeID,
-		"result":    result,
-		"cached":    result.CacheHit,
-	})
+	response := models.ScanResponse{
+		VolumeID: volumeID,
+		Result:   models.ConvertScanResult(result),
+		Cached:   result.CacheHit,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // RefreshVolumeSize forces a refresh of volume size calculation
-// POST /api/v1/volumes/:id/size/refresh
+// @Summary Refresh volume size
+// @Description Clear cache and recalculate volume size, optionally async
+// @Tags scan
+// @Accept json
+// @Produce json
+// @Param id path string true "Volume ID"
+// @Param request body models.RefreshRequest false "Refresh options"
+// @Success 200 {object} models.ScanResponse "Sync scan completed"
+// @Success 202 {object} models.AsyncScanResponse "Async scan started"
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /volumes/{id}/size/refresh [post]
 func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 	volumeID := c.Param("id")
 
@@ -63,7 +87,7 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 		return
 	}
 
-	var req models.RefreshRequest
+	var req coremodels.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		// If JSON binding fails, use defaults
 		req.Async = false
@@ -221,7 +245,7 @@ func (h *Handler) GetScanMethods(c *gin.Context) {
 
 // handleScanError handles scan errors with appropriate HTTP responses
 func (h *Handler) handleScanError(c *gin.Context, err error) {
-	scanErr, ok := err.(*models.ScanError)
+	scanErr, ok := err.(*coremodels.ScanError)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Internal server error",
@@ -238,27 +262,27 @@ func (h *Handler) handleScanError(c *gin.Context, err error) {
 
 	// Add helpful suggestions based on error type
 	switch scanErr.Code {
-	case models.ErrorCodeScanQueueTimeout:
+	case coremodels.ErrorCodeScanQueueTimeout:
 		response["suggestion"] = "Retry the request or scan smaller directories"
 		c.JSON(http.StatusRequestTimeout, response)
 
-	case models.ErrorCodePathValidationFailed:
+	case coremodels.ErrorCodePathValidationFailed:
 		response["suggestion"] = "Ensure the volume exists and is accessible"
 		c.JSON(http.StatusBadRequest, response)
 
-	case models.ErrorCodeVolumeNotFound:
+	case coremodels.ErrorCodeVolumeNotFound:
 		response["suggestion"] = "Check that the volume ID is correct"
 		c.JSON(http.StatusNotFound, response)
 
-	case models.ErrorCodePermissionDenied:
+	case coremodels.ErrorCodePermissionDenied:
 		response["suggestion"] = "Check VolumeViz permissions for accessing the volume"
 		c.JSON(http.StatusForbidden, response)
 
-	case models.ErrorCodeAllMethodsFailed:
+	case coremodels.ErrorCodeAllMethodsFailed:
 		response["suggestion"] = "Check VolumeViz permissions and available disk space"
 		c.JSON(http.StatusInternalServerError, response)
 
-	case models.ErrorCodeScanCancelled:
+	case coremodels.ErrorCodeScanCancelled:
 		response["suggestion"] = "Try again with a longer timeout or scan smaller directories"
 		c.JSON(http.StatusRequestTimeout, response)
 

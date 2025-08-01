@@ -22,7 +22,14 @@ func NewHandler(dockerService *services.DockerService) *Handler {
 }
 
 // GetDockerHealth returns Docker daemon health status
-// GET /api/v1/health/docker
+// @Summary Check Docker health
+// @Description Get Docker daemon connection status and version information
+// @Tags health
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.DockerHealth
+// @Failure 503 {object} models.ErrorResponse
+// @Router /health/docker [get]
 func (h *Handler) GetDockerHealth(c *gin.Context) {
 	ctx := c.Request.Context()
 

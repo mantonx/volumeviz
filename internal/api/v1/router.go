@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/mantonx/volumeviz/internal/api/middleware"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
@@ -100,6 +102,9 @@ func (r *Router) setupRoutes() {
 	
 	// Prometheus metrics endpoint
 	r.engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	
+	// Swagger documentation endpoint
+	r.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	
 	// API v1 routes
 	v1 := r.engine.Group("/api/v1")

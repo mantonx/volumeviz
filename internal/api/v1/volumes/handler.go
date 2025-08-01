@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/api/models"
+	coremodels "github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/services"
 )
 
@@ -22,7 +23,17 @@ func NewHandler(dockerService *services.DockerService) *Handler {
 }
 
 // ListVolumes returns all Docker volumes with metadata
-// GET /api/v1/volumes
+// @Summary List Docker volumes
+// @Description Get a list of all Docker volumes with optional filtering
+// @Tags volumes
+// @Accept json
+// @Produce json
+// @Param driver query string false "Filter by driver type" example(local)
+// @Param label_key query string false "Filter by label key"
+// @Param label_value query string false "Filter by label value"
+// @Success 200 {object} models.VolumeListResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /volumes [get]
 func (h *Handler) ListVolumes(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -31,7 +42,7 @@ func (h *Handler) ListVolumes(c *gin.Context) {
 	labelKey := c.Query("label_key")
 	labelValue := c.Query("label_value")
 
-	var volumes []models.Volume
+	var volumes []coremodels.Volume
 	var err error
 
 	// Apply filters if provided
@@ -47,21 +58,45 @@ func (h *Handler) ListVolumes(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error:   "Failed to list volumes",
 			Code:    "VOLUME_LIST_ERROR",
-			Details: err.Error(),
+			Details: map[string]any{"error": err.Error()},
 		})
 		return
 	}
 
+	// Convert internal models to API models
+	apiVolumes := make([]models.VolumeResponse, len(volumes))
+	for i, vol := range volumes {
+		apiVolumes[i] = models.VolumeResponse{
+			ID:         vol.ID,
+			Name:       vol.Name,
+			Driver:     vol.Driver,
+			Mountpoint: vol.Mountpoint,
+			CreatedAt:  vol.CreatedAt,
+			Labels:     vol.Labels,
+			Options:    vol.Options,
+		}
+	}
+
 	response := models.VolumeListResponse{
-		Volumes: volumes,
-		Total:   len(volumes),
+		Volumes: apiVolumes,
+		Total:   len(apiVolumes),
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
 // GetVolume returns detailed information about a specific volume
-// GET /api/v1/volumes/:id
+// @Summary Get volume details
+// @Description Get detailed information about a specific Docker volume
+// @Tags volumes
+// @Accept json
+// @Produce json
+// @Param id path string true "Volume ID"
+// @Success 200 {object} models.VolumeResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /volumes/{id} [get]
 func (h *Handler) GetVolume(c *gin.Context) {
 	ctx := c.Request.Context()
 	volumeID := c.Param("id")
@@ -70,7 +105,7 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error:   "Volume ID is required",
 			Code:    "MISSING_VOLUME_ID",
-			Details: "Volume ID parameter is missing from the request",
+			Details: map[string]any{"message": "Volume ID parameter is missing from the request"},
 		})
 		return
 	}
@@ -82,7 +117,7 @@ func (h *Handler) GetVolume(c *gin.Context) {
 			c.JSON(http.StatusNotFound, models.ErrorResponse{
 				Error:   "Volume not found",
 				Code:    "VOLUME_NOT_FOUND",
-				Details: err.Error(),
+				Details: map[string]any{"error": err.Error()},
 			})
 			return
 		}
@@ -90,12 +125,23 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error:   "Failed to get volume",
 			Code:    "VOLUME_GET_ERROR",
-			Details: err.Error(),
+			Details: map[string]any{"error": err.Error()},
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, volume)
+	// Convert to API model
+	apiVolume := models.VolumeResponse{
+		ID:         volume.ID,
+		Name:       volume.Name,
+		Driver:     volume.Driver,
+		Mountpoint: volume.Mountpoint,
+		CreatedAt:  volume.CreatedAt,
+		Labels:     volume.Labels,
+		Options:    volume.Options,
+	}
+
+	c.JSON(http.StatusOK, apiVolume)
 }
 
 // GetVolumeContainers returns all containers using a specific volume
@@ -108,7 +154,7 @@ func (h *Handler) GetVolumeContainers(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error:   "Volume ID is required",
 			Code:    "MISSING_VOLUME_ID",
-			Details: "Volume ID parameter is missing from the request",
+			Details: map[string]any{"message": "Volume ID parameter is missing from the request"},
 		})
 		return
 	}
@@ -120,7 +166,7 @@ func (h *Handler) GetVolumeContainers(c *gin.Context) {
 			c.JSON(http.StatusNotFound, models.ErrorResponse{
 				Error:   "Volume not found",
 				Code:    "VOLUME_NOT_FOUND",
-				Details: err.Error(),
+				Details: map[string]any{"error": err.Error()},
 			})
 			return
 		}
@@ -128,7 +174,7 @@ func (h *Handler) GetVolumeContainers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error:   "Failed to verify volume",
 			Code:    "VOLUME_VERIFY_ERROR",
-			Details: err.Error(),
+			Details: map[string]any{"error": err.Error()},
 		})
 		return
 	}
@@ -139,13 +185,13 @@ func (h *Handler) GetVolumeContainers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error:   "Failed to get volume containers",
 			Code:    "VOLUME_CONTAINERS_ERROR",
-			Details: err.Error(),
+			Details: map[string]any{"error": err.Error()},
 		})
 		return
 	}
 
-	response := models.VolumeDetailResponse{
-		Volume: models.Volume{
+	response := coremodels.VolumeDetailResponse{
+		Volume: coremodels.Volume{
 			ID:   volumeID,
 			Name: volumeID,
 		},
@@ -165,7 +211,7 @@ func (h *Handler) GetVolumeStats(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error:   "Volume ID is required",
 			Code:    "MISSING_VOLUME_ID",
-			Details: "Volume ID parameter is missing from the request",
+			Details: map[string]any{"message": "Volume ID parameter is missing from the request"},
 		})
 		return
 	}
@@ -176,7 +222,7 @@ func (h *Handler) GetVolumeStats(c *gin.Context) {
 			c.JSON(http.StatusNotFound, models.ErrorResponse{
 				Error:   "Volume not found",
 				Code:    "VOLUME_NOT_FOUND",
-				Details: err.Error(),
+				Details: map[string]any{"error": err.Error()},
 			})
 			return
 		}
@@ -184,7 +230,7 @@ func (h *Handler) GetVolumeStats(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error:   "Failed to get volume stats",
 			Code:    "VOLUME_STATS_ERROR",
-			Details: err.Error(),
+			Details: map[string]any{"error": err.Error()},
 		})
 		return
 	}
@@ -193,7 +239,7 @@ func (h *Handler) GetVolumeStats(c *gin.Context) {
 	containers, err := h.dockerService.GetVolumeContainers(ctx, volumeID)
 	if err != nil {
 		// Don't fail the request if we can't get containers
-		containers = []models.VolumeContainer{}
+		containers = []coremodels.VolumeContainer{}
 	}
 
 	stats := gin.H{

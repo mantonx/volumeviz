@@ -14,7 +14,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "generate-types": "npx @openapitools/openapi-generator-cli generate -i http://localhost:8080/swagger/doc.json -g typescript-fetch -o src/api/generated --additional-properties=typescriptThreePlus=true,supportsES6=true"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
+    "@openapitools/openapi-generator-cli": "^2.21.4",
     "@storybook/addon-docs": "^9.1.0",
     "@storybook/addon-essentials": "^8.6.14",
     "@storybook/addon-interactions": "^8.6.14",

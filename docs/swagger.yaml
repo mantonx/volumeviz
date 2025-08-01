@@ -1,0 +1,344 @@
+basePath: /api/v1
+definitions:
+  AsyncScanResponse:
+    properties:
+      scan_id:
+        example: scan_tv-shows-readonly_1640995200
+        type: string
+      status:
+        example: started
+        type: string
+      volume_id:
+        example: tv-shows-readonly
+        type: string
+    type: object
+  ErrorResponse:
+    properties:
+      code:
+        example: VOLUME_NOT_FOUND
+        type: string
+      details:
+        additionalProperties: {}
+        type: object
+      error:
+        example: Volume not found
+        type: string
+    type: object
+  RefreshRequest:
+    properties:
+      async:
+        example: false
+        type: boolean
+      method:
+        example: du
+        type: string
+    type: object
+  ScanResponse:
+    properties:
+      cached:
+        example: false
+        type: boolean
+      result:
+        $ref: '#/definitions/ScanResult'
+      volume_id:
+        example: tv-shows-readonly
+        type: string
+    type: object
+  ScanResult:
+    properties:
+      cache_hit:
+        example: false
+        type: boolean
+      directory_count:
+        example: 1204
+        type: integer
+      duration:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        example: 13248000000
+      file_count:
+        example: 12543
+        type: integer
+      filesystem_type:
+        example: cifs
+        type: string
+      largest_file:
+        example: 8589934592
+        type: integer
+      method:
+        example: du
+        type: string
+      scanned_at:
+        type: string
+      total_size:
+        example: 70640394854400
+        type: integer
+      volume_id:
+        example: tv-shows-readonly
+        type: string
+    type: object
+  VolumeListResponse:
+    properties:
+      total:
+        example: 1
+        type: integer
+      volumes:
+        items:
+          $ref: '#/definitions/VolumeResponse'
+        type: array
+    type: object
+  VolumeResponse:
+    properties:
+      created_at:
+        type: string
+      driver:
+        example: local
+        type: string
+      id:
+        example: tv-shows-readonly
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      mountpoint:
+        example: /var/lib/docker/volumes/tv-shows-readonly/_data
+        type: string
+      name:
+        example: tv-shows-readonly
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  github_com_mantonx_volumeviz_internal_models.DockerHealth:
+    properties:
+      api_version:
+        type: string
+      build_time:
+        type: string
+      git_commit:
+        type: string
+      go_version:
+        type: string
+      message:
+        type: string
+      status:
+        type: string
+      version:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.ErrorResponse:
+    properties:
+      code:
+        type: string
+      details:
+        type: string
+      error:
+        type: string
+    type: object
+  time.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    format: int64
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+host: localhost:8080
+info:
+  contact:
+    email: support@volumeviz.io
+    name: API Support
+    url: https://github.com/mantonx/volumeviz/issues
+  description: Docker volume monitoring and visualization API
+  license:
+    name: MIT
+    url: https://github.com/mantonx/volumeviz/blob/main/LICENSE
+  termsOfService: https://github.com/mantonx/volumeviz
+  title: VolumeViz API
+  version: "1.0"
+paths:
+  /health/docker:
+    get:
+      consumes:
+      - application/json
+      description: Get Docker daemon connection status and version information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.DockerHealth'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Check Docker health
+      tags:
+      - health
+  /volumes:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all Docker volumes with optional filtering
+      parameters:
+      - description: Filter by driver type
+        example: local
+        in: query
+        name: driver
+        type: string
+      - description: Filter by label key
+        in: query
+        name: label_key
+        type: string
+      - description: Filter by label value
+        in: query
+        name: label_value
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/VolumeListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List Docker volumes
+      tags:
+      - volumes
+  /volumes/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific Docker volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/VolumeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get volume details
+      tags:
+      - volumes
+  /volumes/{id}/size:
+    get:
+      consumes:
+      - application/json
+      description: Get the current size and statistics of a Docker volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ScanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get volume size
+      tags:
+      - scan
+  /volumes/{id}/size/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Clear cache and recalculate volume size, optionally async
+      parameters:
+      - description: Volume ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Refresh options
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sync scan completed
+          schema:
+            $ref: '#/definitions/ScanResponse'
+        "202":
+          description: Async scan started
+          schema:
+            $ref: '#/definitions/AsyncScanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Refresh volume size
+      tags:
+      - scan
+schemes:
+- http
+- https
+swagger: "2.0"
+tags:
+- description: Docker volume operations
+  name: volumes
+- description: Health check endpoints
+  name: health
+- description: System information endpoints
+  name: system
+- description: Volume scanning operations
+  name: scan
