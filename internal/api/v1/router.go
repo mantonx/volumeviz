@@ -11,6 +11,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/mantonx/volumeviz/internal/api/middleware"
+	"github.com/mantonx/volumeviz/internal/api/v1/database"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
 	"github.com/mantonx/volumeviz/internal/api/v1/system"
@@ -20,6 +21,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/core/services/cache"
 	"github.com/mantonx/volumeviz/internal/core/services/metrics"
 	"github.com/mantonx/volumeviz/internal/core/services/scanner"
+	databasePkg "github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/services"
 )
 
@@ -28,10 +30,11 @@ type Router struct {
 	engine        *gin.Engine
 	dockerService *services.DockerService
 	scanner       interfaces.VolumeScanner
+	database      *databasePkg.DB
 }
 
 // NewRouter creates a new v1 API router
-func NewRouter(dockerService *services.DockerService) *Router {
+func NewRouter(dockerService *services.DockerService, database *databasePkg.DB) *Router {
 	// Initialize the scanner with all dependencies
 	logger := log.New(os.Stdout, "[SCANNER] ", log.LstdFlags)
 	cache := cache.NewMemoryCache(1000)
@@ -57,6 +60,7 @@ func NewRouter(dockerService *services.DockerService) *Router {
 		engine:        gin.New(),
 		dockerService: dockerService,
 		scanner:       volumeScanner,
+		database:      database,
 	}
 
 	router.setupMiddleware()
@@ -103,8 +107,15 @@ func (r *Router) setupRoutes() {
 	// Prometheus metrics endpoint
 	r.engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	
-	// Swagger documentation endpoint
-	r.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Serve OpenAPI specification directly at /openapi route
+	r.engine.Static("/openapi", "./docs")
+	
+	// Swagger documentation endpoint at /api/docs as per requirements
+	// Configure to use our OpenAPI 3.0 specification
+	r.engine.GET("/api/docs/*any", ginSwagger.WrapHandler(
+		swaggerFiles.Handler,
+		ginSwagger.URL("/openapi/openapi.yaml"),
+	))
 	
 	// API v1 routes
 	v1 := r.engine.Group("/api/v1")
@@ -121,6 +132,9 @@ func (r *Router) setupRoutes() {
 		
 		scanRouter := scan.NewRouter(r.scanner)
 		scanRouter.RegisterRoutes(v1)
+		
+		databaseRouter := database.NewRouter(r.database)
+		databaseRouter.RegisterRoutes(v1)
 	}
 }
 

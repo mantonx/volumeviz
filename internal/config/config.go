@@ -8,8 +8,9 @@ import (
 
 // Config holds application configuration
 type Config struct {
-	Server ServerConfig
-	Docker DockerConfig
+	Server   ServerConfig
+	Docker   DockerConfig
+	Database DatabaseConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -25,6 +26,16 @@ type DockerConfig struct {
 	Timeout time.Duration
 }
 
+// DatabaseConfig holds database connection configuration
+type DatabaseConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Name     string
+	SSLMode  string
+}
+
 // Load loads configuration from environment variables with defaults
 func Load() *Config {
 	return &Config{
@@ -36,6 +47,14 @@ func Load() *Config {
 		Docker: DockerConfig{
 			Host:    getEnv("DOCKER_HOST", ""),
 			Timeout: getDurationEnv("DOCKER_TIMEOUT", 30*time.Second),
+		},
+		Database: DatabaseConfig{
+			Host:     getEnv("DB_HOST", "localhost"),
+			Port:     getEnv("DB_PORT", "5432"),
+			User:     getEnv("DB_USER", "volumeviz"),
+			Password: getEnv("DB_PASSWORD", "volumeviz"),
+			Name:     getEnv("DB_NAME", "volumeviz"),
+			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 	}
 }

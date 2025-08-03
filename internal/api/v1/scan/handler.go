@@ -1,22 +1,26 @@
+// Package scan provides HTTP handlers for volume scanning operations
+// Handles size calculations and performance metrics
 package scan
 
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/utils"
 	coremodels "github.com/mantonx/volumeviz/internal/core/models"
 )
 
 // Handler handles scan-related HTTP requests
+// Provides endpoints for volume size scanning and metrics
 type Handler struct {
 	scanner interfaces.VolumeScanner
 }
 
 // NewHandler creates a new scan handler
+// Pass in your volume scanner implementation
 func NewHandler(scanner interfaces.VolumeScanner) *Handler {
 	return &Handler{
 		scanner: scanner,
@@ -129,31 +133,44 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 	})
 }
 
-// GetScanStatus returns the status of an async scan
-// GET /api/v1/scans/:id/status
+// GetScanStatus returns the status of an async scan by volume ID
+// GET /api/v1/volumes/:id/scan/status
 func (h *Handler) GetScanStatus(c *gin.Context) {
-	scanID := c.Param("id")
+	volumeID := c.Param("id")
 
-	if scanID == "" {
+	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Scan ID is required",
-			"code":    "MISSING_SCAN_ID",
-			"details": "Scan ID parameter is missing from the request",
+			"error":   "Volume ID is required",
+			"code":    "MISSING_VOLUME_ID",
+			"details": "Volume ID parameter is missing from the request",
 		})
 		return
 	}
 
-	progress, err := h.scanner.GetScanProgress(scanID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   "Scan not found",
-			"code":    "SCAN_NOT_FOUND",
-			"details": err.Error(),
-		})
+	// Try to get scan progress by volume ID
+	// First, try to cast scanner to access volume-based method
+	if volumeScanner, ok := h.scanner.(interface {
+		GetScanProgressByVolume(volumeID string) (*interfaces.ScanProgress, error)
+	}); ok {
+		progress, err := volumeScanner.GetScanProgressByVolume(volumeID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   "No active scan found for volume",
+				"code":    "NO_ACTIVE_SCAN",
+				"details": fmt.Sprintf("No active scan found for volume %s", volumeID),
+			})
+			return
+		}
+		c.JSON(http.StatusOK, progress)
 		return
 	}
 
-	c.JSON(http.StatusOK, progress)
+	// Fallback to old method if new interface not available
+	c.JSON(http.StatusNotFound, gin.H{
+		"error":   "No active scan found for volume",
+		"code":    "NO_ACTIVE_SCAN",
+		"details": fmt.Sprintf("No active scan found for volume %s", volumeID),
+	})
 }
 
 // BulkScan performs bulk scanning of multiple volumes
@@ -297,7 +314,7 @@ func (h *Handler) ValidateVolumeID(volumeID string) error {
 		return fmt.Errorf("volume ID cannot be empty")
 	}
 
-	if strings.Contains(volumeID, "..") || strings.Contains(volumeID, "/") {
+	if utils.ContainsAny(volumeID, "..", "/") {
 		return fmt.Errorf("volume ID contains invalid characters")
 	}
 

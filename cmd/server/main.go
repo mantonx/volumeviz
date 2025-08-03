@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	v1 "github.com/mantonx/volumeviz/internal/api/v1"
 	"github.com/mantonx/volumeviz/internal/config"
+	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/services"
 
 	_ "github.com/mantonx/volumeviz/docs" // Generated docs
@@ -50,6 +52,35 @@ func main() {
 	// Set Gin mode
 	gin.SetMode(cfg.Server.Mode)
 
+	// Parse database port
+	dbPort, err := strconv.Atoi(cfg.Database.Port)
+	if err != nil {
+		log.Printf("Invalid database port '%s', using default 5432", cfg.Database.Port)
+		dbPort = 5432
+	}
+
+	// Initialize database connection
+	dbConfig := &database.Config{
+		Host:     cfg.Database.Host,
+		Port:     dbPort,
+		User:     cfg.Database.User,
+		Password: cfg.Database.Password,
+		Database: cfg.Database.Name,
+		SSLMode:  cfg.Database.SSLMode,
+	}
+	
+	db, err := database.NewDB(dbConfig)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+
+	// Run database migrations
+	migrationManager := database.NewMigrationManager(db.DB)
+	if err := migrationManager.ApplyAllPending(); err != nil {
+		log.Fatalf("Failed to run database migrations: %v", err)
+	}
+
 	// Initialize Docker service
 	dockerService, err := services.NewDockerService(cfg.Docker.Host, cfg.Docker.Timeout)
 	if err != nil {
@@ -58,7 +89,7 @@ func main() {
 	defer dockerService.Close()
 
 	// Setup v1 API router
-	apiRouter := v1.NewRouter(dockerService)
+	apiRouter := v1.NewRouter(dockerService, db)
 	router := apiRouter.Engine()
 
 	// Create server

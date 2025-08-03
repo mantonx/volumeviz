@@ -1,3 +1,5 @@
+// Package services provides business logic for VolumeViz operations
+// Wraps Docker API calls with error handling and data transformation
 package services
 
 import (
@@ -7,20 +9,24 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/volume"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/utils"
 	"github.com/mantonx/volumeviz/pkg/docker"
 )
 
 // DockerService handles Docker-related operations
+// Wraps the Docker client with business logic and error handling
 type DockerService struct {
-	client *docker.Client
+	client interfaces.DockerClient
 }
 
 // NewDockerService creates a new Docker service instance
+// Pass Docker daemon URL and connection timeout
 func NewDockerService(host string, timeout time.Duration) (*DockerService, error) {
 	client, err := docker.NewClient(host, timeout)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Docker client: %w", err)
+		return nil, utils.WrapError(err, "failed to create Docker client")
 	}
 
 	return &DockerService{
@@ -28,17 +34,28 @@ func NewDockerService(host string, timeout time.Duration) (*DockerService, error
 	}, nil
 }
 
+// NewDockerServiceWithClient creates a new Docker service with a custom client
+// Mainly used for testing with mock clients
+func NewDockerServiceWithClient(client interfaces.DockerClient) *DockerService {
+	return &DockerService{
+		client: client,
+	}
+}
+
 // Close closes the Docker service and its underlying connections
+// Always call this when you're done to avoid resource leaks
 func (s *DockerService) Close() error {
 	return s.client.Close()
 }
 
 // Ping checks if the Docker daemon is reachable
+// Returns error if daemon is down or unreachable
 func (s *DockerService) Ping(ctx context.Context) error {
 	return s.client.Ping(ctx)
 }
 
 // GetVersion returns Docker daemon version information
+// Useful for compatibility checks and debugging
 func (s *DockerService) GetVersion(ctx context.Context) (types.Version, error) {
 	return s.client.Version(ctx)
 }
@@ -48,7 +65,7 @@ func (s *DockerService) ListVolumes(ctx context.Context) ([]models.Volume, error
 	// List all volumes
 	volumeResp, err := s.client.ListVolumes(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list volumes: %w", err)
+		return nil, utils.WrapError(err, "failed to list volumes")
 	}
 
 	volumes := make([]models.Volume, 0, len(volumeResp.Volumes))
@@ -65,7 +82,7 @@ func (s *DockerService) GetVolume(ctx context.Context, volumeID string) (*models
 	// Inspect the volume
 	vol, err := s.client.InspectVolume(ctx, volumeID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get volume %s: %w", volumeID, err)
+		return nil, utils.WrapErrorf(err, "failed to get volume %s", volumeID)
 	}
 
 	// Convert to our model
@@ -78,7 +95,7 @@ func (s *DockerService) GetVolumeContainers(ctx context.Context, volumeName stri
 	// List all containers
 	containers, err := s.client.ListContainers(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list containers: %w", err)
+		return nil, utils.WrapError(err, "failed to list containers")
 	}
 
 	var volumeContainers []models.VolumeContainer
@@ -175,7 +192,7 @@ func (s *DockerService) GetVolumesByDriver(ctx context.Context, driver string) (
 
 	volumeResp, err := s.client.ListVolumes(ctx, filterMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list volumes by driver %s: %w", driver, err)
+		return nil, utils.WrapErrorf(err, "failed to list volumes by driver %s", driver)
 	}
 
 	volumes := make([]models.Volume, 0, len(volumeResp.Volumes))
@@ -200,7 +217,7 @@ func (s *DockerService) GetVolumesByLabel(ctx context.Context, labelKey, labelVa
 
 	volumeResp, err := s.client.ListVolumes(ctx, filterMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list volumes by label %s: %w", labelKey, err)
+		return nil, utils.WrapErrorf(err, "failed to list volumes by label %s", labelKey)
 	}
 
 	volumes := make([]models.Volume, 0, len(volumeResp.Volumes))

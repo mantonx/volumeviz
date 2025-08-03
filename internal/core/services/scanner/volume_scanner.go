@@ -1,3 +1,5 @@
+// Package scanner provides volume scanning implementations
+// Supports multiple scanning methods with fallback strategies
 package scanner
 
 import (
@@ -5,15 +7,18 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
 	"github.com/mantonx/volumeviz/internal/core/models"
 	"github.com/mantonx/volumeviz/internal/services"
+	"github.com/mantonx/volumeviz/internal/utils"
 )
 
 // VolumeScanner implements the main volume scanning service
+// Uses multiple scanning methods with intelligent fallback
 type VolumeScanner struct {
 	methods         []interfaces.ScanMethod
 	cache           interfaces.Cache
@@ -22,9 +27,13 @@ type VolumeScanner struct {
 	dockerService   *services.DockerService
 	semaphore       chan struct{} // Limit concurrent scans
 	config          models.Config
+	activeScans     map[string]*interfaces.ScanProgress // Track active scans by scan ID
+	volumeToScan    map[string]string                   // Map volume ID to active scan ID
+	scanMutex       sync.RWMutex                        // Protect scan maps
 }
 
 // NewVolumeScanner creates a new volume scanner instance
+// Automatically configures scanning methods based on system capabilities
 func NewVolumeScanner(
 	dockerService *services.DockerService,
 	cache interfaces.Cache,
@@ -47,6 +56,8 @@ func NewVolumeScanner(
 		dockerService: dockerService,
 		semaphore:     make(chan struct{}, config.Scanning.MaxConcurrent),
 		config:        config,
+		activeScans:   make(map[string]*interfaces.ScanProgress),
+		volumeToScan:  make(map[string]string),
 	}
 }
 
@@ -163,16 +174,59 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 
 // ScanVolumeAsync starts an async scan and returns a scan ID
 func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (string, error) {
-	// For now, return a simple implementation
-	// In a full implementation, this would start a goroutine and track progress
 	scanID := fmt.Sprintf("scan_%s_%d", volumeID, time.Now().Unix())
+	
+	// Initialize scan progress
+	progress := &interfaces.ScanProgress{
+		ScanID:             scanID,
+		VolumeID:           volumeID,
+		Status:             models.ScanStatusPending,
+		Progress:           0.0,
+		FilesScanned:       0,
+		CurrentPath:        "",
+		EstimatedRemaining: 0,
+		Method:             "",
+		StartedAt:          time.Now(),
+		Error:              "",
+	}
+	
+	vs.scanMutex.Lock()
+	vs.activeScans[scanID] = progress
+	vs.volumeToScan[volumeID] = scanID
+	vs.scanMutex.Unlock()
 	
 	// Start the scan in background
 	go func() {
-		_, err := vs.ScanVolume(context.Background(), volumeID)
-		if err != nil && vs.logger != nil {
-			vs.logger.Printf("Async scan failed for volume %s: %v", volumeID, err)
+		// Update status to running
+		vs.scanMutex.Lock()
+		progress.Status = models.ScanStatusRunning
+		vs.scanMutex.Unlock()
+		
+		result, err := vs.ScanVolume(context.Background(), volumeID)
+		
+		vs.scanMutex.Lock()
+		defer vs.scanMutex.Unlock()
+		
+		if err != nil {
+			progress.Status = models.ScanStatusFailed
+			progress.Error = err.Error()
+			if vs.logger != nil {
+				vs.logger.Printf("Async scan failed for volume %s: %v", volumeID, err)
+			}
+		} else {
+			progress.Status = models.ScanStatusCompleted
+			progress.Progress = 1.0
+			progress.Method = result.Method
 		}
+		
+		// Clean up after some time (keep completed scans for a while)
+		go func() {
+			time.Sleep(5 * time.Minute)
+			vs.scanMutex.Lock()
+			delete(vs.activeScans, scanID)
+			delete(vs.volumeToScan, volumeID)
+			vs.scanMutex.Unlock()
+		}()
 	}()
 	
 	return scanID, nil
@@ -180,12 +234,37 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 
 // GetScanProgress returns the progress of an async scan
 func (vs *VolumeScanner) GetScanProgress(scanID string) (*interfaces.ScanProgress, error) {
-	// Simplified implementation - in reality, this would track actual progress
-	return &interfaces.ScanProgress{
-		ScanID:   scanID,
-		Status:   models.ScanStatusCompleted,
-		Progress: 1.0,
-	}, nil
+	vs.scanMutex.RLock()
+	defer vs.scanMutex.RUnlock()
+	
+	progress, exists := vs.activeScans[scanID]
+	if !exists {
+		return nil, fmt.Errorf("scan not found: %s", scanID)
+	}
+	
+	// Return a copy to avoid race conditions
+	progressCopy := *progress
+	return &progressCopy, nil
+}
+
+// GetScanProgressByVolume returns the progress of the active scan for a volume
+func (vs *VolumeScanner) GetScanProgressByVolume(volumeID string) (*interfaces.ScanProgress, error) {
+	vs.scanMutex.RLock()
+	defer vs.scanMutex.RUnlock()
+	
+	scanID, exists := vs.volumeToScan[volumeID]
+	if !exists {
+		return nil, fmt.Errorf("no active scan found for volume: %s", volumeID)
+	}
+	
+	progress, exists := vs.activeScans[scanID]
+	if !exists {
+		return nil, fmt.Errorf("scan progress not found for volume: %s", volumeID)
+	}
+	
+	// Return a copy to avoid race conditions
+	progressCopy := *progress
+	return &progressCopy, nil
 }
 
 // GetAvailableMethods returns information about available scan methods
@@ -302,7 +381,7 @@ func (vs *VolumeScanner) getVolumePath(volumeID string) (string, error) {
 	ctx := context.Background()
 	volume, err := vs.dockerService.GetVolume(ctx, volumeID)
 	if err != nil {
-		return "", fmt.Errorf("failed to get volume info: %w", err)
+		return "", utils.WrapError(err, "failed to get volume info")
 	}
 	
 	return volume.Mountpoint, nil
@@ -312,7 +391,7 @@ func (vs *VolumeScanner) getVolumePath(volumeID string) (string, error) {
 func (vs *VolumeScanner) validatePath(path string) error {
 	info, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("path not accessible: %w", err)
+		return utils.WrapError(err, "path not accessible")
 	}
 	
 	if !info.IsDir() {

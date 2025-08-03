@@ -1,22 +1,26 @@
+// Package volumes provides HTTP handlers for Docker volume operations
+// Includes listing, filtering, and retrieving volume details
 package volumes
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
+	"github.com/mantonx/volumeviz/internal/interfaces"
+	"github.com/mantonx/volumeviz/internal/utils"
 	coremodels "github.com/mantonx/volumeviz/internal/models"
-	"github.com/mantonx/volumeviz/internal/services"
 )
 
 // Handler handles volume-related HTTP requests
+// Provides REST endpoints for Docker volume operations
 type Handler struct {
-	dockerService *services.DockerService
+	dockerService interfaces.DockerService
 }
 
 // NewHandler creates a new volume handler
-func NewHandler(dockerService *services.DockerService) *Handler {
+// Pass in your Docker service to get started
+func NewHandler(dockerService interfaces.DockerService) *Handler {
 	return &Handler{
 		dockerService: dockerService,
 	}
@@ -272,6 +276,7 @@ func isNotFoundError(err error) bool {
 }
 
 // containsIgnoreCase checks if a string contains a substring (case-insensitive)
+// Using our utils for consistency
 func containsIgnoreCase(s, substr string) bool {
-	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
+	return utils.ContainsIgnoreCase(s, substr)
 }
