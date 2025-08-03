@@ -76,7 +76,7 @@ func main() {
 	defer db.Close()
 
 	// Run database migrations
-	migrationManager := database.NewMigrationManager(db.DB)
+	migrationManager := database.NewMigrationManager(db)
 	if err := migrationManager.ApplyAllPending(); err != nil {
 		log.Fatalf("Failed to run database migrations: %v", err)
 	}

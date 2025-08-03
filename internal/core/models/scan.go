@@ -77,7 +77,7 @@ func DefaultConfig() Config {
 	return Config{
 		Scanning: ScanConfig{
 			DefaultTimeout:    5 * time.Minute,
-			MaxConcurrent:     3,
+			MaxConcurrent:     5,
 			PreferredMethods:  []string{"diskus", "du", "native"},
 			ProgressReporting: true,
 		},

@@ -15,9 +15,10 @@
     "test:coverage": "vitest --coverage",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "generate-types": "npx @openapitools/openapi-generator-cli generate -i http://localhost:8080/swagger/doc.json -g typescript-fetch -o src/api/generated --additional-properties=typescriptThreePlus=true,supportsES6=true"
+    "generate-types": "npx @openapitools/openapi-generator-cli generate -i http://localhost:8080/api/docs/openapi.yaml -g typescript-fetch -o src/api/generated --additional-properties=typescriptThreePlus=true,supportsES6=true"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "jotai": "^2.12.5",

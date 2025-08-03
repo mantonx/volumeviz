@@ -8,24 +8,56 @@ services:
       POSTGRES_USER: volumeviz
       POSTGRES_PASSWORD: volumeviz
       POSTGRES_DB: volumeviz
+      # Performance optimizations for development
+      POSTGRES_INITDB_ARGS: "--data-checksums"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     networks:
       - volumeviz-network-dev
+    # Add health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U volumeviz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  backend:
+  # pgAdmin for PostgreSQL database visualization
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: volumeviz-pgadmin-dev
+    environment:
+      PGADMIN_DEFAULT_EMAIL: dev@volumeviz.com
+      PGADMIN_DEFAULT_PASSWORD: volumeviz
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - pgadmin_data_dev:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - volumeviz-network-dev
+
+  # VolumeViz backend with PostgreSQL
+  backend-postgres:
     image: cosmtrek/air
-    container_name: volumeviz-backend-dev
+    container_name: volumeviz-backend-postgres-dev
     working_dir: /app
     command: air
     environment:
+      DB_TYPE: postgres
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: volumeviz
       DB_PASSWORD: volumeviz
       DB_NAME: volumeviz
+      DB_SSLMODE: disable
       SERVER_PORT: 8080
       SERVER_HOST: 0.0.0.0
       GIN_MODE: debug
@@ -37,13 +69,58 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - volumeviz-network-dev
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.volumeviz-postgres.loadbalancer.server.port=8080"
 
-  frontend:
+  # VolumeViz backend with SQLite
+  backend-sqlite:
+    image: cosmtrek/air
+    container_name: volumeviz-backend-sqlite-dev
+    working_dir: /app
+    command: air
+    environment:
+      DB_TYPE: sqlite
+      DB_PATH: /data/volumeviz.db
+      SERVER_PORT: 8081
+      SERVER_HOST: 0.0.0.0
+      GIN_MODE: debug
+      DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - go_modules:/go/pkg/mod
+      - sqlite_data_dev:/data
+    ports:
+      - "8081:8081"
+    networks:
+      - volumeviz-network-dev
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.volumeviz-sqlite.loadbalancer.server.port=8081"
+
+  # SQLite Web Browser for SQLite database visualization
+  sqlite-web:
+    image: coleifer/sqlite-web
+    container_name: volumeviz-sqlite-web-dev
+    command: sqlite_web --host 0.0.0.0 --port 8082 /data/volumeviz.db --read-only
+    volumes:
+      - sqlite_data_dev:/data
+    ports:
+      - "8082:8082"
+    networks:
+      - volumeviz-network-dev
+    depends_on:
+      - backend-sqlite
+
+  # Frontend pointing to PostgreSQL backend by default
+  frontend-postgres:
     image: node:18-alpine
-    container_name: volumeviz-frontend-dev
+    container_name: volumeviz-frontend-postgres-dev
     working_dir: /app
     command: npm run dev -- --host 0.0.0.0
     environment:
@@ -54,12 +131,74 @@ services:
     ports:
       - "5173:5173"
     depends_on:
-      - backend
+      - backend-postgres
+    networks:
+      - volumeviz-network-dev
+
+  # Frontend pointing to SQLite backend
+  frontend-sqlite:
+    image: node:18-alpine
+    container_name: volumeviz-frontend-sqlite-dev
+    working_dir: /app
+    command: npm run dev -- --host 0.0.0.0 --port 5174
+    environment:
+      VITE_API_URL: http://localhost:8081
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5174:5174"
+    depends_on:
+      - backend-sqlite
+    networks:
+      - volumeviz-network-dev
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: volumeviz-prometheus-dev
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data_dev:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - volumeviz-network-dev
+
+  # Grafana for metrics visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: volumeviz-grafana-dev
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: volumeviz
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana_data_dev:/var/lib/grafana
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./docker/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
     networks:
       - volumeviz-network-dev
 
 volumes:
   postgres_data_dev:
+    driver: local
+  pgadmin_data_dev:
+    driver: local
+  sqlite_data_dev:
+    driver: local
+  prometheus_data_dev:
+    driver: local
+  grafana_data_dev:
     driver: local
   go_modules:
     driver: local

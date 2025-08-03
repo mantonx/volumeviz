@@ -22,7 +22,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.24'
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -43,10 +43,13 @@ jobs:
         cd frontend && npm ci
 
     - name: Run tests
-      run: make test-all
+      run: |
+        go test -v -cover ./pkg/... ./internal/...
+        cd frontend && npm test -- --run
 
     - name: Build binaries
       run: |
+        mkdir -p dist
         # Build for multiple platforms
         GOOS=linux GOARCH=amd64 go build -o dist/volumeviz-linux-amd64 ./cmd/server
         GOOS=linux GOARCH=arm64 go build -o dist/volumeviz-linux-arm64 ./cmd/server

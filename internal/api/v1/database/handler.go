@@ -20,7 +20,7 @@ type Handler struct {
 func NewHandler(db *database.DB) *Handler {
 	return &Handler{
 		db:           db,
-		migrationMgr: database.NewMigrationManager(db.DB),
+		migrationMgr: database.NewMigrationManager(db),
 		volumeRepo:   database.NewVolumeRepository(db),
 		scanJobRepo:  database.NewScanJobRepository(db),
 	}

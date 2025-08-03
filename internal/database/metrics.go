@@ -173,8 +173,8 @@ func (mc *MetricsCollector) collect() {
 // collectTableMetrics collects table size and row count metrics
 func (mc *MetricsCollector) collectTableMetrics() {
 	tables := []string{
-		"volumes", "volume_sizes", "containers", "container_volumes",
-		"scan_jobs", "scan_results", "system_metrics", "alerts",
+		"volumes", "volume_sizes", "containers", "volume_mounts",
+		"scan_jobs", "volume_metrics", "system_health", "scan_cache",
 	}
 
 	for _, table := range tables {
@@ -185,15 +185,53 @@ func (mc *MetricsCollector) collectTableMetrics() {
 			dbTableRows.WithLabelValues(table).Set(float64(count))
 		}
 
-		// Get table size (PostgreSQL specific)
-		var size int64
-		sizeQuery := `
-			SELECT pg_total_relation_size($1::regclass)
-		`
-		if err := mc.db.QueryRow(sizeQuery, table).Scan(&size); err == nil {
+		// Get table size (database-specific implementation)
+		if size := mc.getTableSize(table); size >= 0 {
 			dbTableSize.WithLabelValues(table).Set(float64(size))
 		}
 	}
+}
+
+// getTableSize returns the size of a table in bytes, or -1 if unavailable
+func (mc *MetricsCollector) getTableSize(table string) int64 {
+	var size int64
+	
+	if mc.db.IsPostgreSQL() {
+		// PostgreSQL-specific table size query
+		sizeQuery := `SELECT pg_total_relation_size($1::regclass)`
+		if err := mc.db.QueryRow(sizeQuery, table).Scan(&size); err != nil {
+			return -1
+		}
+		return size
+	} else if mc.db.IsSQLite() {
+		// SQLite doesn't have a direct table size function
+		// We can estimate based on page count and page size
+		var pageCount, pageSize int64
+		
+		// Get page count for the table
+		pageCountQuery := `
+			SELECT COUNT(*) FROM pragma_page_count() 
+			WHERE name = ?
+		`
+		if err := mc.db.QueryRow(pageCountQuery, table).Scan(&pageCount); err != nil {
+			// If pragma doesn't work, estimate based on row count and average row size
+			var rowCount int64
+			if err := mc.db.QueryRow("SELECT COUNT(*) FROM "+table).Scan(&rowCount); err != nil {
+				return -1
+			}
+			// Rough estimate: assume 100 bytes per row on average
+			return rowCount * 100
+		}
+		
+		// Get page size
+		if err := mc.db.QueryRow("PRAGMA page_size").Scan(&pageSize); err != nil {
+			pageSize = 4096 // Default SQLite page size
+		}
+		
+		return pageCount * pageSize
+	}
+	
+	return -1 // Unsupported database type
 }
 
 // RecordQuery records metrics for a database query

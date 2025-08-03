@@ -10,7 +10,7 @@ mkdir -p frontend/src/api/generated
 # Generate TypeScript types using swagger-typescript-api
 cd frontend
 npx swagger-typescript-api generate \
-    -p ../docs/swagger.json \
+    -p ../docs/openapi.yaml \
     -o src/api/generated \
     -n volumeviz-api.ts \
     --responses \

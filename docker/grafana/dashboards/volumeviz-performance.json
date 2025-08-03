@@ -1,0 +1,113 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "VolumeViz Database Performance",
+    "tags": ["volumeviz", "database", "performance"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Database Query Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(volumeviz_db_queries_total[5m])",
+            "legendFormat": "{{operation}} on {{table}} ({{status}})",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Queries/sec"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Database Connection Pool",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "volumeviz_db_connections_total",
+            "legendFormat": "{{state}} connections",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Connections"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Query Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(volumeviz_db_query_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "95th percentile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(volumeviz_db_query_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "50th percentile",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Duration (ms)"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "Database Table Sizes",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "volumeviz_db_table_size_bytes",
+            "legendFormat": "{{table}} size",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Bytes"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "5s",
+    "version": 1
+  }
+}

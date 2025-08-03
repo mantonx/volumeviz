@@ -138,7 +138,7 @@ make docker-build
 
 ## API Documentation
 
-The API documentation is available at `http://localhost:8080/swagger` when running in development mode.
+The API documentation is available at `http://localhost:8080/api/docs` when running in development mode.
 
 ### Key Endpoints
 

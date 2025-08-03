@@ -2,7 +2,7 @@ package health
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/mantonx/volumeviz/internal/services"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 )
 
 // Router handles health-related routes
@@ -11,7 +11,7 @@ type Router struct {
 }
 
 // NewRouter creates a new health router
-func NewRouter(dockerService *services.DockerService) *Router {
+func NewRouter(dockerService interfaces.DockerService) *Router {
 	return &Router{
 		handler: NewHandler(dockerService),
 	}

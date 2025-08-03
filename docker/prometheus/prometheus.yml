@@ -1,0 +1,40 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # Add rule files here if needed
+
+scrape_configs:
+  # VolumeViz PostgreSQL backend
+  - job_name: 'volumeviz-postgres'
+    static_configs:
+      - targets: ['backend-postgres:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 10s
+
+  # VolumeViz SQLite backend
+  - job_name: 'volumeviz-sqlite'
+    static_configs:
+      - targets: ['backend-sqlite:8081']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 10s
+
+  # PostgreSQL database metrics (if postgres_exporter is added)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    params:
+      collect[]:
+        - 'pg_stat_database'
+        - 'pg_stat_user_tables'
+        - 'pg_stat_user_indexes'
+
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

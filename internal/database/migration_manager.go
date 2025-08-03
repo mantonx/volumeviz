@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 	
 	"github.com/mantonx/volumeviz/internal/utils"
@@ -28,16 +29,20 @@ type Migration struct {
 
 // MigrationManager handles database migrations
 type MigrationManager struct {
-	db *sql.DB
+	db     *sql.DB
+	dbType DatabaseType
 }
 
 // NewMigrationManager creates a new migration manager
-func NewMigrationManager(db *sql.DB) *MigrationManager {
-	return &MigrationManager{db: db}
+func NewMigrationManager(db *DB) *MigrationManager {
+	return &MigrationManager{
+		db:     db.DB,
+		dbType: db.GetDatabaseType(),
+	}
 }
 
 // LoadMigrationsFromFiles reads migration files from embedded filesystem
-func LoadMigrationsFromFiles() ([]Migration, error) {
+func (mm *MigrationManager) LoadMigrationsFromFiles() ([]Migration, error) {
 	entries, err := migrationFiles.ReadDir("migrations")
 	if err != nil {
 		return nil, utils.WrapError(err, "failed to read migrations directory")
@@ -56,22 +61,56 @@ func LoadMigrationsFromFiles() ([]Migration, error) {
 			continue
 		}
 		
-		// Parse filename: 001_initial_schema.sql or 001_initial_schema_down.sql
+		// Parse filename: 001_initial_schema.sql, 001_initial_schema_down.sql, or 001_initial_schema_sqlite.sql
 		var version, description string
-		var isDown bool
+		var isDown, isDBSpecific bool
+		var dbSuffix string
 		
 		// Extract version number (first 3 digits)
 		if len(filename) >= 4 && filename[3] == '_' {
 			version = filename[:3]
 			remaining := filename[4:]
 			
+			// Check for database-specific suffix first
+			if strings.Contains(remaining, "_sqlite") {
+				isDBSpecific = true
+				dbSuffix = "sqlite"
+				if mm.dbType != DatabaseTypeSQLite {
+					continue // Skip SQLite-specific files for PostgreSQL
+				}
+			} else if strings.Contains(remaining, "_postgres") {
+				isDBSpecific = true
+				dbSuffix = "postgres"
+				if mm.dbType != DatabaseTypePostgreSQL {
+					continue // Skip PostgreSQL-specific files for SQLite
+				}
+			} else if mm.dbType == DatabaseTypeSQLite {
+				// For SQLite, prefer database-specific files if they exist
+				sqliteVariant := strings.Replace(filename, ".sql", "_sqlite.sql", 1)
+				if _, err := migrationFiles.Open("migrations/" + sqliteVariant); err == nil {
+					continue // Skip generic file in favor of SQLite-specific one
+				}
+			}
+			
 			// Check if it's a down migration
-			if len(remaining) > 5 && remaining[len(remaining)-8:] == "_down.sql" {
+			if strings.HasSuffix(remaining, "_down.sql") {
 				isDown = true
-				description = remaining[:len(remaining)-9] // Remove "_down.sql"
-			} else if len(remaining) > 4 && remaining[len(remaining)-4:] == ".sql" {
+				if isDBSpecific {
+					// Remove "_sqlite_down.sql" or "_postgres_down.sql"
+					description = remaining[:len(remaining)-(len(dbSuffix)+10)]
+				} else {
+					// Remove "_down.sql"
+					description = remaining[:len(remaining)-9]
+				}
+			} else if strings.HasSuffix(remaining, ".sql") {
 				isDown = false
-				description = remaining[:len(remaining)-4] // Remove ".sql"
+				if isDBSpecific {
+					// Remove "_sqlite.sql" or "_postgres.sql"
+					description = remaining[:len(remaining)-(len(dbSuffix)+5)]
+				} else {
+					// Remove ".sql"
+					description = remaining[:len(remaining)-4]
+				}
 			} else {
 				continue // Skip invalid filename
 			}
@@ -159,20 +198,39 @@ func cleanDescription(desc string) string {
 
 // EnsureMigrationTable creates the migration history table if it doesn't exist
 func (mm *MigrationManager) EnsureMigrationTable() error {
-	query := `
-		CREATE TABLE IF NOT EXISTS migration_history (
-			id SERIAL PRIMARY KEY,
-			version VARCHAR(255) NOT NULL UNIQUE,
-			description TEXT NOT NULL,
-			applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			rollback_sql TEXT,
-			checksum VARCHAR(32) NOT NULL,
-			execution_time BIGINT NOT NULL DEFAULT 0
-		);
-		
-		CREATE INDEX IF NOT EXISTS idx_migration_history_version ON migration_history(version);
-		CREATE INDEX IF NOT EXISTS idx_migration_history_applied_at ON migration_history(applied_at);
-	`
+	var query string
+	
+	if mm.dbType == DatabaseTypeSQLite {
+		query = `
+			CREATE TABLE IF NOT EXISTS migration_history (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				version TEXT NOT NULL UNIQUE,
+				description TEXT NOT NULL,
+				applied_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				rollback_sql TEXT,
+				checksum TEXT NOT NULL,
+				execution_time INTEGER NOT NULL DEFAULT 0
+			);
+			
+			CREATE INDEX IF NOT EXISTS idx_migration_history_version ON migration_history(version);
+			CREATE INDEX IF NOT EXISTS idx_migration_history_applied_at ON migration_history(applied_at);
+		`
+	} else {
+		query = `
+			CREATE TABLE IF NOT EXISTS migration_history (
+				id SERIAL PRIMARY KEY,
+				version VARCHAR(255) NOT NULL UNIQUE,
+				description TEXT NOT NULL,
+				applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+				rollback_sql TEXT,
+				checksum VARCHAR(32) NOT NULL,
+				execution_time BIGINT NOT NULL DEFAULT 0
+			);
+			
+			CREATE INDEX IF NOT EXISTS idx_migration_history_version ON migration_history(version);
+			CREATE INDEX IF NOT EXISTS idx_migration_history_applied_at ON migration_history(applied_at);
+		`
+	}
 	
 	_, err := mm.db.Exec(query)
 	return err
@@ -218,7 +276,7 @@ func (mm *MigrationManager) GetPendingMigrations() ([]Migration, error) {
 		appliedMap[m.Version] = true
 	}
 	
-	allMigrations, err := LoadMigrationsFromFiles()
+	allMigrations, err := mm.LoadMigrationsFromFiles()
 	if err != nil {
 		return nil, utils.WrapError(err, "failed to load migrations")
 	}
@@ -355,7 +413,7 @@ func (mm *MigrationManager) GetMigrationStatus() (*MigrationStatus, error) {
 		return nil, err
 	}
 	
-	allMigrations, err := LoadMigrationsFromFiles()
+	allMigrations, err := mm.LoadMigrationsFromFiles()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load all migrations: %w", err)
 	}

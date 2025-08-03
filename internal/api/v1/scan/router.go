@@ -23,10 +23,12 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	group.GET("/volumes/:id/size", r.handler.GetVolumeSize)
 	group.POST("/volumes/:id/size/refresh", r.handler.RefreshVolumeSize)
 	
+	// Volume scan status endpoint (per spec)
+	group.GET("/volumes/:id/scan/status", r.handler.GetScanStatus)
+	
 	// Bulk scanning
 	group.POST("/volumes/bulk-scan", r.handler.BulkScan)
 	
-	// Scan status and methods
-	group.GET("/scans/:id/status", r.handler.GetScanStatus)
+	// Scan methods
 	group.GET("/scan-methods", r.handler.GetScanMethods)
 }

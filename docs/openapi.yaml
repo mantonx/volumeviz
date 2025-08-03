@@ -1,0 +1,2010 @@
+openapi: 3.0.3
+info:
+  title: VolumeViz API
+  version: "1.0.0"
+  description: |
+    Docker volume monitoring and visualization API with comprehensive volume discovery, 
+    size calculation, and performance monitoring capabilities.
+    
+    ## Features
+    - Real-time Docker volume discovery and monitoring
+    - Pluggable volume size calculation with multiple scan methods
+    - High-performance caching with TTL-based invalidation
+    - Async scanning with progress tracking
+    - Comprehensive Prometheus metrics integration
+    - Circuit breaker patterns for resilience
+    
+    ## Performance SLO
+    - 95th percentile response time < 500ms for volume listing
+    - Supports 1000+ volumes with concurrent access
+    - Memory usage < 100MB during large volume scans
+  contact:
+    name: API Support
+    url: https://github.com/mantonx/volumeviz/issues
+    email: support@volumeviz.io
+  license:
+    name: MIT
+    url: https://github.com/mantonx/volumeviz/blob/main/LICENSE
+  termsOfService: https://github.com/mantonx/volumeviz
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api.volumeviz.io/api/v1
+    description: Production server
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  # Health Check Endpoints
+  /health/docker:
+    get:
+      tags:
+        - Health
+      summary: Check Docker daemon health
+      description: |
+        Get Docker daemon connection status and version information.
+        Used for monitoring Docker API connectivity and version compatibility.
+      operationId: getDockerHealth
+      responses:
+        '200':
+          description: Docker daemon is healthy and connected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockerHealth'
+              examples:
+                healthy:
+                  summary: Healthy Docker daemon
+                  value:
+                    status: "healthy"
+                    message: "Docker daemon connected successfully"
+                    version: "24.0.7"
+                    api_version: "1.43"
+                    go_version: "go1.20.10"
+                    git_commit: "afdd53b4e3"
+                    build_time: "2023-10-24T11:05:16.000000000+00:00"
+        '503':
+          description: Docker daemon is unavailable or unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unavailable:
+                  summary: Docker daemon unavailable
+                  value:
+                    error: "Docker daemon unavailable"
+                    code: "DOCKER_UNAVAILABLE"
+                    details: "Cannot connect to the Docker daemon at unix:///var/run/docker.sock"
+
+  /health/app:
+    get:
+      tags:
+        - Health
+      summary: Check application health
+      description: Overall application health including all dependencies
+      operationId: getAppHealth
+      responses:
+        '200':
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /health/readiness:
+    get:
+      tags:
+        - Health
+      summary: Readiness probe
+      description: Kubernetes readiness probe endpoint
+      operationId: getReadiness
+      responses:
+        '200':
+          description: Application is ready to serve traffic
+
+  /health/liveness:
+    get:
+      tags:
+        - Health
+      summary: Liveness probe
+      description: Kubernetes liveness probe endpoint
+      operationId: getLiveness
+      responses:
+        '200':
+          description: Application is alive
+
+  # Volume Endpoints
+  /volumes:
+    get:
+      tags:
+        - Volumes
+      summary: List Docker volumes
+      description: |
+        Get a list of all Docker volumes with optional filtering.
+        Supports filtering by driver type and labels for advanced volume management.
+        
+        **Performance**: Optimized for large volume sets (1000+ volumes).
+        **SLO**: 95th percentile response time < 500ms.
+      operationId: listVolumes
+      parameters:
+        - name: driver
+          in: query
+          description: Filter volumes by driver type
+          required: false
+          schema:
+            type: string
+            enum: [local, nfs, cifs, overlay2]
+          example: local
+        - name: label_key
+          in: query
+          description: Filter volumes by label key
+          required: false
+          schema:
+            type: string
+          example: environment
+        - name: label_value
+          in: query
+          description: Filter volumes by label value (requires label_key)
+          required: false
+          schema:
+            type: string
+          example: production
+        - name: limit
+          in: query
+          description: Limit number of results (for pagination)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: offset
+          in: query
+          description: Offset for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of Docker volumes
+          headers:
+            X-Total-Count:
+              description: Total number of volumes (for pagination)
+              schema:
+                type: integer
+            X-Response-Time:
+              description: Response time in milliseconds
+              schema:
+                type: number
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeListResponse'
+              examples:
+                multiple_volumes:
+                  summary: Multiple volumes response
+                  value:
+                    total: 3
+                    volumes:
+                      - id: "web-data"
+                        name: "web-data"
+                        driver: "local"
+                        mountpoint: "/var/lib/docker/volumes/web-data/_data"
+                        created_at: "2024-01-15T10:30:00Z"
+                        labels:
+                          environment: "production"
+                          backup: "daily"
+                        options: {}
+                      - id: "db-storage"
+                        name: "db-storage"
+                        driver: "local"
+                        mountpoint: "/var/lib/docker/volumes/db-storage/_data"
+                        created_at: "2024-01-15T11:00:00Z"
+                        labels:
+                          environment: "production"
+                          backup: "hourly"
+                        options: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /volumes/{volumeId}:
+    get:
+      tags:
+        - Volumes
+      summary: Get volume details
+      description: |
+        Get detailed information about a specific Docker volume including
+        metadata, labels, and usage statistics if available.
+      operationId: getVolume
+      parameters:
+        - name: volumeId
+          in: path
+          required: true
+          description: Volume ID or name
+          schema:
+            type: string
+          example: "web-data"
+      responses:
+        '200':
+          description: Volume details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeResponse'
+        '404':
+          description: Volume not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                not_found:
+                  summary: Volume not found
+                  value:
+                    error: "Volume not found"
+                    code: "VOLUME_NOT_FOUND"
+                    details: "Volume 'non-existent' does not exist"
+
+  /volumes/{volumeId}/containers:
+    get:
+      tags:
+        - Volumes
+      summary: Get volume containers
+      description: |
+        Get all containers that are currently using the specified volume,
+        including mount information and access modes.
+      operationId: getVolumeContainers
+      parameters:
+        - name: volumeId
+          in: path
+          required: true
+          description: Volume ID or name
+          schema:
+            type: string
+          example: "web-data"
+      responses:
+        '200':
+          description: List of containers using the volume
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  volume_id:
+                    type: string
+                  containers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VolumeContainer'
+
+  /volumes/{volumeId}/stats:
+    get:
+      tags:
+        - Volumes
+      summary: Get volume statistics
+      description: Get usage statistics and metadata for a volume
+      operationId: getVolumeStats
+      parameters:
+        - name: volumeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Volume statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeStats'
+
+  # Volume Size Scanning Endpoints
+  /volumes/{volumeId}/size:
+    get:
+      tags:
+        - Scanning
+      summary: Get volume size
+      description: |
+        Get the current size and file statistics of a Docker volume.
+        Results are cached with TTL-based invalidation for performance.
+        
+        **Performance**: 
+        - Cache hit: < 5ms response time
+        - Cache miss: varies by volume size and scan method
+        - Large volumes (100GB+): typically < 30 seconds
+      operationId: getVolumeSize
+      parameters:
+        - name: volumeId
+          in: path
+          required: true
+          description: Volume ID or name
+          schema:
+            type: string
+          example: "web-data"
+        - name: method
+          in: query
+          description: Preferred scan method (fallback chain will be used if unavailable)
+          required: false
+          schema:
+            type: string
+            enum: [diskus, du, native]
+            default: diskus
+          example: diskus
+      responses:
+        '200':
+          description: Volume size information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+              examples:
+                cached_result:
+                  summary: Cached scan result
+                  value:
+                    volume_id: "web-data"
+                    cached: true
+                    result:
+                      volume_id: "web-data"
+                      total_size: 2147483648
+                      file_count: 1547
+                      directory_count: 234
+                      largest_file: 104857600
+                      method: "diskus"
+                      duration: 15000000000
+                      cache_hit: true
+                      scanned_at: "2024-01-15T14:30:00Z"
+                      filesystem_type: "ext4"
+                fresh_scan:
+                  summary: Fresh scan result
+                  value:
+                    volume_id: "large-data"
+                    cached: false
+                    result:
+                      volume_id: "large-data"
+                      total_size: 107374182400
+                      file_count: 15473
+                      directory_count: 2341
+                      largest_file: 8589934592
+                      method: "diskus"
+                      duration: 13248000000
+                      cache_hit: false
+                      scanned_at: "2024-01-15T14:35:22Z"
+                      filesystem_type: "cifs"
+        '404':
+          description: Volume not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Scan failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /volumes/{volumeId}/size/refresh:
+    post:
+      tags:
+        - Scanning
+      summary: Refresh volume size
+      description: |
+        Force a fresh scan of the volume, bypassing cache.
+        Supports both synchronous and asynchronous scanning modes.
+        
+        **Synchronous mode**: Returns results immediately (default)
+        **Asynchronous mode**: Returns scan ID for status tracking
+      operationId: refreshVolumeSize
+      parameters:
+        - name: volumeId
+          in: path
+          required: true
+          description: Volume ID or name
+          schema:
+            type: string
+          example: "web-data"
+      requestBody:
+        description: Refresh options
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            examples:
+              sync_refresh:
+                summary: Synchronous refresh
+                value:
+                  method: "diskus"
+                  async: false
+              async_refresh:
+                summary: Asynchronous refresh
+                value:
+                  method: "du"
+                  async: true
+      responses:
+        '200':
+          description: Synchronous scan completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+        '202':
+          description: Asynchronous scan started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncScanResponse'
+              examples:
+                async_started:
+                  summary: Async scan initiated
+                  value:
+                    scan_id: "scan_web-data_1640995200"
+                    volume_id: "web-data"
+                    status: "started"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /volumes/{volumeId}/scan/status:
+    get:
+      tags:
+        - Scanning
+      summary: Get scan status
+      description: |
+        Get the status of an ongoing or completed volume scan.
+        Used with asynchronous scanning to track progress.
+      operationId: getScanStatus
+      parameters:
+        - name: volumeId
+          in: path
+          required: true
+          description: Volume ID or name
+          schema:
+            type: string
+          example: "web-data"
+        - name: scan_id
+          in: query
+          description: Scan ID (optional, returns latest scan if omitted)
+          required: false
+          schema:
+            type: string
+          example: "scan_web-data_1640995200"
+      responses:
+        '200':
+          description: Scan status information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanProgress'
+              examples:
+                in_progress:
+                  summary: Scan in progress
+                  value:
+                    scan_id: "scan_web-data_1640995200"
+                    volume_id: "web-data"
+                    status: "running"
+                    progress: 65
+                    method: "diskus"
+                    started_at: "2024-01-15T14:35:00Z"
+                    estimated_completion: "2024-01-15T14:36:15Z"
+                completed:
+                  summary: Scan completed
+                  value:
+                    scan_id: "scan_web-data_1640995200"
+                    volume_id: "web-data"
+                    status: "completed"
+                    progress: 100
+                    method: "diskus"
+                    started_at: "2024-01-15T14:35:00Z"
+                    completed_at: "2024-01-15T14:35:18Z"
+                    result:
+                      total_size: 2147483648
+                      file_count: 1547
+        '404':
+          description: Scan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /volumes/bulk-scan:
+    post:
+      tags:
+        - Scanning
+      summary: Bulk scan volumes
+      description: |
+        Initiate scanning for multiple volumes simultaneously.
+        Useful for refreshing cache for many volumes efficiently.
+      operationId: bulkScanVolumes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                volume_ids:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  maxItems: 100
+                method:
+                  type: string
+                  enum: [diskus, du, native]
+                  default: diskus
+                async:
+                  type: boolean
+                  default: true
+              required:
+                - volume_ids
+            example:
+              volume_ids: ["web-data", "db-storage", "cache-volume"]
+              method: "diskus"
+              async: true
+      responses:
+        '202':
+          description: Bulk scan initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scan_ids:
+                    type: array
+                    items:
+                      type: string
+                  total_volumes:
+                    type: integer
+                  status:
+                    type: string
+
+  /scan-methods:
+    get:
+      tags:
+        - Scanning
+      summary: Get available scan methods
+      description: |
+        Get list of available volume scanning methods and their capabilities.
+        Used to determine optimal scan method for different volume types.
+      operationId: getScanMethods
+      responses:
+        '200':
+          description: Available scan methods
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  methods:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScanMethod'
+              examples:
+                available_methods:
+                  summary: Available scan methods
+                  value:
+                    methods:
+                      - name: "diskus"
+                        description: "Fast disk usage analyzer (recommended)"
+                        available: true
+                        performance: "high"
+                        supports_filesystem: ["ext4", "xfs", "btrfs"]
+                      - name: "du"
+                        description: "Standard Unix du command"
+                        available: true
+                        performance: "medium"
+                        supports_filesystem: ["*"]
+                      - name: "native"
+                        description: "Native Go filesystem traversal"
+                        available: true
+                        performance: "low"
+                        supports_filesystem: ["*"]
+
+  # System Information Endpoints
+  /system/info:
+    get:
+      tags:
+        - System
+      summary: Get system information
+      description: Get comprehensive system information including Docker and host details
+      operationId: getSystemInfo
+      responses:
+        '200':
+          description: System information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemInfo'
+
+  /system/version:
+    get:
+      tags:
+        - System
+      summary: Get application version
+      description: Get VolumeViz application version and build information
+      operationId: getSystemVersion
+      responses:
+        '200':
+          description: Version information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionInfo'
+
+  # Database Management Endpoints
+  /database/health:
+    get:
+      tags:
+        - Database
+      summary: Get database health
+      description: |
+        Get comprehensive database health information including connection status, 
+        performance metrics, and resource usage for monitoring and alerting.
+      operationId: getDatabaseHealth
+      responses:
+        '200':
+          description: Database is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseHealth'
+              examples:
+                healthy:
+                  summary: Healthy database
+                  value:
+                    status: "healthy"
+                    response_time: 2150000
+                    open_connections: 5
+                    idle_connections: 3
+                    max_open_connections: 25
+        '503':
+          description: Database is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseHealth'
+              examples:
+                unhealthy:
+                  summary: Unhealthy database
+                  value:
+                    status: "unhealthy"
+                    response_time: 30000000000
+                    open_connections: 0
+                    idle_connections: 0
+                    max_open_connections: 25
+                    error: "connection refused"
+
+  /database/test-connection:
+    get:
+      tags:
+        - Database
+      summary: Test database connection
+      description: Test database connectivity and return detailed connection information
+      operationId: testDatabaseConnection
+      responses:
+        '200':
+          description: Connection test successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectionTestResult'
+        '503':
+          description: Connection test failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectionTestResult'
+
+  /database/stats:
+    get:
+      tags:
+        - Database
+      summary: Get database statistics
+      description: |
+        Get comprehensive database statistics including volume counts, 
+        scan job metrics, and performance data for operational monitoring.
+      operationId: getDatabaseStats
+      responses:
+        '200':
+          description: Database statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseStats'
+        '500':
+          description: Failed to get database statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /database/migrations/status:
+    get:
+      tags:
+        - Database
+      summary: Get migration status
+      description: |
+        Get detailed information about database migrations including applied, 
+        pending, and completion status for deployment monitoring.
+      operationId: getMigrationStatus
+      responses:
+        '200':
+          description: Migration status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationStatus'
+              examples:
+                up_to_date:
+                  summary: Database up to date
+                  value:
+                    total_migrations: 3
+                    applied_count: 3
+                    pending_count: 0
+                    applied_migrations:
+                      - version: "001"
+                        description: "Initial schema creation"
+                        applied_at: "2024-01-15T10:00:00Z"
+                    pending_migrations: []
+                pending_migrations:
+                  summary: Pending migrations
+                  value:
+                    total_migrations: 3
+                    applied_count: 2
+                    pending_count: 1
+                    pending_migrations: ["003"]
+        '500':
+          description: Failed to get migration status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /database/migrations/history:
+    get:
+      tags:
+        - Database
+      summary: Get migration history
+      description: Get complete history of applied database migrations with execution details
+      operationId: getMigrationHistory
+      responses:
+        '200':
+          description: Migration history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MigrationHistory'
+        '500':
+          description: Failed to get migration history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /database/migrations/apply:
+    post:
+      tags:
+        - Database
+      summary: Apply pending migrations
+      description: |
+        Apply all pending database migrations. Use with caution in production environments.
+        This endpoint should typically be called during deployment processes.
+      operationId: applyPendingMigrations
+      responses:
+        '200':
+          description: Migrations applied successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationStatus'
+        '400':
+          description: No pending migrations or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to apply migrations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /database/migrations/{version}/rollback:
+    post:
+      tags:
+        - Database
+      summary: Rollback migration
+      description: |
+        Rollback a specific database migration by version. Use with extreme caution 
+        in production environments as this can result in data loss.
+      operationId: rollbackMigration
+      parameters:
+        - name: version
+          in: path
+          required: true
+          description: Migration version to rollback
+          schema:
+            type: string
+          example: "002"
+      responses:
+        '200':
+          description: Migration rolled back successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationStatus'
+        '400':
+          description: Invalid version or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Migration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to rollback migration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /database/performance/table-sizes:
+    get:
+      tags:
+        - Database
+      summary: Get table sizes
+      description: Get storage usage information for all database tables
+      operationId: getTableSizes
+      responses:
+        '200':
+          description: Table sizes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TableSizeInfo'
+        '500':
+          description: Failed to get table sizes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /database/performance/slow-queries:
+    get:
+      tags:
+        - Database
+      summary: Get slow queries
+      description: |
+        Get information about slow-running database queries for performance analysis.
+        Requires pg_stat_statements extension to be enabled.
+      operationId: getSlowQueries
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of queries to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Slow queries retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SlowQueryInfo'
+        '500':
+          description: Failed to get slow queries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication (if enabled)
+
+  schemas:
+    # Database Model Schemas
+    Volume:
+      type: object
+      description: Docker volume database model with complete metadata
+      properties:
+        id:
+          type: integer
+          description: Internal database ID
+          example: 1
+        volume_id:
+          type: string
+          description: Docker volume identifier (unique)
+          example: "web-data"
+        name:
+          type: string
+          description: Volume name
+          example: "web-data"
+        driver:
+          type: string
+          description: Volume driver type
+          enum: [local, nfs, cifs, overlay2]
+          example: "local"
+        mountpoint:
+          type: string
+          description: Host filesystem mount point
+          example: "/var/lib/docker/volumes/web-data/_data"
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+          description: Volume labels as key-value pairs
+          example:
+            environment: "production"
+            backup: "daily"
+        options:
+          type: object
+          additionalProperties:
+            type: string
+          description: Volume driver options
+          example:
+            type: "none"
+        scope:
+          type: string
+          description: Volume scope
+          enum: [local, global]
+          default: "local"
+        status:
+          type: string
+          description: Volume status
+          enum: [active, inactive, error]
+          default: "active"
+        last_scanned:
+          type: string
+          format: date-time
+          description: Timestamp of last successful scan
+          nullable: true
+        is_active:
+          type: boolean
+          description: Whether the volume is currently active
+          default: true
+        created_at:
+          type: string
+          format: date-time
+          description: Volume creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - volume_id
+        - name
+        - driver
+        - mountpoint
+        - is_active
+
+    VolumeSize:
+      type: object
+      description: Volume size calculation result
+      properties:
+        id:
+          type: integer
+          description: Internal database ID
+        volume_id:
+          type: string
+          description: Associated volume identifier
+        total_size:
+          type: integer
+          format: int64
+          description: Total volume size in bytes
+          minimum: 0
+        file_count:
+          type: integer
+          format: int64
+          description: Number of files in volume
+          minimum: 0
+        directory_count:
+          type: integer
+          format: int64
+          description: Number of directories in volume
+          minimum: 0
+        largest_file:
+          type: integer
+          format: int64
+          description: Size of largest file in bytes
+          minimum: 0
+        scan_method:
+          type: string
+          description: Scan method used
+          enum: [diskus, du, native]
+        scan_duration:
+          type: integer
+          format: int64
+          description: Scan duration in nanoseconds
+        filesystem_type:
+          type: string
+          description: Detected filesystem type
+          example: "ext4"
+        checksum_md5:
+          type: string
+          description: MD5 checksum of scan result
+          nullable: true
+        is_valid:
+          type: boolean
+          description: Whether the scan result is valid
+          default: true
+        error_message:
+          type: string
+          description: Error message if scan failed
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - volume_id
+        - total_size
+        - scan_method
+
+    ScanJob:
+      type: object
+      description: Asynchronous scan job tracking
+      properties:
+        id:
+          type: integer
+          description: Internal database ID
+        scan_id:
+          type: string
+          description: Unique scan identifier
+          example: "scan_web-data_1640995200"
+        volume_id:
+          type: string
+          description: Associated volume identifier
+        status:
+          type: string
+          description: Current job status
+          enum: [queued, running, completed, failed, cancelled]
+        progress:
+          type: integer
+          description: Scan progress percentage
+          minimum: 0
+          maximum: 100
+        method:
+          type: string
+          description: Scan method being used
+          enum: [diskus, du, native]
+        started_at:
+          type: string
+          format: date-time
+          description: Job start timestamp
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          description: Job completion timestamp
+          nullable: true
+        error_message:
+          type: string
+          description: Error message if job failed
+          nullable: true
+        result_id:
+          type: integer
+          description: Associated VolumeSize result ID
+          nullable: true
+        estimated_duration:
+          type: integer
+          format: int64
+          description: Estimated completion time in nanoseconds
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - scan_id
+        - volume_id
+        - status
+        - method
+
+    Container:
+      type: object
+      description: Docker container database model
+      properties:
+        id:
+          type: integer
+          description: Internal database ID
+        container_id:
+          type: string
+          description: Docker container identifier (unique)
+        name:
+          type: string
+          description: Container name
+        image:
+          type: string
+          description: Container image
+        state:
+          type: string
+          description: Container state
+          enum: [created, running, paused, restarting, removing, exited, dead]
+        status:
+          type: string
+          description: Container status description
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+          description: Container labels
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+          default: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - container_id
+        - name
+        - image
+        - state
+
+    VolumeMount:
+      type: object
+      description: Container-volume mount relationship
+      properties:
+        id:
+          type: integer
+        volume_id:
+          type: string
+          description: Associated volume identifier
+        container_id:
+          type: string
+          description: Associated container identifier
+        mount_path:
+          type: string
+          description: Mount path inside container
+        access_mode:
+          type: string
+          description: Access mode
+          enum: [rw, ro]
+          default: "rw"
+        is_active:
+          type: boolean
+          default: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - volume_id
+        - container_id
+        - mount_path
+
+    VolumeMetrics:
+      type: object
+      description: Historical volume metrics for analytics
+      properties:
+        id:
+          type: integer
+        volume_id:
+          type: string
+        metric_timestamp:
+          type: string
+          format: date-time
+          description: Metrics collection timestamp
+        total_size:
+          type: integer
+          format: int64
+        file_count:
+          type: integer
+          format: int64
+        directory_count:
+          type: integer
+          format: int64
+        growth_rate:
+          type: number
+          format: double
+          description: Growth rate in bytes per day
+          nullable: true
+        access_frequency:
+          type: integer
+          description: Number of scans per day
+          default: 0
+        container_count:
+          type: integer
+          description: Number of containers using this volume
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - volume_id
+        - metric_timestamp
+        - total_size
+
+    SystemHealth:
+      type: object
+      description: System component health monitoring
+      properties:
+        id:
+          type: integer
+        component:
+          type: string
+          description: System component name
+          enum: [docker, database, filesystem, scanner]
+        status:
+          type: string
+          description: Health status
+          enum: [healthy, warning, critical, unknown]
+        last_check_at:
+          type: string
+          format: date-time
+        response_time:
+          type: integer
+          format: int64
+          description: Response time in milliseconds
+          nullable: true
+        error_message:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional component-specific metadata
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - component
+        - status
+        - last_check_at
+
+    MigrationHistory:
+      type: object
+      description: Database migration history
+      properties:
+        id:
+          type: integer
+        version:
+          type: string
+          description: Migration version identifier
+          example: "001"
+        description:
+          type: string
+          description: Migration description
+          example: "Initial schema creation"
+        applied_at:
+          type: string
+          format: date-time
+        rollback_sql:
+          type: string
+          description: SQL for rolling back this migration
+          nullable: true
+        checksum:
+          type: string
+          description: MD5 checksum of migration SQL
+        execution_time:
+          type: integer
+          format: int64
+          description: Migration execution time in milliseconds
+      required:
+        - version
+        - description
+        - checksum
+
+    MigrationStatus:
+      type: object
+      description: Overall database migration status
+      properties:
+        total_migrations:
+          type: integer
+          description: Total number of available migrations
+        applied_count:
+          type: integer
+          description: Number of applied migrations
+        pending_count:
+          type: integer
+          description: Number of pending migrations
+        applied_migrations:
+          type: array
+          items:
+            $ref: '#/components/schemas/MigrationHistory'
+        pending_migrations:
+          type: array
+          items:
+            type: string
+          description: List of pending migration versions
+        last_applied:
+          $ref: '#/components/schemas/MigrationHistory'
+          nullable: true
+      required:
+        - total_migrations
+        - applied_count
+        - pending_count
+
+    DatabaseHealth:
+      type: object
+      description: Database connection health status
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        response_time:
+          type: integer
+          format: int64
+          description: Database response time in nanoseconds
+        open_connections:
+          type: integer
+          description: Current open connections
+        idle_connections:
+          type: integer
+          description: Current idle connections
+        max_open_connections:
+          type: integer
+          description: Maximum allowed open connections
+        error:
+          type: string
+          description: Error message if unhealthy
+          nullable: true
+      required:
+        - status
+        - response_time
+
+    # Database API Response Schemas
+    DatabaseStats:
+      type: object
+      description: Comprehensive database statistics
+      properties:
+        volume_stats:
+          $ref: '#/components/schemas/VolumeStats'
+        scan_job_stats:
+          $ref: '#/components/schemas/ScanJobStats'
+        database_health:
+          $ref: '#/components/schemas/DatabaseHealth'
+        migration_status:
+          $ref: '#/components/schemas/MigrationStatus'
+      required:
+        - volume_stats
+        - scan_job_stats
+        - database_health
+        - migration_status
+
+    VolumeStats:
+      type: object
+      description: Volume-related statistics
+      properties:
+        total_volumes:
+          type: integer
+          description: Total number of volumes
+        active_volumes:
+          type: integer
+          description: Number of active volumes
+        unique_drivers:
+          type: integer
+          description: Number of unique volume drivers
+        scanned_volumes:
+          type: integer
+          description: Number of volumes that have been scanned
+        newest_volume:
+          type: string
+          format: date-time
+          nullable: true
+        oldest_volume:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - total_volumes
+        - active_volumes
+        - unique_drivers
+        - scanned_volumes
+
+    ScanJobStats:
+      type: object
+      description: Scan job statistics
+      properties:
+        total_jobs:
+          type: integer
+          description: Total number of scan jobs (last 30 days)
+        queued_jobs:
+          type: integer
+          description: Number of queued jobs
+        running_jobs:
+          type: integer
+          description: Number of currently running jobs
+        completed_jobs:
+          type: integer
+          description: Number of completed jobs
+        failed_jobs:
+          type: integer
+          description: Number of failed jobs
+        cancelled_jobs:
+          type: integer
+          description: Number of cancelled jobs
+        avg_duration:
+          type: integer
+          format: int64
+          description: Average job duration in nanoseconds
+          nullable: true
+      required:
+        - total_jobs
+        - queued_jobs
+        - running_jobs
+        - completed_jobs
+        - failed_jobs
+        - cancelled_jobs
+
+    ConnectionTestResult:
+      type: object
+      description: Database connection test result
+      properties:
+        success:
+          type: boolean
+          description: Whether the connection test succeeded
+        message:
+          type: string
+          description: Human-readable test result message
+        error:
+          type: string
+          description: Error message if test failed
+          nullable: true
+        open_connections:
+          type: integer
+          description: Current open connections
+          nullable: true
+        idle_connections:
+          type: integer
+          description: Current idle connections
+          nullable: true
+        max_open_connections:
+          type: integer
+          description: Maximum allowed open connections
+          nullable: true
+      required:
+        - success
+        - message
+
+    TableSizeInfo:
+      type: object
+      description: Database table size and statistics information
+      properties:
+        schema_name:
+          type: string
+          description: Database schema name
+        table_name:
+          type: string
+          description: Table name
+        column_name:
+          type: string
+          description: Column name
+        distinct_values:
+          type: integer
+          format: int64
+          description: Number of distinct values in column
+          nullable: true
+        correlation:
+          type: number
+          format: double
+          description: Statistical correlation of column values
+          nullable: true
+      required:
+        - schema_name
+        - table_name
+        - column_name
+
+    SlowQueryInfo:
+      type: object
+      description: Slow query performance information
+      properties:
+        query:
+          type: string
+          description: SQL query text
+        calls:
+          type: integer
+          format: int64
+          description: Number of times query was executed
+        total_time:
+          type: number
+          format: double
+          description: Total execution time in milliseconds
+        mean_time:
+          type: number
+          format: double
+          description: Average execution time in milliseconds
+        min_time:
+          type: number
+          format: double
+          description: Minimum execution time in milliseconds
+        max_time:
+          type: number
+          format: double
+          description: Maximum execution time in milliseconds
+        stddev_time:
+          type: number
+          format: double
+          description: Standard deviation of execution time
+        rows:
+          type: integer
+          format: int64
+          description: Total number of rows returned
+        hit_percent:
+          type: number
+          format: double
+          description: Cache hit percentage
+          nullable: true
+      required:
+        - query
+        - calls
+        - total_time
+        - mean_time
+        - min_time
+        - max_time
+        - stddev_time
+        - rows
+
+    # Health Schemas
+    DockerHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy, unknown]
+          description: Overall Docker daemon health status
+        message:
+          type: string
+          description: Human-readable status message
+        version:
+          type: string
+          description: Docker engine version
+        api_version:
+          type: string
+          description: Docker API version
+        go_version:
+          type: string
+          description: Go version used to build Docker
+        git_commit:
+          type: string
+          description: Git commit hash
+        build_time:
+          type: string
+          format: date-time
+          description: Docker build timestamp
+      required:
+        - status
+        - message
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy, degraded]
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+              message:
+                type: string
+              duration:
+                type: string
+
+    # Volume Schemas
+    VolumeListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of volumes
+          minimum: 0
+        volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VolumeResponse'
+      required:
+        - total
+        - volumes
+
+    VolumeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique volume identifier
+        name:
+          type: string
+          description: Volume name
+        driver:
+          type: string
+          description: Volume driver (local, nfs, etc.)
+        mountpoint:
+          type: string
+          description: Host filesystem mount point
+        created_at:
+          type: string
+          format: date-time
+          description: Volume creation timestamp
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+          description: Volume labels
+        options:
+          type: object
+          additionalProperties:
+            type: string
+          description: Volume driver options
+        scope:
+          type: string
+          description: Volume scope (local, global)
+      required:
+        - id
+        - name
+        - driver
+        - mountpoint
+
+    VolumeContainer:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Container ID
+        name:
+          type: string
+          description: Container name
+        image:
+          type: string
+          description: Container image
+        state:
+          type: string
+          description: Container state
+        mount_path:
+          type: string
+          description: Volume mount path inside container
+        access_mode:
+          type: string
+          enum: [rw, ro]
+          description: Access mode (read-write or read-only)
+      required:
+        - id
+        - name
+        - mount_path
+        - access_mode
+
+    VolumeStats:
+      type: object
+      properties:
+        volume_id:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+        file_count:
+          type: integer
+        last_modified:
+          type: string
+          format: date-time
+        ref_count:
+          type: integer
+          description: Number of containers using this volume
+
+    # Scanning Schemas
+    ScanResponse:
+      type: object
+      properties:
+        volume_id:
+          type: string
+          description: Volume identifier
+        cached:
+          type: boolean
+          description: Whether result was served from cache
+        result:
+          $ref: '#/components/schemas/ScanResult'
+      required:
+        - volume_id
+        - cached
+        - result
+
+    ScanResult:
+      type: object
+      properties:
+        volume_id:
+          type: string
+          description: Volume identifier
+        total_size:
+          type: integer
+          format: int64
+          description: Total volume size in bytes
+          minimum: 0
+        file_count:
+          type: integer
+          description: Number of files in volume
+          minimum: 0
+        directory_count:
+          type: integer
+          description: Number of directories in volume
+          minimum: 0
+        largest_file:
+          type: integer
+          format: int64
+          description: Size of largest file in bytes
+          minimum: 0
+        method:
+          type: string
+          enum: [diskus, du, native]
+          description: Scan method used
+        duration:
+          type: integer
+          format: int64
+          description: Scan duration in nanoseconds
+        cache_hit:
+          type: boolean
+          description: Whether scan was served from cache
+        scanned_at:
+          type: string
+          format: date-time
+          description: Scan completion timestamp
+        filesystem_type:
+          type: string
+          description: Detected filesystem type
+      required:
+        - volume_id
+        - total_size
+        - file_count
+        - directory_count
+        - method
+        - duration
+        - cache_hit
+        - scanned_at
+
+    RefreshRequest:
+      type: object
+      properties:
+        method:
+          type: string
+          enum: [diskus, du, native]
+          default: diskus
+          description: Preferred scan method
+        async:
+          type: boolean
+          default: false
+          description: Whether to perform async scan
+
+    AsyncScanResponse:
+      type: object
+      properties:
+        scan_id:
+          type: string
+          description: Unique scan identifier for status tracking
+        volume_id:
+          type: string
+          description: Volume identifier
+        status:
+          type: string
+          enum: [started, queued]
+          description: Initial scan status
+      required:
+        - scan_id
+        - volume_id
+        - status
+
+    ScanProgress:
+      type: object
+      properties:
+        scan_id:
+          type: string
+          description: Unique scan identifier
+        volume_id:
+          type: string
+          description: Volume identifier
+        status:
+          type: string
+          enum: [queued, running, completed, failed, cancelled]
+          description: Current scan status
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Scan progress percentage
+        method:
+          type: string
+          description: Scan method being used
+        started_at:
+          type: string
+          format: date-time
+          description: Scan start timestamp
+        completed_at:
+          type: string
+          format: date-time
+          description: Scan completion timestamp (if completed)
+        estimated_completion:
+          type: string
+          format: date-time
+          description: Estimated completion time (if running)
+        error:
+          type: string
+          description: Error message (if failed)
+        result:
+          $ref: '#/components/schemas/ScanResult'
+          description: Scan result (if completed successfully)
+      required:
+        - scan_id
+        - volume_id
+        - status
+
+    ScanMethod:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Method name
+        description:
+          type: string
+          description: Method description
+        available:
+          type: boolean
+          description: Whether method is available on this system
+        performance:
+          type: string
+          enum: [high, medium, low]
+          description: Relative performance rating
+        supports_filesystem:
+          type: array
+          items:
+            type: string
+          description: List of supported filesystems (* means all)
+      required:
+        - name
+        - description
+        - available
+        - performance
+
+    # System Schemas
+    SystemInfo:
+      type: object
+      properties:
+        application:
+          type: object
+          properties:
+            name:
+              type: string
+            version:
+              type: string
+            build_time:
+              type: string
+              format: date-time
+            git_commit:
+              type: string
+        docker:
+          $ref: '#/components/schemas/DockerHealth'
+        host:
+          type: object
+          properties:
+            os:
+              type: string
+            architecture:
+              type: string
+            cpu_count:
+              type: integer
+            memory_total:
+              type: integer
+              format: int64
+
+    VersionInfo:
+      type: object
+      properties:
+        version:
+          type: string
+        build_time:
+          type: string
+          format: date-time
+        git_commit:
+          type: string
+        go_version:
+          type: string
+      required:
+        - version
+
+    # Error Schemas
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - VOLUME_NOT_FOUND
+            - DOCKER_UNAVAILABLE
+            - DOCKER_CONNECTION_ERROR
+            - SCAN_IN_PROGRESS
+            - SCAN_FAILED
+            - INVALID_REQUEST
+            - INTERNAL_ERROR
+            - PERMISSION_DENIED
+            - TIMEOUT
+            - RATE_LIMITED
+        details:
+          type: string
+          description: Additional error details or troubleshooting information
+        correlation_id:
+          type: string
+          description: Request correlation ID for debugging
+      required:
+        - error
+        - code
+      example:
+        error: "Volume not found"
+        code: "VOLUME_NOT_FOUND"
+        details: "Volume 'web-data' does not exist or is not accessible"
+        correlation_id: "req-123e4567-e89b-12d3-a456-426614174000"
+
+tags:
+  - name: Health
+    description: Health check and monitoring endpoints
+  - name: Volumes
+    description: Docker volume discovery and management
+  - name: Scanning
+    description: Volume size calculation and scanning operations
+  - name: System
+    description: System information and diagnostics
+
+externalDocs:
+  description: VolumeViz Documentation
+  url: https://github.com/mantonx/volumeviz/blob/main/docs/

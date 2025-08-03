@@ -5,17 +5,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
-	"github.com/mantonx/volumeviz/internal/services"
 )
 
 // Handler handles health-related HTTP requests
 type Handler struct {
-	dockerService *services.DockerService
+	dockerService interfaces.DockerService
 }
 
 // NewHandler creates a new health handler
-func NewHandler(dockerService *services.DockerService) *Handler {
+func NewHandler(dockerService interfaces.DockerService) *Handler {
 	return &Handler{
 		dockerService: dockerService,
 	}

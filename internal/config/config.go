@@ -4,6 +4,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+	
+	"github.com/mantonx/volumeviz/internal/database"
 )
 
 // Config holds application configuration
@@ -28,12 +30,14 @@ type DockerConfig struct {
 
 // DatabaseConfig holds database connection configuration
 type DatabaseConfig struct {
+	Type     string // "postgres" or "sqlite"
 	Host     string
 	Port     string
 	User     string
 	Password string
 	Name     string
 	SSLMode  string
+	Path     string // SQLite database file path
 }
 
 // Load loads configuration from environment variables with defaults
@@ -49,12 +53,14 @@ func Load() *Config {
 			Timeout: getDurationEnv("DOCKER_TIMEOUT", 30*time.Second),
 		},
 		Database: DatabaseConfig{
+			Type:     getEnv("DB_TYPE", "postgres"),
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnv("DB_PORT", "5432"),
 			User:     getEnv("DB_USER", "volumeviz"),
 			Password: getEnv("DB_PASSWORD", "volumeviz"),
 			Name:     getEnv("DB_NAME", "volumeviz"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			Path:     getEnv("DB_PATH", "./volumeviz.db"),
 		},
 	}
 }
@@ -79,4 +85,38 @@ func getDurationEnv(key string, defaultValue time.Duration) time.Duration {
 		}
 	}
 	return defaultValue
+}
+
+// ToDatabaseConfig converts the config.DatabaseConfig to database.Config
+func (dc *DatabaseConfig) ToDatabaseConfig() *database.Config {
+	var dbType database.DatabaseType
+	switch dc.Type {
+	case "sqlite":
+		dbType = database.DatabaseTypeSQLite
+	case "postgres", "postgresql":
+		dbType = database.DatabaseTypePostgreSQL
+	default:
+		dbType = database.DatabaseTypePostgreSQL // Default to PostgreSQL
+	}
+
+	// Convert port string to int
+	port := 5432
+	if portInt, err := strconv.Atoi(dc.Port); err == nil {
+		port = portInt
+	}
+
+	return &database.Config{
+		Type:         dbType,
+		Host:         dc.Host,
+		Port:         port,
+		User:         dc.User,
+		Password:     dc.Password,
+		Database:     dc.Name,
+		SSLMode:      dc.SSLMode,
+		Path:         dc.Path,
+		MaxOpenConns: 25,
+		MaxIdleConns: 10,
+		ConnMaxLife:  30 * time.Minute,
+		Timeout:      30 * time.Second,
+	}
 }

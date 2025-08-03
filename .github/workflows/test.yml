@@ -31,7 +31,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.24'
 
     - name: Cache Go modules
       uses: actions/cache@v4
@@ -51,7 +51,7 @@ jobs:
         DB_USER: volumeviz
         DB_PASSWORD: volumeviz
         DB_NAME: volumeviz_test
-      run: go test -v -cover ./...
+      run: go test -v -cover ./pkg/... ./internal/...
 
     - name: Run integration tests
       env:
@@ -83,6 +83,10 @@ jobs:
       working-directory: ./frontend
       run: npm run lint
 
+    - name: Run type check
+      working-directory: ./frontend
+      run: npm run type-check
+
     - name: Run tests
       working-directory: ./frontend
       run: npm test -- --run
@@ -100,7 +104,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.24'
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v6
