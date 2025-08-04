@@ -8,7 +8,7 @@ import tseslint from '@typescript-eslint/eslint-plugin'
 import parser from '@typescript-eslint/parser'
 
 export default [
-  { ignores: ['dist', '*.config.js', '*.config.ts'] },
+  { ignores: ['dist', '*.config.js', '*.config.ts', '.storybook/**', 'storybook-static/**', 'coverage/**'] },
   {
     files: ['src/**/*.{js,jsx,ts,tsx}'],
     languageOptions: {

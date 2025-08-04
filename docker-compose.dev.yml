@@ -119,15 +119,14 @@ services:
 
   # Frontend pointing to PostgreSQL backend by default
   frontend-postgres:
-    image: node:18-alpine
+    image: node:20
     container_name: volumeviz-frontend-postgres-dev
     working_dir: /app
     command: npm run dev -- --host 0.0.0.0
     environment:
-      VITE_API_URL: http://localhost:8080
+      VITE_API_URL: http://localhost:8080/api/v1
     volumes:
       - ./frontend:/app
-      - /app/node_modules
     ports:
       - "5173:5173"
     depends_on:
@@ -137,12 +136,12 @@ services:
 
   # Frontend pointing to SQLite backend
   frontend-sqlite:
-    image: node:18-alpine
+    image: node:20
     container_name: volumeviz-frontend-sqlite-dev
     working_dir: /app
     command: npm run dev -- --host 0.0.0.0 --port 5174
     environment:
-      VITE_API_URL: http://localhost:8081
+      VITE_API_URL: http://localhost:8081/api/v1
     volumes:
       - ./frontend:/app
       - /app/node_modules

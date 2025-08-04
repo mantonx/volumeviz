@@ -1,52 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAtomValue } from 'jotai';
+import { Header } from './Header';
+import { Sidebar } from './Sidebar';
+import { resolvedThemeAtom } from '@/store';
 import { BaseComponentProps } from '@/types';
+import { cn } from '@/utils';
 
-export interface LayoutProps extends BaseComponentProps {}
+export interface LayoutProps extends BaseComponentProps {
+  className?: string;
+}
 
-export const Layout: React.FC<LayoutProps> = ({ children }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const resolvedTheme = useAtomValue(resolvedThemeAtom);
+
+  // Apply theme to document root
+  React.useEffect(() => {
+    const root = document.documentElement;
+    if (resolvedTheme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [resolvedTheme]);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                VolumeViz
-              </h1>
-            </div>
-            <nav className="hidden md:flex space-x-8">
-              <a
-                href="/"
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-              >
-                Dashboard
-              </a>
-              <a
-                href="/containers"
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-              >
-                Containers
-              </a>
-              <a
-                href="/networks"
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-              >
-                Networks
-              </a>
-              <a
-                href="/metrics"
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-              >
-                Metrics
-              </a>
-            </nav>
-          </div>
-        </div>
-      </header>
+      {/* Sidebar */}
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {children}
-      </main>
+      {/* Main content area */}
+      <div className="lg:pl-72">
+        {/* Header */}
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+
+        {/* Page content */}
+        <main className={cn('py-6', className)}>
+          <div className="px-4 sm:px-6 lg:px-8">{children}</div>
+        </main>
+      </div>
     </div>
   );
 };

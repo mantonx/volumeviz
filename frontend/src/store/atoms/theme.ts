@@ -42,7 +42,7 @@ if (typeof window !== 'undefined') {
   systemThemeAtom.init = mediaQuery.matches ? 'dark' : 'light';
 
   // Listen for changes
-  mediaQuery.addEventListener('change', (e) => {
+  mediaQuery.addEventListener('change', () => {
     // This would need to be handled by a provider or effect
     // systemThemeAtom.write(e.matches ? 'dark' : 'light');
   });
