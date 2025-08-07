@@ -60,7 +60,35 @@ export interface HealthCheckResponse {
 }
 
 /**
- * Hook for managing volume data
+ * React hook for managing Docker volume data and operations.
+ *
+ * Provides comprehensive volume management functionality including:
+ * - Fetching volume lists with optional filtering (driver, labels)
+ * - Loading states and error handling
+ * - Last updated timestamp tracking
+ * - Automatic state management through Jotai atoms
+ *
+ * @returns Object containing:
+ * - volumes: Current volume data array
+ * - loading: Boolean indicating if a request is in progress
+ * - error: Error message string or null
+ * - fetchVolumes: Function to fetch volumes with optional filters
+ * - refreshVolumes: Convenience function to refresh current volume list
+ *
+ * @example
+ * ```tsx
+ * const { volumes, loading, error, fetchVolumes } = useVolumes();
+ *
+ * // Fetch all volumes
+ * useEffect(() => {
+ *   fetchVolumes();
+ * }, []);
+ *
+ * // Fetch volumes with driver filter
+ * const handleFilterByLocal = () => {
+ *   fetchVolumes({ driver: 'local' });
+ * };
+ * ```
  */
 export function useVolumes() {
   const httpClient = useHttpClient();
@@ -115,7 +143,36 @@ export function useVolumes() {
 }
 
 /**
- * Hook for managing volume scanning
+ * React hook for managing Docker volume size scanning operations.
+ *
+ * Handles both synchronous and asynchronous volume scanning:
+ * - Immediate size calculation for small volumes
+ * - Background scanning for large volumes with progress tracking
+ * - Bulk scanning operations across multiple volumes
+ * - Scan status monitoring and result caching
+ *
+ * @returns Object containing:
+ * - scanLoading: Object mapping volume IDs to loading states
+ * - scanError: Object mapping volume IDs to error messages
+ * - scanResults: Object mapping volume IDs to size scan results
+ * - asyncScans: Object mapping volume IDs to async scan handles
+ * - scanVolume: Function to scan a specific volume
+ * - getVolumeSize: Function to get cached or fresh volume size
+ * - getScanStatus: Function to check async scan progress
+ *
+ * @example
+ * ```tsx
+ * const { scanVolume, scanResults, scanLoading } = useVolumeScanning();
+ *
+ * const handleScan = async (volumeId: string) => {
+ *   try {
+ *     await scanVolume(volumeId, { async: false });
+ *     console.log('Scan result:', scanResults[volumeId]);
+ *   } catch (error) {
+ *     console.error('Scan failed:', error);
+ *   }
+ * };
+ * ```
  */
 export function useVolumeScanning() {
   const httpClient = useHttpClient();
@@ -250,10 +307,9 @@ export function useApiHealth() {
   }, [httpClient, setHealth, setLoading, setError]);
 
   const checkDatabaseHealth = useCallback(async () => {
-    const response: ApiResponse<any> = await httpClient.get(
-      'database/health',
-      { skipErrorHandling: true },
-    );
+    const response: ApiResponse<any> = await httpClient.get('database/health', {
+      skipErrorHandling: true,
+    });
     return response.data;
   }, [httpClient]);
 

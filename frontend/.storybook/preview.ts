@@ -1,10 +1,12 @@
 import type { Preview } from '@storybook/react';
+import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import '../src/index.css';
 
-/**
- * Storybook preview configuration.
- */
 const preview: Preview = {
+  decorators: [
+    (Story) => React.createElement(MemoryRouter, {}, React.createElement(Story)),
+  ],
   parameters: {
     actions: { argTypesRegex: '^on[A-Z].*' },
     controls: {
@@ -13,17 +15,13 @@ const preview: Preview = {
         date: /Date$/,
       },
     },
-    docs: {
-      extractComponentDescription: (component, { notes }) => {
-        if (notes) {
-          return typeof notes === 'string' ? notes : notes.markdown || notes.text;
-        }
-        return null;
-      },
+    backgrounds: {
+      default: 'light',
+      values: [
+        { name: 'light', value: '#ffffff' },
+        { name: 'dark', value: '#1f2937' },
+      ],
     },
-  },
-  argTypes: {
-    className: { control: false },
   },
 };
 
