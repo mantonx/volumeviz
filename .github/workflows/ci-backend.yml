@@ -60,16 +60,30 @@ jobs:
 
       - name: Enforce coverage threshold (60%)
         run: |
-          echo "Checking test coverage..."
+          echo "📊 Analyzing test coverage..."
           pct=$(go tool cover -func=coverage.out | awk '/total:/ {print substr($3, 1, length($3)-1)}')
           echo "Total coverage: ${pct}%"
+          echo ""
+          echo "Coverage by package:"
+          go tool cover -func=coverage.out | grep -v "total:" | sort -k3 -nr
+          echo ""
           awk -v p="$pct" 'BEGIN { 
             if (p+0 < 60) { 
-              print "❌ Coverage below 60%: " p "%"
-              print "Please add more tests to improve coverage"
+              print "❌ Coverage below minimum threshold"
+              print "   Required: ≥60%"
+              print "   Actual:   " p "%"
+              print "   Gap:      " (60 - p) "%"
+              print ""
+              print "Please add tests to improve coverage before merging."
+              print "Focus on packages with lower coverage shown above."
               exit 1 
             } else {
               print "✅ Coverage meets threshold: " p "% (≥60%)"
+              if (p+0 >= 80) {
+                print "🌟 Excellent coverage!"
+              } else if (p+0 >= 70) {
+                print "👍 Good coverage!"
+              }
             }
           }'
 
