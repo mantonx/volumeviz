@@ -60,7 +60,7 @@ func testDatabaseConnection(t *testing.T, container *PostgreSQLTestContainer) {
 
 // testMigrationSystemBasic tests migration functionality
 func testMigrationSystemBasic(t *testing.T, container *PostgreSQLTestContainer) {
-	migrationMgr := database.NewMigrationManager(container.DB.DB)
+	migrationMgr := database.NewMigrationManager(container.DB)
 
 	// Get migration status
 	status, err := migrationMgr.GetMigrationStatus()

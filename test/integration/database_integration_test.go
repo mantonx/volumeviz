@@ -100,7 +100,7 @@ func TestDatabaseIntegration(t *testing.T) {
 
 // testMigrationSystem tests the migration system with real database
 func testMigrationSystem(t *testing.T, db *database.DB) {
-	migrationMgr := database.NewMigrationManager(db.DB)
+	migrationMgr := database.NewMigrationManager(db)
 
 	// Test getting initial migration status
 	status, err := migrationMgr.GetMigrationStatus()
@@ -108,7 +108,7 @@ func testMigrationSystem(t *testing.T, db *database.DB) {
 	assert.NotNil(t, status)
 
 	// Load migrations from files
-	migrations, err := database.LoadMigrationsFromFiles()
+	migrations, err := migrationMgr.LoadMigrationsFromFiles()
 	require.NoError(t, err)
 	assert.Greater(t, len(migrations), 0, "Should have at least one migration")
 

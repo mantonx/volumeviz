@@ -105,7 +105,7 @@ func (p *PostgreSQLTestContainer) Close(t *testing.T) {
 
 // ApplyMigrations applies all pending database migrations
 func (p *PostgreSQLTestContainer) ApplyMigrations(t *testing.T) {
-	migrationMgr := database.NewMigrationManager(p.DB.DB)
+	migrationMgr := database.NewMigrationManager(p.DB)
 	err := migrationMgr.ApplyAllPending()
 	require.NoError(t, err)
 }
