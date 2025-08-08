@@ -32,7 +32,10 @@ jobs:
           cache-dependency-path: "frontend/package-lock.json"
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Use --legacy-peer-deps to handle Storybook 9.x + @storybook/test 8.x version mismatch
+          # TODO: Update @storybook/test when Storybook 9.x compatible version is available
+          npm ci --legacy-peer-deps
 
       - name: TypeScript type checking
         run: |
