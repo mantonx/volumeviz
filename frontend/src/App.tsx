@@ -9,9 +9,9 @@ import {
   SettingsPage,
   NotFoundPage,
 } from '@/pages';
-import { 
+import {
   RealTimeDashboard,
-  HistoricalDataDashboard 
+  HistoricalDataDashboard,
 } from '@/components/visualization';
 
 const App: React.FC = () => {

@@ -82,27 +82,35 @@ describe('formatDate', () => {
 
   it('should format absolute dates for older dates', () => {
     const oneWeekAgo = new Date('2024-01-08T12:00:00Z');
-    
+
     expect(formatDate(oneWeekAgo)).toBe('Jan 8, 2024');
   });
 
   it('should format absolute dates when relative is false', () => {
     const fiveMinutesAgo = new Date('2024-01-15T11:55:00Z');
-    
-    expect(formatDate(fiveMinutesAgo, { relative: false })).toBe('Jan 15, 2024');
+
+    expect(formatDate(fiveMinutesAgo, { relative: false })).toBe(
+      'Jan 15, 2024',
+    );
   });
 
   it('should handle different date formats', () => {
     const date = new Date('2024-01-15T12:00:00Z');
-    
-    expect(formatDate(date, { relative: false, format: 'short' })).toBe('Jan 15');
-    expect(formatDate(date, { relative: false, format: 'medium' })).toBe('Jan 15, 2024');
-    expect(formatDate(date, { relative: false, format: 'long' })).toContain('January 15, 2024');
+
+    expect(formatDate(date, { relative: false, format: 'short' })).toBe(
+      'Jan 15',
+    );
+    expect(formatDate(date, { relative: false, format: 'medium' })).toBe(
+      'Jan 15, 2024',
+    );
+    expect(formatDate(date, { relative: false, format: 'long' })).toContain(
+      'January 15, 2024',
+    );
   });
 
   it('should handle string dates', () => {
     const dateString = '2024-01-15T11:55:00Z';
-    
+
     expect(formatDate(dateString)).toBe('5m ago');
   });
 });
@@ -135,11 +143,12 @@ describe('formatDuration', () => {
   });
 
   it('should handle complex durations', () => {
-    const duration = 2 * 24 * 60 * 60 * 1000 + // 2 days
-                    3 * 60 * 60 * 1000 +       // 3 hours
-                    45 * 60 * 1000 +          // 45 minutes
-                    30 * 1000;                // 30 seconds
-    
+    const duration =
+      2 * 24 * 60 * 60 * 1000 + // 2 days
+      3 * 60 * 60 * 1000 + // 3 hours
+      45 * 60 * 1000 + // 45 minutes
+      30 * 1000; // 30 seconds
+
     expect(formatDuration(duration)).toBe('2d 3h');
   });
 });
@@ -185,11 +194,15 @@ describe('truncateString', () => {
   });
 
   it('should truncate from the start', () => {
-    expect(truncateString(longString, 20, 'start')).toBe('...eds to be truncated');
+    expect(truncateString(longString, 20, 'start')).toBe(
+      '...eds to be truncated',
+    );
   });
 
   it('should truncate from the middle', () => {
-    expect(truncateString(longString, 20, 'middle')).toBe('This is...truncated');
+    expect(truncateString(longString, 20, 'middle')).toBe(
+      'This is...truncated',
+    );
   });
 
   it('should handle edge cases', () => {

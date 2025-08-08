@@ -16,43 +16,43 @@ export interface ForecastDataPoint {
 export interface CapacityForecastProps {
   /** Historical data for prediction training */
   historicalData: HistoricalForecastPoint[];
-  
+
   /** Forecast horizon in days */
   forecastDays?: number;
-  
+
   /** Prediction model to use */
   model?: 'auto' | 'linear' | 'exponential' | 'polynomial' | 'seasonal';
-  
+
   /** Selected volumes to forecast */
   selectedVolumes?: string[];
-  
+
   /** Whether to show confidence intervals */
   showConfidence?: boolean;
-  
+
   /** Whether to show capacity thresholds */
   showThresholds?: boolean;
-  
+
   /** Storage capacity limits for warnings */
   capacityLimits?: Record<string, number>; // volumeId -> max capacity in bytes
-  
+
   /** Whether to show prediction accuracy metrics */
   showAccuracy?: boolean;
-  
+
   /** Chart height in pixels */
   height?: number;
-  
+
   /** Whether to enable interactive features */
   interactive?: boolean;
-  
+
   /** Callback when forecast period changes */
   onForecastPeriodChange?: (days: number) => void;
-  
+
   /** Callback when model changes */
   onModelChange?: (model: string) => void;
-  
+
   /** Callback when capacity alert is triggered */
   onCapacityAlert?: (alert: CapacityAlert) => void;
-  
+
   /** Custom CSS class */
   className?: string;
 }
@@ -83,7 +83,12 @@ export interface ForecastSummary {
   forecastSize90d: number;
   forecastSize365d: number;
   model: PredictionModel;
-  growthTrend: 'linear' | 'exponential' | 'logarithmic' | 'declining' | 'volatile';
+  growthTrend:
+    | 'linear'
+    | 'exponential'
+    | 'logarithmic'
+    | 'declining'
+    | 'volatile';
   capacityAlert?: CapacityAlert;
   timeToCapacity?: number; // days until reaching capacity limit
 }
@@ -92,7 +97,11 @@ export interface CapacityAlert {
   volumeId: string;
   volumeName: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
-  type: 'approaching_limit' | 'exceeding_limit' | 'rapid_growth' | 'unusual_pattern';
+  type:
+    | 'approaching_limit'
+    | 'exceeding_limit'
+    | 'rapid_growth'
+    | 'unusual_pattern';
   message: string;
   threshold: number;
   predicted_date: Date;

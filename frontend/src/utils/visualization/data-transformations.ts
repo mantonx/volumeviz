@@ -3,8 +3,16 @@
  */
 
 import type { VolumeResponse, ScanResponse } from '../../api/client';
-import type { VolumeChartData, SystemStorageData, TopVolumeData } from './useVisualizationData.types';
-import { getVolumeColor, getDriverColor, getSizeRangeColor } from '../../utils/colors';
+import type {
+  VolumeChartData,
+  SystemStorageData,
+  TopVolumeData,
+} from './useVisualizationData.types';
+import {
+  getVolumeColor,
+  getDriverColor,
+  getSizeRangeColor,
+} from '../../utils/colors';
 
 /**
  * Size ranges for categorizing volumes
@@ -113,34 +121,30 @@ export const generateSystemStorageData = (
     .sort((a, b) => b.totalSize - a.totalSize);
 
   // Group by size ranges
-  const bySizeRange = SIZE_RANGES
-    .map((range, index) => {
-      const volumesInRange = volumes.filter((vol) => {
-        const scanResult = scanResults[vol.id || ''];
-        const size = scanResult?.result?.total_size || 0;
-        return (
-          size >= range.minSize &&
-          (range.maxSize === null || size <= range.maxSize)
-        );
-      });
+  const bySizeRange = SIZE_RANGES.map((range, index) => {
+    const volumesInRange = volumes.filter((vol) => {
+      const scanResult = scanResults[vol.id || ''];
+      const size = scanResult?.result?.total_size || 0;
+      return (
+        size >= range.minSize &&
+        (range.maxSize === null || size <= range.maxSize)
+      );
+    });
 
-      const rangeTotalSize = volumesInRange.reduce((sum, vol) => {
-        const scanResult = scanResults[vol.id || ''];
-        return sum + (scanResult?.result?.total_size || 0);
-      }, 0);
+    const rangeTotalSize = volumesInRange.reduce((sum, vol) => {
+      const scanResult = scanResults[vol.id || ''];
+      return sum + (scanResult?.result?.total_size || 0);
+    }, 0);
 
-      return {
-        label: range.label,
-        count: volumesInRange.length,
-        totalSize: rangeTotalSize,
-        percentage:
-          volumes.length > 0
-            ? (volumesInRange.length / volumes.length) * 100
-            : 0,
-        color: getSizeRangeColor(index),
-      };
-    })
-    .filter((range) => range.count > 0);
+    return {
+      label: range.label,
+      count: volumesInRange.length,
+      totalSize: rangeTotalSize,
+      percentage:
+        volumes.length > 0 ? (volumesInRange.length / volumes.length) * 100 : 0,
+      color: getSizeRangeColor(index),
+    };
+  }).filter((range) => range.count > 0);
 
   return {
     totalSize,
@@ -167,7 +171,8 @@ export const generateTopVolumesData = (
     createdAt: new Date(volume.lastScanned),
     percentage: volume.percentage,
     rank: index + 1,
-    status: volume.mountCount > 0 ? ('mounted' as const) : ('unmounted' as const),
+    status:
+      volume.mountCount > 0 ? ('mounted' as const) : ('unmounted' as const),
     color: volume.color,
   }));
 };
@@ -177,7 +182,7 @@ export const generateTopVolumesData = (
  */
 export const getTimeRangeCutoff = (timeRange: string): Date => {
   const now = new Date();
-  
+
   switch (timeRange) {
     case '1h':
       return new Date(now.getTime() - 60 * 60 * 1000);

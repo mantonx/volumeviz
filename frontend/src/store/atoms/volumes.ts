@@ -127,8 +127,10 @@ export const filteredVolumesAtom = atom<VolumeResponse[]>((get) => {
       case 'size': {
         // Get size from scan results
         const scanResults = get(scanResultsAtom);
-        aValue = scanResults[a.volume_id || a.id || '']?.result?.total_size || 0;
-        bValue = scanResults[b.volume_id || b.id || '']?.result?.total_size || 0;
+        aValue =
+          scanResults[a.volume_id || a.id || '']?.result?.total_size || 0;
+        bValue =
+          scanResults[b.volume_id || b.id || '']?.result?.total_size || 0;
         break;
       }
       default:

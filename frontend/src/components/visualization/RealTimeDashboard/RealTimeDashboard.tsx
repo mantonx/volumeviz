@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
-import { Activity, BarChart3, PieChart, Settings, AlertTriangle } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  PieChart,
+  Settings,
+  AlertTriangle,
+} from 'lucide-react';
 import { clsx } from 'clsx';
-import { RealTimeVisualizationProvider, useRealTimeVisualization } from '../RealTimeVisualizationProvider';
+import {
+  RealTimeVisualizationProvider,
+  useRealTimeVisualization,
+} from '../RealTimeVisualizationProvider';
 import { RealTimeLiveVolumeChart } from '../RealTimeLiveVolumeChart';
 import { SizeComparisonChart } from '../SizeComparisonChart';
 import { VolumeUsageTimeline } from '../VolumeUsageTimeline';
@@ -37,7 +46,10 @@ interface DashboardContentProps {
 /**
  * Dashboard content component (inside context)
  */
-const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSettings }) => {
+const DashboardContent: React.FC<DashboardContentProps> = ({
+  layout,
+  showSettings,
+}) => {
   const {
     chartData,
     systemOverview,
@@ -48,7 +60,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
     error,
   } = useRealTimeVisualization();
 
-  const [selectedChart, setSelectedChart] = useState<'pie' | 'bar' | 'donut'>('donut');
+  const [selectedChart, setSelectedChart] = useState<'pie' | 'bar' | 'donut'>(
+    'donut',
+  );
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Grid layout
@@ -91,16 +105,20 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
 
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-3">
-              <div className={clsx(
-                'p-2 rounded-lg',
-                isActive 
-                  ? 'bg-green-100 dark:bg-green-900/30' 
-                  : 'bg-gray-100 dark:bg-gray-700'
-              )}>
-                <Activity className={clsx(
-                  'w-5 h-5',
-                  isActive ? 'text-green-600' : 'text-gray-400'
-                )} />
+              <div
+                className={clsx(
+                  'p-2 rounded-lg',
+                  isActive
+                    ? 'bg-green-100 dark:bg-green-900/30'
+                    : 'bg-gray-100 dark:bg-gray-700',
+                )}
+              >
+                <Activity
+                  className={clsx(
+                    'w-5 h-5',
+                    isActive ? 'text-green-600' : 'text-gray-400',
+                  )}
+                />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -115,14 +133,20 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
 
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-3">
-              <div className={clsx(
-                'p-2 rounded-lg',
-                error ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-700'
-              )}>
-                <AlertTriangle className={clsx(
-                  'w-5 h-5',
-                  error ? 'text-red-600' : 'text-gray-400'
-                )} />
+              <div
+                className={clsx(
+                  'p-2 rounded-lg',
+                  error
+                    ? 'bg-red-100 dark:bg-red-900/30'
+                    : 'bg-gray-100 dark:bg-gray-700',
+                )}
+              >
+                <AlertTriangle
+                  className={clsx(
+                    'w-5 h-5',
+                    error ? 'text-red-600' : 'text-gray-400',
+                  )}
+                />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -152,7 +176,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
                     'px-3 py-1.5 text-sm rounded-md transition-colors',
                     selectedChart === 'pie'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500',
                   )}
                 >
                   <PieChart className="w-4 h-4" />
@@ -163,7 +187,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
                     'px-3 py-1.5 text-sm rounded-md transition-colors',
                     selectedChart === 'donut'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500',
                   )}
                 >
                   Donut
@@ -174,7 +198,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
                     'px-3 py-1.5 text-sm rounded-md transition-colors',
                     selectedChart === 'bar'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500',
                   )}
                 >
                   <BarChart3 className="w-4 h-4" />
@@ -183,11 +207,11 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
             </div>
 
             {/* Live Volume Chart */}
-            <VisualizationErrorBoundary 
+            <VisualizationErrorBoundary
               title="Real-time Chart Error"
               description="Unable to load live volume data"
             >
-              <RealTimeLiveVolumeChart 
+              <RealTimeLiveVolumeChart
                 variant={selectedChart}
                 size="lg"
                 showStatus={true}
@@ -196,11 +220,11 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
             </VisualizationErrorBoundary>
 
             {/* Size Comparison Chart */}
-            <VisualizationErrorBoundary 
+            <VisualizationErrorBoundary
               title="Comparison Chart Error"
               description="Unable to load volume comparison data"
             >
-              <SizeComparisonChart 
+              <SizeComparisonChart
                 data={chartData}
                 variant="horizontal"
                 maxItems={8}
@@ -210,11 +234,11 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
 
             {/* Timeline Chart */}
             {showAdvanced && (
-              <VisualizationErrorBoundary 
+              <VisualizationErrorBoundary
                 title="Timeline Chart Error"
                 description="Unable to load timeline data"
               >
-                <VolumeUsageTimeline 
+                <VolumeUsageTimeline
                   data={timeSeriesData}
                   timeRange="24h"
                   showControls={true}
@@ -226,22 +250,19 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
           {/* Right Column - Widgets */}
           <div className="space-y-6">
             {/* System Overview */}
-            <VisualizationErrorBoundary 
+            <VisualizationErrorBoundary
               title="System Overview Error"
               description="Unable to load system metrics"
             >
-              <SystemOverview 
-                data={systemOverview}
-                showDetails={true}
-              />
+              <SystemOverview data={systemOverview} showDetails={true} />
             </VisualizationErrorBoundary>
 
             {/* Top Volumes */}
-            <VisualizationErrorBoundary 
+            <VisualizationErrorBoundary
               title="Top Volumes Error"
               description="Unable to load volume rankings"
             >
-              <TopVolumesWidget 
+              <TopVolumesWidget
                 data={topVolumes}
                 maxItems={5}
                 showActions={true}
@@ -257,7 +278,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
                     Settings
                   </h3>
                 </div>
-                
+
                 <div className="space-y-3">
                   <label className="flex items-center justify-between">
                     <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -283,19 +304,19 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
   if (layout === 'stack') {
     return (
       <div className="space-y-6 max-w-4xl mx-auto">
-        <RealTimeLiveVolumeChart 
+        <RealTimeLiveVolumeChart
           variant={selectedChart}
           size="lg"
           showStatus={true}
           showControls={true}
         />
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <SystemOverview data={systemOverview} showDetails={true} />
           <TopVolumesWidget data={topVolumes} maxItems={5} showActions={true} />
         </div>
-        
-        <SizeComparisonChart 
+
+        <SizeComparisonChart
           data={chartData}
           variant="horizontal"
           maxItems={8}
@@ -308,7 +329,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
   // Custom layout
   return (
     <div className="space-y-6">
-      <RealTimeLiveVolumeChart 
+      <RealTimeLiveVolumeChart
         variant="donut"
         size="md"
         showStatus={true}
@@ -320,7 +341,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ layout, showSetting
 
 /**
  * Real-time Dashboard component for volume visualization.
- * 
+ *
  * Provides a comprehensive real-time dashboard with:
  * - Multiple chart types and layouts
  * - Real-time data updates via WebSocket/polling
@@ -344,7 +365,9 @@ export const RealTimeDashboard: React.FC<RealTimeDashboardProps> = ({
   };
 
   return (
-    <div className={clsx('min-h-screen bg-gray-50 dark:bg-gray-900', className)}>
+    <div
+      className={clsx('min-h-screen bg-gray-50 dark:bg-gray-900', className)}
+    >
       <div className="max-w-7xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

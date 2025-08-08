@@ -17,34 +17,39 @@ export interface TrendAnalysisData {
 export interface TrendAnalysisWidgetProps {
   /** Array of volume trend data */
   data: TrendAnalysisData[];
-  
+
   /** Maximum number of volumes to display */
   maxVolumes?: number;
-  
+
   /** Sort order for volumes */
-  sortBy?: 'growthRate' | 'growthPercentage' | 'currentSize' | 'anomalyScore' | 'name';
-  
+  sortBy?:
+    | 'growthRate'
+    | 'growthPercentage'
+    | 'currentSize'
+    | 'anomalyScore'
+    | 'name';
+
   /** Sort direction */
   sortDirection?: 'asc' | 'desc';
-  
+
   /** Whether to show growth projections */
   showProjections?: boolean;
-  
+
   /** Whether to show anomaly indicators */
   showAnomalies?: boolean;
-  
+
   /** Whether to show confidence indicators */
   showConfidence?: boolean;
-  
+
   /** Time period for analysis display */
   analysisPeriod?: '7d' | '30d' | '90d';
-  
+
   /** Callback when volume is selected for detailed view */
   onVolumeSelect?: (volumeId: string) => void;
-  
+
   /** Callback when export is requested */
   onExport?: (format: 'csv' | 'json') => void;
-  
+
   /** Custom CSS class */
   className?: string;
 }

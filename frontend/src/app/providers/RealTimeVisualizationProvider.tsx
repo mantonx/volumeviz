@@ -1,6 +1,6 @@
 /**
  * Application-level Real-time Visualization Provider
- * 
+ *
  * This provider should be at the application layer, not in the UI component library.
  * It integrates application-specific hooks and business logic.
  */
@@ -31,7 +31,7 @@ interface RealTimeVisualizationContextValue {
   systemOverview: any;
   topVolumes: any[];
   timeSeriesData: any[];
-  
+
   // Raw data
   volumes: any[];
   scanResults: Record<string, any>;
@@ -49,13 +49,13 @@ interface RealTimeVisualizationProviderProps {
 
 /**
  * Application-level provider that integrates real-time scanning with visualization data.
- * 
+ *
  * This component:
  * - Manages real-time volume scanning and updates
  * - Provides transformed data for visualization components
  * - Handles WebSocket connections and polling
  * - Offers centralized state for all visualization components
- * 
+ *
  * NOTE: This is application-specific and should not be part of a reusable UI library
  */
 export const RealTimeVisualizationProvider: React.FC<

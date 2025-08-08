@@ -26,13 +26,13 @@ describe('cn', () => {
   it('should handle conditional classes', () => {
     const isActive = true;
     const isDisabled = false;
-    
+
     const result = cn(
       'base-class',
       isActive && 'active-class',
-      isDisabled && 'disabled-class'
+      isDisabled && 'disabled-class',
     );
-    
+
     expect(result).toBe('base-class active-class');
   });
 
@@ -42,7 +42,7 @@ describe('cn', () => {
       'text-white': true,
       'opacity-50': false,
     });
-    
+
     // clsx mock flattens objects to space-separated strings
     expect(result).toContain('bg-blue-500');
     expect(result).toContain('text-white');
@@ -64,9 +64,9 @@ describe('cn', () => {
       null,
       undefined,
       false,
-      'final-class'
+      'final-class',
     );
-    
+
     expect(result).toContain('base');
     expect(result).toContain('array-class');
     expect(result).toContain('object-class');
@@ -78,17 +78,17 @@ describe('cn', () => {
 
   it('should call clsx with provided inputs', () => {
     const { clsx } = require('clsx');
-    
-    cn('class1', 'class2', { 'class3': true });
-    
-    expect(clsx).toHaveBeenCalledWith(['class1', 'class2', { 'class3': true }]);
+
+    cn('class1', 'class2', { class3: true });
+
+    expect(clsx).toHaveBeenCalledWith(['class1', 'class2', { class3: true }]);
   });
 
   it('should call twMerge with clsx result', () => {
     const { twMerge } = require('tailwind-merge');
-    
+
     cn('class1', 'class2');
-    
+
     expect(twMerge).toHaveBeenCalledWith('class1 class2');
   });
 
@@ -103,7 +103,11 @@ describe('cn', () => {
   });
 
   it('should handle whitespace in class names', () => {
-    const result = cn(' leading-space', 'trailing-space ', '  multiple-spaces  ');
+    const result = cn(
+      ' leading-space',
+      'trailing-space ',
+      '  multiple-spaces  ',
+    );
     expect(result).toContain('leading-space');
     expect(result).toContain('trailing-space');
     expect(result).toContain('multiple-spaces');
@@ -120,7 +124,7 @@ describe('cn', () => {
 
     it('should actually merge and deduplicate Tailwind classes', () => {
       const result = cn('px-2 py-1 px-3', 'bg-red-200 bg-red-500');
-      
+
       // Should deduplicate conflicting classes, keeping the last one
       expect(result).toContain('px-3');
       expect(result).not.toContain('px-2');
@@ -133,7 +137,7 @@ describe('cn', () => {
       const variant = 'primary';
       const size = 'large';
       const disabled = false;
-      
+
       const result = cn(
         'btn',
         {
@@ -143,9 +147,9 @@ describe('cn', () => {
           'btn-lg': size === 'large',
           'opacity-50 cursor-not-allowed': disabled,
         },
-        disabled && 'pointer-events-none'
+        disabled && 'pointer-events-none',
       );
-      
+
       expect(result).toContain('btn');
       expect(result).toContain('btn-primary');
       expect(result).toContain('btn-lg');

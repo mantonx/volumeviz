@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, TrendingUp, BarChart3, Target, Brain, Download } from 'lucide-react';
+import {
+  Calendar,
+  TrendingUp,
+  BarChart3,
+  Target,
+  Brain,
+  Download,
+} from 'lucide-react';
 import { clsx } from 'clsx';
 import { VolumeGrowthTimeline } from '../VolumeGrowthTimeline';
 import { TrendAnalysisWidget } from '../TrendAnalysisWidget';
@@ -16,20 +23,20 @@ import type { HistoricalForecastPoint } from '../CapacityForecast/CapacityForeca
 interface HistoricalDataDashboardProps {
   /** Historical data points for all analysis */
   data?: HistoricalDataPoint[];
-  
+
   /** Dashboard layout mode */
   layout?: 'grid' | 'tabs' | 'stack';
-  
+
   /** Whether to show export controls */
   showExport?: boolean;
-  
+
   /** Custom CSS class */
   className?: string;
 }
 
 /**
  * Comprehensive historical data dashboard showcasing all Ticket #8 components.
- * 
+ *
  * Features:
  * - Volume Growth Timeline with multi-volume support
  * - Trend Analysis Widget with growth calculations
@@ -37,12 +44,9 @@ interface HistoricalDataDashboardProps {
  * - Growth Rate Chart with rate visualization
  * - Capacity Forecast with predictive analytics
  */
-export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = ({
-  data = [],
-  layout = 'grid',
-  showExport = true,
-  className,
-}) => {
+export const HistoricalDataDashboard: React.FC<
+  HistoricalDataDashboardProps
+> = ({ data = [], layout = 'grid', showExport = true, className }) => {
   const [activeTab, setActiveTab] = useState('timeline');
   const [selectedVolumes, setSelectedVolumes] = useState<string[]>([]);
 
@@ -60,21 +64,23 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
     const samplePoints: HistoricalDataPoint[] = [];
     const now = new Date();
 
-    volumes.forEach(volume => {
+    volumes.forEach((volume) => {
       for (let day = 0; day < 90; day++) {
         const date = new Date(now.getTime() - (89 - day) * 24 * 60 * 60 * 1000);
-        
+
         // Simulate different growth patterns
         let growthFactor = 1;
         if (volume.id === 'vol1') {
-          growthFactor = 1 + (day * 0.01); // Linear growth
+          growthFactor = 1 + day * 0.01; // Linear growth
         } else if (volume.id === 'vol2') {
           growthFactor = Math.pow(1.008, day); // Exponential growth
         } else {
-          growthFactor = 1 + (Math.sin(day * 0.1) * 0.05) + (day * 0.002); // Cyclical with trend
+          growthFactor = 1 + Math.sin(day * 0.1) * 0.05 + day * 0.002; // Cyclical with trend
         }
 
-        const size = Math.floor(volume.baseSize * growthFactor + Math.random() * 100000000);
+        const size = Math.floor(
+          volume.baseSize * growthFactor + Math.random() * 100000000,
+        );
         const growthRate = day > 0 ? (size - volume.baseSize) / day : 0;
 
         samplePoints.push({
@@ -98,8 +104,8 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
   // Transform data for different components
   const trendAnalysisData: TrendAnalysisData[] = useMemo(() => {
     const volumeMap = new Map<string, HistoricalDataPoint[]>();
-    
-    sampleData.forEach(point => {
+
+    sampleData.forEach((point) => {
       if (!volumeMap.has(point.volumeId)) {
         volumeMap.set(point.volumeId, []);
       }
@@ -107,12 +113,16 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
     });
 
     return Array.from(volumeMap.entries()).map(([volumeId, points]) => {
-      const sortedPoints = points.sort((a, b) => a.date.getTime() - b.date.getTime());
+      const sortedPoints = points.sort(
+        (a, b) => a.date.getTime() - b.date.getTime(),
+      );
       const firstPoint = sortedPoints[0];
       const lastPoint = sortedPoints[sortedPoints.length - 1];
-      
+
       const totalGrowth = lastPoint.totalSize - firstPoint.totalSize;
-      const timespan = (lastPoint.date.getTime() - firstPoint.date.getTime()) / (1000 * 60 * 60 * 24);
+      const timespan =
+        (lastPoint.date.getTime() - firstPoint.date.getTime()) /
+        (1000 * 60 * 60 * 24);
       const growthRate = totalGrowth / timespan; // bytes per day
       const growthPercentage = (totalGrowth / firstPoint.totalSize) * 100;
 
@@ -123,11 +133,11 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
         previousSize: firstPoint.totalSize,
         growthRate,
         growthPercentage,
-        trend: growthRate > 0 ? 'increasing' as const : 'stable' as const,
+        trend: growthRate > 0 ? ('increasing' as const) : ('stable' as const),
         confidence: 0.85 + Math.random() * 0.1,
         timespan,
-        projectedSize30d: lastPoint.totalSize + (growthRate * 30),
-        projectedSize90d: lastPoint.totalSize + (growthRate * 90),
+        projectedSize30d: lastPoint.totalSize + growthRate * 30,
+        projectedSize90d: lastPoint.totalSize + growthRate * 90,
         anomalyScore: Math.random() * 0.3,
         lastUpdated: lastPoint.date,
       };
@@ -136,8 +146,8 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
 
   const comparisonData: VolumeComparisonData[] = useMemo(() => {
     const volumeMap = new Map<string, HistoricalDataPoint[]>();
-    
-    sampleData.forEach(point => {
+
+    sampleData.forEach((point) => {
       if (!volumeMap.has(point.volumeId)) {
         volumeMap.set(point.volumeId, []);
       }
@@ -145,14 +155,16 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
     });
 
     return Array.from(volumeMap.entries()).map(([volumeId, points], index) => {
-      const sortedPoints = points.sort((a, b) => a.date.getTime() - b.date.getTime());
+      const sortedPoints = points.sort(
+        (a, b) => a.date.getTime() - b.date.getTime(),
+      );
       const firstPoint = sortedPoints[0];
       const lastPoint = sortedPoints[sortedPoints.length - 1];
 
       return {
         volumeId,
         volumeName: firstPoint.volumeName,
-        historicalData: sortedPoints.map(point => ({
+        historicalData: sortedPoints.map((point) => ({
           timestamp: point.timestamp,
           date: point.date,
           size: point.totalSize,
@@ -163,14 +175,15 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
         currentSize: lastPoint.totalSize,
         startSize: firstPoint.totalSize,
         totalGrowth: lastPoint.totalSize - firstPoint.totalSize,
-        averageGrowthRate: (lastPoint.totalSize - firstPoint.totalSize) / sortedPoints.length,
+        averageGrowthRate:
+          (lastPoint.totalSize - firstPoint.totalSize) / sortedPoints.length,
         color: ['#3B82F6', '#10B981', '#F59E0B'][index % 3],
       };
     });
   }, [sampleData]);
 
   const growthRateData: GrowthRateDataPoint[] = useMemo(() => {
-    return sampleData.map(point => ({
+    return sampleData.map((point) => ({
       timestamp: point.timestamp,
       date: point.date,
       volumeId: point.volumeId,
@@ -185,7 +198,7 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
   }, [sampleData]);
 
   const forecastData: HistoricalForecastPoint[] = useMemo(() => {
-    return sampleData.map(point => ({
+    return sampleData.map((point) => ({
       timestamp: point.timestamp,
       date: point.date,
       volumeId: point.volumeId,
@@ -221,7 +234,7 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Volume Growth Timeline - Full Width */}
         <div className="xl:col-span-2">
-          <VisualizationErrorBoundary 
+          <VisualizationErrorBoundary
             title="Growth Timeline Error"
             description="Unable to load historical growth data"
           >
@@ -241,7 +254,7 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
 
         {/* Trend Analysis Widget */}
         <div>
-          <VisualizationErrorBoundary 
+          <VisualizationErrorBoundary
             title="Trend Analysis Error"
             description="Unable to load trend analysis data"
           >
@@ -260,7 +273,7 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
 
         {/* Capacity Forecast */}
         <div>
-          <VisualizationErrorBoundary 
+          <VisualizationErrorBoundary
             title="Capacity Forecast Error"
             description="Unable to generate capacity forecasts"
           >
@@ -271,9 +284,9 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
               showConfidence={true}
               showThresholds={true}
               capacityLimits={{
-                'vol1': 2000000000, // 2GB limit for nginx-data
-                'vol2': 10000000000, // 10GB limit for postgres-data
-                'vol3': 1000000000, // 1GB limit for logs-volume
+                vol1: 2000000000, // 2GB limit for nginx-data
+                vol2: 10000000000, // 10GB limit for postgres-data
+                vol3: 1000000000, // 1GB limit for logs-volume
               }}
               height={350}
               onCapacityAlert={(alert) => console.log('Capacity alert:', alert)}
@@ -323,7 +336,7 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
               { id: 'comparison', label: 'Comparison', icon: BarChart3 },
               { id: 'rates', label: 'Growth Rates', icon: Target },
               { id: 'forecast', label: 'Capacity Forecast', icon: Brain },
-            ].map(tab => (
+            ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -331,7 +344,7 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
                   'group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm',
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
                 )}
               >
                 <tab.icon className="w-5 h-5 mr-2" />
@@ -389,9 +402,9 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
               showThresholds={true}
               height={500}
               capacityLimits={{
-                'vol1': 2000000000,
-                'vol2': 10000000000,
-                'vol3': 1000000000,
+                vol1: 2000000000,
+                vol2: 10000000000,
+                vol3: 1000000000,
               }}
             />
           )}
@@ -411,7 +424,12 @@ export const HistoricalDataDashboard: React.FC<HistoricalDataDashboardProps> = (
   );
 
   return (
-    <div className={clsx('min-h-screen bg-gray-50 dark:bg-gray-900 p-6', className)}>
+    <div
+      className={clsx(
+        'min-h-screen bg-gray-50 dark:bg-gray-900 p-6',
+        className,
+      )}
+    >
       {layout === 'grid' && renderGridLayout()}
       {layout === 'tabs' && renderTabLayout()}
       {layout === 'stack' && renderStackLayout()}

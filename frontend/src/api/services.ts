@@ -414,10 +414,10 @@ export function useBulkOperations() {
 
 /**
  * Hook for fetching and managing container data
- * 
+ *
  * Since VolumeViz doesn't have a direct containers list endpoint,
  * this service aggregates container information from volume data.
- * 
+ *
  * @returns Container management functions and state
  */
 export function useContainers() {
@@ -438,7 +438,7 @@ export function useContainers() {
       // Fetch containers for each volume in parallel
       const containerPromises = volumes.map(async (volume) => {
         if (!volume.id) return [];
-        
+
         try {
           const response: ApiResponse<{
             containers: Array<{
@@ -451,17 +451,20 @@ export function useContainers() {
               access_mode: string;
             }>;
           }> = await httpClient.get(`volumes/${volume.id}/containers`);
-          
+
           return response.data.containers || [];
         } catch (err) {
           // Silently ignore individual volume errors
-          console.warn(`Failed to fetch containers for volume ${volume.id}:`, err);
+          console.warn(
+            `Failed to fetch containers for volume ${volume.id}:`,
+            err,
+          );
           return [];
         }
       });
 
       const containerArrays = await Promise.all(containerPromises);
-      
+
       // Aggregate and deduplicate containers
       containerArrays.forEach((containerList) => {
         containerList.forEach((container) => {

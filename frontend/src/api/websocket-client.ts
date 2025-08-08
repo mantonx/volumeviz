@@ -23,15 +23,15 @@ class SimpleEventEmitter {
 
   emit(event: string, ...args: any[]) {
     if (!this.events[event]) return;
-    this.events[event].forEach(listener => listener(...args));
+    this.events[event].forEach((listener) => listener(...args));
   }
 }
-import type { 
+import type {
   WebSocketMessageType,
   VolumeUpdateMessageType,
   ScanProgressMessageType,
   ScanCompleteMessageType,
-  ScanErrorMessageType
+  ScanErrorMessageType,
 } from './generated/volumeviz-api';
 
 export type WebSocketMessage = WebSocketMessageType;
@@ -92,12 +92,12 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
   disconnect(): void {
     this.isClosing = true;
     this.cleanup();
-    
+
     if (this.ws) {
       this.ws.close(1000, 'Client disconnect');
       this.ws = null;
     }
-    
+
     this.emit('disconnected');
   }
 
@@ -146,7 +146,7 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
     this.ws.onclose = (event) => {
       console.log('WebSocket closed:', event.code, event.reason);
       this.cleanup();
-      
+
       if (!this.isClosing) {
         this.emit('disconnected');
         this.handleReconnect();
@@ -159,16 +159,16 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
       case 'ping':
         this.send({ type: 'pong', timestamp: new Date().toISOString() });
         break;
-        
+
       case 'pong':
         // Heartbeat response received
         break;
-        
+
       case 'volume_update':
         const volumeMessage = message as VolumeUpdateMessage;
         this.emit('volume_update', volumeMessage.data);
         break;
-        
+
       case 'scan_complete':
         const completeMessage = message as ScanCompleteMessage;
         this.emit('scan_complete', {
@@ -176,7 +176,7 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
           result: completeMessage.data.result,
         });
         break;
-        
+
       case 'scan_progress':
         const progressMessage = message as ScanProgressMessage;
         this.emit('scan_progress', {
@@ -184,7 +184,7 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
           progress: progressMessage.data,
         });
         break;
-        
+
       case 'scan_error':
         const errorMessage = message as ScanErrorMessage;
         this.emit('scan_error', {
@@ -192,7 +192,7 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
           error: errorMessage.data,
         });
         break;
-        
+
       default:
         console.warn('Unknown message type:', message.type);
     }
@@ -200,7 +200,7 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
 
   private startHeartbeat(): void {
     this.stopHeartbeat();
-    
+
     this.heartbeatTimer = setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
         this.send({ type: 'ping', timestamp: new Date().toISOString() });
@@ -244,9 +244,12 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
     }
 
     this.reconnectAttempts++;
-    const delay = this.options.reconnectDelay * Math.min(this.reconnectAttempts, 5);
-    
-    console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    const delay =
+      this.options.reconnectDelay * Math.min(this.reconnectAttempts, 5);
+
+    console.log(
+      `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`,
+    );
     this.emit('reconnecting', { attempt: this.reconnectAttempts, delay });
 
     this.reconnectTimer = setTimeout(() => {
@@ -257,7 +260,7 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
   private cleanup(): void {
     this.stopHeartbeat();
     this.clearConnectionTimeout();
-    
+
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
@@ -280,11 +283,13 @@ export function getWebSocketClient(url?: string): VolumeWebSocketClient {
   if (!wsClient && url) {
     wsClient = new VolumeWebSocketClient({ url });
   }
-  
+
   if (!wsClient) {
-    throw new Error('WebSocket client not initialized. Provide URL on first call.');
+    throw new Error(
+      'WebSocket client not initialized. Provide URL on first call.',
+    );
   }
-  
+
   return wsClient;
 }
 

@@ -104,7 +104,7 @@ describe('colors', () => {
     it('should handle special characters', () => {
       const color1 = getHashColor('test!@#$%^&*()');
       const color2 = getHashColor('éñüøß');
-      
+
       expect(VOLUME_COLORS).toContain(color1);
       expect(VOLUME_COLORS).toContain(color2);
     });

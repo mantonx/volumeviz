@@ -24,7 +24,7 @@ interface RealTimeVisualizationContextValue {
   systemOverview: any;
   topVolumes: any[];
   timeSeriesData: any[];
-  
+
   // Raw data
   volumes: any[];
   scanResults: Record<string, any>;
@@ -42,7 +42,7 @@ interface RealTimeVisualizationProviderProps {
 
 /**
  * Provider component that integrates real-time scanning with visualization data.
- * 
+ *
  * This component:
  * - Manages real-time volume scanning and updates
  * - Provides transformed data for visualization components

@@ -76,7 +76,7 @@ describe('data-transformations', () => {
           size: 2 * 1024 * 1024 * 1024,
           driver: 'local',
           mountCount: 1,
-        })
+        }),
       );
 
       // Should be sorted by size descending
@@ -103,7 +103,10 @@ describe('data-transformations', () => {
         },
       };
 
-      const result = transformVolumesToChartData(volumesWithZero, scanResultsWithZero);
+      const result = transformVolumesToChartData(
+        volumesWithZero,
+        scanResultsWithZero,
+      );
       expect(result).toHaveLength(2);
     });
 
@@ -130,10 +133,14 @@ describe('data-transformations', () => {
     });
 
     it('should group volumes by driver correctly', () => {
-      const result = generateSystemStorageData(mockVolumes, mockScanResults, mockVolumeStats);
+      const result = generateSystemStorageData(
+        mockVolumes,
+        mockScanResults,
+        mockVolumeStats,
+      );
 
-      const localDriver = result.byDriver.find(d => d.driver === 'local');
-      const nfsDriver = result.byDriver.find(d => d.driver === 'nfs');
+      const localDriver = result.byDriver.find((d) => d.driver === 'local');
+      const nfsDriver = result.byDriver.find((d) => d.driver === 'nfs');
 
       expect(localDriver).toBeDefined();
       expect(localDriver?.volumeCount).toBe(2);
@@ -145,7 +152,11 @@ describe('data-transformations', () => {
     });
 
     it('should group volumes by size range correctly', () => {
-      const result = generateSystemStorageData(mockVolumes, mockScanResults, mockVolumeStats);
+      const result = generateSystemStorageData(
+        mockVolumes,
+        mockScanResults,
+        mockVolumeStats,
+      );
 
       expect(result.bySizeRange).toEqual(
         expect.arrayContaining([
@@ -154,15 +165,19 @@ describe('data-transformations', () => {
             count: 1, // volume-2 (512MB)
           }),
           expect.objectContaining({
-            label: '1GB - 10GB', 
+            label: '1GB - 10GB',
             count: 2, // volume-1 (1GB) and volume-3 (2GB)
           }),
-        ])
+        ]),
       );
     });
 
     it('should calculate mounted/unmounted counts correctly', () => {
-      const result = generateSystemStorageData(mockVolumes, mockScanResults, mockVolumeStats);
+      const result = generateSystemStorageData(
+        mockVolumes,
+        mockScanResults,
+        mockVolumeStats,
+      );
 
       expect(result.volumeCount).toBe(3);
       expect(result.mountedCount).toBe(2); // volume-1 and volume-3 have mountpoint
@@ -189,8 +204,26 @@ describe('data-transformations', () => {
 
     it('should assign correct ranks', () => {
       const chartData = [
-        { id: '1', name: 'First', size: 1000, percentage: 50, color: '#000', driver: 'local', mountCount: 1, lastScanned: '2023-01-01T00:00:00Z' },
-        { id: '2', name: 'Second', size: 500, percentage: 25, color: '#000', driver: 'local', mountCount: 0, lastScanned: '2023-01-01T00:00:00Z' },
+        {
+          id: '1',
+          name: 'First',
+          size: 1000,
+          percentage: 50,
+          color: '#000',
+          driver: 'local',
+          mountCount: 1,
+          lastScanned: '2023-01-01T00:00:00Z',
+        },
+        {
+          id: '2',
+          name: 'Second',
+          size: 500,
+          percentage: 25,
+          color: '#000',
+          driver: 'local',
+          mountCount: 0,
+          lastScanned: '2023-01-01T00:00:00Z',
+        },
       ];
 
       const result = generateTopVolumesData(chartData);
@@ -242,7 +275,7 @@ describe('data-transformations', () => {
   describe('SIZE_RANGES', () => {
     it('should have correct size ranges defined', () => {
       expect(SIZE_RANGES).toHaveLength(5);
-      
+
       expect(SIZE_RANGES[0]).toEqual({
         label: '< 100MB',
         minSize: 0,

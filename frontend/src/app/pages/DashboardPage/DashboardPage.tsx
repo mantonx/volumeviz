@@ -1,6 +1,6 @@
 /**
  * Dashboard Page - Application Entry Point
- * 
+ *
  * This demonstrates the proper separation of concerns:
  * - Application logic in the app layer
  * - Pure UI components in the component library
@@ -14,22 +14,21 @@ import { getDefaultScanOptions } from '../../../config/real-time';
 import type { RealTimeScanOptions } from '../../../hooks/useRealTimeScans/useRealTimeScans.types';
 
 export const DashboardPage: React.FC = () => {
-  
   // Configuration for real-time scanning with environment defaults
   const scanOptions: RealTimeScanOptions = {
     ...getDefaultScanOptions(),
-    
+
     // Event handlers for scan lifecycle
     onScanComplete: (volumeId, result) => {
       if (import.meta.env.DEV) {
         console.log(`Scan completed for volume ${volumeId}:`, result);
       }
     },
-    
+
     onScanError: (volumeId, error) => {
       console.error(`Scan failed for volume ${volumeId}:`, error);
     },
-    
+
     onPollingUpdate: (volumes) => {
       if (import.meta.env.DEV) {
         console.log(`Polling update: ${volumes.length} volumes found`);
@@ -54,13 +53,10 @@ export const DashboardPage: React.FC = () => {
       {/* Dashboard with Provider */}
       <div className="max-w-7xl mx-auto p-6">
         <RealTimeVisualizationProvider options={scanOptions}>
-          <VolumeDashboard 
-            layout="grid"
-            showSettings={true}
-          />
+          <VolumeDashboard layout="grid" showSettings={true} />
         </RealTimeVisualizationProvider>
       </div>
-      
+
       {/* Footer */}
       <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-8">
         <div className="max-w-7xl mx-auto px-6 py-8">

@@ -28,7 +28,7 @@ interface RealTimeLiveVolumeChartProps
 
 /**
  * Real-time integrated Live Volume Chart component.
- * 
+ *
  * This component extends the basic LiveVolumeChart with:
  * - Real-time data integration through context
  * - WebSocket connection status indicators
@@ -36,7 +36,9 @@ interface RealTimeLiveVolumeChartProps
  * - Automatic refresh capabilities
  * - Error handling and status display
  */
-export const RealTimeLiveVolumeChart: React.FC<RealTimeLiveVolumeChartProps> = ({
+export const RealTimeLiveVolumeChart: React.FC<
+  RealTimeLiveVolumeChartProps
+> = ({
   showStatus = true,
   showControls = true,
   statusMessages = {},
@@ -47,7 +49,7 @@ export const RealTimeLiveVolumeChart: React.FC<RealTimeLiveVolumeChartProps> = (
     // Data
     chartData,
     volumes,
-    
+
     // Status
     isActive,
     isWebSocketConnected,
@@ -55,7 +57,7 @@ export const RealTimeLiveVolumeChart: React.FC<RealTimeLiveVolumeChartProps> = (
     lastUpdate,
     status,
     error,
-    
+
     // Actions
     startRealTimeUpdates,
     stopRealTimeUpdates,
@@ -64,7 +66,7 @@ export const RealTimeLiveVolumeChart: React.FC<RealTimeLiveVolumeChartProps> = (
   } = useRealTimeVisualization();
 
   // Transform chart data to expected format
-  const transformedVolumes = chartData.map(item => ({
+  const transformedVolumes = chartData.map((item) => ({
     id: item.id,
     name: item.name,
     size: item.size,
@@ -146,7 +148,7 @@ export const RealTimeLiveVolumeChart: React.FC<RealTimeLiveVolumeChartProps> = (
                   {getStatusMessage()}
                 </span>
               </div>
-              
+
               {lastUpdate && (
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   Last update: {lastUpdate.toLocaleTimeString()}
@@ -182,7 +184,7 @@ export const RealTimeLiveVolumeChart: React.FC<RealTimeLiveVolumeChartProps> = (
                     'px-3 py-1.5 text-xs rounded-md transition-colors flex items-center gap-1',
                     isActive
                       ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                      : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200',
                   )}
                 >
                   {isActive ? (
@@ -229,9 +231,7 @@ export const RealTimeLiveVolumeChart: React.FC<RealTimeLiveVolumeChartProps> = (
               Connection Error
             </span>
           </div>
-          <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-            {error}
-          </p>
+          <p className="text-sm text-red-700 dark:text-red-300 mt-1">{error}</p>
         </div>
       )}
     </div>

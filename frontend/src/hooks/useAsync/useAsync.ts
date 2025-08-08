@@ -3,7 +3,11 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { AsyncState, UseAsyncOptions, UseAsyncReturn } from './useAsync.types';
+import type {
+  AsyncState,
+  UseAsyncOptions,
+  UseAsyncReturn,
+} from './useAsync.types';
 
 /**
  * Custom hook for handling async operations
@@ -13,7 +17,7 @@ export const useAsync = <T>(
   options: UseAsyncOptions = {},
 ): UseAsyncReturn<T> => {
   const { immediate = true, resetOnChange = true } = options;
-  
+
   const [state, setState] = useState<AsyncState<T>>({
     data: null,
     error: null,

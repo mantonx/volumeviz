@@ -1,1 +1,4 @@
-export { VisualizationErrorBoundary, withVisualizationErrorBoundary } from './VisualizationErrorBoundary';
+export {
+  VisualizationErrorBoundary,
+  withVisualizationErrorBoundary,
+} from './VisualizationErrorBoundary';

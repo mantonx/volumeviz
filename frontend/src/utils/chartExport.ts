@@ -18,7 +18,10 @@ export interface ExportOptions {
 /**
  * Export chart data to CSV format
  */
-export const exportToCSV = (data: ExportData[], options: ExportOptions = {}) => {
+export const exportToCSV = (
+  data: ExportData[],
+  options: ExportOptions = {},
+) => {
   const {
     filename = 'chart-data.csv',
     includeHeaders = true,
@@ -33,8 +36,8 @@ export const exportToCSV = (data: ExportData[], options: ExportOptions = {}) => 
 
   // Get all unique keys (columns)
   const allKeys = new Set<string>();
-  data.forEach(row => {
-    Object.keys(row).forEach(key => allKeys.add(key));
+  data.forEach((row) => {
+    Object.keys(row).forEach((key) => allKeys.add(key));
   });
 
   const columns = Array.from(allKeys);
@@ -42,7 +45,7 @@ export const exportToCSV = (data: ExportData[], options: ExportOptions = {}) => 
 
   // Add headers if requested
   if (includeHeaders) {
-    const headers = columns.map(col => {
+    const headers = columns.map((col) => {
       // Clean up column names for better readability
       if (col === 'timestamp') return 'Date';
       if (col.includes('_size')) {
@@ -59,14 +62,14 @@ export const exportToCSV = (data: ExportData[], options: ExportOptions = {}) => 
       }
       return col;
     });
-    csvContent.push(headers.map(h => `"${h}"`).join(','));
+    csvContent.push(headers.map((h) => `"${h}"`).join(','));
   }
 
   // Add data rows
-  data.forEach(row => {
-    const values = columns.map(col => {
+  data.forEach((row) => {
+    const values = columns.map((col) => {
       const value = row[col];
-      
+
       if (col === 'timestamp') {
         // Format timestamp based on dateFormat option
         const date = new Date(value);
@@ -79,30 +82,35 @@ export const exportToCSV = (data: ExportData[], options: ExportOptions = {}) => 
             return `"${value}"`;
         }
       }
-      
+
       if (typeof value === 'number') {
         return value.toString();
       }
-      
+
       if (value === undefined || value === null) {
         return '';
       }
-      
+
       return `"${value}"`;
     });
-    
+
     csvContent.push(values.join(','));
   });
 
   // Download the CSV
-  const csvBlob = new Blob([csvContent.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const csvBlob = new Blob([csvContent.join('\n')], {
+    type: 'text/csv;charset=utf-8;',
+  });
   downloadBlob(csvBlob, filename);
 };
 
 /**
  * Export chart data to JSON format
  */
-export const exportToJSON = (data: ExportData[], options: ExportOptions = {}) => {
+export const exportToJSON = (
+  data: ExportData[],
+  options: ExportOptions = {},
+) => {
   const { filename = 'chart-data.json', volumeNames = {} } = options;
 
   if (!data.length) {
@@ -111,9 +119,9 @@ export const exportToJSON = (data: ExportData[], options: ExportOptions = {}) =>
   }
 
   // Clean up and format the data
-  const formattedData = data.map(row => {
+  const formattedData = data.map((row) => {
     const cleanRow: any = {};
-    
+
     Object.entries(row).forEach(([key, value]) => {
       if (key === 'timestamp') {
         cleanRow.date = value;
@@ -134,7 +142,7 @@ export const exportToJSON = (data: ExportData[], options: ExportOptions = {}) =>
         cleanRow[key] = value;
       }
     });
-    
+
     return cleanRow;
   });
 
@@ -148,7 +156,9 @@ export const exportToJSON = (data: ExportData[], options: ExportOptions = {}) =>
     data: formattedData,
   };
 
-  const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], {
+    type: 'application/json',
+  });
   downloadBlob(jsonBlob, filename);
 };
 
@@ -156,7 +166,10 @@ export const exportToJSON = (data: ExportData[], options: ExportOptions = {}) =>
  * Export chart as PNG image
  * Note: This requires the chart to be rendered in a canvas or SVG
  */
-export const exportToPNG = (chartElement: HTMLElement, options: ExportOptions = {}) => {
+export const exportToPNG = (
+  chartElement: HTMLElement,
+  options: ExportOptions = {},
+) => {
   const { filename = 'chart.png' } = options;
 
   // Find SVG element within the chart
@@ -176,12 +189,12 @@ export const exportToPNG = (chartElement: HTMLElement, options: ExportOptions = 
 
   const svgData = new XMLSerializer().serializeToString(svgElement);
   const img = new Image();
-  
+
   img.onload = () => {
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
-    
+
     canvas.toBlob((blob) => {
       if (blob) {
         downloadBlob(blob, filename);
@@ -197,7 +210,10 @@ export const exportToPNG = (chartElement: HTMLElement, options: ExportOptions = 
 /**
  * Export chart as SVG
  */
-export const exportToSVG = (chartElement: HTMLElement, options: ExportOptions = {}) => {
+export const exportToSVG = (
+  chartElement: HTMLElement,
+  options: ExportOptions = {},
+) => {
   const { filename = 'chart.svg' } = options;
 
   const svgElement = chartElement.querySelector('svg');
@@ -208,14 +224,14 @@ export const exportToSVG = (chartElement: HTMLElement, options: ExportOptions = 
 
   // Clone the SVG and ensure it has proper styling
   const clonedSvg = svgElement.cloneNode(true) as SVGElement;
-  
+
   // Add inline styles for better compatibility
   clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   clonedSvg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-  
+
   const svgData = new XMLSerializer().serializeToString(clonedSvg);
   const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-  
+
   downloadBlob(svgBlob, filename);
 };
 
@@ -238,7 +254,7 @@ const downloadBlob = (blob: Blob, filename: string) => {
  */
 export const getDefaultExportOptions = (chartType: string): ExportOptions => {
   const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  
+
   return {
     filename: `${chartType}-${timestamp}`,
     includeHeaders: true,
@@ -253,14 +269,14 @@ export const exportMultipleFormats = (
   data: ExportData[],
   chartElement: HTMLElement,
   formats: ('csv' | 'json' | 'png' | 'svg')[],
-  options: ExportOptions = {}
+  options: ExportOptions = {},
 ) => {
-  formats.forEach(format => {
+  formats.forEach((format) => {
     const formatOptions = {
       ...options,
-      filename: options.filename ? 
-        `${options.filename}.${format}` : 
-        `chart-export-${Date.now()}.${format}`,
+      filename: options.filename
+        ? `${options.filename}.${format}`
+        : `chart-export-${Date.now()}.${format}`,
     };
 
     switch (format) {

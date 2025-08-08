@@ -200,7 +200,13 @@ export const useRealTimeScans = (
         }));
       }
     }
-  }, [autoRefreshEnabled, fetchVolumes, setLastUpdated, onPollingUpdate, volumes]);
+  }, [
+    autoRefreshEnabled,
+    fetchVolumes,
+    setLastUpdated,
+    onPollingUpdate,
+    volumes,
+  ]);
 
   // WebSocket connection handler
   const connectWebSocket = useCallback(() => {
@@ -212,7 +218,7 @@ export const useRealTimeScans = (
     import('../../api/websocket-client').then(({ getWebSocketClient }) => {
       try {
         const wsClient = getWebSocketClient(webSocketUrl);
-        
+
         // Set up event listeners
         wsClient.on('connected', () => {
           if (mountedRef.current) {
@@ -247,7 +253,7 @@ export const useRealTimeScans = (
 
         wsClient.on('volume_update', (volumes) => {
           if (!mountedRef.current) return;
-          
+
           setVolumes(volumes);
           setLastUpdated(new Date());
           onPollingUpdate?.(volumes);
@@ -256,7 +262,7 @@ export const useRealTimeScans = (
 
         wsClient.on('scan_complete', ({ volume_id, result }) => {
           if (!mountedRef.current) return;
-          
+
           setScanResults((prev) => ({
             ...prev,
             [volume_id]: result,
@@ -270,14 +276,14 @@ export const useRealTimeScans = (
 
         wsClient.on('scan_progress', ({ volume_id, progress }) => {
           if (!mountedRef.current) return;
-          
+
           // Handle scan progress updates
           console.log(`Scan progress for ${volume_id}: ${progress}%`);
         });
 
         wsClient.on('scan_error', ({ volume_id, error }) => {
           if (!mountedRef.current) return;
-          
+
           setScanErrors((prev) => ({
             ...prev,
             [volume_id]: error,

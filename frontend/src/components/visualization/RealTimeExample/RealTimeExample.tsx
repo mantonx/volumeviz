@@ -4,12 +4,12 @@ import type { RealTimeScanOptions } from '../../../hooks/useRealTimeScans/useRea
 
 /**
  * Example component demonstrating real-time volume visualization.
- * 
+ *
  * This component showcases:
  * - Complete real-time dashboard setup
  * - Proper configuration options
  * - Integration examples
- * 
+ *
  * Use this as a reference for implementing real-time volume visualization
  * in your application.
  */
@@ -19,23 +19,23 @@ export const RealTimeExample: React.FC = () => {
     // Enable automatic polling every 30 seconds
     enablePolling: true,
     pollingInterval: 30000,
-    
+
     // WebSocket can be enabled if backend supports it
     enableWebSocket: false,
     // webSocketUrl: 'ws://localhost:8080/ws',
-    
+
     // Limit concurrent scans to avoid overwhelming the system
     maxConcurrentScans: 3,
-    
+
     // Event handlers for scan lifecycle
     onScanComplete: (volumeId, result) => {
       console.log(`Scan completed for volume ${volumeId}:`, result);
     },
-    
+
     onScanError: (volumeId, error) => {
       console.error(`Scan failed for volume ${volumeId}:`, error);
     },
-    
+
     onPollingUpdate: (volumes) => {
       console.log(`Polling update: ${volumes.length} volumes found`);
     },
@@ -50,7 +50,8 @@ export const RealTimeExample: React.FC = () => {
             VolumeViz - Real-time Volume Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Live monitoring and analysis of Docker volume usage with automatic scanning
+            Live monitoring and analysis of Docker volume usage with automatic
+            scanning
           </p>
         </div>
       </div>
@@ -62,7 +63,7 @@ export const RealTimeExample: React.FC = () => {
         showSettings={true}
         className="py-6"
       />
-      
+
       {/* Footer with usage instructions */}
       <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-8">
         <div className="max-w-7xl mx-auto px-6 py-8">
@@ -78,7 +79,7 @@ export const RealTimeExample: React.FC = () => {
                 <li>• Concurrent scan management and queuing</li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                 Visualization Types
@@ -90,7 +91,7 @@ export const RealTimeExample: React.FC = () => {
                 <li>• Top volumes ranking and comparison</li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                 Controls & Settings

@@ -14,7 +14,12 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatBytes } from '@/utils/formatters';
-import { useVolumes, useApiHealth, useVolumeScanning, useContainers } from '@/api/services';
+import {
+  useVolumes,
+  useApiHealth,
+  useVolumeScanning,
+  useContainers,
+} from '@/api/services';
 import {
   volumesAtom,
   volumeStatsAtom,
@@ -52,11 +57,14 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const containerStats = useAtomValue(containerStatsAtom);
   const apiStatus = useAtomValue(apiStatusAtom);
   const lastUpdated = useAtomValue(volumesLastUpdatedAtom);
-  
+
   // Debug logging
   useEffect(() => {
     console.log('[Dashboard] Volume stats:', volumeStats);
-    console.log('[Dashboard] Scan results count:', Object.keys(scanResults).length);
+    console.log(
+      '[Dashboard] Scan results count:',
+      Object.keys(scanResults).length,
+    );
     console.log('[Dashboard] Scan results:', scanResults);
     console.log('[Dashboard] Containers:', containers);
     console.log('[Dashboard] Container stats:', containerStats);
@@ -88,16 +96,26 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               // Trigger scan in background, don't wait for results
               getVolumeSize(volume.id)
                 .then((result) => {
-                  console.log('[Dashboard] Scan result for', volume.id, ':', result);
+                  console.log(
+                    '[Dashboard] Scan result for',
+                    volume.id,
+                    ':',
+                    result,
+                  );
                 })
                 .catch((error) => {
-                  console.error('[Dashboard] Scan failed for', volume.id, ':', error);
+                  console.error(
+                    '[Dashboard] Scan failed for',
+                    volume.id,
+                    ':',
+                    error,
+                  );
                 });
             }, index * 500); // 500ms delay between each scan
           }
         });
       }, 1000); // Initial 1 second delay
-      
+
       return () => clearTimeout(scanTimer);
     }
   }, [volumes, getVolumeSize]);
@@ -242,10 +260,13 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 Storage Used
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {volumeStats.totalSize ? formatBytes(volumeStats.totalSize) : '0 B'}
+                {volumeStats.totalSize
+                  ? formatBytes(volumeStats.totalSize)
+                  : '0 B'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500">
-                Across {volumeStats.total} volumes ({Object.keys(scanResults).length} scanned)
+                Across {volumeStats.total} volumes (
+                {Object.keys(scanResults).length} scanned)
               </p>
             </div>
             <div className="h-12 w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">

@@ -24,7 +24,9 @@ import type {
 /**
  * Hook for managing WebSocket connections with VolumeViz backend
  */
-export const useWebSocketConnection = (options: WebSocketOptions = {}): WebSocketReturn => {
+export const useWebSocketConnection = (
+  options: WebSocketOptions = {},
+): WebSocketReturn => {
   const {
     url = `ws://${window.location.hostname}:8080/ws`,
     autoReconnect = true,

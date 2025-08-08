@@ -22,17 +22,17 @@ export interface EnhancedLiveVolumeChartProps extends BaseProps {
    * If provided, will show real-time status indicators
    */
   realTimeStatus?: RealTimeStatus;
-  
+
   /**
    * Handler for toggling real-time updates (optional)
    */
   onToggleRealTime?: () => void;
-  
+
   /**
    * Handler for scanning all volumes (optional)
    */
   onScanAll?: () => void;
-  
+
   /**
    * Whether to show real-time controls (defaults to false)
    */

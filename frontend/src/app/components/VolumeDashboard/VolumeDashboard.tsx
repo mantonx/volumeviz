@@ -1,17 +1,23 @@
 /**
  * Application-level Volume Dashboard
- * 
+ *
  * This component integrates business logic with pure UI components.
  * It should be in the application layer, not in the reusable UI library.
  */
 
 import React, { useState } from 'react';
-import { Activity, BarChart3, PieChart, Settings, AlertTriangle } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  PieChart,
+  Settings,
+  AlertTriangle,
+} from 'lucide-react';
 import { clsx } from 'clsx';
 import { useRealTimeVisualization } from '../../providers/RealTimeVisualizationProvider';
 
 // Import pure UI components from the component library
-import { 
+import {
   LiveVolumeChart,
   SizeComparisonChart,
   VolumeUsageTimeline,
@@ -38,7 +44,7 @@ interface VolumeDashboardProps {
 
 /**
  * Application-specific Volume Dashboard
- * 
+ *
  * This component:
  * - Uses the application-level RealTimeVisualizationProvider context
  * - Passes data as props to pure UI components
@@ -57,7 +63,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
     topVolumes,
     timeSeriesData,
     volumes,
-    
+
     // Real-time state
     isActive,
     isWebSocketConnected,
@@ -65,7 +71,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
     lastUpdate,
     status,
     error,
-    
+
     // Actions
     startRealTimeUpdates,
     stopRealTimeUpdates,
@@ -73,7 +79,9 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
     forceRefresh,
   } = useRealTimeVisualization();
 
-  const [selectedChart, setSelectedChart] = useState<'pie' | 'bar' | 'donut'>('donut');
+  const [selectedChart, setSelectedChart] = useState<'pie' | 'bar' | 'donut'>(
+    'donut',
+  );
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Transform application state to UI component props
@@ -87,7 +95,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
   };
 
   // Transform volume data for UI components
-  const transformedVolumes = chartData.map(item => ({
+  const transformedVolumes = chartData.map((item) => ({
     id: item.id,
     name: item.name,
     size: item.size,
@@ -153,16 +161,20 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
 
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-3">
-              <div className={clsx(
-                'p-2 rounded-lg',
-                isActive 
-                  ? 'bg-green-100 dark:bg-green-900/30' 
-                  : 'bg-gray-100 dark:bg-gray-700'
-              )}>
-                <Activity className={clsx(
-                  'w-5 h-5',
-                  isActive ? 'text-green-600' : 'text-gray-400'
-                )} />
+              <div
+                className={clsx(
+                  'p-2 rounded-lg',
+                  isActive
+                    ? 'bg-green-100 dark:bg-green-900/30'
+                    : 'bg-gray-100 dark:bg-gray-700',
+                )}
+              >
+                <Activity
+                  className={clsx(
+                    'w-5 h-5',
+                    isActive ? 'text-green-600' : 'text-gray-400',
+                  )}
+                />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -177,14 +189,20 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
 
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-3">
-              <div className={clsx(
-                'p-2 rounded-lg',
-                error ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-700'
-              )}>
-                <AlertTriangle className={clsx(
-                  'w-5 h-5',
-                  error ? 'text-red-600' : 'text-gray-400'
-                )} />
+              <div
+                className={clsx(
+                  'p-2 rounded-lg',
+                  error
+                    ? 'bg-red-100 dark:bg-red-900/30'
+                    : 'bg-gray-100 dark:bg-gray-700',
+                )}
+              >
+                <AlertTriangle
+                  className={clsx(
+                    'w-5 h-5',
+                    error ? 'text-red-600' : 'text-gray-400',
+                  )}
+                />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -223,7 +241,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
                     'px-3 py-1.5 text-sm rounded-md transition-colors',
                     selectedChart === 'pie'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500',
                   )}
                 >
                   <PieChart className="w-4 h-4" />
@@ -234,7 +252,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
                     'px-3 py-1.5 text-sm rounded-md transition-colors',
                     selectedChart === 'donut'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500',
                   )}
                 >
                   Donut
@@ -245,7 +263,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
                     'px-3 py-1.5 text-sm rounded-md transition-colors',
                     selectedChart === 'bar'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500',
                   )}
                 >
                   <BarChart3 className="w-4 h-4" />
@@ -254,7 +272,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
             </div>
 
             {/* Live Volume Chart - Pure UI Component */}
-            <LiveVolumeChart 
+            <LiveVolumeChart
               volumes={transformedVolumes}
               variant={selectedChart}
               size="lg"
@@ -262,7 +280,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
             />
 
             {/* Size Comparison Chart - Pure UI Component */}
-            <SizeComparisonChart 
+            <SizeComparisonChart
               volumes={transformedVolumes}
               variant="horizontal"
               maxItems={8}
@@ -271,23 +289,17 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
 
             {/* Timeline Chart - Pure UI Component */}
             {showAdvanced && (
-              <VolumeUsageTimeline 
-                data={timeSeriesData}
-                timeRange="24h"
-              />
+              <VolumeUsageTimeline data={timeSeriesData} timeRange="24h" />
             )}
           </div>
 
           {/* Right Column - Widgets */}
           <div className="space-y-6">
             {/* System Overview - Pure UI Component */}
-            <SystemOverview 
-              volumes={volumes}
-              showBreakdown={true}
-            />
+            <SystemOverview volumes={volumes} showBreakdown={true} />
 
             {/* Top Volumes - Pure UI Component */}
-            <TopVolumesWidget 
+            <TopVolumesWidget
               volumes={volumes}
               maxVolumes={5}
               showIndicators={true}
@@ -307,7 +319,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
                     Settings
                   </h3>
                 </div>
-                
+
                 <div className="space-y-3">
                   <label className="flex items-center justify-between">
                     <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -339,20 +351,25 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
         onScanAll={handleScanAll}
         onRefresh={handleRefresh}
       />
-      
-      <LiveVolumeChart 
+
+      <LiveVolumeChart
         volumes={transformedVolumes}
         variant={selectedChart}
         size="lg"
         onRefresh={handleRefresh}
       />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <SystemOverview volumes={volumes} showBreakdown={true} />
-        <TopVolumesWidget volumes={volumes} maxVolumes={5} showIndicators={true} showDetails={true} />
+        <TopVolumesWidget
+          volumes={volumes}
+          maxVolumes={5}
+          showIndicators={true}
+          showDetails={true}
+        />
       </div>
-      
-      <SizeComparisonChart 
+
+      <SizeComparisonChart
         volumes={transformedVolumes}
         variant="horizontal"
         maxItems={8}

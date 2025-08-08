@@ -18,7 +18,7 @@ jest.mock('date-fns', () => ({
     const inputDate = new Date(date);
     const diffMs = mockDate.getTime() - inputDate.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    
+
     if (options?.addSuffix) {
       return `${diffHours} hours ago`;
     }
@@ -106,20 +106,19 @@ describe('formatUptime', () => {
   it('should format uptime without suffix', () => {
     const createdAt = '2024-01-15T08:00:00Z';
     const result = formatUptime(createdAt);
-    
+
     expect(result).toBe('4 hours');
   });
 
   it('should call formatDistanceToNow with correct options', () => {
     const { formatDistanceToNow } = require('date-fns');
     const createdAt = '2024-01-15T08:00:00Z';
-    
+
     formatUptime(createdAt);
-    
-    expect(formatDistanceToNow).toHaveBeenCalledWith(
-      new Date(createdAt),
-      { addSuffix: false }
-    );
+
+    expect(formatDistanceToNow).toHaveBeenCalledWith(new Date(createdAt), {
+      addSuffix: false,
+    });
   });
 });
 
@@ -131,23 +130,23 @@ describe('formatDate', () => {
   it('should format date with default format', () => {
     const date = new Date('2024-01-15T12:00:00Z');
     const result = formatDate(date);
-    
+
     expect(result).toBe('Jan 15, 2024 12:00');
   });
 
   it('should format string dates', () => {
     const dateString = '2024-01-15T12:00:00Z';
     const result = formatDate(dateString);
-    
+
     expect(result).toBe('Jan 15, 2024 12:00');
   });
 
   it('should call format with correct parameters', () => {
     const { format } = require('date-fns');
     const date = new Date('2024-01-15T12:00:00Z');
-    
+
     formatDate(date);
-    
+
     expect(format).toHaveBeenCalledWith(date, 'MMM dd, yyyy HH:mm');
   });
 });
@@ -160,27 +159,24 @@ describe('formatRelativeTime', () => {
   it('should format relative time with suffix', () => {
     const date = new Date('2024-01-15T08:00:00Z');
     const result = formatRelativeTime(date);
-    
+
     expect(result).toBe('4 hours ago');
   });
 
   it('should format string dates', () => {
     const dateString = '2024-01-15T08:00:00Z';
     const result = formatRelativeTime(dateString);
-    
+
     expect(result).toBe('4 hours ago');
   });
 
   it('should call formatDistanceToNow with suffix', () => {
     const { formatDistanceToNow } = require('date-fns');
     const date = new Date('2024-01-15T08:00:00Z');
-    
+
     formatRelativeTime(date);
-    
-    expect(formatDistanceToNow).toHaveBeenCalledWith(
-      date,
-      { addSuffix: true }
-    );
+
+    expect(formatDistanceToNow).toHaveBeenCalledWith(date, { addSuffix: true });
   });
 });
 

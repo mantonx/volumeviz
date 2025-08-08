@@ -88,7 +88,7 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     expect(result.current.status).toBe('connected');
@@ -104,12 +104,12 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     await act(async () => {
       result.current.disconnect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     expect(result.current.status).toBe('disconnected');
@@ -122,7 +122,7 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     const sendSpy = jest.spyOn(MockWebSocket.prototype, 'send');
@@ -148,28 +148,30 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     // Get the WebSocket instance to simulate messages
     mockWs = (global.WebSocket as any).mock?.instances?.[0];
-    
+
     if (mockWs?.onmessage) {
       act(() => {
-        mockWs.onmessage(new MessageEvent('message', {
-          data: JSON.stringify({
-            type: 'volume_update',
-            data: { volumes: [] }
-          })
-        }));
+        mockWs.onmessage(
+          new MessageEvent('message', {
+            data: JSON.stringify({
+              type: 'volume_update',
+              data: { volumes: [] },
+            }),
+          }),
+        );
       });
     }
 
     expect(onMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'volume_update',
-        data: { volumes: [] }
-      })
+        data: { volumes: [] },
+      }),
     );
   });
 
@@ -183,7 +185,7 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     mockWs = (global.WebSocket as any).mock?.instances?.[0];
@@ -209,7 +211,7 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     mockWs = (global.WebSocket as any).mock?.instances?.[0];
@@ -217,7 +219,7 @@ describe('useWebSocketConnection', () => {
     // Simulate connection loss
     await act(async () => {
       mockWs.close(1006, 'Connection lost'); // Abnormal closure
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     expect(result.current.status).toBe('reconnecting');
@@ -233,7 +235,7 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     mockWs = (global.WebSocket as any).mock?.instances?.[0];
@@ -241,12 +243,14 @@ describe('useWebSocketConnection', () => {
     // Simulate pong response
     if (mockWs?.onmessage) {
       act(() => {
-        mockWs.onmessage(new MessageEvent('message', {
-          data: JSON.stringify({
-            type: 'pong',
-            timestamp: new Date().toISOString()
-          })
-        }));
+        mockWs.onmessage(
+          new MessageEvent('message', {
+            data: JSON.stringify({
+              type: 'pong',
+              timestamp: new Date().toISOString(),
+            }),
+          }),
+        );
       });
     }
 
@@ -258,7 +262,7 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     const sendSpy = jest.spyOn(MockWebSocket.prototype, 'send');
@@ -269,7 +273,7 @@ describe('useWebSocketConnection', () => {
     });
 
     expect(sendSpy).toHaveBeenCalledWith(
-      expect.stringContaining('"volume_id":"volume-1"')
+      expect.stringContaining('"volume_id":"volume-1"'),
     );
   });
 
@@ -284,7 +288,7 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     expect(result.current.isReady).toBe(true);
@@ -308,7 +312,7 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 150));
     });
 
     expect(result.current.status).toBe('error');
@@ -320,7 +324,7 @@ describe('useWebSocketConnection', () => {
 
     await act(async () => {
       result.current.connect();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     const closeSpy = jest.spyOn(MockWebSocket.prototype, 'close');

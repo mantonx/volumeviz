@@ -16,12 +16,12 @@ interface RealTimeStatusBarProps {
    * Real-time status information
    */
   status: RealTimeStatus;
-  
+
   /**
    * Whether to show control buttons
    */
   showControls?: boolean;
-  
+
   /**
    * Custom status messages
    */
@@ -32,14 +32,14 @@ interface RealTimeStatusBarProps {
     idle?: string;
     reconnecting?: string;
   };
-  
+
   /**
    * Event handlers
    */
   onToggleRealTime?: () => void;
   onScanAll?: () => void;
   onRefresh?: () => void;
-  
+
   /**
    * Custom CSS classes
    */
@@ -48,7 +48,7 @@ interface RealTimeStatusBarProps {
 
 /**
  * Real-time Status Bar Component
- * 
+ *
  * Pure UI component that displays real-time status and controls.
  * Receives all data through props - no business logic or context dependencies.
  */
@@ -101,10 +101,12 @@ export const RealTimeStatusBar: React.FC<RealTimeStatusBarProps> = ({
   };
 
   return (
-    <div className={clsx(
-      'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3',
-      className
-    )}>
+    <div
+      className={clsx(
+        'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3',
+        className,
+      )}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -115,7 +117,7 @@ export const RealTimeStatusBar: React.FC<RealTimeStatusBarProps> = ({
               {getStatusMessage()}
             </span>
           </div>
-          
+
           {status.lastUpdate && (
             <div className="text-xs text-gray-500 dark:text-gray-400">
               Last update: {status.lastUpdate.toLocaleTimeString()}
@@ -154,7 +156,7 @@ export const RealTimeStatusBar: React.FC<RealTimeStatusBarProps> = ({
                   'px-3 py-1.5 text-xs rounded-md transition-colors flex items-center gap-1',
                   status.isActive
                     ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                    : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200',
                 )}
               >
                 {status.isActive ? (

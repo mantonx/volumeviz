@@ -14,43 +14,43 @@ export interface HistoricalDataPoint {
 export interface VolumeGrowthTimelineProps {
   /** Historical data points for volume size growth */
   data: HistoricalDataPoint[];
-  
+
   /** Selected time range for display */
   timeRange?: '1d' | '1w' | '1m' | '3m' | '6m' | '1y' | 'all';
-  
+
   /** Array of volume IDs to display (if empty, shows all) */
   selectedVolumes?: string[];
-  
+
   /** Whether to show growth rate indicators */
   showGrowthRate?: boolean;
-  
+
   /** Whether to show anomaly detection markers */
   showAnomalies?: boolean;
-  
+
   /** Whether to enable brushing for time selection */
   enableBrushing?: boolean;
-  
+
   /** Whether to enable zooming and panning */
   enableZoom?: boolean;
-  
+
   /** Height of the chart in pixels */
   height?: number;
-  
+
   /** Whether to show data points */
   showDataPoints?: boolean;
-  
+
   /** Whether to show area fill under lines */
   showArea?: boolean;
-  
+
   /** Callback when time range changes via brushing */
   onTimeRangeChange?: (startDate: Date, endDate: Date) => void;
-  
+
   /** Callback when volume selection changes */
   onVolumeSelectionChange?: (volumeIds: string[]) => void;
-  
+
   /** Callback when data point is clicked */
   onDataPointClick?: (dataPoint: HistoricalDataPoint) => void;
-  
+
   /** Custom CSS class */
   className?: string;
 }

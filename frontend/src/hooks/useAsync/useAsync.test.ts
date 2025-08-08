@@ -10,7 +10,7 @@ import { useAsync } from './useAsync';
 const successfulAsyncFn = jest.fn(() => Promise.resolve('success'));
 const failingAsyncFn = jest.fn(() => Promise.reject(new Error('Failed')));
 const slowAsyncFn = jest.fn(
-  () => new Promise((resolve) => setTimeout(() => resolve('slow'), 100))
+  () => new Promise((resolve) => setTimeout(() => resolve('slow'), 100)),
 );
 
 describe('useAsync', () => {
@@ -19,8 +19,8 @@ describe('useAsync', () => {
   });
 
   it('should initialize with loading false and no data/error', () => {
-    const { result } = renderHook(() => 
-      useAsync(successfulAsyncFn, { immediate: false })
+    const { result } = renderHook(() =>
+      useAsync(successfulAsyncFn, { immediate: false }),
     );
 
     expect(result.current.loading).toBe(false);
@@ -51,8 +51,8 @@ describe('useAsync', () => {
   });
 
   it('should handle successful execution', async () => {
-    const { result } = renderHook(() => 
-      useAsync(successfulAsyncFn, { immediate: false })
+    const { result } = renderHook(() =>
+      useAsync(successfulAsyncFn, { immediate: false }),
     );
 
     act(() => {
@@ -72,8 +72,8 @@ describe('useAsync', () => {
   });
 
   it('should handle failed execution', async () => {
-    const { result } = renderHook(() => 
-      useAsync(failingAsyncFn, { immediate: false })
+    const { result } = renderHook(() =>
+      useAsync(failingAsyncFn, { immediate: false }),
     );
 
     act(() => {
@@ -93,8 +93,8 @@ describe('useAsync', () => {
   });
 
   it('should handle manual execution', async () => {
-    const { result } = renderHook(() => 
-      useAsync(successfulAsyncFn, { immediate: false })
+    const { result } = renderHook(() =>
+      useAsync(successfulAsyncFn, { immediate: false }),
     );
 
     expect(result.current.data).toBe(null);
@@ -126,8 +126,8 @@ describe('useAsync', () => {
   });
 
   it('should show loading state during execution', async () => {
-    const { result } = renderHook(() => 
-      useAsync(slowAsyncFn, { immediate: false })
+    const { result } = renderHook(() =>
+      useAsync(slowAsyncFn, { immediate: false }),
     );
 
     act(() => {
@@ -147,8 +147,8 @@ describe('useAsync', () => {
   });
 
   it('should handle multiple executions', async () => {
-    const { result } = renderHook(() => 
-      useAsync(successfulAsyncFn, { immediate: false })
+    const { result } = renderHook(() =>
+      useAsync(successfulAsyncFn, { immediate: false }),
     );
 
     await act(async () => {
@@ -167,9 +167,9 @@ describe('useAsync', () => {
 
   it('should handle non-Error rejections', async () => {
     const stringErrorFn = jest.fn(() => Promise.reject('String error'));
-    
-    const { result } = renderHook(() => 
-      useAsync(stringErrorFn, { immediate: false })
+
+    const { result } = renderHook(() =>
+      useAsync(stringErrorFn, { immediate: false }),
     );
 
     await act(async () => {

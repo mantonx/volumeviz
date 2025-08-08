@@ -19,12 +19,15 @@ interface ErrorBoundaryState {
   eventId: string | null;
 }
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   private resetTimeoutId: number | null = null;
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    
+
     this.state = {
       hasError: false,
       error: null,
@@ -45,7 +48,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error details
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     this.setState({
       error,
       errorInfo,
@@ -65,7 +68,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (hasError && resetOnPropsChange && resetKeys) {
       const prevResetKeys = prevProps.resetKeys || [];
       const hasResetKeyChanged = resetKeys.some(
-        (key, index) => prevResetKeys[index] !== key
+        (key, index) => prevResetKeys[index] !== key,
       );
 
       if (hasResetKeyChanged) {
@@ -111,11 +114,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <Card className="max-w-2xl mx-auto m-6">
           <div className="p-6 text-center">
             <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            
+
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
               Something went wrong
             </h2>
-            
+
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               An unexpected error occurred while rendering this component.
               {this.state.eventId && (
@@ -126,8 +129,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </p>
 
             <div className="flex justify-center gap-3 mb-6">
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 size="sm"
                 onClick={this.handleRetry}
                 className="flex items-center gap-2"
@@ -135,9 +138,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 <RefreshCw className="w-4 h-4" />
                 Try Again
               </Button>
-              
-              <Button 
-                variant="secondary" 
+
+              <Button
+                variant="secondary"
                 size="sm"
                 onClick={this.handleGoHome}
                 className="flex items-center gap-2"
@@ -187,7 +190,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 // Higher-order component for wrapping components with error boundary
 export function withErrorBoundary<T extends {}>(
   Component: React.ComponentType<T>,
-  errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
+  errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>,
 ) {
   const WrappedComponent = (props: T) => (
     <ErrorBoundary {...errorBoundaryProps}>

@@ -3,7 +3,10 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { UseDebounceOptions, UseDebounceReturn } from './useDebounce.types';
+import type {
+  UseDebounceOptions,
+  UseDebounceReturn,
+} from './useDebounce.types';
 
 /**
  * Simple debounce hook - returns debounced value
@@ -31,16 +34,11 @@ export const useAdvancedDebounce = <T>(
   value: T,
   options: UseDebounceOptions,
 ): UseDebounceReturn<T> => {
-  const {
-    delay,
-    leading = false,
-    trailing = true,
-    maxWait,
-  } = options;
+  const { delay, leading = false, trailing = true, maxWait } = options;
 
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   const [isPending, setIsPending] = useState(false);
-  
+
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCallTimeRef = useRef<number>(0);
@@ -52,25 +50,31 @@ export const useAdvancedDebounce = <T>(
     lastInvokeTimeRef.current = Date.now();
   }, []);
 
-  const shouldInvoke = useCallback((time: number) => {
-    const timeSinceLastCall = time - lastCallTimeRef.current;
-    const timeSinceLastInvoke = time - lastInvokeTimeRef.current;
+  const shouldInvoke = useCallback(
+    (time: number) => {
+      const timeSinceLastCall = time - lastCallTimeRef.current;
+      const timeSinceLastInvoke = time - lastInvokeTimeRef.current;
 
-    // Either this is the first call, activity has stopped, or max wait has elapsed
-    return (
-      lastCallTimeRef.current === 0 ||
-      timeSinceLastCall >= delay ||
-      (maxWait !== undefined && timeSinceLastInvoke >= maxWait)
-    );
-  }, [delay, maxWait]);
+      // Either this is the first call, activity has stopped, or max wait has elapsed
+      return (
+        lastCallTimeRef.current === 0 ||
+        timeSinceLastCall >= delay ||
+        (maxWait !== undefined && timeSinceLastInvoke >= maxWait)
+      );
+    },
+    [delay, maxWait],
+  );
 
-  const trailingEdge = useCallback((time: number, newValue: T) => {
-    timeoutRef.current = null;
-    if (trailing) {
-      invokeFunc(newValue);
-    }
-    setIsPending(false);
-  }, [trailing, invokeFunc]);
+  const trailingEdge = useCallback(
+    (time: number, newValue: T) => {
+      timeoutRef.current = null;
+      if (trailing) {
+        invokeFunc(newValue);
+      }
+      setIsPending(false);
+    },
+    [trailing, invokeFunc],
+  );
 
   const timerExpired = useCallback(() => {
     const time = Date.now();
@@ -143,7 +147,17 @@ export const useAdvancedDebounce = <T>(
         clearTimeout(maxTimeoutRef.current);
       }
     };
-  }, [value, delay, shouldInvoke, leading, trailing, invokeFunc, timerExpired, maxWait, cancel]);
+  }, [
+    value,
+    delay,
+    shouldInvoke,
+    leading,
+    trailing,
+    invokeFunc,
+    timerExpired,
+    maxWait,
+    cancel,
+  ]);
 
   return {
     debouncedValue,

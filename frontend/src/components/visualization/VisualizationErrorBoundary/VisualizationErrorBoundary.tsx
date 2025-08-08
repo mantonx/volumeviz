@@ -15,8 +15,8 @@ const VisualizationErrorFallback: React.FC<VisualizationErrorFallbackProps> = ({
   error,
   resetError,
   eventId,
-  title = "Visualization Error",
-  description = "Unable to render chart data",
+  title = 'Visualization Error',
+  description = 'Unable to render chart data',
   showChart = true,
 }) => {
   return (
@@ -30,17 +30,17 @@ const VisualizationErrorFallback: React.FC<VisualizationErrorFallbackProps> = ({
         ) : (
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
         )}
-        
+
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
           {title}
         </h3>
-        
+
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 max-w-md">
           {description}
         </p>
 
-        <Button 
-          variant="secondary" 
+        <Button
+          variant="secondary"
           size="sm"
           onClick={resetError}
           className="flex items-center gap-2"
@@ -73,14 +73,9 @@ interface VisualizationErrorBoundaryProps {
   resetKeys?: Array<string | number>;
 }
 
-export const VisualizationErrorBoundary: React.FC<VisualizationErrorBoundaryProps> = ({
-  children,
-  title,
-  description,
-  showChart,
-  onError,
-  resetKeys,
-}) => {
+export const VisualizationErrorBoundary: React.FC<
+  VisualizationErrorBoundaryProps
+> = ({ children, title, description, showChart, onError, resetKeys }) => {
   const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
     // Log visualization-specific error details
     console.error('Visualization Error:', {
@@ -122,7 +117,7 @@ export function withVisualizationErrorBoundary<T extends {}>(
     title?: string;
     description?: string;
     showChart?: boolean;
-  }
+  },
 ) {
   const WrappedComponent = (props: T) => (
     <VisualizationErrorBoundary {...options}>
@@ -133,6 +128,6 @@ export function withVisualizationErrorBoundary<T extends {}>(
   WrappedComponent.displayName = `withVisualizationErrorBoundary(${
     Component.displayName || Component.name
   })`;
-  
+
   return WrappedComponent;
 }

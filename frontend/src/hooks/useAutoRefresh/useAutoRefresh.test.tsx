@@ -162,8 +162,10 @@ describe('useAutoRefresh', () => {
   });
 
   it('should handle refresh errors', async () => {
-    const errorRefreshFn = jest.fn(() => Promise.reject(new Error('Refresh failed')));
-    
+    const errorRefreshFn = jest.fn(() =>
+      Promise.reject(new Error('Refresh failed')),
+    );
+
     const { result } = renderUseAutoRefresh({
       refreshFn: errorRefreshFn,
       onError: mockErrorCallback,
@@ -180,8 +182,10 @@ describe('useAutoRefresh', () => {
   });
 
   it('should pause after max errors', async () => {
-    const errorRefreshFn = jest.fn(() => Promise.reject(new Error('Refresh failed')));
-    
+    const errorRefreshFn = jest.fn(() =>
+      Promise.reject(new Error('Refresh failed')),
+    );
+
     const { result } = renderUseAutoRefresh({
       refreshFn: errorRefreshFn,
       maxErrors: 2,

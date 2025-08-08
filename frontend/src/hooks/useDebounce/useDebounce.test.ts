@@ -21,7 +21,7 @@ describe('useDebounce', () => {
     it('should debounce value changes', () => {
       const { result, rerender } = renderHook(
         ({ value, delay }) => useDebounce(value, delay),
-        { initialProps: { value: 'initial', delay: 500 } }
+        { initialProps: { value: 'initial', delay: 500 } },
       );
 
       expect(result.current).toBe('initial');
@@ -41,7 +41,7 @@ describe('useDebounce', () => {
     it('should reset timer on rapid changes', () => {
       const { result, rerender } = renderHook(
         ({ value }) => useDebounce(value, 500),
-        { initialProps: { value: 'initial' } }
+        { initialProps: { value: 'initial' } },
       );
 
       rerender({ value: 'change1' });
@@ -68,7 +68,7 @@ describe('useDebounce', () => {
     it('should work with trailing edge by default', () => {
       const { result, rerender } = renderHook(
         ({ value }) => useAdvancedDebounce(value, { delay: 500 }),
-        { initialProps: { value: 'initial' } }
+        { initialProps: { value: 'initial' } },
       );
 
       expect(result.current.debouncedValue).toBe('initial');
@@ -87,8 +87,13 @@ describe('useDebounce', () => {
 
     it('should work with leading edge', () => {
       const { result, rerender } = renderHook(
-        ({ value }) => useAdvancedDebounce(value, { delay: 500, leading: true, trailing: false }),
-        { initialProps: { value: 'initial' } }
+        ({ value }) =>
+          useAdvancedDebounce(value, {
+            delay: 500,
+            leading: true,
+            trailing: false,
+          }),
+        { initialProps: { value: 'initial' } },
       );
 
       expect(result.current.debouncedValue).toBe('initial');
@@ -101,7 +106,7 @@ describe('useDebounce', () => {
     it('should cancel pending debounced calls', () => {
       const { result, rerender } = renderHook(
         ({ value }) => useAdvancedDebounce(value, { delay: 500 }),
-        { initialProps: { value: 'initial' } }
+        { initialProps: { value: 'initial' } },
       );
 
       rerender({ value: 'updated' });
@@ -123,7 +128,7 @@ describe('useDebounce', () => {
     it('should flush pending debounced calls', () => {
       const { result, rerender } = renderHook(
         ({ value }) => useAdvancedDebounce(value, { delay: 500 }),
-        { initialProps: { value: 'initial' } }
+        { initialProps: { value: 'initial' } },
       );
 
       rerender({ value: 'updated' });
@@ -139,8 +144,9 @@ describe('useDebounce', () => {
 
     it('should respect maxWait option', () => {
       const { result, rerender } = renderHook(
-        ({ value }) => useAdvancedDebounce(value, { delay: 1000, maxWait: 500 }),
-        { initialProps: { value: 'initial' } }
+        ({ value }) =>
+          useAdvancedDebounce(value, { delay: 1000, maxWait: 500 }),
+        { initialProps: { value: 'initial' } },
       );
 
       rerender({ value: 'updated' });

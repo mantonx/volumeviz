@@ -72,7 +72,9 @@ export const LiveVolumeChart: React.FC<LiveVolumeChartProps> = ({
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [realtimeVolumes, setRealtimeVolumes] = useState<VolumeResponseType[]>([]);
+  const [realtimeVolumes, setRealtimeVolumes] = useState<VolumeResponseType[]>(
+    [],
+  );
 
   // WebSocket connection for real-time updates
   const { isConnected, connectionStatus } = useWebSocketConnection({
@@ -82,15 +84,15 @@ export const LiveVolumeChart: React.FC<LiveVolumeChartProps> = ({
     },
     onScanComplete: (data) => {
       // Update the specific volume with new size data
-      setRealtimeVolumes(prev => 
-        prev.map(vol => 
-          vol.id === data.volume_id 
+      setRealtimeVolumes((prev) =>
+        prev.map((vol) =>
+          vol.id === data.volume_id
             ? { ...vol, size: data.result.total_size }
-            : vol
-        )
+            : vol,
+        ),
       );
       setLastUpdated(new Date());
-    }
+    },
   });
 
   // Use real-time data if available, otherwise fallback to props
@@ -278,15 +280,23 @@ export const LiveVolumeChart: React.FC<LiveVolumeChartProps> = ({
           {/* Connection Status Indicator */}
           <div className="flex items-center gap-1">
             {isConnected ? (
-              <Wifi className="w-4 h-4 text-green-500" title="WebSocket Connected" />
+              <Wifi
+                className="w-4 h-4 text-green-500"
+                title="WebSocket Connected"
+              />
             ) : (
-              <WifiOff className="w-4 h-4 text-red-500" title="WebSocket Disconnected" />
+              <WifiOff
+                className="w-4 h-4 text-red-500"
+                title="WebSocket Disconnected"
+              />
             )}
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              isConnected 
-                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-            }`}>
+            <span
+              className={`text-xs px-2 py-1 rounded-full ${
+                isConnected
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+              }`}
+            >
               {connectionStatus}
             </span>
           </div>

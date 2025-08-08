@@ -20,7 +20,9 @@ import type {
 /**
  * Hook for intelligent auto-refresh functionality
  */
-export const useAutoRefresh = (options: AutoRefreshOptions): AutoRefreshReturn => {
+export const useAutoRefresh = (
+  options: AutoRefreshOptions,
+): AutoRefreshReturn => {
   const {
     refreshFn,
     interval,

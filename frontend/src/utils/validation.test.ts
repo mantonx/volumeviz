@@ -37,7 +37,9 @@ describe('isValidUrl', () => {
   it('should validate correct URLs', () => {
     expect(isValidUrl('https://example.com')).toBe(true);
     expect(isValidUrl('http://localhost:8080')).toBe(true);
-    expect(isValidUrl('https://subdomain.example.co.uk/path?query=value')).toBe(true);
+    expect(isValidUrl('https://subdomain.example.co.uk/path?query=value')).toBe(
+      true,
+    );
     expect(isValidUrl('ftp://files.example.com')).toBe(true);
     expect(isValidUrl('https://192.168.1.1:3000')).toBe(true);
   });
@@ -54,7 +56,9 @@ describe('isValidUrl', () => {
   it('should handle special cases', () => {
     expect(isValidUrl('http://example')).toBe(true); // Local domains are valid
     expect(isValidUrl('https://example.com:80')).toBe(true);
-    expect(isValidUrl('https://example.com/path/to/resource#fragment')).toBe(true);
+    expect(isValidUrl('https://example.com/path/to/resource#fragment')).toBe(
+      true,
+    );
   });
 });
 
@@ -82,7 +86,7 @@ describe('isValidContainerName', () => {
   it('should handle length restrictions', () => {
     const validLongName = 'a'.repeat(255);
     const invalidLongName = 'a'.repeat(256);
-    
+
     expect(isValidContainerName(validLongName)).toBe(true);
     expect(isValidContainerName(invalidLongName)).toBe(false);
   });

@@ -14,52 +14,52 @@ export interface GrowthRateDataPoint {
 export interface GrowthRateChartProps {
   /** Array of growth rate data points */
   data: GrowthRateDataPoint[];
-  
+
   /** Chart display mode */
   mode?: 'absolute' | 'percentage' | 'both';
-  
+
   /** Time unit for rate calculation */
   rateUnit?: 'hour' | 'day' | 'week' | 'month';
-  
+
   /** Chart type for visualization */
   chartType?: 'line' | 'bar' | 'area' | 'combo';
-  
+
   /** Selected volumes to display */
   selectedVolumes?: string[];
-  
+
   /** Whether to show moving average */
   showMovingAverage?: boolean;
-  
+
   /** Moving average period */
   movingAveragePeriod?: number;
-  
+
   /** Whether to show trend lines */
   showTrendLines?: boolean;
-  
+
   /** Whether to highlight positive/negative rates with colors */
   colorByRate?: boolean;
-  
+
   /** Minimum threshold for highlighting significant changes */
   significanceThreshold?: number; // percentage
-  
+
   /** Chart height in pixels */
   height?: number;
-  
+
   /** Whether to show data labels */
   showDataLabels?: boolean;
-  
+
   /** Whether to enable interactive features */
   interactive?: boolean;
-  
+
   /** Callback when time period is selected */
   onTimeSelectionChange?: (startDate: Date, endDate: Date) => void;
-  
+
   /** Callback when volume selection changes */
   onVolumeSelectionChange?: (volumeIds: string[]) => void;
-  
+
   /** Callback when rate unit changes */
   onRateUnitChange?: (unit: string) => void;
-  
+
   /** Custom CSS class */
   className?: string;
 }
@@ -94,7 +94,7 @@ export const DEFAULT_RATE_THRESHOLDS: RateThreshold[] = [
   },
   {
     label: 'Moderate Growth',
-    value: 100000000, // 100MB/day  
+    value: 100000000, // 100MB/day
     color: '#F59E0B',
     type: 'warning',
   },

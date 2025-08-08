@@ -23,7 +23,7 @@ import { formatBytes, formatPercentage } from '../../../utils/formatters';
 
 /**
  * TrendAnalysisWidget component for displaying volume growth trends and insights.
- * 
+ *
  * Features:
  * - Growth rate calculations with visual indicators
  * - Trend pattern detection (linear, exponential, cyclical)
@@ -50,7 +50,7 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
   // Sort and filter data
   const sortedData = useMemo(() => {
     const filtered = data.slice(0, maxVolumes);
-    
+
     return filtered.sort((a, b) => {
       let aValue: number | string;
       let bValue: number | string;
@@ -78,12 +78,12 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
       }
 
       if (typeof aValue === 'string') {
-        return activeSortDirection === 'asc' 
+        return activeSortDirection === 'asc'
           ? aValue.localeCompare(bValue as string)
           : (bValue as string).localeCompare(aValue);
       }
 
-      return activeSortDirection === 'asc' 
+      return activeSortDirection === 'asc'
         ? (aValue as number) - (bValue as number)
         : (bValue as number) - (aValue as number);
     });
@@ -95,9 +95,15 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
 
     const totalGrowth = data.reduce((sum, item) => sum + item.growthRate, 0);
     const averageGrowth = totalGrowth / data.length;
-    const growingVolumes = data.filter(item => item.trend === 'increasing').length;
-    const shrinkingVolumes = data.filter(item => item.trend === 'decreasing').length;
-    const anomalousVolumes = data.filter(item => item.anomalyScore > 0.7).length;
+    const growingVolumes = data.filter(
+      (item) => item.trend === 'increasing',
+    ).length;
+    const shrinkingVolumes = data.filter(
+      (item) => item.trend === 'decreasing',
+    ).length;
+    const anomalousVolumes = data.filter(
+      (item) => item.anomalyScore > 0.7,
+    ).length;
 
     return {
       totalVolumes: data.length,
@@ -112,7 +118,7 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
   // Handle sort change
   const handleSortChange = (newSortBy: typeof sortBy) => {
     if (newSortBy === activeSortBy) {
-      setActiveSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+      setActiveSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setActiveSortBy(newSortBy);
       setActiveSortDirection('desc');
@@ -148,20 +154,28 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
       className="flex items-center gap-1 text-left text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
     >
       {label}
-      {activeSortBy === sortKey && (
-        activeSortDirection === 'asc' ? 
-          <ArrowUp className="w-3 h-3" /> : 
+      {activeSortBy === sortKey &&
+        (activeSortDirection === 'asc' ? (
+          <ArrowUp className="w-3 h-3" />
+        ) : (
           <ArrowDown className="w-3 h-3" />
-      )}
+        ))}
     </button>
   );
 
   if (!data.length) {
     return (
-      <div className={clsx('bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6', className)}>
+      <div
+        className={clsx(
+          'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6',
+          className,
+        )}
+      >
         <div className="text-center py-8">
           <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-          <p className="text-gray-500 dark:text-gray-400 mb-2">No trend data available</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-2">
+            No trend data available
+          </p>
           <p className="text-sm text-gray-400 dark:text-gray-500">
             Historical scan data is needed to analyze growth trends
           </p>
@@ -171,7 +185,12 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
   }
 
   return (
-    <div className={clsx('bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700', className)}>
+    <div
+      className={clsx(
+        'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700',
+        className,
+      )}
+    >
       {/* Header */}
       <div className="p-6 pb-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
@@ -183,7 +202,7 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
               {analysisPeriod} analysis across {data.length} volumes
             </p>
           </div>
-          
+
           {onExport && (
             <div className="flex items-center gap-2">
               <button
@@ -204,26 +223,34 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
               <div className="text-2xl font-bold text-green-600">
                 {summaryStats.growingVolumes}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Growing</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Growing
+              </div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">
                 {summaryStats.shrinkingVolumes}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Shrinking</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Shrinking
+              </div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-600">
                 {summaryStats.stableVolumes}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Stable</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Stable
+              </div>
             </div>
             {showAnomalies && (
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-600">
                   {summaryStats.anomalousVolumes}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Anomalies</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Anomalies
+                </div>
               </div>
             )}
           </div>
@@ -262,7 +289,7 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {sortedData.map((volume) => {
               const indicator = getTrendIndicator(volume.trend);
-              
+
               return (
                 <tr
                   key={volume.volumeId}
@@ -282,7 +309,7 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
 
                   {/* Trend Indicator */}
                   <td className="px-6 py-4">
-                    <div 
+                    <div
                       className="flex items-center gap-2"
                       style={{ color: indicator.color }}
                     >
@@ -307,23 +334,35 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
 
                   {/* Growth Rate */}
                   <td className="px-6 py-4 text-right">
-                    <div className={clsx(
-                      'font-mono text-sm',
-                      volume.growthRate > 0 ? 'text-green-600' :
-                      volume.growthRate < 0 ? 'text-red-600' : 'text-gray-600'
-                    )}>
-                      {volume.growthRate > 0 ? '+' : ''}{formatBytes(volume.growthRate)}/day
+                    <div
+                      className={clsx(
+                        'font-mono text-sm',
+                        volume.growthRate > 0
+                          ? 'text-green-600'
+                          : volume.growthRate < 0
+                            ? 'text-red-600'
+                            : 'text-gray-600',
+                      )}
+                    >
+                      {volume.growthRate > 0 ? '+' : ''}
+                      {formatBytes(volume.growthRate)}/day
                     </div>
                   </td>
 
                   {/* Growth Percentage */}
                   <td className="px-6 py-4 text-right">
-                    <div className={clsx(
-                      'font-mono text-sm',
-                      volume.growthPercentage > 0 ? 'text-green-600' :
-                      volume.growthPercentage < 0 ? 'text-red-600' : 'text-gray-600'
-                    )}>
-                      {volume.growthPercentage > 0 ? '+' : ''}{formatPercentage(volume.growthPercentage)}
+                    <div
+                      className={clsx(
+                        'font-mono text-sm',
+                        volume.growthPercentage > 0
+                          ? 'text-green-600'
+                          : volume.growthPercentage < 0
+                            ? 'text-red-600'
+                            : 'text-gray-600',
+                      )}
+                    >
+                      {volume.growthPercentage > 0 ? '+' : ''}
+                      {formatPercentage(volume.growthPercentage)}
                     </div>
                   </td>
 
@@ -334,8 +373,12 @@ export const TrendAnalysisWidget: React.FC<TrendAnalysisWidgetProps> = ({
                         {formatBytes(volume.projectedSize30d)}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {volume.projectedSize30d > volume.currentSize ? '+' : ''}
-                        {formatBytes(volume.projectedSize30d - volume.currentSize)}
+                        {volume.projectedSize30d > volume.currentSize
+                          ? '+'
+                          : ''}
+                        {formatBytes(
+                          volume.projectedSize30d - volume.currentSize,
+                        )}
                       </div>
                     </td>
                   )}
