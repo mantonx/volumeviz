@@ -127,8 +127,8 @@ export const filteredVolumesAtom = atom<VolumeResponse[]>((get) => {
       case 'size': {
         // Get size from scan results
         const scanResults = get(scanResultsAtom);
-        aValue = scanResults[a.volume_id || '']?.total_size || 0;
-        bValue = scanResults[b.volume_id || '']?.total_size || 0;
+        aValue = scanResults[a.volume_id || a.id || '']?.result?.total_size || 0;
+        bValue = scanResults[b.volume_id || b.id || '']?.result?.total_size || 0;
         break;
       }
       default:
@@ -172,9 +172,9 @@ export const volumeStatsAtom = atom((get) => {
       }
 
       // Size calculation
-      const scanResult = scanResults[volume.volume_id || ''];
-      if (scanResult?.total_size) {
-        acc.totalSize += scanResult.total_size;
+      const scanResult = scanResults[volume.volume_id || volume.id || ''];
+      if (scanResult?.result?.total_size) {
+        acc.totalSize += scanResult.result.total_size;
       }
 
       return acc;

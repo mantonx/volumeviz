@@ -9,21 +9,27 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/utils"
+	"github.com/mantonx/volumeviz/internal/websocket"
 	coremodels "github.com/mantonx/volumeviz/internal/core/models"
 )
 
 // Handler handles scan-related HTTP requests
 // Provides endpoints for volume size scanning and metrics
 type Handler struct {
-	scanner interfaces.VolumeScanner
+	scanner       interfaces.VolumeScanner
+	hub           *websocket.Hub
+	metricsRepo   *database.VolumeMetricsRepository
 }
 
 // NewHandler creates a new scan handler
-// Pass in your volume scanner implementation
-func NewHandler(scanner interfaces.VolumeScanner) *Handler {
+// Pass in your volume scanner implementation, WebSocket hub, and metrics repository
+func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, metricsRepo *database.VolumeMetricsRepository) *Handler {
 	return &Handler{
-		scanner: scanner,
+		scanner:     scanner,
+		hub:         hub,
+		metricsRepo: metricsRepo,
 	}
 }
 
@@ -54,6 +60,10 @@ func (h *Handler) GetVolumeSize(c *gin.Context) {
 	result, err := h.scanner.ScanVolume(c.Request.Context(), volumeID)
 	if err != nil {
 		h.handleScanError(c, err)
+		// Broadcast scan error via WebSocket
+		if h.hub != nil {
+			h.hub.BroadcastScanError(volumeID, err.Error(), "SCAN_ERROR")
+		}
 		return
 	}
 
@@ -61,6 +71,36 @@ func (h *Handler) GetVolumeSize(c *gin.Context) {
 		VolumeID: volumeID,
 		Result:   models.ConvertScanResult(result),
 		Cached:   result.CacheHit,
+	}
+
+	// Save historical metrics if repository is available
+	if h.metricsRepo != nil {
+		err := h.metricsRepo.SaveMetrics(
+			c.Request.Context(),
+			volumeID,
+			result.TotalSize,
+			int64(result.FileCount),
+			int64(result.DirectoryCount),
+			result.Method,
+		)
+		if err != nil {
+			// Log error but don't fail the request
+			// In production, use proper logging
+			fmt.Printf("Failed to save metrics for volume %s: %v\n", volumeID, err)
+		}
+	}
+
+	// Broadcast scan completion via WebSocket
+	if h.hub != nil {
+		wsResult := websocket.ScanResult{
+			TotalSize:      result.TotalSize,
+			FileCount:      result.FileCount,
+			DirectoryCount: result.DirectoryCount,
+			ScannedAt:      result.ScannedAt,
+			Method:         result.Method,
+			Duration:       result.Duration,
+		}
+		h.hub.BroadcastScanComplete(volumeID, wsResult)
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -124,7 +164,24 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 	result, err := h.scanner.ScanVolume(c.Request.Context(), volumeID)
 	if err != nil {
 		h.handleScanError(c, err)
+		// Broadcast scan error via WebSocket
+		if h.hub != nil {
+			h.hub.BroadcastScanError(volumeID, err.Error(), "SCAN_ERROR")
+		}
 		return
+	}
+
+	// Broadcast scan completion via WebSocket
+	if h.hub != nil {
+		wsResult := websocket.ScanResult{
+			TotalSize:      result.TotalSize,
+			FileCount:      result.FileCount,
+			DirectoryCount: result.DirectoryCount,
+			ScannedAt:      result.ScannedAt,
+			Method:         result.Method,
+			Duration:       result.Duration,
+		}
+		h.hub.BroadcastScanComplete(volumeID, wsResult)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

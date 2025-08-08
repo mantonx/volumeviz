@@ -118,3 +118,13 @@ export function truncateString(
       return str.slice(0, truncatedLength) + ellipsis;
   }
 }
+
+/**
+ * Formats a percentage value.
+ * @param value - Percentage as decimal (0.5 = 50%)
+ * @param decimals - Number of decimal places (default: 1)
+ * @returns Formatted percentage string (e.g., "50.0%")
+ */
+export function formatPercentage(value: number, decimals = 1): string {
+  return `${(value * 100).toFixed(decimals)}%`;
+}

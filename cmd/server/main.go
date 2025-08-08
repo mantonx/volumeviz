@@ -61,12 +61,14 @@ func main() {
 
 	// Initialize database connection
 	dbConfig := &database.Config{
+		Type:     database.DatabaseType(cfg.Database.Type),
 		Host:     cfg.Database.Host,
 		Port:     dbPort,
 		User:     cfg.Database.User,
 		Password: cfg.Database.Password,
 		Database: cfg.Database.Name,
 		SSLMode:  cfg.Database.SSLMode,
+		Path:     cfg.Database.Path,
 	}
 	
 	db, err := database.NewDB(dbConfig)

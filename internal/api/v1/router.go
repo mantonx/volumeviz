@@ -9,16 +9,18 @@ import (
 	"github.com/mantonx/volumeviz/internal/api/middleware"
 	"github.com/mantonx/volumeviz/internal/api/v1/database"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
+	"github.com/mantonx/volumeviz/internal/api/v1/metrics"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
 	"github.com/mantonx/volumeviz/internal/api/v1/system"
 	"github.com/mantonx/volumeviz/internal/api/v1/volumes"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
 	"github.com/mantonx/volumeviz/internal/core/models"
 	"github.com/mantonx/volumeviz/internal/core/services/cache"
-	"github.com/mantonx/volumeviz/internal/core/services/metrics"
+	coreMetrics "github.com/mantonx/volumeviz/internal/core/services/metrics"
 	"github.com/mantonx/volumeviz/internal/core/services/scanner"
 	databasePkg "github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/services"
+	"github.com/mantonx/volumeviz/internal/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
@@ -31,16 +33,21 @@ type Router struct {
 	dockerService *services.DockerService
 	scanner       interfaces.VolumeScanner
 	database      *databasePkg.DB
+	websocketHub  *websocket.Hub
 }
 
 // NewRouter creates a new v1 API router
 func NewRouter(dockerService *services.DockerService, database *databasePkg.DB) *Router {
+	// Initialize WebSocket hub
+	hub := websocket.NewHub()
+	go hub.Run()
+
 	// Initialize the scanner with all dependencies
 	logger := log.New(os.Stdout, "[SCANNER] ", log.LstdFlags)
 	cache := cache.NewMemoryCache(1000)
 
 	// Use Prometheus metrics for production monitoring
-	metricsCollector := metrics.NewPrometheusMetricsCollector(
+	metricsCollector := coreMetrics.NewPrometheusMetricsCollector(
 		"volumeviz",
 		"scanner",
 		prometheus.Labels{"instance": "main"},
@@ -61,6 +68,7 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB) 
 		dockerService: dockerService,
 		scanner:       volumeScanner,
 		database:      database,
+		websocketHub:  hub,
 	}
 
 	router.setupMiddleware()
@@ -72,6 +80,11 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB) 
 // Engine returns the underlying Gin engine
 func (r *Router) Engine() *gin.Engine {
 	return r.engine
+}
+
+// GetWebSocketHub returns the WebSocket hub for broadcasting messages
+func (r *Router) GetWebSocketHub() *websocket.Hub {
+	return r.websocketHub
 }
 
 // setupMiddleware configures all middleware for the router
@@ -120,21 +133,29 @@ func (r *Router) setupRoutes() {
 	// API v1 routes
 	v1 := r.engine.Group("/api/v1")
 	{
+		// WebSocket endpoint
+		websocketHandler := websocket.NewHandler(r.websocketHub)
+		websocketHandler.RegisterRoutes(v1)
+
 		// Register sub-routers
 		healthRouter := health.NewRouter(r.dockerService)
 		healthRouter.RegisterRoutes(v1)
 
-		volumesRouter := volumes.NewRouter(r.dockerService)
+		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub)
 		volumesRouter.RegisterRoutes(v1)
 
 		systemRouter := system.NewRouter(r.dockerService)
 		systemRouter.RegisterRoutes(v1)
 
-		scanRouter := scan.NewRouter(r.scanner)
+		scanRouter := scan.NewRouter(r.scanner, r.websocketHub, r.database)
 		scanRouter.RegisterRoutes(v1)
 
 		databaseRouter := database.NewRouter(r.database)
 		databaseRouter.RegisterRoutes(v1)
+
+		// Initialize metrics router with database access
+		metricsRouter := metrics.New(r.database)
+		metricsRouter.RegisterRoutes(v1)
 	}
 }
 

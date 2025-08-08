@@ -1,0 +1,232 @@
+# WebSocket Endpoint Definition for VolumeViz API
+# This should be added to the main openapi.yaml file
+
+# Add to paths section:
+  /ws:
+    get:
+      tags:
+        - Real-time
+      summary: WebSocket endpoint for real-time updates
+      description: |
+        Establishes a WebSocket connection for real-time volume updates and scan progress.
+        
+        ## Message Types
+        
+        ### Client to Server:
+        - `subscribe`: Subscribe to volume updates
+        - `unsubscribe`: Unsubscribe from updates
+        - `ping`: Heartbeat
+        
+        ### Server to Client:
+        - `volume_update`: Volume data has changed
+        - `scan_progress`: Scan progress update
+        - `scan_complete`: Scan completed
+        - `scan_error`: Scan failed
+        - `pong`: Heartbeat response
+        
+        ## Usage Example:
+        ```javascript
+        const ws = new WebSocket('ws://localhost:8080/api/v1/ws');
+        
+        ws.onopen = () => {
+          // Subscribe to updates
+          ws.send(JSON.stringify({
+            type: 'subscribe',
+            channels: ['volumes', 'scans']
+          }));
+        };
+        
+        ws.onmessage = (event) => {
+          const message = JSON.parse(event.data);
+          switch(message.type) {
+            case 'volume_update':
+              // Handle volume update
+              break;
+            case 'scan_complete':
+              // Handle scan completion
+              break;
+          }
+        };
+        ```
+      operationId: connectWebSocket
+      parameters:
+        - name: Connection
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [Upgrade]
+          description: Must be "Upgrade"
+        - name: Upgrade
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [websocket]
+          description: Must be "websocket"
+        - name: Sec-WebSocket-Version
+          in: header
+          required: true
+          schema:
+            type: string
+          description: WebSocket protocol version
+        - name: Sec-WebSocket-Key
+          in: header
+          required: true
+          schema:
+            type: string
+          description: WebSocket security key
+      responses:
+        '101':
+          description: Switching Protocols - WebSocket connection established
+          headers:
+            Connection:
+              schema:
+                type: string
+                enum: [Upgrade]
+            Upgrade:
+              schema:
+                type: string
+                enum: [websocket]
+            Sec-WebSocket-Accept:
+              schema:
+                type: string
+        '400':
+          description: Bad Request - Invalid WebSocket headers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+# Add to components/schemas section:
+  WebSocketMessage:
+    type: object
+    required:
+      - type
+      - timestamp
+    properties:
+      type:
+        type: string
+        enum:
+          - subscribe
+          - unsubscribe
+          - volume_update
+          - scan_progress
+          - scan_complete
+          - scan_error
+          - ping
+          - pong
+        description: Message type
+      timestamp:
+        type: string
+        format: date-time
+        description: Message timestamp
+      data:
+        type: object
+        description: Message payload (varies by type)
+    discriminator:
+      propertyName: type
+      mapping:
+        subscribe: '#/components/schemas/SubscribeMessage'
+        volume_update: '#/components/schemas/VolumeUpdateMessage'
+        scan_progress: '#/components/schemas/ScanProgressMessage'
+        scan_complete: '#/components/schemas/ScanCompleteMessage'
+        scan_error: '#/components/schemas/ScanErrorMessage'
+
+  SubscribeMessage:
+    allOf:
+      - $ref: '#/components/schemas/WebSocketMessage'
+      - type: object
+        required:
+          - channels
+        properties:
+          channels:
+            type: array
+            items:
+              type: string
+              enum: [volumes, scans, health]
+            description: Channels to subscribe to
+
+  VolumeUpdateMessage:
+    allOf:
+      - $ref: '#/components/schemas/WebSocketMessage'
+      - type: object
+        required:
+          - volumes
+        properties:
+          volumes:
+            type: array
+            items:
+              $ref: '#/components/schemas/VolumeResponse'
+            description: Updated volume list
+
+  ScanProgressMessage:
+    allOf:
+      - $ref: '#/components/schemas/WebSocketMessage'
+      - type: object
+        required:
+          - volume_id
+          - progress
+        properties:
+          volume_id:
+            type: string
+            description: Volume being scanned
+          scan_id:
+            type: string
+            description: Scan job ID
+          progress:
+            type: integer
+            minimum: 0
+            maximum: 100
+            description: Progress percentage
+          current_size:
+            type: integer
+            format: int64
+            description: Current calculated size
+          files_processed:
+            type: integer
+            description: Number of files processed
+
+  ScanCompleteMessage:
+    allOf:
+      - $ref: '#/components/schemas/WebSocketMessage'
+      - type: object
+        required:
+          - volume_id
+          - result
+        properties:
+          volume_id:
+            type: string
+            description: Volume that was scanned
+          scan_id:
+            type: string
+            description: Scan job ID
+          result:
+            $ref: '#/components/schemas/ScanResult'
+
+  ScanErrorMessage:
+    allOf:
+      - $ref: '#/components/schemas/WebSocketMessage'
+      - type: object
+        required:
+          - volume_id
+          - error
+        properties:
+          volume_id:
+            type: string
+            description: Volume that failed to scan
+          scan_id:
+            type: string
+            description: Scan job ID
+          error:
+            type: string
+            description: Error message
+          code:
+            type: string
+            description: Error code

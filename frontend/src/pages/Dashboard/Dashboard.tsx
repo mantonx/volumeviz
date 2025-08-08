@@ -13,12 +13,15 @@ import {
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { useVolumes, useApiHealth } from '@/api/services';
+import { formatBytes } from '@/utils/formatters';
+import { useVolumes, useApiHealth, useVolumeScanning, useContainers } from '@/api/services';
 import {
+  volumesAtom,
   volumeStatsAtom,
   containerStatsAtom,
   apiStatusAtom,
   volumesLastUpdatedAtom,
+  scanResultsAtom,
 } from '@/store';
 import type { DashboardProps } from './Dashboard.types';
 
@@ -41,10 +44,23 @@ import type { DashboardProps } from './Dashboard.types';
 export const Dashboard: React.FC<DashboardProps> = () => {
   const { fetchVolumes } = useVolumes();
   const { checkHealth } = useApiHealth();
+  const { getVolumeSize } = useVolumeScanning();
+  const { containers } = useContainers(); // This will auto-fetch containers
+  const volumes = useAtomValue(volumesAtom);
   const volumeStats = useAtomValue(volumeStatsAtom);
+  const scanResults = useAtomValue(scanResultsAtom);
   const containerStats = useAtomValue(containerStatsAtom);
   const apiStatus = useAtomValue(apiStatusAtom);
   const lastUpdated = useAtomValue(volumesLastUpdatedAtom);
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('[Dashboard] Volume stats:', volumeStats);
+    console.log('[Dashboard] Scan results count:', Object.keys(scanResults).length);
+    console.log('[Dashboard] Scan results:', scanResults);
+    console.log('[Dashboard] Containers:', containers);
+    console.log('[Dashboard] Container stats:', containerStats);
+  }, [volumeStats, scanResults, containers, containerStats]);
 
   /**
    * Load initial data when dashboard mounts
@@ -53,6 +69,38 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     fetchVolumes();
     checkHealth();
   }, [fetchVolumes, checkHealth]);
+
+  /**
+   * Auto-scan volumes when they change to populate size data for dashboard
+   */
+  useEffect(() => {
+    if (volumes.length > 0) {
+      console.log('[Dashboard] Auto-scanning volumes:', volumes.length);
+      // Add a small delay to ensure volumes are properly loaded
+      const scanTimer = setTimeout(() => {
+        // Scan first few volumes to get size data for dashboard display
+        const volumesToScan = volumes.slice(0, 8); // Limit to avoid overwhelming system
+        volumesToScan.forEach((volume, index) => {
+          if (volume.id) {
+            // Stagger the scans to avoid overwhelming the backend
+            setTimeout(() => {
+              console.log('[Dashboard] Scanning volume:', volume.id);
+              // Trigger scan in background, don't wait for results
+              getVolumeSize(volume.id)
+                .then((result) => {
+                  console.log('[Dashboard] Scan result for', volume.id, ':', result);
+                })
+                .catch((error) => {
+                  console.error('[Dashboard] Scan failed for', volume.id, ':', error);
+                });
+            }, index * 500); // 500ms delay between each scan
+          }
+        });
+      }, 1000); // Initial 1 second delay
+      
+      return () => clearTimeout(scanTimer);
+    }
+  }, [volumes, getVolumeSize]);
 
   /**
    * Get appropriate status color class based on API connection state
@@ -194,10 +242,10 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 Storage Used
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {volumeStats.totalSize || '0 B'}
+                {volumeStats.totalSize ? formatBytes(volumeStats.totalSize) : '0 B'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500">
-                Across {volumeStats.total} volumes
+                Across {volumeStats.total} volumes ({Object.keys(scanResults).length} scanned)
               </p>
             </div>
             <div className="h-12 w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">

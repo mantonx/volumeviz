@@ -29,8 +29,9 @@ export const volumeApi = {
     driver?: string;
     label_key?: string;
     label_value?: string;
+    user_only?: boolean;
   }) {
-    const response = await volumeVizApi.volumes.volumesList(filters);
+    const response = await volumeVizApi.volumes.listVolumes(filters);
     return response.data as VolumeListResponse;
   },
 

@@ -2,7 +2,13 @@
 export { cn } from './class-names/cn';
 
 // Format utilities
-export * from './format';
+export * from './formatters';
+
+// Color utilities
+export * from './colors';
+
+// Visualization utilities
+export * from './visualization';
 
 // Validation utilities
 export * from './validation';

@@ -30,6 +30,13 @@ import {
   apiConnectedAtom,
 } from '@/store/atoms/api';
 
+// Container atoms
+import {
+  containersAtom,
+  containersLoadingAtom,
+  containersErrorAtom,
+} from '@/store/atoms/containers';
+
 // Import types from generated API client
 import type {
   VolumeResponse,
@@ -42,6 +49,7 @@ export interface VolumeListParams {
   driver?: string;
   label_key?: string;
   label_value?: string;
+  user_only?: boolean;
 }
 
 export interface HealthCheckResponse {
@@ -109,6 +117,9 @@ export function useVolumes() {
           queryParams.append('label_key', params.label_key);
         if (params?.label_value)
           queryParams.append('label_value', params.label_value);
+        // Default to showing only user volumes (excludes Docker infrastructure)
+        const userOnly = params?.user_only ?? true;
+        if (userOnly) queryParams.append('user_only', 'true');
 
         const queryString = queryParams.toString();
         const endpoint = `volumes${queryString ? `?${queryString}` : ''}`;
@@ -116,7 +127,8 @@ export function useVolumes() {
         const response: ApiResponse<{ volumes: VolumeResponse[] }> =
           await httpClient.get(endpoint);
 
-        setVolumes(response.data.volumes || []);
+        const volumes = response.data.volumes || [];
+        setVolumes(volumes);
         setLastUpdated(new Date());
       } catch (err) {
         const errorMessage =
@@ -397,5 +409,97 @@ export function useBulkOperations() {
 
   return {
     bulkScan,
+  };
+}
+
+/**
+ * Hook for fetching and managing container data
+ * 
+ * Since VolumeViz doesn't have a direct containers list endpoint,
+ * this service aggregates container information from volume data.
+ * 
+ * @returns Container management functions and state
+ */
+export function useContainers() {
+  const httpClient = useHttpClient();
+  const [containers, setContainers] = useAtom(containersAtom);
+  const [loading, setLoading] = useAtom(containersLoadingAtom);
+  const [error, setError] = useAtom(containersErrorAtom);
+  const volumes = useAtomValue(volumesAtom);
+
+  const fetchContainersForVolumes = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch containers for each volume
+      const allContainers = new Map(); // Use Map to deduplicate by container ID
+
+      // Fetch containers for each volume in parallel
+      const containerPromises = volumes.map(async (volume) => {
+        if (!volume.id) return [];
+        
+        try {
+          const response: ApiResponse<{
+            containers: Array<{
+              id: string;
+              name: string;
+              state: string;
+              status: string;
+              mount_path: string;
+              mount_type: string;
+              access_mode: string;
+            }>;
+          }> = await httpClient.get(`volumes/${volume.id}/containers`);
+          
+          return response.data.containers || [];
+        } catch (err) {
+          // Silently ignore individual volume errors
+          console.warn(`Failed to fetch containers for volume ${volume.id}:`, err);
+          return [];
+        }
+      });
+
+      const containerArrays = await Promise.all(containerPromises);
+      
+      // Aggregate and deduplicate containers
+      containerArrays.forEach((containerList) => {
+        containerList.forEach((container) => {
+          if (!allContainers.has(container.id)) {
+            allContainers.set(container.id, {
+              id: container.id,
+              name: container.name.replace(/^\//, ''), // Remove leading slash
+              status: container.state || 'unknown',
+              state: container.state,
+              image: '', // Not provided by volume containers endpoint
+              created: '', // Not provided by volume containers endpoint
+            });
+          }
+        });
+      });
+
+      const uniqueContainers = Array.from(allContainers.values());
+      setContainers(uniqueContainers);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch containers';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [httpClient, volumes, setContainers, setLoading, setError]);
+
+  // Auto-fetch containers when volumes change
+  useEffect(() => {
+    if (volumes.length > 0) {
+      fetchContainersForVolumes();
+    }
+  }, [volumes, fetchContainersForVolumes]);
+
+  return {
+    containers,
+    loading,
+    error,
+    fetchContainers: fetchContainersForVolumes,
   };
 }

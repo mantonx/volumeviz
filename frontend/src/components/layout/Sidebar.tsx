@@ -13,6 +13,8 @@ import {
   Layers,
   Network,
   X,
+  TrendingUp,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { volumeStatsAtom, containerStatsAtom } from '@/store';
@@ -57,10 +59,16 @@ const navigation: NavigationItem[] = [
     description: 'Network configurations',
   },
   {
-    name: 'Metrics',
-    href: '/metrics',
-    icon: BarChart3,
-    description: 'Performance analytics',
+    name: 'Real-time',
+    href: '/realtime',
+    icon: Zap,
+    description: 'Live volume monitoring',
+  },
+  {
+    name: 'Analytics',
+    href: '/historical',
+    icon: TrendingUp,
+    description: 'Historical data & trends',
   },
   {
     name: 'Logs',

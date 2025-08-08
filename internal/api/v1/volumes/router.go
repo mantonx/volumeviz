@@ -3,6 +3,7 @@ package volumes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/interfaces"
+	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // Router handles volume-related routes
@@ -11,9 +12,9 @@ type Router struct {
 }
 
 // NewRouter creates a new volume router
-func NewRouter(dockerService interfaces.DockerService) *Router {
+func NewRouter(dockerService interfaces.DockerService, hub *websocket.Hub) *Router {
 	return &Router{
-		handler: NewHandler(dockerService),
+		handler: NewHandler(dockerService, hub),
 	}
 }
 

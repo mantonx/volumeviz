@@ -377,6 +377,7 @@ func (vs *VolumeScanner) scanWithMethod(
 }
 
 // getVolumePath resolves a volume ID to its filesystem path
+// For user-mounted volumes, returns the actual device path instead of Docker internal path
 func (vs *VolumeScanner) getVolumePath(volumeID string) (string, error) {
 	ctx := context.Background()
 	volume, err := vs.dockerService.GetVolume(ctx, volumeID)
@@ -384,6 +385,22 @@ func (vs *VolumeScanner) getVolumePath(volumeID string) (string, error) {
 		return "", utils.WrapError(err, "failed to get volume info")
 	}
 	
+	// For user-mounted volumes, use the device path if available
+	if device, hasDevice := volume.Options["device"]; hasDevice {
+		// Validate the device path exists and is accessible
+		if _, err := os.Stat(device); err == nil {
+			if vs.logger != nil {
+				vs.logger.Printf("Using device path for volume %s: %s", volumeID, device)
+			}
+			return device, nil
+		} else {
+			if vs.logger != nil {
+				vs.logger.Printf("Device path %s not accessible for volume %s, falling back to mountpoint", device, volumeID)
+			}
+		}
+	}
+	
+	// Fall back to Docker internal mountpoint
 	return volume.Mountpoint, nil
 }
 

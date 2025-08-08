@@ -116,6 +116,93 @@ paths:
         '200':
           description: Application is alive
 
+  # WebSocket Endpoint for Real-time Updates
+  /ws:
+    get:
+      tags:
+        - Real-time
+      summary: WebSocket endpoint for real-time updates
+      description: |
+        Establishes a WebSocket connection for real-time volume updates and scan progress.
+        
+        ## Message Types
+        
+        ### Client to Server:
+        - `ping`: Heartbeat message
+        
+        ### Server to Client:
+        - `volume_update`: Volume data has changed
+        - `scan_progress`: Scan progress update
+        - `scan_complete`: Scan completed
+        - `scan_error`: Scan failed
+        - `pong`: Heartbeat response
+        
+        ## Usage Example:
+        ```javascript
+        const ws = new WebSocket('ws://localhost:8080/api/v1/ws');
+        
+        ws.onmessage = (event) => {
+          const message = JSON.parse(event.data);
+          switch(message.type) {
+            case 'volume_update':
+              // Handle volume update
+              break;
+            case 'scan_complete':
+              // Handle scan completion
+              break;
+          }
+        };
+        ```
+      operationId: connectWebSocket
+      parameters:
+        - name: Connection
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [Upgrade]
+          description: Must be "Upgrade"
+        - name: Upgrade
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [websocket]
+          description: Must be "websocket"
+        - name: Sec-WebSocket-Version
+          in: header
+          required: true
+          schema:
+            type: string
+          description: WebSocket protocol version
+        - name: Sec-WebSocket-Key
+          in: header
+          required: true
+          schema:
+            type: string
+          description: WebSocket security key
+      responses:
+        '101':
+          description: Switching Protocols - WebSocket connection established
+          headers:
+            Connection:
+              schema:
+                type: string
+                enum: [Upgrade]
+            Upgrade:
+              schema:
+                type: string
+                enum: [websocket]
+            Sec-WebSocket-Accept:
+              schema:
+                type: string
+        '400':
+          description: Bad Request - Invalid WebSocket headers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   # Volume Endpoints
   /volumes:
     get:
@@ -169,6 +256,14 @@ paths:
             type: integer
             minimum: 0
             default: 0
+        - name: user_only
+          in: query
+          description: Filter to only show user-mounted volumes (excludes Docker infrastructure volumes)
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: true
       responses:
         '200':
           description: List of Docker volumes
@@ -1725,7 +1820,7 @@ components:
         - mount_path
         - access_mode
 
-    VolumeStats:
+    VolumeStatistics:
       type: object
       properties:
         volume_id:
@@ -1995,9 +2090,132 @@ components:
         details: "Volume 'web-data' does not exist or is not accessible"
         correlation_id: "req-123e4567-e89b-12d3-a456-426614174000"
 
+    # WebSocket Message Schemas
+    WebSocketMessage:
+      type: object
+      required:
+        - type
+        - timestamp
+      properties:
+        type:
+          type: string
+          enum:
+            - volume_update
+            - scan_progress
+            - scan_complete
+            - scan_error
+            - ping
+            - pong
+          description: Message type
+        timestamp:
+          type: string
+          format: date-time
+          description: Message timestamp
+        data:
+          type: object
+          description: Message payload (varies by type)
+        volume_id:
+          type: string
+          description: Related volume ID (if applicable)
+      discriminator:
+        propertyName: type
+
+    VolumeUpdateMessage:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/VolumeResponse'
+              description: Updated volume list
+
+    ScanProgressMessage:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          required:
+            - volume_id
+            - data
+          properties:
+            volume_id:
+              type: string
+              description: Volume being scanned
+            data:
+              type: object
+              required:
+                - progress
+                - current_size
+                - files_processed
+              properties:
+                progress:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+                  description: Progress percentage
+                current_size:
+                  type: integer
+                  format: int64
+                  description: Current calculated size in bytes
+                files_processed:
+                  type: integer
+                  description: Number of files processed
+
+    ScanCompleteMessage:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          required:
+            - volume_id
+            - data
+          properties:
+            volume_id:
+              type: string
+              description: Volume that was scanned
+            data:
+              type: object
+              required:
+                - volume_id
+                - result
+              properties:
+                volume_id:
+                  type: string
+                  description: Volume ID
+                result:
+                  $ref: '#/components/schemas/ScanResult'
+
+    ScanErrorMessage:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          required:
+            - volume_id
+            - data
+          properties:
+            volume_id:
+              type: string
+              description: Volume that failed to scan
+            data:
+              type: object
+              required:
+                - error
+                - code
+              properties:
+                error:
+                  type: string
+                  description: Error message
+                code:
+                  type: string
+                  description: Error code
+
 tags:
   - name: Health
     description: Health check and monitoring endpoints
+  - name: Real-time
+    description: WebSocket endpoints for real-time updates and notifications
   - name: Volumes
     description: Docker volume discovery and management
   - name: Scanning

@@ -24,6 +24,7 @@ services:
       dockerfile: Dockerfile
       target: backend-builder
     container_name: volumeviz-backend
+    command: ["/app/volumeviz"]
     environment:
       DB_HOST: postgres
       DB_PORT: 5432

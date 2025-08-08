@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useAtomValue } from 'jotai';
 import { Scan, Loader2, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import {
@@ -54,7 +54,7 @@ export const ScanButton: React.FC<ScanButtonProps> = ({
   const scanResults = useAtomValue(scanResultsAtom);
   const scanError = useAtomValue(scanErrorAtom);
   const { scanVolume } = useVolumes();
-  
+
   const lastScanResult = scanResults ? scanResults[volumeId] : null;
 
   const handleScan = async () => {

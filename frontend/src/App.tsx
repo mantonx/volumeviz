@@ -5,14 +5,14 @@ import {
   Dashboard,
   VolumesPage,
   ContainersPage,
-  NetworksPage,
-  MetricsPage,
-  LogsPage,
   HealthPage,
-  SecurityPage,
   SettingsPage,
   NotFoundPage,
 } from '@/pages';
+import { 
+  RealTimeDashboard,
+  HistoricalDataDashboard 
+} from '@/components/visualization';
 
 const App: React.FC = () => {
   return (
@@ -23,13 +23,13 @@ const App: React.FC = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/volumes" element={<VolumesPage />} />
           <Route path="/containers" element={<ContainersPage />} />
-          <Route path="/networks" element={<NetworksPage />} />
-          <Route path="/metrics" element={<MetricsPage />} />
-          <Route path="/logs" element={<LogsPage />} />
+
+          {/* Visualization Routes */}
+          <Route path="/realtime" element={<RealTimeDashboard />} />
+          <Route path="/historical" element={<HistoricalDataDashboard />} />
 
           {/* System Routes */}
           <Route path="/health" element={<HealthPage />} />
-          <Route path="/security" element={<SecurityPage />} />
           <Route path="/settings" element={<SettingsPage />} />
 
           {/* 404 Route */}
