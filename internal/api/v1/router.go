@@ -54,14 +54,15 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, 
 		prometheus.Labels{"instance": "main"},
 	)
 
-	config := models.DefaultConfig()
+	// Use default scanner config for now
+	scannerConfig := models.DefaultConfig()
 
 	volumeScanner := scanner.NewVolumeScanner(
 		dockerService,
 		cache,
 		metricsCollector,
 		logger,
-		config,
+		scannerConfig,
 	)
 
 	router := &Router{

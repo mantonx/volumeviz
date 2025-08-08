@@ -1,7 +1,7 @@
-// Package main demonstrates PostgreSQL performance optimizations in VolumeViz
+// Package postgres demonstrates PostgreSQL performance optimizations in VolumeViz
 // This example shows the optimized PostgreSQL database configuration
 // and the performance settings that would be applied.
-package main
+package postgres
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/database"
 )
 
-func main() {
+func Demo() {
 	fmt.Println("🐘 PostgreSQL Performance Optimizations in VolumeViz")
 	fmt.Println("===================================================")
 

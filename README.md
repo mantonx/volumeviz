@@ -2,6 +2,11 @@
 
 [![Backend CI](https://github.com/mantonx/volumeviz/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/mantonx/volumeviz/actions/workflows/ci-backend.yml)
 [![Frontend CI](https://github.com/mantonx/volumeviz/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/mantonx/volumeviz/actions/workflows/ci-frontend.yml)
+[![Security](https://github.com/mantonx/volumeviz/actions/workflows/security.yml/badge.svg)](https://github.com/mantonx/volumeviz/actions/workflows/security.yml)
+[![CodeQL](https://github.com/mantonx/volumeviz/actions/workflows/codeql.yml/badge.svg)](https://github.com/mantonx/volumeviz/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/badge/Go-1.22+-blue.svg)](https://golang.org/)
+[![Node Version](https://img.shields.io/badge/Node-20+-green.svg)](https://nodejs.org/)
 
 VolumeViz is a Docker volume monitoring and management tool that provides real-time insights into your mounted volumes. Focus on the volumes that matter - your user-mounted data like media libraries, databases, and application storage.
 

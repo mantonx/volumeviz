@@ -1,7 +1,7 @@
-// Package main demonstrates SQLite performance optimizations in VolumeViz
+// Package sqlite demonstrates SQLite performance optimizations in VolumeViz
 // This example shows how to use the optimized SQLite database connection
 // and measure the performance improvements from the applied optimizations.
-package main
+package sqlite
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/database"
 )
 
-func main() {
+func Demo() {
 	// Create temporary directory for demo
 	tempDir, err := os.MkdirTemp("", "volumeviz_sqlite_demo")
 	if err != nil {
