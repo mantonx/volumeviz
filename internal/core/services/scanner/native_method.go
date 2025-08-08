@@ -2,10 +2,8 @@ package scanner
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
