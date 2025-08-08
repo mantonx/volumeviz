@@ -19,6 +19,7 @@ linters:
     - goconst       # Find repeated strings that could be constants
     - gocyclo       # Cyclomatic complexity
     - dupl          # Code clone detection
+    - shadow        # Shadow variable detection
 
 linters-settings:
   errcheck:
@@ -26,7 +27,8 @@ linters-settings:
     check-blank: true
   
   govet:
-    check-shadowing: true
+    # Enable all govet checks
+    enable-all: true
   
   gocyclo:
     min-complexity: 15
@@ -74,6 +76,5 @@ issues:
   max-same-issues: 0
 
 output:
-  format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
