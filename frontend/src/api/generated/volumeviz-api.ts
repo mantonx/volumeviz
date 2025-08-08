@@ -11,7 +11,7 @@
  */
 
 /** Docker volume database model with complete metadata */
-export interface VolumeType {
+export interface Volume {
   /**
    * Internal database ID
    * @example 1
@@ -80,7 +80,7 @@ export interface VolumeType {
 }
 
 /** Volume size calculation result */
-export interface VolumeSizeType {
+export interface VolumeSize {
   /** Internal database ID */
   id?: number;
   /** Associated volume identifier */
@@ -137,7 +137,7 @@ export interface VolumeSizeType {
 }
 
 /** Asynchronous scan job tracking */
-export interface ScanJobType {
+export interface ScanJob {
   /** Internal database ID */
   id?: number;
   /**
@@ -183,7 +183,7 @@ export interface ScanJobType {
 }
 
 /** Docker container database model */
-export interface ContainerType {
+export interface Container {
   /** Internal database ID */
   id?: number;
   /** Docker container identifier (unique) */
@@ -218,7 +218,7 @@ export interface ContainerType {
 }
 
 /** Container-volume mount relationship */
-export interface VolumeMountType {
+export interface VolumeMount {
   id?: number;
   /** Associated volume identifier */
   volume_id: string;
@@ -240,7 +240,7 @@ export interface VolumeMountType {
 }
 
 /** Historical volume metrics for analytics */
-export interface VolumeMetricsType {
+export interface VolumeMetrics {
   id?: number;
   volume_id: string;
   /**
@@ -276,7 +276,7 @@ export interface VolumeMetricsType {
 }
 
 /** System component health monitoring */
-export interface SystemHealthType {
+export interface SystemHealth {
   id?: number;
   /** System component name */
   component: "docker" | "database" | "filesystem" | "scanner";
@@ -299,7 +299,7 @@ export interface SystemHealthType {
 }
 
 /** Database migration history */
-export interface MigrationHistoryType {
+export interface MigrationHistory {
   id?: number;
   /**
    * Migration version identifier
@@ -325,22 +325,22 @@ export interface MigrationHistoryType {
 }
 
 /** Overall database migration status */
-export interface MigrationStatusType {
+export interface MigrationStatus {
   /** Total number of available migrations */
   total_migrations: number;
   /** Number of applied migrations */
   applied_count: number;
   /** Number of pending migrations */
   pending_count: number;
-  applied_migrations?: MigrationHistoryType[];
+  applied_migrations?: MigrationHistory[];
   /** List of pending migration versions */
   pending_migrations?: string[];
   /** Database migration history */
-  last_applied?: MigrationHistoryType | null;
+  last_applied?: MigrationHistory | null;
 }
 
 /** Database connection health status */
-export interface DatabaseHealthType {
+export interface DatabaseHealth {
   status: "healthy" | "degraded" | "unhealthy";
   /**
    * Database response time in nanoseconds
@@ -358,19 +358,19 @@ export interface DatabaseHealthType {
 }
 
 /** Comprehensive database statistics */
-export interface DatabaseStatsType {
+export interface DatabaseStats {
   /** Volume-related statistics */
-  volume_stats: VolumeStatsType;
+  volume_stats: VolumeStats;
   /** Scan job statistics */
-  scan_job_stats: ScanJobStatsType;
+  scan_job_stats: ScanJobStats;
   /** Database connection health status */
-  database_health: DatabaseHealthType;
+  database_health: DatabaseHealth;
   /** Overall database migration status */
-  migration_status: MigrationStatusType;
+  migration_status: MigrationStatus;
 }
 
 /** Volume-related statistics */
-export interface VolumeStatsType {
+export interface VolumeStats {
   /** Total number of volumes */
   total_volumes: number;
   /** Number of active volumes */
@@ -386,7 +386,7 @@ export interface VolumeStatsType {
 }
 
 /** Scan job statistics */
-export interface ScanJobStatsType {
+export interface ScanJobStats {
   /** Total number of scan jobs (last 30 days) */
   total_jobs: number;
   /** Number of queued jobs */
@@ -407,7 +407,7 @@ export interface ScanJobStatsType {
 }
 
 /** Database connection test result */
-export interface ConnectionTestResultType {
+export interface ConnectionTestResult {
   /** Whether the connection test succeeded */
   success: boolean;
   /** Human-readable test result message */
@@ -423,7 +423,7 @@ export interface ConnectionTestResultType {
 }
 
 /** Database table size and statistics information */
-export interface TableSizeInfoType {
+export interface TableSizeInfo {
   /** Database schema name */
   schema_name: string;
   /** Table name */
@@ -443,7 +443,7 @@ export interface TableSizeInfoType {
 }
 
 /** Slow query performance information */
-export interface SlowQueryInfoType {
+export interface SlowQueryInfo {
   /** SQL query text */
   query: string;
   /**
@@ -488,7 +488,7 @@ export interface SlowQueryInfoType {
   hit_percent?: number | null;
 }
 
-export interface DockerHealthType {
+export interface DockerHealth {
   /** Overall Docker daemon health status */
   status: "healthy" | "unhealthy" | "unknown";
   /** Human-readable status message */
@@ -508,7 +508,7 @@ export interface DockerHealthType {
   build_time?: string;
 }
 
-export interface HealthStatusType {
+export interface HealthStatus {
   status?: "healthy" | "unhealthy" | "degraded";
   /** @format date-time */
   timestamp?: string;
@@ -522,16 +522,16 @@ export interface HealthStatusType {
   >;
 }
 
-export interface VolumeListResponseType {
+export interface VolumeListResponse {
   /**
    * Total number of volumes
    * @min 0
    */
   total: number;
-  volumes: VolumeResponseType[];
+  volumes: VolumeResponse[];
 }
 
-export interface VolumeResponseType {
+export interface VolumeResponse {
   /** Unique volume identifier */
   id: string;
   /** Volume name */
@@ -553,7 +553,7 @@ export interface VolumeResponseType {
   scope?: string;
 }
 
-export interface VolumeContainerType {
+export interface VolumeContainer {
   /** Container ID */
   id: string;
   /** Container name */
@@ -568,7 +568,7 @@ export interface VolumeContainerType {
   access_mode: "rw" | "ro";
 }
 
-export interface VolumeStatisticsType {
+export interface VolumeStatistics {
   volume_id?: string;
   /** @format int64 */
   size_bytes?: number;
@@ -579,15 +579,15 @@ export interface VolumeStatisticsType {
   ref_count?: number;
 }
 
-export interface ScanResponseType {
+export interface ScanResponse {
   /** Volume identifier */
   volume_id: string;
   /** Whether result was served from cache */
   cached: boolean;
-  result: ScanResultType;
+  result: ScanResult;
 }
 
-export interface ScanResultType {
+export interface ScanResult {
   /** Volume identifier */
   volume_id: string;
   /**
@@ -630,7 +630,7 @@ export interface ScanResultType {
   filesystem_type?: string;
 }
 
-export interface RefreshRequestType {
+export interface RefreshRequest {
   /**
    * Preferred scan method
    * @default "diskus"
@@ -643,7 +643,7 @@ export interface RefreshRequestType {
   async?: boolean;
 }
 
-export interface AsyncScanResponseType {
+export interface AsyncScanResponse {
   /** Unique scan identifier for status tracking */
   scan_id: string;
   /** Volume identifier */
@@ -652,7 +652,7 @@ export interface AsyncScanResponseType {
   status: "started" | "queued";
 }
 
-export interface ScanProgressType {
+export interface ScanProgress {
   /** Unique scan identifier */
   scan_id: string;
   /** Volume identifier */
@@ -685,10 +685,10 @@ export interface ScanProgressType {
   /** Error message (if failed) */
   error?: string;
   /** Scan result (if completed successfully) */
-  result?: ScanResultType;
+  result?: ScanResult;
 }
 
-export interface ScanMethodType {
+export interface ScanMethod {
   /** Method name */
   name: string;
   /** Method description */
@@ -701,7 +701,7 @@ export interface ScanMethodType {
   supports_filesystem?: string[];
 }
 
-export interface SystemInfoType {
+export interface SystemInfo {
   application?: {
     name?: string;
     version?: string;
@@ -709,7 +709,7 @@ export interface SystemInfoType {
     build_time?: string;
     git_commit?: string;
   };
-  docker?: DockerHealthType;
+  docker?: DockerHealth;
   host?: {
     os?: string;
     architecture?: string;
@@ -719,7 +719,7 @@ export interface SystemInfoType {
   };
 }
 
-export interface VersionInfoType {
+export interface VersionInfo {
   version: string;
   /** @format date-time */
   build_time?: string;
@@ -728,7 +728,7 @@ export interface VersionInfoType {
 }
 
 /** @example {"error":"Volume not found","code":"VOLUME_NOT_FOUND","details":"Volume 'web-data' does not exist or is not accessible","correlation_id":"req-123e4567-e89b-12d3-a456-426614174000"} */
-export interface ErrorResponseType {
+export interface ErrorResponse {
   /** Human-readable error message */
   error: string;
   /** Machine-readable error code */
@@ -749,7 +749,7 @@ export interface ErrorResponseType {
   correlation_id?: string;
 }
 
-export interface WebSocketMessageType {
+export interface WebSocketMessage {
   /** Message type */
   type:
     | "volume_update"
@@ -769,12 +769,12 @@ export interface WebSocketMessageType {
   volume_id?: string;
 }
 
-export type VolumeUpdateMessageType = WebSocketMessageType & {
+export type VolumeUpdateMessage = WebSocketMessage & {
   /** Updated volume list */
-  data: VolumeResponseType[];
+  data: VolumeResponse[];
 };
 
-export type ScanProgressMessageType = WebSocketMessageType & {
+export type ScanProgressMessage = WebSocketMessage & {
   /** Volume being scanned */
   volume_id: string;
   data: {
@@ -794,17 +794,17 @@ export type ScanProgressMessageType = WebSocketMessageType & {
   };
 };
 
-export type ScanCompleteMessageType = WebSocketMessageType & {
+export type ScanCompleteMessage = WebSocketMessage & {
   /** Volume that was scanned */
   volume_id: string;
   data: {
     /** Volume ID */
     volume_id: string;
-    result: ScanResultType;
+    result: ScanResult;
   };
 };
 
-export type ScanErrorMessageType = WebSocketMessageType & {
+export type ScanErrorMessage = WebSocketMessage & {
   /** Volume that failed to scan */
   volume_id: string;
   data: {
@@ -1073,14 +1073,19 @@ export class HttpClient<SecurityDataType = unknown> {
  * @externalDocs https://github.com/mantonx/volumeviz/blob/main/docs/
  * @contact API Support <support@volumeviz.io> (https://github.com/mantonx/volumeviz/issues)
  *
- * Docker volume monitoring and visualization API with comprehensive volume discovery,
- * size calculation, and performance monitoring capabilities.
+ * Docker volume monitoring API with comprehensive volume discovery, size calculation,
+ * and container attachment tracking. Focus on user-mounted volumes only.
+ *
+ * ## Volume-First Approach
+ * - Automatic discovery and filtering of user-mounted volumes
+ * - Excludes Docker infrastructure volumes (container filesystems, tmp volumes)
+ * - Real-time volume usage monitoring and size calculation
+ * - Container attachment tracking for each volume
  *
  * ## Features
- * - Real-time Docker volume discovery and monitoring
- * - Pluggable volume size calculation with multiple scan methods
+ * - Multi-method volume size calculation (du, find, stat)
+ * - Asynchronous scanning with progress tracking for large volumes
  * - High-performance caching with TTL-based invalidation
- * - Async scanning with progress tracking
  * - Comprehensive Prometheus metrics integration
  * - Circuit breaker patterns for resilience
  *
@@ -1101,11 +1106,11 @@ export class Api<
      * @summary Check Docker daemon health
      * @request GET:/health/docker
      * @secure
-     * @response `200` `DockerHealthType` Docker daemon is healthy and connected
-     * @response `503` `ErrorResponseType` Docker daemon is unavailable or unhealthy
+     * @response `200` `DockerHealth` Docker daemon is healthy and connected
+     * @response `503` `ErrorResponse` Docker daemon is unavailable or unhealthy
      */
     getDockerHealth: (params: RequestParams = {}) =>
-      this.request<DockerHealthType, ErrorResponseType>({
+      this.request<DockerHealth, ErrorResponse>({
         path: `/health/docker`,
         method: "GET",
         secure: true,
@@ -1121,10 +1126,10 @@ export class Api<
      * @summary Check application health
      * @request GET:/health/app
      * @secure
-     * @response `200` `HealthStatusType` Application is healthy
+     * @response `200` `HealthStatus` Application is healthy
      */
     getAppHealth: (params: RequestParams = {}) =>
-      this.request<HealthStatusType, any>({
+      this.request<HealthStatus, any>({
         path: `/health/app`,
         method: "GET",
         secure: true,
@@ -1178,10 +1183,10 @@ export class Api<
      * @request GET:/ws
      * @secure
      * @response `101` `void` Switching Protocols - WebSocket connection established
-     * @response `400` `ErrorResponseType` Bad Request - Invalid WebSocket headers
+     * @response `400` `ErrorResponse` Bad Request - Invalid WebSocket headers
      */
     connectWebSocket: (params: RequestParams = {}) =>
-      this.request<any, void | ErrorResponseType>({
+      this.request<any, void | ErrorResponse>({
         path: `/ws`,
         method: "GET",
         secure: true,
@@ -1197,8 +1202,8 @@ export class Api<
      * @summary List Docker volumes
      * @request GET:/volumes
      * @secure
-     * @response `200` `VolumeListResponseType` List of Docker volumes
-     * @response `500` `ErrorResponseType` Internal server error
+     * @response `200` `VolumeListResponse` List of Docker volumes
+     * @response `500` `ErrorResponse` Internal server error
      */
     listVolumes: (
       query?: {
@@ -1239,7 +1244,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<VolumeListResponseType, ErrorResponseType>({
+      this.request<VolumeListResponse, ErrorResponse>({
         path: `/volumes`,
         method: "GET",
         query: query,
@@ -1256,11 +1261,11 @@ export class Api<
      * @summary Get volume details
      * @request GET:/volumes/{volumeId}
      * @secure
-     * @response `200` `VolumeResponseType` Volume details
-     * @response `404` `ErrorResponseType` Volume not found
+     * @response `200` `VolumeResponse` Volume details
+     * @response `404` `ErrorResponse` Volume not found
      */
     getVolume: (volumeId: string, params: RequestParams = {}) =>
-      this.request<VolumeResponseType, ErrorResponseType>({
+      this.request<VolumeResponse, ErrorResponse>({
         path: `/volumes/${volumeId}`,
         method: "GET",
         secure: true,
@@ -1278,7 +1283,7 @@ export class Api<
  * @secure
  * @response `200` `{
     volume_id?: string,
-    containers?: (VolumeContainerType)[],
+    containers?: (VolumeContainer)[],
 
 }` List of containers using the volume
  */
@@ -1286,7 +1291,7 @@ export class Api<
       this.request<
         {
           volume_id?: string;
-          containers?: VolumeContainerType[];
+          containers?: VolumeContainer[];
         },
         any
       >({
@@ -1305,10 +1310,10 @@ export class Api<
      * @summary Get volume statistics
      * @request GET:/volumes/{volumeId}/stats
      * @secure
-     * @response `200` `VolumeStatsType` Volume statistics
+     * @response `200` `VolumeStats` Volume statistics
      */
     getVolumeStats: (volumeId: string, params: RequestParams = {}) =>
-      this.request<VolumeStatsType, any>({
+      this.request<VolumeStats, any>({
         path: `/volumes/${volumeId}/stats`,
         method: "GET",
         secure: true,
@@ -1324,9 +1329,9 @@ export class Api<
      * @summary Get volume size
      * @request GET:/volumes/{volumeId}/size
      * @secure
-     * @response `200` `ScanResponseType` Volume size information
-     * @response `404` `ErrorResponseType` Volume not found
-     * @response `500` `ErrorResponseType` Scan failed
+     * @response `200` `ScanResponse` Volume size information
+     * @response `404` `ErrorResponse` Volume not found
+     * @response `500` `ErrorResponse` Scan failed
      */
     getVolumeSize: (
       volumeId: string,
@@ -1340,7 +1345,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScanResponseType, ErrorResponseType>({
+      this.request<ScanResponse, ErrorResponse>({
         path: `/volumes/${volumeId}/size`,
         method: "GET",
         query: query,
@@ -1357,16 +1362,16 @@ export class Api<
      * @summary Refresh volume size
      * @request POST:/volumes/{volumeId}/size/refresh
      * @secure
-     * @response `200` `ScanResponseType` Synchronous scan completed
-     * @response `202` `AsyncScanResponseType` Asynchronous scan started
-     * @response `400` `ErrorResponseType` Invalid request
+     * @response `200` `ScanResponse` Synchronous scan completed
+     * @response `202` `AsyncScanResponse` Asynchronous scan started
+     * @response `400` `ErrorResponse` Invalid request
      */
     refreshVolumeSize: (
       volumeId: string,
-      data?: RefreshRequestType,
+      data?: RefreshRequest,
       params: RequestParams = {},
     ) =>
-      this.request<ScanResponseType, ErrorResponseType>({
+      this.request<ScanResponse, ErrorResponse>({
         path: `/volumes/${volumeId}/size/refresh`,
         method: "POST",
         body: data,
@@ -1384,8 +1389,8 @@ export class Api<
      * @summary Get scan status
      * @request GET:/volumes/{volumeId}/scan/status
      * @secure
-     * @response `200` `ScanProgressType` Scan status information
-     * @response `404` `ErrorResponseType` Scan not found
+     * @response `200` `ScanProgress` Scan status information
+     * @response `404` `ErrorResponse` Scan not found
      */
     getScanStatus: (
       volumeId: string,
@@ -1398,7 +1403,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScanProgressType, ErrorResponseType>({
+      this.request<ScanProgress, ErrorResponse>({
         path: `/volumes/${volumeId}/scan/status`,
         method: "GET",
         query: query,
@@ -1453,6 +1458,27 @@ export class Api<
         ...params,
       }),
   };
+  scans = {
+    /**
+     * @description Retrieve the status of an asynchronous scan using its scan ID. This complements the volume-based endpoint.
+     *
+     * @tags Scanning
+     * @name GetScanStatusById
+     * @summary Get scan status by scan ID
+     * @request GET:/scans/{scanId}/status
+     * @secure
+     * @response `200` `ScanProgress` Scan status information
+     * @response `404` `ErrorResponse` Scan not found
+     */
+    getScanStatusById: (scanId: string, params: RequestParams = {}) =>
+      this.request<ScanProgress, ErrorResponse>({
+        path: `/scans/${scanId}/status`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+  };
   scanMethods = {
     /**
  * @description Get list of available volume scanning methods and their capabilities. Used to determine optimal scan method for different volume types.
@@ -1463,14 +1489,14 @@ export class Api<
  * @request GET:/scan-methods
  * @secure
  * @response `200` `{
-    methods?: (ScanMethodType)[],
+    methods?: (ScanMethod)[],
 
 }` Available scan methods
  */
     getScanMethods: (params: RequestParams = {}) =>
       this.request<
         {
-          methods?: ScanMethodType[];
+          methods?: ScanMethod[];
         },
         any
       >({
@@ -1490,10 +1516,10 @@ export class Api<
      * @summary Get system information
      * @request GET:/system/info
      * @secure
-     * @response `200` `SystemInfoType` System information
+     * @response `200` `SystemInfo` System information
      */
     getSystemInfo: (params: RequestParams = {}) =>
-      this.request<SystemInfoType, any>({
+      this.request<SystemInfo, any>({
         path: `/system/info`,
         method: "GET",
         secure: true,
@@ -1509,10 +1535,10 @@ export class Api<
      * @summary Get application version
      * @request GET:/system/version
      * @secure
-     * @response `200` `VersionInfoType` Version information
+     * @response `200` `VersionInfo` Version information
      */
     getSystemVersion: (params: RequestParams = {}) =>
-      this.request<VersionInfoType, any>({
+      this.request<VersionInfo, any>({
         path: `/system/version`,
         method: "GET",
         secure: true,
@@ -1529,11 +1555,11 @@ export class Api<
      * @summary Get database health
      * @request GET:/database/health
      * @secure
-     * @response `200` `DatabaseHealthType` Database is healthy
-     * @response `503` `DatabaseHealthType` Database is unhealthy
+     * @response `200` `DatabaseHealth` Database is healthy
+     * @response `503` `DatabaseHealth` Database is unhealthy
      */
     getDatabaseHealth: (params: RequestParams = {}) =>
-      this.request<DatabaseHealthType, DatabaseHealthType>({
+      this.request<DatabaseHealth, DatabaseHealth>({
         path: `/database/health`,
         method: "GET",
         secure: true,
@@ -1549,11 +1575,11 @@ export class Api<
      * @summary Test database connection
      * @request GET:/database/test-connection
      * @secure
-     * @response `200` `ConnectionTestResultType` Connection test successful
-     * @response `503` `ConnectionTestResultType` Connection test failed
+     * @response `200` `ConnectionTestResult` Connection test successful
+     * @response `503` `ConnectionTestResult` Connection test failed
      */
     testDatabaseConnection: (params: RequestParams = {}) =>
-      this.request<ConnectionTestResultType, ConnectionTestResultType>({
+      this.request<ConnectionTestResult, ConnectionTestResult>({
         path: `/database/test-connection`,
         method: "GET",
         secure: true,
@@ -1569,11 +1595,11 @@ export class Api<
      * @summary Get database statistics
      * @request GET:/database/stats
      * @secure
-     * @response `200` `DatabaseStatsType` Database statistics retrieved successfully
-     * @response `500` `ErrorResponseType` Failed to get database statistics
+     * @response `200` `DatabaseStats` Database statistics retrieved successfully
+     * @response `500` `ErrorResponse` Failed to get database statistics
      */
     getDatabaseStats: (params: RequestParams = {}) =>
-      this.request<DatabaseStatsType, ErrorResponseType>({
+      this.request<DatabaseStats, ErrorResponse>({
         path: `/database/stats`,
         method: "GET",
         secure: true,
@@ -1589,11 +1615,11 @@ export class Api<
      * @summary Get migration status
      * @request GET:/database/migrations/status
      * @secure
-     * @response `200` `MigrationStatusType` Migration status retrieved successfully
-     * @response `500` `ErrorResponseType` Failed to get migration status
+     * @response `200` `MigrationStatus` Migration status retrieved successfully
+     * @response `500` `ErrorResponse` Failed to get migration status
      */
     getMigrationStatus: (params: RequestParams = {}) =>
-      this.request<MigrationStatusType, ErrorResponseType>({
+      this.request<MigrationStatus, ErrorResponse>({
         path: `/database/migrations/status`,
         method: "GET",
         secure: true,
@@ -1609,11 +1635,11 @@ export class Api<
      * @summary Get migration history
      * @request GET:/database/migrations/history
      * @secure
-     * @response `200` `(MigrationHistoryType)[]` Migration history retrieved successfully
-     * @response `500` `ErrorResponseType` Failed to get migration history
+     * @response `200` `(MigrationHistory)[]` Migration history retrieved successfully
+     * @response `500` `ErrorResponse` Failed to get migration history
      */
     getMigrationHistory: (params: RequestParams = {}) =>
-      this.request<MigrationHistoryType[], ErrorResponseType>({
+      this.request<MigrationHistory[], ErrorResponse>({
         path: `/database/migrations/history`,
         method: "GET",
         secure: true,
@@ -1629,12 +1655,12 @@ export class Api<
      * @summary Apply pending migrations
      * @request POST:/database/migrations/apply
      * @secure
-     * @response `200` `MigrationStatusType` Migrations applied successfully
-     * @response `400` `ErrorResponseType` No pending migrations or validation error
-     * @response `500` `ErrorResponseType` Failed to apply migrations
+     * @response `200` `MigrationStatus` Migrations applied successfully
+     * @response `400` `ErrorResponse` No pending migrations or validation error
+     * @response `500` `ErrorResponse` Failed to apply migrations
      */
     applyPendingMigrations: (params: RequestParams = {}) =>
-      this.request<MigrationStatusType, ErrorResponseType>({
+      this.request<MigrationStatus, ErrorResponse>({
         path: `/database/migrations/apply`,
         method: "POST",
         secure: true,
@@ -1650,13 +1676,13 @@ export class Api<
      * @summary Rollback migration
      * @request POST:/database/migrations/{version}/rollback
      * @secure
-     * @response `200` `MigrationStatusType` Migration rolled back successfully
-     * @response `400` `ErrorResponseType` Invalid version or validation error
-     * @response `404` `ErrorResponseType` Migration not found
-     * @response `500` `ErrorResponseType` Failed to rollback migration
+     * @response `200` `MigrationStatus` Migration rolled back successfully
+     * @response `400` `ErrorResponse` Invalid version or validation error
+     * @response `404` `ErrorResponse` Migration not found
+     * @response `500` `ErrorResponse` Failed to rollback migration
      */
     rollbackMigration: (version: string, params: RequestParams = {}) =>
-      this.request<MigrationStatusType, ErrorResponseType>({
+      this.request<MigrationStatus, ErrorResponse>({
         path: `/database/migrations/${version}/rollback`,
         method: "POST",
         secure: true,
@@ -1672,11 +1698,11 @@ export class Api<
      * @summary Get table sizes
      * @request GET:/database/performance/table-sizes
      * @secure
-     * @response `200` `(TableSizeInfoType)[]` Table sizes retrieved successfully
-     * @response `500` `ErrorResponseType` Failed to get table sizes
+     * @response `200` `(TableSizeInfo)[]` Table sizes retrieved successfully
+     * @response `500` `ErrorResponse` Failed to get table sizes
      */
     getTableSizes: (params: RequestParams = {}) =>
-      this.request<TableSizeInfoType[], ErrorResponseType>({
+      this.request<TableSizeInfo[], ErrorResponse>({
         path: `/database/performance/table-sizes`,
         method: "GET",
         secure: true,
@@ -1692,8 +1718,8 @@ export class Api<
      * @summary Get slow queries
      * @request GET:/database/performance/slow-queries
      * @secure
-     * @response `200` `(SlowQueryInfoType)[]` Slow queries retrieved successfully
-     * @response `500` `ErrorResponseType` Failed to get slow queries
+     * @response `200` `(SlowQueryInfo)[]` Slow queries retrieved successfully
+     * @response `500` `ErrorResponse` Failed to get slow queries
      */
     getSlowQueries: (
       query?: {
@@ -1707,7 +1733,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<SlowQueryInfoType[], ErrorResponseType>({
+      this.request<SlowQueryInfo[], ErrorResponse>({
         path: `/database/performance/slow-queries`,
         method: "GET",
         query: query,
