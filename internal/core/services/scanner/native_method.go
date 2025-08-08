@@ -164,4 +164,3 @@ func (n *NativeMethod) Scan(ctx context.Context, path string) (*interfaces.ScanR
 		FilesystemType: "", // Will be filled by the scanner
 	}, nil
 }
-
