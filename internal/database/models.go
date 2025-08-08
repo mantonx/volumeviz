@@ -79,7 +79,7 @@ type ScanJob struct {
 	BaseModel
 	ScanID            string         `db:"scan_id" json:"scan_id"`
 	VolumeID          string         `db:"volume_id" json:"volume_id"`
-	Status            string         `db:"status" json:"status"`     // queued, running, completed, failed, cancelled
+	Status            string         `db:"status" json:"status"`     // queued, running, completed, failed, canceled
 	Progress          int            `db:"progress" json:"progress"` // 0-100
 	Method            string         `db:"method" json:"method"`
 	StartedAt         *time.Time     `db:"started_at" json:"started_at,omitempty"`

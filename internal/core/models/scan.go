@@ -98,7 +98,7 @@ const (
 	ErrorCodeResultValidationFailed = "RESULT_VALIDATION_FAILED"
 	ErrorCodePermissionDenied       = "PERMISSION_DENIED"
 	ErrorCodeVolumeNotFound         = "VOLUME_NOT_FOUND"
-	ErrorCodeScanCancelled          = "SCAN_CANCELLED"
+	ErrorCodeScanCanceled           = "SCAN_CANCELED"
 	ErrorCodeMethodUnavailable      = "METHOD_UNAVAILABLE"
 	ErrorCodePathNotFound           = "PATH_NOT_FOUND"
 	ErrorCodeInsufficientSpace      = "INSUFFICIENT_SPACE"
@@ -112,5 +112,5 @@ const (
 	ScanStatusRunning   = "running"
 	ScanStatusCompleted = "completed"
 	ScanStatusFailed    = "failed"
-	ScanStatusCancelled = "cancelled"
+	ScanStatusCanceled = "canceled"
 )

@@ -243,11 +243,11 @@ func (r *ScanJobRepository) CompleteJob(scanID string, resultID *int, errorMessa
 	return nil
 }
 
-// CancelJob marks a scan job as cancelled
+// CancelJob marks a scan job as canceled
 func (r *ScanJobRepository) CancelJob(scanID string) error {
 	query := `
 		UPDATE scan_jobs 
-		SET status = 'cancelled', 
+		SET status = 'canceled', 
 		    completed_at = CURRENT_TIMESTAMP,
 		    updated_at = CURRENT_TIMESTAMP
 		WHERE scan_id = $1 AND status IN ('queued', 'running')
@@ -277,7 +277,7 @@ func (r *ScanJobRepository) CleanupOldJobs(olderThan time.Duration) (int, error)
 
 	query := `
 		DELETE FROM scan_jobs 
-		WHERE status IN ('completed', 'failed', 'cancelled') 
+		WHERE status IN ('completed', 'failed', 'canceled') 
 		  AND completed_at < $1
 	`
 
@@ -304,7 +304,7 @@ func (r *ScanJobRepository) GetJobStats() (*ScanJobStats, error) {
 			COUNT(*) FILTER (WHERE status = 'running') as running_jobs,
 			COUNT(*) FILTER (WHERE status = 'completed') as completed_jobs,
 			COUNT(*) FILTER (WHERE status = 'failed') as failed_jobs,
-			COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled_jobs,
+			COUNT(*) FILTER (WHERE status = 'canceled') as canceled_jobs,
 			AVG(EXTRACT(EPOCH FROM (completed_at - started_at))) FILTER (WHERE status = 'completed' AND started_at IS NOT NULL AND completed_at IS NOT NULL) as avg_duration_seconds
 		FROM scan_jobs
 		WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
@@ -424,6 +424,6 @@ type ScanJobStats struct {
 	RunningJobs   int            `json:"running_jobs"`
 	CompletedJobs int            `json:"completed_jobs"`
 	FailedJobs    int            `json:"failed_jobs"`
-	CancelledJobs int            `json:"cancelled_jobs"`
+	CancelledJobs int            `json:"canceled_jobs"`
 	AvgDuration   *time.Duration `json:"avg_duration,omitempty"`
 }

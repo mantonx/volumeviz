@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/mantonx/volumeviz/internal/mocks"
@@ -266,7 +267,7 @@ func TestDockerService_GetVolume(t *testing.T) {
 func TestDockerService_GetVolumeContainers(t *testing.T) {
 	volumeName := "test-volume"
 
-	mockContainers := []types.Container{
+	mockContainers := []containertypes.Summary{
 		{
 			ID:     "container1",
 			Names:  []string{"/test-container-1"},
@@ -281,12 +282,12 @@ func TestDockerService_GetVolumeContainers(t *testing.T) {
 		},
 	}
 
-	mockContainerJSON1 := types.ContainerJSON{
-		ContainerJSONBase: &types.ContainerJSONBase{
+	mockContainerJSON1 := containertypes.InspectResponse{
+		ContainerJSONBase: &containertypes.ContainerJSONBase{
 			ID:   "container1",
 			Name: "/test-container-1",
 		},
-		Mounts: []types.MountPoint{
+		Mounts: []containertypes.MountPoint{
 			{
 				Type:        mount.TypeVolume,
 				Name:        volumeName,
@@ -296,12 +297,12 @@ func TestDockerService_GetVolumeContainers(t *testing.T) {
 		},
 	}
 
-	mockContainerJSON2 := types.ContainerJSON{
-		ContainerJSONBase: &types.ContainerJSONBase{
+	mockContainerJSON2 := containertypes.InspectResponse{
+		ContainerJSONBase: &containertypes.ContainerJSONBase{
 			ID:   "container2",
 			Name: "/test-container-2",
 		},
-		Mounts: []types.MountPoint{
+		Mounts: []containertypes.MountPoint{
 			{
 				Type:        mount.TypeVolume,
 				Name:        volumeName,
@@ -314,8 +315,8 @@ func TestDockerService_GetVolumeContainers(t *testing.T) {
 	tests := []struct {
 		name           string
 		volumeName     string
-		containers     []types.Container
-		containerJSONs map[string]types.ContainerJSON
+		containers     []containertypes.Summary
+		containerJSONs map[string]containertypes.InspectResponse
 		listErr        error
 		wantCount      int
 		wantErr        bool
@@ -324,7 +325,7 @@ func TestDockerService_GetVolumeContainers(t *testing.T) {
 			name:       "successful get containers",
 			volumeName: volumeName,
 			containers: mockContainers,
-			containerJSONs: map[string]types.ContainerJSON{
+			containerJSONs: map[string]containertypes.InspectResponse{
 				"container1": mockContainerJSON1,
 				"container2": mockContainerJSON2,
 			},
@@ -336,7 +337,7 @@ func TestDockerService_GetVolumeContainers(t *testing.T) {
 			name:           "no containers using volume",
 			volumeName:     "unused-volume",
 			containers:     mockContainers,
-			containerJSONs: map[string]types.ContainerJSON{},
+			containerJSONs: map[string]containertypes.InspectResponse{},
 			listErr:        nil,
 			wantCount:      0,
 			wantErr:        false,
@@ -355,14 +356,14 @@ func TestDockerService_GetVolumeContainers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mocks.MockDockerClient{
-				ListContainersFunc: func(ctx context.Context, filterMap map[string][]string) ([]types.Container, error) {
+				ListContainersFunc: func(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error) {
 					return tt.containers, tt.listErr
 				},
-				InspectContainerFunc: func(ctx context.Context, containerID string) (types.ContainerJSON, error) {
+				InspectContainerFunc: func(ctx context.Context, containerID string) (containertypes.InspectResponse, error) {
 					if json, ok := tt.containerJSONs[containerID]; ok {
 						return json, nil
 					}
-					return types.ContainerJSON{}, errors.New("container not found")
+					return containertypes.InspectResponse{}, errors.New("container not found")
 				},
 			}
 

@@ -76,7 +76,7 @@ func (n *NativeMethod) Scan(ctx context.Context, path string) (*interfaces.ScanR
 			return &models.ScanError{
 				Method:  "native",
 				Path:    currentPath,
-				Code:    models.ErrorCodeScanCancelled,
+				Code:    models.ErrorCodeScanCanceled,
 				Message: "scan cancelled due to timeout or context cancellation",
 				Err:     scanCtx.Err(),
 				Context: map[string]any{

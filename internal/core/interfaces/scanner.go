@@ -68,7 +68,7 @@ type ScanResult struct {
 type ScanProgress struct {
 	ScanID             string        `json:"scan_id"`
 	VolumeID           string        `json:"volume_id"`
-	Status             string        `json:"status"`   // "running", "completed", "failed", "cancelled"
+	Status             string        `json:"status"`   // "running", "completed", "failed", "canceled"
 	Progress           float64       `json:"progress"` // 0.0 to 1.0
 	FilesScanned       int           `json:"files_scanned"`
 	CurrentPath        string        `json:"current_path"`

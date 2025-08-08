@@ -71,7 +71,7 @@ type AsyncScanResponse struct {
 type ScanProgress struct {
 	ScanID             string        `json:"scan_id" example:"scan_tv-shows-readonly_1640995200"`
 	VolumeID           string        `json:"volume_id" example:"tv-shows-readonly"`
-	Status             string        `json:"status" example:"running" enums:"pending,running,completed,failed,cancelled"`
+	Status             string        `json:"status" example:"running" enums:"pending,running,completed,failed,canceled"`
 	Progress           float64       `json:"progress" example:"0.75"`
 	FilesScanned       int           `json:"files_scanned" example:"9407"`
 	CurrentPath        string        `json:"current_path" example:"/mnt/tv-shows/Season 3"`

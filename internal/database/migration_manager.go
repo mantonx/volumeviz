@@ -155,8 +155,14 @@ func (mm *MigrationManager) LoadMigrationsFromFiles() ([]Migration, error) {
 
 	// Sort by version number
 	sort.Slice(migrations, func(i, j int) bool {
-		vi, _ := strconv.Atoi(migrations[i].Version)
-		vj, _ := strconv.Atoi(migrations[j].Version)
+		vi, err := strconv.Atoi(migrations[i].Version)
+		if err != nil {
+			vi = 0 // Default to 0 if version parsing fails
+		}
+		vj, err := strconv.Atoi(migrations[j].Version)
+		if err != nil {
+			vj = 0 // Default to 0 if version parsing fails
+		}
 		return vi < vj
 	})
 
@@ -300,7 +306,12 @@ func (mm *MigrationManager) ApplyMigration(migration Migration) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			// Log rollback error but don't override the main error
+			fmt.Printf("Warning: failed to rollback transaction: %v\n", err)
+		}
+	}()
 
 	// Execute migration SQL
 	_, err = tx.Exec(migration.UpSQL)
@@ -355,7 +366,12 @@ func (mm *MigrationManager) RollbackMigration(version string) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			// Log rollback error but don't override the main error
+			fmt.Printf("Warning: failed to rollback transaction: %v\n", err)
+		}
+	}()
 
 	// Execute rollback SQL
 	_, err = tx.Exec(*m.RollbackSQL)

@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	containertypes "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/volume"
 )
 
 func TestNewClient(t *testing.T) {
@@ -135,25 +133,3 @@ func TestClient_ErrorScenarios(t *testing.T) {
 	})
 }
 
-// Test helper functions
-func createTestVolume(name string) *volume.Volume {
-	return &volume.Volume{
-		Name:       name,
-		Driver:     "local",
-		Mountpoint: "/var/lib/docker/volumes/" + name + "/_data",
-		CreatedAt:  time.Now().Format(time.RFC3339),
-		Labels:     map[string]string{"test": "true"},
-		Options:    map[string]string{},
-		Scope:      "local",
-	}
-}
-
-func createTestContainer(id, name string) containertypes.Summary {
-	return containertypes.Summary{
-		ID:      id,
-		Names:   []string{"/" + name},
-		State:   "running",
-		Status:  "Up 2 hours",
-		Created: time.Now().Unix(),
-	}
-}

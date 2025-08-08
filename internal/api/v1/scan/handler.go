@@ -356,7 +356,7 @@ func (h *Handler) handleScanError(c *gin.Context, err error) {
 		response["suggestion"] = "Check VolumeViz permissions and available disk space"
 		c.JSON(http.StatusInternalServerError, response)
 
-	case coremodels.ErrorCodeScanCancelled:
+	case coremodels.ErrorCodeScanCanceled:
 		response["suggestion"] = "Try again with a longer timeout or scan smaller directories"
 		c.JSON(http.StatusRequestTimeout, response)
 

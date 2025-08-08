@@ -150,7 +150,7 @@ func TestScanJob_Validation(t *testing.T) {
 	assert.LessOrEqual(t, job.Progress, 100)
 
 	// Test valid status values
-	validStatuses := []string{"queued", "running", "completed", "failed", "cancelled"}
+	validStatuses := []string{"queued", "running", "completed", "failed", "canceled"}
 	assert.Contains(t, validStatuses, job.Status)
 
 	// Test valid methods
