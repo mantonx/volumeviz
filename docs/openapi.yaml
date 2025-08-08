@@ -3,14 +3,19 @@ info:
   title: VolumeViz API
   version: "1.0.0"
   description: |
-    Docker volume monitoring and visualization API with comprehensive volume discovery, 
-    size calculation, and performance monitoring capabilities.
+    Docker volume monitoring API with comprehensive volume discovery, size calculation, 
+    and container attachment tracking. Focus on user-mounted volumes only.
     
-    ## Features
-    - Real-time Docker volume discovery and monitoring
-    - Pluggable volume size calculation with multiple scan methods
+    ## Volume-First Approach
+    - Automatic discovery and filtering of user-mounted volumes
+    - Excludes Docker infrastructure volumes (container filesystems, tmp volumes)
+    - Real-time volume usage monitoring and size calculation
+    - Container attachment tracking for each volume
+    
+    ## Features  
+    - Multi-method volume size calculation (du, find, stat)
+    - Asynchronous scanning with progress tracking for large volumes
     - High-performance caching with TTL-based invalidation
-    - Async scanning with progress tracking
     - Comprehensive Prometheus metrics integration
     - Circuit breaker patterns for resilience
     

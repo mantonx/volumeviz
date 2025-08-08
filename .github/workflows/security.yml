@@ -1,0 +1,127 @@
+name: Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security checks weekly
+    - cron: '0 6 * * 1'
+
+jobs:
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run TruffleHog
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+  docker-scan:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'Dockerfile') || github.event_name == 'schedule'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build Docker image
+      run: docker build -t volumeviz:test .
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'volumeviz:test'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  dependency-check:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest  
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Run govulncheck
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        govulncheck ./...
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'frontend/package-lock.json'
+
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+
+    - name: Run npm audit
+      run: |
+        cd frontend
+        npm audit --audit-level high
+
+  config-security:
+    name: Configuration Security Check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check for exposed secrets in configs
+      run: |
+        echo "Checking for potential secrets in configuration files..."
+        
+        # Check for common secret patterns
+        if grep -r "password.*=" . --include="*.env*" --include="*.yaml" --include="*.yml"; then
+          echo "⚠️  Found potential password in config files"
+          exit 1
+        fi
+        
+        if grep -r "secret.*=" . --include="*.env*" --include="*.yaml" --include="*.yml"; then  
+          echo "⚠️  Found potential secret in config files"
+          exit 1
+        fi
+        
+        echo "✅ Configuration security check passed"
+
+    - name: Validate Docker Compose security
+      run: |
+        echo "Checking Docker Compose security..."
+        
+        # Check for privileged containers
+        if grep -i "privileged.*true" docker-compose.yml; then
+          echo "⚠️  Found privileged containers in docker-compose.yml"
+        fi
+        
+        # Check for host network mode
+        if grep -i "network_mode.*host" docker-compose.yml; then
+          echo "⚠️  Found host network mode in docker-compose.yml"  
+          exit 1
+        fi
+        
+        echo "✅ Docker Compose security check passed"

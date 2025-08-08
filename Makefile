@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-build docker-run lint format migrate
+.PHONY: help build run test clean docker-build docker-run lint format migrate up down restart logs logs-api logs-web ps rebuild dev-token dev-token-admin security-check
 
 # Variables
 BINARY_NAME=volumeviz
@@ -24,6 +24,17 @@ help:
 	@echo "  migrate       - Run database migrations"
 	@echo "  deps          - Download Go dependencies"
 	@echo "  dev           - Run in development mode with hot reload"
+	@echo "  up            - Start services with docker compose up -d"
+	@echo "  down          - Stop services with docker compose down"
+	@echo "  restart       - Restart services (down + up)"
+	@echo "  logs          - Show logs from all services"
+	@echo "  logs-api      - Show logs from API service"
+	@echo "  logs-web      - Show logs from web service"
+	@echo "  ps            - Show running containers"
+	@echo "  rebuild       - Rebuild and restart services"
+	@echo "  dev-token     - Generate JWT token for development (operator role)"
+	@echo "  dev-token-admin - Generate JWT token for development (admin role)"
+	@echo "  security-check - Run basic security checks"
 
 # Build the binary
 build:
@@ -127,3 +138,65 @@ install-tools:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/air-verse/air@latest
 	@echo "Tools installed"
+
+# Docker Compose convenience commands
+up:
+	@echo "Starting VolumeViz services..."
+	docker compose up -d
+
+down:
+	@echo "Stopping VolumeViz services..."
+	docker compose down
+
+restart: down up
+	@echo "VolumeViz services restarted"
+
+logs:
+	@echo "Showing logs from all services..."
+	docker compose logs -f
+
+logs-api:
+	@echo "Showing API service logs..."
+	docker compose logs -f api
+
+logs-web:
+	@echo "Showing web service logs..."
+	docker compose logs -f web
+
+ps:
+	@echo "VolumeViz service status:"
+	docker compose ps
+
+rebuild:
+	@echo "Rebuilding and restarting VolumeViz services..."
+	docker compose down
+	docker compose build --no-cache
+	docker compose up -d
+
+# Security and development tools
+dev-token:
+	@echo "Generating JWT token for development..."
+	@if [ -z "$$AUTH_HS256_SECRET" ]; then \
+		echo "ERROR: AUTH_HS256_SECRET environment variable not set"; \
+		echo "Set it with: export AUTH_HS256_SECRET=your-secret-key-at-least-32-characters"; \
+		exit 1; \
+	fi
+	go run cmd/jwt-gen/main.go -user dev-user -role operator -duration 24h
+
+dev-token-admin:
+	@echo "Generating admin JWT token for development..."
+	@if [ -z "$$AUTH_HS256_SECRET" ]; then \
+		echo "ERROR: AUTH_HS256_SECRET environment variable not set"; \
+		echo "Set it with: export AUTH_HS256_SECRET=your-secret-key-at-least-32-characters"; \
+		exit 1; \
+	fi
+	go run cmd/jwt-gen/main.go -user admin-user -role admin -duration 24h
+
+security-check:
+	@echo "Running security checks..."
+	@echo "Checking for secrets in code..."
+	@if grep -r "password\|secret\|key" --include="*.go" --include="*.js" --include="*.ts" .; then \
+		echo "⚠️  Found potential secrets in code"; \
+	else \
+		echo "✅ No obvious secrets found"; \
+	fi

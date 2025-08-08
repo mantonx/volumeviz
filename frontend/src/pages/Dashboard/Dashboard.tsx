@@ -165,7 +165,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           Dashboard
         </h1>
         <p className="mt-1 text-gray-600 dark:text-gray-400">
-          Overview of your Docker volumes and container infrastructure
+          Overview of your Docker volumes and storage usage
         </p>
       </div>
 
@@ -363,7 +363,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           <Activity className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
           <p>Activity monitoring coming soon</p>
           <p className="text-sm">
-            Volume scans, container events, and system changes will appear here
+            Volume scans, size changes, and mount events will appear here
           </p>
         </div>
       </Card>

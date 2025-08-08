@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 	
 	"github.com/mantonx/volumeviz/internal/database"
@@ -10,9 +11,14 @@ import (
 
 // Config holds application configuration
 type Config struct {
-	Server   ServerConfig
-	Docker   DockerConfig
-	Database DatabaseConfig
+	Server    ServerConfig
+	Docker    DockerConfig
+	Database  DatabaseConfig
+	CORS      CORSConfig
+	Auth      AuthConfig
+	Security  SecurityConfig
+	RateLimit RateLimitConfig
+	TLS       TLSConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -40,6 +46,42 @@ type DatabaseConfig struct {
 	Path     string // SQLite database file path
 }
 
+// CORSConfig holds CORS-specific configuration
+type CORSConfig struct {
+	AllowedOrigins []string
+}
+
+// AuthConfig holds authentication configuration
+type AuthConfig struct {
+	Enabled bool
+	Secret  string
+}
+
+// SecurityConfig holds security headers configuration
+type SecurityConfig struct {
+	HideServerHeader    bool
+	EnableHSTS          bool
+	HSSTMaxAge          int
+	ContentTypeOptions  string
+	FrameOptions        string
+	ReferrerPolicy      string
+	ContentSecurityPolicy string
+}
+
+// RateLimitConfig holds rate limiting configuration  
+type RateLimitConfig struct {
+	Enabled bool
+	RPM     int
+	Burst   int
+}
+
+// TLSConfig holds TLS/HTTPS configuration
+type TLSConfig struct {
+	Enabled  bool
+	CertFile string
+	KeyFile  string
+}
+
 // Load loads configuration from environment variables with defaults
 func Load() *Config {
 	return &Config{
@@ -62,6 +104,37 @@ func Load() *Config {
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 			Path:     getEnv("DB_PATH", "./volumeviz.db"),
 		},
+		CORS: CORSConfig{
+			AllowedOrigins: getStringSliceEnv("ALLOW_ORIGINS", []string{"http://localhost:3000"}),
+		},
+		Auth: AuthConfig{
+			Enabled: getBoolEnv("AUTH_ENABLED", false),
+			Secret:  getEnv("AUTH_HS256_SECRET", ""),
+		},
+		Security: SecurityConfig{
+			HideServerHeader:      getBoolEnv("SECURITY_HIDE_SERVER", true),
+			EnableHSTS:            getBoolEnv("SECURITY_ENABLE_HSTS", false),
+			HSSTMaxAge:            getIntEnv("SECURITY_HSTS_MAX_AGE", 31536000), // 1 year
+			ContentTypeOptions:    getEnv("SECURITY_CONTENT_TYPE_OPTIONS", "nosniff"),
+			FrameOptions:          getEnv("SECURITY_FRAME_OPTIONS", "SAMEORIGIN"),
+			ReferrerPolicy:        getEnv("SECURITY_REFERRER_POLICY", "no-referrer"),
+			ContentSecurityPolicy: getEnv("SECURITY_CSP", "default-src 'none'; frame-ancestors 'self';"),
+		},
+		RateLimit: RateLimitConfig{
+			Enabled: getBoolEnv("RATE_LIMIT_ENABLED", true),
+			RPM:     getIntEnv("RATE_LIMIT_RPM", 60),
+			Burst:   getIntEnv("RATE_LIMIT_BURST", 30),
+		},
+		TLS: func() TLSConfig {
+			certFile := getEnv("TLS_CERT_FILE", "")
+			keyFile := getEnv("TLS_KEY_FILE", "")
+			enabled := certFile != "" && keyFile != ""
+			return TLSConfig{
+				Enabled:  enabled,
+				CertFile: certFile,
+				KeyFile:  keyFile,
+			}
+		}(),
 	}
 }
 
@@ -82,6 +155,34 @@ func getDurationEnv(key string, defaultValue time.Duration) time.Duration {
 		// Try parsing as seconds if duration parsing fails
 		if seconds, err := strconv.Atoi(value); err == nil {
 			return time.Duration(seconds) * time.Second
+		}
+	}
+	return defaultValue
+}
+
+// getStringSliceEnv gets comma-separated string environment variable as slice with default value
+func getStringSliceEnv(key string, defaultValue []string) []string {
+	if value := os.Getenv(key); value != "" {
+		return strings.Split(value, ",")
+	}
+	return defaultValue
+}
+
+// getBoolEnv gets boolean environment variable with default value
+func getBoolEnv(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		if parsed, err := strconv.ParseBool(value); err == nil {
+			return parsed
+		}
+	}
+	return defaultValue
+}
+
+// getIntEnv gets integer environment variable with default value
+func getIntEnv(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if parsed, err := strconv.Atoi(value); err == nil {
+			return parsed
 		}
 	}
 	return defaultValue

@@ -91,20 +91,32 @@ func main() {
 	defer dockerService.Close()
 
 	// Setup v1 API router
-	apiRouter := v1.NewRouter(dockerService, db)
+	apiRouter := v1.NewRouter(dockerService, db, cfg)
 	router := apiRouter.Engine()
 
 	// Create server
 	srv := &http.Server{
-		Addr:    fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port),
-		Handler: router,
+		Addr:         fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port),
+		Handler:      router,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
 	// Start server in goroutine
 	go func() {
-		log.Printf("Starting VolumeViz server on %s:%s", cfg.Server.Host, cfg.Server.Port)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Failed to start server: %v", err)
+		if cfg.TLS.Enabled {
+			log.Printf("Starting VolumeViz HTTPS server on %s:%s", cfg.Server.Host, cfg.Server.Port)
+			log.Printf("Using TLS cert: %s, key: %s", cfg.TLS.CertFile, cfg.TLS.KeyFile)
+			if err := srv.ListenAndServeTLS(cfg.TLS.CertFile, cfg.TLS.KeyFile); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("Failed to start HTTPS server: %v", err)
+			}
+		} else {
+			log.Printf("Starting VolumeViz HTTP server on %s:%s", cfg.Server.Host, cfg.Server.Port)
+			log.Println("⚠️  Running in HTTP mode. For production, enable TLS with TLS_CERT_FILE and TLS_KEY_FILE")
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("Failed to start HTTP server: %v", err)
+			}
 		}
 	}()
 

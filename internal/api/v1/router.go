@@ -13,6 +13,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
 	"github.com/mantonx/volumeviz/internal/api/v1/system"
 	"github.com/mantonx/volumeviz/internal/api/v1/volumes"
+	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
 	"github.com/mantonx/volumeviz/internal/core/models"
 	"github.com/mantonx/volumeviz/internal/core/services/cache"
@@ -37,7 +38,7 @@ type Router struct {
 }
 
 // NewRouter creates a new v1 API router
-func NewRouter(dockerService *services.DockerService, database *databasePkg.DB) *Router {
+func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, config *config.Config) *Router {
 	// Initialize WebSocket hub
 	hub := websocket.NewHub()
 	go hub.Run()
@@ -71,7 +72,7 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB) 
 		websocketHub:  hub,
 	}
 
-	router.setupMiddleware()
+	router.setupMiddleware(config)
 	router.setupRoutes()
 
 	return router
@@ -88,7 +89,7 @@ func (r *Router) GetWebSocketHub() *websocket.Hub {
 }
 
 // setupMiddleware configures all middleware for the router
-func (r *Router) setupMiddleware() {
+func (r *Router) setupMiddleware(config *config.Config) {
 	// Core middleware
 	r.engine.Use(gin.Logger())
 	r.engine.Use(gin.Recovery())
@@ -97,19 +98,45 @@ func (r *Router) setupMiddleware() {
 	r.engine.Use(middleware.ErrorHandler())
 	r.engine.Use(middleware.DockerErrorHandler())
 
-	// CORS middleware for development
-	r.engine.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	})
+	// Security middleware
+	r.engine.Use(middleware.RequestIDMiddleware())
+	r.engine.Use(middleware.SecurityHeadersMiddleware(nil)) // Use defaults
+	
+	// CORS middleware with configuration
+	corsConfig := &middleware.CORSConfig{
+		AllowedOrigins:   config.CORS.AllowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Requested-With"},
+		ExposedHeaders:   []string{"X-Request-ID"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}
+	r.engine.Use(middleware.CORSMiddleware(corsConfig))
+	
+	// Rate limiting
+	rateLimitConfig := &middleware.RateLimitConfig{
+		Enabled:   config.RateLimit.Enabled,
+		RPM:       config.RateLimit.RPM,
+		Burst:     config.RateLimit.Burst,
+		SkipPaths: []string{"/api/v1/health", "/health", "/metrics"},
+		KeyFunc:   middleware.DefaultKeyFunc,
+	}
+	r.engine.Use(middleware.RateLimitMiddleware(rateLimitConfig))
+	
+	// Authentication middleware (if enabled)
+	authConfig := &middleware.AuthConfig{
+		Enabled:      config.Auth.Enabled,
+		Secret:       config.Auth.Secret,
+		RequiredRole: middleware.RoleViewer,
+		SkipPaths: []string{
+			"/api/v1/health",
+			"/health",
+			"/metrics", 
+			"/api/docs",
+			"/openapi",
+		},
+	}
+	r.engine.Use(middleware.AuthMiddleware(authConfig))
 }
 
 // setupRoutes configures all API routes
