@@ -49,7 +49,7 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			h.clients[client] = true
 			log.Printf("Client connected. Total clients: %d", len(h.clients))
-			
+
 			// Send queued messages to newly connected client
 			for _, msg := range h.messageQueue {
 				client.sendMessage(msg)

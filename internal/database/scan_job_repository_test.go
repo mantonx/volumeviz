@@ -33,7 +33,7 @@ func createTestScanJob() *ScanJob {
 func TestScanJobRepository_Create(t *testing.T) {
 	// Test basic scan job creation
 	job := createTestScanJob()
-	
+
 	assert.NotNil(t, job)
 	assert.Equal(t, "scan_test123", job.ScanID)
 	assert.Equal(t, "vol_test123", job.VolumeID)
@@ -173,7 +173,7 @@ func TestScanJob_ProgressValidation(t *testing.T) {
 	// Edge cases
 	job.Progress = 0
 	assert.Equal(t, 0, job.Progress)
-	
+
 	job.Progress = 100
 	assert.Equal(t, 100, job.Progress)
 }
@@ -181,19 +181,19 @@ func TestScanJob_ProgressValidation(t *testing.T) {
 // Test scan job duration calculations
 func TestScanJob_DurationCalculations(t *testing.T) {
 	job := createTestScanJob()
-	
+
 	// Set start time
 	startTime := time.Now()
 	job.StartedAt = &startTime
-	
+
 	// Set completion time (1 minute later)
 	completionTime := startTime.Add(1 * time.Minute)
 	job.CompletedAt = &completionTime
-	
+
 	// Calculate duration
 	actualDuration := job.CompletedAt.Sub(*job.StartedAt)
 	assert.Equal(t, 1*time.Minute, actualDuration)
-	
+
 	// Compare with estimated duration
 	if job.EstimatedDuration != nil {
 		assert.NotEqual(t, *job.EstimatedDuration, actualDuration)
@@ -205,7 +205,7 @@ func TestScanJob_DurationCalculations(t *testing.T) {
 // Test scan job method types
 func TestScanJob_Methods(t *testing.T) {
 	methods := []string{"du", "find", "stat", "custom"}
-	
+
 	for _, method := range methods {
 		job := createTestScanJob()
 		job.Method = method

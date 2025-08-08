@@ -10,7 +10,7 @@ import (
 func TestMigrationHistory_Structure(t *testing.T) {
 	now := time.Now()
 	rollbackSQL := "DROP TABLE test_table;"
-	
+
 	migration := &MigrationHistory{
 		ID:            1,
 		Version:       "001",
@@ -40,7 +40,7 @@ func TestMigrationStatus_Structure(t *testing.T) {
 		Checksum:      "abc123",
 		ExecutionTime: 100,
 	}
-	
+
 	status := &MigrationStatus{
 		TotalMigrations:   5,
 		AppliedCount:      3,
@@ -89,7 +89,7 @@ func TestMigrationStatus_IsUpToDate(t *testing.T) {
 func TestMigration_Structure(t *testing.T) {
 	upSQL := "CREATE TABLE test (id SERIAL PRIMARY KEY);"
 	downSQL := "DROP TABLE test;"
-	
+
 	migration := &Migration{
 		Version:     "001",
 		Description: "Create test table",
@@ -105,7 +105,7 @@ func TestMigration_Structure(t *testing.T) {
 
 func TestMigration_RequiredFields(t *testing.T) {
 	upSQL := "ALTER TABLE test ADD COLUMN name VARCHAR(255);"
-	
+
 	migration := &Migration{
 		Version:     "002",
 		Description: "Add name column",
@@ -180,10 +180,10 @@ func TestMigrationValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Simple validation logic
-			isValid := tt.migration.Version != "" && 
-					 tt.migration.UpSQL != "" && 
-					 tt.migration.Description != ""
-			
+			isValid := tt.migration.Version != "" &&
+				tt.migration.UpSQL != "" &&
+				tt.migration.Description != ""
+
 			assert.Equal(t, tt.expectValid, isValid)
 		})
 	}
@@ -191,12 +191,12 @@ func TestMigrationValidation(t *testing.T) {
 
 func TestMigrationVersionComparison(t *testing.T) {
 	versions := []string{"001", "002", "010", "011", "100"}
-	
+
 	// Test that versions can be compared (as strings they sort correctly)
 	for i := 0; i < len(versions)-1; i++ {
 		current := versions[i]
 		next := versions[i+1]
-		
+
 		// String comparison should work for zero-padded versions
 		assert.True(t, current < next, "Version %s should be less than %s", current, next)
 	}
@@ -238,11 +238,11 @@ func TestMigrationStatus_Calculations(t *testing.T) {
 
 	// Verify calculations are consistent
 	assert.Equal(t, status.TotalMigrations, status.AppliedCount+status.PendingCount)
-	
+
 	// Test percentages
 	appliedPercent := float64(status.AppliedCount) / float64(status.TotalMigrations) * 100
 	pendingPercent := float64(status.PendingCount) / float64(status.TotalMigrations) * 100
-	
+
 	assert.Equal(t, 70.0, appliedPercent)
 	assert.Equal(t, 30.0, pendingPercent)
 	assert.Equal(t, 100.0, appliedPercent+pendingPercent)
@@ -272,10 +272,10 @@ func TestMigrationHistory_ExecutionTime(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.executionTime, migration.ExecutionTime)
-			
+
 			// Convert to duration for readability
 			duration := time.Duration(migration.ExecutionTime) * time.Millisecond
-			
+
 			switch {
 			case tt.executionTime < 100:
 				assert.Less(t, duration, 100*time.Millisecond)
@@ -292,7 +292,7 @@ func TestMigrationHistory_ExecutionTime(t *testing.T) {
 func BenchmarkMigrationHistory_Creation(b *testing.B) {
 	now := time.Now()
 	rollbackSQL := "DROP TABLE test;"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = &MigrationHistory{
@@ -310,7 +310,7 @@ func BenchmarkMigrationHistory_Creation(b *testing.B) {
 func BenchmarkMigrationStatus_Creation(b *testing.B) {
 	appliedMigrations := []MigrationHistory{{ID: 1, Version: "001"}}
 	pendingMigrations := []string{"002_migration.sql", "003_migration.sql"}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = &MigrationStatus{
@@ -327,7 +327,7 @@ func BenchmarkMigrationStatus_IsUpToDate(b *testing.B) {
 	status := &MigrationStatus{
 		PendingCount: 0,
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = status.IsUpToDate()

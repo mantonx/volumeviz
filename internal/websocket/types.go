@@ -12,11 +12,11 @@ const (
 	MessageTypePing MessageType = "ping"
 
 	// Server to Client
-	MessageTypePong          MessageType = "pong"
-	MessageTypeVolumeUpdate  MessageType = "volume_update"
-	MessageTypeScanProgress  MessageType = "scan_progress"
-	MessageTypeScanComplete  MessageType = "scan_complete"
-	MessageTypeScanError     MessageType = "scan_error"
+	MessageTypePong         MessageType = "pong"
+	MessageTypeVolumeUpdate MessageType = "volume_update"
+	MessageTypeScanProgress MessageType = "scan_progress"
+	MessageTypeScanComplete MessageType = "scan_complete"
+	MessageTypeScanError    MessageType = "scan_error"
 )
 
 // Message represents a WebSocket message
@@ -38,15 +38,15 @@ type VolumeData struct {
 
 // ScanProgressData represents scan progress information
 type ScanProgressData struct {
-	Progress        int   `json:"progress"`
-	CurrentSize     int64 `json:"current_size"`
-	FilesProcessed  int   `json:"files_processed"`
+	Progress       int   `json:"progress"`
+	CurrentSize    int64 `json:"current_size"`
+	FilesProcessed int   `json:"files_processed"`
 }
 
 // ScanCompleteData represents scan completion information
 type ScanCompleteData struct {
-	VolumeID      string        `json:"volume_id"`
-	Result        ScanResult    `json:"result"`
+	VolumeID string     `json:"volume_id"`
+	Result   ScanResult `json:"result"`
 }
 
 // ScanResult represents the result of a volume scan

@@ -9,9 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/interfaces"
+	coremodels "github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/utils"
 	"github.com/mantonx/volumeviz/internal/websocket"
-	coremodels "github.com/mantonx/volumeviz/internal/models"
 )
 
 // Handler handles volume-related HTTP requests
@@ -294,8 +294,8 @@ func (h *Handler) GetVolumeStats(c *gin.Context) {
 // isNotFoundError checks if the error is a "not found" type error
 func isNotFoundError(err error) bool {
 	return err != nil && (
-		// Check for common Docker "not found" error patterns
-		containsIgnoreCase(err.Error(), "not found") ||
+	// Check for common Docker "not found" error patterns
+	containsIgnoreCase(err.Error(), "not found") ||
 		containsIgnoreCase(err.Error(), "no such") ||
 		containsIgnoreCase(err.Error(), "doesn't exist"))
 }
@@ -310,13 +310,13 @@ func containsIgnoreCase(s, substr string) bool {
 // Excludes Docker infrastructure volumes and anonymous volumes
 func filterUserVolumes(volumes []coremodels.Volume) []coremodels.Volume {
 	var userVolumes []coremodels.Volume
-	
+
 	for _, vol := range volumes {
 		if isUserVolume(vol) {
 			userVolumes = append(userVolumes, vol)
 		}
 	}
-	
+
 	return userVolumes
 }
 
@@ -338,19 +338,19 @@ func isUserVolume(vol coremodels.Volume) bool {
 		// If it has a device path that's not Docker internal, it's likely user-mounted
 		return true
 	}
-	
+
 	// Check for named volumes that look like user volumes
 	// User volumes often have descriptive names like "tv-shows-readonly", "media-storage"
 	// Exclude Docker infrastructure patterns
 	if isInfrastructureVolume(vol.Name) {
 		return false
 	}
-	
+
 	// Check if it's an anonymous volume (Docker generates random hex names)
 	if isAnonymousVolume(vol.Name) {
 		return false
 	}
-	
+
 	// If it's a named volume (not anonymous) and not infrastructure, it's likely user-created
 	return len(vol.Name) > 0
 }
@@ -370,14 +370,14 @@ func isInfrastructureVolume(name string) bool {
 		"nginx_",
 		"traefik_",
 	}
-	
+
 	lowerName := strings.ToLower(name)
 	for _, pattern := range infrastructurePatterns {
 		if strings.Contains(lowerName, pattern) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -394,7 +394,7 @@ func isAnonymousVolume(name string) bool {
 		}
 		return true
 	}
-	
+
 	// Some anonymous volumes might be shorter hex strings
 	if len(name) >= 12 && len(name) <= 64 {
 		// Check if it looks like a hex string with no meaningful name parts
@@ -410,6 +410,6 @@ func isAnonymousVolume(name string) bool {
 			return true
 		}
 	}
-	
+
 	return false
 }

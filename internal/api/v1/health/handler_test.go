@@ -117,22 +117,22 @@ func TestHandler_GetAppHealth(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
-		name           string
+		name            string
 		dockerAvailable bool
-		expectedStatus int
-		expectedHealth string
+		expectedStatus  int
+		expectedHealth  string
 	}{
 		{
-			name:           "all services healthy",
+			name:            "all services healthy",
 			dockerAvailable: true,
-			expectedStatus: http.StatusOK,
-			expectedHealth: "healthy",
+			expectedStatus:  http.StatusOK,
+			expectedHealth:  "healthy",
 		},
 		{
-			name:           "docker unavailable",
+			name:            "docker unavailable",
 			dockerAvailable: false,
-			expectedStatus: http.StatusPartialContent,
-			expectedHealth: "degraded",
+			expectedStatus:  http.StatusPartialContent,
+			expectedHealth:  "degraded",
 		},
 	}
 
@@ -167,22 +167,22 @@ func TestHandler_GetReadiness(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
-		name           string
+		name            string
 		dockerAvailable bool
-		expectedStatus int
-		expectedReady  bool
+		expectedStatus  int
+		expectedReady   bool
 	}{
 		{
-			name:           "ready",
+			name:            "ready",
 			dockerAvailable: true,
-			expectedStatus: http.StatusOK,
-			expectedReady:  true,
+			expectedStatus:  http.StatusOK,
+			expectedReady:   true,
 		},
 		{
-			name:           "not ready",
+			name:            "not ready",
 			dockerAvailable: false,
-			expectedStatus: http.StatusServiceUnavailable,
-			expectedReady:  false,
+			expectedStatus:  http.StatusServiceUnavailable,
+			expectedReady:   false,
 		},
 	}
 

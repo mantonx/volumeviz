@@ -32,21 +32,21 @@ func (r *VolumeMetricsRepository) SaveMetrics(ctx context.Context, volumeID stri
 			}
 		}
 	}()
-	
+
 	now := time.Now()
-	
+
 	// Calculate growth rate from previous metric (within transaction)
 	growthRate, err := r.calculateGrowthRateInTx(ctx, tx, volumeID, totalSize)
 	if err != nil {
 		return fmt.Errorf("failed to calculate growth rate: %w", err)
 	}
-	
+
 	// Count containers using this volume (within transaction)
 	containerCount, err := r.getContainerCountInTx(ctx, tx, volumeID)
 	if err != nil {
 		return fmt.Errorf("failed to get container count: %w", err)
 	}
-	
+
 	// Insert the metrics record
 	query := `
 		INSERT INTO volume_metrics (
@@ -63,7 +63,7 @@ func (r *VolumeMetricsRepository) SaveMetrics(ctx context.Context, volumeID stri
 			container_count = EXCLUDED.container_count,
 			updated_at = EXCLUDED.updated_at
 	`
-	
+
 	_, err = tx.ExecContext(ctx, query,
 		volumeID,
 		now,
@@ -79,12 +79,12 @@ func (r *VolumeMetricsRepository) SaveMetrics(ctx context.Context, volumeID stri
 	if err != nil {
 		return fmt.Errorf("failed to insert metrics: %w", err)
 	}
-	
+
 	// Commit transaction
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -99,18 +99,18 @@ func (r *VolumeMetricsRepository) GetMetrics(ctx context.Context, volumeID strin
 		ORDER BY metric_timestamp DESC
 		LIMIT ?
 	`
-	
+
 	rows, err := r.db.QueryContext(ctx, query, volumeID, startTime, endTime, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var metrics []VolumeMetrics
 	for rows.Next() {
 		var m VolumeMetrics
 		var growthRate *float64
-		
+
 		err := rows.Scan(
 			&m.ID,
 			&m.CreatedAt,
@@ -127,11 +127,11 @@ func (r *VolumeMetricsRepository) GetMetrics(ctx context.Context, volumeID strin
 		if err != nil {
 			return nil, err
 		}
-		
+
 		m.GrowthRate = growthRate
 		metrics = append(metrics, m)
 	}
-	
+
 	return metrics, rows.Err()
 }
 
@@ -140,11 +140,11 @@ func (r *VolumeMetricsRepository) GetTrends(ctx context.Context, volumeIDs []str
 	if len(volumeIDs) == 0 {
 		return map[string]TrendData{}, nil
 	}
-	
+
 	// Build query with IN clause for multiple volume IDs
 	placeholders := ""
 	args := make([]interface{}, 0, len(volumeIDs)+1)
-	
+
 	for i, id := range volumeIDs {
 		if i > 0 {
 			placeholders += ","
@@ -153,7 +153,7 @@ func (r *VolumeMetricsRepository) GetTrends(ctx context.Context, volumeIDs []str
 		args = append(args, id)
 	}
 	args = append(args, time.Now().Add(-time.Duration(days)*24*time.Hour))
-	
+
 	query := `
 		SELECT volume_id,
 		       AVG(growth_rate) as avg_growth_rate,
@@ -164,18 +164,18 @@ func (r *VolumeMetricsRepository) GetTrends(ctx context.Context, volumeIDs []str
 		WHERE volume_id IN (` + placeholders + `) AND metric_timestamp >= ?
 		GROUP BY volume_id
 	`
-	
+
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	trends := make(map[string]TrendData)
 	for rows.Next() {
 		var volumeID string
 		var trend TrendData
-		
+
 		err := rows.Scan(
 			&volumeID,
 			&trend.AvgGrowthRate,
@@ -186,15 +186,15 @@ func (r *VolumeMetricsRepository) GetTrends(ctx context.Context, volumeIDs []str
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Calculate additional trend metrics
 		trend.VolumeID = volumeID
 		trend.GrowthTrend = r.classifyTrend(trend.AvgGrowthRate)
 		trend.TotalGrowth = trend.MaxSize - trend.MinSize
-		
+
 		trends[volumeID] = trend
 	}
-	
+
 	return trends, rows.Err()
 }
 
@@ -206,16 +206,16 @@ func (r *VolumeMetricsRepository) GetAllActiveVolumeIDs(ctx context.Context) ([]
 		WHERE metric_timestamp >= ?
 		ORDER BY volume_id
 	`
-	
+
 	// Consider volumes active if they have metrics in the last 7 days
 	since := time.Now().Add(-7 * 24 * time.Hour)
-	
+
 	rows, err := r.db.QueryContext(ctx, query, since)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var volumeIDs []string
 	for rows.Next() {
 		var volumeID string
@@ -224,7 +224,7 @@ func (r *VolumeMetricsRepository) GetAllActiveVolumeIDs(ctx context.Context) ([]
 		}
 		volumeIDs = append(volumeIDs, volumeID)
 	}
-	
+
 	return volumeIDs, rows.Err()
 }
 
@@ -241,27 +241,27 @@ func (r *VolumeMetricsRepository) calculateGrowthRateInTx(ctx context.Context, t
 		ORDER BY metric_timestamp DESC
 		LIMIT 1
 	`
-	
+
 	var prevSize int64
 	var prevTime time.Time
-	
+
 	err := tx.QueryRowContext(ctx, query, volumeID).Scan(&prevSize, &prevTime)
 	if err != nil {
 		// No previous data, return nil (this is not an error)
 		return nil, nil
 	}
-	
+
 	// Calculate growth rate in bytes per day
 	timeDiff := time.Since(prevTime)
 	if timeDiff.Hours() < 1 {
 		// Too soon to calculate meaningful growth rate
 		return nil, nil
 	}
-	
+
 	sizeDiff := currentSize - prevSize
 	daysElapsed := timeDiff.Hours() / 24
 	growthRate := float64(sizeDiff) / daysElapsed
-	
+
 	return &growthRate, nil
 }
 
@@ -272,13 +272,13 @@ func (r *VolumeMetricsRepository) getContainerCountInTx(ctx context.Context, tx 
 		FROM volume_mounts
 		WHERE volume_id = ? AND is_active = true
 	`
-	
+
 	var count int
 	err := tx.QueryRowContext(ctx, query, volumeID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to query container count: %w", err)
 	}
-	
+
 	return count, nil
 }
 
@@ -293,27 +293,27 @@ func (r *VolumeMetricsRepository) calculateGrowthRate(ctx context.Context, volum
 		ORDER BY metric_timestamp DESC
 		LIMIT 1
 	`
-	
+
 	var prevSize int64
 	var prevTime time.Time
-	
+
 	err := r.db.QueryRowContext(ctx, query, volumeID).Scan(&prevSize, &prevTime)
 	if err != nil {
 		// No previous data, return nil
 		return nil
 	}
-	
+
 	// Calculate growth rate in bytes per day
 	timeDiff := time.Since(prevTime)
 	if timeDiff.Hours() < 1 {
 		// Too soon to calculate meaningful growth rate
 		return nil
 	}
-	
+
 	sizeDiff := currentSize - prevSize
 	daysElapsed := timeDiff.Hours() / 24
 	growthRate := float64(sizeDiff) / daysElapsed
-	
+
 	return &growthRate
 }
 
@@ -324,13 +324,13 @@ func (r *VolumeMetricsRepository) getContainerCount(ctx context.Context, volumeI
 		FROM volume_mounts
 		WHERE volume_id = ? AND is_active = true
 	`
-	
+
 	var count int
 	err := r.db.QueryRowContext(ctx, query, volumeID).Scan(&count)
 	if err != nil {
 		return 0
 	}
-	
+
 	return count
 }
 
@@ -338,9 +338,9 @@ func (r *VolumeMetricsRepository) classifyTrend(avgGrowthRate *float64) string {
 	if avgGrowthRate == nil {
 		return "unknown"
 	}
-	
+
 	rate := *avgGrowthRate
-	
+
 	if rate > 50*1024*1024 { // > 50MB per day
 		return "rapidly_increasing"
 	} else if rate > 10*1024*1024 { // > 10MB per day

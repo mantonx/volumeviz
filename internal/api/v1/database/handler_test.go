@@ -3,8 +3,8 @@ package database
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/mantonx/volumeviz/internal/database"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConnectionTestResult_Structure(t *testing.T) {

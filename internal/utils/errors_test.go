@@ -7,7 +7,7 @@ import (
 
 func TestWrapError(t *testing.T) {
 	baseErr := errors.New("base error")
-	
+
 	tests := []struct {
 		name     string
 		err      error
@@ -18,7 +18,7 @@ func TestWrapError(t *testing.T) {
 		{"nil error", nil, "context", "", true},
 		{"wrap error", baseErr, "context", "context: base error", false},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := WrapError(tt.err, tt.msg)
@@ -34,14 +34,14 @@ func TestWrapError(t *testing.T) {
 
 func TestWrapErrorf(t *testing.T) {
 	baseErr := errors.New("base error")
-	
+
 	result := WrapErrorf(baseErr, "context %d %s", 123, "test")
 	expected := "context 123 test: base error"
-	
+
 	if result.Error() != expected {
 		t.Errorf("WrapErrorf = %q, want %q", result.Error(), expected)
 	}
-	
+
 	// Test nil error
 	if WrapErrorf(nil, "context") != nil {
 		t.Error("WrapErrorf should return nil for nil error")
@@ -61,7 +61,7 @@ func TestIsNotFound(t *testing.T) {
 		{"contains does not exist", errors.New("table does not exist"), true},
 		{"other error", errors.New("connection timeout"), false},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := IsNotFound(tt.err)
@@ -75,7 +75,7 @@ func TestIsNotFound(t *testing.T) {
 func TestFirstError(t *testing.T) {
 	err1 := errors.New("first")
 	err2 := errors.New("second")
-	
+
 	tests := []struct {
 		name     string
 		errs     []error
@@ -86,7 +86,7 @@ func TestFirstError(t *testing.T) {
 		{"first is error", []error{err1, nil, err2}, err1},
 		{"empty list", []error{}, nil},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := FirstError(tt.errs...)
@@ -99,7 +99,7 @@ func TestFirstError(t *testing.T) {
 
 func TestErrorList(t *testing.T) {
 	el := &ErrorList{}
-	
+
 	// Test empty list
 	if el.HasErrors() {
 		t.Error("Empty ErrorList should not have errors")
@@ -110,15 +110,15 @@ func TestErrorList(t *testing.T) {
 	if el.Error() != "" {
 		t.Error("Empty ErrorList.Error() should return empty string")
 	}
-	
+
 	// Add errors
 	err1 := errors.New("error 1")
 	err2 := errors.New("error 2")
-	
+
 	el.Add(nil) // should be ignored
 	el.Add(err1)
 	el.Add(err2)
-	
+
 	if !el.HasErrors() {
 		t.Error("ErrorList should have errors after adding")
 	}
@@ -128,13 +128,13 @@ func TestErrorList(t *testing.T) {
 	if len(el.Errors) != 2 {
 		t.Errorf("Expected 2 errors, got %d", len(el.Errors))
 	}
-	
+
 	// Test error message
 	msg := el.Error()
 	if msg != "multiple errors (2): error 1" {
 		t.Errorf("Error() = %q, want %q", msg, "multiple errors (2): error 1")
 	}
-	
+
 	// Test single error
 	el2 := &ErrorList{}
 	el2.Add(err1)

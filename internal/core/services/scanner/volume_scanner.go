@@ -20,16 +20,16 @@ import (
 // VolumeScanner implements the main volume scanning service
 // Uses multiple scanning methods with intelligent fallback
 type VolumeScanner struct {
-	methods         []interfaces.ScanMethod
-	cache           interfaces.Cache
-	metrics         interfaces.MetricsCollector
-	logger          *log.Logger
-	dockerService   *services.DockerService
-	semaphore       chan struct{} // Limit concurrent scans
-	config          models.Config
-	activeScans     map[string]*interfaces.ScanProgress // Track active scans by scan ID
-	volumeToScan    map[string]string                   // Map volume ID to active scan ID
-	scanMutex       sync.RWMutex                        // Protect scan maps
+	methods       []interfaces.ScanMethod
+	cache         interfaces.Cache
+	metrics       interfaces.MetricsCollector
+	logger        *log.Logger
+	dockerService *services.DockerService
+	semaphore     chan struct{} // Limit concurrent scans
+	config        models.Config
+	activeScans   map[string]*interfaces.ScanProgress // Track active scans by scan ID
+	volumeToScan  map[string]string                   // Map volume ID to active scan ID
+	scanMutex     sync.RWMutex                        // Protect scan maps
 }
 
 // NewVolumeScanner creates a new volume scanner instance
@@ -109,7 +109,7 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 	for _, method := range vs.methods {
 		if !method.Available() {
 			if vs.logger != nil {
-				vs.logger.Printf("Scan method %s not available for volume %s", 
+				vs.logger.Printf("Scan method %s not available for volume %s",
 					method.Name(), volumeID)
 			}
 			continue
@@ -123,7 +123,7 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 		result, err := vs.scanWithMethod(ctx, method, volumeID, volumePath)
 		if err != nil {
 			if vs.logger != nil {
-				vs.logger.Printf("Scan method %s failed for volume %s: %v", 
+				vs.logger.Printf("Scan method %s failed for volume %s: %v",
 					method.Name(), volumeID, err)
 			}
 			lastErr = err
@@ -137,7 +137,7 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 		}
 
 		vs.metrics.ScanCompleted(volumeID, method.Name(), result.Duration, result.TotalSize)
-		
+
 		// Get volume metadata for enhanced metrics
 		if volume, err := vs.dockerService.GetVolume(context.Background(), volumeID); err == nil {
 			vs.metrics.UpdateVolumeMetrics(
@@ -150,7 +150,7 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 				method.Name(),
 			)
 		}
-		
+
 		if vs.logger != nil {
 			vs.logger.Printf("Volume scan completed: volume=%s method=%s size=%d duration=%v",
 				volumeID, method.Name(), result.TotalSize, result.Duration)
@@ -175,7 +175,7 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 // ScanVolumeAsync starts an async scan and returns a scan ID
 func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (string, error) {
 	scanID := fmt.Sprintf("scan_%s_%d", volumeID, time.Now().Unix())
-	
+
 	// Initialize scan progress
 	progress := &interfaces.ScanProgress{
 		ScanID:             scanID,
@@ -189,24 +189,24 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 		StartedAt:          time.Now(),
 		Error:              "",
 	}
-	
+
 	vs.scanMutex.Lock()
 	vs.activeScans[scanID] = progress
 	vs.volumeToScan[volumeID] = scanID
 	vs.scanMutex.Unlock()
-	
+
 	// Start the scan in background
 	go func() {
 		// Update status to running
 		vs.scanMutex.Lock()
 		progress.Status = models.ScanStatusRunning
 		vs.scanMutex.Unlock()
-		
+
 		result, err := vs.ScanVolume(context.Background(), volumeID)
-		
+
 		vs.scanMutex.Lock()
 		defer vs.scanMutex.Unlock()
-		
+
 		if err != nil {
 			progress.Status = models.ScanStatusFailed
 			progress.Error = err.Error()
@@ -218,7 +218,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 			progress.Progress = 1.0
 			progress.Method = result.Method
 		}
-		
+
 		// Clean up after some time (keep completed scans for a while)
 		go func() {
 			time.Sleep(5 * time.Minute)
@@ -228,7 +228,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 			vs.scanMutex.Unlock()
 		}()
 	}()
-	
+
 	return scanID, nil
 }
 
@@ -236,12 +236,12 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 func (vs *VolumeScanner) GetScanProgress(scanID string) (*interfaces.ScanProgress, error) {
 	vs.scanMutex.RLock()
 	defer vs.scanMutex.RUnlock()
-	
+
 	progress, exists := vs.activeScans[scanID]
 	if !exists {
 		return nil, fmt.Errorf("scan not found: %s", scanID)
 	}
-	
+
 	// Return a copy to avoid race conditions
 	progressCopy := *progress
 	return &progressCopy, nil
@@ -251,17 +251,17 @@ func (vs *VolumeScanner) GetScanProgress(scanID string) (*interfaces.ScanProgres
 func (vs *VolumeScanner) GetScanProgressByVolume(volumeID string) (*interfaces.ScanProgress, error) {
 	vs.scanMutex.RLock()
 	defer vs.scanMutex.RUnlock()
-	
+
 	scanID, exists := vs.volumeToScan[volumeID]
 	if !exists {
 		return nil, fmt.Errorf("no active scan found for volume: %s", volumeID)
 	}
-	
+
 	progress, exists := vs.activeScans[scanID]
 	if !exists {
 		return nil, fmt.Errorf("scan progress not found for volume: %s", volumeID)
 	}
-	
+
 	// Return a copy to avoid race conditions
 	progressCopy := *progress
 	return &progressCopy, nil
@@ -270,11 +270,11 @@ func (vs *VolumeScanner) GetScanProgressByVolume(volumeID string) (*interfaces.S
 // GetAvailableMethods returns information about available scan methods
 func (vs *VolumeScanner) GetAvailableMethods() []interfaces.MethodInfo {
 	methods := make([]interfaces.MethodInfo, len(vs.methods))
-	
+
 	for i, method := range vs.methods {
 		var performance, accuracy string
 		var features []string
-		
+
 		switch method.Name() {
 		case "diskus":
 			performance = "fast"
@@ -289,7 +289,7 @@ func (vs *VolumeScanner) GetAvailableMethods() []interfaces.MethodInfo {
 			accuracy = "high"
 			features = []string{"detailed_stats", "progress_reporting", "always_available"}
 		}
-		
+
 		methods[i] = interfaces.MethodInfo{
 			Name:        method.Name(),
 			Available:   method.Available(),
@@ -299,7 +299,7 @@ func (vs *VolumeScanner) GetAvailableMethods() []interfaces.MethodInfo {
 			Features:    features,
 		}
 	}
-	
+
 	return methods
 }
 
@@ -310,8 +310,8 @@ func (vs *VolumeScanner) ClearCache(volumeID string) error {
 
 // scanWithMethod executes a scan using a specific method
 func (vs *VolumeScanner) scanWithMethod(
-	ctx context.Context, 
-	method interfaces.ScanMethod, 
+	ctx context.Context,
+	method interfaces.ScanMethod,
 	volumeID, path string,
 ) (*interfaces.ScanResult, error) {
 	start := time.Now()
@@ -384,7 +384,7 @@ func (vs *VolumeScanner) getVolumePath(volumeID string) (string, error) {
 	if err != nil {
 		return "", utils.WrapError(err, "failed to get volume info")
 	}
-	
+
 	// For user-mounted volumes, use the device path if available
 	if device, hasDevice := volume.Options["device"]; hasDevice {
 		// Validate the device path exists and is accessible
@@ -399,7 +399,7 @@ func (vs *VolumeScanner) getVolumePath(volumeID string) (string, error) {
 			}
 		}
 	}
-	
+
 	// Fall back to Docker internal mountpoint
 	return volume.Mountpoint, nil
 }
@@ -410,11 +410,11 @@ func (vs *VolumeScanner) validatePath(path string) error {
 	if err != nil {
 		return utils.WrapError(err, "path not accessible")
 	}
-	
+
 	if !info.IsDir() {
 		return fmt.Errorf("path is not a directory")
 	}
-	
+
 	return nil
 }
 
@@ -423,22 +423,22 @@ func (vs *VolumeScanner) validateResult(result *interfaces.ScanResult) error {
 	if result.TotalSize < 0 {
 		return fmt.Errorf("invalid total size: %d", result.TotalSize)
 	}
-	
+
 	if result.FileCount < 0 {
 		return fmt.Errorf("invalid file count: %d", result.FileCount)
 	}
-	
+
 	if result.Method == "" {
 		return fmt.Errorf("method not specified")
 	}
-	
+
 	return nil
 }
 
 // wrapScanError wraps an error with additional context
 func (vs *VolumeScanner) wrapScanError(
-	err error, 
-	volumeID, method, path string, 
+	err error,
+	volumeID, method, path string,
 	duration time.Duration,
 ) error {
 	// If it's already a ScanError, return it as-is
@@ -463,14 +463,14 @@ func (vs *VolumeScanner) wrapScanError(
 func (vs *VolumeScanner) calculateCacheTTL(result *interfaces.ScanResult) time.Duration {
 	// Base TTL from config
 	baseTTL := vs.config.Cache.TTL
-	
+
 	// Adjust based on size (larger volumes cached longer)
 	if result.TotalSize > 100*1024*1024*1024 { // >100GB
 		return baseTTL * 2
 	} else if result.TotalSize < 1024*1024*1024 { // <1GB
 		return baseTTL / 2
 	}
-	
+
 	return baseTTL
 }
 
@@ -517,12 +517,12 @@ func (vs *VolumeScanner) classifyError(err error) string {
 	if err == nil {
 		return "success"
 	}
-	
+
 	// Check for specific error types
 	if scanErr, ok := err.(*models.ScanError); ok {
 		return scanErr.Code
 	}
-	
+
 	// Classify based on error message patterns
 	errMsg := err.Error()
 	switch {

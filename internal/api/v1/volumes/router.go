@@ -24,7 +24,7 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	{
 		// List and filter volumes
 		volumes.GET("", r.handler.ListVolumes)
-		
+
 		// Volume operations
 		volumes.GET("/:id", r.handler.GetVolume)
 		volumes.GET("/:id/containers", r.handler.GetVolumeContainers)

@@ -107,7 +107,7 @@ func CORSMiddleware(config *CORSConfig) gin.HandlerFunc {
 			// Check if the request method is allowed
 			requestedMethod := c.Request.Header.Get("Access-Control-Request-Method")
 			methodAllowed := false
-			
+
 			if requestedMethod != "" {
 				for _, allowedMethod := range config.AllowedMethods {
 					if allowedMethod == requestedMethod {
@@ -120,20 +120,20 @@ func CORSMiddleware(config *CORSConfig) gin.HandlerFunc {
 			// Check if requested headers are allowed
 			requestedHeaders := c.Request.Header.Get("Access-Control-Request-Headers")
 			headersAllowed := true
-			
+
 			if requestedHeaders != "" {
 				headers := strings.Split(requestedHeaders, ",")
 				for _, header := range headers {
 					header = strings.TrimSpace(header)
 					headerAllowed := false
-					
+
 					for _, allowedHeader := range config.AllowedHeaders {
 						if strings.EqualFold(allowedHeader, header) {
 							headerAllowed = true
 							break
 						}
 					}
-					
+
 					if !headerAllowed {
 						headersAllowed = false
 						break

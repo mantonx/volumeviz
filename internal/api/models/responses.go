@@ -8,8 +8,8 @@ import (
 
 // ErrorResponse represents an API error response
 type ErrorResponse struct {
-	Error   string            `json:"error" example:"Volume not found"`
-	Code    string            `json:"code,omitempty" example:"VOLUME_NOT_FOUND"`
+	Error   string         `json:"error" example:"Volume not found"`
+	Code    string         `json:"code,omitempty" example:"VOLUME_NOT_FOUND"`
 	Details map[string]any `json:"details,omitempty"`
 } // @name ErrorResponse
 
@@ -91,7 +91,7 @@ type BulkScanRequest struct {
 // BulkScanResponse represents the response from a bulk scan operation
 type BulkScanResponse struct {
 	ScanID   string            `json:"scan_id,omitempty" example:"bulk_scan_1640995200"`
-	Results  map[string]any `json:"results"`
+	Results  map[string]any    `json:"results"`
 	Failed   map[string]string `json:"failed,omitempty"`
 	Total    int               `json:"total" example:"2"`
 	Success  int               `json:"success" example:"1"`
@@ -137,7 +137,7 @@ type SystemInfoResponse struct {
 
 // VolumeDetailResponse represents volume details with containers
 type VolumeDetailResponse struct {
-	Volume     VolumeResponse      `json:"volume"`
+	Volume     VolumeResponse    `json:"volume"`
 	Containers []VolumeContainer `json:"containers"`
 } // @name VolumeDetailResponse
 

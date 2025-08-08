@@ -17,7 +17,7 @@ func RequestIDMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Check if request ID is already provided by client or proxy
 		requestID := c.GetHeader(RequestIDHeader)
-		
+
 		// If not provided, generate a new UUID
 		if requestID == "" {
 			requestID = uuid.New().String()

@@ -9,18 +9,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	coremodels "github.com/mantonx/volumeviz/internal/core/models"
 	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/utils"
 	"github.com/mantonx/volumeviz/internal/websocket"
-	coremodels "github.com/mantonx/volumeviz/internal/core/models"
 )
 
 // Handler handles scan-related HTTP requests
 // Provides endpoints for volume size scanning and metrics
 type Handler struct {
-	scanner       interfaces.VolumeScanner
-	hub           *websocket.Hub
-	metricsRepo   *database.VolumeMetricsRepository
+	scanner     interfaces.VolumeScanner
+	hub         *websocket.Hub
+	metricsRepo *database.VolumeMetricsRepository
 }
 
 // NewHandler creates a new scan handler
@@ -244,8 +244,8 @@ func (h *Handler) BulkScan(c *gin.Context) {
 
 	if len(req.VolumeIDs) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "At least one volume ID is required",
-			"code":    "EMPTY_VOLUME_LIST",
+			"error": "At least one volume ID is required",
+			"code":  "EMPTY_VOLUME_LIST",
 		})
 		return
 	}

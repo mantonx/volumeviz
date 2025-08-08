@@ -67,7 +67,7 @@ func testMigrationSystemBasic(t *testing.T, container *PostgreSQLTestContainer) 
 	require.NoError(t, err)
 	assert.NotNil(t, status)
 
-	t.Logf("Migration status: %d total, %d applied, %d pending", 
+	t.Logf("Migration status: %d total, %d applied, %d pending",
 		status.TotalMigrations, status.AppliedCount, status.PendingCount)
 
 	// Verify migrations are up to date (they were applied in helper)
@@ -92,7 +92,7 @@ func testMigrationSystemBasic(t *testing.T, container *PostgreSQLTestContainer) 
 func testTableVerification(t *testing.T, container *PostgreSQLTestContainer) {
 	expectedTables := []string{
 		"volumes", "volume_sizes", "containers", "volume_mounts",
-		"scan_jobs", "volume_metrics", "system_health", "scan_cache", 
+		"scan_jobs", "volume_metrics", "system_health", "scan_cache",
 		"migration_history",
 	}
 
@@ -104,7 +104,7 @@ func testTableVerification(t *testing.T, container *PostgreSQLTestContainer) {
 				WHERE table_schema = 'public' 
 				AND table_name = $1
 			)`
-		
+
 		err := container.DB.QueryRow(query, tableName).Scan(&exists)
 		require.NoError(t, err)
 		assert.True(t, exists, "Table %s should exist", tableName)
@@ -114,13 +114,13 @@ func testTableVerification(t *testing.T, container *PostgreSQLTestContainer) {
 	t.Run("Volumes Table Structure", func(t *testing.T) {
 		columns := getTableColumns(t, container, "volumes")
 		expectedColumns := []string{
-			"id", "volume_id", "name", "driver", "mountpoint", 
-			"labels", "options", "scope", "status", "last_scanned", 
+			"id", "volume_id", "name", "driver", "mountpoint",
+			"labels", "options", "scope", "status", "last_scanned",
 			"is_active", "created_at", "updated_at",
 		}
-		
+
 		for _, expectedCol := range expectedColumns {
-			assert.Contains(t, columns, expectedCol, 
+			assert.Contains(t, columns, expectedCol,
 				"Table volumes should have column %s", expectedCol)
 		}
 	})
@@ -132,7 +132,7 @@ func testTableVerification(t *testing.T, container *PostgreSQLTestContainer) {
 			"started_at", "completed_at", "error_message", "result_id",
 			"estimated_duration", "created_at", "updated_at",
 		}
-		
+
 		for _, expectedCol := range expectedColumns {
 			assert.Contains(t, columns, expectedCol,
 				"Table scan_jobs should have column %s", expectedCol)
@@ -161,7 +161,7 @@ func testBasicCRUDOperations(t *testing.T, container *PostgreSQLTestContainer) {
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			RETURNING id, created_at, updated_at
 		`
-		
+
 		var id int
 		var createdAt, updatedAt time.Time
 		err := container.DB.QueryRow(query,
@@ -175,7 +175,7 @@ func testBasicCRUDOperations(t *testing.T, container *PostgreSQLTestContainer) {
 			"active",
 			true,
 		).Scan(&id, &createdAt, &updatedAt)
-		
+
 		require.NoError(t, err)
 		assert.Greater(t, id, 0)
 		assert.True(t, createdAt.After(time.Time{}))
@@ -191,12 +191,12 @@ func testBasicCRUDOperations(t *testing.T, container *PostgreSQLTestContainer) {
 			FROM volumes 
 			WHERE volume_id = $1
 		`
-		
+
 		var volumeID, name, driver, status string
 		var isActive bool
 		err := container.DB.QueryRow(query, "test_vol_basic_001").Scan(
 			&volumeID, &name, &driver, &status, &isActive)
-		
+
 		require.NoError(t, err)
 		assert.Equal(t, "test_vol_basic_001", volumeID)
 		assert.Equal(t, "basic-integration-test-volume", name)
@@ -212,10 +212,10 @@ func testBasicCRUDOperations(t *testing.T, container *PostgreSQLTestContainer) {
 			SET status = $1, updated_at = CURRENT_TIMESTAMP 
 			WHERE volume_id = $2
 		`
-		
+
 		result, err := container.DB.Exec(query, "inactive", "test_vol_basic_001")
 		require.NoError(t, err)
-		
+
 		rowsAffected, err := result.RowsAffected()
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), rowsAffected)
@@ -228,7 +228,7 @@ func testBasicCRUDOperations(t *testing.T, container *PostgreSQLTestContainer) {
 			VALUES ($1, $2, $3, $4, $5)
 			RETURNING id, created_at
 		`
-		
+
 		var id int
 		var createdAt time.Time
 		err := container.DB.QueryRow(query,
@@ -238,7 +238,7 @@ func testBasicCRUDOperations(t *testing.T, container *PostgreSQLTestContainer) {
 			0,
 			"du",
 		).Scan(&id, &createdAt)
-		
+
 		require.NoError(t, err)
 		assert.Greater(t, id, 0)
 		assert.True(t, createdAt.After(time.Time{}))
@@ -249,11 +249,11 @@ func testBasicCRUDOperations(t *testing.T, container *PostgreSQLTestContainer) {
 	// Test count operations
 	t.Run("Count Records", func(t *testing.T) {
 		var volumeCount, scanJobCount int
-		
+
 		err := container.DB.QueryRow("SELECT COUNT(*) FROM volumes").Scan(&volumeCount)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, volumeCount, 1)
-		
+
 		err = container.DB.QueryRow("SELECT COUNT(*) FROM scan_jobs").Scan(&scanJobCount)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, scanJobCount, 1)
@@ -271,7 +271,7 @@ func getTableColumns(t *testing.T, container *PostgreSQLTestContainer, tableName
 		AND table_name = $1
 		ORDER BY ordinal_position
 	`
-	
+
 	rows, err := container.DB.Query(query, tableName)
 	require.NoError(t, err)
 	defer rows.Close()
@@ -283,7 +283,7 @@ func getTableColumns(t *testing.T, container *PostgreSQLTestContainer, tableName
 		require.NoError(t, err)
 		columns = append(columns, columnName)
 	}
-	
+
 	require.NoError(t, rows.Err())
 	return columns
 }
@@ -323,7 +323,7 @@ func TestDatabaseConcurrency(t *testing.T) {
 		assert.LessOrEqual(t, stats.OpenConnections, container.Config.MaxOpenConns)
 		assert.LessOrEqual(t, stats.Idle, container.Config.MaxIdleConns)
 
-		t.Logf("Concurrency test: %d/%d successful, pool: %d open, %d idle", 
+		t.Logf("Concurrency test: %d/%d successful, pool: %d open, %d idle",
 			successCount, numGoroutines, stats.OpenConnections, stats.Idle)
 	})
 }
@@ -360,30 +360,30 @@ func TestDatabasePerformanceBasic(t *testing.T) {
 			duration := time.Since(start)
 			ratePerSecond := float64(numRecords) / duration.Seconds()
 
-			t.Logf("Inserted %d records in %v (%.2f records/sec)", 
+			t.Logf("Inserted %d records in %v (%.2f records/sec)",
 				numRecords, duration, ratePerSecond)
 
 			// Performance assertions
-			assert.Less(t, duration, 10*time.Second, 
+			assert.Less(t, duration, 10*time.Second,
 				"Bulk insert should complete within 10 seconds")
-			assert.Greater(t, ratePerSecond, 5.0, 
+			assert.Greater(t, ratePerSecond, 5.0,
 				"Should insert at least 5 records per second")
 		})
 
 		// Test query performance
 		t.Run("Query Performance", func(t *testing.T) {
 			start := time.Now()
-			
+
 			var count int
 			err := container.DB.QueryRow("SELECT COUNT(*) FROM volumes").Scan(&count)
-			
+
 			duration := time.Since(start)
-			
+
 			require.NoError(t, err)
 			assert.Greater(t, count, 0)
 
 			t.Logf("Count query completed in %v (returned %d records)", duration, count)
-			assert.Less(t, duration, 1*time.Second, 
+			assert.Less(t, duration, 1*time.Second,
 				"Count query should complete within 1 second")
 		})
 	})

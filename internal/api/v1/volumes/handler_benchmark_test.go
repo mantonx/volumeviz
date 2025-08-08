@@ -86,19 +86,19 @@ func BenchmarkListVolumes_Small(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
 	handler := NewHandler(mockService, &websocket.Hub{})
-	
+
 	volumes := generateMockVolumes(10)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
-	
+
 	router := gin.New()
 	router.GET("/volumes", handler.ListVolumes)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		req, _ := http.NewRequest("GET", "/volumes", nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
-		
+
 		if w.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", w.Code)
 		}
@@ -110,27 +110,27 @@ func BenchmarkListVolumes_Large(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
 	handler := NewHandler(mockService, &websocket.Hub{})
-	
+
 	// Generate 1000+ volumes as per enhanced requirements
 	volumes := generateMockVolumes(1000)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
-	
+
 	router := gin.New()
 	router.GET("/volumes", handler.ListVolumes)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		req, _ := http.NewRequest("GET", "/volumes", nil)
 		w := httptest.NewRecorder()
-		
+
 		start := time.Now()
 		router.ServeHTTP(w, req)
 		duration := time.Since(start)
-		
+
 		if w.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", w.Code)
 		}
-		
+
 		// Validate SLO: 95th percentile < 500ms
 		if duration > 500*time.Millisecond {
 			b.Logf("WARNING: Response time %v exceeds 500ms SLO", duration)
@@ -143,27 +143,27 @@ func BenchmarkListVolumes_Concurrent(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
 	handler := NewHandler(mockService, &websocket.Hub{})
-	
+
 	volumes := generateMockVolumes(500)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
-	
+
 	router := gin.New()
 	router.GET("/volumes", handler.ListVolumes)
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			req, _ := http.NewRequest("GET", "/volumes", nil)
 			w := httptest.NewRecorder()
-			
+
 			start := time.Now()
 			router.ServeHTTP(w, req)
 			duration := time.Since(start)
-			
+
 			if w.Code != http.StatusOK {
 				b.Fatalf("Expected status 200, got %d", w.Code)
 			}
-			
+
 			// Track performance under concurrent load
 			if duration > 500*time.Millisecond {
 				b.Logf("Concurrent request exceeded SLO: %v", duration)
@@ -177,7 +177,7 @@ func BenchmarkGetVolume(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
 	handler := NewHandler(mockService, &websocket.Hub{})
-	
+
 	volume := &models.Volume{
 		ID:         "test-volume",
 		Name:       "test-volume",
@@ -185,25 +185,25 @@ func BenchmarkGetVolume(b *testing.B) {
 		Mountpoint: "/var/lib/docker/volumes/test-volume/_data",
 		CreatedAt:  time.Now(),
 	}
-	
+
 	mockService.On("GetVolume", mock.Anything, "test-volume").Return(volume, nil)
-	
+
 	router := gin.New()
 	router.GET("/volumes/:id", handler.GetVolume)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		req, _ := http.NewRequest("GET", "/volumes/test-volume", nil)
 		w := httptest.NewRecorder()
-		
+
 		start := time.Now()
 		router.ServeHTTP(w, req)
 		duration := time.Since(start)
-		
+
 		if w.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", w.Code)
 		}
-		
+
 		// Single volume requests should be very fast
 		if duration > 100*time.Millisecond {
 			b.Logf("Single volume request took %v (>100ms)", duration)
@@ -216,28 +216,28 @@ func TestSLOCompliance(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
 	handler := NewHandler(mockService, &websocket.Hub{})
-	
+
 	volumes := generateMockVolumes(1000)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
-	
+
 	router := gin.New()
 	router.GET("/volumes", handler.ListVolumes)
-	
+
 	// Collect response times for 100 requests
 	durations := make([]time.Duration, 100)
 	for i := 0; i < 100; i++ {
 		req, _ := http.NewRequest("GET", "/volumes", nil)
 		w := httptest.NewRecorder()
-		
+
 		start := time.Now()
 		router.ServeHTTP(w, req)
 		durations[i] = time.Since(start)
-		
+
 		if w.Code != http.StatusOK {
 			t.Fatalf("Request %d failed with status %d", i, w.Code)
 		}
 	}
-	
+
 	// Calculate 95th percentile
 	// Sort durations and find 95th percentile
 	for i := 0; i < len(durations)-1; i++ {
@@ -247,13 +247,13 @@ func TestSLOCompliance(t *testing.T) {
 			}
 		}
 	}
-	
+
 	p95Index := int(float64(len(durations)) * 0.95)
 	p95Duration := durations[p95Index]
-	
+
 	t.Logf("95th percentile response time: %v", p95Duration)
 	t.Logf("SLO requirement: < 500ms")
-	
+
 	if p95Duration >= 500*time.Millisecond {
 		t.Errorf("SLO VIOLATION: 95th percentile (%v) >= 500ms", p95Duration)
 	} else {

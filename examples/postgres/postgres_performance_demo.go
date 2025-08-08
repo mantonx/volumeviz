@@ -36,7 +36,7 @@ func Demo() {
 
 	// Display session-level optimizations that would be applied
 	fmt.Println("\n⚡ Session-Level Performance Optimizations:")
-	
+
 	memoryOptimizations := map[string]string{
 		"work_mem":             "64MB (increased for sorting/hashing)",
 		"maintenance_work_mem": "256MB (for VACUUM, CREATE INDEX)",
@@ -51,10 +51,10 @@ func Demo() {
 
 	queryOptimizations := map[string]string{
 		"random_page_cost":         "1.1 (SSD-optimized)",
-		"seq_page_cost":           "1.0 (sequential access cost)",
+		"seq_page_cost":            "1.0 (sequential access cost)",
 		"effective_io_concurrency": "200 (SSD concurrent I/O)",
-		"jit":                     "on (Just-In-Time compilation)",
-		"jit_above_cost":          "100000 (JIT for expensive queries)",
+		"jit":                      "on (Just-In-Time compilation)",
+		"jit_above_cost":           "100000 (JIT for expensive queries)",
 	}
 
 	fmt.Println("\n   🎯 Query Planner Optimizations:")
@@ -64,8 +64,8 @@ func Demo() {
 
 	parallelOptimizations := map[string]string{
 		"max_parallel_workers_per_gather": "4 (parallel query workers)",
-		"parallel_tuple_cost":            "0.1 (tuple transfer cost)",
-		"parallel_setup_cost":            "1000.0 (parallel setup cost)",
+		"parallel_tuple_cost":             "0.1 (tuple transfer cost)",
+		"parallel_setup_cost":             "1000.0 (parallel setup cost)",
 	}
 
 	fmt.Println("\n   🔄 Parallel Query Optimizations:")
@@ -74,10 +74,10 @@ func Demo() {
 	}
 
 	safetyOptimizations := map[string]string{
-		"statement_timeout":                     "300s (prevent runaway queries)",
-		"lock_timeout":                         "30s (lock acquisition timeout)",
+		"statement_timeout":                   "300s (prevent runaway queries)",
+		"lock_timeout":                        "30s (lock acquisition timeout)",
 		"idle_in_transaction_session_timeout": "60s (prevent idle transactions)",
-		"synchronous_commit":                   "on (ensure durability)",
+		"synchronous_commit":                  "on (ensure durability)",
 	}
 
 	fmt.Println("\n   🛡️  Safety & Timeout Optimizations:")
@@ -103,18 +103,18 @@ func Demo() {
 
 	// Performance comparison
 	fmt.Println("\n📊 Performance Profile Comparison:")
-	
+
 	pgProfile := map[string]string{
 		"Concurrent Connections": "Excellent (100+ simultaneous connections)",
-		"Write Throughput":      "High (10,000+ writes/sec with ACID)",
-		"Complex Queries":       "Excellent (advanced query optimization)",
-		"Memory Usage":          "Configurable (work_mem, shared_buffers)",
-		"Disk I/O":             "Advanced (parallel, SSD-aware, caching)",
-		"Transaction Safety":    "Full ACID compliance with WAL",
-		"Scalability":          "Horizontal and vertical scaling",
-		"JSON/JSONB":           "Native support with GIN indexes",
-		"Full-Text Search":     "Built-in with ranking and highlighting",
-		"Replication":          "Master-slave, streaming, logical",
+		"Write Throughput":       "High (10,000+ writes/sec with ACID)",
+		"Complex Queries":        "Excellent (advanced query optimization)",
+		"Memory Usage":           "Configurable (work_mem, shared_buffers)",
+		"Disk I/O":               "Advanced (parallel, SSD-aware, caching)",
+		"Transaction Safety":     "Full ACID compliance with WAL",
+		"Scalability":            "Horizontal and vertical scaling",
+		"JSON/JSONB":             "Native support with GIN indexes",
+		"Full-Text Search":       "Built-in with ranking and highlighting",
+		"Replication":            "Master-slave, streaming, logical",
 	}
 
 	fmt.Println("\n   🐘 PostgreSQL Strengths:")

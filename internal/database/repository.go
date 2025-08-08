@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"time"
-	
+
 	"github.com/mantonx/volumeviz/internal/utils"
 )
 
@@ -17,7 +17,7 @@ type Repository interface {
 	// Transaction management
 	WithTx(tx *Tx) Repository
 	BeginTx() (*Tx, error)
-	
+
 	// Health and status
 	Health() *HealthStatus
 	Ping() error
@@ -130,7 +130,7 @@ func (qb *QueryBuilder) Where(condition string, args ...interface{}) *QueryBuild
 		qb.argIndex++
 		parameterizedCondition = strings.Replace(parameterizedCondition, "?", fmt.Sprintf("$%d", qb.argIndex), 1)
 	}
-	
+
 	qb.whereClause = append(qb.whereClause, parameterizedCondition)
 	qb.args = append(qb.args, args...)
 	return qb
@@ -157,7 +157,7 @@ func (qb *QueryBuilder) Offset(offset int) *QueryBuilder {
 // Build constructs the final SQL query
 func (qb *QueryBuilder) Build() (string, []interface{}) {
 	var query strings.Builder
-	
+
 	// SELECT
 	if len(qb.selectFields) > 0 {
 		query.WriteString("SELECT ")
@@ -165,52 +165,52 @@ func (qb *QueryBuilder) Build() (string, []interface{}) {
 	} else {
 		query.WriteString("SELECT *")
 	}
-	
+
 	// FROM
 	if qb.fromTable != "" {
 		query.WriteString(" FROM ")
 		query.WriteString(qb.fromTable)
 	}
-	
+
 	// JOINs
 	for _, join := range qb.joins {
 		query.WriteString(" ")
 		query.WriteString(join)
 	}
-	
+
 	// WHERE
 	if len(qb.whereClause) > 0 {
 		query.WriteString(" WHERE ")
 		query.WriteString(strings.Join(qb.whereClause, " AND "))
 	}
-	
+
 	// ORDER BY
 	if len(qb.orderBy) > 0 {
 		query.WriteString(" ORDER BY ")
 		query.WriteString(strings.Join(qb.orderBy, ", "))
 	}
-	
+
 	// LIMIT
 	if qb.limit != nil {
 		qb.argIndex++
 		query.WriteString(fmt.Sprintf(" LIMIT $%d", qb.argIndex))
 		qb.args = append(qb.args, *qb.limit)
 	}
-	
+
 	// OFFSET
 	if qb.offset != nil {
 		qb.argIndex++
 		query.WriteString(fmt.Sprintf(" OFFSET $%d", qb.argIndex))
 		qb.args = append(qb.args, *qb.offset)
 	}
-	
+
 	return query.String(), qb.args
 }
 
 // ScanRows is a helper function to scan multiple rows into a slice
 func ScanRows[T any](rows *sql.Rows, scanFunc func(*sql.Rows) (*T, error)) ([]*T, error) {
 	var results []*T
-	
+
 	for rows.Next() {
 		item, err := scanFunc(rows)
 		if err != nil {
@@ -218,23 +218,23 @@ func ScanRows[T any](rows *sql.Rows, scanFunc func(*sql.Rows) (*T, error)) ([]*T
 		}
 		results = append(results, item)
 	}
-	
+
 	if err := rows.Err(); err != nil {
 		return nil, utils.WrapError(err, "rows iteration error")
 	}
-	
+
 	return results, nil
 }
 
 // FilterOptions represents common filtering options
 type FilterOptions struct {
-	Limit      *int              `json:"limit,omitempty"`
-	Offset     *int              `json:"offset,omitempty"`
-	OrderBy    *string           `json:"order_by,omitempty"`
-	OrderDesc  bool              `json:"order_desc,omitempty"`
-	Filters    map[string]interface{} `json:"filters,omitempty"`
-	CreatedAfter  *time.Time     `json:"created_after,omitempty"`
-	CreatedBefore *time.Time     `json:"created_before,omitempty"`
+	Limit         *int                   `json:"limit,omitempty"`
+	Offset        *int                   `json:"offset,omitempty"`
+	OrderBy       *string                `json:"order_by,omitempty"`
+	OrderDesc     bool                   `json:"order_desc,omitempty"`
+	Filters       map[string]interface{} `json:"filters,omitempty"`
+	CreatedAfter  *time.Time             `json:"created_after,omitempty"`
+	CreatedBefore *time.Time             `json:"created_before,omitempty"`
 }
 
 // ApplyToQuery applies filter options to a query builder
@@ -242,7 +242,7 @@ func (fo *FilterOptions) ApplyToQuery(qb *QueryBuilder, tableAlias string) *Quer
 	if fo == nil {
 		return qb
 	}
-	
+
 	// Apply generic filters
 	for field, value := range fo.Filters {
 		if value != nil {
@@ -250,7 +250,7 @@ func (fo *FilterOptions) ApplyToQuery(qb *QueryBuilder, tableAlias string) *Quer
 			if tableAlias != "" {
 				fieldName = tableAlias + "." + field
 			}
-			
+
 			// Handle different types of values
 			switch v := value.(type) {
 			case string:
@@ -272,7 +272,7 @@ func (fo *FilterOptions) ApplyToQuery(qb *QueryBuilder, tableAlias string) *Quer
 			}
 		}
 	}
-	
+
 	// Apply date range filters
 	if fo.CreatedAfter != nil {
 		fieldName := "created_at"
@@ -281,7 +281,7 @@ func (fo *FilterOptions) ApplyToQuery(qb *QueryBuilder, tableAlias string) *Quer
 		}
 		qb.Where(fieldName+" >= ?", *fo.CreatedAfter)
 	}
-	
+
 	if fo.CreatedBefore != nil {
 		fieldName := "created_at"
 		if tableAlias != "" {
@@ -289,7 +289,7 @@ func (fo *FilterOptions) ApplyToQuery(qb *QueryBuilder, tableAlias string) *Quer
 		}
 		qb.Where(fieldName+" <= ?", *fo.CreatedBefore)
 	}
-	
+
 	// Apply ordering
 	if fo.OrderBy != nil {
 		orderBy := *fo.OrderBy
@@ -301,16 +301,16 @@ func (fo *FilterOptions) ApplyToQuery(qb *QueryBuilder, tableAlias string) *Quer
 		}
 		qb.OrderBy(orderBy)
 	}
-	
+
 	// Apply pagination
 	if fo.Limit != nil {
 		qb.Limit(*fo.Limit)
 	}
-	
+
 	if fo.Offset != nil {
 		qb.Offset(*fo.Offset)
 	}
-	
+
 	return qb
 }
 
@@ -332,12 +332,12 @@ func NewPaginatedResult[T any](items []*T, total, limit, offset int) *PaginatedR
 		Limit:  limit,
 		Offset: offset,
 	}
-	
+
 	if limit > 0 {
 		result.TotalPages = (total + limit - 1) / limit // Ceiling division
 		result.HasMore = offset+limit < total
 	}
-	
+
 	return result
 }
 
@@ -346,24 +346,24 @@ func StructToMap(s interface{}, excludeFields ...string) map[string]interface{} 
 	result := make(map[string]interface{})
 	v := reflect.ValueOf(s)
 	t := reflect.TypeOf(s)
-	
+
 	// Handle pointers
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 		t = t.Elem()
 	}
-	
+
 	if v.Kind() != reflect.Struct {
 		return result
 	}
-	
+
 	excludeMap := make(map[string]bool)
 	for _, field := range excludeFields {
 		excludeMap[field] = true
 	}
-	
+
 	processStruct(v, t, result, excludeMap)
-	
+
 	return result
 }
 
@@ -372,45 +372,45 @@ func processStruct(v reflect.Value, t reflect.Type, result map[string]interface{
 	for i := 0; i < v.NumField(); i++ {
 		field := t.Field(i)
 		value := v.Field(i)
-		
+
 		// Skip unexported fields
 		if !value.CanInterface() {
 			continue
 		}
-		
+
 		// Check if this is an embedded struct
 		if field.Anonymous && value.Kind() == reflect.Struct {
 			// Recursively process embedded struct fields
 			processStruct(value, value.Type(), result, excludeMap)
 			continue
 		}
-		
+
 		// Get field name from db tag or use field name
 		dbTag := field.Tag.Get("db")
 		if dbTag == "-" {
 			continue // Skip fields marked with db:"-"
 		}
-		
+
 		fieldName := field.Name
 		if dbTag != "" {
 			fieldName = dbTag
 		}
-		
+
 		// Skip excluded fields
 		if excludeMap[fieldName] {
 			continue
 		}
-		
+
 		// Skip empty values for certain types
 		if value.Kind() == reflect.Ptr && value.IsNil() {
 			continue
 		}
-		
+
 		// Skip zero time values
 		if timeVal, ok := value.Interface().(time.Time); ok && timeVal.IsZero() {
 			continue
 		}
-		
+
 		result[fieldName] = value.Interface()
 	}
 }
@@ -420,11 +420,11 @@ func BuildInsertQuery(table string, fields map[string]interface{}) (string, []in
 	if len(fields) == 0 {
 		return "", nil
 	}
-	
+
 	var fieldNames []string
 	var placeholders []string
 	var values []interface{}
-	
+
 	i := 1
 	for field, value := range fields {
 		fieldNames = append(fieldNames, field)
@@ -432,14 +432,14 @@ func BuildInsertQuery(table string, fields map[string]interface{}) (string, []in
 		values = append(values, value)
 		i++
 	}
-	
+
 	query := fmt.Sprintf(
 		"INSERT INTO %s (%s) VALUES (%s)",
 		table,
 		strings.Join(fieldNames, ", "),
 		strings.Join(placeholders, ", "),
 	)
-	
+
 	return query, values
 }
 
@@ -448,20 +448,20 @@ func BuildUpdateQuery(table string, fields map[string]interface{}, whereField st
 	if len(fields) == 0 {
 		return "", nil
 	}
-	
+
 	var setParts []string
 	var values []interface{}
-	
+
 	i := 1
 	for field, value := range fields {
 		setParts = append(setParts, fmt.Sprintf("%s = $%d", field, i))
 		values = append(values, value)
 		i++
 	}
-	
+
 	// Add WHERE clause
 	values = append(values, whereValue)
-	
+
 	query := fmt.Sprintf(
 		"UPDATE %s SET %s WHERE %s = $%d",
 		table,
@@ -469,6 +469,89 @@ func BuildUpdateQuery(table string, fields map[string]interface{}, whereField st
 		whereField,
 		i,
 	)
-	
+
 	return query, values
+}
+
+// ListWithPagination is a generic helper for list operations with pagination
+func ListWithPagination[T any](
+	executor Executor,
+	selectFields []string,
+	tableName string,
+	options *FilterOptions,
+	scanRowFunc func(*sql.Rows) (*T, error),
+	countFunc func(*FilterOptions) (int, error),
+) (*PaginatedResult[T], error) {
+	// Build the main query
+	qb := NewQueryBuilder().
+		Select(selectFields...).
+		From(tableName)
+
+	// Apply filters
+	if options != nil {
+		options.ApplyToQuery(qb, "")
+	}
+
+	// Default ordering
+	if options == nil || options.OrderBy == nil {
+		qb.OrderBy("created_at DESC")
+	}
+
+	query, args := qb.Build()
+
+	// Execute query
+	rows, err := executor.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Scan results
+	items, err := ScanRows(rows, scanRowFunc)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get total count for pagination
+	total, err := countFunc(options)
+	if err != nil {
+		return nil, err
+	}
+
+	limit := 0
+	offset := 0
+	if options != nil {
+		if options.Limit != nil {
+			limit = *options.Limit
+		}
+		if options.Offset != nil {
+			offset = *options.Offset
+		}
+	}
+
+	return NewPaginatedResult(items, total, limit, offset), nil
+}
+
+// RowScanner interface for entities that can scan from either sql.Row or sql.Rows
+type RowScanner interface {
+	Scan(dest ...interface{}) error
+}
+
+// UnifiedScanFunc creates a single scan function that works with both sql.Row and sql.Rows
+// This eliminates duplication between scanEntity and scanEntityRow methods
+func UnifiedScanFunc[T any](scanLogic func(RowScanner) (*T, error)) struct {
+	FromRow  func(*sql.Row) (*T, error)
+	FromRows func(*sql.Rows) (*T, error)
+} {
+	return struct {
+		FromRow  func(*sql.Row) (*T, error)
+		FromRows func(*sql.Rows) (*T, error)
+	}{
+		FromRow: func(row *sql.Row) (*T, error) {
+			return scanLogic(row)
+		},
+		FromRows: func(rows *sql.Rows) (*T, error) {
+			return scanLogic(rows)
+		},
+	}
 }

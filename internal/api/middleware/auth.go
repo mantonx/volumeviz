@@ -37,11 +37,11 @@ type AuthClaims struct {
 	Issuer    string    `json:"iss"`
 }
 
-// AuthConfig holds authentication middleware configuration  
+// AuthConfig holds authentication middleware configuration
 type AuthConfig struct {
-	Enabled    bool
-	Secret     string
-	SkipPaths  []string
+	Enabled      bool
+	Secret       string
+	SkipPaths    []string
 	RequiredRole UserRole // Minimum required role
 }
 
@@ -52,7 +52,7 @@ func DefaultAuthConfig() *AuthConfig {
 		RequiredRole: RoleViewer,
 		SkipPaths: []string{
 			"/api/v1/health",
-			"/health", 
+			"/health",
 			"/metrics",
 			"/api/docs",
 			"/openapi",
@@ -190,7 +190,7 @@ func RequireRole(requiredRole UserRole) gin.HandlerFunc {
 		if userRole == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":     "Authentication required",
-				"code":      "AUTH_REQUIRED", 
+				"code":      "AUTH_REQUIRED",
 				"requestId": GetRequestID(c),
 			})
 			return
@@ -219,7 +219,7 @@ func hasRequiredRole(userRole, requiredRole UserRole) bool {
 
 	userLevel := roleHierarchy[userRole]
 	requiredLevel := roleHierarchy[requiredRole]
-	
+
 	return userLevel >= requiredLevel
 }
 

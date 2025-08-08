@@ -23,10 +23,10 @@ func NewHandler(dockerService *services.DockerService) *Handler {
 // GET /api/v1/system/info
 func (h *Handler) GetSystemInfo(c *gin.Context) {
 	ctx := c.Request.Context()
-	
+
 	version, err := h.dockerService.GetVersion(ctx)
 	dockerAvailable := h.dockerService.IsDockerAvailable(ctx)
-	
+
 	info := gin.H{
 		"service": "volumeviz",
 		"version": "1.0.0", // TODO: Get from build info
@@ -34,7 +34,7 @@ func (h *Handler) GetSystemInfo(c *gin.Context) {
 			"available": dockerAvailable,
 		},
 	}
-	
+
 	if err == nil && dockerAvailable {
 		info["docker"] = gin.H{
 			"available":   true,
@@ -42,7 +42,7 @@ func (h *Handler) GetSystemInfo(c *gin.Context) {
 			"api_version": version.APIVersion,
 		}
 	}
-	
+
 	c.JSON(http.StatusOK, info)
 }
 

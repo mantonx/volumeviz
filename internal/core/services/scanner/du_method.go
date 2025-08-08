@@ -77,7 +77,7 @@ func (d *DuMethod) Scan(ctx context.Context, path string) (*interfaces.ScanResul
 
 	if err != nil {
 		stderrStr := stderr.String()
-		
+
 		// Handle common error cases
 		if strings.Contains(stderrStr, "Permission denied") {
 			return nil, &models.ScanError{
@@ -91,7 +91,7 @@ func (d *DuMethod) Scan(ctx context.Context, path string) (*interfaces.ScanResul
 				},
 			}
 		}
-		
+
 		if strings.Contains(stderrStr, "No such file or directory") {
 			return nil, &models.ScanError{
 				Method:  "du",

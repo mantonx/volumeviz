@@ -26,10 +26,10 @@ func NewMemoryCache(maxSize int) interfaces.Cache {
 		entries: make(map[string]*cacheEntry),
 		maxSize: maxSize,
 	}
-	
+
 	// Start cleanup goroutine
 	go cache.cleanupExpired()
-	
+
 	return cache
 }
 
@@ -70,7 +70,7 @@ func (c *MemoryCache) Set(key string, result *interfaces.ScanResult, ttl time.Du
 		result:    result,
 		expiresAt: time.Now().Add(ttl),
 	}
-	
+
 	c.entries[key] = entry
 	return nil
 }
@@ -132,13 +132,13 @@ func (c *MemoryCache) cleanupExpired() {
 	for range ticker.C {
 		c.mu.Lock()
 		now := time.Now()
-		
+
 		for key, entry := range c.entries {
 			if now.After(entry.expiresAt) {
 				delete(c.entries, key)
 			}
 		}
-		
+
 		c.mu.Unlock()
 	}
 }

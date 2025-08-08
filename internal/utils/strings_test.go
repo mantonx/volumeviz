@@ -58,7 +58,7 @@ func TestSplitAndGetAfter(t *testing.T) {
 	for _, tt := range tests {
 		result := SplitAndGetAfter(tt.input, tt.delimiter)
 		if result != tt.expected {
-			t.Errorf("SplitAndGetAfter(%q, %q) = %q, want %q", 
+			t.Errorf("SplitAndGetAfter(%q, %q) = %q, want %q",
 				tt.input, tt.delimiter, result, tt.expected)
 		}
 	}

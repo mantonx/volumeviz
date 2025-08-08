@@ -106,10 +106,10 @@ func (h *Handler) GetAppHealth(c *gin.Context) {
 // GET /api/v1/health/ready
 func (h *Handler) GetReadiness(c *gin.Context) {
 	ctx := c.Request.Context()
-	
+
 	// Check if all critical dependencies are available
 	dockerAvailable := h.dockerService.IsDockerAvailable(ctx)
-	
+
 	if dockerAvailable {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "ready",

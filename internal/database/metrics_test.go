@@ -38,13 +38,13 @@ func TestRecordQuery(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Record the metric
 			RecordQuery(tt.operation, tt.table, tt.duration, tt.err)
-			
+
 			// Check that metrics were recorded
 			status := "success"
 			if tt.err != nil {
 				status = "error"
 			}
-			
+
 			// Verify counter was incremented
 			counter := testutil.ToFloat64(dbQueryTotal.WithLabelValues(tt.operation, tt.table, status))
 			assert.Greater(t, counter, float64(0))
@@ -80,7 +80,7 @@ func TestRecordTransaction(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Record the metric
 			RecordTransaction(tt.duration, tt.status)
-			
+
 			// Verify counter was incremented
 			counter := testutil.ToFloat64(dbTransactionTotal.WithLabelValues(tt.status))
 			assert.Greater(t, counter, float64(0))
@@ -114,13 +114,13 @@ func TestRecordMigration(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Record the metric
 			RecordMigration(tt.direction, tt.duration, tt.err)
-			
+
 			// Check that metrics were recorded
 			status := "success"
 			if tt.err != nil {
 				status = "error"
 			}
-			
+
 			// Verify counter was incremented
 			counter := testutil.ToFloat64(dbMigrationTotal.WithLabelValues(tt.direction, status))
 			assert.Greater(t, counter, float64(0))
@@ -131,9 +131,9 @@ func TestRecordMigration(t *testing.T) {
 // TestRecordConnectionError tests connection error recording
 func TestRecordConnectionError(t *testing.T) {
 	initialCount := testutil.ToFloat64(dbErrorTotal.WithLabelValues("connection"))
-	
+
 	RecordConnectionError()
-	
+
 	newCount := testutil.ToFloat64(dbErrorTotal.WithLabelValues("connection"))
 	assert.Equal(t, initialCount+1, newCount)
 }
@@ -224,39 +224,39 @@ func TestMetricsIntegration(t *testing.T) {
 	dbQueryTotal.Reset()
 	dbTransactionTotal.Reset()
 	dbErrorTotal.Reset()
-	
+
 	// Test query metrics
 	RecordQuery("select", "volumes", 25*time.Millisecond, nil)
 	RecordQuery("insert", "scan_jobs", 15*time.Millisecond, nil)
 	RecordQuery("update", "volumes", 30*time.Millisecond, assert.AnError)
-	
+
 	// Verify metrics
 	selectSuccess := testutil.ToFloat64(dbQueryTotal.WithLabelValues("select", "volumes", "success"))
 	assert.Equal(t, float64(1), selectSuccess)
-	
+
 	insertSuccess := testutil.ToFloat64(dbQueryTotal.WithLabelValues("insert", "scan_jobs", "success"))
 	assert.Equal(t, float64(1), insertSuccess)
-	
+
 	updateError := testutil.ToFloat64(dbQueryTotal.WithLabelValues("update", "volumes", "error"))
 	assert.Equal(t, float64(1), updateError)
-	
+
 	queryErrors := testutil.ToFloat64(dbErrorTotal.WithLabelValues("query"))
 	assert.Equal(t, float64(1), queryErrors)
-	
+
 	// Test transaction metrics
 	RecordTransaction(100*time.Millisecond, "committed")
 	RecordTransaction(50*time.Millisecond, "rolled_back")
 	RecordTransaction(25*time.Millisecond, "error")
-	
+
 	committed := testutil.ToFloat64(dbTransactionTotal.WithLabelValues("committed"))
 	assert.Equal(t, float64(1), committed)
-	
+
 	rolledBack := testutil.ToFloat64(dbTransactionTotal.WithLabelValues("rolled_back"))
 	assert.Equal(t, float64(1), rolledBack)
-	
+
 	txErrors := testutil.ToFloat64(dbTransactionTotal.WithLabelValues("error"))
 	assert.Equal(t, float64(1), txErrors)
-	
+
 	totalErrors := testutil.ToFloat64(dbErrorTotal.WithLabelValues("transaction"))
 	assert.Equal(t, float64(1), totalErrors)
 }
@@ -267,18 +267,18 @@ func TestMetricsLabels(t *testing.T) {
 	dbConnectionsTotal.WithLabelValues("open").Set(5)
 	dbConnectionsTotal.WithLabelValues("in_use").Set(3)
 	dbConnectionsTotal.WithLabelValues("idle").Set(2)
-	
+
 	// Verify all labels work
 	assert.Equal(t, float64(5), testutil.ToFloat64(dbConnectionsTotal.WithLabelValues("open")))
 	assert.Equal(t, float64(3), testutil.ToFloat64(dbConnectionsTotal.WithLabelValues("in_use")))
 	assert.Equal(t, float64(2), testutil.ToFloat64(dbConnectionsTotal.WithLabelValues("idle")))
-	
+
 	// Test table metrics labels
 	tables := []string{"volumes", "containers", "scan_jobs", "alerts"}
 	for _, table := range tables {
 		dbTableRows.WithLabelValues(table).Set(100)
 		dbTableSize.WithLabelValues(table).Set(1024)
-		
+
 		assert.Equal(t, float64(100), testutil.ToFloat64(dbTableRows.WithLabelValues(table)))
 		assert.Equal(t, float64(1024), testutil.ToFloat64(dbTableSize.WithLabelValues(table)))
 	}
@@ -337,7 +337,7 @@ func TestExtractComplexQueries(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			op := extractOperation(tt.query)
 			table := extractTableName(tt.query)
-			
+
 			assert.Equal(t, tt.expectedOp, op, "operation mismatch")
 			if !strings.Contains(tt.name, "with clause") { // WITH clause extraction is complex
 				assert.Equal(t, tt.expectedTable, table, "table mismatch")

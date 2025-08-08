@@ -89,7 +89,7 @@ func TestDatabaseAPIIntegration(t *testing.T) {
 		dbRoutes.GET("/health", handler.GetDatabaseHealth)
 		dbRoutes.GET("/test-connection", handler.TestDatabaseConnection)
 		dbRoutes.GET("/stats", handler.GetDatabaseStats)
-		
+
 		migrations := dbRoutes.Group("/migrations")
 		{
 			migrations.GET("/status", handler.GetMigrationStatus)
@@ -97,7 +97,7 @@ func TestDatabaseAPIIntegration(t *testing.T) {
 			migrations.POST("/apply", handler.ApplyPendingMigrations)
 			migrations.POST("/:version/rollback", handler.RollbackMigration)
 		}
-		
+
 		performance := dbRoutes.Group("/performance")
 		{
 			performance.GET("/table-sizes", handler.GetTableSizes)
@@ -196,7 +196,7 @@ func testMigrationEndpoints(t *testing.T, router *gin.Engine) {
 		require.NoError(t, err)
 
 		assert.Greater(t, len(history), 0)
-		
+
 		// Check first migration has required fields
 		firstMigration := history[0]
 		assert.NotEmpty(t, firstMigration.Version)
@@ -266,7 +266,7 @@ func testDatabaseStatsEndpoints(t *testing.T, router *gin.Engine) {
 		assert.GreaterOrEqual(t, stats.VolumeStats.ActiveVolumes, 0)
 		assert.GreaterOrEqual(t, stats.VolumeStats.UniqueDrivers, 0)
 
-		// Verify scan job stats structure  
+		// Verify scan job stats structure
 		assert.GreaterOrEqual(t, stats.ScanJobStats.TotalJobs, 0)
 
 		// Verify database health
@@ -342,7 +342,7 @@ func createTestData(t *testing.T, router *gin.Engine) {
 	// This would normally create test volumes and scan jobs
 	// For integration testing, we can use the database directly
 	// or create test endpoints that populate data
-	
+
 	// For now, we'll just verify the endpoints work with empty/minimal data
 	// In a real scenario, you'd populate the database with test fixtures
 	_ = router // Avoid unused variable warning
@@ -357,7 +357,7 @@ func TestDatabaseAPIErrorHandling(t *testing.T) {
 	// Set up router with nil database to test error handling
 	gin.SetMode(gin.TestMode)
 	_ = gin.New() // router would be used for error testing
-	
+
 	// Use invalid database configuration to trigger errors
 	config := &dbPkg.Config{
 		Host:     "invalid-host",
@@ -391,7 +391,7 @@ func TestDatabaseAPIConcurrency(t *testing.T) {
 
 	// Start PostgreSQL container
 	postgresContainer, err := postgres.Run(ctx,
-		"postgres:15-alpine", 
+		"postgres:15-alpine",
 		postgres.WithDatabase("volumeviz_concurrency_test"),
 		postgres.WithUsername("concurrency_user"),
 		postgres.WithPassword("concurrency_password"),
@@ -443,7 +443,7 @@ func TestDatabaseAPIConcurrency(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	handler := database.NewHandler(db)
-	
+
 	api := router.Group("/api/v1/database")
 	api.GET("/health", handler.GetDatabaseHealth)
 	api.GET("/test-connection", handler.TestDatabaseConnection)

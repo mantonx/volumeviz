@@ -113,7 +113,7 @@ func (p *PostgreSQLTestContainer) ApplyMigrations(t *testing.T) {
 // CreateTestVolume creates a test volume record in the database
 func (p *PostgreSQLTestContainer) CreateTestVolume(t *testing.T, volumeID, name string) *database.Volume {
 	repo := database.NewVolumeRepository(p.DB)
-	
+
 	now := time.Now()
 	volume := &database.Volume{
 		VolumeID:    volumeID,
@@ -137,7 +137,7 @@ func (p *PostgreSQLTestContainer) CreateTestVolume(t *testing.T, volumeID, name 
 // CreateTestScanJob creates a test scan job record in the database
 func (p *PostgreSQLTestContainer) CreateTestScanJob(t *testing.T, scanID, volumeID string) *database.ScanJob {
 	repo := database.NewScanJobRepository(p.DB)
-	
+
 	duration := 30 * time.Second
 	job := &database.ScanJob{
 		ScanID:            scanID,
@@ -197,7 +197,7 @@ func (p *PostgreSQLTestContainer) WaitForHealthy(t *testing.T, timeout time.Dura
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	
+
 	require.Fail(t, "Database failed to become healthy within timeout")
 }
 
@@ -247,13 +247,13 @@ func (c *TestContainerCleanup) Cleanup(t *testing.T) {
 func WithPostgreSQLContainer(t *testing.T, dbName string, testFunc func(*PostgreSQLTestContainer)) {
 	container := NewPostgreSQLTestContainer(t, dbName, "test_user", "test_password")
 	defer container.Close(t)
-	
+
 	// Apply migrations
 	container.ApplyMigrations(t)
-	
+
 	// Wait for healthy status
 	container.WaitForHealthy(t, 30*time.Second)
-	
+
 	// Run the test
 	testFunc(container)
 }
@@ -267,9 +267,9 @@ func DockerRequiredOrSkip(t *testing.T) {
 	// Try to create a simple container to check if Docker is available
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
-		Image:        "alpine:latest",
-		Cmd:          []string{"echo", "test"},
-		WaitingFor:   wait.ForExit(),
+		Image:      "alpine:latest",
+		Cmd:        []string{"echo", "test"},
+		WaitingFor: wait.ForExit(),
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{

@@ -34,7 +34,7 @@ func createTestVolume() *Volume {
 func TestVolumeRepository_Create(t *testing.T) {
 	// Since we don't have full DB mocking setup, test basic object creation
 	volume := createTestVolume()
-	
+
 	assert.NotNil(t, volume)
 	assert.Equal(t, "vol_test123", volume.VolumeID)
 	assert.Equal(t, "test-volume", volume.Name)
@@ -238,10 +238,10 @@ func BenchmarkLabels_Scan(b *testing.B) {
 // Test driver.Valuer interface implementation
 func TestLabels_DriverValuer(t *testing.T) {
 	labels := Labels{"key": "value"}
-	
+
 	// Ensure Labels implements driver.Valuer
 	var _ driver.Valuer = labels
-	
+
 	value, err := labels.Value()
 	assert.NoError(t, err)
 	assert.NotNil(t, value)

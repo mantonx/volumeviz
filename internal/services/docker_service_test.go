@@ -125,11 +125,11 @@ func TestDockerService_ListVolumes(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		volumes     []*volume.Volume
-		listErr     error
-		wantCount   int
-		wantErr     bool
+		name      string
+		volumes   []*volume.Volume
+		listErr   error
+		wantCount int
+		wantErr   bool
 	}{
 		{
 			name:      "successful list",
@@ -265,7 +265,7 @@ func TestDockerService_GetVolume(t *testing.T) {
 
 func TestDockerService_GetVolumeContainers(t *testing.T) {
 	volumeName := "test-volume"
-	
+
 	mockContainers := []types.Container{
 		{
 			ID:     "container1",
@@ -444,12 +444,12 @@ func TestDockerService_GetVolumesByDriver(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		driver     string
-		volumes    []*volume.Volume
-		listErr    error
-		wantCount  int
-		wantErr    bool
+		name        string
+		driver      string
+		volumes     []*volume.Volume
+		listErr     error
+		wantCount   int
+		wantErr     bool
 		checkFilter bool
 	}{
 		{
@@ -626,7 +626,7 @@ func TestDockerService_NewDockerService(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			service, err := NewDockerService(tt.host, tt.timeout)
-			
+
 			if tt.expectError && err == nil {
 				t.Error("NewDockerService() expected error but got none")
 			}
@@ -644,12 +644,12 @@ func TestDockerService_Close(t *testing.T) {
 		},
 	}
 	service := NewDockerServiceWithClient(mockClient)
-	
+
 	err := service.Close()
 	if err != nil {
 		t.Errorf("Close() error = %v, want nil", err)
 	}
-	
+
 	if mockClient.CloseCalls != 1 {
 		t.Errorf("Close() called %d times, want 1", mockClient.CloseCalls)
 	}
@@ -681,7 +681,7 @@ func TestDockerService_GetVolumesByLabel(t *testing.T) {
 		},
 		{
 			name:        "filter_error",
-			labelKey:    "env", 
+			labelKey:    "env",
 			labelValue:  "production",
 			expectError: true,
 			errorMsg:    "failed to list volumes",
@@ -692,7 +692,7 @@ func TestDockerService_GetVolumesByLabel(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mocks.MockDockerClient{}
 			service := NewDockerServiceWithClient(mockClient)
-			
+
 			if tt.expectError {
 				mockClient.ListVolumesFunc = func(ctx context.Context, filterMap map[string][]string) (volume.ListResponse, error) {
 					return volume.ListResponse{}, errors.New(tt.errorMsg)

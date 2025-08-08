@@ -128,9 +128,9 @@ func testMigrationSystem(t *testing.T, db *database.DB) {
 	assert.Greater(t, len(history), 0)
 
 	// Verify tables exist
-	tables := []string{"volumes", "volume_sizes", "containers", "volume_mounts", 
+	tables := []string{"volumes", "volume_sizes", "containers", "volume_mounts",
 		"scan_jobs", "volume_metrics", "system_health", "scan_cache", "migration_history"}
-	
+
 	for _, table := range tables {
 		var exists bool
 		err := db.QueryRow(`
@@ -438,7 +438,7 @@ func testDatabasePerformance(t *testing.T, db *database.DB) {
 			volume := &database.Volume{
 				VolumeID:   fmt.Sprintf("perf_test_vol_%04d", i),
 				Name:       fmt.Sprintf("performance-test-volume-%d", i),
-				Driver:     "local", 
+				Driver:     "local",
 				Mountpoint: fmt.Sprintf("/test/perf/%d", i),
 				Labels:     database.Labels{"test": "performance", "batch": "bulk_insert"},
 				Options:    database.Labels{},
@@ -454,7 +454,7 @@ func testDatabasePerformance(t *testing.T, db *database.DB) {
 		ratePerSecond := float64(numRecords) / duration.Seconds()
 
 		t.Logf("Inserted %d records in %v (%.2f records/sec)", numRecords, duration, ratePerSecond)
-		
+
 		// Performance assertions (adjust based on acceptable performance)
 		assert.Less(t, duration, 30*time.Second, "Bulk insert should complete within 30 seconds")
 		assert.Greater(t, ratePerSecond, 10.0, "Should insert at least 10 records per second")
@@ -565,6 +565,6 @@ func TestDatabaseConnectionPool(t *testing.T) {
 	assert.LessOrEqual(t, stats.Idle, config.MaxIdleConns)
 	assert.Equal(t, config.MaxOpenConns, stats.MaxOpenConnections)
 
-	t.Logf("Connection pool stats: Open=%d, Idle=%d, Max=%d", 
+	t.Logf("Connection pool stats: Open=%d, Idle=%d, Max=%d",
 		stats.OpenConnections, stats.Idle, stats.MaxOpenConnections)
 }

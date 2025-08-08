@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	
+
 	"github.com/mantonx/volumeviz/internal/database"
 )
 
@@ -59,16 +59,16 @@ type AuthConfig struct {
 
 // SecurityConfig holds security headers configuration
 type SecurityConfig struct {
-	HideServerHeader    bool
-	EnableHSTS          bool
-	HSSTMaxAge          int
-	ContentTypeOptions  string
-	FrameOptions        string
-	ReferrerPolicy      string
+	HideServerHeader      bool
+	EnableHSTS            bool
+	HSSTMaxAge            int
+	ContentTypeOptions    string
+	FrameOptions          string
+	ReferrerPolicy        string
 	ContentSecurityPolicy string
 }
 
-// RateLimitConfig holds rate limiting configuration  
+// RateLimitConfig holds rate limiting configuration
 type RateLimitConfig struct {
 	Enabled bool
 	RPM     int

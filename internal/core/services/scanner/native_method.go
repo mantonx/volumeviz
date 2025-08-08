@@ -80,7 +80,7 @@ func (n *NativeMethod) Scan(ctx context.Context, path string) (*interfaces.ScanR
 				Message: "scan cancelled due to timeout or context cancellation",
 				Err:     scanCtx.Err(),
 				Context: map[string]any{
-					"elapsed_time": time.Since(start),
+					"elapsed_time":  time.Since(start),
 					"files_scanned": fileCount,
 				},
 			}

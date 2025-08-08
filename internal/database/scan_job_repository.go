@@ -29,14 +29,14 @@ func (r *ScanJobRepository) Create(job *ScanJob) error {
 	fields := StructToMap(job, "id", "created_at", "updated_at")
 	query, args := BuildInsertQuery(TableNames.ScanJobs, fields)
 	query += " RETURNING id, created_at, updated_at"
-	
+
 	executor := r.getExecutor()
 	err := executor.QueryRow(query, args...).Scan(
 		&job.ID,
 		&job.CreatedAt,
 		&job.UpdatedAt,
 	)
-	
+
 	return err
 }
 
@@ -49,7 +49,7 @@ func (r *ScanJobRepository) GetByID(id int) (*ScanJob, error) {
 		FROM scan_jobs 
 		WHERE id = $1
 	`
-	
+
 	executor := r.getExecutor()
 	return r.scanScanJob(executor.QueryRow(query, id))
 }
@@ -63,7 +63,7 @@ func (r *ScanJobRepository) GetByScanID(scanID string) (*ScanJob, error) {
 		FROM scan_jobs 
 		WHERE scan_id = $1
 	`
-	
+
 	executor := r.getExecutor()
 	return r.scanScanJob(executor.QueryRow(query, scanID))
 }
@@ -79,7 +79,7 @@ func (r *ScanJobRepository) GetByVolumeID(volumeID string) (*ScanJob, error) {
 		ORDER BY created_at DESC
 		LIMIT 1
 	`
-	
+
 	executor := r.getExecutor()
 	return r.scanScanJob(executor.QueryRow(query, volumeID))
 }
@@ -94,14 +94,14 @@ func (r *ScanJobRepository) GetActiveJobs() ([]*ScanJob, error) {
 		WHERE status IN ('queued', 'running')
 		ORDER BY created_at ASC
 	`
-	
+
 	executor := r.getExecutor()
 	rows, err := executor.Query(query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	return ScanRows(rows, r.scanScanJobRow)
 }
 
@@ -115,66 +115,31 @@ func (r *ScanJobRepository) GetJobsByStatus(status string) ([]*ScanJob, error) {
 		WHERE status = $1
 		ORDER BY created_at DESC
 	`
-	
+
 	executor := r.getExecutor()
 	rows, err := executor.Query(query, status)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	return ScanRows(rows, r.scanScanJobRow)
 }
 
 // List retrieves scan jobs with optional filtering and pagination
 func (r *ScanJobRepository) List(options *FilterOptions) (*PaginatedResult[ScanJob], error) {
-	qb := NewQueryBuilder().
-		Select("id", "scan_id", "volume_id", "status", "progress", "method",
-			"started_at", "completed_at", "error_message", "result_id",
-			"estimated_duration", "created_at", "updated_at").
-		From(TableNames.ScanJobs)
-	
-	if options != nil {
-		options.ApplyToQuery(qb, "")
-	}
-	
-	// Default ordering
-	if options == nil || options.OrderBy == nil {
-		qb.OrderBy("created_at DESC")
-	}
-	
-	query, args := qb.Build()
-	
-	executor := r.getExecutor()
-	rows, err := executor.Query(query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	
-	jobs, err := ScanRows(rows, r.scanScanJobRow)
-	if err != nil {
-		return nil, err
-	}
-	
-	// Get total count
-	total, err := r.getScanJobCount(options)
-	if err != nil {
-		return nil, err
-	}
-	
-	limit := 0
-	offset := 0
-	if options != nil {
-		if options.Limit != nil {
-			limit = *options.Limit
-		}
-		if options.Offset != nil {
-			offset = *options.Offset
-		}
-	}
-	
-	return NewPaginatedResult(jobs, total, limit, offset), nil
+	selectFields := []string{"id", "scan_id", "volume_id", "status", "progress", "method",
+		"started_at", "completed_at", "error_message", "result_id",
+		"estimated_duration", "created_at", "updated_at"}
+
+	return ListWithPagination(
+		r.getExecutor(),
+		selectFields,
+		TableNames.ScanJobs,
+		options,
+		r.scanScanJobRow,
+		r.getScanJobCount,
+	)
 }
 
 // UpdateStatus updates the status and progress of a scan job
@@ -184,22 +149,22 @@ func (r *ScanJobRepository) UpdateStatus(scanID string, status string, progress 
 		SET status = $2, progress = $3, updated_at = CURRENT_TIMESTAMP
 		WHERE scan_id = $1
 	`
-	
+
 	executor := r.getExecutor()
 	result, err := executor.Exec(query, scanID, status, progress)
 	if err != nil {
 		return err
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	
+
 	if rowsAffected == 0 {
 		return sql.ErrNoRows
 	}
-	
+
 	return nil
 }
 
@@ -210,22 +175,22 @@ func (r *ScanJobRepository) StartJob(scanID string) error {
 		SET status = 'running', started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
 		WHERE scan_id = $1 AND status = 'queued'
 	`
-	
+
 	executor := r.getExecutor()
 	result, err := executor.Exec(query, scanID)
 	if err != nil {
 		return err
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	
+
 	if rowsAffected == 0 {
 		return sql.ErrNoRows
 	}
-	
+
 	return nil
 }
 
@@ -233,7 +198,7 @@ func (r *ScanJobRepository) StartJob(scanID string) error {
 func (r *ScanJobRepository) CompleteJob(scanID string, resultID *int, errorMessage *string) error {
 	var query string
 	var args []interface{}
-	
+
 	if errorMessage != nil {
 		// Job failed
 		query = `
@@ -259,22 +224,22 @@ func (r *ScanJobRepository) CompleteJob(scanID string, resultID *int, errorMessa
 		`
 		args = []interface{}{scanID, resultID}
 	}
-	
+
 	executor := r.getExecutor()
 	result, err := executor.Exec(query, args...)
 	if err != nil {
 		return err
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	
+
 	if rowsAffected == 0 {
 		return sql.ErrNoRows
 	}
-	
+
 	return nil
 }
 
@@ -287,46 +252,46 @@ func (r *ScanJobRepository) CancelJob(scanID string) error {
 		    updated_at = CURRENT_TIMESTAMP
 		WHERE scan_id = $1 AND status IN ('queued', 'running')
 	`
-	
+
 	executor := r.getExecutor()
 	result, err := executor.Exec(query, scanID)
 	if err != nil {
 		return err
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	
+
 	if rowsAffected == 0 {
 		return sql.ErrNoRows
 	}
-	
+
 	return nil
 }
 
 // CleanupOldJobs removes completed/failed jobs older than the specified duration
 func (r *ScanJobRepository) CleanupOldJobs(olderThan time.Duration) (int, error) {
 	cutoffTime := time.Now().Add(-olderThan)
-	
+
 	query := `
 		DELETE FROM scan_jobs 
 		WHERE status IN ('completed', 'failed', 'cancelled') 
 		  AND completed_at < $1
 	`
-	
+
 	executor := r.getExecutor()
 	result, err := executor.Exec(query, cutoffTime)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return int(rowsAffected), nil
 }
 
@@ -344,11 +309,11 @@ func (r *ScanJobRepository) GetJobStats() (*ScanJobStats, error) {
 		FROM scan_jobs
 		WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
 	`
-	
+
 	executor := r.getExecutor()
 	stats := &ScanJobStats{}
 	var avgDuration sql.NullFloat64
-	
+
 	err := executor.QueryRow(query).Scan(
 		&stats.TotalJobs,
 		&stats.QueuedJobs,
@@ -358,28 +323,29 @@ func (r *ScanJobRepository) GetJobStats() (*ScanJobStats, error) {
 		&stats.CancelledJobs,
 		&avgDuration,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if avgDuration.Valid {
 		duration := time.Duration(avgDuration.Float64 * float64(time.Second))
 		stats.AvgDuration = &duration
 	}
-	
+
 	return stats, nil
 }
 
 // scanScanJob scans a single scan job from a row
-func (r *ScanJobRepository) scanScanJob(row *sql.Row) (*ScanJob, error) {
+// scanJobScanner contains unified scanning functions for ScanJob entities
+var scanJobScanner = UnifiedScanFunc[ScanJob](func(scanner RowScanner) (*ScanJob, error) {
 	job := &ScanJob{}
 	var startedAt, completedAt sql.NullTime
 	var errorMessage sql.NullString
 	var resultID sql.NullInt32
 	var estimatedDuration sql.NullInt64
-	
-	err := row.Scan(
+
+	err := scanner.Scan(
 		&job.ID,
 		&job.ScanID,
 		&job.VolumeID,
@@ -394,11 +360,11 @@ func (r *ScanJobRepository) scanScanJob(row *sql.Row) (*ScanJob, error) {
 		&job.CreatedAt,
 		&job.UpdatedAt,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if startedAt.Valid {
 		job.StartedAt = &startedAt.Time
 	}
@@ -416,57 +382,17 @@ func (r *ScanJobRepository) scanScanJob(row *sql.Row) (*ScanJob, error) {
 		duration := time.Duration(estimatedDuration.Int64)
 		job.EstimatedDuration = &duration
 	}
-	
+
 	return job, nil
+})
+
+func (r *ScanJobRepository) scanScanJob(row *sql.Row) (*ScanJob, error) {
+	return scanJobScanner.FromRow(row)
 }
 
 // scanScanJobRow scans a scan job from a rows result set
 func (r *ScanJobRepository) scanScanJobRow(rows *sql.Rows) (*ScanJob, error) {
-	job := &ScanJob{}
-	var startedAt, completedAt sql.NullTime
-	var errorMessage sql.NullString
-	var resultID sql.NullInt32
-	var estimatedDuration sql.NullInt64
-	
-	err := rows.Scan(
-		&job.ID,
-		&job.ScanID,
-		&job.VolumeID,
-		&job.Status,
-		&job.Progress,
-		&job.Method,
-		&startedAt,
-		&completedAt,
-		&errorMessage,
-		&resultID,
-		&estimatedDuration,
-		&job.CreatedAt,
-		&job.UpdatedAt,
-	)
-	
-	if err != nil {
-		return nil, err
-	}
-	
-	if startedAt.Valid {
-		job.StartedAt = &startedAt.Time
-	}
-	if completedAt.Valid {
-		job.CompletedAt = &completedAt.Time
-	}
-	if errorMessage.Valid {
-		job.ErrorMessage = &errorMessage.String
-	}
-	if resultID.Valid {
-		id := int(resultID.Int32)
-		job.ResultID = &id
-	}
-	if estimatedDuration.Valid {
-		duration := time.Duration(estimatedDuration.Int64)
-		job.EstimatedDuration = &duration
-	}
-	
-	return job, nil
+	return scanJobScanner.FromRows(rows)
 }
 
 // getScanJobCount returns the total count of scan jobs matching the filter
@@ -474,7 +400,7 @@ func (r *ScanJobRepository) getScanJobCount(options *FilterOptions) (int, error)
 	qb := NewQueryBuilder().
 		Select("COUNT(*)").
 		From(TableNames.ScanJobs)
-	
+
 	if options != nil {
 		filterOptions := *options
 		filterOptions.Limit = nil
@@ -482,9 +408,9 @@ func (r *ScanJobRepository) getScanJobCount(options *FilterOptions) (int, error)
 		filterOptions.OrderBy = nil
 		filterOptions.ApplyToQuery(qb, "")
 	}
-	
+
 	query, args := qb.Build()
-	
+
 	executor := r.getExecutor()
 	var count int
 	err := executor.QueryRow(query, args...).Scan(&count)

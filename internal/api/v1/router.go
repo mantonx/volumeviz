@@ -102,7 +102,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 	// Security middleware
 	r.engine.Use(middleware.RequestIDMiddleware())
 	r.engine.Use(middleware.SecurityHeadersMiddleware(nil)) // Use defaults
-	
+
 	// CORS middleware with configuration
 	corsConfig := &middleware.CORSConfig{
 		AllowedOrigins:   config.CORS.AllowedOrigins,
@@ -113,7 +113,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 		MaxAge:           300,
 	}
 	r.engine.Use(middleware.CORSMiddleware(corsConfig))
-	
+
 	// Rate limiting
 	rateLimitConfig := &middleware.RateLimitConfig{
 		Enabled:   config.RateLimit.Enabled,
@@ -123,7 +123,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 		KeyFunc:   middleware.DefaultKeyFunc,
 	}
 	r.engine.Use(middleware.RateLimitMiddleware(rateLimitConfig))
-	
+
 	// Authentication middleware (if enabled)
 	authConfig := &middleware.AuthConfig{
 		Enabled:      config.Auth.Enabled,
@@ -132,7 +132,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 		SkipPaths: []string{
 			"/api/v1/health",
 			"/health",
-			"/metrics", 
+			"/metrics",
 			"/api/docs",
 			"/openapi",
 		},

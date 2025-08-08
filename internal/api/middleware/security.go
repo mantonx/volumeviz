@@ -8,24 +8,24 @@ import (
 
 // SecurityConfig holds security middleware configuration
 type SecurityConfig struct {
-	ContentTypeOptions      string
-	FrameOptions           string
-	ReferrerPolicy         string
-	ContentSecurityPolicy  string
-	StrictTransportSecurity string // Only set if using HTTPS
+	ContentTypeOptions           string
+	FrameOptions                 string
+	ReferrerPolicy               string
+	ContentSecurityPolicy        string
+	StrictTransportSecurity      string // Only set if using HTTPS
 	PermittedCrossDomainPolicies string
-	HideServerHeader       bool
+	HideServerHeader             bool
 }
 
 // DefaultSecurityConfig returns secure default security headers configuration
 func DefaultSecurityConfig() *SecurityConfig {
 	return &SecurityConfig{
-		ContentTypeOptions:      "nosniff",
-		FrameOptions:           "SAMEORIGIN",
-		ReferrerPolicy:         "no-referrer",
-		ContentSecurityPolicy:  "default-src 'none'; frame-ancestors 'self';",
+		ContentTypeOptions:           "nosniff",
+		FrameOptions:                 "SAMEORIGIN",
+		ReferrerPolicy:               "no-referrer",
+		ContentSecurityPolicy:        "default-src 'none'; frame-ancestors 'self';",
 		PermittedCrossDomainPolicies: "none",
-		HideServerHeader:       true,
+		HideServerHeader:             true,
 	}
 }
 
@@ -88,10 +88,10 @@ func ErrorHandlingMiddleware(isProduction bool) gin.HandlerFunc {
 			if isProduction {
 				// Log the full error but return generic message
 				gin.Logger()(c)
-				
+
 				c.JSON(c.Writer.Status(), gin.H{
 					"error":     "Internal server error",
-					"code":      "INTERNAL_ERROR", 
+					"code":      "INTERNAL_ERROR",
 					"requestId": c.GetString("requestId"),
 				})
 			} else {

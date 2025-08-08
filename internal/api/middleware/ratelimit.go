@@ -13,11 +13,11 @@ import (
 
 // TokenBucket implements a simple token bucket rate limiter
 type TokenBucket struct {
-	capacity   int           // Maximum tokens
-	tokens     int           // Current tokens
-	refillRate int           // Tokens per minute
-	lastRefill time.Time     // Last refill time
-	mutex      sync.Mutex    // Thread safety
+	capacity   int        // Maximum tokens
+	tokens     int        // Current tokens
+	refillRate int        // Tokens per minute
+	lastRefill time.Time  // Last refill time
+	mutex      sync.Mutex // Thread safety
 }
 
 // NewTokenBucket creates a new token bucket
@@ -38,7 +38,7 @@ func (tb *TokenBucket) TryConsume() bool {
 	// Refill tokens based on time elapsed
 	now := time.Now()
 	elapsed := now.Sub(tb.lastRefill).Minutes()
-	
+
 	if elapsed >= 1.0 {
 		// Add tokens for each minute elapsed
 		tokensToAdd := int(elapsed) * tb.refillRate
@@ -57,19 +57,19 @@ func (tb *TokenBucket) TryConsume() bool {
 
 // RateLimitConfig holds rate limiting configuration
 type RateLimitConfig struct {
-	Enabled    bool          // Whether rate limiting is enabled
-	RPM        int           // Requests per minute
-	Burst      int           // Burst capacity
-	SkipPaths  []string      // Paths to skip (e.g., health checks)
-	KeyFunc    func(*gin.Context) string // Function to generate rate limit key
+	Enabled   bool                      // Whether rate limiting is enabled
+	RPM       int                       // Requests per minute
+	Burst     int                       // Burst capacity
+	SkipPaths []string                  // Paths to skip (e.g., health checks)
+	KeyFunc   func(*gin.Context) string // Function to generate rate limit key
 }
 
 // DefaultRateLimitConfig returns default rate limiting configuration
 func DefaultRateLimitConfig() *RateLimitConfig {
 	return &RateLimitConfig{
 		Enabled:   true,
-		RPM:       60,   // 60 requests per minute
-		Burst:     30,   // Allow bursts up to 30 requests
+		RPM:       60, // 60 requests per minute
+		Burst:     30, // Allow bursts up to 30 requests
 		SkipPaths: []string{"/api/v1/health", "/health", "/metrics"},
 		KeyFunc:   DefaultKeyFunc,
 	}
@@ -79,13 +79,13 @@ func DefaultRateLimitConfig() *RateLimitConfig {
 func DefaultKeyFunc(c *gin.Context) string {
 	// Get client IP
 	clientIP := getClientIP(c)
-	
+
 	// Include route in key for per-endpoint limiting
 	route := c.FullPath()
 	if route == "" {
 		route = c.Request.URL.Path
 	}
-	
+
 	return fmt.Sprintf("%s:%s", clientIP, route)
 }
 
@@ -111,7 +111,7 @@ func getClientIP(c *gin.Context) string {
 	if err != nil {
 		return c.Request.RemoteAddr
 	}
-	
+
 	return host
 }
 
@@ -187,7 +187,7 @@ func RateLimitMiddleware(config *RateLimitConfig) gin.HandlerFunc {
 	go func() {
 		ticker := time.NewTicker(time.Hour)
 		defer ticker.Stop()
-		
+
 		for range ticker.C {
 			limiter.Cleanup()
 		}
@@ -210,11 +210,11 @@ func RateLimitMiddleware(config *RateLimitConfig) gin.HandlerFunc {
 			c.Header("X-RateLimit-Limit", strconv.Itoa(config.RPM))
 			c.Header("X-RateLimit-Remaining", "0")
 			c.Header("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(time.Minute).Unix(), 10))
-			
+
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
-				"error":     "Rate limit exceeded",
-				"code":      "RATE_LIMIT_EXCEEDED",
-				"requestId": GetRequestID(c),
+				"error":      "Rate limit exceeded",
+				"code":       "RATE_LIMIT_EXCEEDED",
+				"requestId":  GetRequestID(c),
 				"retryAfter": "60", // seconds
 			})
 			return

@@ -72,10 +72,10 @@ func Demo() {
 
 	// Performance test: Inserts
 	fmt.Println("\n⚡ Running performance tests...")
-	
+
 	insertCount := 5000
 	start := time.Now()
-	
+
 	for i := 0; i < insertCount; i++ {
 		_, err := db.Exec("INSERT INTO performance_test (name, value, data) VALUES (?, ?, ?)",
 			fmt.Sprintf("test_%d", i), i, fmt.Sprintf("data_for_record_%d", i))
@@ -83,23 +83,23 @@ func Demo() {
 			log.Fatalf("Insert failed: %v", err)
 		}
 	}
-	
+
 	insertDuration := time.Since(start)
 	insertRate := float64(insertCount) / insertDuration.Seconds()
-	
-	fmt.Printf("   📝 Inserts: %d records in %v (%.0f records/sec)\n", 
+
+	fmt.Printf("   📝 Inserts: %d records in %v (%.0f records/sec)\n",
 		insertCount, insertDuration, insertRate)
 
 	// Performance test: Queries
 	queryCount := 1000
 	start = time.Now()
-	
+
 	for i := 0; i < queryCount; i++ {
 		rows, err := db.Query("SELECT id, name, value FROM performance_test LIMIT 10")
 		if err != nil {
 			log.Fatalf("Query failed: %v", err)
 		}
-		
+
 		// Process results
 		for rows.Next() {
 			var id int
@@ -109,11 +109,11 @@ func Demo() {
 		}
 		rows.Close()
 	}
-	
+
 	queryDuration := time.Since(start)
 	queryRate := float64(queryCount) / queryDuration.Seconds()
-	
-	fmt.Printf("   🔍 Queries: %d queries in %v (%.0f queries/sec)\n", 
+
+	fmt.Printf("   🔍 Queries: %d queries in %v (%.0f queries/sec)\n",
 		queryCount, queryDuration, queryRate)
 
 	// Run database optimization
@@ -128,7 +128,7 @@ func Demo() {
 
 	// Check database file size
 	if stat, err := os.Stat(dbPath); err == nil {
-		fmt.Printf("\n💾 Database file size: %d bytes (%.2f KB)\n", 
+		fmt.Printf("\n💾 Database file size: %d bytes (%.2f KB)\n",
 			stat.Size(), float64(stat.Size())/1024.0)
 	}
 
@@ -138,7 +138,7 @@ func Demo() {
 	fmt.Printf("   • Query throughput:  %.0f queries/second\n", queryRate)
 	fmt.Printf("   • Total records:     %d\n", insertCount)
 	fmt.Printf("   • Database type:     %s\n", db.GetDatabaseType())
-	
+
 	if insertRate > 30000 {
 		fmt.Println("   🎉 Excellent insert performance!")
 	}

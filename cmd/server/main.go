@@ -70,7 +70,7 @@ func main() {
 		SSLMode:  cfg.Database.SSLMode,
 		Path:     cfg.Database.Path,
 	}
-	
+
 	db, err := database.NewDB(dbConfig)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
@@ -129,11 +129,10 @@ func main() {
 	// Graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	
+
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server forced to shutdown:", err)
 	}
 
 	log.Println("Server exited gracefully")
 }
-

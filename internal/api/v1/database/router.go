@@ -26,7 +26,7 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 		database.GET("/health", r.handler.GetDatabaseHealth)
 		database.GET("/test-connection", r.handler.TestDatabaseConnection)
 		database.GET("/stats", r.handler.GetDatabaseStats)
-		
+
 		// Migration management endpoints
 		migrations := database.Group("/migrations")
 		{
@@ -35,7 +35,7 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 			migrations.POST("/apply", r.handler.ApplyPendingMigrations)
 			migrations.POST("/:version/rollback", r.handler.RollbackMigration)
 		}
-		
+
 		// Performance and monitoring endpoints
 		performance := database.Group("/performance")
 		{

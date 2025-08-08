@@ -38,7 +38,7 @@ func main() {
 	case "viewer":
 		userRole = middleware.RoleViewer
 	case "operator":
-		userRole = middleware.RoleOperator  
+		userRole = middleware.RoleOperator
 	case "admin":
 		userRole = middleware.RoleAdmin
 	default:

@@ -12,10 +12,10 @@ func TestStructToMap(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name         string
-		input        interface{}
+		name          string
+		input         interface{}
 		excludeFields []string
-		expected     map[string]interface{}
+		expected      map[string]interface{}
 	}{
 		{
 			name: "simple struct",
@@ -50,18 +50,18 @@ func TestStructToMap(t *testing.T) {
 				IsActive:   true,
 			},
 			expected: map[string]interface{}{
-				"id":          1,
-				"created_at":  now,
-				"updated_at":  now,
-				"volume_id":   "vol-123",
-				"name":        "test-volume",
-				"driver":      "local",
-				"mountpoint":  "/var/lib/docker/volumes/test",
-				"labels":      Labels{"env": "test"},
-				"options":     Labels{},
-				"scope":       "local",
-				"status":      "active",
-				"is_active":   true,
+				"id":         1,
+				"created_at": now,
+				"updated_at": now,
+				"volume_id":  "vol-123",
+				"name":       "test-volume",
+				"driver":     "local",
+				"mountpoint": "/var/lib/docker/volumes/test",
+				"labels":     Labels{"env": "test"},
+				"options":    Labels{},
+				"scope":      "local",
+				"status":     "active",
+				"is_active":  true,
 			},
 		},
 		{
@@ -80,15 +80,15 @@ func TestStructToMap(t *testing.T) {
 			},
 			excludeFields: []string{"id", "created_at", "updated_at"},
 			expected: map[string]interface{}{
-				"volume_id":   "vol-456",
-				"name":        "excluded-volume",
-				"driver":      "overlay",
-				"mountpoint":  "/mnt/volumes/test",
-				"labels":      Labels(nil),
-				"options":     Labels(nil),
-				"scope":       "",
-				"status":      "",
-				"is_active":   false,
+				"volume_id":  "vol-456",
+				"name":       "excluded-volume",
+				"driver":     "overlay",
+				"mountpoint": "/mnt/volumes/test",
+				"labels":     Labels(nil),
+				"options":    Labels(nil),
+				"scope":      "",
+				"status":     "",
+				"is_active":  false,
 			},
 		},
 		{
@@ -104,16 +104,16 @@ func TestStructToMap(t *testing.T) {
 				LastScanned: nil, // nil pointer field
 			},
 			expected: map[string]interface{}{
-				"id":          2,
-				"volume_id":   "vol-789",
-				"name":        "nil-fields",
-				"driver":      "local",
-				"mountpoint":  "/tmp",
-				"labels":      Labels(nil),
-				"options":     Labels(nil),
-				"scope":       "",
-				"status":      "",
-				"is_active":   false,
+				"id":         2,
+				"volume_id":  "vol-789",
+				"name":       "nil-fields",
+				"driver":     "local",
+				"mountpoint": "/tmp",
+				"labels":     Labels(nil),
+				"options":    Labels(nil),
+				"scope":      "",
+				"status":     "",
+				"is_active":  false,
 			},
 		},
 		{
@@ -137,12 +137,12 @@ func TestStructToMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := StructToMap(tt.input, tt.excludeFields...)
-			
+
 			// Check that all expected fields are present
 			for key, expectedValue := range tt.expected {
 				actualValue, exists := result[key]
 				assert.True(t, exists, "expected key %s to exist", key)
-				
+
 				// For time values, compare with precision
 				if expectedTime, ok := expectedValue.(time.Time); ok {
 					if actualTime, ok := actualValue.(time.Time); ok {
@@ -155,9 +155,9 @@ func TestStructToMap(t *testing.T) {
 					assert.Equal(t, expectedValue, actualValue, "values for key %s should be equal", key)
 				}
 			}
-			
+
 			// Check that no unexpected fields are present
-			assert.Equal(t, len(tt.expected), len(result), 
+			assert.Equal(t, len(tt.expected), len(result),
 				"result should have exactly %d fields", len(tt.expected))
 		})
 	}
@@ -169,13 +169,13 @@ func TestProcessStruct(t *testing.T) {
 		Field1 string `db:"field1"`
 		Field2 int    `db:"field2"`
 	}
-	
+
 	type TestStruct struct {
 		EmbeddedStruct
 		Field3 string `db:"field3"`
 		Field4 bool   `db:"field4"`
 	}
-	
+
 	input := TestStruct{
 		EmbeddedStruct: EmbeddedStruct{
 			Field1: "value1",
@@ -184,16 +184,16 @@ func TestProcessStruct(t *testing.T) {
 		Field3: "value3",
 		Field4: true,
 	}
-	
+
 	result := StructToMap(input)
-	
+
 	expected := map[string]interface{}{
 		"field1": "value1",
 		"field2": 42,
 		"field3": "value3",
 		"field4": true,
 	}
-	
+
 	assert.Equal(t, expected, result)
 }
 
@@ -215,7 +215,7 @@ func BenchmarkStructToMap(b *testing.B) {
 		Status:     "active",
 		IsActive:   true,
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = StructToMap(v)
@@ -236,9 +236,9 @@ func BenchmarkStructToMapWithExclusions(b *testing.B) {
 		Mountpoint: "/var/lib/docker/volumes/bench",
 		IsActive:   true,
 	}
-	
+
 	excludeFields := []string{"id", "created_at", "updated_at"}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = StructToMap(v, excludeFields...)

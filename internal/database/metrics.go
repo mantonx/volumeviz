@@ -160,7 +160,7 @@ func (mc *MetricsCollector) collect() {
 	dbConnectionsTotal.WithLabelValues("open").Set(float64(stats.OpenConnections))
 	dbConnectionsTotal.WithLabelValues("in_use").Set(float64(stats.InUse))
 	dbConnectionsTotal.WithLabelValues("idle").Set(float64(stats.Idle))
-	
+
 	if stats.WaitDuration > 0 && stats.WaitCount > 0 {
 		avgWait := stats.WaitDuration / time.Duration(stats.WaitCount)
 		dbConnectionWaitDuration.Observe(avgWait.Seconds())
@@ -195,7 +195,7 @@ func (mc *MetricsCollector) collectTableMetrics() {
 // getTableSize returns the size of a table in bytes, or -1 if unavailable
 func (mc *MetricsCollector) getTableSize(table string) int64 {
 	var size int64
-	
+
 	if mc.db.IsPostgreSQL() {
 		// PostgreSQL-specific table size query
 		sizeQuery := `SELECT pg_total_relation_size($1::regclass)`
@@ -207,7 +207,7 @@ func (mc *MetricsCollector) getTableSize(table string) int64 {
 		// SQLite doesn't have a direct table size function
 		// We can estimate based on page count and page size
 		var pageCount, pageSize int64
-		
+
 		// Get page count for the table
 		pageCountQuery := `
 			SELECT COUNT(*) FROM pragma_page_count() 
@@ -216,21 +216,21 @@ func (mc *MetricsCollector) getTableSize(table string) int64 {
 		if err := mc.db.QueryRow(pageCountQuery, table).Scan(&pageCount); err != nil {
 			// If pragma doesn't work, estimate based on row count and average row size
 			var rowCount int64
-			if err := mc.db.QueryRow("SELECT COUNT(*) FROM "+table).Scan(&rowCount); err != nil {
+			if err := mc.db.QueryRow("SELECT COUNT(*) FROM " + table).Scan(&rowCount); err != nil {
 				return -1
 			}
 			// Rough estimate: assume 100 bytes per row on average
 			return rowCount * 100
 		}
-		
+
 		// Get page size
 		if err := mc.db.QueryRow("PRAGMA page_size").Scan(&pageSize); err != nil {
 			pageSize = 4096 // Default SQLite page size
 		}
-		
+
 		return pageCount * pageSize
 	}
-	
+
 	return -1 // Unsupported database type
 }
 
@@ -245,7 +245,7 @@ func RecordQuery(operation, table string, duration time.Duration, err error) {
 		status = "error"
 		dbErrorTotal.WithLabelValues("query").Inc()
 	}
-	
+
 	dbQueryDuration.WithLabelValues(operation, table).Observe(duration.Seconds())
 	dbQueryTotal.WithLabelValues(operation, table, status).Inc()
 }
@@ -256,7 +256,7 @@ func RecordQuery(operation, table string, duration time.Duration, err error) {
 func RecordTransaction(duration time.Duration, status string) {
 	dbTransactionDuration.Observe(duration.Seconds())
 	dbTransactionTotal.WithLabelValues(status).Inc()
-	
+
 	if status == "error" {
 		dbErrorTotal.WithLabelValues("transaction").Inc()
 	}
@@ -272,7 +272,7 @@ func RecordMigration(direction string, duration time.Duration, err error) {
 		status = "error"
 		dbErrorTotal.WithLabelValues("migration").Inc()
 	}
-	
+
 	dbMigrationDuration.Observe(duration.Seconds())
 	dbMigrationTotal.WithLabelValues(direction, status).Inc()
 }
@@ -350,7 +350,7 @@ func (itx *instrumentedTx) Rollback() error {
 // Handles CTEs and returns lowercase operation name
 func extractOperation(query string) string {
 	query = utils.TrimAndUpper(query)
-	
+
 	// Handle WITH clause (CTE)
 	if strings.HasPrefix(query, "WITH") {
 		// Find the actual operation after the CTE
@@ -364,7 +364,7 @@ func extractOperation(query string) string {
 			return "delete"
 		}
 	}
-	
+
 	// Check direct operation prefixes
 	if utils.HasAnyPrefix(query, "SELECT") {
 		return "select"
@@ -382,7 +382,7 @@ func extractOperation(query string) string {
 // Handles UPDATE, SELECT, INSERT, and DELETE statements
 func extractTableName(query string) string {
 	query = utils.TrimAndUpper(query)
-	
+
 	// Handle UPDATE statements first (may have FROM clause)
 	if strings.HasPrefix(query, "UPDATE") {
 		tablePart := utils.SplitAndGetAfter(query, "UPDATE")
@@ -396,7 +396,7 @@ func extractTableName(query string) string {
 			return tableName
 		}
 	}
-	
+
 	// Handle SELECT/DELETE with FROM clause
 	if strings.Contains(query, "FROM") {
 		tablePart := utils.SplitAndGetAfter(query, "FROM")
@@ -404,7 +404,7 @@ func extractTableName(query string) string {
 			return utils.SafeLower(firstWord)
 		}
 	}
-	
+
 	// Handle INSERT INTO
 	if strings.Contains(query, "INTO") {
 		tablePart := utils.SplitAndGetAfter(query, "INTO")
@@ -412,7 +412,7 @@ func extractTableName(query string) string {
 			return utils.SafeLower(firstWord)
 		}
 	}
-	
+
 	return "unknown"
 }
 

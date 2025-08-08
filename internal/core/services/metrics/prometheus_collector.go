@@ -3,9 +3,9 @@ package metrics
 import (
 	"time"
 
+	"github.com/mantonx/volumeviz/internal/core/interfaces"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/mantonx/volumeviz/internal/core/interfaces"
 )
 
 // PrometheusMetricsCollector implements metrics collection using Prometheus
@@ -16,13 +16,13 @@ type PrometheusMetricsCollector struct {
 	cacheSize        prometheus.Gauge
 
 	// Scan metrics
-	scanDurationHistogram    prometheus.HistogramVec
-	scanAttemptsTotal        prometheus.CounterVec
-	scanSuccessTotal         prometheus.CounterVec
-	scanFailuresTotal        prometheus.CounterVec
-	scanQueueDepthGauge      prometheus.Gauge
-	scanSizeHistogram        prometheus.HistogramVec
-	scansInProgressGauge     prometheus.GaugeVec
+	scanDurationHistogram prometheus.HistogramVec
+	scanAttemptsTotal     prometheus.CounterVec
+	scanSuccessTotal      prometheus.CounterVec
+	scanFailuresTotal     prometheus.CounterVec
+	scanQueueDepthGauge   prometheus.Gauge
+	scanSizeHistogram     prometheus.HistogramVec
+	scansInProgressGauge  prometheus.GaugeVec
 
 	// Volume metrics
 	volumeTotalSizeGauge     prometheus.GaugeVec
@@ -31,7 +31,7 @@ type PrometheusMetricsCollector struct {
 
 	// System metrics
 	dockerConnectionStatus prometheus.Gauge
-	activeScanners          prometheus.Gauge
+	activeScanners         prometheus.Gauge
 }
 
 // NewPrometheusMetricsCollector creates a new Prometheus metrics collector
@@ -64,11 +64,11 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 
 		// Scan duration histogram with appropriate buckets for volume scanning
 		scanDurationHistogram: *promauto.NewHistogramVec(prometheus.HistogramOpts{
-			Namespace: namespace,
-			Subsystem: subsystem,
-			Name:      "scan_duration_seconds",
-			Help:      "Duration of volume scans in seconds",
-			Buckets:   []float64{0.1, 0.5, 1, 5, 10, 30, 60, 120, 300, 600, 1200}, // Up to 20 minutes
+			Namespace:   namespace,
+			Subsystem:   subsystem,
+			Name:        "scan_duration_seconds",
+			Help:        "Duration of volume scans in seconds",
+			Buckets:     []float64{0.1, 0.5, 1, 5, 10, 30, 60, 120, 300, 600, 1200}, // Up to 20 minutes
 			ConstLabels: labels,
 		}, []string{"method", "volume_id", "filesystem_type"}),
 
@@ -111,14 +111,14 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Name:      "volume_size_bytes",
 			Help:      "Size of scanned volumes in bytes",
 			Buckets: []float64{
-				1024,           // 1KB
-				1024 * 1024,    // 1MB
-				100 * 1024 * 1024, // 100MB
-				1024 * 1024 * 1024, // 1GB
-				10 * 1024 * 1024 * 1024,  // 10GB
-				100 * 1024 * 1024 * 1024, // 100GB
-				1024 * 1024 * 1024 * 1024, // 1TB
-				10 * 1024 * 1024 * 1024 * 1024, // 10TB
+				1024,                            // 1KB
+				1024 * 1024,                     // 1MB
+				100 * 1024 * 1024,               // 100MB
+				1024 * 1024 * 1024,              // 1GB
+				10 * 1024 * 1024 * 1024,         // 10GB
+				100 * 1024 * 1024 * 1024,        // 100GB
+				1024 * 1024 * 1024 * 1024,       // 1TB
+				10 * 1024 * 1024 * 1024 * 1024,  // 10TB
 				100 * 1024 * 1024 * 1024 * 1024, // 100TB
 			},
 			ConstLabels: labels,
@@ -190,13 +190,13 @@ func (p *PrometheusMetricsCollector) CacheMiss(volumeID string) {
 func (p *PrometheusMetricsCollector) ScanCompleted(volumeID, method string, duration time.Duration, size int64) {
 	// Record scan success
 	p.scanSuccessTotal.WithLabelValues(method).Inc()
-	
+
 	// Record scan duration
 	p.scanDurationHistogram.WithLabelValues(method, volumeID, "unknown").Observe(duration.Seconds())
-	
+
 	// Record volume size distribution
 	p.scanSizeHistogram.WithLabelValues(volumeID, method, "unknown").Observe(float64(size))
-	
+
 	// Update volume-specific metrics
 	p.volumeTotalSizeGauge.WithLabelValues(volumeID, volumeID, "unknown").Set(float64(size))
 	p.volumeScanTimestampGauge.WithLabelValues(volumeID, method).SetToCurrentTime()
@@ -205,7 +205,7 @@ func (p *PrometheusMetricsCollector) ScanCompleted(volumeID, method string, dura
 // RecordScanAttempt records a scan attempt
 func (p *PrometheusMetricsCollector) RecordScanAttempt(method string, duration time.Duration, success bool) {
 	p.scanAttemptsTotal.WithLabelValues(method).Inc()
-	
+
 	if success {
 		p.scanSuccessTotal.WithLabelValues(method).Inc()
 	} else {

@@ -114,13 +114,13 @@ func (s *DockerService) GetVolumeContainers(ctx context.Context, volumeName stri
 			// For volumes, the mount name matches the volume name
 			if mount.Type == "volume" && mount.Name == volumeName {
 				volumeContainer := models.VolumeContainer{
-					ID:          container.ID,
-					Name:        containerInfo.Name,
-					State:       container.State,
-					Status:      container.Status,
-					MountPath:   mount.Destination,
-					MountType:   string(mount.Type),
-					AccessMode:  "rw", // Default
+					ID:         container.ID,
+					Name:       containerInfo.Name,
+					State:      container.State,
+					Status:     container.Status,
+					MountPath:  mount.Destination,
+					MountType:  string(mount.Type),
+					AccessMode: "rw", // Default
 				}
 
 				// Determine read/write permissions from mount

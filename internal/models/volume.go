@@ -38,13 +38,13 @@ type VolumeContainer struct {
 
 // DockerHealth represents Docker daemon health status
 type DockerHealth struct {
-	Status      string `json:"status"`
-	Message     string `json:"message,omitempty"`
-	Version     string `json:"version,omitempty"`
-	APIVersion  string `json:"api_version,omitempty"`
-	GoVersion   string `json:"go_version,omitempty"`
-	GitCommit   string `json:"git_commit,omitempty"`
-	BuildTime   string `json:"build_time,omitempty"`
+	Status     string `json:"status"`
+	Message    string `json:"message,omitempty"`
+	Version    string `json:"version,omitempty"`
+	APIVersion string `json:"api_version,omitempty"`
+	GoVersion  string `json:"go_version,omitempty"`
+	GitCommit  string `json:"git_commit,omitempty"`
+	BuildTime  string `json:"build_time,omitempty"`
 }
 
 // VolumeListResponse represents the response for volume listing

@@ -39,7 +39,7 @@ type MetricsCollector interface {
 	ScanCompleted(volumeID, method string, duration time.Duration, size int64)
 	RecordScanAttempt(method string, duration time.Duration, success bool)
 	ScanQueueDepth(depth int)
-	
+
 	// Enhanced metrics for production monitoring
 	RecordScanFailure(method, errorCode string)
 	UpdateVolumeMetrics(volumeID, volumeName, driver, filesystemType string, size int64, fileCount int, scanMethod string)
@@ -68,7 +68,7 @@ type ScanResult struct {
 type ScanProgress struct {
 	ScanID             string        `json:"scan_id"`
 	VolumeID           string        `json:"volume_id"`
-	Status             string        `json:"status"` // "running", "completed", "failed", "cancelled"
+	Status             string        `json:"status"`   // "running", "completed", "failed", "cancelled"
 	Progress           float64       `json:"progress"` // 0.0 to 1.0
 	FilesScanned       int           `json:"files_scanned"`
 	CurrentPath        string        `json:"current_path"`
@@ -80,12 +80,12 @@ type ScanProgress struct {
 
 // MethodInfo provides information about available scan methods
 type MethodInfo struct {
-	Name        string        `json:"name"`
-	Available   bool          `json:"available"`
-	Description string        `json:"description"`
-	Performance string        `json:"performance"` // "fast", "medium", "slow"
-	Accuracy    string        `json:"accuracy"`    // "high", "medium", "basic"
-	Features    []string      `json:"features"`
+	Name        string   `json:"name"`
+	Available   bool     `json:"available"`
+	Description string   `json:"description"`
+	Performance string   `json:"performance"` // "fast", "medium", "slow"
+	Accuracy    string   `json:"accuracy"`    // "high", "medium", "basic"
+	Features    []string `json:"features"`
 }
 
 // ProgressUpdate represents a progress update during scanning

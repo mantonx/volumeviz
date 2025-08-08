@@ -55,7 +55,7 @@ func TestDockerService_PerformanceRequirements(t *testing.T) {
 		// Get a volume to test with
 		volumes, err := service.ListVolumes(ctx)
 		require.NoError(t, err)
-		
+
 		if len(volumes) == 0 {
 			t.Skip("No volumes available for concurrent access test")
 		}
@@ -70,7 +70,7 @@ func TestDockerService_PerformanceRequirements(t *testing.T) {
 				start := time.Now()
 				_, err := service.GetVolume(ctx, testVolume.ID)
 				duration := time.Since(start)
-				
+
 				if err != nil {
 					t.Errorf("Concurrent volume access failed: %v", err)
 				}
@@ -90,7 +90,7 @@ func TestDockerService_PerformanceRequirements(t *testing.T) {
 
 		// Should handle concurrent access efficiently
 		maxConcurrentDuration := 1 * time.Second
-		assert.Less(t, avgDuration, maxConcurrentDuration, 
+		assert.Less(t, avgDuration, maxConcurrentDuration,
 			"Concurrent access should average less than 1s")
 	})
 
@@ -103,9 +103,9 @@ func TestDockerService_PerformanceRequirements(t *testing.T) {
 			start := time.Now()
 			err := service.Ping(ctx)
 			duration := time.Since(start)
-			
+
 			healthDurations = append(healthDurations, duration)
-			
+
 			if err != nil {
 				t.Errorf("Health check %d failed: %v", i, err)
 			}
@@ -120,9 +120,9 @@ func TestDockerService_PerformanceRequirements(t *testing.T) {
 			totalHealthTime += d
 		}
 		avgHealthTime := totalHealthTime / time.Duration(len(healthDurations))
-		
+
 		t.Logf("Average health check time: %v", avgHealthTime)
-		
+
 		// Health checks should be very fast
 		maxHealthDuration := 100 * time.Millisecond
 		assert.Less(t, avgHealthTime, maxHealthDuration,
@@ -178,13 +178,13 @@ func TestDockerService_LoadTesting(t *testing.T) {
 
 		t.Logf("Completed %d requests in %v", requestCount, totalDuration)
 		t.Logf("Throughput: %.2f requests/second", requestsPerSecond)
-		t.Logf("Error rate: %d/%d (%.2f%%)", errorCount, requestCount, 
+		t.Logf("Error rate: %d/%d (%.2f%%)", errorCount, requestCount,
 			float64(errorCount)/float64(requestCount)*100)
 
 		// Performance requirements
-		assert.Less(t, float64(errorCount)/float64(requestCount), 0.01, 
+		assert.Less(t, float64(errorCount)/float64(requestCount), 0.01,
 			"Error rate should be less than 1%")
-		assert.Greater(t, requestsPerSecond, 10.0, 
+		assert.Greater(t, requestsPerSecond, 10.0,
 			"Should handle at least 10 requests per second")
 	})
 }
@@ -208,12 +208,12 @@ func TestDockerService_ResourceUsage(t *testing.T) {
 	t.Run("MemoryUsageDuringOperations", func(t *testing.T) {
 		// Note: This is a simplified test. In production, you'd use
 		// proper memory profiling tools like pprof
-		
+
 		// Perform memory-intensive operations
 		for i := 0; i < 50; i++ {
 			volumes, err := service.ListVolumes(ctx)
 			require.NoError(t, err)
-			
+
 			// Process each volume to simulate real usage
 			for _, vol := range volumes {
 				containers, _ := service.GetVolumeContainers(ctx, vol.Name)

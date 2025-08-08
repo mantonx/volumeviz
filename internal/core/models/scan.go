@@ -7,13 +7,13 @@ import (
 
 // ScanError represents detailed error information for scan operations
 type ScanError struct {
-	VolumeID string                 `json:"volume_id"`
-	Method   string                 `json:"method"`
-	Path     string                 `json:"path"`
-	Err      error                  `json:"-"`
-	Message  string                 `json:"message"`
+	VolumeID string         `json:"volume_id"`
+	Method   string         `json:"method"`
+	Path     string         `json:"path"`
+	Err      error          `json:"-"`
+	Message  string         `json:"message"`
 	Context  map[string]any `json:"context"`
-	Code     string                 `json:"code"`
+	Code     string         `json:"code"`
 }
 
 func (e *ScanError) Error() string {
@@ -37,7 +37,7 @@ type BulkScanRequest struct {
 // BulkScanResponse represents the response from a bulk scan operation
 type BulkScanResponse struct {
 	ScanID   string            `json:"scan_id,omitempty"`
-	Results  map[string]any `json:"results"`
+	Results  map[string]any    `json:"results"`
 	Failed   map[string]string `json:"failed,omitempty"`
 	Total    int               `json:"total"`
 	Success  int               `json:"success"`
@@ -52,10 +52,10 @@ type RefreshRequest struct {
 
 // ScanConfig holds configuration for scanning operations
 type ScanConfig struct {
-	DefaultTimeout   time.Duration `yaml:"default_timeout"`
-	MaxConcurrent    int           `yaml:"max_concurrent"`
-	PreferredMethods []string      `yaml:"preferred_methods"`
-	ProgressReporting bool         `yaml:"progress_reporting"`
+	DefaultTimeout    time.Duration `yaml:"default_timeout"`
+	MaxConcurrent     int           `yaml:"max_concurrent"`
+	PreferredMethods  []string      `yaml:"preferred_methods"`
+	ProgressReporting bool          `yaml:"progress_reporting"`
 }
 
 // CacheConfig holds configuration for caching
@@ -101,9 +101,9 @@ const (
 	ErrorCodeScanCancelled          = "SCAN_CANCELLED"
 	ErrorCodeMethodUnavailable      = "METHOD_UNAVAILABLE"
 	ErrorCodePathNotFound           = "PATH_NOT_FOUND"
-	ErrorCodeInsufficientSpace     = "INSUFFICIENT_SPACE"
-	ErrorCodeScanTimeout           = "SCAN_TIMEOUT"
-	ErrorCodeUnknown               = "UNKNOWN"
+	ErrorCodeInsufficientSpace      = "INSUFFICIENT_SPACE"
+	ErrorCodeScanTimeout            = "SCAN_TIMEOUT"
+	ErrorCodeUnknown                = "UNKNOWN"
 )
 
 // ScanStatus represents the possible states of a scan operation

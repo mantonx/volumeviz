@@ -92,7 +92,7 @@ func (d *DiskusMethod) Scan(ctx context.Context, path string) (*interfaces.ScanR
 				},
 			}
 		}
-		
+
 		return nil, &models.ScanError{
 			Method:  "diskus",
 			Path:    path,

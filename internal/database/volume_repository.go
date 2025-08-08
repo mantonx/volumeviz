@@ -33,18 +33,18 @@ func (r *VolumeRepository) Create(volume *Volume) error {
 	fields := StructToMap(volume, "id", "created_at", "updated_at")
 	query, args := BuildInsertQuery(TableNames.Volumes, fields)
 	query += " RETURNING id, created_at, updated_at"
-	
+
 	executor := r.getExecutor()
 	err := executor.QueryRow(query, args...).Scan(
 		&volume.ID,
 		&volume.CreatedAt,
 		&volume.UpdatedAt,
 	)
-	
+
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -57,7 +57,7 @@ func (r *VolumeRepository) GetByID(id int) (*Volume, error) {
 		FROM volumes 
 		WHERE id = $1
 	`
-	
+
 	executor := r.getExecutor()
 	return r.scanVolume(executor.QueryRow(query, id))
 }
@@ -70,63 +70,24 @@ func (r *VolumeRepository) GetByVolumeID(volumeID string) (*Volume, error) {
 		FROM volumes 
 		WHERE volume_id = $1
 	`
-	
+
 	executor := r.getExecutor()
 	return r.scanVolume(executor.QueryRow(query, volumeID))
 }
 
 // List retrieves volumes with optional filtering and pagination
 func (r *VolumeRepository) List(options *FilterOptions) (*PaginatedResult[Volume], error) {
-	// Build the main query
-	qb := NewQueryBuilder().
-		Select("id", "volume_id", "name", "driver", "mountpoint", "labels", "options",
-			"scope", "status", "last_scanned", "is_active", "created_at", "updated_at").
-		From(TableNames.Volumes)
-	
-	// Apply filters
-	if options != nil {
-		options.ApplyToQuery(qb, "")
-	}
-	
-	// Default ordering
-	if options == nil || options.OrderBy == nil {
-		qb.OrderBy("created_at DESC")
-	}
-	
-	query, args := qb.Build()
-	
-	// Execute query
-	executor := r.getExecutor()
-	rows, err := executor.Query(query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	
-	// Scan results
-	volumes, err := ScanRows(rows, r.scanVolumeRow)
-	if err != nil {
-		return nil, err
-	}
-	
-	// Get total count for pagination
-	total, err := r.getVolumeCount(options)
-	if err != nil {
-		return nil, err
-	}
-	
-	limit := 0
-	offset := 0
-	if options != nil {
-		if options.Limit != nil {
-			limit = *options.Limit
-		}
-		if options.Offset != nil {
-			offset = *options.Offset
-		}
-	}
-	
-	return NewPaginatedResult(volumes, total, limit, offset), nil
+	selectFields := []string{"id", "volume_id", "name", "driver", "mountpoint", "labels", "options",
+		"scope", "status", "last_scanned", "is_active", "created_at", "updated_at"}
+
+	return ListWithPagination(
+		r.getExecutor(),
+		selectFields,
+		TableNames.Volumes,
+		options,
+		r.scanVolumeRow,
+		r.getVolumeCount,
+	)
 }
 
 // GetByDriver retrieves volumes by driver type
@@ -138,14 +99,14 @@ func (r *VolumeRepository) GetByDriver(driver string) ([]*Volume, error) {
 		WHERE driver = $1 AND is_active = true
 		ORDER BY created_at DESC
 	`
-	
+
 	executor := r.getExecutor()
 	rows, err := executor.Query(query, driver)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	return ScanRows(rows, r.scanVolumeRow)
 }
 
@@ -158,14 +119,14 @@ func (r *VolumeRepository) GetByLabel(key, value string) ([]*Volume, error) {
 		WHERE labels->$1 = $2 AND is_active = true
 		ORDER BY created_at DESC
 	`
-	
+
 	executor := r.getExecutor()
 	rows, err := executor.Query(query, key, value)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	return ScanRows(rows, r.scanVolumeRow)
 }
 
@@ -174,10 +135,10 @@ func (r *VolumeRepository) Update(volume *Volume) error {
 	fields := StructToMap(volume, "id", "created_at", "updated_at")
 	query, args := BuildUpdateQuery(TableNames.Volumes, fields, "id", volume.ID)
 	query += " RETURNING updated_at"
-	
+
 	executor := r.getExecutor()
 	err := executor.QueryRow(query, args...).Scan(&volume.UpdatedAt)
-	
+
 	return err
 }
 
@@ -188,7 +149,7 @@ func (r *VolumeRepository) UpdateLastScanned(volumeID string, scannedAt time.Tim
 		SET last_scanned = $2, updated_at = CURRENT_TIMESTAMP 
 		WHERE volume_id = $1
 	`
-	
+
 	executor := r.getExecutor()
 	_, err := executor.Exec(query, volumeID, scannedAt)
 	return err
@@ -201,51 +162,51 @@ func (r *VolumeRepository) Delete(id int) error {
 		SET is_active = false, updated_at = CURRENT_TIMESTAMP 
 		WHERE id = $1
 	`
-	
+
 	executor := r.getExecutor()
 	result, err := executor.Exec(query, id)
 	if err != nil {
 		return err
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	
+
 	if rowsAffected == 0 {
 		return sql.ErrNoRows
 	}
-	
+
 	return nil
 }
 
 // HardDelete permanently removes a volume from the database
 func (r *VolumeRepository) HardDelete(id int) error {
 	query := `DELETE FROM volumes WHERE id = $1`
-	
+
 	executor := r.getExecutor()
 	result, err := executor.Exec(query, id)
 	if err != nil {
 		return err
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	
+
 	if rowsAffected == 0 {
 		return sql.ErrNoRows
 	}
-	
+
 	return nil
 }
 
 // GetActiveCount returns the count of active volumes
 func (r *VolumeRepository) GetActiveCount() (int, error) {
 	query := `SELECT COUNT(*) FROM volumes WHERE is_active = true`
-	
+
 	executor := r.getExecutor()
 	var count int
 	err := executor.QueryRow(query).Scan(&count)
@@ -264,11 +225,11 @@ func (r *VolumeRepository) GetVolumeStats() (*VolumeStats, error) {
 			MIN(created_at) as oldest_volume
 		FROM volumes
 	`
-	
+
 	executor := r.getExecutor()
 	stats := &VolumeStats{}
 	var newestVolume, oldestVolume sql.NullTime
-	
+
 	err := executor.QueryRow(query).Scan(
 		&stats.TotalVolumes,
 		&stats.ActiveVolumes,
@@ -277,18 +238,18 @@ func (r *VolumeRepository) GetVolumeStats() (*VolumeStats, error) {
 		&newestVolume,
 		&oldestVolume,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if newestVolume.Valid {
 		stats.NewestVolume = &newestVolume.Time
 	}
 	if oldestVolume.Valid {
 		stats.OldestVolume = &oldestVolume.Time
 	}
-	
+
 	return stats, nil
 }
 
@@ -310,7 +271,7 @@ func (r *VolumeRepository) UpsertVolume(volume *Volume) error {
 			updated_at = CURRENT_TIMESTAMP
 		RETURNING id, created_at, updated_at
 	`
-	
+
 	executor := r.getExecutor()
 	err := executor.QueryRow(query,
 		volume.VolumeID,
@@ -323,16 +284,16 @@ func (r *VolumeRepository) UpsertVolume(volume *Volume) error {
 		volume.Status,
 		volume.IsActive,
 	).Scan(&volume.ID, &volume.CreatedAt, &volume.UpdatedAt)
-	
+
 	return err
 }
 
-// scanVolume scans a single volume from a row
-func (r *VolumeRepository) scanVolume(row *sql.Row) (*Volume, error) {
+// volumeScanner contains unified scanning functions for Volume entities
+var volumeScanner = UnifiedScanFunc[Volume](func(scanner RowScanner) (*Volume, error) {
 	volume := &Volume{}
 	var lastScanned sql.NullTime
-	
-	err := row.Scan(
+
+	err := scanner.Scan(
 		&volume.ID,
 		&volume.VolumeID,
 		&volume.Name,
@@ -347,48 +308,26 @@ func (r *VolumeRepository) scanVolume(row *sql.Row) (*Volume, error) {
 		&volume.CreatedAt,
 		&volume.UpdatedAt,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if lastScanned.Valid {
 		volume.LastScanned = &lastScanned.Time
 	}
-	
+
 	return volume, nil
+})
+
+// scanVolume scans a single volume from a row
+func (r *VolumeRepository) scanVolume(row *sql.Row) (*Volume, error) {
+	return volumeScanner.FromRow(row)
 }
 
 // scanVolumeRow scans a volume from a rows result set
 func (r *VolumeRepository) scanVolumeRow(rows *sql.Rows) (*Volume, error) {
-	volume := &Volume{}
-	var lastScanned sql.NullTime
-	
-	err := rows.Scan(
-		&volume.ID,
-		&volume.VolumeID,
-		&volume.Name,
-		&volume.Driver,
-		&volume.Mountpoint,
-		&volume.Labels,
-		&volume.Options,
-		&volume.Scope,
-		&volume.Status,
-		&lastScanned,
-		&volume.IsActive,
-		&volume.CreatedAt,
-		&volume.UpdatedAt,
-	)
-	
-	if err != nil {
-		return nil, err
-	}
-	
-	if lastScanned.Valid {
-		volume.LastScanned = &lastScanned.Time
-	}
-	
-	return volume, nil
+	return volumeScanner.FromRows(rows)
 }
 
 // getVolumeCount returns the total count of volumes matching the filter
@@ -396,7 +335,7 @@ func (r *VolumeRepository) getVolumeCount(options *FilterOptions) (int, error) {
 	qb := NewQueryBuilder().
 		Select("COUNT(*)").
 		From(TableNames.Volumes)
-	
+
 	if options != nil {
 		// Apply filters but not pagination
 		filterOptions := *options
@@ -405,9 +344,9 @@ func (r *VolumeRepository) getVolumeCount(options *FilterOptions) (int, error) {
 		filterOptions.OrderBy = nil
 		filterOptions.ApplyToQuery(qb, "")
 	}
-	
+
 	query, args := qb.Build()
-	
+
 	executor := r.getExecutor()
 	var count int
 	err := executor.QueryRow(query, args...).Scan(&count)

@@ -61,14 +61,14 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		
+
 		// Handle incoming messages
 		var msg Message
 		if err := json.Unmarshal(message, &msg); err != nil {
 			log.Printf("error unmarshaling message: %v", err)
 			continue
 		}
-		
+
 		// Handle ping messages
 		if msg.Type == MessageTypePing {
 			pongMsg := Message{
@@ -133,7 +133,7 @@ func (c *Client) sendMessage(message Message) {
 		log.Printf("error marshaling message: %v", err)
 		return
 	}
-	
+
 	select {
 	case c.send <- data:
 	default:
