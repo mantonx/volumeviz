@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
 )
 
@@ -22,6 +23,6 @@ type DockerClient interface {
 	InspectVolume(ctx context.Context, volumeID string) (volume.Volume, error)
 
 	// Container operations
-	ListContainers(ctx context.Context, filterMap map[string][]string) ([]types.Container, error)
-	InspectContainer(ctx context.Context, containerID string) (types.ContainerJSON, error)
+	ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error)
+	InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error)
 }

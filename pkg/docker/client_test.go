@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
 )
 
@@ -148,8 +149,8 @@ func createTestVolume(name string) *volume.Volume {
 	}
 }
 
-func createTestContainer(id, name string) types.Container {
-	return types.Container{
+func createTestContainer(id, name string) containertypes.Summary {
+	return containertypes.Summary{
 		ID:      id,
 		Names:   []string{"/" + name},
 		State:   "running",

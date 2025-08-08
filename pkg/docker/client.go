@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
@@ -110,11 +110,11 @@ func (c *Client) InspectVolume(ctx context.Context, volumeID string) (volume.Vol
 }
 
 // ListContainers lists all containers with optional filters
-func (c *Client) ListContainers(ctx context.Context, filterMap map[string][]string) ([]types.Container, error) {
+func (c *Client) ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error) {
 	ctx, cancel := c.contextWithTimeout(ctx)
 	defer cancel()
 
-	options := container.ListOptions{
+	options := containertypes.ListOptions{
 		All: true,
 	}
 	if len(filterMap) > 0 {
@@ -135,13 +135,13 @@ func (c *Client) ListContainers(ctx context.Context, filterMap map[string][]stri
 }
 
 // InspectContainer gets detailed information about a specific container
-func (c *Client) InspectContainer(ctx context.Context, containerID string) (types.ContainerJSON, error) {
+func (c *Client) InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error) {
 	ctx, cancel := c.contextWithTimeout(ctx)
 	defer cancel()
 
 	container, err := c.cli.ContainerInspect(ctx, containerID)
 	if err != nil {
-		return types.ContainerJSON{}, fmt.Errorf("failed to inspect container %s: %w", containerID, err)
+		return containertypes.InspectResponse{}, fmt.Errorf("failed to inspect container %s: %w", containerID, err)
 	}
 	return container, nil
 }

@@ -5,14 +5,15 @@ import (
 	"fmt"
 
 	"github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
 )
 
 // MockDockerClient is a mock implementation of the DockerClient interface
 type MockDockerClient struct {
 	// Connection
-	PingFunc       func(ctx context.Context) error
-	CloseFunc      func() error
+	PingFunc        func(ctx context.Context) error
+	CloseFunc       func() error
 	IsConnectedFunc func(ctx context.Context) bool
 
 	// Version
@@ -23,17 +24,17 @@ type MockDockerClient struct {
 	InspectVolumeFunc func(ctx context.Context, volumeID string) (volume.Volume, error)
 
 	// Containers
-	ListContainersFunc   func(ctx context.Context, filterMap map[string][]string) ([]types.Container, error)
-	InspectContainerFunc func(ctx context.Context, containerID string) (types.ContainerJSON, error)
+	ListContainersFunc   func(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error)
+	InspectContainerFunc func(ctx context.Context, containerID string) (containertypes.InspectResponse, error)
 
 	// Call counters for assertions
-	PingCalls            int
-	CloseCalls           int
-	IsConnectedCalls     int
-	VersionCalls         int
-	ListVolumesCalls     int
-	InspectVolumeCalls   int
-	ListContainersCalls  int
+	PingCalls             int
+	CloseCalls            int
+	IsConnectedCalls      int
+	VersionCalls          int
+	ListVolumesCalls      int
+	InspectVolumeCalls    int
+	ListContainersCalls   int
 	InspectContainerCalls int
 }
 
@@ -98,19 +99,19 @@ func (m *MockDockerClient) InspectVolume(ctx context.Context, volumeID string) (
 }
 
 // ListContainers mocks the ListContainers method
-func (m *MockDockerClient) ListContainers(ctx context.Context, filterMap map[string][]string) ([]types.Container, error) {
+func (m *MockDockerClient) ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error) {
 	m.ListContainersCalls++
 	if m.ListContainersFunc != nil {
 		return m.ListContainersFunc(ctx, filterMap)
 	}
-	return []types.Container{}, nil
+	return []containertypes.Summary{}, nil
 }
 
 // InspectContainer mocks the InspectContainer method
-func (m *MockDockerClient) InspectContainer(ctx context.Context, containerID string) (types.ContainerJSON, error) {
+func (m *MockDockerClient) InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error) {
 	m.InspectContainerCalls++
 	if m.InspectContainerFunc != nil {
 		return m.InspectContainerFunc(ctx, containerID)
 	}
-	return types.ContainerJSON{}, fmt.Errorf("container not found")
+	return containertypes.InspectResponse{}, fmt.Errorf("container not found")
 }

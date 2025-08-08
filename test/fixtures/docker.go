@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/volume"
@@ -32,8 +32,8 @@ func CreateTestVolume(name string) *volume.Volume {
 }
 
 // CreateTestContainer creates a test container for unit tests
-func CreateTestContainer(id, name string) types.Container {
-	return types.Container{
+func CreateTestContainer(id, name string) containertypes.Summary {
+	return containertypes.Summary{
 		ID:      id,
 		Names:   []string{"/" + name},
 		Image:   "test:latest",
@@ -60,8 +60,8 @@ func CreateTestContainer(id, name string) types.Container {
 }
 
 // CreateTestContainerJSON creates a test container JSON for unit tests
-func CreateTestContainerJSON(id, name, volumeName string) types.ContainerJSON {
-	return types.ContainerJSON{
+func CreateTestContainerJSON(id, name, volumeName string) containertypes.InspectResponse {
+	return containertypes.InspectResponse{
 		ContainerJSONBase: &types.ContainerJSONBase{
 			ID:      id,
 			Created: time.Now().Format(time.RFC3339),
@@ -104,7 +104,7 @@ func CreateTestContainerJSON(id, name, volumeName string) types.ContainerJSON {
 				Propagation: mount.PropagationRPrivate,
 			},
 		},
-		Config: &container.Config{
+		Config: &containertypes.Config{
 			Hostname:     "test-container",
 			Domainname:   "",
 			User:         "",
