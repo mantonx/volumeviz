@@ -1,0 +1,82 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "frontend/**"
+      - ".github/workflows/ci-frontend.yml"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md" 
+      - "docs/**"
+      - "frontend/**"
+      - ".github/workflows/ci-frontend.yml"
+
+jobs:
+  go:
+    name: Go Build, Test & Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: true
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Verify Go modules
+        run: go mod verify
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m --verbose
+
+      - name: Run tests with race detection and coverage
+        run: go test ./... -race -coverprofile=coverage.out -covermode=atomic -v
+
+      - name: Enforce coverage threshold (60%)
+        run: |
+          echo "Checking test coverage..."
+          pct=$(go tool cover -func=coverage.out | awk '/total:/ {print substr($3, 1, length($3)-1)}')
+          echo "Total coverage: ${pct}%"
+          awk -v p="$pct" 'BEGIN { 
+            if (p+0 < 60) { 
+              print "❌ Coverage below 60%: " p "%"
+              print "Please add more tests to improve coverage"
+              exit 1 
+            } else {
+              print "✅ Coverage meets threshold: " p "% (≥60%)"
+            }
+          }'
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage.out
+          retention-days: 30
+
+      - name: Generate coverage report
+        run: go tool cover -html=coverage.out -o coverage.html
+
+      - name: Upload coverage HTML
+        uses: actions/upload-artifact@v4  
+        with:
+          name: backend-coverage-html
+          path: coverage.html
+          retention-days: 30
