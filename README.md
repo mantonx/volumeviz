@@ -2,6 +2,8 @@
 
 [![Backend CI](https://github.com/mantonx/volumeviz/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/mantonx/volumeviz/actions/workflows/ci-backend.yml)
 [![Frontend CI](https://github.com/mantonx/volumeviz/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/mantonx/volumeviz/actions/workflows/ci-frontend.yml)
+[![Test](https://github.com/mantonx/volumeviz/actions/workflows/test.yml/badge.svg)](https://github.com/mantonx/volumeviz/actions/workflows/test.yml)
+[![Lint](https://github.com/mantonx/volumeviz/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/mantonx/volumeviz/actions/workflows/golangci-lint.yml)
 [![Security](https://github.com/mantonx/volumeviz/actions/workflows/security.yml/badge.svg)](https://github.com/mantonx/volumeviz/actions/workflows/security.yml)
 [![CodeQL](https://github.com/mantonx/volumeviz/actions/workflows/codeql.yml/badge.svg)](https://github.com/mantonx/volumeviz/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
