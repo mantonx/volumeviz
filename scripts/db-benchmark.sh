@@ -118,10 +118,10 @@ if [[ "$POSTGRES_AVAILABLE" == "true" && "$SQLITE_AVAILABLE" == "true" ]]; then
     echo "   • Prometheus: http://localhost:9090"
 elif [[ "$POSTGRES_AVAILABLE" == "true" ]]; then
     echo "✅ PostgreSQL backend tested"
-    echo "   Start SQLite backend for comparison: docker-compose -f docker-compose.dev.yml up -d backend-sqlite"
+    echo "   Start SQLite backend for comparison: docker compose -f docker compose.dev.yml up -d backend-sqlite"
 elif [[ "$SQLITE_AVAILABLE" == "true" ]]; then
     echo "✅ SQLite backend tested"
-    echo "   Start PostgreSQL backend for comparison: docker-compose -f docker-compose.dev.yml up -d postgres backend-postgres"
+    echo "   Start PostgreSQL backend for comparison: docker compose -f docker compose.dev.yml up -d postgres backend-postgres"
 fi
 
 echo ""

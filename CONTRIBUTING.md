@@ -53,7 +53,7 @@ By participating in this project, you agree to abide by our Code of Conduct:
 
 3. **Database Setup**:
    ```bash
-   docker-compose up -d postgres
+   docker compose up -d postgres
    make migrate
    ```
 

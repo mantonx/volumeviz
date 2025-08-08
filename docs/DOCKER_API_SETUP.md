@@ -21,7 +21,7 @@ VolumeViz integrates with Docker through the official Docker API client to provi
 ### Local Docker Socket (Recommended)
 
 ```yaml
-# docker-compose.yml
+# docker compose.yml
 version: '3.8'
 services:
   volumeviz:

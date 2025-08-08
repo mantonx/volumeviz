@@ -207,14 +207,14 @@ Both backends expose Prometheus metrics at `/metrics`:
 
 ```bash
 # View backend logs
-docker-compose -f docker-compose.dev.yml logs -f backend-postgres
-docker-compose -f docker-compose.dev.yml logs -f backend-sqlite
+docker compose -f docker compose.dev.yml logs -f backend-postgres
+docker compose -f docker compose.dev.yml logs -f backend-sqlite
 
 # View database logs
-docker-compose -f docker-compose.dev.yml logs -f postgres
+docker compose -f docker compose.dev.yml logs -f postgres
 
 # View all logs
-docker-compose -f docker-compose.dev.yml logs -f
+docker compose -f docker compose.dev.yml logs -f
 ```
 
 ## Troubleshooting
@@ -237,13 +237,13 @@ netstat -tlnp | grep -E ':(5432|8080|8081|5173|5174)'
 #### Database Connection Issues
 ```bash
 # Check PostgreSQL health
-docker-compose -f docker-compose.dev.yml exec postgres pg_isready -U volumeviz
+docker compose -f docker compose.dev.yml exec postgres pg_isready -U volumeviz
 
 # Check SQLite database file
-docker-compose -f docker-compose.dev.yml exec backend-sqlite ls -la /data/
+docker compose -f docker compose.dev.yml exec backend-sqlite ls -la /data/
 
 # Verify environment variables
-docker-compose -f docker-compose.dev.yml exec backend-postgres env | grep DB_
+docker compose -f docker compose.dev.yml exec backend-postgres env | grep DB_
 ```
 
 #### Performance Issues
@@ -252,10 +252,10 @@ docker-compose -f docker-compose.dev.yml exec backend-postgres env | grep DB_
 docker stats
 
 # View slow queries (PostgreSQL)
-docker-compose -f docker-compose.dev.yml exec postgres psql -U volumeviz -c "SELECT query, total_time FROM pg_stat_statements ORDER BY total_time DESC LIMIT 5;"
+docker compose -f docker compose.dev.yml exec postgres psql -U volumeviz -c "SELECT query, total_time FROM pg_stat_statements ORDER BY total_time DESC LIMIT 5;"
 
 # Check SQLite PRAGMA settings
-docker-compose -f docker-compose.dev.yml exec backend-sqlite sqlite3 /data/volumeviz.db "PRAGMA compile_options;"
+docker compose -f docker compose.dev.yml exec backend-sqlite sqlite3 /data/volumeviz.db "PRAGMA compile_options;"
 ```
 
 ### Reset Environment

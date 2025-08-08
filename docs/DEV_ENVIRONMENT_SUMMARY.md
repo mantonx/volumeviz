@@ -115,13 +115,13 @@ curl http://localhost:8081/health  # SQLite backend
 
 ```bash
 # View logs
-docker-compose -f docker-compose.dev.yml logs -f [service]
+docker compose -f docker compose.dev.yml logs -f [service]
 
 # Restart specific service
-docker-compose -f docker-compose.dev.yml restart backend-postgres
+docker compose -f docker compose.dev.yml restart backend-postgres
 
 # Scale services (PostgreSQL only - SQLite is single-connection)
-docker-compose -f docker-compose.dev.yml up -d --scale backend-postgres=2
+docker compose -f docker compose.dev.yml up -d --scale backend-postgres=2
 
 # Stop everything
 ./scripts/dev-stop.sh

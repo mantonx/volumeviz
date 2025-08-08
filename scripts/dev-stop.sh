@@ -47,11 +47,11 @@ done
 
 # Stop and remove containers
 echo "📦 Stopping Docker containers..."
-docker-compose -f docker-compose.dev.yml down
+docker compose -f docker compose.dev.yml down
 
 if [[ "$REMOVE_VOLUMES" == "true" ]]; then
     echo "⚠️  Removing data volumes (this will delete all data)..."
-    docker-compose -f docker-compose.dev.yml down -v
+    docker compose -f docker compose.dev.yml down -v
     
     # Remove named volumes explicitly
     docker volume rm -f volumeviz_postgres_data_dev 2>/dev/null || true
@@ -66,7 +66,7 @@ if [[ "$REMOVE_IMAGES" == "true" ]]; then
     echo "🗑️  Removing Docker images..."
     
     # Get list of images used by the compose file
-    IMAGES=$(docker-compose -f docker-compose.dev.yml config | grep 'image:' | awk '{print $2}' | sort | uniq)
+    IMAGES=$(docker compose -f docker compose.dev.yml config | grep 'image:' | awk '{print $2}' | sort | uniq)
     
     for image in $IMAGES; do
         echo "   Removing image: $image"

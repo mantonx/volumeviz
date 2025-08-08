@@ -16,12 +16,12 @@ if [[ ! -f .env ]]; then
 fi
 echo "✅ .env file found"
 
-# Validate docker-compose.yml
+# Validate docker compose.yml
 echo "🐳 Validating Docker Compose configuration..."
 if docker compose config --quiet; then
-    echo "✅ docker-compose.yml is valid"
+    echo "✅ docker compose.yml is valid"
 else
-    echo "❌ docker-compose.yml has configuration errors"
+    echo "❌ docker compose.yml has configuration errors"
     exit 1
 fi
 
