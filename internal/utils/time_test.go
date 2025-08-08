@@ -11,6 +11,7 @@ func TestTimePtr(t *testing.T) {
 
 	if ptr == nil {
 		t.Error("TimePtr returned nil")
+		return
 	}
 	if *ptr != now {
 		t.Errorf("TimePtr value mismatch: got %v, want %v", *ptr, now)
@@ -46,6 +47,7 @@ func TestNowPtr(t *testing.T) {
 
 	if ptr == nil {
 		t.Error("NowPtr returned nil")
+		return
 	}
 	if (*ptr).Before(before) || (*ptr).After(after) {
 		t.Error("NowPtr time out of expected range")

@@ -42,9 +42,9 @@ func CreateTestContainer(id, name string) containertypes.Summary {
 		Created: time.Now().Unix(),
 		State:   "running",
 		Status:  "Up 2 hours",
-		Ports:   []types.Port{},
+		Ports:   []containertypes.Port{},
 		Labels:  map[string]string{"test": "true"},
-		Mounts: []types.MountPoint{
+		Mounts: []containertypes.MountPoint{
 			{
 				Type:        mount.TypeVolume,
 				Name:        "test-volume",
@@ -62,12 +62,12 @@ func CreateTestContainer(id, name string) containertypes.Summary {
 // CreateTestContainerJSON creates a test container JSON for unit tests
 func CreateTestContainerJSON(id, name, volumeName string) containertypes.InspectResponse {
 	return containertypes.InspectResponse{
-		ContainerJSONBase: &types.ContainerJSONBase{
+		ContainerJSONBase: &containertypes.ContainerJSONBase{
 			ID:      id,
 			Created: time.Now().Format(time.RFC3339),
 			Path:    "/bin/sh",
 			Args:    []string{"-c", "while true; do sleep 1; done"},
-			State: &types.ContainerState{
+			State: &containertypes.State{
 				Status:     "running",
 				Running:    true,
 				Paused:     false,
@@ -92,7 +92,7 @@ func CreateTestContainerJSON(id, name, volumeName string) containertypes.Inspect
 			ProcessLabel:    "",
 			AppArmorProfile: "",
 		},
-		Mounts: []types.MountPoint{
+		Mounts: []containertypes.MountPoint{
 			{
 				Type:        mount.TypeVolume,
 				Name:        volumeName,
@@ -123,7 +123,7 @@ func CreateTestContainerJSON(id, name, volumeName string) containertypes.Inspect
 			OnBuild:      nil,
 			Labels:       map[string]string{"test": "true"},
 		},
-		NetworkSettings: &types.NetworkSettings{
+		NetworkSettings: &containertypes.NetworkSettings{
 			Networks: map[string]*network.EndpointSettings{
 				"bridge": {
 					IPAMConfig:          nil,
