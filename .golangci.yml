@@ -7,7 +7,7 @@ linters:
   enable:
     - errcheck      # Check for unchecked errors
     - gosimple      # Simplify code
-    - govet         # Vet examines Go source code
+    - govet         # Vet examines Go source code (includes shadow checking with enable-all)
     - ineffassign   # Detect ineffectual assignments
     - staticcheck   # Static analysis checks
     - unused        # Check for unused constants, variables, functions and types
@@ -19,7 +19,6 @@ linters:
     - goconst       # Find repeated strings that could be constants
     - gocyclo       # Cyclomatic complexity
     - dupl          # Code clone detection
-    - shadow        # Shadow variable detection
 
 linters-settings:
   errcheck:
