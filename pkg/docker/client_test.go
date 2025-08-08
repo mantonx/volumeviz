@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 	"time"
-
 )
 
 func TestNewClient(t *testing.T) {
@@ -132,4 +131,3 @@ func TestClient_ErrorScenarios(t *testing.T) {
 		t.Skip("Docker client validation varies by version")
 	})
 }
-

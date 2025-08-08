@@ -77,7 +77,7 @@ func (n *NativeMethod) Scan(ctx context.Context, path string) (*interfaces.ScanR
 				Method:  "native",
 				Path:    currentPath,
 				Code:    models.ErrorCodeScanCanceled,
-				Message: "scan cancelled due to timeout or context cancellation",
+				Message: "scan canceled due to timeout or context cancellation",
 				Err:     scanCtx.Err(),
 				Context: map[string]any{
 					"elapsed_time":  time.Since(start),
@@ -167,31 +167,3 @@ func (n *NativeMethod) Scan(ctx context.Context, path string) (*interfaces.ScanR
 	}, nil
 }
 
-// detectFilesystemType attempts to detect the filesystem type
-func (n *NativeMethod) detectFilesystemType(path string) string {
-	var stat syscall.Statfs_t
-	err := syscall.Statfs(path, &stat)
-	if err != nil {
-		return "unknown"
-	}
-
-	// Common filesystem type detection based on magic numbers
-	switch stat.Type {
-	case 0x58465342: // XFS
-		return "xfs"
-	case 0xEF53: // EXT2/EXT3/EXT4
-		return "ext4"
-	case 0x9123683E: // BTRFS
-		return "btrfs"
-	case 0x6969: // NFS
-		return "nfs"
-	case 0xFF534D42: // CIFS
-		return "cifs"
-	case 0x01021994: // TMPFS
-		return "tmpfs"
-	case 0x858458F6: // RAMFS
-		return "ramfs"
-	default:
-		return fmt.Sprintf("unknown(0x%x)", stat.Type)
-	}
-}
