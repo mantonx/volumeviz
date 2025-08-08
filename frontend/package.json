@@ -48,7 +48,7 @@
     "@types/validator": "^13.15.2",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
-    "@vitejs/plugin-react": "^4.6.0",
+    "@vitejs/plugin-react": "^5.0.0",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.30.1",
