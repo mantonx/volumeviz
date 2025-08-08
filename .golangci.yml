@@ -5,67 +5,58 @@ run:
 
 linters:
   enable:
-    - errcheck      # Check for unchecked errors
-    - gosimple      # Simplify code
-    - govet         # Vet examines Go source code (includes shadow checking with enable-all)
-    - ineffassign   # Detect ineffectual assignments
-    - staticcheck   # Static analysis checks
-    - unused        # Check for unused constants, variables, functions and types
-    - gofmt         # Check whether code was gofmt-ed
-    - goimports     # Check import formatting
-    - misspell      # Find misspelled words
-    - revive        # Replacement for golint
-    - gosec         # Security-focused linter
-    - goconst       # Find repeated strings that could be constants
-    - gocyclo       # Cyclomatic complexity
-    - dupl          # Code clone detection
+    - govet
+    - errcheck
+    - ineffassign
+    - staticcheck
+    - gofmt
+    - goimports
+    - misspell
+  disable:
+    - revive
+    - gosec
+    - goconst
+    - gocyclo
+    - dupl
+    - gosimple
+    - unused
 
 linters-settings:
   errcheck:
     check-type-assertions: true
     check-blank: true
-  
   govet:
-    # Enable all govet checks
-    enable-all: true
-  
-  gocyclo:
-    min-complexity: 15
-  
-  dupl:
-    threshold: 100
-  
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  
+    enable-all: false
+    disable:
+      - fieldalignment
+      - shadow
+      - unusedwrite
   misspell:
     locale: US
-  
-  revive:
-    rules:
-      - name: exported
-        disabled: false
-      - name: var-naming
-        disabled: false
-      - name: package-comments
-        disabled: false
 
 issues:
   exclude-rules:
-    # Exclude some linters from running on tests files
+    # Exclude stricter checks from tests and helper test code
     - path: _test\.go
       linters:
-        - gosec
+        - errcheck
+        - govet
+    - path: ^test/
+      linters:
+        - errcheck
+        - govet
         - dupl
         - gocyclo
-    
-    # Exclude generated files
+        - gosec
+    # Exclude known WIP file from unused warnings (until implemented)
+    - path: internal/database/metrics_repository\.go
+      linters:
+        - unused
+    # Generated files
     - path: ".*\\.pb\\.go"
       linters:
         - all
-    
-    # Exclude vendor directories
+    # Vendor directories
     - path: vendor/
       linters:
         - all

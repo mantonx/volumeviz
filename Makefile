@@ -91,13 +91,8 @@ docker-run:
 # Run linter
 lint:
 	@echo "Running linter..."
-	@if command -v golangci-lint > /dev/null 2>&1; then \
-		golangci-lint run; \
-	else \
-		echo "golangci-lint not installed. Installing..."; \
-		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
-		golangci-lint run; \
-	fi
+	@echo "Using golangci-lint via go run to avoid global install requirements"
+	@GOFLAGS=-buildvcs=false go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run --timeout=5m --verbose
 
 # Format code
 format:
