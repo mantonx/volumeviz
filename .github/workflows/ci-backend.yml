@@ -48,15 +48,7 @@ jobs:
 
       - name: Run tests with race detection and coverage
         run: |
-          # Run tests on core packages (excluding broken handler tests for now)
-          go test -race -coverprofile=coverage.out -covermode=atomic -v \
-            ./internal/utils ./internal/services ./pkg/docker \
-            ./internal/config ./internal/database ./internal/core/models \
-            ./internal/core/services/cache ./internal/core/services/metrics \
-            ./internal/core/services/scanner ./internal/api/middleware \
-            ./internal/api/models ./internal/api/v1/database \
-            ./internal/api/v1/health ./internal/api/v1/metrics \
-            ./internal/api/v1/system ./internal/websocket
+          go test -race -covermode=atomic -coverprofile=coverage.out -v ./...
 
       - name: Enforce coverage threshold (60%)
         run: |

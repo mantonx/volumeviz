@@ -96,6 +96,15 @@ make test-integration
 make test-all
 ```
 
+#### Coverage Gate (CI)
+- Backend CI enforces a minimum total Go test coverage of 60%.
+- PRs that drop total coverage below 60% will fail with a clear message showing the measured percentage.
+- You can generate coverage locally with:
+  ```bash
+  go test -race -covermode=atomic -coverprofile=coverage.out -v ./...
+  go tool cover -func=coverage.out | tail -n1
+  ```
+
 ### Commit Guidelines
 
 We follow the Conventional Commits specification:
