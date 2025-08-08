@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/websocket"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -84,7 +85,7 @@ func generateMockVolumes(count int) []models.Volume {
 func BenchmarkListVolumes_Small(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService)
+	handler := NewHandler(mockService, &websocket.Hub{})
 	
 	volumes := generateMockVolumes(10)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
@@ -108,7 +109,7 @@ func BenchmarkListVolumes_Small(b *testing.B) {
 func BenchmarkListVolumes_Large(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService)
+	handler := NewHandler(mockService, &websocket.Hub{})
 	
 	// Generate 1000+ volumes as per enhanced requirements
 	volumes := generateMockVolumes(1000)
@@ -141,7 +142,7 @@ func BenchmarkListVolumes_Large(b *testing.B) {
 func BenchmarkListVolumes_Concurrent(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService)
+	handler := NewHandler(mockService, &websocket.Hub{})
 	
 	volumes := generateMockVolumes(500)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
@@ -175,7 +176,7 @@ func BenchmarkListVolumes_Concurrent(b *testing.B) {
 func BenchmarkGetVolume(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService)
+	handler := NewHandler(mockService, &websocket.Hub{})
 	
 	volume := &models.Volume{
 		ID:         "test-volume",
@@ -214,7 +215,7 @@ func BenchmarkGetVolume(b *testing.B) {
 func TestSLOCompliance(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService)
+	handler := NewHandler(mockService, &websocket.Hub{})
 	
 	volumes := generateMockVolumes(1000)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)

@@ -73,7 +73,7 @@ func TestDatabaseAPIIntegration(t *testing.T) {
 	defer db.Close()
 
 	// Apply migrations first
-	migrationMgr := dbPkg.NewMigrationManager(db.DB)
+	migrationMgr := dbPkg.NewMigrationManager(db)
 	err = migrationMgr.ApplyAllPending()
 	require.NoError(t, err)
 
@@ -435,7 +435,7 @@ func TestDatabaseAPIConcurrency(t *testing.T) {
 	defer db.Close()
 
 	// Apply migrations
-	migrationMgr := dbPkg.NewMigrationManager(db.DB)
+	migrationMgr := dbPkg.NewMigrationManager(db)
 	err = migrationMgr.ApplyAllPending()
 	require.NoError(t, err)
 

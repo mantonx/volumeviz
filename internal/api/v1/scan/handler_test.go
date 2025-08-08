@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/websocket"
 	coremodels "github.com/mantonx/volumeviz/internal/core/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -56,7 +57,7 @@ func (m *MockVolumeScanner) ClearCache(volumeID string) error {
 func setupTestRouter(scanner interfaces.VolumeScanner) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	handler := NewHandler(scanner)
+	handler := NewHandler(scanner, &websocket.Hub{}, nil)
 	
 	r.GET("/volumes/:id/size", handler.GetVolumeSize)
 	r.POST("/volumes/:id/size/refresh", handler.RefreshVolumeSize)
