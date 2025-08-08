@@ -619,6 +619,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /scans/{scanId}/status:
+    get:
+      tags:
+        - Scanning
+      summary: Get scan status by scan ID
+      description: |
+        Retrieve the status of an asynchronous scan using its scan ID.
+        This complements the volume-based endpoint.
+      operationId: getScanStatusById
+      parameters:
+        - name: scanId
+          in: path
+          required: true
+          description: Scan ID returned by async scan
+          schema:
+            type: string
+          example: "scan_123"
+      responses:
+        '200':
+          description: Scan status information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanProgress'
+        '404':
+          description: Scan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /volumes/bulk-scan:
     post:
       tags:

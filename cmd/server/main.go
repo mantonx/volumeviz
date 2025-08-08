@@ -16,6 +16,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/services"
+	lifecycle "github.com/mantonx/volumeviz/internal/services/lifecycle"
 
 	_ "github.com/mantonx/volumeviz/docs" // Generated docs
 )
@@ -82,6 +83,18 @@ func main() {
 	if err := migrationManager.ApplyAllPending(); err != nil {
 		log.Fatalf("Failed to run database migrations: %v", err)
 	}
+
+	// Start lifecycle retention service
+	lc := lifecycle.New(db.DB, lifecycle.Config{
+		Enabled:        cfg.Lifecycle.Enabled,
+		MetricsTTLDays: cfg.Lifecycle.MetricsTTLDays,
+		SizesTTLDays:   cfg.Lifecycle.SizesTTLDays,
+		RollupEnabled:  cfg.Lifecycle.RollupEnabled,
+		Interval:       cfg.Lifecycle.Interval,
+		InitialDelay:   cfg.Lifecycle.InitialDelay,
+	})
+	lc.Start()
+	defer lc.Stop()
 
 	// Initialize Docker service
 	dockerService, err := services.NewDockerService(cfg.Docker.Host, cfg.Docker.Timeout)

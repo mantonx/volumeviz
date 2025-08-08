@@ -120,6 +120,23 @@ Returns progress of active scan for a volume.
 }
 ```
 
+#### Get Scan Status by Scan ID
+```http
+GET /api/v1/scans/{id}/status
+```
+
+Retrieve progress using a scan ID returned from async scans.
+
+**Response Example:**
+```json
+{
+  "scan_id": "scan_123",
+  "volume_id": "my-volume",
+  "status": "running",
+  "progress": 0.75
+}
+```
+
 ### Bulk Operations
 
 #### Bulk Scan

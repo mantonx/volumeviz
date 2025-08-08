@@ -166,7 +166,7 @@ func (r *Router) setupRoutes() {
 		websocketHandler.RegisterRoutes(v1)
 
 		// Register sub-routers
-		healthRouter := health.NewRouter(r.dockerService)
+		healthRouter := health.NewRouter(r.dockerService, r.database)
 		healthRouter.RegisterRoutes(v1)
 
 		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub)

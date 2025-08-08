@@ -5,6 +5,7 @@ package scan
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
@@ -190,31 +191,30 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 	})
 }
 
-// GetScanStatus returns the status of an async scan by volume ID
-// GET /api/v1/volumes/:id/scan/status
+// GetScanStatus returns the status of an async scan.
+// Supports both routes:
+// - GET /api/v1/volumes/:id/scan/status (id = volumeID)
+// - GET /api/v1/scans/:id/status (id = scanID)
 func (h *Handler) GetScanStatus(c *gin.Context) {
-	volumeID := c.Param("id")
-
-	if volumeID == "" {
+	id := c.Param("id")
+	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Volume ID is required",
-			"code":    "MISSING_VOLUME_ID",
-			"details": "Volume ID parameter is missing from the request",
+			"error":   "ID is required",
+			"code":    "MISSING_ID",
+			"details": "ID parameter is missing from the request",
 		})
 		return
 	}
 
-	// Try to get scan progress by volume ID
-	// First, try to cast scanner to access volume-based method
-	if volumeScanner, ok := h.scanner.(interface {
-		GetScanProgressByVolume(volumeID string) (*interfaces.ScanProgress, error)
-	}); ok {
-		progress, err := volumeScanner.GetScanProgressByVolume(volumeID)
+	fullPath := c.FullPath()
+	// If route matches scans path, treat id as scanID and use GetScanProgress
+	if strings.Contains(fullPath, "/scans/:id/status") {
+		progress, err := h.scanner.GetScanProgress(id)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{
-				"error":   "No active scan found for volume",
-				"code":    "NO_ACTIVE_SCAN",
-				"details": fmt.Sprintf("No active scan found for volume %s", volumeID),
+				"error":   "Scan not found",
+				"code":    "SCAN_NOT_FOUND",
+				"details": fmt.Sprintf("No scan found with ID %s", id),
 			})
 			return
 		}
@@ -222,11 +222,28 @@ func (h *Handler) GetScanStatus(c *gin.Context) {
 		return
 	}
 
-	// Fallback to old method if new interface not available
+	// Otherwise treat as volume-based route and attempt to get progress by volume
+	if volumeScanner, ok := h.scanner.(interface {
+		GetScanProgressByVolume(volumeID string) (*interfaces.ScanProgress, error)
+	}); ok {
+		progress, err := volumeScanner.GetScanProgressByVolume(id)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   "No active scan found for volume",
+				"code":    "NO_ACTIVE_SCAN",
+				"details": fmt.Sprintf("No active scan found for volume %s", id),
+			})
+			return
+		}
+		c.JSON(http.StatusOK, progress)
+		return
+	}
+
+	// Fallback if volume-based method is not available
 	c.JSON(http.StatusNotFound, gin.H{
 		"error":   "No active scan found for volume",
 		"code":    "NO_ACTIVE_SCAN",
-		"details": fmt.Sprintf("No active scan found for volume %s", volumeID),
+		"details": fmt.Sprintf("No active scan found for volume %s", id),
 	})
 }
 

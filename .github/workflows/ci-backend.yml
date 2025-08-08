@@ -20,6 +20,21 @@ jobs:
     name: Go Build, Test & Lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: volumeviz
+          POSTGRES_PASSWORD: volumeviz
+          POSTGRES_DB: volumeviz
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     
     steps:
       - name: Checkout code
@@ -47,6 +62,13 @@ jobs:
           args: --timeout=5m --verbose
 
       - name: Run tests with race detection and coverage
+        env:
+          DB_TYPE: postgres
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: volumeviz
+          DB_PASSWORD: volumeviz
+          DB_NAME: volumeviz
         run: |
           go test -race -covermode=atomic -coverprofile=coverage.out -v ./...
 
@@ -95,3 +117,26 @@ jobs:
           name: backend-coverage-html
           path: coverage.html
           retention-days: 30
+
+      - name: Seed database for smoke checks (optional)
+        if: always()
+        env:
+          PGPASSWORD: volumeviz
+        run: |
+          psql -h localhost -p 5432 -U volumeviz -d volumeviz -v ON_ERROR_STOP=1 -f scripts/seed.sql || true
+
+      - name: Smoke: query migration status and volume count
+        if: always()
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: volumeviz
+          DB_PASSWORD: volumeviz
+          DB_NAME: volumeviz
+        run: |
+          go run ./cmd/server &
+          SVR=$!
+          sleep 2
+          curl -sf http://localhost:8080/api/v1/health | jq '.checks.migrations.current_version' || true
+          curl -sf http://localhost:8080/api/v1/database/stats | jq '.volume_count' || true
+          kill $$SVR || true

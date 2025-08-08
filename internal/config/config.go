@@ -19,6 +19,7 @@ type Config struct {
 	Security  SecurityConfig
 	RateLimit RateLimitConfig
 	TLS       TLSConfig
+	Lifecycle LifecycleConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -82,6 +83,16 @@ type TLSConfig struct {
 	KeyFile  string
 }
 
+// LifecycleConfig controls data retention and rollups
+type LifecycleConfig struct {
+	Enabled        bool
+	MetricsTTLDays int
+	SizesTTLDays   int
+	RollupEnabled  bool
+	Interval       time.Duration
+	InitialDelay   time.Duration
+}
+
 // Load loads configuration from environment variables with defaults
 func Load() *Config {
 	return &Config{
@@ -135,6 +146,14 @@ func Load() *Config {
 				KeyFile:  keyFile,
 			}
 		}(),
+		Lifecycle: LifecycleConfig{
+			Enabled:        getBoolEnv("LIFECYCLE_ENABLED", true),
+			MetricsTTLDays: getIntEnv("VOLUME_METRICS_TTL_DAYS", 90),
+			SizesTTLDays:   getIntEnv("VOLUME_SIZES_TTL_DAYS", 90),
+			RollupEnabled:  getBoolEnv("VOLUME_ROLLUP_ENABLED", true),
+			Interval:       getDurationEnv("LIFECYCLE_INTERVAL", time.Hour),
+			InitialDelay:   getDurationEnv("LIFECYCLE_INITIAL_DELAY", 30*time.Second),
+		},
 	}
 }
 

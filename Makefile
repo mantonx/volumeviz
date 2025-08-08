@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-build docker-run lint format migrate up down restart logs logs-api logs-web ps rebuild dev-token dev-token-admin security-check
+.PHONY: help build run test clean docker-build docker-run lint format migrate up down restart logs logs-api logs-web ps rebuild dev-token dev-token-admin security-check db-seed db-prune
 
 # Variables
 BINARY_NAME=volumeviz
@@ -35,6 +35,8 @@ help:
 	@echo "  dev-token     - Generate JWT token for development (operator role)"
 	@echo "  dev-token-admin - Generate JWT token for development (admin role)"
 	@echo "  security-check - Run basic security checks"
+	@echo "  db-seed       - Seed the database with sample data"
+	@echo "  db-prune      - Prune the database"
 
 # Build the binary
 build:
@@ -195,3 +197,37 @@ security-check:
 	else \
 		echo "✅ No obvious secrets found"; \
 	fi
+
+# Seed database with sample data
+# Usage: make db-seed DB_TYPE=postgres DB_HOST=localhost DB_PORT=5432 DB_USER=volumeviz DB_PASSWORD=volumeviz DB_NAME=volumeviz
+#        make db-seed DB_TYPE=sqlite DB_PATH=./volumeviz.db
+DB_TYPE ?= postgres
+DB_HOST ?= localhost
+DB_PORT ?= 5432
+DB_USER ?= volumeviz
+DB_PASSWORD ?= volumeviz
+DB_NAME ?= volumeviz
+DB_PATH ?= ./volumeviz.db
+
+ifeq ($(DB_TYPE),postgres)
+DB_PSQL = PGPASSWORD=$(DB_PASSWORD) psql "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) dbname=$(DB_NAME) sslmode=disable"
+else
+DB_PSQL = sqlite3 $(DB_PATH)
+endif
+
+db-seed:
+	@echo "Seeding database ($(DB_TYPE))..."
+ifeq ($(DB_TYPE),postgres)
+	@$(DB_PSQL) -v ON_ERROR_STOP=1 -f scripts/seed.sql
+else
+	@$(DB_PSQL) < scripts/seed_sqlite.sql
+endif
+	@echo "Seed complete"
+
+# Manually trigger prune (uses app retention settings by executing a short-lived run)
+db-prune:
+	@echo "Starting app transiently to run a prune cycle..."
+	@LIFECYCLE_ENABLED=true LIFECYCLE_INTERVAL=5s LIFECYCLE_INITIAL_DELAY=0s SERVER_PORT=18080 go run ./cmd/server & PID=$$!; \
+	sleep 7; \
+	kill $$PID; \
+	echo "Prune triggered"

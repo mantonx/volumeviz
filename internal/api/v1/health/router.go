@@ -2,6 +2,7 @@ package health
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 )
 
@@ -11,9 +12,9 @@ type Router struct {
 }
 
 // NewRouter creates a new health router
-func NewRouter(dockerService interfaces.DockerService) *Router {
+func NewRouter(dockerService interfaces.DockerService, db *database.DB) *Router {
 	return &Router{
-		handler: NewHandler(dockerService),
+		handler: NewHandler(dockerService, db),
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
 )
@@ -12,12 +13,14 @@ import (
 // Handler handles health-related HTTP requests
 type Handler struct {
 	dockerService interfaces.DockerService
+	db            *database.DB
 }
 
 // NewHandler creates a new health handler
-func NewHandler(dockerService interfaces.DockerService) *Handler {
+func NewHandler(dockerService interfaces.DockerService, db *database.DB) *Handler {
 	return &Handler{
 		dockerService: dockerService,
+		db:            db,
 	}
 }
 
@@ -74,24 +77,50 @@ func (h *Handler) GetAppHealth(c *gin.Context) {
 	// Check Docker connectivity
 	dockerAvailable := h.dockerService.IsDockerAvailable(ctx)
 
+	checks := gin.H{
+		"docker": gin.H{
+			"status": func() string {
+				if dockerAvailable {
+					return "healthy"
+				}
+				return "unhealthy"
+			}(),
+		},
+	}
+
+	// Optionally add DB connectivity and migration version if DB is wired
+	if h.db != nil {
+		dbHealth := gin.H{"status": "unknown"}
+		migrationVersion := "unknown"
+		if st := h.db.Health(); st != nil {
+			dbHealth["status"] = st.Status
+			dbHealth["response_ms"] = st.ResponseTime.Milliseconds()
+		}
+		mm := database.NewMigrationManager(h.db)
+		if status, err := mm.GetMigrationStatus(); err == nil {
+			if status.LastApplied != nil {
+				migrationVersion = status.LastApplied.Version
+			} else {
+				migrationVersion = "none"
+			}
+		}
+		checks["database"] = dbHealth
+		checks["migrations"] = gin.H{"current_version": migrationVersion}
+	}
+
 	health := gin.H{
 		"status":    "healthy",
 		"timestamp": time.Now().Unix(),
-		"checks": gin.H{
-			"docker": gin.H{
-				"status": func() string {
-					if dockerAvailable {
-						return "healthy"
-					}
-					return "unhealthy"
-				}(),
-			},
-		},
+		"checks":    checks,
 	}
 
 	// Set overall status based on dependencies
 	if !dockerAvailable {
 		health["status"] = "degraded"
+	} else if h.db != nil {
+		if db, ok := checks["database"].(gin.H); ok && db["status"] != "healthy" {
+			health["status"] = "degraded"
+		}
 	}
 
 	statusCode := http.StatusOK
