@@ -64,7 +64,7 @@
     "swagger-typescript-api": "^13.2.7",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.8.4",
-    "vite": "^7.0.4",
+    "vite": "^7.1.1",
     "vitest": "^1.6.0"
   }
 }
