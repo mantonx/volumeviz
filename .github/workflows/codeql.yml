@@ -50,7 +50,7 @@ jobs:
 
     # Initialize CodeQL for the specified language
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
         # Override default queries with security-focused ones
@@ -58,18 +58,18 @@ jobs:
 
     # Autobuild attempts to build any compiled languages (Go)
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      uses: github/codeql-action/autobuild@v3
 
     # Perform CodeQL Analysis
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
 
     # Upload results to GitHub Security tab
     - name: Upload CodeQL Results
       if: always()
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ../results/
 
@@ -95,7 +95,7 @@ jobs:
 
     - name: Upload Gosec Results
       if: always()
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: gosec-results.sarif
 
