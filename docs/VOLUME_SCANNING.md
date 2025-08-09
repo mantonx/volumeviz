@@ -196,7 +196,7 @@ Returns available scanning methods and their capabilities.
       "name": "du",
       "available": true,
       "description": "Reliable du-based scanning",
-      "performance": "medium", 
+      "performance": "medium",
       "accuracy": "high",
       "features": ["reliable", "standard_tool"]
     },
@@ -205,7 +205,7 @@ Returns available scanning methods and their capabilities.
       "available": true,
       "description": "Native Go implementation with detailed metrics",
       "performance": "slow",
-      "accuracy": "high", 
+      "accuracy": "high",
       "features": ["detailed_metrics", "file_counts", "always_available"]
     }
   ],
@@ -329,7 +329,7 @@ All scan operations include structured logs with:
 
 #### Slow Scanning Performance
 - **Symptom**: Scans taking longer than expected
-- **Solutions**: 
+- **Solutions**:
   - Install diskus for faster scanning
   - Check filesystem type (network filesystems are slower)
   - Increase concurrent scan limits if system can handle it

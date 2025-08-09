@@ -119,12 +119,12 @@ func (s *Service) pruneOlderThanWithCondition(ctx context.Context, table, tsCol 
 	// Different SQL dialects for Postgres vs SQLite
 	// Use CURRENT_TIMESTAMP - interval in Postgres; datetime('now', ...) for SQLite
 	// Try Postgres first; if it fails due to syntax, fallback to SQLite form
-	
+
 	whereClause := fmt.Sprintf("%s < (CURRENT_TIMESTAMP - INTERVAL '%d days')", tsCol, ttlDays)
 	if condition != "" {
 		whereClause = fmt.Sprintf("%s AND %s", whereClause, condition)
 	}
-	
+
 	pg := fmt.Sprintf("DELETE FROM %s WHERE %s", table, whereClause)
 	res, err := s.db.ExecContext(ctx, pg)
 	if err != nil {

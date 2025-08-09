@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface UseUrlStateOptions {
   defaultValue?: any;
@@ -10,14 +10,14 @@ interface UseUrlStateOptions {
 
 /**
  * Custom hook to synchronize component state with URL search parameters
- * 
+ *
  * @param key - The URL parameter key
  * @param options - Configuration options
  * @returns [value, setValue] - State value and setter function
  */
 export function useUrlState<T>(
   key: string,
-  options: UseUrlStateOptions = {}
+  options: UseUrlStateOptions = {},
 ): [T | undefined, (value: T | undefined) => void] {
   const {
     defaultValue,
@@ -33,7 +33,7 @@ export function useUrlState<T>(
   const getInitialValue = useCallback((): T | undefined => {
     const params = new URLSearchParams(location.search);
     const urlValue = params.get(key);
-    
+
     if (urlValue !== null) {
       try {
         return deserialize(urlValue);
@@ -42,7 +42,7 @@ export function useUrlState<T>(
         return defaultValue;
       }
     }
-    
+
     return defaultValue;
   }, [key, location.search, defaultValue, deserialize]);
 
@@ -55,24 +55,27 @@ export function useUrlState<T>(
   }, [getInitialValue]);
 
   // Update URL when state changes
-  const setValue = useCallback((value: T | undefined) => {
-    const params = new URLSearchParams(location.search);
-    
-    if (value === undefined || value === null || value === '') {
-      params.delete(key);
-    } else {
-      params.set(key, serialize(value));
-    }
+  const setValue = useCallback(
+    (value: T | undefined) => {
+      const params = new URLSearchParams(location.search);
 
-    const newSearch = params.toString();
-    const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}`;
-    
-    if (newUrl !== `${location.pathname}${location.search}`) {
-      navigate(newUrl, { replace });
-    }
-    
-    setState(value);
-  }, [key, serialize, navigate, location, replace]);
+      if (value === undefined || value === null || value === '') {
+        params.delete(key);
+      } else {
+        params.set(key, serialize(value));
+      }
+
+      const newSearch = params.toString();
+      const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}`;
+
+      if (newUrl !== `${location.pathname}${location.search}`) {
+        navigate(newUrl, { replace });
+      }
+
+      setState(value);
+    },
+    [key, serialize, navigate, location, replace],
+  );
 
   return [state, setValue];
 }
@@ -82,7 +85,7 @@ export function useUrlState<T>(
  */
 export function useMultipleUrlState<T extends Record<string, any>>(
   keys: (keyof T)[],
-  options: Partial<Record<keyof T, UseUrlStateOptions>> = {}
+  options: Partial<Record<keyof T, UseUrlStateOptions>> = {},
 ): [Partial<T>, (updates: Partial<T>) => void] {
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,14 +96,17 @@ export function useMultipleUrlState<T extends Record<string, any>>(
 
     keys.forEach((key) => {
       const keyOptions = options[key] || {};
-      const { defaultValue, deserialize = (value) => value } = keyOptions;
+      const { defaultValue, deserialize = (value: any) => value } = keyOptions;
       const urlValue = params.get(String(key));
 
       if (urlValue !== null) {
         try {
           values[key] = deserialize(urlValue);
         } catch (error) {
-          console.warn(`Failed to deserialize URL parameter "${String(key)}":`, error);
+          console.warn(
+            `Failed to deserialize URL parameter "${String(key)}":`,
+            error,
+          );
           if (defaultValue !== undefined) {
             values[key] = defaultValue;
           }
@@ -118,33 +124,52 @@ export function useMultipleUrlState<T extends Record<string, any>>(
   // Update state when URL changes
   useEffect(() => {
     const newValues = getInitialValues();
-    setState(newValues);
-  }, [getInitialValues]);
-
-  const setValues = useCallback((updates: Partial<T>) => {
-    const params = new URLSearchParams(location.search);
-
-    // Update params based on the provided updates
-    Object.entries(updates).forEach(([key, value]) => {
-      const keyOptions = options[key as keyof T] || {};
-      const { serialize = (value) => String(value) } = keyOptions;
-
-      if (value === undefined || value === null || value === '') {
-        params.delete(key);
-      } else {
-        params.set(key, serialize(value));
-      }
+    setState((prev) => {
+      // Only update if there are actual changes to prevent infinite loops
+      const hasChanges = keys.some((key) => prev[key] !== newValues[key]);
+      return hasChanges ? newValues : prev;
     });
+  }, [getInitialValues, keys]);
 
-    const newSearch = params.toString();
-    const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}`;
+  const setValues = useCallback(
+    (updates: Partial<T>) => {
+      const params = new URLSearchParams(location.search);
 
-    if (newUrl !== `${location.pathname}${location.search}`) {
-      navigate(newUrl, { replace: true });
-    }
+      // Update params based on the provided updates
+      Object.entries(updates).forEach(([key, value]) => {
+        const keyOptions = options[key as keyof T] || {};
+        const { serialize = (value: any) => String(value) } = keyOptions as any;
 
-    setState((prev) => ({ ...prev, ...updates }));
-  }, [location, navigate, options]);
+        // Compute serialized value first so we decide deletion based on output
+        let serialized: any;
+        try {
+          serialized = serialize(value);
+        } catch {
+          serialized = undefined;
+        }
+
+        if (
+          serialized === undefined ||
+          serialized === null ||
+          serialized === ''
+        ) {
+          params.delete(key);
+        } else {
+          params.set(key, serialized);
+        }
+      });
+
+      const newSearch = params.toString();
+      const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}`;
+
+      if (newUrl !== `${location.pathname}${location.search}`) {
+        navigate(newUrl, { replace: true });
+      }
+
+      setState((prev) => ({ ...prev, ...updates }));
+    },
+    [location, navigate, options],
+  );
 
   return [state, setValues];
 }
@@ -161,36 +186,39 @@ export function useVolumeListUrlState() {
     driver: string;
     orphaned: boolean;
     system: boolean;
-  }>(
-    ['page', 'page_size', 'sort', 'q', 'driver', 'orphaned', 'system'],
-    {
-      page: {
-        defaultValue: 1,
-        serialize: (value) => String(value),
-        deserialize: (value) => parseInt(value, 10) || 1,
-      },
-      page_size: {
-        defaultValue: 25,
-        serialize: (value) => String(value),
-        deserialize: (value) => parseInt(value, 10) || 25,
-      },
-      sort: {
-        defaultValue: 'name:asc',
-      },
-      q: {
-        defaultValue: '',
-      },
-      driver: {
-        defaultValue: '',
-      },
-      orphaned: {
-        serialize: (value) => value ? 'true' : 'false',
-        deserialize: (value) => value === 'true',
-      },
-      system: {
-        serialize: (value) => value ? 'true' : 'false',
-        deserialize: (value) => value === 'true',
-      },
-    }
-  );
+  }>(['page', 'page_size', 'sort', 'q', 'driver', 'orphaned', 'system'], {
+    page: {
+      defaultValue: 1,
+      serialize: (value) => String(value),
+      deserialize: (value) => parseInt(value, 10) || 1,
+    },
+    page_size: {
+      defaultValue: 25,
+      serialize: (value) => String(value),
+      deserialize: (value) => parseInt(value, 10) || 25,
+    },
+    sort: {
+      defaultValue: 'name:asc',
+    },
+    q: {
+      defaultValue: '',
+      serialize: (value) => (value ? String(value) : ''),
+    },
+    driver: {
+      defaultValue: '',
+      serialize: (value) => (value ? String(value) : ''),
+    },
+    orphaned: {
+      defaultValue: false,
+      // Only include when true
+      serialize: (value) => (value ? 'true' : ''),
+      deserialize: (value) => value === 'true',
+    },
+    system: {
+      defaultValue: false,
+      // Only include when true (absence means false)
+      serialize: (value) => (value ? 'true' : ''),
+      deserialize: (value) => value === 'true',
+    },
+  });
 }

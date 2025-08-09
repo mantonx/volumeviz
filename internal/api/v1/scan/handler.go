@@ -188,10 +188,13 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 		h.hub.BroadcastScanComplete(volumeID, wsResult)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Volume size refreshed",
-		"result":  result,
-	})
+	response := models.ScanResponse{
+		VolumeID: volumeID,
+		Result:   models.ConvertScanResult(result),
+		Cached:   false, // Always false since we cleared cache
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetScanStatus returns the status of an async scan.
@@ -523,7 +526,7 @@ func (h *Handler) TriggerAllVolumesScan(c *gin.Context) {
 
 	// Get scheduler status for additional info
 	status := h.scheduler.GetStatus()
-	
+
 	c.JSON(http.StatusAccepted, gin.H{
 		"message":     "All volumes scan enqueued",
 		"batch_id":    batchID,

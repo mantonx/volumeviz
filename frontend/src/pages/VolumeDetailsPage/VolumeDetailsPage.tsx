@@ -7,33 +7,38 @@ import {
   Database,
   Activity,
   RefreshCw,
-  Calendar,
-  Tag,
   MapPin,
+  Tag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useVolumes, useVolumeScanning } from '@/api/services';
 import { volumesAtom } from '@/store';
-import type { VolumeResponse } from '@/api/client';
+import { formatBytes, formatDate } from '@/utils/formatters';
+import type { Volume } from '@/api/generated/volumeviz-api';
 
 const VolumeDetailsPage: React.FC = () => {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
+
+  // Preserve URL state when going back
+  const handleBackToVolumes = () => {
+    navigate(-1); // Go back to previous page to preserve filters
+  };
   const volumes = useAtomValue(volumesAtom);
   const { fetchVolumes } = useVolumes();
-  const { scanVolume, scanResults, scanLoading, scanError } = useVolumeScanning();
+  const { scanVolume, scanResults, scanLoading, scanError } =
+    useVolumeScanning();
 
-
-  const [volume, setVolume] = useState<VolumeResponse | null>(null);
+  const [volume, setVolume] = useState<Volume | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Find volume in current data or fetch if needed
   useEffect(() => {
     const findVolume = () => {
-      const foundVolume = volumes.find(v => v.name === name);
+      const foundVolume = volumes.find((v) => v.name === name);
       if (foundVolume) {
         setVolume(foundVolume);
         setLoading(false);
@@ -55,9 +60,9 @@ const VolumeDetailsPage: React.FC = () => {
 
   const handleScan = async () => {
     if (!volume) return;
-    
+
     try {
-      const volumeId = volume.volume_id || volume.name;
+      const volumeId = volume.name; // Use name as the primary identifier
       await scanVolume(volumeId, { async: false });
     } catch (error) {
       console.error('Failed to scan volume:', error);
@@ -66,13 +71,7 @@ const VolumeDetailsPage: React.FC = () => {
 
   const formatSize = (bytes?: number): string => {
     if (!bytes) return 'Unknown';
-    const gb = bytes / (1024 * 1024 * 1024);
-    return `${gb.toFixed(2)} GB`;
-  };
-
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return 'Unknown';
-    return new Date(dateString).toLocaleString();
+    return formatBytes(bytes);
   };
 
   const getStatusVariant = (isActive?: boolean) => {
@@ -88,7 +87,9 @@ const VolumeDetailsPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-64">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto text-blue-500 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading volume details...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading volume details...
+          </p>
         </div>
       </div>
     );
@@ -98,7 +99,7 @@ const VolumeDetailsPage: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={() => navigate('/volumes')}>
+          <Button variant="outline" onClick={handleBackToVolumes}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Volumes
           </Button>
@@ -113,15 +114,13 @@ const VolumeDetailsPage: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             The volume "{name}" could not be found.
           </p>
-          <Button onClick={() => navigate('/volumes')}>
-            Return to Volumes List
-          </Button>
+          <Button onClick={handleBackToVolumes}>Return to Volumes List</Button>
         </Card>
       </div>
     );
   }
 
-  const volumeId = volume.volume_id || volume.name;
+  const volumeId = volume.name; // Use name as the primary identifier
   const scanResult = scanResults[volumeId];
   const isScanning = scanLoading[volumeId];
   const scanErrorMessage = scanError[volumeId];
@@ -131,7 +130,7 @@ const VolumeDetailsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={() => navigate('/volumes')}>
+          <Button variant="outline" onClick={handleBackToVolumes}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Volumes
           </Button>
@@ -139,18 +138,14 @@ const VolumeDetailsPage: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {volume.name || 'Unnamed Volume'}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Volume Details
-            </p>
+            <p className="text-gray-600 dark:text-gray-400">Volume Details</p>
           </div>
         </div>
         <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            onClick={handleScan}
-            disabled={isScanning}
-          >
-            <Activity className={`h-4 w-4 mr-2 ${isScanning ? 'animate-spin' : ''}`} />
+          <Button variant="outline" onClick={handleScan} disabled={isScanning}>
+            <Activity
+              className={`h-4 w-4 mr-2 ${isScanning ? 'animate-spin' : ''}`}
+            />
             {isScanning ? 'Scanning...' : 'Scan Size'}
           </Button>
           <Button onClick={() => fetchVolumes({ q: name })}>
@@ -180,7 +175,7 @@ const VolumeDetailsPage: React.FC = () => {
               <Badge variant={getStatusVariant(volume.is_active)}>
                 {getStatusText(volume.is_active)}
               </Badge>
-              {volume.is_orphaned && <Badge variant="destructive">Orphaned</Badge>}
+              {volume.is_orphaned && <Badge variant="error">Orphaned</Badge>}
               {volume.is_system && <Badge variant="secondary">System</Badge>}
             </div>
           </div>
@@ -188,19 +183,25 @@ const VolumeDetailsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Volume ID:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Volume ID:
+                </span>
                 <span className="font-mono text-sm text-gray-900 dark:text-white">
-                  {volume.volume_id || 'N/A'}
+                  {volume.volume_id || volume.name || 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Driver:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Driver:
+                </span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {volume.driver || 'local'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Status:
+                </span>
                 <Badge variant={getStatusVariant(volume.is_active)}>
                   {getStatusText(volume.is_active)}
                 </Badge>
@@ -209,23 +210,27 @@ const VolumeDetailsPage: React.FC = () => {
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Size:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Size:
+                </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {volume.size_bytes
-                    ? formatSize(volume.size_bytes)
-                    : scanResult
-                      ? formatSize(scanResult.size_bytes)
-                      : 'Unknown'}
+                  {scanResult?.result?.total_size
+                    ? formatSize(scanResult.result.total_size)
+                    : 'Unknown'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Containers:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Containers:
+                </span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {volume.attachments_count || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Created:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Created:
+                </span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {formatDate(volume.created_at)}
                 </span>
@@ -241,11 +246,9 @@ const VolumeDetailsPage: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Size</p>
                 <p className="text-xl font-bold text-blue-600">
-                  {volume.size_bytes
-                    ? formatSize(volume.size_bytes)
-                    : scanResult
-                      ? formatSize(scanResult.size_bytes)
-                      : 'Unknown'}
+                  {scanResult?.result?.total_size
+                    ? formatSize(scanResult.result.total_size)
+                    : 'Unknown'}
                 </p>
               </div>
               <Database className="h-8 w-8 text-blue-500" />
@@ -255,7 +258,9 @@ const VolumeDetailsPage: React.FC = () => {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Containers</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Containers
+                </p>
                 <p className="text-xl font-bold text-green-600">
                   {volume.attachments_count || 0}
                 </p>
@@ -267,7 +272,9 @@ const VolumeDetailsPage: React.FC = () => {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Driver</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Driver
+                </p>
                 <p className="text-xl font-bold text-purple-600">
                   {volume.driver || 'local'}
                 </p>
@@ -338,27 +345,39 @@ const VolumeDetailsPage: React.FC = () => {
           ) : scanResult ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Size:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Size:
+                </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {formatSize(scanResult.size_bytes)}
+                  {formatSize(scanResult.result.total_size)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Method:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Method:
+                </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {scanResult.method || 'Unknown'}
+                  {scanResult.result.method || 'Unknown'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Duration:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Duration:
+                </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {scanResult.duration_ms ? `${scanResult.duration_ms}ms` : 'Unknown'}
+                  {scanResult.result.duration
+                    ? `${(scanResult.result.duration / 1000000).toFixed(2)}ms`
+                    : 'Unknown'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Scanned At:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Scanned At:
+                </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {formatDate(scanResult.scanned_at)}
+                  {scanResult.result.scanned_at
+                    ? formatDate(scanResult.result.scanned_at)
+                    : 'Unknown'}
                 </span>
               </div>
             </div>

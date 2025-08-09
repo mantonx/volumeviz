@@ -9,6 +9,10 @@ export interface ToastProps {
 }
 
 export interface ToastContextValue {
-  showToast: (message: string, variant?: ToastVariant, duration?: number) => void;
+  showToast: (
+    message: string,
+    variant?: ToastVariant,
+    duration?: number,
+  ) => void;
   hideToast: (id: string) => void;
 }

@@ -1,18 +1,19 @@
-import React from 'react';
-import { useAtomValue } from 'jotai';
-import {
-  HardDrive,
-  Database,
-  Container,
-  Clock,
-  MoreVertical,
-  Activity,
-} from 'lucide-react';
-import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { scanResultsAtom } from '@/store/atoms/volumes';
 import { cn } from '@/utils';
+import { formatBytes } from '@/utils/formatters';
+import { useAtomValue } from 'jotai';
+import {
+  Activity,
+  Clock,
+  Container,
+  Database,
+  HardDrive,
+  MoreVertical,
+} from 'lucide-react';
+import React from 'react';
 import type { VolumeCardProps } from './VolumeCard.types';
 
 /**
@@ -46,22 +47,10 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
   ...props
 }) => {
   const scanResults = useAtomValue(scanResultsAtom);
-  const scanResult = scanResults[volume.id];
-
-  /**
-   * Format bytes to human-readable size with appropriate units.
-   * Uses binary prefixes (1024) for consistency with Docker/filesystem tools.
-   */
-  const formatSize = (bytes?: number): string => {
-    if (!bytes || bytes === 0) return '0 B';
-
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const base = 1024;
-    const index = Math.floor(Math.log(bytes) / Math.log(base));
-    const size = bytes / Math.pow(base, index);
-
-    return `${size.toFixed(index > 0 ? 1 : 0)} ${units[index]}`;
-  };
+  // Use volume_id if available (from API), otherwise fallback to name or id
+  const volumeKey =
+    (volume as any).volume_id || volume.name || String(volume.id);
+  const scanResult = scanResults[volumeKey];
 
   /**
    * Get appropriate status badge variant based on volume state.
@@ -176,10 +165,12 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
           <span
             className={cn(
               'text-sm font-medium',
-              getSizeColorClass(scanResult?.size_bytes),
+              getSizeColorClass(scanResult?.result.total_size),
             )}
           >
-            {scanResult ? formatSize(scanResult.size_bytes) : 'Not scanned'}
+            {scanResult
+              ? formatBytes(scanResult.result.total_size)
+              : 'Not scanned'}
           </span>
         </div>
 
@@ -219,7 +210,7 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
           <div className="flex items-center space-x-1">
             <Clock className="h-3 w-3 text-gray-500" />
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {formatLastScan(scanResult?.scanned_at)}
+              {formatLastScan(scanResult?.result.scanned_at)}
             </span>
           </div>
         </div>

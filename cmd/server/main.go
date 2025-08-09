@@ -51,7 +51,7 @@ func main() {
 	// Print version information
 	versionInfo := version.Get()
 	log.Printf("Starting VolumeViz %s", versionInfo.Version)
-	log.Printf("Build info: commit=%s, date=%s, go=%s, platform=%s", 
+	log.Printf("Build info: commit=%s, date=%s, go=%s, platform=%s",
 		versionInfo.GitCommit, versionInfo.BuildDate, versionInfo.GoVersion, versionInfo.Platform)
 
 	// Load configuration
@@ -113,7 +113,7 @@ func main() {
 	// Setup v1 API router
 	apiRouter := v1.NewRouter(dockerService, db, cfg)
 	router := apiRouter.Engine()
-	
+
 	// Start events service if enabled
 	if cfg.Events.Enabled && apiRouter.EventsService() != nil {
 		if err := apiRouter.EventsService().Start(context.Background()); err != nil {
@@ -163,7 +163,7 @@ func main() {
 	// Graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	
+
 	// Stop scheduler if running
 	if apiRouter.Scheduler() != nil {
 		if err := apiRouter.Scheduler().Stop(ctx); err != nil {

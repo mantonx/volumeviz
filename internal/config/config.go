@@ -106,14 +106,14 @@ type EventsConfig struct {
 
 // ScanConfig holds scan scheduler configuration
 type ScanConfig struct {
-	Enabled              bool
-	Interval             time.Duration
-	Concurrency          int
-	TimeoutPerVolume     time.Duration
-	MethodsOrder         []string
-	BindMountsEnabled    bool
-	BindAllowList        []string
-	SkipPattern          string
+	Enabled           bool
+	Interval          time.Duration
+	Concurrency       int
+	TimeoutPerVolume  time.Duration
+	MethodsOrder      []string
+	BindMountsEnabled bool
+	BindAllowList     []string
+	SkipPattern       string
 }
 
 // Load loads configuration from environment variables with defaults
@@ -185,14 +185,14 @@ func Load() *Config {
 			ReconcileInterval:  getDurationEnv("EVENTS_RECONCILE_INTERVAL", 6*time.Hour),
 		},
 		Scan: ScanConfig{
-			Enabled:              getScanEnabledDefault(),
-			Interval:             getDurationEnv("SCAN_INTERVAL", 6*time.Hour),
-			Concurrency:          getIntEnv("SCAN_CONCURRENCY", 2),
-			TimeoutPerVolume:     getDurationEnv("SCAN_TIMEOUT_PER_VOLUME", 2*time.Minute),
-			MethodsOrder:         getStringSliceEnv("SCAN_METHODS_ORDER", []string{"diskus", "du", "native"}),
-			BindMountsEnabled:    getBoolEnv("SCAN_BIND_MOUNTS_ENABLED", false),
-			BindAllowList:        getStringSliceEnv("SCAN_BIND_ALLOWLIST", []string{}),
-			SkipPattern:          getEnv("SCAN_SKIP_PATTERN", "^docker_|^builder_|^containerd"),
+			Enabled:           getScanEnabledDefault(),
+			Interval:          getDurationEnv("SCAN_INTERVAL", 6*time.Hour),
+			Concurrency:       getIntEnv("SCAN_CONCURRENCY", 2),
+			TimeoutPerVolume:  getDurationEnv("SCAN_TIMEOUT_PER_VOLUME", 2*time.Minute),
+			MethodsOrder:      getStringSliceEnv("SCAN_METHODS_ORDER", []string{"diskus", "du", "native"}),
+			BindMountsEnabled: getBoolEnv("SCAN_BIND_MOUNTS_ENABLED", false),
+			BindAllowList:     getStringSliceEnv("SCAN_BIND_ALLOWLIST", []string{}),
+			SkipPattern:       getEnv("SCAN_SKIP_PATTERN", "^docker_|^builder_|^containerd"),
 		},
 	}
 }
@@ -255,7 +255,7 @@ func getScanEnabledDefault() bool {
 			return parsed
 		}
 	}
-	
+
 	// Default based on environment: true in dev/debug, false in production
 	ginMode := getEnv("GIN_MODE", "release")
 	isDev := ginMode == "debug" || ginMode == "test" || os.Getenv("NODE_ENV") == "development"

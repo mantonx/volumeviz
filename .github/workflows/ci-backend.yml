@@ -10,7 +10,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - "**/*.md" 
+      - "**/*.md"
       - "docs/**"
       - "frontend/**"
       - ".github/workflows/ci-frontend.yml"
@@ -35,7 +35,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -81,8 +81,8 @@ jobs:
           echo "Coverage by package:"
           go tool cover -func=coverage.out | grep -v "total:" | sort -k3 -nr
           echo ""
-          awk -v p="$pct" 'BEGIN { 
-            if (p+0 < 60) { 
+          awk -v p="$pct" 'BEGIN {
+            if (p+0 < 60) {
               print "❌ Coverage below minimum threshold"
               print "   Required: ≥60%"
               print "   Actual:   " p "%"
@@ -90,7 +90,7 @@ jobs:
               print ""
               print "Please add tests to improve coverage before merging."
               print "Focus on packages with lower coverage shown above."
-              exit 1 
+              exit 1
             } else {
               print "✅ Coverage meets threshold: " p "% (≥60%)"
               if (p+0 >= 80) {
@@ -112,7 +112,7 @@ jobs:
         run: go tool cover -html=coverage.out -o coverage.html
 
       - name: Upload coverage HTML
-        uses: actions/upload-artifact@v4  
+        uses: actions/upload-artifact@v4
         with:
           name: backend-coverage-html
           path: coverage.html

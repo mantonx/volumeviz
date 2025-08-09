@@ -40,10 +40,10 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	group.GET("/scan-methods", r.handler.GetScanMethods)
 
 	// Manual scan trigger endpoints (scheduler-based)
-	group.POST("/volumes/:name/scan", r.handler.TriggerVolumeScan)    // Enqueue single volume
-	group.POST("/scan/now", r.handler.TriggerAllVolumesScan)         // Enqueue all volumes (admin-only)
-	
+	group.POST("/volumes/:name/scan", r.handler.TriggerVolumeScan) // Enqueue single volume
+	group.POST("/scan/now", r.handler.TriggerAllVolumesScan)       // Enqueue all volumes (admin-only)
+
 	// Scheduler management endpoints
-	group.GET("/scheduler/status", r.handler.GetSchedulerStatus)     // Get scheduler status
-	group.GET("/scheduler/metrics", r.handler.GetSchedulerMetrics)   // Get scheduler metrics
+	group.GET("/scheduler/status", r.handler.GetSchedulerStatus)   // Get scheduler status
+	group.GET("/scheduler/metrics", r.handler.GetSchedulerMetrics) // Get scheduler metrics
 }

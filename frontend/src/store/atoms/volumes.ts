@@ -1,11 +1,7 @@
+import type { AsyncScanResponse, ScanResponse } from '@/api/client';
+import type { Volume } from '@/api/generated/volumeviz-api';
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-import type {
-  VolumeListResponse,
-  VolumeResponse,
-  ScanResponse,
-  AsyncScanResponse,
-} from '@/api/client';
 
 // Types for volume state management
 export interface VolumeFilters {
@@ -29,7 +25,7 @@ export interface VolumePaginationMeta {
 }
 
 export interface VolumeState {
-  volumes: VolumeResponse[];
+  volumes: Volume[];
   loading: boolean;
   error: string | null;
   lastUpdated: Date | null;
@@ -44,7 +40,7 @@ export interface ScanState {
 }
 
 // Primary volume state atoms
-export const volumesAtom = atom<VolumeResponse[]>([]);
+export const volumesAtom = atom<Volume[]>([]);
 export const volumesLoadingAtom = atom<boolean>(false);
 export const volumesErrorAtom = atom<string | null>(null);
 export const volumesLastUpdatedAtom = atom<Date | null>(null);
@@ -64,7 +60,10 @@ export const volumeSortAtom = atom<VolumeSortConfig>({
 // Scan state atoms
 export const scanLoadingAtom = atom<Record<string, boolean>>({});
 export const scanErrorAtom = atom<Record<string, string | null>>({});
-export const scanResultsAtom = atom<Record<string, ScanResponse>>({});
+export const scanResultsAtom = atomWithStorage<Record<string, ScanResponse>>(
+  'volumeviz-scan-results',
+  {},
+);
 export const asyncScansAtom = atom<Record<string, AsyncScanResponse>>({});
 
 // Auto-refresh settings
@@ -78,7 +77,7 @@ export const autoRefreshIntervalAtom = atomWithStorage(
 ); // 30 seconds
 
 // Computed filtered and sorted volumes
-export const filteredVolumesAtom = atom<VolumeResponse[]>((get) => {
+export const filteredVolumesAtom = atom<Volume[]>((get) => {
   const volumes = get(volumesAtom);
   const filters = get(volumeFiltersAtom);
   const sortConfig = get(volumeSortAtom);

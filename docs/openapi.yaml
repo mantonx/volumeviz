@@ -1,24 +1,24 @@
 openapi: 3.0.3
 info:
   title: VolumeViz API
-  version: "1.0.0"
+  version: '1.0.0'
   description: |
-    Docker volume monitoring API with comprehensive volume discovery, size calculation, 
+    Docker volume monitoring API with comprehensive volume discovery, size calculation,
     and container attachment tracking. Focus on user-mounted volumes only.
-    
+
     ## Volume-First Approach
     - Automatic discovery and filtering of user-mounted volumes
     - Excludes Docker infrastructure volumes (container filesystems, tmp volumes)
     - Real-time volume usage monitoring and size calculation
     - Container attachment tracking for each volume
-    
-    ## Features  
+
+    ## Features
     - Multi-method volume size calculation (du, find, stat)
     - Asynchronous scanning with progress tracking for large volumes
     - High-performance caching with TTL-based invalidation
     - Comprehensive Prometheus metrics integration
     - Circuit breaker patterns for resilience
-    
+
     ## Performance SLO
     - 95th percentile response time < 500ms for volume listing
     - Supports 1000+ volumes with concurrent access
@@ -63,13 +63,13 @@ paths:
                 healthy:
                   summary: Healthy Docker daemon
                   value:
-                    status: "healthy"
-                    message: "Docker daemon connected successfully"
-                    version: "24.0.7"
-                    api_version: "1.43"
-                    go_version: "go1.20.10"
-                    git_commit: "afdd53b4e3"
-                    build_time: "2023-10-24T11:05:16.000000000+00:00"
+                    status: 'healthy'
+                    message: 'Docker daemon connected successfully'
+                    version: '24.0.7'
+                    api_version: '1.43'
+                    go_version: 'go1.20.10'
+                    git_commit: 'afdd53b4e3'
+                    build_time: '2023-10-24T11:05:16.000000000+00:00'
         '503':
           description: Docker daemon is unavailable or unhealthy
           content:
@@ -80,9 +80,9 @@ paths:
                 unavailable:
                   summary: Docker daemon unavailable
                   value:
-                    error: "Docker daemon unavailable"
-                    code: "DOCKER_UNAVAILABLE"
-                    details: "Cannot connect to the Docker daemon at unix:///var/run/docker.sock"
+                    error: 'Docker daemon unavailable'
+                    code: 'DOCKER_UNAVAILABLE'
+                    details: 'Cannot connect to the Docker daemon at unix:///var/run/docker.sock'
 
   /health/app:
     get:
@@ -129,23 +129,23 @@ paths:
       summary: WebSocket endpoint for real-time updates
       description: |
         Establishes a WebSocket connection for real-time volume updates and scan progress.
-        
+
         ## Message Types
-        
+
         ### Client to Server:
         - `ping`: Heartbeat message
-        
+
         ### Server to Client:
         - `volume_update`: Volume data has changed
         - `scan_progress`: Scan progress update
         - `scan_complete`: Scan completed
         - `scan_error`: Scan failed
         - `pong`: Heartbeat response
-        
+
         ## Usage Example:
         ```javascript
         const ws = new WebSocket('ws://localhost:8080/api/v1/ws');
-        
+
         ws.onmessage = (event) => {
           const message = JSON.parse(event.data);
           switch(message.type) {
@@ -216,7 +216,7 @@ paths:
       summary: List Docker volumes
       description: |
         List volumes with pagination, sorting, and filters.
-        
+
         **Performance**: Optimized for large volume sets (1000+ volumes).
         **SLO**: 95th percentile response time < 250ms.
       operationId: listVolumes
@@ -303,24 +303,24 @@ paths:
                   summary: Paginated volumes response
                   value:
                     data:
-                      - name: "app-data"
-                        driver: "local"
-                        created_at: "2025-08-08T14:04:13Z"
+                      - name: 'app-data'
+                        driver: 'local'
+                        created_at: '2025-08-08T14:04:13Z'
                         labels:
-                          app: "web"
-                        scope: "local"
-                        mountpoint: "/var/lib/docker/volumes/app-data/_data"
+                          app: 'web'
+                        scope: 'local'
+                        mountpoint: '/var/lib/docker/volumes/app-data/_data'
                         size_bytes: 123456789
-                        last_scan_at: "2025-08-08T15:11:00Z"
+                        last_scan_at: '2025-08-08T15:11:00Z'
                         attachments_count: 2
                         is_system: false
                         is_orphaned: false
                     page: 1
                     page_size: 25
                     total: 123
-                    sort: "name:asc"
+                    sort: 'name:asc'
                     filters:
-                      driver: "local"
+                      driver: 'local'
                       orphaned: false
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -345,7 +345,7 @@ paths:
           description: Volume name
           schema:
             type: string
-          example: "app-data"
+          example: 'app-data'
       responses:
         '200':
           description: Volume details
@@ -362,24 +362,24 @@ paths:
                 volume_detail:
                   summary: Volume with attachments
                   value:
-                    name: "app-data"
-                    driver: "local"
-                    created_at: "2025-08-08T14:04:13Z"
+                    name: 'app-data'
+                    driver: 'local'
+                    created_at: '2025-08-08T14:04:13Z'
                     labels:
-                      app: "web"
-                    scope: "local"
-                    mountpoint: "/var/lib/docker/volumes/app-data/_data"
+                      app: 'web'
+                    scope: 'local'
+                    mountpoint: '/var/lib/docker/volumes/app-data/_data'
                     size_bytes: 123456789
-                    last_scan_at: "2025-08-08T15:11:00Z"
+                    last_scan_at: '2025-08-08T15:11:00Z'
                     attachments:
-                      - container_id: "a1b2c3"
-                        mount_path: "/data"
+                      - container_id: 'a1b2c3'
+                        mount_path: '/data'
                         rw: true
                     is_system: false
                     is_orphaned: false
                     meta:
                       driver_opts:
-                        type: "none"
+                        type: 'none'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
@@ -404,7 +404,7 @@ paths:
           description: Volume name
           schema:
             type: string
-          example: "app-data"
+          example: 'app-data'
       responses:
         '200':
           description: List of container attachments
@@ -422,12 +422,12 @@ paths:
                   summary: Volume attachments
                   value:
                     data:
-                      - container_id: "a1b2c3"
-                        container_name: "web"
-                        mount_path: "/data"
+                      - container_id: 'a1b2c3'
+                        container_name: 'web'
+                        mount_path: '/data'
                         rw: true
-                        first_seen: "2025-08-08T14:10:00Z"
-                        last_seen: "2025-08-08T15:11:00Z"
+                        first_seen: '2025-08-08T14:10:00Z'
+                        last_seen: '2025-08-08T15:11:00Z'
                     total: 1
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -517,10 +517,10 @@ paths:
                   summary: Orphaned volumes sorted by size
                   value:
                     data:
-                      - name: "cache-old"
-                        driver: "local"
+                      - name: 'cache-old'
+                        driver: 'local'
                         size_bytes: 987654321
-                        created_at: "2025-07-01T12:00:00Z"
+                        created_at: '2025-07-01T12:00:00Z'
                         is_system: false
                     page: 1
                     page_size: 25
@@ -541,8 +541,8 @@ paths:
       description: |
         Get the current size and file statistics of a Docker volume.
         Results are cached with TTL-based invalidation for performance.
-        
-        **Performance**: 
+
+        **Performance**:
         - Cache hit: < 5ms response time
         - Cache miss: varies by volume size and scan method
         - Large volumes (100GB+): typically < 30 seconds
@@ -554,7 +554,7 @@ paths:
           description: Volume ID or name
           schema:
             type: string
-          example: "web-data"
+          example: 'web-data'
         - name: method
           in: query
           description: Preferred scan method (fallback chain will be used if unavailable)
@@ -575,35 +575,35 @@ paths:
                 cached_result:
                   summary: Cached scan result
                   value:
-                    volume_id: "web-data"
+                    volume_id: 'web-data'
                     cached: true
                     result:
-                      volume_id: "web-data"
+                      volume_id: 'web-data'
                       total_size: 2147483648
                       file_count: 1547
                       directory_count: 234
                       largest_file: 104857600
-                      method: "diskus"
+                      method: 'diskus'
                       duration: 15000000000
                       cache_hit: true
-                      scanned_at: "2024-01-15T14:30:00Z"
-                      filesystem_type: "ext4"
+                      scanned_at: '2024-01-15T14:30:00Z'
+                      filesystem_type: 'ext4'
                 fresh_scan:
                   summary: Fresh scan result
                   value:
-                    volume_id: "large-data"
+                    volume_id: 'large-data'
                     cached: false
                     result:
-                      volume_id: "large-data"
+                      volume_id: 'large-data'
                       total_size: 107374182400
                       file_count: 15473
                       directory_count: 2341
                       largest_file: 8589934592
-                      method: "diskus"
+                      method: 'diskus'
                       duration: 13248000000
                       cache_hit: false
-                      scanned_at: "2024-01-15T14:35:22Z"
-                      filesystem_type: "cifs"
+                      scanned_at: '2024-01-15T14:35:22Z'
+                      filesystem_type: 'cifs'
         '404':
           description: Volume not found
           content:
@@ -625,7 +625,7 @@ paths:
       description: |
         Force a fresh scan of the volume, bypassing cache.
         Supports both synchronous and asynchronous scanning modes.
-        
+
         **Synchronous mode**: Returns results immediately (default)
         **Asynchronous mode**: Returns scan ID for status tracking
       operationId: refreshVolumeSize
@@ -636,7 +636,7 @@ paths:
           description: Volume ID or name
           schema:
             type: string
-          example: "web-data"
+          example: 'web-data'
       requestBody:
         description: Refresh options
         required: false
@@ -648,12 +648,12 @@ paths:
               sync_refresh:
                 summary: Synchronous refresh
                 value:
-                  method: "diskus"
+                  method: 'diskus'
                   async: false
               async_refresh:
                 summary: Asynchronous refresh
                 value:
-                  method: "du"
+                  method: 'du'
                   async: true
       responses:
         '200':
@@ -672,9 +672,9 @@ paths:
                 async_started:
                   summary: Async scan initiated
                   value:
-                    scan_id: "scan_web-data_1640995200"
-                    volume_id: "web-data"
-                    status: "started"
+                    scan_id: 'scan_web-data_1640995200'
+                    volume_id: 'web-data'
+                    status: 'started'
         '400':
           description: Invalid request
           content:
@@ -698,14 +698,14 @@ paths:
           description: Volume ID or name
           schema:
             type: string
-          example: "web-data"
+          example: 'web-data'
         - name: scan_id
           in: query
           description: Scan ID (optional, returns latest scan if omitted)
           required: false
           schema:
             type: string
-          example: "scan_web-data_1640995200"
+          example: 'scan_web-data_1640995200'
       responses:
         '200':
           description: Scan status information
@@ -717,23 +717,23 @@ paths:
                 in_progress:
                   summary: Scan in progress
                   value:
-                    scan_id: "scan_web-data_1640995200"
-                    volume_id: "web-data"
-                    status: "running"
+                    scan_id: 'scan_web-data_1640995200'
+                    volume_id: 'web-data'
+                    status: 'running'
                     progress: 65
-                    method: "diskus"
-                    started_at: "2024-01-15T14:35:00Z"
-                    estimated_completion: "2024-01-15T14:36:15Z"
+                    method: 'diskus'
+                    started_at: '2024-01-15T14:35:00Z'
+                    estimated_completion: '2024-01-15T14:36:15Z'
                 completed:
                   summary: Scan completed
                   value:
-                    scan_id: "scan_web-data_1640995200"
-                    volume_id: "web-data"
-                    status: "completed"
+                    scan_id: 'scan_web-data_1640995200'
+                    volume_id: 'web-data'
+                    status: 'completed'
                     progress: 100
-                    method: "diskus"
-                    started_at: "2024-01-15T14:35:00Z"
-                    completed_at: "2024-01-15T14:35:18Z"
+                    method: 'diskus'
+                    started_at: '2024-01-15T14:35:00Z'
+                    completed_at: '2024-01-15T14:35:18Z'
                     result:
                       total_size: 2147483648
                       file_count: 1547
@@ -760,7 +760,7 @@ paths:
           description: Scan ID returned by async scan
           schema:
             type: string
-          example: "scan_123"
+          example: 'scan_123'
       responses:
         '200':
           description: Scan status information
@@ -807,8 +807,8 @@ paths:
               required:
                 - volume_ids
             example:
-              volume_ids: ["web-data", "db-storage", "cache-volume"]
-              method: "diskus"
+              volume_ids: ['web-data', 'db-storage', 'cache-volume']
+              method: 'diskus'
               async: true
       responses:
         '202':
@@ -853,21 +853,21 @@ paths:
                   summary: Available scan methods
                   value:
                     methods:
-                      - name: "diskus"
-                        description: "Fast disk usage analyzer (recommended)"
+                      - name: 'diskus'
+                        description: 'Fast disk usage analyzer (recommended)'
                         available: true
-                        performance: "high"
-                        supports_filesystem: ["ext4", "xfs", "btrfs"]
-                      - name: "du"
-                        description: "Standard Unix du command"
+                        performance: 'high'
+                        supports_filesystem: ['ext4', 'xfs', 'btrfs']
+                      - name: 'du'
+                        description: 'Standard Unix du command'
                         available: true
-                        performance: "medium"
-                        supports_filesystem: ["*"]
-                      - name: "native"
-                        description: "Native Go filesystem traversal"
+                        performance: 'medium'
+                        supports_filesystem: ['*']
+                      - name: 'native'
+                        description: 'Native Go filesystem traversal'
                         available: true
-                        performance: "low"
-                        supports_filesystem: ["*"]
+                        performance: 'low'
+                        supports_filesystem: ['*']
 
   # System Information Endpoints
   /system/info:
@@ -907,7 +907,7 @@ paths:
         - Database
       summary: Get database health
       description: |
-        Get comprehensive database health information including connection status, 
+        Get comprehensive database health information including connection status,
         performance metrics, and resource usage for monitoring and alerting.
       operationId: getDatabaseHealth
       responses:
@@ -921,7 +921,7 @@ paths:
                 healthy:
                   summary: Healthy database
                   value:
-                    status: "healthy"
+                    status: 'healthy'
                     response_time: 2150000
                     open_connections: 5
                     idle_connections: 3
@@ -936,12 +936,12 @@ paths:
                 unhealthy:
                   summary: Unhealthy database
                   value:
-                    status: "unhealthy"
+                    status: 'unhealthy'
                     response_time: 30000000000
                     open_connections: 0
                     idle_connections: 0
                     max_open_connections: 25
-                    error: "connection refused"
+                    error: 'connection refused'
 
   /database/test-connection:
     get:
@@ -970,7 +970,7 @@ paths:
         - Database
       summary: Get database statistics
       description: |
-        Get comprehensive database statistics including volume counts, 
+        Get comprehensive database statistics including volume counts,
         scan job metrics, and performance data for operational monitoring.
       operationId: getDatabaseStats
       responses:
@@ -993,7 +993,7 @@ paths:
         - Database
       summary: Get migration status
       description: |
-        Get detailed information about database migrations including applied, 
+        Get detailed information about database migrations including applied,
         pending, and completion status for deployment monitoring.
       operationId: getMigrationStatus
       responses:
@@ -1011,9 +1011,9 @@ paths:
                     applied_count: 3
                     pending_count: 0
                     applied_migrations:
-                      - version: "001"
-                        description: "Initial schema creation"
-                        applied_at: "2024-01-15T10:00:00Z"
+                      - version: '001'
+                        description: 'Initial schema creation'
+                        applied_at: '2024-01-15T10:00:00Z'
                     pending_migrations: []
                 pending_migrations:
                   summary: Pending migrations
@@ -1021,7 +1021,7 @@ paths:
                     total_migrations: 3
                     applied_count: 2
                     pending_count: 1
-                    pending_migrations: ["003"]
+                    pending_migrations: ['003']
         '500':
           description: Failed to get migration status
           content:
@@ -1087,7 +1087,7 @@ paths:
         - Database
       summary: Rollback migration
       description: |
-        Rollback a specific database migration by version. Use with extreme caution 
+        Rollback a specific database migration by version. Use with extreme caution
         in production environments as this can result in data loss.
       operationId: rollbackMigration
       parameters:
@@ -1097,7 +1097,7 @@ paths:
           description: Migration version to rollback
           schema:
             type: string
-          example: "002"
+          example: '002'
       responses:
         '200':
           description: Migration rolled back successfully
@@ -1189,7 +1189,7 @@ components:
       in: header
       name: X-API-Key
       description: API key for authentication (if enabled)
-  
+
   responses:
     UnauthorizedError:
       description: Unauthorized
@@ -1199,10 +1199,10 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error:
-              code: "unauthorized"
-              message: "Authentication required"
-              request_id: "550e8400-e29b-41d4-a716-446655440000"
-    
+              code: 'unauthorized'
+              message: 'Authentication required'
+              request_id: '550e8400-e29b-41d4-a716-446655440000'
+
     ForbiddenError:
       description: Forbidden
       content:
@@ -1211,10 +1211,10 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error:
-              code: "forbidden"
-              message: "Insufficient permissions"
-              request_id: "550e8400-e29b-41d4-a716-446655440000"
-    
+              code: 'forbidden'
+              message: 'Insufficient permissions'
+              request_id: '550e8400-e29b-41d4-a716-446655440000'
+
     NotFoundError:
       description: Not Found
       content:
@@ -1223,10 +1223,10 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error:
-              code: "not_found"
-              message: "Resource not found"
-              request_id: "550e8400-e29b-41d4-a716-446655440000"
-    
+              code: 'not_found'
+              message: 'Resource not found'
+              request_id: '550e8400-e29b-41d4-a716-446655440000'
+
     RateLimitedError:
       description: Rate Limited
       headers:
@@ -1240,10 +1240,10 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error:
-              code: "rate_limited"
-              message: "Too many requests"
-              request_id: "550e8400-e29b-41d4-a716-446655440000"
-    
+              code: 'rate_limited'
+              message: 'Too many requests'
+              request_id: '550e8400-e29b-41d4-a716-446655440000'
+
     InternalError:
       description: Internal Server Error
       content:
@@ -1252,9 +1252,9 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error:
-              code: "internal"
-              message: "An internal error occurred"
-              request_id: "550e8400-e29b-41d4-a716-446655440000"
+              code: 'internal'
+              message: 'An internal error occurred'
+              request_id: '550e8400-e29b-41d4-a716-446655440000'
 
   schemas:
     # Database Model Schemas
@@ -1269,45 +1269,45 @@ components:
         volume_id:
           type: string
           description: Docker volume identifier (unique)
-          example: "web-data"
+          example: 'web-data'
         name:
           type: string
           description: Volume name
-          example: "web-data"
+          example: 'web-data'
         driver:
           type: string
           description: Volume driver type
           enum: [local, nfs, cifs, overlay2]
-          example: "local"
+          example: 'local'
         mountpoint:
           type: string
           description: Host filesystem mount point
-          example: "/var/lib/docker/volumes/web-data/_data"
+          example: '/var/lib/docker/volumes/web-data/_data'
         labels:
           type: object
           additionalProperties:
             type: string
           description: Volume labels as key-value pairs
           example:
-            environment: "production"
-            backup: "daily"
+            environment: 'production'
+            backup: 'daily'
         options:
           type: object
           additionalProperties:
             type: string
           description: Volume driver options
           example:
-            type: "none"
+            type: 'none'
         scope:
           type: string
           description: Volume scope
           enum: [local, global]
-          default: "local"
+          default: 'local'
         status:
           type: string
           description: Volume status
           enum: [active, inactive, error]
-          default: "active"
+          default: 'active'
         last_scanned:
           type: string
           format: date-time
@@ -1393,7 +1393,7 @@ components:
         filesystem_type:
           type: string
           description: Detected filesystem type
-          example: "ext4"
+          example: 'ext4'
         checksum_md5:
           type: string
           description: MD5 checksum of scan result
@@ -1427,7 +1427,7 @@ components:
         scan_id:
           type: string
           description: Unique scan identifier
-          example: "scan_web-data_1640995200"
+          example: 'scan_web-data_1640995200'
         volume_id:
           type: string
           description: Associated volume identifier
@@ -1549,7 +1549,7 @@ components:
           type: string
           description: Access mode
           enum: [rw, ro]
-          default: "rw"
+          default: 'rw'
         is_active:
           type: boolean
           default: true
@@ -1659,11 +1659,11 @@ components:
         version:
           type: string
           description: Migration version identifier
-          example: "001"
+          example: '001'
         description:
           type: string
           description: Migration description
-          example: "Initial schema creation"
+          example: 'Initial schema creation'
         applied_at:
           type: string
           format: date-time
@@ -2490,10 +2490,10 @@ components:
         - error
         - code
       example:
-        error: "Volume not found"
-        code: "VOLUME_NOT_FOUND"
+        error: 'Volume not found'
+        code: 'VOLUME_NOT_FOUND'
         details: "Volume 'web-data' does not exist or is not accessible"
-        correlation_id: "req-123e4567-e89b-12d3-a456-426614174000"
+        correlation_id: 'req-123e4567-e89b-12d3-a456-426614174000'
 
     # WebSocket Message Schemas
     WebSocketMessage:

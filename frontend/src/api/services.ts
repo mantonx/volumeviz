@@ -3,50 +3,45 @@
  * Provides hooks and utilities for interacting with the VolumeViz API
  */
 
-import { useAtom, useSetAtom, useAtomValue } from 'jotai';
-import { useCallback, useEffect, useRef } from 'react';
 import { getErrorMessage } from '@/utils/errorHandling';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useEffect, useRef } from 'react';
 
 // Volume atoms
 import {
-  volumesAtom,
-  volumesLoadingAtom,
-  volumesErrorAtom,
-  volumesLastUpdatedAtom,
-  volumesPaginationMetaAtom,
-  scanLoadingAtom,
-  scanErrorAtom,
-  scanResultsAtom,
   asyncScansAtom,
   autoRefreshEnabledAtom,
   autoRefreshIntervalAtom,
+  scanErrorAtom,
+  scanLoadingAtom,
+  scanResultsAtom,
+  volumesAtom,
+  volumesErrorAtom,
+  volumesLastUpdatedAtom,
+  volumesLoadingAtom,
+  volumesPaginationMetaAtom,
 } from '@/store/atoms/volumes';
 
 // API atoms
 import {
-  apiHealthAtom,
-  apiHealthLoadingAtom,
-  apiHealthErrorAtom,
   apiConnectedAtom,
+  apiHealthAtom,
+  apiHealthErrorAtom,
+  apiHealthLoadingAtom,
 } from '@/store/atoms/api';
 
 // Container atoms
 import {
   containersAtom,
-  containersLoadingAtom,
   containersErrorAtom,
+  containersLoadingAtom,
 } from '@/store/atoms/containers';
 
 // Import types from generated API client
-import type {
-  VolumeResponse,
-  ScanResponse,
-  AsyncScanResponse,
-  RefreshRequest,
-} from './client';
+import type { AsyncScanResponse, RefreshRequest, ScanResponse } from './client';
 
 // Import generated API client
-import { Api, type PagedVolumes, type Volume } from './generated/volumeviz-api';
+import { Api, type Volume } from './generated/volumeviz-api';
 
 // Create configured API client instance
 const volumeVizApi = new Api({
@@ -146,68 +141,48 @@ export function useVolumes() {
   const [loading, setLoading] = useAtom(volumesLoadingAtom);
   const [error, setError] = useAtom(volumesErrorAtom);
   const setLastUpdated = useSetAtom(volumesLastUpdatedAtom);
-
-  // Use pagination atom instead of local state
   const [paginationMeta, setPaginationMeta] = useAtom(
     volumesPaginationMetaAtom,
   );
-
-  // Store last used params for refresh functionality
-  const lastParamsRef = useRef<VolumeListParams | undefined>();
+  const lastParamsRef = useRef<VolumeListParams | undefined>(undefined);
+  const requestSeqRef = useRef(0); // sequence counter to avoid race conditions
 
   const fetchVolumes = useCallback(
     async (params?: VolumeListParams) => {
+      const seq = ++requestSeqRef.current; // increment sequence
       try {
         setLoading(true);
         setError(null);
-
-        // Store params for refresh functionality
         lastParamsRef.current = params;
-
-        // Build query object for generated API client
         const queryParams = {
-          // Pagination parameters with defaults
           page: params?.page ?? 1,
           page_size: params?.page_size ?? 25,
-
-          // Sorting parameter
           sort: params?.sort,
-
-          // Search and filter parameters
           q: params?.q,
           driver: params?.driver,
           orphaned: params?.orphaned,
           system: params?.system,
-
-          // Date filters
           created_after: params?.created_after,
           created_before: params?.created_before,
         };
-
-        // Use direct fetch to bypass generated client issues
-        const baseUrl = import.meta.env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+        const baseUrl =
+          import.meta.env?.VITE_API_URL || 'http://localhost:8080/api/v1';
         const searchParams = new URLSearchParams();
-        
         Object.entries(queryParams).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             searchParams.append(key, String(value));
           }
         });
-        
         const url = `${baseUrl}/volumes?${searchParams.toString()}`;
-        
-        const response = await fetch(url);
+        const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
+        // Ignore stale responses
+        if (seq !== requestSeqRef.current) return;
         const pagedData = await response.json();
-
-        // Update volumes array
         const volumeData = pagedData.data || [];
-        setVolumes(volumeData as VolumeResponse[]);
-
-        // Update pagination metadata
+        setVolumes(volumeData as Volume[]);
         setPaginationMeta({
           page: pagedData.page,
           pageSize: pagedData.page_size,
@@ -215,15 +190,13 @@ export function useVolumes() {
           sort: pagedData.sort,
           filters: pagedData.filters,
         });
-
         setLastUpdated(new Date());
       } catch (err) {
-        console.error('fetchVolumes: Error occurred:', err);
+        if (seq !== requestSeqRef.current) return; // suppress stale errors
         const errorMessage = getErrorMessage(err);
-        console.error('fetchVolumes: Error message:', errorMessage);
         setError(errorMessage);
       } finally {
-        setLoading(false);
+        if (seq === requestSeqRef.current) setLoading(false);
       }
     },
     [setVolumes, setLoading, setError, setLastUpdated, setPaginationMeta],
@@ -295,11 +268,10 @@ export function useVolumeScanning() {
         );
 
         // Check if it's an async scan
-        if ('scan_id' in response.data) {
-          // Async scan
+        if ((response.data as any).scan_id) {
           setAsyncScans((prev) => ({
             ...prev,
-            [volumeId]: response.data as AsyncScanResponse,
+            [volumeId]: response.data as unknown as AsyncScanResponse,
           }));
         } else {
           // Synchronous scan
@@ -384,13 +356,14 @@ export function useApiHealth() {
       setError(null);
 
       // Use direct fetch since the generated API client has wrong endpoint path
-      const baseUrl = import.meta.env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+      const baseUrl =
+        import.meta.env?.VITE_API_URL || 'http://localhost:8080/api/v1';
       const response = await fetch(`${baseUrl}/health`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const healthData = await response.json();
 
       setHealth({

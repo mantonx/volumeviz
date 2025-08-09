@@ -39,7 +39,7 @@ vi.mock('@/utils/errorHandling', () => ({
         case 401:
           return 'Authentication required. Please log in and try again.';
         case 403:
-          return 'Access denied. You don\'t have permission to perform this action.';
+          return "Access denied. You don't have permission to perform this action.";
         case 404:
           return 'The requested resource was not found.';
         case 429:
@@ -72,7 +72,7 @@ vi.mock('@/utils/errorHandling', () => ({
   getHttpStatusCode: vi.fn((error) => error?.response?.status || error?.status),
   formatErrorForDisplay: vi.fn((error) => {
     const statusCode = error?.response?.status || error?.status;
-    
+
     if (statusCode === 429) {
       return {
         title: 'Rate Limited',
@@ -81,13 +81,14 @@ vi.mock('@/utils/errorHandling', () => ({
         showRetry: true,
       };
     }
-    
+
     if (statusCode === 401 || statusCode === 403) {
       return {
         title: 'Access Denied',
-        message: statusCode === 401 
-          ? 'Authentication required. Please log in and try again.'
-          : 'You don\'t have permission to perform this action.',
+        message:
+          statusCode === 401
+            ? 'Authentication required. Please log in and try again.'
+            : "You don't have permission to perform this action.",
         variant: 'error',
         showRetry: false,
       };
@@ -119,9 +120,7 @@ const createTestWrapper = () => {
   return ({ children }: { children: React.ReactNode }) => (
     <BrowserRouter>
       <Provider>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <ToastProvider>{children}</ToastProvider>
       </Provider>
     </BrowserRouter>
   );
@@ -213,16 +212,22 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
-      expect(screen.getByText(/bad request\. please check your input and try again/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /bad request\. please check your input and try again/i,
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /try again/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -234,15 +239,19 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
-      expect(screen.getByText(/authentication required\. please log in and try again/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /authentication required\. please log in and try again/i,
+        ),
+      ).toBeInTheDocument();
     });
 
     it('should handle 401 error during volume scan', async () => {
@@ -262,18 +271,20 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
       await user.click(scanButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/failed to scan test-volume: unauthorized/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/failed to scan test-volume: unauthorized/i),
+        ).toBeInTheDocument();
       });
     });
   });
@@ -282,19 +293,24 @@ describe('VolumesPage Error Handling', () => {
     it('should display access denied error message', () => {
       (useVolumes as any).mockReturnValue({
         ...defaultUseVolumesMock,
-        error: 'Access denied. You don\'t have permission to perform this action.',
+        error:
+          "Access denied. You don't have permission to perform this action.",
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
-      expect(screen.getByText(/access denied\. you don't have permission to perform this action/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /access denied\. you don't have permission to perform this action/i,
+        ),
+      ).toBeInTheDocument();
     });
 
     it('should handle 403 error during volume scan', async () => {
@@ -314,18 +330,20 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
       await user.click(scanButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/failed to scan test-volume: forbidden/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/failed to scan test-volume: forbidden/i),
+        ).toBeInTheDocument();
       });
     });
   });
@@ -338,15 +356,17 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
-      expect(screen.getByText(/the requested resource was not found/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/the requested resource was not found/i),
+      ).toBeInTheDocument();
     });
   });
 
@@ -358,15 +378,19 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
-      expect(screen.getByText(/too many requests\. please wait a moment and try again/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /too many requests\. please wait a moment and try again/i,
+        ),
+      ).toBeInTheDocument();
     });
 
     it('should handle 429 error during volume scan', async () => {
@@ -386,18 +410,20 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
       await user.click(scanButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/failed to scan test-volume: too many requests/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/failed to scan test-volume: too many requests/i),
+        ).toBeInTheDocument();
       });
     });
 
@@ -418,11 +444,11 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
@@ -430,7 +456,9 @@ describe('VolumesPage Error Handling', () => {
 
       await waitFor(() => {
         // Toast should show error
-        expect(screen.getByText(/failed to scan test-volume/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/failed to scan test-volume/i),
+        ).toBeInTheDocument();
       });
     });
   });
@@ -443,16 +471,20 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
-      expect(screen.getByText(/internal server error\. please try again later/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+      expect(
+        screen.getByText(/internal server error\. please try again later/i),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /try again/i }),
+      ).toBeInTheDocument();
     });
 
     it('should handle 500 error during volume scan', async () => {
@@ -472,18 +504,22 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
       await user.click(scanButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/failed to scan test-volume: internal server error/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            /failed to scan test-volume: internal server error/i,
+          ),
+        ).toBeInTheDocument();
       });
     });
   });
@@ -496,15 +532,19 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
-      expect(screen.getByText(/service temporarily unavailable\. please try again later/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /service temporarily unavailable\. please try again later/i,
+        ),
+      ).toBeInTheDocument();
     });
 
     it('should display service unavailable error message for 503', () => {
@@ -514,15 +554,19 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
-      expect(screen.getByText(/service temporarily unavailable\. please try again later/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /service temporarily unavailable\. please try again later/i,
+        ),
+      ).toBeInTheDocument();
     });
 
     it('should handle 502 error during volume scan', async () => {
@@ -542,18 +586,20 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
       await user.click(scanButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/failed to scan test-volume: bad gateway/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/failed to scan test-volume: bad gateway/i),
+        ).toBeInTheDocument();
       });
     });
   });
@@ -566,11 +612,11 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
@@ -584,11 +630,11 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
@@ -596,7 +642,9 @@ describe('VolumesPage Error Handling', () => {
     });
 
     it('should handle network errors during volume scan', async () => {
-      const mockScanVolume = vi.fn().mockRejectedValue(new Error('Network Error'));
+      const mockScanVolume = vi
+        .fn()
+        .mockRejectedValue(new Error('Network Error'));
 
       (useVolumes as any).mockReturnValue({
         ...defaultUseVolumesMock,
@@ -609,18 +657,20 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
       await user.click(scanButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/failed to scan test-volume: network error/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/failed to scan test-volume: network error/i),
+        ).toBeInTheDocument();
       });
     });
   });
@@ -650,15 +700,19 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
-      expect(screen.getByText(/bad request\. please check your input and try again/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /bad request\. please check your input and try again/i,
+        ),
+      ).toBeInTheDocument();
     });
 
     it('should show error details when available', () => {
@@ -675,22 +729,24 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /show details/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /show details/i }),
+      ).toBeInTheDocument();
     });
   });
 
   describe('Error Recovery', () => {
     it('should clear error state when retry is successful', async () => {
       const mockRefreshVolumes = vi.fn();
-      
+
       // Start with error state
       (useVolumes as any).mockReturnValue({
         ...defaultUseVolumesMock,
@@ -699,11 +755,11 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       const { rerender } = render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
@@ -724,10 +780,12 @@ describe('VolumesPage Error Handling', () => {
       rerender(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      expect(screen.queryByText(/failed to load volumes/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/failed to load volumes/i),
+      ).not.toBeInTheDocument();
       expect(screen.getByText('test-volume')).toBeInTheDocument();
     });
 
@@ -745,16 +803,18 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Should show volumes despite scan error
       expect(screen.getByText('test-volume')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /rescan size/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /rescan size/i }),
+      ).toBeInTheDocument();
     });
 
     it('should maintain user input during error states', async () => {
@@ -771,11 +831,11 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Should maintain search value even in error state
@@ -791,14 +851,16 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      expect(screen.getByRole('status')).toHaveTextContent('Error loading volumes');
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Error loading volumes',
+      );
     });
 
     it('should maintain focus management during error states', () => {
@@ -808,16 +870,16 @@ describe('VolumesPage Error Handling', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const retryButton = screen.getByRole('button', { name: /try again/i });
       expect(retryButton).toBeInTheDocument();
-      
+
       // Button should be focusable
       retryButton.focus();
       expect(document.activeElement).toBe(retryButton);

@@ -17,7 +17,7 @@ VolumeViz is a Docker volume monitoring and management tool that provides real-t
 VolumeViz helps you monitor Docker volumes from a **volume-first perspective**. Instead of managing containers and networks, VolumeViz focuses exclusively on:
 
 - **Volume Inventory**: Discover and catalog all your Docker volumes
-- **Usage Tracking**: Monitor storage consumption with detailed size analytics  
+- **Usage Tracking**: Monitor storage consumption with detailed size analytics
 - **Mount Analysis**: Track which containers are using each volume
 - **Lifecycle Operations**: Scan, monitor, and manage volume data
 - **Orphaned Volume Detection**: Identify unused volumes consuming storage
@@ -31,7 +31,7 @@ VolumeViz helps you monitor Docker volumes from a **volume-first perspective**. 
 - Real-time volume listing with driver, creation date, and mount point information
 - Smart filtering to show only volumes that contain your actual data
 
-### Storage Usage Monitoring  
+### Storage Usage Monitoring
 - Multi-method volume size calculation (du, find, stat)
 - Asynchronous scanning for large volumes with progress tracking
 - Historical storage trends and growth analytics
@@ -88,13 +88,13 @@ make ps
 
 # View logs if needed
 docker compose logs -f
-# or  
+# or
 make logs
 ```
 
 4. **Access VolumeViz**:
 - **Web UI**: http://localhost:3000
-- **API**: http://localhost:8080/api/v1  
+- **API**: http://localhost:8080/api/v1
 - **API Health**: http://localhost:8080/api/v1/health
 - **API Documentation**: http://localhost:8080/api/docs
 - **Metrics** (if enabled): http://localhost:9090/metrics
@@ -178,7 +178,7 @@ volumes:
 ### Image Tags
 
 - `ghcr.io/mantonx/volumeviz:latest` - Latest stable release (tracks `v*` tags)
-- `ghcr.io/mantonx/volumeviz:v0.1.0` - Specific version 
+- `ghcr.io/mantonx/volumeviz:v0.1.0` - Specific version
 - `ghcr.io/mantonx/volumeviz:main` - Latest development build (main branch)
 
 ### Multi-Architecture Support
@@ -224,13 +224,13 @@ The frontend will be available at http://localhost:5173 (Vite dev server).
 VolumeViz includes convenient Makefile commands for managing the Docker Compose stack:
 
 ```bash
-make up          # Start all services  
+make up          # Start all services
 make down        # Stop all services
 make restart     # Restart all services
 make ps          # Show service status
 make logs        # Follow logs from all services
 make logs-api    # Follow API service logs only
-make logs-web    # Follow web service logs only  
+make logs-web    # Follow web service logs only
 make rebuild     # Rebuild images and restart
 ```
 
@@ -279,7 +279,7 @@ DOCKER_HOST=tcp://remote-host:2375
 | `ENABLE_METRICS` | Enable Prometheus metrics | true | No |
 | `METRICS_PORT` | Metrics server port | 9090 | No |
 
-### Frontend Configuration  
+### Frontend Configuration
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
@@ -324,7 +324,7 @@ VolumeViz automatically filters volumes to show only user-mounted data:
 - `GET /api/v1/volumes/{id}/size` - Get volume size (cached)
 - `POST /api/v1/volumes/{id}/size/refresh` - Trigger size rescan
 
-### Health & Monitoring  
+### Health & Monitoring
 - `GET /api/v1/health/app` - Application health status
 - `GET /api/v1/health/docker` - Docker daemon connectivity
 - `GET /api/v1/health/database` - Database connection status
@@ -374,7 +374,7 @@ VolumeViz implements secure-by-default practices while acknowledging the inheren
 ### Security Features
 
 - **Strict CORS Policy**: Configurable origins, default deny-all for unknown origins
-- **Rate Limiting**: Per-IP request limiting with configurable thresholds  
+- **Rate Limiting**: Per-IP request limiting with configurable thresholds
 - **Security Headers**: Comprehensive HTTP security headers (X-Content-Type-Options, X-Frame-Options, CSP, etc.)
 - **Request ID Correlation**: All requests tracked with unique IDs for audit trails
 - **JWT Authentication**: Optional HS256 JWT-based authentication with role-based access
@@ -393,7 +393,7 @@ volumes:
 
 **Security Implications**:
 - **Root-equivalent access**: Docker socket provides root privileges on host
-- **Container escape risk**: Compromised VolumeViz could create privileged containers  
+- **Container escape risk**: Compromised VolumeViz could create privileged containers
 - **Full filesystem access**: Can access all mounted volumes and host directories
 
 **Recommended Mitigations**:
@@ -467,7 +467,7 @@ RATE_LIMIT_BURST=30        # Burst capacity
 
 Rate limiting can be disabled for development: `RATE_LIMIT_ENABLED=false`
 
-### CORS Configuration  
+### CORS Configuration
 
 Strict CORS policy prevents cross-origin abuse:
 
@@ -488,7 +488,7 @@ VolumeViz automatically sets security headers:
 
 ```
 X-Content-Type-Options: nosniff
-X-Frame-Options: SAMEORIGIN  
+X-Frame-Options: SAMEORIGIN
 Referrer-Policy: no-referrer
 Content-Security-Policy: default-src 'none'; frame-ancestors 'self';
 ```
@@ -502,7 +502,7 @@ Headers can be customized via environment variables (see `.env.example`).
 - [ ] Configure specific CORS origins: `ALLOW_ORIGINS`
 - [ ] Enable HTTPS: `TLS_CERT_FILE` and `TLS_KEY_FILE`
 - [ ] Use Docker socket proxy
-- [ ] Deploy behind authentication gateway  
+- [ ] Deploy behind authentication gateway
 - [ ] Enable rate limiting: `RATE_LIMIT_ENABLED=true`
 - [ ] Configure monitoring and alerting
 - [ ] Regular security updates via Dependabot
@@ -523,7 +523,7 @@ volumeviz/
 │   ├── core/            # Business logic and services
 │   ├── database/        # Database layer
 │   └── config/          # Configuration management
-├── frontend/            # React frontend application  
+├── frontend/            # React frontend application
 │   ├── src/
 │   │   ├── components/  # React components
 │   │   ├── pages/       # Page components
@@ -542,7 +542,7 @@ volumeviz/
 # Build backend binary
 make build
 
-# Build frontend  
+# Build frontend
 cd frontend && npm run build
 
 # Build Docker images
@@ -555,7 +555,7 @@ docker compose build
 # Backend tests
 make test
 
-# Frontend tests  
+# Frontend tests
 cd frontend && npm test
 
 # Integration tests
@@ -567,7 +567,7 @@ make test-integration
 The following features are planned for future releases:
 
 - **Multi-host Support**: Monitor volumes across multiple Docker hosts
-- **Advanced Analytics**: Historical trends, growth prediction, capacity planning  
+- **Advanced Analytics**: Historical trends, growth prediction, capacity planning
 - **Alerting System**: Custom alerts for storage thresholds and volume events
 - **Backup Integration**: Track backup status and retention policies
 - **Volume Lifecycle Automation**: Automated cleanup of orphaned volumes

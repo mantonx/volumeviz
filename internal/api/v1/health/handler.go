@@ -195,7 +195,7 @@ func (h *Handler) getEventsHealth() gin.H {
 	metrics := h.eventsService.GetMetrics()
 	connected := h.eventsService.IsConnected()
 	lastEventTime := h.eventsService.GetLastEventTime()
-	
+
 	status := "healthy"
 	if !connected {
 		status = "unhealthy"
@@ -203,33 +203,33 @@ func (h *Handler) getEventsHealth() gin.H {
 		// If no events for 5+ minutes, consider it degraded (but not unhealthy)
 		status = "degraded"
 	}
-	
+
 	healthInfo := gin.H{
-		"status":              status,
-		"connected":           connected,
-		"queue_size":          metrics.QueueSize,
-		"processed_total":     len(metrics.ProcessedTotal),
-		"errors_total":        len(metrics.ErrorsTotal),
-		"dropped_total":       metrics.DroppedTotal,
-		"reconnects_total":    metrics.ReconnectsTotal,
+		"status":           status,
+		"connected":        connected,
+		"queue_size":       metrics.QueueSize,
+		"processed_total":  len(metrics.ProcessedTotal),
+		"errors_total":     len(metrics.ErrorsTotal),
+		"dropped_total":    metrics.DroppedTotal,
+		"reconnects_total": metrics.ReconnectsTotal,
 	}
-	
+
 	// Add last event time if available
 	if lastEventTime != nil {
 		healthInfo["last_event_timestamp"] = lastEventTime.Unix()
 		healthInfo["last_event_age_seconds"] = int64(time.Since(*lastEventTime).Seconds())
 	}
-	
+
 	// Add last reconnect time if available
 	if metrics.LastReconnectTime != nil {
 		healthInfo["last_reconnect_timestamp"] = metrics.LastReconnectTime.Unix()
 	}
-	
+
 	// Add reconciliation stats
 	if len(metrics.ReconcileRuns) > 0 {
 		healthInfo["reconciliation_runs"] = metrics.ReconcileRuns
 	}
-	
+
 	return healthInfo
 }
 
@@ -245,14 +245,14 @@ func (h *Handler) getEventsHealth() gin.H {
 func (h *Handler) GetEventsHealth(c *gin.Context) {
 	if h.eventsService == nil {
 		c.JSON(http.StatusNotImplemented, gin.H{
-			"status": "not_configured",
+			"status":  "not_configured",
 			"message": "Docker events service is not configured",
 		})
 		return
 	}
-	
+
 	eventsHealth := h.getEventsHealth()
-	
+
 	statusCode := http.StatusOK
 	if status, ok := eventsHealth["status"].(string); ok {
 		switch status {
@@ -262,7 +262,7 @@ func (h *Handler) GetEventsHealth(c *gin.Context) {
 			statusCode = http.StatusPartialContent
 		}
 	}
-	
+
 	c.JSON(statusCode, eventsHealth)
 }
 
@@ -270,16 +270,16 @@ func (h *Handler) GetEventsHealth(c *gin.Context) {
 func (h *Handler) getSchedulerHealth() gin.H {
 	if h.scheduler == nil {
 		return gin.H{
-			"status": "not_configured",
+			"status":  "not_configured",
 			"message": "Scan scheduler is not configured",
 		}
 	}
 
 	status := h.scheduler.GetStatus()
 	metrics := h.scheduler.GetMetrics()
-	
+
 	schedulerStatus := "healthy"
-	
+
 	// Determine health status based on scheduler state
 	if !status.Running {
 		schedulerStatus = "stopped"
@@ -299,36 +299,36 @@ func (h *Handler) getSchedulerHealth() gin.H {
 			}
 		}
 	}
-	
+
 	healthInfo := gin.H{
-		"status":                 schedulerStatus,
-		"running":               status.Running,
-		"queue_depth":           status.QueueDepth,
-		"active_scans":          status.ActiveScans,
-		"worker_count":          status.WorkerCount,
-		"worker_utilization":    metrics.WorkerUtilization,
-		"total_completed":       status.TotalCompleted,
-		"total_failed":          status.TotalFailed,
-		"completed_by_status":   metrics.CompletedScans,
-		"error_counts":          metrics.ErrorCounts,
+		"status":              schedulerStatus,
+		"running":             status.Running,
+		"queue_depth":         status.QueueDepth,
+		"active_scans":        status.ActiveScans,
+		"worker_count":        status.WorkerCount,
+		"worker_utilization":  metrics.WorkerUtilization,
+		"total_completed":     status.TotalCompleted,
+		"total_failed":        status.TotalFailed,
+		"completed_by_status": metrics.CompletedScans,
+		"error_counts":        metrics.ErrorCounts,
 	}
-	
+
 	// Add timing information if available
 	if status.LastRunAt != nil {
 		healthInfo["last_run_timestamp"] = status.LastRunAt.Unix()
 		healthInfo["last_run_age_seconds"] = int64(time.Since(*status.LastRunAt).Seconds())
 	}
-	
+
 	if status.NextRunAt != nil {
 		healthInfo["next_run_timestamp"] = status.NextRunAt.Unix()
 		healthInfo["next_run_in_seconds"] = int64(time.Until(*status.NextRunAt).Seconds())
 	}
-	
+
 	// Add scan duration averages if available
 	if len(metrics.ScanDurations) > 0 {
 		healthInfo["scan_durations_avg"] = metrics.ScanDurations
 	}
-	
+
 	return healthInfo
 }
 
@@ -344,14 +344,14 @@ func (h *Handler) getSchedulerHealth() gin.H {
 func (h *Handler) GetSchedulerHealth(c *gin.Context) {
 	if h.scheduler == nil {
 		c.JSON(http.StatusNotImplemented, gin.H{
-			"status": "not_configured",
+			"status":  "not_configured",
 			"message": "Scan scheduler is not configured",
 		})
 		return
 	}
-	
+
 	schedulerHealth := h.getSchedulerHealth()
-	
+
 	statusCode := http.StatusOK
 	if status, ok := schedulerHealth["status"].(string); ok {
 		switch status {
@@ -361,6 +361,6 @@ func (h *Handler) GetSchedulerHealth(c *gin.Context) {
 			statusCode = http.StatusPartialContent
 		}
 	}
-	
+
 	c.JSON(statusCode, schedulerHealth)
 }

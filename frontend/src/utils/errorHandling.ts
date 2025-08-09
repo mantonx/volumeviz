@@ -182,17 +182,17 @@ export function getHttpStatusCode(error: any): number | null {
   if (error?.response?.status) {
     return error.response.status;
   }
-  
+
   // Check if error has status property directly
   if (typeof error?.status === 'number') {
     return error.status;
   }
-  
+
   // Check if error has response.status (fetch-like)
   if (error?.response && typeof error.response.status === 'number') {
     return error.response.status;
   }
-  
+
   return null;
 }
 
@@ -206,7 +206,7 @@ export function getStatusCodeMessage(statusCode: number): string {
     case 401:
       return 'Authentication required. Please log in and try again.';
     case 403:
-      return 'Access denied. You don\'t have permission to perform this action.';
+      return "Access denied. You don't have permission to perform this action.";
     case 404:
       return 'The requested resource was not found.';
     case 409:

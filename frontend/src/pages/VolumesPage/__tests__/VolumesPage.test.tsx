@@ -53,9 +53,7 @@ const createTestWrapper = () => {
   return ({ children }: { children: React.ReactNode }) => (
     <BrowserRouter>
       <Provider>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <ToastProvider>{children}</ToastProvider>
       </Provider>
     </BrowserRouter>
   );
@@ -137,24 +135,28 @@ describe('VolumesPage Component', () => {
   describe('Rendering and Basic Layout', () => {
     it('should render page header and title', () => {
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      expect(screen.getByRole('heading', { name: /docker volumes/i })).toBeInTheDocument();
-      expect(screen.getByText(/manage and monitor your docker volume storage/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /docker volumes/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/manage and monitor your docker volume storage/i),
+      ).toBeInTheDocument();
     });
 
     it('should render statistics overview', () => {
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText('Total Volumes')).toBeInTheDocument();
@@ -165,32 +167,42 @@ describe('VolumesPage Component', () => {
 
     it('should render search and filters section', () => {
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      expect(screen.getByLabelText(/search volumes by name/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/filter by driver type/i)).toBeInTheDocument();
+      expect(
+        screen.getByLabelText(/search volumes by name/i),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByLabelText(/filter by driver type/i),
+      ).toBeInTheDocument();
       expect(screen.getByLabelText(/sort volumes by/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /orphaned only/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /orphaned only/i }),
+      ).toBeInTheDocument();
     });
 
     it('should render volume cards when volumes exist', () => {
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText('test-volume')).toBeInTheDocument();
       expect(screen.getByText('local driver')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /rescan size/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /view details/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /rescan size/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /view details/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -203,11 +215,11 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/loading volumes/i)).toBeInTheDocument();
@@ -221,11 +233,11 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const refreshButton = screen.getByRole('button', { name: /refresh/i });
@@ -242,15 +254,17 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/no volumes found/i)).toBeInTheDocument();
-      expect(screen.getByText(/no docker volumes are currently available/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/no docker volumes are currently available/i),
+      ).toBeInTheDocument();
     });
 
     it('should show filtered empty state when search has no results', () => {
@@ -266,16 +280,20 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/no matching volumes/i)).toBeInTheDocument();
-      expect(screen.getByText(/no volumes match your current search criteria/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /clear filters/i })).toBeInTheDocument();
+      expect(
+        screen.getByText(/no volumes match your current search criteria/i),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /clear filters/i }),
+      ).toBeInTheDocument();
     });
 
     it('should clear filters when clear filters button is clicked', async () => {
@@ -292,14 +310,16 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      const clearButton = screen.getByRole('button', { name: /clear filters/i });
+      const clearButton = screen.getByRole('button', {
+        name: /clear filters/i,
+      });
       await user.click(clearButton);
 
       expect(mockSetUrlState).toHaveBeenCalledWith({
@@ -322,16 +342,18 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
       expect(screen.getByText(/network error/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /try again/i }),
+      ).toBeInTheDocument();
     });
 
     it('should call refreshVolumes when retry button is clicked', async () => {
@@ -344,11 +366,11 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const retryButton = screen.getByRole('button', { name: /try again/i });
@@ -372,11 +394,11 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText(/failed to load volumes/i)).toBeInTheDocument();
@@ -392,11 +414,11 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const searchInput = screen.getByLabelText(/search volumes by name/i);
@@ -415,11 +437,11 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const searchInput = screen.getByLabelText(/search volumes by name/i);
@@ -436,11 +458,11 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const driverSelect = screen.getByLabelText(/filter by driver type/i);
@@ -460,11 +482,11 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const sortSelect = screen.getByLabelText(/sort volumes by/i);
@@ -484,14 +506,16 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      const orphanedButton = screen.getByRole('button', { name: /orphaned only/i });
+      const orphanedButton = screen.getByRole('button', {
+        name: /orphaned only/i,
+      });
       await user.click(orphanedButton);
 
       expect(mockSetUrlState).toHaveBeenCalledWith({
@@ -507,28 +531,32 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      expect(screen.getByRole('button', { name: /show all/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /show all/i }),
+      ).toBeInTheDocument();
     });
   });
 
   describe('Volume Actions', () => {
     it('should navigate to volume details when details button is clicked', async () => {
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      const detailsButton = screen.getByRole('button', { name: /view details/i });
+      const detailsButton = screen.getByRole('button', {
+        name: /view details/i,
+      });
       await user.click(detailsButton);
 
       expect(mockNavigate).toHaveBeenCalledWith('/volumes/test-volume');
@@ -542,11 +570,11 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
@@ -562,15 +590,19 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      expect(screen.getByRole('button', { name: /scanning.../i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /scanning.../i })).toBeDisabled();
+      expect(
+        screen.getByRole('button', { name: /scanning.../i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /scanning.../i }),
+      ).toBeDisabled();
     });
 
     it('should not allow scan when volume is already being scanned', async () => {
@@ -582,11 +614,11 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /scanning.../i });
@@ -614,15 +646,19 @@ describe('VolumesPage Component', () => {
 
     it('should render pagination when there are multiple pages', () => {
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      expect(screen.getByRole('navigation', { name: /volume pagination/i })).toBeInTheDocument();
-      expect(screen.getByText(/showing 26-50 of 100 volumes/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('navigation', { name: /volume pagination/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/showing 26-50 of 100 volumes/i),
+      ).toBeInTheDocument();
     });
 
     it('should handle page navigation', async () => {
@@ -633,14 +669,16 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      const nextButton = screen.getByRole('button', { name: /go to next page/i });
+      const nextButton = screen.getByRole('button', {
+        name: /go to next page/i,
+      });
       await user.click(nextButton);
 
       expect(mockSetUrlState).toHaveBeenCalledWith({ page: 3 });
@@ -653,14 +691,16 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      const prevButton = screen.getByRole('button', { name: /go to previous page/i });
+      const prevButton = screen.getByRole('button', {
+        name: /go to previous page/i,
+      });
       expect(prevButton).toBeDisabled();
     });
 
@@ -680,14 +720,16 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      const nextButton = screen.getByRole('button', { name: /go to next page/i });
+      const nextButton = screen.getByRole('button', {
+        name: /go to next page/i,
+      });
       expect(nextButton).toBeDisabled();
     });
   });
@@ -695,25 +737,29 @@ describe('VolumesPage Component', () => {
   describe('Accessibility', () => {
     it('should have proper ARIA labels for form elements', () => {
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      expect(screen.getByLabelText(/search volumes by name/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/filter by driver type/i)).toBeInTheDocument();
+      expect(
+        screen.getByLabelText(/search volumes by name/i),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByLabelText(/filter by driver type/i),
+      ).toBeInTheDocument();
       expect(screen.getByLabelText(/sort volumes by/i)).toBeInTheDocument();
     });
 
     it('should have screen reader announcements', () => {
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByRole('status')).toBeInTheDocument();
@@ -721,15 +767,17 @@ describe('VolumesPage Component', () => {
 
     it('should have proper landmark regions', () => {
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByRole('main')).toBeInTheDocument();
-      expect(screen.getByRole('navigation', { name: /volume pagination/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('navigation', { name: /volume pagination/i }),
+      ).toBeInTheDocument();
     });
 
     it('should have proper ARIA attributes for pagination', () => {
@@ -743,15 +791,17 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Check for proper aria-current on current page
-      expect(screen.getByRole('button', { name: /current page, page 2/i })).toHaveAttribute('aria-current', 'page');
+      expect(
+        screen.getByRole('button', { name: /current page, page 2/i }),
+      ).toHaveAttribute('aria-current', 'page');
     });
   });
 
@@ -764,65 +814,75 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
       await user.click(scanButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/successfully scanned test-volume/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/successfully scanned test-volume/i),
+        ).toBeInTheDocument();
       });
     });
 
     it('should show error toast when scan fails', async () => {
-      const mockScanVolume = vi.fn().mockRejectedValue(new Error('Scan failed'));
+      const mockScanVolume = vi
+        .fn()
+        .mockRejectedValue(new Error('Scan failed'));
       (useVolumeScanning as any).mockReturnValue({
         ...defaultUseScanningMock,
         scanVolume: mockScanVolume,
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
       await user.click(scanButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/failed to scan test-volume/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/failed to scan test-volume/i),
+        ).toBeInTheDocument();
       });
     });
 
     it('should show info toast when scan starts', async () => {
-      const mockScanVolume = vi.fn().mockImplementation(() => 
-        new Promise(resolve => setTimeout(resolve, 100))
-      );
+      const mockScanVolume = vi
+        .fn()
+        .mockImplementation(
+          () => new Promise((resolve) => setTimeout(resolve, 100)),
+        );
       (useVolumeScanning as any).mockReturnValue({
         ...defaultUseScanningMock,
         scanVolume: mockScanVolume,
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const scanButton = screen.getByRole('button', { name: /rescan size/i });
       await user.click(scanButton);
 
-      expect(screen.getByText(/starting scan for test-volume/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/starting scan for test-volume/i),
+      ).toBeInTheDocument();
     });
   });
 
@@ -835,11 +895,11 @@ describe('VolumesPage Component', () => {
       });
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(mockFetchVolumes).toHaveBeenCalledWith({
@@ -868,17 +928,19 @@ describe('VolumesPage Component', () => {
       ]);
 
       const TestWrapper = createTestWrapper();
-      
+
       render(
         <TestWrapper>
           <VolumesPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByDisplayValue('test-query')).toBeInTheDocument();
       expect(screen.getByDisplayValue('nfs')).toBeInTheDocument();
       expect(screen.getByDisplayValue('size_bytes:desc')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /show all/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /show all/i }),
+      ).toBeInTheDocument();
     });
   });
 });

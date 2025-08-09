@@ -39,7 +39,7 @@ type Router struct {
 	database      *databasePkg.DB
 	websocketHub  *websocket.Hub
 	scheduler     scheduler.ScanScheduler // Optional scan scheduler
-	eventsService events.EventService    // Optional events service
+	eventsService events.EventService     // Optional events service
 }
 
 // NewRouter creates a new v1 API router
@@ -74,11 +74,11 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, 
 	var scanScheduler scheduler.ScanScheduler
 	if config.Scan.Enabled {
 		schedulerConfig := scheduler.NewSchedulerConfig(&config.Scan)
-		
+
 		// Create repository and volume provider for the scheduler
 		repository := scheduler.NewRepository(database)
 		volumeProvider := scheduler.NewVolumeProvider(repository)
-		
+
 		schedulerInstance, err := scheduler.NewScheduler(
 			schedulerConfig,
 			volumeScanner,
@@ -104,20 +104,20 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, 
 	if config.Events.Enabled {
 		// Create event repository
 		eventRepo := databasePkg.NewEventRepository(database)
-		
+
 		// Create event metrics collector
 		eventMetrics := events.NewEventMetricsCollector(
 			"volumeviz",
 			"events",
 			prometheus.Labels{"instance": "main"},
 		)
-		
+
 		// Create Docker client adapter for events service
 		dockerClient := services.NewDockerClientAdapter(dockerService)
-		
+
 		// Create event handler service
 		eventHandler := events.NewEventHandlerService(dockerClient, eventRepo, eventMetrics)
-		
+
 		// Create event reconciler
 		eventReconcileMetrics := &events.EventMetrics{
 			ProcessedTotal: make(map[events.EventType]int64),
@@ -125,11 +125,11 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, 
 			ReconcileRuns:  make(map[string]int64),
 		}
 		eventReconciler := events.NewReconcilerService(dockerClient, eventRepo, &config.Events, eventReconcileMetrics, eventMetrics)
-		
+
 		// Create events client
 		eventsClient := events.NewEventsClient(dockerClient, &config.Events, eventHandler, eventReconciler, eventMetrics)
 		eventsService = eventsClient
-		
+
 		log.Printf("[INFO] Docker events integration initialized")
 	}
 
