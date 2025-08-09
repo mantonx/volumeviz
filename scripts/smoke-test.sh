@@ -104,6 +104,9 @@ cleanup() {
     fi
 
     log_success "Cleanup complete"
+    
+    # Preserve the original exit code
+    exit $exit_code
 }
 
 # Set up cleanup trap
