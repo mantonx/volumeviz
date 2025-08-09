@@ -76,7 +76,7 @@ func (r *EventRepository) DeleteVolume(ctx context.Context, volumeID string) err
 		SET is_active = false, updated_at = CURRENT_TIMESTAMP 
 		WHERE volume_id = $1
 	`
-	
+
 	executor := r.getExecutor()
 	if _, err := executor.Exec(mountQuery, volumeID); err != nil {
 		log.Printf("[WARN] Failed to deactivate volume mounts for volume %s: %v", volumeID, err)
@@ -84,7 +84,7 @@ func (r *EventRepository) DeleteVolume(ctx context.Context, volumeID string) err
 
 	// Then delete the volume
 	query := `DELETE FROM volumes WHERE volume_id = $1`
-	
+
 	result, err := executor.Exec(query, volumeID)
 	if err != nil {
 		return fmt.Errorf("failed to delete volume: %w", err)
@@ -196,7 +196,7 @@ func (r *EventRepository) DeleteContainer(ctx context.Context, containerID strin
 
 	// Then delete the container
 	query := `DELETE FROM containers WHERE container_id = $1`
-	
+
 	executor := r.getExecutor()
 	result, err := executor.Exec(query, containerID)
 	if err != nil {
@@ -295,7 +295,7 @@ func (r *EventRepository) UpsertVolumeMount(ctx context.Context, mount *VolumeMo
 // DeleteVolumeMount deletes a specific volume mount
 func (r *EventRepository) DeleteVolumeMount(ctx context.Context, volumeID, containerID string) error {
 	query := `DELETE FROM volume_mounts WHERE volume_id = $1 AND container_id = $2`
-	
+
 	executor := r.getExecutor()
 	_, err := executor.Exec(query, volumeID, containerID)
 	return err
@@ -384,7 +384,7 @@ func (r *EventRepository) DeactivateVolumeMounts(ctx context.Context, containerI
 		SET is_active = false, updated_at = CURRENT_TIMESTAMP 
 		WHERE container_id = $1 AND is_active = true
 	`
-	
+
 	executor := r.getExecutor()
 	_, err := executor.Exec(query, containerID)
 	return err

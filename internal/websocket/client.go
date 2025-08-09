@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -17,10 +18,13 @@ const (
 	pongWait = 60 * time.Second
 
 	// Send pings to peer with this period. Must be less than pongWait.
-	pingPeriod = (pongWait * 9) / 10
+	pingPeriod = 30 * time.Second
 
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
+
+	// Maximum missed pongs before dropping client
+	maxMissedPongs = 2
 )
 
 var upgrader = websocket.Upgrader{
@@ -35,6 +39,13 @@ type Client struct {
 	hub  *Hub
 	conn *websocket.Conn
 	send chan []byte
+
+	// Connection metadata
+	id           string
+	connectedAt  time.Time
+	lastPongTime time.Time
+	missedPongs  int
+	token        string
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -54,15 +65,20 @@ func (c *Client) readPump() {
 	}
 	c.conn.SetPongHandler(func(string) error {
 		if err := c.conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
-			log.Printf("error setting read deadline in pong handler: %v", err)
+			log.Printf("ws %s: error setting read deadline in pong handler: %v", c.id, err)
 		}
+		c.lastPongTime = time.Now()
+		c.missedPongs = 0
 		return nil
 	})
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				log.Printf("ws %s: unexpected close error: %v", c.id, err)
+			} else {
+				duration := time.Since(c.connectedAt)
+				log.Printf("ws %s: disconnected after %s (missed pongs: %d)", c.id, duration, c.missedPongs)
 			}
 			break
 		}
@@ -70,17 +86,21 @@ func (c *Client) readPump() {
 		// Handle incoming messages
 		var msg Message
 		if err := json.Unmarshal(message, &msg); err != nil {
-			log.Printf("error unmarshaling message: %v", err)
+			log.Printf("ws %s: error unmarshaling message: %v", c.id, err)
 			continue
 		}
 
-		// Handle ping messages
-		if msg.Type == MessageTypePing {
+		// Handle ping/pong messages
+		switch msg.Type {
+		case MessageTypePing:
 			pongMsg := Message{
 				Type:      MessageTypePong,
 				Timestamp: time.Now(),
 			}
 			c.sendMessage(pongMsg)
+		case MessageTypePong:
+			c.lastPongTime = time.Now()
+			c.missedPongs = 0
 		}
 	}
 }
@@ -136,12 +156,20 @@ func (c *Client) writePump() {
 				return
 			}
 		case <-ticker.C:
+			// Check missed pongs
+			if c.missedPongs >= maxMissedPongs {
+				log.Printf("ws %s: dropping client due to %d missed pongs", c.id, c.missedPongs)
+				return
+			}
+
 			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
 				return
 			}
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				log.Printf("ws %s: error sending ping: %v", c.id, err)
 				return
 			}
+			c.missedPongs++
 		}
 	}
 }
@@ -150,30 +178,77 @@ func (c *Client) writePump() {
 func (c *Client) sendMessage(message Message) {
 	data, err := json.Marshal(message)
 	if err != nil {
-		log.Printf("error marshaling message: %v", err)
+		log.Printf("ws %s: error marshaling message: %v", c.id, err)
 		return
 	}
 
 	select {
 	case c.send <- data:
 	default:
+		log.Printf("ws %s: send buffer full, dropping message", c.id)
 		close(c.send)
 		delete(c.hub.clients, c)
 	}
 }
 
+// GetMetrics returns client connection metrics
+func (c *Client) GetMetrics() ClientMetrics {
+	return ClientMetrics{
+		ID:           c.id,
+		ConnectedAt:  c.connectedAt,
+		LastPongTime: c.lastPongTime,
+		MissedPongs:  c.missedPongs,
+		Token:        c.token != "",
+	}
+}
+
+// ClientMetrics contains client connection metrics
+type ClientMetrics struct {
+	ID           string    `json:"id"`
+	ConnectedAt  time.Time `json:"connected_at"`
+	LastPongTime time.Time `json:"last_pong_time"`
+	MissedPongs  int       `json:"missed_pongs"`
+	Token        bool      `json:"has_token"`
+}
+
 // ServeWS handles websocket requests from the peer.
 func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	// Extract token from headers (optional)
+	token := r.Header.Get("Authorization")
+	if token != "" && len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		log.Printf("websocket upgrade error: %v", err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+
+	// Generate unique client ID
+	clientID := generateClientID()
+
+	client := &Client{
+		hub:          hub,
+		conn:         conn,
+		send:         make(chan []byte, 256),
+		id:           clientID,
+		connectedAt:  time.Now(),
+		lastPongTime: time.Now(),
+		token:        token,
+	}
+
 	client.hub.register <- client
+
+	log.Printf("ws %s: new connection established (has_token: %v)", clientID, token != "")
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
 	go client.readPump()
+}
+
+// generateClientID generates a unique client identifier
+func generateClientID() string {
+	return fmt.Sprintf("client_%d", time.Now().UnixNano())
 }

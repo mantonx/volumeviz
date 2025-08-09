@@ -196,14 +196,14 @@ func createTestScheduler() (*Scheduler, *MockVolumeScanner, *MockScanRepository,
 
 	schedulerConfig := &SchedulerConfig{
 		ScanConfig: &config.ScanConfig{
-			Enabled:              true,
-			Interval:             5 * time.Minute,
-			Concurrency:          2,
-			TimeoutPerVolume:     30 * time.Second,
-			MethodsOrder:         []string{"diskus", "du"},
-			BindMountsEnabled:    false,
-			BindAllowList:        []string{},
-			SkipPattern:          "^test_",
+			Enabled:           true,
+			Interval:          5 * time.Minute,
+			Concurrency:       2,
+			TimeoutPerVolume:  30 * time.Second,
+			MethodsOrder:      []string{"diskus", "du"},
+			BindMountsEnabled: false,
+			BindAllowList:     []string{},
+			SkipPattern:       "^test_",
 		},
 		QueueSize: 10,
 	}
@@ -215,14 +215,14 @@ func createTestScheduler() (*Scheduler, *MockVolumeScanner, *MockScanRepository,
 func TestNewScheduler(t *testing.T) {
 	schedulerConfig := &SchedulerConfig{
 		ScanConfig: &config.ScanConfig{
-			Enabled:              true,
-			Interval:             5 * time.Minute,
-			Concurrency:          2,
-			TimeoutPerVolume:     30 * time.Second,
-			MethodsOrder:         []string{"diskus", "du"},
-			BindMountsEnabled:    false,
-			BindAllowList:        []string{},
-			SkipPattern:          "",
+			Enabled:           true,
+			Interval:          5 * time.Minute,
+			Concurrency:       2,
+			TimeoutPerVolume:  30 * time.Second,
+			MethodsOrder:      []string{"diskus", "du"},
+			BindMountsEnabled: false,
+			BindAllowList:     []string{},
+			SkipPattern:       "",
 		},
 		QueueSize: 10,
 	}
@@ -247,14 +247,14 @@ func TestNewScheduler(t *testing.T) {
 func TestNewSchedulerWithInvalidSkipPattern(t *testing.T) {
 	schedulerConfig := &SchedulerConfig{
 		ScanConfig: &config.ScanConfig{
-			Enabled:              true,
-			Interval:             5 * time.Minute,
-			Concurrency:          2,
-			TimeoutPerVolume:     30 * time.Second,
-			MethodsOrder:         []string{"diskus", "du"},
-			BindMountsEnabled:    false,
-			BindAllowList:        []string{},
-			SkipPattern:          "[invalid-regex",
+			Enabled:           true,
+			Interval:          5 * time.Minute,
+			Concurrency:       2,
+			TimeoutPerVolume:  30 * time.Second,
+			MethodsOrder:      []string{"diskus", "du"},
+			BindMountsEnabled: false,
+			BindAllowList:     []string{},
+			SkipPattern:       "[invalid-regex",
 		},
 		QueueSize: 10,
 	}
@@ -378,7 +378,7 @@ func TestEnqueueVolume(t *testing.T) {
 	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
 	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*database.VolumeScanStats")).Return(nil).Maybe()
 
-	// Mock scanner methods that workers might call  
+	// Mock scanner methods that workers might call
 	mockScanner.On("ScanVolume", mock.Anything, "test-volume").Return(&interfaces.ScanResult{
 		VolumeID:  "test-volume",
 		TotalSize: 1024,
@@ -392,7 +392,7 @@ func TestEnqueueVolume(t *testing.T) {
 
 	// Start scheduler
 	mockMetrics.On("SetSchedulerRunningStatus", true).Once()
-	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Maybe() // Called by start, enqueue, and workers
+	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Maybe()            // Called by start, enqueue, and workers
 	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Maybe() // Called multiple times by workers
 
 	// Mock other metrics methods that workers might call
@@ -487,7 +487,7 @@ func TestEnqueueAllVolumes(t *testing.T) {
 
 	// Start scheduler
 	mockMetrics.On("SetSchedulerRunningStatus", true).Once()
-	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Maybe() // Called by start, enqueues, and workers
+	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Maybe()            // Called by start, enqueues, and workers
 	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Maybe() // Called by workers
 
 	// Mock other metrics methods that workers might call
@@ -544,7 +544,7 @@ func TestEnqueueAllVolumesRateLimit(t *testing.T) {
 
 	// Start scheduler
 	mockMetrics.On("SetSchedulerRunningStatus", true).Once()
-	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Maybe() // Called by start, enqueues, and workers
+	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Maybe()            // Called by start, enqueues, and workers
 	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Maybe() // Called by workers
 
 	// Mock other metrics methods that workers might call
@@ -626,7 +626,7 @@ func TestIsBindMount(t *testing.T) {
 
 func TestIsBindMountAllowed(t *testing.T) {
 	scheduler, _, _, _, _ := createTestScheduler()
-	
+
 	// Configure bind mounts
 	scheduler.config.BindMountsEnabled = true
 	scheduler.config.BindAllowList = []string{"/home/user", "/mnt/data"}

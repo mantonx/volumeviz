@@ -48,7 +48,7 @@ type MetricsCollector interface {
 	SetActiveScanners(count int)
 	ScanStarted(method string)
 	ScanFinished(method string)
-	
+
 	// Scheduler-specific metrics
 	SetSchedulerRunningStatus(running bool)
 	UpdateSchedulerQueueDepth(depth int)

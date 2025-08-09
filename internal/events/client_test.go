@@ -28,7 +28,7 @@ func TestEventTypeMapping(t *testing.T) {
 		},
 		{
 			name:           "volume remove",
-			eventType:      "volume", 
+			eventType:      "volume",
 			action:         "remove",
 			expectedResult: VolumeRemoved,
 		},
@@ -76,7 +76,7 @@ func TestEventTypeMapping(t *testing.T) {
 				Type:   events.Type(tt.eventType),
 				Action: events.Action(tt.action),
 			}
-			
+
 			result := client.getEventType(rawEvent)
 			assert.Equal(t, tt.expectedResult, result)
 		})
@@ -85,7 +85,7 @@ func TestEventTypeMapping(t *testing.T) {
 
 func TestConvertEvent(t *testing.T) {
 	client := &EventsClient{}
-	
+
 	now := time.Now()
 	timeUnix := now.Unix()
 	timeNano := now.UnixNano()
@@ -181,14 +181,14 @@ func TestConvertEvent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := client.convertEvent(tt.rawEvent)
-			
+
 			require.NoError(t, err)
-			
+
 			if tt.expectNil {
 				assert.Nil(t, result)
 				return
 			}
-			
+
 			require.NotNil(t, result)
 			assert.Equal(t, tt.expectedEvent.Type, result.Type)
 			assert.Equal(t, tt.expectedEvent.ID, result.ID)
@@ -205,16 +205,16 @@ func TestCalculateBackoff(t *testing.T) {
 		BackoffMinDuration: 1 * time.Second,
 		BackoffMaxDuration: 60 * time.Second,
 	}
-	
+
 	client := &EventsClient{
 		config: cfg,
 	}
 
 	tests := []struct {
-		name             string
-		backoffCount     int
-		expectedMin      time.Duration
-		expectedMax      time.Duration
+		name         string
+		backoffCount int
+		expectedMin  time.Duration
+		expectedMax  time.Duration
 	}{
 		{
 			name:         "first attempt",
@@ -225,7 +225,7 @@ func TestCalculateBackoff(t *testing.T) {
 		{
 			name:         "second attempt",
 			backoffCount: 1,
-			expectedMin:  1 * time.Second,  // min * 2^1 = 2s, with 25% jitter = 1.5-2.5s
+			expectedMin:  1 * time.Second, // min * 2^1 = 2s, with 25% jitter = 1.5-2.5s
 			expectedMax:  3 * time.Second,
 		},
 		{
@@ -240,7 +240,7 @@ func TestCalculateBackoff(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client.backoffCount = tt.backoffCount
 			result := client.calculateBackoff()
-			
+
 			assert.GreaterOrEqual(t, result, tt.expectedMin)
 			assert.LessOrEqual(t, result, tt.expectedMax)
 		})
@@ -253,14 +253,14 @@ func TestIsConnected(t *testing.T) {
 			Connected: false,
 		},
 	}
-	
+
 	// Initially not connected
 	assert.False(t, client.IsConnected())
-	
+
 	// Set connected
 	client.setConnected(true)
 	assert.True(t, client.IsConnected())
-	
+
 	// Set disconnected
 	client.setConnected(false)
 	assert.False(t, client.IsConnected())
@@ -278,19 +278,19 @@ func TestGetMetrics(t *testing.T) {
 			Connected:       true,
 		},
 	}
-	
+
 	// Add some test data
 	client.metrics.ProcessedTotal[VolumeCreated] = 10
 	client.metrics.ProcessedTotal[ContainerStarted] = 5
 	client.metrics.ErrorsTotal["processing"] = 2
 	client.metrics.ReconcileRuns["volumes"] = 1
-	
+
 	// Add some items to queue to test queue size
 	client.eventQueue <- &DockerEvent{Type: VolumeCreated}
 	client.eventQueue <- &DockerEvent{Type: ContainerStarted}
-	
+
 	metrics := client.GetMetrics()
-	
+
 	assert.Equal(t, int64(5), metrics.DroppedTotal)
 	assert.Equal(t, int64(3), metrics.ReconnectsTotal)
 	assert.Equal(t, client.connected, metrics.Connected)
@@ -303,31 +303,31 @@ func TestGetMetrics(t *testing.T) {
 
 func TestClientProcessEvent(t *testing.T) {
 	mockProcessor := &MockEventProcessor{}
-	
+
 	client := &EventsClient{
 		processor: mockProcessor,
 		metrics: &EventMetrics{
 			ProcessedTotal: make(map[EventType]int64),
-			ErrorsTotal:   make(map[string]int64),
+			ErrorsTotal:    make(map[string]int64),
 		},
 	}
-	
+
 	// Create a context for testing
 	ctx := context.Background()
 	client.ctx = ctx
-	
+
 	event := &DockerEvent{
 		Type:   VolumeCreated,
 		ID:     "vol_123",
 		Action: "create",
 	}
-	
+
 	// Test successful processing
 	err := client.processEvent(event)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, mockProcessor.ProcessEventCallCount)
 	assert.Equal(t, event, mockProcessor.LastEvent)
-	
+
 	// Test error processing
 	mockProcessor.ShouldError = true
 	err = client.processEvent(event)
@@ -338,14 +338,14 @@ func TestClientProcessEvent(t *testing.T) {
 // MockEventProcessor for testing
 type MockEventProcessor struct {
 	ProcessEventCallCount int
-	LastEvent            *DockerEvent
-	ShouldError          bool
+	LastEvent             *DockerEvent
+	ShouldError           bool
 }
 
 func (m *MockEventProcessor) ProcessEvent(ctx context.Context, event *DockerEvent) error {
 	m.ProcessEventCallCount++
 	m.LastEvent = event
-	
+
 	if m.ShouldError {
 		return assert.AnError
 	}

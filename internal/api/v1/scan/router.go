@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
 	"github.com/mantonx/volumeviz/internal/database"
+	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/websocket"
 )
@@ -14,10 +15,10 @@ type Router struct {
 }
 
 // NewRouter creates a new scan router
-func NewRouter(scanner interfaces.VolumeScanner, hub *websocket.Hub, db *database.DB, scanScheduler scheduler.ScanScheduler) *Router {
+func NewRouter(scanner interfaces.VolumeScanner, hub *websocket.Hub, db *database.DB, scanScheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Router {
 	metricsRepo := database.NewVolumeMetricsRepository(db)
 	return &Router{
-		handler: NewHandler(scanner, hub, metricsRepo, scanScheduler),
+		handler: NewHandler(scanner, hub, metricsRepo, scanScheduler, publisher),
 	}
 }
 

@@ -24,19 +24,19 @@ type EventsClient struct {
 	reconciler   Reconciler
 	metrics      *EventMetrics
 	promMetrics  *EventMetricsCollector
-	
+
 	// Channel for events processing
-	eventQueue   chan *DockerEvent
-	ctx          context.Context
-	cancel       context.CancelFunc
-	wg           sync.WaitGroup
-	
+	eventQueue chan *DockerEvent
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+
 	// Connection state
-	connected    bool
-	connMutex    sync.RWMutex
-	lastEventTime *time.Time
+	connected       bool
+	connMutex       sync.RWMutex
+	lastEventTime   *time.Time
 	streamStartTime *time.Time
-	
+
 	// Backoff state
 	backoffCount int
 	maxBackoff   int
@@ -52,10 +52,10 @@ func NewEventsClient(dockerClient interfaces.DockerClient, config *config.Events
 		promMetrics:  promMetrics,
 		eventQueue:   make(chan *DockerEvent, config.QueueSize),
 		metrics: &EventMetrics{
-			ProcessedTotal:  make(map[EventType]int64),
-			ErrorsTotal:     make(map[string]int64),
-			ReconcileRuns:   make(map[string]int64),
-			Connected:       false,
+			ProcessedTotal: make(map[EventType]int64),
+			ErrorsTotal:    make(map[string]int64),
+			ReconcileRuns:  make(map[string]int64),
+			Connected:      false,
 		},
 		maxBackoff: int(config.BackoffMaxDuration.Seconds()),
 	}
@@ -70,7 +70,7 @@ func (c *EventsClient) Start(ctx context.Context) error {
 
 	c.ctx, c.cancel = context.WithCancel(ctx)
 
-	log.Printf("[INFO] Starting Docker events client (queue size: %d, reconcile interval: %v)", 
+	log.Printf("[INFO] Starting Docker events client (queue size: %d, reconcile interval: %v)",
 		c.config.QueueSize, c.config.ReconcileInterval)
 
 	// Start event processor worker
@@ -130,25 +130,25 @@ func (c *EventsClient) GetLastEventTime() *time.Time {
 func (c *EventsClient) GetMetrics() *EventMetrics {
 	c.connMutex.RLock()
 	defer c.connMutex.RUnlock()
-	
+
 	queueSize := len(c.eventQueue)
-	
+
 	// Update Prometheus queue size metric
 	if c.promMetrics != nil {
 		c.promMetrics.SetEventQueueSize(queueSize)
 	}
-	
+
 	// Make a copy to avoid race conditions
 	metrics := &EventMetrics{
 		ProcessedTotal:    make(map[EventType]int64),
-		ErrorsTotal:      make(map[string]int64),
-		ReconcileRuns:    make(map[string]int64),
-		DroppedTotal:     c.metrics.DroppedTotal,
-		ReconnectsTotal:  c.metrics.ReconnectsTotal,
-		LastEventTime:    c.lastEventTime,
+		ErrorsTotal:       make(map[string]int64),
+		ReconcileRuns:     make(map[string]int64),
+		DroppedTotal:      c.metrics.DroppedTotal,
+		ReconnectsTotal:   c.metrics.ReconnectsTotal,
+		LastEventTime:     c.lastEventTime,
 		LastReconnectTime: c.metrics.LastReconnectTime,
-		Connected:        c.connected,
-		QueueSize:        queueSize,
+		Connected:         c.connected,
+		QueueSize:         queueSize,
 	}
 
 	// Copy maps
@@ -341,7 +341,7 @@ func (c *EventsClient) processEvents() {
 				// Channel closed, exit
 				return
 			}
-			
+
 			if err := c.processEvent(event); err != nil {
 				log.Printf("[ERROR] Failed to process event %s %s: %v", event.Action, event.ID, err)
 				c.metrics.ErrorsTotal["processing"]++
@@ -378,7 +378,7 @@ func (c *EventsClient) calculateBackoff() time.Duration {
 
 	// Exponential backoff: min * 2^count
 	exponential := float64(c.config.BackoffMinDuration.Nanoseconds()) * math.Pow(2, float64(c.backoffCount))
-	
+
 	// Cap at max backoff
 	maxNanos := float64(c.config.BackoffMaxDuration.Nanoseconds())
 	if exponential > maxNanos {
@@ -388,24 +388,24 @@ func (c *EventsClient) calculateBackoff() time.Duration {
 	// Add jitter (±25%)
 	jitter := exponential * 0.25 * (rand.Float64()*2 - 1)
 	backoffNanos := int64(exponential + jitter)
-	
+
 	return time.Duration(backoffNanos)
 }
 
 // runPeriodicReconciliation runs reconciliation at configured intervals
 func (c *EventsClient) runPeriodicReconciliation() {
 	defer c.wg.Done()
-	
+
 	ticker := time.NewTicker(c.config.ReconcileInterval)
 	defer ticker.Stop()
-	
+
 	log.Printf("[INFO] Starting periodic reconciliation every %v", c.config.ReconcileInterval)
-	
+
 	// Run initial reconciliation on startup
 	if err := c.runReconciliation(); err != nil {
 		log.Printf("[ERROR] Initial reconciliation failed: %v", err)
 	}
-	
+
 	for {
 		select {
 		case <-ticker.C:
@@ -422,7 +422,7 @@ func (c *EventsClient) runPeriodicReconciliation() {
 func (c *EventsClient) runReconciliation() error {
 	ctx, cancel := context.WithTimeout(c.ctx, 5*time.Minute)
 	defer cancel()
-	
+
 	return c.reconciler.FullReconcile(ctx)
 }
 

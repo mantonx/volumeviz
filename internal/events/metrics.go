@@ -12,25 +12,25 @@ type EventMetricsCollector struct {
 	eventsFailedTotal    prometheus.CounterVec
 	eventsDroppedTotal   prometheus.Counter
 	eventQueueSize       prometheus.Gauge
-	
+
 	// Connection and streaming metrics
-	eventsConnectionStatus   prometheus.Gauge
-	eventsReconnectsTotal    prometheus.Counter
-	eventsStreamDuration     prometheus.Histogram
-	eventsLastEventTime      prometheus.Gauge
-	eventsLastReconnectTime  prometheus.Gauge
-	
+	eventsConnectionStatus  prometheus.Gauge
+	eventsReconnectsTotal   prometheus.Counter
+	eventsStreamDuration    prometheus.Histogram
+	eventsLastEventTime     prometheus.Gauge
+	eventsLastReconnectTime prometheus.Gauge
+
 	// Reconciliation metrics
-	reconciliationRunsTotal    prometheus.CounterVec
-	reconciliationDuration     prometheus.HistogramVec
+	reconciliationRunsTotal     prometheus.CounterVec
+	reconciliationDuration      prometheus.HistogramVec
 	reconciliationFailuresTotal prometheus.CounterVec
 	reconciliationLastRunTime   prometheus.GaugeVec
-	
+
 	// Volume/Container sync metrics
-	volumesSyncedTotal      prometheus.CounterVec
-	containersSyncedTotal   prometheus.CounterVec
-	mountsSyncedTotal       prometheus.CounterVec
-	resourcesRemovedTotal   prometheus.CounterVec
+	volumesSyncedTotal    prometheus.CounterVec
+	containersSyncedTotal prometheus.CounterVec
+	mountsSyncedTotal     prometheus.CounterVec
+	resourcesRemovedTotal prometheus.CounterVec
 }
 
 // NewEventMetricsCollector creates a new Prometheus metrics collector for events
@@ -48,7 +48,7 @@ func NewEventMetricsCollector(namespace, subsystem string, labels prometheus.Lab
 		eventsFailedTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace:   namespace,
 			Subsystem:   subsystem,
-			Name:        "docker_events_failed_total", 
+			Name:        "docker_events_failed_total",
 			Help:        "Total number of failed Docker event processing attempts",
 			ConstLabels: labels,
 		}, []string{"error_type", "event_type"}),

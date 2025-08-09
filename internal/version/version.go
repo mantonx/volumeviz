@@ -6,10 +6,10 @@ import (
 
 // Build information. These will be set via ldflags during build
 var (
-	Version   = "dev"     // The version of the application
-	GitCommit = "unknown" // Git commit hash
-	GitBranch = "unknown" // Git branch
-	BuildDate = "unknown" // Build date
+	Version   = "dev"             // The version of the application
+	GitCommit = "unknown"         // Git commit hash
+	GitBranch = "unknown"         // Git branch
+	BuildDate = "unknown"         // Build date
 	GoVersion = runtime.Version() // Go version used to build
 )
 

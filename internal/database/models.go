@@ -92,12 +92,12 @@ type ScanJob struct {
 // VolumeScanStats represents historical volume scan statistics (maps to volume_stats table)
 type VolumeScanStats struct {
 	BaseModel
-	VolumeName   string        `db:"volume_name" json:"volume_name"`
-	SizeBytes    int64         `db:"size_bytes" json:"size_bytes"`
-	FileCount    *int          `db:"file_count" json:"file_count"`       // nullable
-	ScanMethod   string        `db:"scan_method" json:"scan_method"`
-	DurationMs   int64         `db:"duration_ms" json:"duration_ms"`
-	Timestamp    time.Time     `db:"ts" json:"ts"`                       // using ts as column name per spec
+	VolumeName string    `db:"volume_name" json:"volume_name"`
+	SizeBytes  int64     `db:"size_bytes" json:"size_bytes"`
+	FileCount  *int      `db:"file_count" json:"file_count"` // nullable
+	ScanMethod string    `db:"scan_method" json:"scan_method"`
+	DurationMs int64     `db:"duration_ms" json:"duration_ms"`
+	Timestamp  time.Time `db:"ts" json:"ts"` // using ts as column name per spec
 }
 
 // VolumeMetrics represents historical volume metrics for analytics

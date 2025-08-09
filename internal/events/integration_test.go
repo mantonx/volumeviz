@@ -323,7 +323,7 @@ func (suite *EventsIntegrationTestSuite) TestDisconnectReconnect() {
 	// Wait for event processing
 	suite.waitForVolumeInRepo(volumeName, 10*time.Second)
 
-	// Note: In a real disconnect scenario, we would need to simulate 
+	// Note: In a real disconnect scenario, we would need to simulate
 	// Docker daemon restart or network interruption. This test verifies
 	// the metrics and status reporting work correctly.
 

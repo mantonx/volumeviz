@@ -10,7 +10,7 @@ interface VolumeCardProps {
   volume: Volume;
 }
 
-export const VolumeCard: React.FC<VolumeCardProps> = ({ volume }) => {
+export const VolumeCard: React.FC<VolumeCardProps> = React.memo(({ volume }) => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { scanVolume, scanResults, scanLoading } = useVolumeScanning();
@@ -139,6 +139,8 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({ volume }) => {
       </div>
     </Card>
   );
-};
+});
+
+VolumeCard.displayName = 'VolumeCard';
 
 export default VolumeCard;

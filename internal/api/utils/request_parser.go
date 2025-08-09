@@ -25,12 +25,12 @@ type SortParam struct {
 
 // VolumeFilters holds volume-specific filter parameters
 type VolumeFilters struct {
-	Query          string    // Search query (q parameter)
-	Driver         string    // Exact driver match
-	Orphaned       *bool     // Filter by orphaned status
-	System         bool      // Include system volumes
-	CreatedAfter   *time.Time
-	CreatedBefore  *time.Time
+	Query         string // Search query (q parameter)
+	Driver        string // Exact driver match
+	Orphaned      *bool  // Filter by orphaned status
+	System        bool   // Include system volumes
+	CreatedAfter  *time.Time
+	CreatedBefore *time.Time
 }
 
 // ParsePaginationParams extracts and validates pagination parameters from request
@@ -173,12 +173,12 @@ func BuildSQLOrderBy(sortParams []SortParam, fieldMapping map[string]string) str
 
 // PagedResponse represents a generic paginated response
 type PagedResponse struct {
-	Data       interface{}            `json:"data"`
-	Page       int                    `json:"page"`
-	PageSize   int                    `json:"page_size"`
-	Total      int64                  `json:"total"`
-	Sort       string                 `json:"sort,omitempty"`
-	Filters    map[string]interface{} `json:"filters,omitempty"`
+	Data     interface{}            `json:"data"`
+	Page     int                    `json:"page"`
+	PageSize int                    `json:"page_size"`
+	Total    int64                  `json:"total"`
+	Sort     string                 `json:"sort,omitempty"`
+	Filters  map[string]interface{} `json:"filters,omitempty"`
 }
 
 // BuildPagedResponse creates a standardized paged response

@@ -160,7 +160,7 @@ func (c *Client) IsConnected(ctx context.Context) bool {
 	return c.Ping(ctx) == nil
 }
 
-// ContainerInspect gets detailed information about a specific container (alternative method name) 
+// ContainerInspect gets detailed information about a specific container (alternative method name)
 func (c *Client) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
 	ctx, cancel := c.contextWithTimeout(ctx)
 	defer cancel()

@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
 	coremodels "github.com/mantonx/volumeviz/internal/core/models"
 	"github.com/mantonx/volumeviz/internal/database"
+	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/utils"
 	"github.com/mantonx/volumeviz/internal/websocket"
@@ -20,20 +22,22 @@ import (
 // Handler handles scan-related HTTP requests
 // Provides endpoints for volume size scanning and metrics
 type Handler struct {
-	scanner     interfaces.VolumeScanner
-	hub         *websocket.Hub
-	metricsRepo *database.VolumeMetricsRepository
-	scheduler   scheduler.ScanScheduler // Optional scheduler for manual scan triggers
+	scanner           interfaces.VolumeScanner
+	hub               *websocket.Hub
+	metricsRepo       *database.VolumeMetricsRepository
+	scheduler         scheduler.ScanScheduler // Optional scheduler for manual scan triggers
+	realtimePublisher *realtime.Publisher
 }
 
 // NewHandler creates a new scan handler
-// Pass in your volume scanner implementation, WebSocket hub, metrics repository, and optional scheduler
-func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, metricsRepo *database.VolumeMetricsRepository, scheduler scheduler.ScanScheduler) *Handler {
+// Pass in your volume scanner implementation, WebSocket hub, metrics repository, optional scheduler, and realtime publisher
+func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, metricsRepo *database.VolumeMetricsRepository, scheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Handler {
 	return &Handler{
-		scanner:     scanner,
-		hub:         hub,
-		metricsRepo: metricsRepo,
-		scheduler:   scheduler,
+		scanner:           scanner,
+		hub:               hub,
+		metricsRepo:       metricsRepo,
+		scheduler:         scheduler,
+		realtimePublisher: publisher,
 	}
 }
 
@@ -43,20 +47,20 @@ func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, metricsRep
 // @Tags scan
 // @Accept json
 // @Produce json
-// @Param name path string true "Volume Name"
+// @Param id path string true "Volume ID"
 // @Success 200 {object} models.ScanResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /volumes/{name}/size [get]
+// @Router /volumes/{id}/size [get]
 func (h *Handler) GetVolumeSize(c *gin.Context) {
-	volumeID := c.Param("name")
+	volumeID := c.Param("id")
 
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error:   "Volume name is required",
-			Code:    "MISSING_VOLUME_NAME",
-			Details: map[string]any{"message": "Volume name parameter is missing from the request"},
+			Error:   "Volume ID is required",
+			Code:    "MISSING_VOLUME_ID",
+			Details: map[string]any{"message": "Volume ID parameter is missing from the request"},
 		})
 		return
 	}
@@ -116,20 +120,20 @@ func (h *Handler) GetVolumeSize(c *gin.Context) {
 // @Tags scan
 // @Accept json
 // @Produce json
-// @Param name path string true "Volume Name"
+// @Param id path string true "Volume ID"
 // @Param request body models.RefreshRequest false "Refresh options"
 // @Success 200 {object} models.ScanResponse "Sync scan completed"
 // @Success 202 {object} models.AsyncScanResponse "Async scan started"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /volumes/{name}/size/refresh [post]
+// @Router /volumes/{id}/size/refresh [post]
 func (h *Handler) RefreshVolumeSize(c *gin.Context) {
-	volumeID := c.Param("name")
+	volumeID := c.Param("id")
 
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Volume name is required",
-			"code":    "MISSING_VOLUME_NAME",
+			"error":   "Volume ID is required",
+			"code":    "MISSING_VOLUME_ID",
 			"details": "Volume name parameter is missing from the request",
 		})
 		return
@@ -142,9 +146,25 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 	}
 
 	if req.Async {
+		// Emit scan start progress
+		if h.realtimePublisher != nil {
+			startProgress := realtime.ScanProgressData{
+				VolumeID:       volumeID,
+				Progress:       0,
+				CurrentSize:    0,
+				FilesProcessed: 0,
+				Method:         req.Method,
+				StartedAt:      time.Now(),
+			}
+			h.realtimePublisher.PublishScanProgress(startProgress)
+		}
+
 		scanID, err := h.scanner.ScanVolumeAsync(c.Request.Context(), volumeID)
 		if err != nil {
 			h.handleScanError(c, err)
+			if h.realtimePublisher != nil {
+				h.realtimePublisher.PublishScanError(volumeID, err, req.Method)
+			}
 			return
 		}
 
@@ -165,27 +185,41 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 		return
 	}
 
+	// Emit scan start progress for sync scans too
+	if h.realtimePublisher != nil {
+		startProgress := realtime.ScanProgressData{
+			VolumeID:       volumeID,
+			Progress:       0,
+			CurrentSize:    0,
+			FilesProcessed: 0,
+			Method:         req.Method,
+			StartedAt:      time.Now(),
+		}
+		h.realtimePublisher.PublishScanProgress(startProgress)
+	}
+
 	result, err := h.scanner.ScanVolume(c.Request.Context(), volumeID)
 	if err != nil {
 		h.handleScanError(c, err)
-		// Broadcast scan error via WebSocket
-		if h.hub != nil {
-			h.hub.BroadcastScanError(volumeID, err.Error(), "SCAN_ERROR")
+		// Broadcast scan error via realtime publisher
+		if h.realtimePublisher != nil {
+			h.realtimePublisher.PublishScanError(volumeID, err, req.Method)
 		}
 		return
 	}
 
-	// Broadcast scan completion via WebSocket
-	if h.hub != nil {
-		wsResult := websocket.ScanResult{
+	// Broadcast scan completion via realtime publisher
+	if h.realtimePublisher != nil {
+		completeData := realtime.ScanCompleteData{
+			VolumeID:       volumeID,
 			TotalSize:      result.TotalSize,
 			FileCount:      result.FileCount,
 			DirectoryCount: result.DirectoryCount,
-			ScannedAt:      result.ScannedAt,
 			Method:         result.Method,
 			Duration:       result.Duration,
+			ScannedAt:      result.ScannedAt,
 		}
-		h.hub.BroadcastScanComplete(volumeID, wsResult)
+		h.realtimePublisher.PublishScanComplete(completeData)
 	}
 
 	response := models.ScanResponse{
@@ -419,7 +453,7 @@ func (h *Handler) TriggerVolumeScan(c *gin.Context) {
 	volumeName := c.Param("name")
 	if volumeName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Volume name is required",
+			"error": "Volume ID is required",
 			"code":  "MISSING_VOLUME_NAME",
 		})
 		return

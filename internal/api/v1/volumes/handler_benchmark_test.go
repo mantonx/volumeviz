@@ -85,7 +85,7 @@ func generateMockVolumes(count int) []models.Volume {
 func BenchmarkListVolumes_Small(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{}, nil)
+	handler := NewHandler(mockService, &websocket.Hub{}, nil, nil)
 
 	volumes := generateMockVolumes(10)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
@@ -111,7 +111,7 @@ func BenchmarkListVolumes_Small(b *testing.B) {
 func BenchmarkListVolumes_Large(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{}, nil)
+	handler := NewHandler(mockService, &websocket.Hub{}, nil, nil)
 
 	// Generate 1000+ volumes as per enhanced requirements
 	volumes := generateMockVolumes(1000)
@@ -145,7 +145,7 @@ func BenchmarkListVolumes_Large(b *testing.B) {
 func BenchmarkListVolumes_Concurrent(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{}, nil)
+	handler := NewHandler(mockService, &websocket.Hub{}, nil, nil)
 
 	volumes := generateMockVolumes(500)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
@@ -180,7 +180,7 @@ func BenchmarkListVolumes_Concurrent(b *testing.B) {
 func BenchmarkGetVolume(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{}, nil)
+	handler := NewHandler(mockService, &websocket.Hub{}, nil, nil)
 
 	volume := &models.Volume{
 		ID:         "test-volume",
@@ -219,7 +219,7 @@ func BenchmarkGetVolume(b *testing.B) {
 func TestSLOCompliance(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{}, nil)
+	handler := NewHandler(mockService, &websocket.Hub{}, nil, nil)
 
 	volumes := generateMockVolumes(1000)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)

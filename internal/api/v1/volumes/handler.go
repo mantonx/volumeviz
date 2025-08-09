@@ -16,6 +16,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	coremodels "github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/utils"
 	"github.com/mantonx/volumeviz/internal/websocket"
 )
@@ -23,23 +24,29 @@ import (
 // Handler handles volume-related HTTP requests
 // Provides REST endpoints for Docker volume operations
 type Handler struct {
-	dockerService    interfaces.DockerService
-	hub              *websocket.Hub
-	database         *database.DB
+	dockerService     interfaces.DockerService
+	hub               *websocket.Hub
+	database          *database.DB
+	realtimePublisher *realtime.Publisher
 	systemVolumeRegex *regexp.Regexp
 }
 
 // NewHandler creates a new volume handler
-// Pass in your Docker service, WebSocket hub, and database to get started
-func NewHandler(dockerService interfaces.DockerService, hub *websocket.Hub, db *database.DB) *Handler {
+// Pass in your Docker service, WebSocket hub, database, and realtime publisher to get started
+func NewHandler(dockerService interfaces.DockerService, hub *websocket.Hub, db *database.DB, publisher *realtime.Publisher) *Handler {
 	// Default system volume regex pattern
 	pattern := `^(docker_|builder_|containerd|_data$)`
-	regex, _ := regexp.Compile(pattern)
-	
+	regex, err := regexp.Compile(pattern)
+	if err != nil {
+		// Fall back to nil regex if pattern is invalid
+		regex = nil
+	}
+
 	return &Handler{
 		dockerService:     dockerService,
 		hub:               hub,
 		database:          db,
+		realtimePublisher: publisher,
 		systemVolumeRegex: regex,
 	}
 }
@@ -186,7 +193,11 @@ func (h *Handler) filterVolumes(volumes []coremodels.Volume, filters *apiutils.V
 
 		// Apply orphaned filter (requires container check)
 		if filters.Orphaned != nil {
-			containers, _ := h.dockerService.GetVolumeContainers(context.Background(), vol.ID)
+			containers, err := h.dockerService.GetVolumeContainers(context.Background(), vol.ID)
+			if err != nil {
+				// Skip this volume if we can't check containers
+				continue
+			}
 			isOrphaned := len(containers) == 0
 			if *filters.Orphaned != isOrphaned {
 				continue
@@ -202,7 +213,10 @@ func (h *Handler) filterVolumes(volumes []coremodels.Volume, filters *apiutils.V
 // convertToAPIVolume converts internal volume model to API format
 func (h *Handler) convertToAPIVolume(vol coremodels.Volume) models.VolumeV1 {
 	// Get container count for attachments_count
-	containers, _ := h.dockerService.GetVolumeContainers(context.Background(), vol.ID)
+	containers, err := h.dockerService.GetVolumeContainers(context.Background(), vol.ID)
+	if err != nil {
+		containers = []coremodels.VolumeContainer{}
+	}
 	attachmentsCount := len(containers)
 
 	// Get size if available from volume usage data
@@ -685,7 +699,11 @@ func (h *Handler) GetOrphanedVolumes(c *gin.Context) {
 		}
 
 		// Check if volume has any containers
-		containers, _ := h.dockerService.GetVolumeContainers(ctx, vol.ID)
+		containers, err := h.dockerService.GetVolumeContainers(ctx, vol.ID)
+		if err != nil {
+			// Skip this volume if we can't check containers
+			continue
+		}
 		if len(containers) == 0 {
 			// Get size if available
 			var sizeBytes int64

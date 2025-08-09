@@ -75,9 +75,9 @@ func (r *ReconcilerService) ReconcileVolumes(ctx context.Context) error {
 			// Volume exists in both - check if update needed
 			if r.shouldUpdateVolume(dbVol, dockerVol) {
 				updatedVol := r.convertDockerVolumeToModel(dockerVol, time.Now())
-				updatedVol.ID = dbVol.ID // Preserve database ID
+				updatedVol.ID = dbVol.ID               // Preserve database ID
 				updatedVol.CreatedAt = dbVol.CreatedAt // Preserve original created time
-				
+
 				if err := r.repository.UpsertVolume(ctx, updatedVol); err != nil {
 					log.Printf("[WARN] Failed to update volume %s during reconciliation: %v", dockerVol.Name, err)
 				}
@@ -108,7 +108,7 @@ func (r *ReconcilerService) ReconcileVolumes(ctx context.Context) error {
 		}
 	}
 
-	log.Printf("[INFO] Volume reconciliation: %d Docker volumes, %d DB volumes, %d removed", 
+	log.Printf("[INFO] Volume reconciliation: %d Docker volumes, %d DB volumes, %d removed",
 		len(dockerVolumes.Volumes), len(dbVolumes), removedCount)
 	return nil
 }
@@ -159,14 +159,14 @@ func (r *ReconcilerService) ReconcileContainers(ctx context.Context) error {
 		}
 
 		state := r.mapContainerState(dockerContainer.State)
-		
+
 		if dbContainer, exists := dbContainerMap[dockerContainer.ID]; exists {
 			// Container exists in both - check if update needed
 			if r.shouldUpdateContainer(dbContainer, dockerContainer, state) {
 				updatedContainer := r.convertDockerContainerToModel(containerJSON, state, time.Now())
-				updatedContainer.ID = dbContainer.ID // Preserve database ID
+				updatedContainer.ID = dbContainer.ID               // Preserve database ID
 				updatedContainer.CreatedAt = dbContainer.CreatedAt // Preserve original created time
-				
+
 				if err := r.repository.UpsertContainer(ctx, updatedContainer); err != nil {
 					log.Printf("[WARN] Failed to update container %s during reconciliation: %v", dockerContainer.ID, err)
 				}
@@ -192,7 +192,7 @@ func (r *ReconcilerService) ReconcileContainers(ctx context.Context) error {
 			if err := r.repository.DeactivateVolumeMounts(ctx, containerID); err != nil {
 				log.Printf("[WARN] Failed to deactivate mounts for container %s: %v", containerID, err)
 			}
-			
+
 			if err := r.repository.DeleteContainer(ctx, containerID); err != nil {
 				log.Printf("[WARN] Failed to remove container %s during reconciliation: %v", containerID, err)
 			} else {
@@ -201,7 +201,7 @@ func (r *ReconcilerService) ReconcileContainers(ctx context.Context) error {
 		}
 	}
 
-	log.Printf("[INFO] Container reconciliation: %d Docker containers, %d DB containers, %d removed", 
+	log.Printf("[INFO] Container reconciliation: %d Docker containers, %d DB containers, %d removed",
 		len(dockerContainers), len(dbContainers), deactivatedCount)
 	return nil
 }
@@ -265,7 +265,7 @@ func (r *ReconcilerService) reconcileContainerMounts(ctx context.Context, contai
 				dbMount.AccessMode = accessMode
 				dbMount.IsActive = true
 				dbMount.UpdatedAt = time.Now()
-				
+
 				if err := r.repository.UpsertVolumeMount(ctx, dbMount); err != nil {
 					log.Printf("[WARN] Failed to update mount %s->%s: %v", volumeName, containerID, err)
 				}
@@ -370,7 +370,7 @@ func (r *ReconcilerService) mapContainerState(dockerState string) string {
 	case "running":
 		return "running"
 	case "exited":
-		return "exited" 
+		return "exited"
 	case "created":
 		return "created"
 	case "restarting":

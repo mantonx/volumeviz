@@ -1,0 +1,53 @@
+name: Dependabot Auto-merge
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize, opened, edited, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Auto-approve PR
+        if: contains(github.event.pull_request.labels.*.name, 'automerge')
+        run: gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Enable auto-merge for Dependabot PRs with automerge label
+        if: contains(github.event.pull_request.labels.*.name, 'automerge')
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Auto-label safe dependency updates
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: |
+          gh pr edit "$PR_URL" --add-label "automerge"
+          echo "Added automerge label to safe dependency update"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Comment on major version updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        run: |
+          gh pr comment "$PR_URL" --body "🚨 **Major version update detected!** This PR requires manual review before merging. Please check for breaking changes."
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

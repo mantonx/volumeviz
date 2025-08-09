@@ -89,7 +89,7 @@ func (h *EventHandlerService) HandleVolumeCreate(ctx context.Context, event *Doc
 	if h.promMetrics != nil {
 		h.promMetrics.RecordVolumeSync("create", "event")
 	}
-	
+
 	log.Printf("[INFO] Volume created: %s (driver: %s)", event.Name, volume.Driver)
 	return nil
 }
@@ -114,7 +114,7 @@ func (h *EventHandlerService) HandleContainerStart(ctx context.Context, event *D
 	return h.updateContainerAndMounts(ctx, event, "running")
 }
 
-// HandleContainerStop handles container stop events  
+// HandleContainerStop handles container stop events
 func (h *EventHandlerService) HandleContainerStop(ctx context.Context, event *DockerEvent) error {
 	return h.updateContainerAndMounts(ctx, event, "stopped")
 }

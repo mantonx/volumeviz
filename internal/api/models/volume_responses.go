@@ -21,18 +21,18 @@ type VolumeV1 struct {
 
 // VolumeDetailV1 represents detailed volume information
 type VolumeDetailV1 struct {
-	Name             string                 `json:"name"`
-	Driver           string                 `json:"driver"`
-	CreatedAt        time.Time              `json:"created_at"`
-	Labels           map[string]string      `json:"labels,omitempty"`
-	Scope            string                 `json:"scope"`
-	Mountpoint       string                 `json:"mountpoint"`
-	SizeBytes        *int64                 `json:"size_bytes,omitempty"`
-	LastScanAt       *time.Time             `json:"last_scan_at,omitempty"`
-	Attachments      []AttachmentV1         `json:"attachments"`
-	IsSystem         bool                   `json:"is_system"`
-	IsOrphaned       bool                   `json:"is_orphaned"`
-	Meta             map[string]interface{} `json:"meta,omitempty"`
+	Name        string                 `json:"name"`
+	Driver      string                 `json:"driver"`
+	CreatedAt   time.Time              `json:"created_at"`
+	Labels      map[string]string      `json:"labels,omitempty"`
+	Scope       string                 `json:"scope"`
+	Mountpoint  string                 `json:"mountpoint"`
+	SizeBytes   *int64                 `json:"size_bytes,omitempty"`
+	LastScanAt  *time.Time             `json:"last_scan_at,omitempty"`
+	Attachments []AttachmentV1         `json:"attachments"`
+	IsSystem    bool                   `json:"is_system"`
+	IsOrphaned  bool                   `json:"is_orphaned"`
+	Meta        map[string]interface{} `json:"meta,omitempty"`
 }
 
 // AttachmentV1 represents a container attachment to a volume

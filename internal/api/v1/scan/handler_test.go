@@ -57,7 +57,7 @@ func (m *MockVolumeScanner) ClearCache(volumeID string) error {
 func setupTestRouter(scanner interfaces.VolumeScanner) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	handler := NewHandler(scanner, &websocket.Hub{}, nil, nil)
+	handler := NewHandler(scanner, &websocket.Hub{}, nil, nil, nil)
 
 	r.GET("/volumes/:id/size", handler.GetVolumeSize)
 	r.POST("/volumes/:id/size/refresh", handler.RefreshVolumeSize)
@@ -173,11 +173,13 @@ func TestHandler_RefreshVolumeSize_Sync(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	var response models.ScanResponse
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
-	assert.Equal(t, "Volume size refreshed", response["message"])
-	assert.Contains(t, response, "result")
+	assert.Equal(t, "test-volume", response.VolumeID)
+	assert.NotNil(t, response.Result)
+	assert.Equal(t, int64(2048000), response.Result.TotalSize)
+	assert.False(t, response.Cached) // Should be false since cache was cleared
 
 	mockScanner.AssertExpectations(t)
 }

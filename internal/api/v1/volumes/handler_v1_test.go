@@ -43,7 +43,7 @@ func TestListVolumes_V1API(t *testing.T) {
 					},
 					{
 						ID:         "vol2",
-						Name:       "test-volume-2", 
+						Name:       "test-volume-2",
 						Driver:     "local",
 						CreatedAt:  time.Now().Add(-12 * time.Hour),
 						Mountpoint: "/var/lib/docker/volumes/test-volume-2/_data",
@@ -80,7 +80,7 @@ func TestListVolumes_V1API(t *testing.T) {
 					{
 						ID:        "vol2",
 						Name:      "test-volume-2",
-						Driver:    "local", 
+						Driver:    "local",
 						CreatedAt: time.Now().Add(-12 * time.Hour),
 					},
 				}
@@ -137,7 +137,7 @@ func TestListVolumes_V1API(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDocker := &mocks.DockerService{}
-			handler := NewHandler(mockDocker, nil, nil)
+			handler := NewHandler(mockDocker, nil, nil, nil)
 			tt.setupMock(mockDocker)
 
 			w := httptest.NewRecorder()
@@ -221,7 +221,7 @@ func TestGetVolume_V1API(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDocker := &mocks.DockerService{}
-			handler := NewHandler(mockDocker, nil, nil)
+			handler := NewHandler(mockDocker, nil, nil, nil)
 			tt.setupMock(mockDocker)
 
 			w := httptest.NewRecorder()
@@ -265,7 +265,7 @@ func TestGetVolumeAttachments_V1API(t *testing.T) {
 					},
 					{
 						ID:         "container2",
-						Name:       "test-container-2", 
+						Name:       "test-container-2",
 						MountPath:  "/app",
 						AccessMode: "ro",
 					},
@@ -281,7 +281,7 @@ func TestGetVolumeAttachments_V1API(t *testing.T) {
 				assert.Equal(t, float64(2), response["total"])
 				data := response["data"].([]interface{})
 				assert.Len(t, data, 2)
-				
+
 				attachment1 := data[0].(map[string]interface{})
 				assert.Equal(t, "container1", attachment1["container_id"])
 				assert.Equal(t, "test-container-1", attachment1["container_name"])
@@ -310,7 +310,7 @@ func TestGetVolumeAttachments_V1API(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDocker := &mocks.DockerService{}
-			handler := NewHandler(mockDocker, nil, nil)
+			handler := NewHandler(mockDocker, nil, nil, nil)
 			tt.setupMock(mockDocker)
 
 			w := httptest.NewRecorder()
@@ -354,7 +354,7 @@ func TestGetOrphanedVolumes(t *testing.T) {
 					},
 					{
 						ID:        "vol2",
-						Name:      "used-volume", 
+						Name:      "used-volume",
 						Driver:    "local",
 						CreatedAt: time.Now().Add(-12 * time.Hour),
 					},
@@ -362,7 +362,7 @@ func TestGetOrphanedVolumes(t *testing.T) {
 				m.On("ListVolumes", mock.Anything).Return(volumes, nil)
 				// vol1 has no containers (orphaned)
 				m.On("GetVolumeContainers", mock.Anything, "vol1").Return([]coremodels.VolumeContainer{}, nil)
-				// vol2 has containers (not orphaned)  
+				// vol2 has containers (not orphaned)
 				m.On("GetVolumeContainers", mock.Anything, "vol2").Return([]coremodels.VolumeContainer{{ID: "container1"}}, nil)
 			},
 			expectedStatus: 200,
@@ -373,7 +373,7 @@ func TestGetOrphanedVolumes(t *testing.T) {
 				assert.Equal(t, int64(1), response.Total) // Only 1 orphaned volume
 				data := response.Data.([]interface{})
 				assert.Len(t, data, 1)
-				
+
 				orphanedVol := data[0].(map[string]interface{})
 				assert.Equal(t, "orphaned-volume", orphanedVol["name"])
 				assert.Equal(t, "local", orphanedVol["driver"])
@@ -408,7 +408,7 @@ func TestGetOrphanedVolumes(t *testing.T) {
 				assert.Equal(t, int64(1), response.Total) // Only user volume, system volume filtered out
 				data := response.Data.([]interface{})
 				assert.Len(t, data, 1)
-				
+
 				orphanedVol := data[0].(map[string]interface{})
 				assert.Equal(t, "user-volume", orphanedVol["name"])
 			},
@@ -418,7 +418,7 @@ func TestGetOrphanedVolumes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDocker := &mocks.DockerService{}
-			handler := NewHandler(mockDocker, nil, nil)
+			handler := NewHandler(mockDocker, nil, nil, nil)
 			tt.setupMock(mockDocker)
 
 			w := httptest.NewRecorder()

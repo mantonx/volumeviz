@@ -35,7 +35,7 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
 
   const [urlState, setUrlState] = useVolumeListUrlState();
   const [qInput, setQInput] = useState(urlState.q || '');
-  const debouncedQ = useDebounce(qInput, 300);
+  const debouncedQ = useDebounce(qInput, 150);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -190,7 +190,7 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
     return `Showing ${volumes.length} volume${volumes.length !== 1 ? 's' : ''} on page ${page} of ${Math.ceil(paginationMeta.total / page_size)}`;
   };
 
-  const FilterBar: React.FC = () => {
+  const FilterBar: React.FC = useMemo(() => () => {
     return (
       <div
         className="flex flex-wrap gap-2 items-center"
@@ -273,7 +273,7 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
         )}
       </div>
     );
-  };
+  }, [driver, sort, orphaned, system, handleDriverChange, handleSortChange, toggleOrphaned, toggleSystem, handleShowAll, setUrlState, q]);
 
   return (
     <div className="space-y-6">

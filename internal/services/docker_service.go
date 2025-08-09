@@ -271,4 +271,3 @@ func (s *DockerService) InspectVolume(ctx context.Context, volumeID string) (vol
 func (s *DockerService) InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error) {
 	return s.client.InspectContainer(ctx, containerID)
 }
-

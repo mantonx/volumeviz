@@ -32,10 +32,10 @@ type PrometheusMetricsCollector struct {
 	// System metrics
 	dockerConnectionStatus prometheus.Gauge
 	activeScanners         prometheus.Gauge
-	
+
 	// Scheduler metrics
-	schedulerRunningStatus prometheus.Gauge
-	schedulerQueueDepthGauge prometheus.Gauge
+	schedulerRunningStatus     prometheus.Gauge
+	schedulerQueueDepthGauge   prometheus.Gauge
 	schedulerWorkerUtilization prometheus.Gauge
 }
 
@@ -178,7 +178,7 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Help:        "Number of active scanner goroutines",
 			ConstLabels: labels,
 		}),
-		
+
 		// Scheduler status metrics
 		schedulerRunningStatus: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace:   namespace,
@@ -187,7 +187,7 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Help:        "Status of the scan scheduler (1=running, 0=stopped)",
 			ConstLabels: labels,
 		}),
-		
+
 		schedulerQueueDepthGauge: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace:   namespace,
 			Subsystem:   "scheduler",
@@ -195,7 +195,7 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Help:        "Current depth of the scheduler task queue",
 			ConstLabels: labels,
 		}),
-		
+
 		schedulerWorkerUtilization: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace:   namespace,
 			Subsystem:   "scheduler",

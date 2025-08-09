@@ -15,9 +15,10 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { themeAtom, apiStatusAtom, requestCountAtom } from '@/store';
+import { themeAtom, apiStatusAtom, requestCountAtom, connectionStatusAtom } from '@/store';
 import { cn } from '@/utils';
 import type { HeaderProps, ThemeOption, ApiStatus } from './Header.types';
+import type { ConnectionStatus, WebSocketStatus } from '@/store/atoms/websocket';
 
 /**
  * Theme icon component mapping theme names to appropriate icons
@@ -56,6 +57,27 @@ const StatusIcon = ({ status }: { status: ApiStatus }) => {
 };
 
 /**
+ * WebSocket status icon component
+ */
+const WebSocketIcon = ({ status }: { status: WebSocketStatus }) => {
+  const baseClasses = 'h-3 w-3';
+
+  switch (status) {
+    case 'connected':
+      return <div className={cn(baseClasses, 'rounded-full bg-green-500')} />;
+    case 'connecting':
+    case 'reconnecting':
+      return <div className={cn(baseClasses, 'rounded-full bg-yellow-500 animate-pulse')} />;
+    case 'disconnected':
+      return <div className={cn(baseClasses, 'rounded-full bg-gray-400')} />;
+    case 'error':
+      return <div className={cn(baseClasses, 'rounded-full bg-red-500')} />;
+    default:
+      return <div className={cn(baseClasses, 'rounded-full bg-gray-400')} />;
+  }
+};
+
+/**
  * Application header component providing navigation and system status.
  *
  * Features:
@@ -77,6 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [theme, setTheme] = useAtom(themeAtom);
   const apiStatus = useAtomValue(apiStatusAtom);
   const requestCount = useAtomValue(requestCountAtom);
+  const connectionStatus = useAtomValue(connectionStatusAtom);
 
   /**
    * Cycle through available themes: system -> light -> dark -> system
@@ -104,6 +127,37 @@ export const Header: React.FC<HeaderProps> = ({
       default:
         return 'Unknown API status';
     }
+  };
+
+  /**
+   * Get WebSocket status text for accessibility
+   */
+  const getWebSocketStatusText = (status: WebSocketStatus): string => {
+    switch (status) {
+      case 'connected':
+        return 'WebSocket connected';
+      case 'connecting':
+        return 'WebSocket connecting';
+      case 'reconnecting':
+        return 'WebSocket reconnecting';
+      case 'disconnected':
+        return 'WebSocket disconnected';
+      case 'error':
+        return 'WebSocket connection error';
+      default:
+        return 'Unknown WebSocket status';
+    }
+  };
+
+  /**
+   * Get combined status text for tooltip
+   */
+  const getCombinedStatusText = (conn: ConnectionStatus): string => {
+    let text = getStatusText(conn.api);
+    if (conn.websocketEnabled) {
+      text += ` | ${getWebSocketStatusText(conn.websocket)}`;
+    }
+    return text;
   };
 
   return (
@@ -135,13 +189,31 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right side: Status indicators and user menu */}
         <div className="flex items-center space-x-4">
-          {/* API Status and Request Counter */}
+          {/* Combined API and WebSocket Status */}
           <div className="flex items-center space-x-2">
             <div
-              className="flex items-center space-x-1"
-              title={getStatusText(apiStatus)}
+              className="flex items-center space-x-2 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700"
+              title={getCombinedStatusText(connectionStatus)}
             >
-              <StatusIcon status={apiStatus} />
+              {/* API Status Icon */}
+              <div className="flex items-center space-x-1">
+                <StatusIcon status={connectionStatus.api} />
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  API
+                </span>
+              </div>
+              
+              {/* WebSocket Status (if enabled) */}
+              {connectionStatus.websocketEnabled && (
+                <div className="flex items-center space-x-1">
+                  <WebSocketIcon status={connectionStatus.websocket} />
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                    RT
+                  </span>
+                </div>
+              )}
+              
+              {/* Request counter */}
               {requestCount > 0 && (
                 <span className="text-xs text-gray-500 dark:text-gray-400 animate-pulse">
                   {requestCount}

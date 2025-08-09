@@ -227,7 +227,7 @@ func TestWorkerProcessTaskVolumeStatsError(t *testing.T) {
 	mockScanner.On("ScanVolume", mock.AnythingOfType("*context.timerCtx"), "test-volume").Return(scanResult, nil)
 	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*database.ScanJob")).Return(nil)
 	mockRepo.On("UpdateScanRun", ctx, mock.AnythingOfType("*database.ScanJob")).Return(nil)
-	
+
 	// Mock error when inserting volume stats
 	statsError := errors.New("failed to insert volume stats")
 	mockRepo.On("InsertVolumeStats", ctx, mock.AnythingOfType("*database.VolumeScanStats")).Return(statsError)
@@ -275,7 +275,7 @@ func TestWorkerUpdateActiveScans(t *testing.T) {
 
 func TestWorkerConcurrency(t *testing.T) {
 	scheduler, mockScanner, mockRepo, _, mockMetrics := createTestScheduler()
-	
+
 	// Start scheduler with multiple workers
 	ctx := context.Background()
 	mockMetrics.On("SetSchedulerRunningStatus", true).Once()
@@ -339,7 +339,7 @@ func TestWorkerConcurrency(t *testing.T) {
 
 func TestWorkerShutdown(t *testing.T) {
 	scheduler, _, _, _, mockMetrics := createTestScheduler()
-	
+
 	// Start scheduler
 	ctx := context.Background()
 	mockMetrics.On("SetSchedulerRunningStatus", mock.AnythingOfType("bool")).Maybe()

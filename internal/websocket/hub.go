@@ -27,17 +27,21 @@ type Hub struct {
 	// Message queue for offline clients (optional)
 	messageQueue []Message
 	maxQueueSize int
+
+	// Done channel for graceful shutdown
+	done chan struct{}
 }
 
 // NewHub creates a new WebSocket hub
 func NewHub() *Hub {
 	return &Hub{
-		broadcast:    make(chan []byte, 256),
-		register:     make(chan *Client),
-		unregister:   make(chan *Client),
+		broadcast:    make(chan []byte, 1024), // Increased buffer for O(1) broadcast
+		register:     make(chan *Client, 256),
+		unregister:   make(chan *Client, 256),
 		clients:      make(map[*Client]bool),
 		messageQueue: make([]Message, 0),
 		maxQueueSize: 100,
+		done:         make(chan struct{}),
 	}
 }
 
@@ -48,7 +52,7 @@ func (h *Hub) Run() {
 		case client := <-h.register:
 			h.mu.Lock()
 			h.clients[client] = true
-			log.Printf("Client connected. Total clients: %d", len(h.clients))
+			log.Printf("ws %s: client registered. Total clients: %d", client.id, len(h.clients))
 
 			// Send queued messages to newly connected client
 			for _, msg := range h.messageQueue {
@@ -61,7 +65,7 @@ func (h *Hub) Run() {
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
-				log.Printf("Client disconnected. Total clients: %d", len(h.clients))
+				log.Printf("ws %s: client unregistered. Total clients: %d", client.id, len(h.clients))
 			}
 			h.mu.Unlock()
 
@@ -157,4 +161,31 @@ func (h *Hub) GetClientCount() int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return len(h.clients)
+}
+
+// GetClientsMetrics returns metrics for all connected clients
+func (h *Hub) GetClientsMetrics() []ClientMetrics {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	metrics := make([]ClientMetrics, 0, len(h.clients))
+	for client := range h.clients {
+		metrics = append(metrics, client.GetMetrics())
+	}
+	return metrics
+}
+
+// Stop gracefully shuts down the hub
+func (h *Hub) Stop() {
+	close(h.done)
+
+	// Close all client connections
+	h.mu.Lock()
+	for client := range h.clients {
+		close(client.send)
+		delete(h.clients, client)
+	}
+	h.mu.Unlock()
+
+	log.Printf("WebSocket hub stopped")
 }

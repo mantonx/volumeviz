@@ -13,6 +13,13 @@ updates:
     commit-message:
       prefix: "build"
       include: "scope"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Frontend npm packages
   - package-ecosystem: "npm"
@@ -27,6 +34,13 @@ updates:
     commit-message:
       prefix: "build"
       include: "scope"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Docker dependencies
   - package-ecosystem: "docker"
@@ -55,3 +69,7 @@ updates:
     commit-message:
       prefix: "ci"
       include: "scope"
+    groups:
+      actions-updates:
+        patterns:
+          - "*"

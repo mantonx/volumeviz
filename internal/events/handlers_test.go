@@ -18,11 +18,11 @@ import (
 func TestEventHandlerProcessEvent(t *testing.T) {
 	mockRepo := &MockRepository{}
 	mockDocker := &MockDockerClient{}
-	
+
 	handler := NewEventHandlerService(mockDocker, mockRepo, nil)
-	
+
 	ctx := context.Background()
-	
+
 	tests := []struct {
 		name        string
 		event       *DockerEvent
@@ -104,25 +104,25 @@ func TestEventHandlerProcessEvent(t *testing.T) {
 			expectError: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset mocks
 			mockRepo.ExpectedCalls = nil
 			mockDocker.ExpectedCalls = nil
-			
+
 			if tt.setupMocks != nil {
 				tt.setupMocks()
 			}
-			
+
 			err := handler.ProcessEvent(ctx, tt.event)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 			}
-			
+
 			mockRepo.AssertExpectations(t)
 			mockDocker.AssertExpectations(t)
 		})
@@ -132,9 +132,9 @@ func TestEventHandlerProcessEvent(t *testing.T) {
 func TestHandleVolumeCreate(t *testing.T) {
 	mockRepo := &MockRepository{}
 	mockDocker := &MockDockerClient{}
-	
+
 	handler := NewEventHandlerService(mockDocker, mockRepo, nil)
-	
+
 	ctx := context.Background()
 	event := &DockerEvent{
 		Type:   VolumeCreated,
@@ -143,7 +143,7 @@ func TestHandleVolumeCreate(t *testing.T) {
 		Action: "create",
 		Time:   time.Now(),
 	}
-	
+
 	volumeResp := volume.Volume{
 		Name:       "test-volume",
 		Driver:     "local",
@@ -154,7 +154,7 @@ func TestHandleVolumeCreate(t *testing.T) {
 		},
 		Options: map[string]string{},
 	}
-	
+
 	mockDocker.On("InspectVolume", ctx, "test-volume").Return(volumeResp, nil)
 	mockRepo.On("UpsertVolume", ctx, mock.MatchedBy(func(v *database.Volume) bool {
 		return v.VolumeID == "test-volume" &&
@@ -165,9 +165,9 @@ func TestHandleVolumeCreate(t *testing.T) {
 			v.Status == "active" &&
 			v.IsActive == true
 	})).Return(nil)
-	
+
 	err := handler.HandleVolumeCreate(ctx, event)
-	
+
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
 	mockDocker.AssertExpectations(t)
@@ -176,9 +176,9 @@ func TestHandleVolumeCreate(t *testing.T) {
 func TestHandleVolumeCreateError(t *testing.T) {
 	mockRepo := &MockRepository{}
 	mockDocker := &MockDockerClient{}
-	
+
 	handler := NewEventHandlerService(mockDocker, mockRepo, nil)
-	
+
 	ctx := context.Background()
 	event := &DockerEvent{
 		Type:   VolumeCreated,
@@ -187,12 +187,12 @@ func TestHandleVolumeCreateError(t *testing.T) {
 		Action: "create",
 		Time:   time.Now(),
 	}
-	
+
 	// Test Docker inspect error
 	mockDocker.On("InspectVolume", ctx, "test-volume").Return(volume.Volume{}, errors.New("volume not found"))
-	
+
 	err := handler.HandleVolumeCreate(ctx, event)
-	
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to inspect volume")
 	mockDocker.AssertExpectations(t)
@@ -201,9 +201,9 @@ func TestHandleVolumeCreateError(t *testing.T) {
 func TestHandleVolumeRemove(t *testing.T) {
 	mockRepo := &MockRepository{}
 	mockDocker := &MockDockerClient{}
-	
+
 	handler := NewEventHandlerService(mockDocker, mockRepo, nil)
-	
+
 	ctx := context.Background()
 	event := &DockerEvent{
 		Type:   VolumeRemoved,
@@ -212,11 +212,11 @@ func TestHandleVolumeRemove(t *testing.T) {
 		Action: "remove",
 		Time:   time.Now(),
 	}
-	
+
 	mockRepo.On("DeleteVolume", ctx, "test-volume").Return(nil)
-	
+
 	err := handler.HandleVolumeRemove(ctx, event)
-	
+
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
 }
@@ -224,9 +224,9 @@ func TestHandleVolumeRemove(t *testing.T) {
 func TestHandleContainerStart(t *testing.T) {
 	mockRepo := &MockRepository{}
 	mockDocker := &MockDockerClient{}
-	
+
 	handler := NewEventHandlerService(mockDocker, mockRepo, nil)
-	
+
 	ctx := context.Background()
 	event := &DockerEvent{
 		Type:   ContainerStarted,
@@ -235,7 +235,7 @@ func TestHandleContainerStart(t *testing.T) {
 		Action: "start",
 		Time:   time.Now(),
 	}
-	
+
 	containerJSON := types.ContainerJSON{
 		ContainerJSONBase: &types.ContainerJSONBase{
 			ID:   "container_abc",
@@ -259,7 +259,7 @@ func TestHandleContainerStart(t *testing.T) {
 			},
 		},
 	}
-	
+
 	mockDocker.On("ContainerInspect", ctx, "container_abc").Return(containerJSON, nil)
 	mockRepo.On("UpsertContainer", ctx, mock.MatchedBy(func(c *database.Container) bool {
 		return c.ContainerID == "container_abc" &&
@@ -276,9 +276,9 @@ func TestHandleContainerStart(t *testing.T) {
 			m.AccessMode == "rw" &&
 			m.IsActive == true
 	})).Return(nil)
-	
+
 	err := handler.HandleContainerStart(ctx, event)
-	
+
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
 	mockDocker.AssertExpectations(t)
@@ -287,9 +287,9 @@ func TestHandleContainerStart(t *testing.T) {
 func TestHandleContainerDestroy(t *testing.T) {
 	mockRepo := &MockRepository{}
 	mockDocker := &MockDockerClient{}
-	
+
 	handler := NewEventHandlerService(mockDocker, mockRepo, nil)
-	
+
 	ctx := context.Background()
 	event := &DockerEvent{
 		Type:   ContainerDestroyed,
@@ -298,12 +298,12 @@ func TestHandleContainerDestroy(t *testing.T) {
 		Action: "destroy",
 		Time:   time.Now(),
 	}
-	
+
 	mockRepo.On("DeactivateVolumeMounts", ctx, "container_abc").Return(nil)
 	mockRepo.On("DeleteContainer", ctx, "container_abc").Return(nil)
-	
+
 	err := handler.HandleContainerDestroy(ctx, event)
-	
+
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
 }
@@ -311,13 +311,13 @@ func TestHandleContainerDestroy(t *testing.T) {
 func TestUpdateVolumeMounts(t *testing.T) {
 	mockRepo := &MockRepository{}
 	mockDocker := &MockDockerClient{}
-	
+
 	handler := NewEventHandlerService(mockDocker, mockRepo, nil)
-	
+
 	ctx := context.Background()
 	containerID := "container_123"
 	eventTime := time.Now()
-	
+
 	mounts := []types.MountPoint{
 		{
 			Type:        "volume",
@@ -327,7 +327,7 @@ func TestUpdateVolumeMounts(t *testing.T) {
 		},
 		{
 			Type:        "volume",
-			Name:        "vol2", 
+			Name:        "vol2",
 			Destination: "/data2",
 			RW:          false,
 		},
@@ -338,23 +338,23 @@ func TestUpdateVolumeMounts(t *testing.T) {
 			RW:          true,
 		},
 	}
-	
+
 	mockRepo.On("DeactivateVolumeMounts", ctx, containerID).Return(nil)
-	
+
 	// Should only process volume mounts, not bind mounts
 	mockRepo.On("UpsertVolumeMount", ctx, mock.MatchedBy(func(m *database.VolumeMount) bool {
 		return m.VolumeID == "vol1" && m.AccessMode == "rw"
 	})).Return(nil)
-	
+
 	mockRepo.On("UpsertVolumeMount", ctx, mock.MatchedBy(func(m *database.VolumeMount) bool {
 		return m.VolumeID == "vol2" && m.AccessMode == "ro"
 	})).Return(nil)
-	
+
 	err := handler.updateVolumeMounts(ctx, containerID, mounts, eventTime)
-	
+
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
-	
+
 	// Verify bind mount was not processed (only 2 UpsertVolumeMount calls expected)
 	mockRepo.AssertNumberOfCalls(t, "UpsertVolumeMount", 2)
 }
@@ -449,11 +449,21 @@ func (m *MockDockerClient) ContainerInspect(ctx context.Context, containerID str
 }
 
 // Implement other interface methods as no-ops for testing
-func (m *MockDockerClient) Ping(ctx context.Context) error { return nil }
-func (m *MockDockerClient) Close() error { return nil }
+func (m *MockDockerClient) Ping(ctx context.Context) error       { return nil }
+func (m *MockDockerClient) Close() error                         { return nil }
 func (m *MockDockerClient) IsConnected(ctx context.Context) bool { return true }
-func (m *MockDockerClient) Version(ctx context.Context) (types.Version, error) { return types.Version{}, nil }
-func (m *MockDockerClient) ListVolumes(ctx context.Context, filterMap map[string][]string) (volume.ListResponse, error) { return volume.ListResponse{}, nil }
-func (m *MockDockerClient) ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error) { return nil, nil }
-func (m *MockDockerClient) InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error) { return containertypes.InspectResponse{}, nil }
-func (m *MockDockerClient) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) { return nil, nil }
+func (m *MockDockerClient) Version(ctx context.Context) (types.Version, error) {
+	return types.Version{}, nil
+}
+func (m *MockDockerClient) ListVolumes(ctx context.Context, filterMap map[string][]string) (volume.ListResponse, error) {
+	return volume.ListResponse{}, nil
+}
+func (m *MockDockerClient) ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error) {
+	return nil, nil
+}
+func (m *MockDockerClient) InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error) {
+	return containertypes.InspectResponse{}, nil
+}
+func (m *MockDockerClient) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {
+	return nil, nil
+}

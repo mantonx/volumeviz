@@ -24,4 +24,15 @@ func (h *Handler) HandleWebSocket(c *gin.Context) {
 // RegisterRoutes registers WebSocket routes
 func (h *Handler) RegisterRoutes(router gin.IRouter) {
 	router.GET("/ws", h.HandleWebSocket)
+	router.GET("/ws/metrics", h.GetWebSocketMetrics)
+}
+
+// GetWebSocketMetrics returns WebSocket connection metrics
+func (h *Handler) GetWebSocketMetrics(c *gin.Context) {
+	metrics := map[string]interface{}{
+		"total_clients": h.hub.GetClientCount(),
+		"clients":       h.hub.GetClientsMetrics(),
+	}
+
+	c.JSON(200, metrics)
 }

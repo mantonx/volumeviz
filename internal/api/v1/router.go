@@ -22,6 +22,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/core/services/scanner"
 	databasePkg "github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/events"
+	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/services"
 	"github.com/mantonx/volumeviz/internal/websocket"
@@ -33,13 +34,14 @@ import (
 
 // Router manages all v1 API routes
 type Router struct {
-	engine        *gin.Engine
-	dockerService *services.DockerService
-	scanner       interfaces.VolumeScanner
-	database      *databasePkg.DB
-	websocketHub  *websocket.Hub
-	scheduler     scheduler.ScanScheduler // Optional scan scheduler
-	eventsService events.EventService     // Optional events service
+	engine            *gin.Engine
+	dockerService     *services.DockerService
+	scanner           interfaces.VolumeScanner
+	database          *databasePkg.DB
+	websocketHub      *websocket.Hub
+	realtimePublisher *realtime.Publisher
+	scheduler         scheduler.ScanScheduler // Optional scan scheduler
+	eventsService     events.EventService     // Optional events service
 }
 
 // NewRouter creates a new v1 API router
@@ -47,6 +49,9 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, 
 	// Initialize WebSocket hub
 	hub := websocket.NewHub()
 	go hub.Run()
+
+	// Initialize real-time publisher
+	publisher := realtime.NewPublisher(hub)
 
 	// Initialize the scanner with all dependencies
 	logger := log.New(os.Stdout, "[SCANNER] ", log.LstdFlags)
@@ -134,13 +139,14 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, 
 	}
 
 	router := &Router{
-		engine:        gin.New(),
-		dockerService: dockerService,
-		scanner:       volumeScanner,
-		database:      database,
-		websocketHub:  hub,
-		scheduler:     scanScheduler,
-		eventsService: eventsService,
+		engine:            gin.New(),
+		dockerService:     dockerService,
+		scanner:           volumeScanner,
+		database:          database,
+		websocketHub:      hub,
+		realtimePublisher: publisher,
+		scheduler:         scanScheduler,
+		eventsService:     eventsService,
 	}
 
 	router.setupMiddleware(config)
@@ -157,6 +163,11 @@ func (r *Router) Engine() *gin.Engine {
 // GetWebSocketHub returns the WebSocket hub for broadcasting messages
 func (r *Router) GetWebSocketHub() *websocket.Hub {
 	return r.websocketHub
+}
+
+// GetRealtimePublisher returns the real-time event publisher
+func (r *Router) GetRealtimePublisher() *realtime.Publisher {
+	return r.realtimePublisher
 }
 
 // EventsService returns the events service if configured
@@ -249,13 +260,13 @@ func (r *Router) setupRoutes() {
 		healthRouter := health.NewRouter(r.dockerService, r.database, r.eventsService, r.scheduler)
 		healthRouter.RegisterRoutes(v1)
 
-		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub, r.database)
+		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub, r.database, r.realtimePublisher)
 		volumesRouter.RegisterRoutes(v1)
 
 		systemRouter := system.NewRouter(r.dockerService)
 		systemRouter.RegisterRoutes(v1)
 
-		scanRouter := scan.NewRouter(r.scanner, r.websocketHub, r.database, r.scheduler)
+		scanRouter := scan.NewRouter(r.scanner, r.websocketHub, r.database, r.scheduler, r.realtimePublisher)
 		scanRouter.RegisterRoutes(v1)
 
 		databaseRouter := database.NewRouter(r.database)

@@ -57,3 +57,11 @@ export {
   featureFlagsAtom,
   apiDebugAtom,
 } from './atoms/api';
+
+// WebSocket atoms
+export {
+  websocketStateAtom,
+  websocketStatusAtom,
+  websocketEnabledAtom,
+  connectionStatusAtom,
+} from './atoms/websocket';

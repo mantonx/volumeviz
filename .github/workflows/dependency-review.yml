@@ -1,0 +1,88 @@
+name: Weekly Dependency Review
+
+on:
+  schedule:
+    # Run every Monday at 10:00 UTC (after Dependabot runs at 04:00)
+    - cron: '0 10 * * 1'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate dependency review
+        id: review
+        run: |
+          echo "## 📊 Weekly Dependency Review - $(date +'%Y-%m-%d')" > review.md
+          echo "" >> review.md
+          
+          # Get pending Dependabot PRs
+          pending_prs=$(gh pr list --author "dependabot[bot]" --json number,title,labels,url --jq 'length')
+          
+          if [ "$pending_prs" -gt 0 ]; then
+            echo "### 🔄 Pending Dependabot PRs ($pending_prs)" >> review.md
+            gh pr list --author "dependabot[bot]" --json number,title,labels,url --jq -r '.[] | "- [#\(.number)](\(.url)) \(.title) \(if (.labels | map(.name) | contains(["automerge"])) then "🟢 *automerge*" else "⚠️  *needs review*" end)"' >> review.md
+            echo "" >> review.md
+          else
+            echo "### ✅ No pending dependency updates" >> review.md
+            echo "" >> review.md
+          fi
+          
+          # Check for security advisories
+          echo "### 🔐 Security Status" >> review.md
+          if command -v npm audit &> /dev/null; then
+            cd frontend && npm audit --audit-level moderate --json > ../audit.json 2>/dev/null || true
+            if [ -f ../audit.json ] && [ "$(jq '.vulnerabilities | length' ../audit.json 2>/dev/null || echo 0)" -gt 0 ]; then
+              echo "⚠️  **Security vulnerabilities detected in frontend dependencies**" >> review.md
+              echo "Run \`cd frontend && npm audit\` for details" >> review.md
+            else
+              echo "✅ No known security vulnerabilities in frontend dependencies" >> review.md
+            fi
+          fi
+          echo "" >> review.md
+          
+          # Add maintenance suggestions
+          echo "### 💡 Maintenance Suggestions" >> review.md
+          echo "- Review and merge safe dependency updates (minor/patch versions with automerge label)" >> review.md
+          echo "- Check for major version updates that require breaking change review" >> review.md
+          echo "- Consider running \`npm audit\` and \`go mod audit\` for security checks" >> review.md
+          echo "" >> review.md
+          echo "---" >> review.md
+          echo "*This review is automatically generated every Monday. Add the \`automerge\` label to safe Dependabot PRs for automatic merging.*" >> review.md
+          
+          # Output for next step
+          echo "review_content<<EOF" >> $GITHUB_OUTPUT
+          cat review.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find existing review issue
+        id: find-issue
+        run: |
+          issue_number=$(gh issue list --label "dependencies,weekly-review" --json number --jq '.[0].number // empty')
+          echo "issue_number=$issue_number" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update or create dependency review issue
+        run: |
+          if [ -n "${{ steps.find-issue.outputs.issue_number }}" ]; then
+            # Update existing issue
+            gh issue edit "${{ steps.find-issue.outputs.issue_number }}" --body "${{ steps.review.outputs.review_content }}"
+            echo "Updated existing dependency review issue #${{ steps.find-issue.outputs.issue_number }}"
+          else
+            # Create new issue
+            gh issue create \
+              --title "📊 Weekly Dependency Review - $(date +'%Y-%m-%d')" \
+              --body "${{ steps.review.outputs.review_content }}" \
+              --label "dependencies,weekly-review"
+            echo "Created new dependency review issue"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
