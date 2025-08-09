@@ -271,6 +271,46 @@ func (s *SimpleMetricsCollector) ScanFinished(method string) {
 	}
 }
 
+// SetSchedulerRunningStatus updates scheduler running status
+func (s *SimpleMetricsCollector) SetSchedulerRunningStatus(running bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.stats["scheduler_running"] = running
+
+	if s.logger != nil {
+		status := "RUNNING"
+		if !running {
+			status = "STOPPED"
+		}
+		s.logger.Printf("SCHEDULER_STATUS status=%s", status)
+	}
+}
+
+// UpdateSchedulerQueueDepth updates scheduler queue depth
+func (s *SimpleMetricsCollector) UpdateSchedulerQueueDepth(depth int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.stats["scheduler_queue_depth"] = depth
+
+	if s.logger != nil && depth > 0 {
+		s.logger.Printf("SCHEDULER_QUEUE_DEPTH depth=%d", depth)
+	}
+}
+
+// UpdateSchedulerWorkerUtilization updates scheduler worker utilization
+func (s *SimpleMetricsCollector) UpdateSchedulerWorkerUtilization(utilization float64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.stats["scheduler_worker_utilization"] = utilization
+
+	if s.logger != nil && utilization > 0.1 { // Only log when utilization is above 10%
+		s.logger.Printf("SCHEDULER_WORKER_UTILIZATION utilization=%.2f", utilization)
+	}
+}
+
 // GetStats returns a copy of current statistics
 func (s *SimpleMetricsCollector) GetStats() map[string]any {
 	s.mu.RLock()

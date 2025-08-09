@@ -74,7 +74,7 @@ type VolumeMount struct {
 	IsActive    bool   `db:"is_active" json:"is_active"`
 }
 
-// ScanJob represents asynchronous scan operations
+// ScanJob represents asynchronous scan operations (maps to scan_runs table)
 type ScanJob struct {
 	BaseModel
 	ScanID            string         `db:"scan_id" json:"scan_id"`
@@ -87,6 +87,17 @@ type ScanJob struct {
 	ErrorMessage      *string        `db:"error_message" json:"error_message,omitempty"`
 	ResultID          *int           `db:"result_id" json:"result_id,omitempty"` // FK to VolumeSize
 	EstimatedDuration *time.Duration `db:"estimated_duration" json:"estimated_duration,omitempty"`
+}
+
+// VolumeScanStats represents historical volume scan statistics (maps to volume_stats table)
+type VolumeScanStats struct {
+	BaseModel
+	VolumeName   string        `db:"volume_name" json:"volume_name"`
+	SizeBytes    int64         `db:"size_bytes" json:"size_bytes"`
+	FileCount    *int          `db:"file_count" json:"file_count"`       // nullable
+	ScanMethod   string        `db:"scan_method" json:"scan_method"`
+	DurationMs   int64         `db:"duration_ms" json:"duration_ms"`
+	Timestamp    time.Time     `db:"ts" json:"ts"`                       // using ts as column name per spec
 }
 
 // VolumeMetrics represents historical volume metrics for analytics

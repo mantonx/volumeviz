@@ -20,6 +20,7 @@ import (
 	coreMetrics "github.com/mantonx/volumeviz/internal/core/services/metrics"
 	"github.com/mantonx/volumeviz/internal/core/services/scanner"
 	databasePkg "github.com/mantonx/volumeviz/internal/database"
+	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/services"
 	"github.com/mantonx/volumeviz/internal/websocket"
 	"github.com/prometheus/client_golang/prometheus"
@@ -35,6 +36,7 @@ type Router struct {
 	scanner       interfaces.VolumeScanner
 	database      *databasePkg.DB
 	websocketHub  *websocket.Hub
+	scheduler     scheduler.ScanScheduler // Optional scan scheduler
 }
 
 // NewRouter creates a new v1 API router
@@ -65,12 +67,37 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, 
 		scannerConfig,
 	)
 
+	// Initialize scan scheduler if enabled
+	var scanScheduler scheduler.ScanScheduler
+	if config.Scan.Enabled {
+		schedulerConfig := scheduler.NewSchedulerConfig(&config.Scan)
+		
+		// Create repository and volume provider for the scheduler
+		repository := scheduler.NewRepository(database)
+		volumeProvider := scheduler.NewVolumeProvider(repository)
+		
+		schedulerInstance, err := scheduler.NewScheduler(
+			schedulerConfig,
+			volumeScanner,
+			repository,
+			volumeProvider,
+			metricsCollector,
+		)
+		if err != nil {
+			log.Printf("[WARN] Failed to initialize scan scheduler: %v", err)
+		} else {
+			scanScheduler = schedulerInstance
+			log.Printf("[INFO] Scan scheduler initialized")
+		}
+	}
+
 	router := &Router{
 		engine:        gin.New(),
 		dockerService: dockerService,
 		scanner:       volumeScanner,
 		database:      database,
 		websocketHub:  hub,
+		scheduler:     scanScheduler,
 	}
 
 	router.setupMiddleware(config)
@@ -166,16 +193,16 @@ func (r *Router) setupRoutes() {
 		websocketHandler.RegisterRoutes(v1)
 
 		// Register sub-routers
-		healthRouter := health.NewRouter(r.dockerService, r.database)
+		healthRouter := health.NewRouter(r.dockerService, r.database, nil, r.scheduler)
 		healthRouter.RegisterRoutes(v1)
 
-		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub)
+		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub, r.database)
 		volumesRouter.RegisterRoutes(v1)
 
 		systemRouter := system.NewRouter(r.dockerService)
 		systemRouter.RegisterRoutes(v1)
 
-		scanRouter := scan.NewRouter(r.scanner, r.websocketHub, r.database)
+		scanRouter := scan.NewRouter(r.scanner, r.websocketHub, r.database, r.scheduler)
 		scanRouter.RegisterRoutes(v1)
 
 		databaseRouter := database.NewRouter(r.database)

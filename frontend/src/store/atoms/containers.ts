@@ -1,10 +1,10 @@
 import { atom } from 'jotai';
-import { Container, ContainerFilters, SortConfig } from '@/types';
+import { VolumeAttachedContainer, ContainerFilters, SortConfig } from '@/types';
 
 /**
  * Primary container data storage atom.
  */
-export const containersAtom = atom<Container[]>([]);
+export const containersAtom = atom<VolumeAttachedContainer[]>([]);
 
 /**
  * Container loading state.
@@ -32,7 +32,7 @@ export const containerSortAtom = atom<SortConfig>({
 /**
  * Computed filtered and sorted containers.
  */
-export const filteredContainersAtom = atom<Container[]>((get) => {
+export const filteredContainersAtom = atom<VolumeAttachedContainer[]>((get) => {
   const containers = get(containersAtom);
   const filters = get(containerFiltersAtom);
   const sortConfig = get(containerSortAtom);
@@ -50,36 +50,6 @@ export const filteredContainersAtom = atom<Container[]>((get) => {
     if (filters.name) {
       if (!container.name.toLowerCase().includes(filters.name.toLowerCase())) {
         return false;
-      }
-    }
-
-    // Image filter
-    if (filters.image) {
-      if (
-        !container.image.toLowerCase().includes(filters.image.toLowerCase())
-      ) {
-        return false;
-      }
-    }
-
-    // Network filter
-    if (filters.network) {
-      const hasNetwork = container.networks.some((network) =>
-        network.networkName
-          .toLowerCase()
-          .includes(filters.network!.toLowerCase()),
-      );
-      if (!hasNetwork) {
-        return false;
-      }
-    }
-
-    // Label filters
-    if (filters.label) {
-      for (const [key, value] of Object.entries(filters.label)) {
-        if (container.labels[key] !== value) {
-          return false;
-        }
       }
     }
 
@@ -117,17 +87,14 @@ export const containerStatsAtom = atom((get) => {
       acc.total += 1;
       if (container.status === 'running') {
         acc.running += 1;
-      } else if (
-        container.status === 'stopped' ||
-        container.status === 'exited'
-      ) {
+      } else if (container.status === 'stopped') {
         acc.stopped += 1;
-      } else if (container.status === 'paused') {
-        acc.paused += 1;
+      } else {
+        acc.unknown += 1;
       }
       return acc;
     },
-    { total: 0, running: 0, stopped: 0, paused: 0 },
+    { total: 0, running: 0, stopped: 0, unknown: 0 },
   );
 
   return stats;

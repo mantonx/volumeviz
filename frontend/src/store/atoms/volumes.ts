@@ -20,11 +20,20 @@ export interface VolumeSortConfig {
   direction: 'asc' | 'desc';
 }
 
+export interface VolumePaginationMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  sort?: string;
+  filters?: Record<string, any>;
+}
+
 export interface VolumeState {
   volumes: VolumeResponse[];
   loading: boolean;
   error: string | null;
   lastUpdated: Date | null;
+  paginationMeta?: VolumePaginationMeta;
 }
 
 export interface ScanState {
@@ -39,6 +48,11 @@ export const volumesAtom = atom<VolumeResponse[]>([]);
 export const volumesLoadingAtom = atom<boolean>(false);
 export const volumesErrorAtom = atom<string | null>(null);
 export const volumesLastUpdatedAtom = atom<Date | null>(null);
+export const volumesPaginationMetaAtom = atom<VolumePaginationMeta>({
+  page: 1,
+  pageSize: 25,
+  total: 0,
+});
 
 // Volume filters and sorting
 export const volumeFiltersAtom = atom<VolumeFilters>({});
@@ -199,6 +213,7 @@ export const volumeStateAtom = atom<VolumeState>((get) => ({
   loading: get(volumesLoadingAtom),
   error: get(volumesErrorAtom),
   lastUpdated: get(volumesLastUpdatedAtom),
+  paginationMeta: get(volumesPaginationMetaAtom),
 }));
 
 // Combined scan state

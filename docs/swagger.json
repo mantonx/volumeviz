@@ -44,12 +44,20 @@
       "description": "Docker volume discovery and management"
     },
     {
+      "name": "Reports",
+      "description": "Volume reports and analytics"
+    },
+    {
       "name": "Scanning",
       "description": "Volume size calculation and scanning operations"
     },
     {
       "name": "System",
       "description": "System information and diagnostics"
+    },
+    {
+      "name": "Database",
+      "description": "Database management and operations"
     }
   ],
   "externalDocs": {
@@ -263,13 +271,56 @@
           "Volumes"
         ],
         "summary": "List Docker volumes",
-        "description": "Get a list of all Docker volumes with optional filtering.\nSupports filtering by driver type and labels for advanced volume management.\n\n**Performance**: Optimized for large volume sets (1000+ volumes).\n**SLO**: 95th percentile response time < 500ms.\n",
+        "description": "List volumes with pagination, sorting, and filters.\n\n**Performance**: Optimized for large volume sets (1000+ volumes).\n**SLO**: 95th percentile response time < 250ms.\n",
         "operationId": "listVolumes",
         "parameters": [
           {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Items per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 25
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field and direction (e.g., name:asc, size_bytes:desc)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "name:asc"
+            },
+            "example": "size_bytes:desc,name:asc"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search query (case-insensitive substring match on name and labels)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "driver",
             "in": "query",
-            "description": "Filter volumes by driver type",
+            "description": "Filter by exact driver match",
             "required": false,
             "schema": {
               "type": "string",
@@ -279,231 +330,264 @@
                 "cifs",
                 "overlay2"
               ]
-            },
-            "example": "local"
-          },
-          {
-            "name": "label_key",
-            "in": "query",
-            "description": "Filter volumes by label key",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "example": "environment"
-          },
-          {
-            "name": "label_value",
-            "in": "query",
-            "description": "Filter volumes by label value (requires label_key)",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "example": "production"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Limit number of results (for pagination)",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 1000,
-              "default": 100
             }
           },
           {
-            "name": "offset",
+            "name": "orphaned",
             "in": "query",
-            "description": "Offset for pagination",
+            "description": "Filter by orphaned status",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
+              "type": "boolean"
             }
           },
           {
-            "name": "user_only",
+            "name": "system",
             "in": "query",
-            "description": "Filter to only show user-mounted volumes (excludes Docker infrastructure volumes)",
+            "description": "Include system/internal volumes",
             "required": false,
             "schema": {
               "type": "boolean",
               "default": false
-            },
-            "example": true
+            }
+          },
+          {
+            "name": "created_after",
+            "in": "query",
+            "description": "Filter volumes created after this timestamp",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "created_before",
+            "in": "query",
+            "description": "Filter volumes created before this timestamp",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of Docker volumes",
+            "description": "Paginated list of volumes",
             "headers": {
-              "X-Total-Count": {
-                "description": "Total number of volumes (for pagination)",
+              "X-Request-Id": {
+                "description": "Request correlation ID",
                 "schema": {
-                  "type": "integer"
-                }
-              },
-              "X-Response-Time": {
-                "description": "Response time in milliseconds",
-                "schema": {
-                  "type": "number"
+                  "type": "string"
                 }
               }
             },
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/VolumeListResponse"
+                  "$ref": "#/components/schemas/PagedVolumes"
                 },
                 "examples": {
-                  "multiple_volumes": {
-                    "summary": "Multiple volumes response",
+                  "paginated_response": {
+                    "summary": "Paginated volumes response",
                     "value": {
-                      "total": 3,
-                      "volumes": [
+                      "data": [
                         {
-                          "id": "web-data",
-                          "name": "web-data",
+                          "name": "app-data",
                           "driver": "local",
-                          "mountpoint": "/var/lib/docker/volumes/web-data/_data",
-                          "created_at": "2024-01-15T10:30:00Z",
+                          "created_at": "2025-08-08T14:04:13Z",
                           "labels": {
-                            "environment": "production",
-                            "backup": "daily"
+                            "app": "web"
                           },
-                          "options": {}
-                        },
-                        {
-                          "id": "db-storage",
-                          "name": "db-storage",
-                          "driver": "local",
-                          "mountpoint": "/var/lib/docker/volumes/db-storage/_data",
-                          "created_at": "2024-01-15T11:00:00Z",
-                          "labels": {
-                            "environment": "production",
-                            "backup": "hourly"
-                          },
-                          "options": {}
+                          "scope": "local",
+                          "mountpoint": "/var/lib/docker/volumes/app-data/_data",
+                          "size_bytes": 123456789,
+                          "last_scan_at": "2025-08-08T15:11:00Z",
+                          "attachments_count": 2,
+                          "is_system": false,
+                          "is_orphaned": false
                         }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/volumes/{volumeId}": {
-      "get": {
-        "tags": [
-          "Volumes"
-        ],
-        "summary": "Get volume details",
-        "description": "Get detailed information about a specific Docker volume including\nmetadata, labels, and usage statistics if available.\n",
-        "operationId": "getVolume",
-        "parameters": [
-          {
-            "name": "volumeId",
-            "in": "path",
-            "required": true,
-            "description": "Volume ID or name",
-            "schema": {
-              "type": "string"
-            },
-            "example": "web-data"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Volume details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VolumeResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Volume not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "examples": {
-                  "not_found": {
-                    "summary": "Volume not found",
-                    "value": {
-                      "error": "Volume not found",
-                      "code": "VOLUME_NOT_FOUND",
-                      "details": "Volume 'non-existent' does not exist"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/volumes/{volumeId}/containers": {
-      "get": {
-        "tags": [
-          "Volumes"
-        ],
-        "summary": "Get volume containers",
-        "description": "Get all containers that are currently using the specified volume,\nincluding mount information and access modes.\n",
-        "operationId": "getVolumeContainers",
-        "parameters": [
-          {
-            "name": "volumeId",
-            "in": "path",
-            "required": true,
-            "description": "Volume ID or name",
-            "schema": {
-              "type": "string"
-            },
-            "example": "web-data"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of containers using the volume",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "volume_id": {
-                      "type": "string"
-                    },
-                    "containers": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/VolumeContainer"
+                      ],
+                      "page": 1,
+                      "page_size": 25,
+                      "total": 123,
+                      "sort": "name:asc",
+                      "filters": {
+                        "driver": "local",
+                        "orphaned": false
                       }
                     }
                   }
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/volumes/{name}": {
+      "get": {
+        "tags": [
+          "Volumes"
+        ],
+        "summary": "Get volume details",
+        "description": "Get detailed information about a specific Docker volume including\nmetadata, labels, attachments, and usage statistics.\n",
+        "operationId": "getVolume",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "Volume name",
+            "schema": {
+              "type": "string"
+            },
+            "example": "app-data"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Volume details",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Request correlation ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VolumeDetail"
+                },
+                "examples": {
+                  "volume_detail": {
+                    "summary": "Volume with attachments",
+                    "value": {
+                      "name": "app-data",
+                      "driver": "local",
+                      "created_at": "2025-08-08T14:04:13Z",
+                      "labels": {
+                        "app": "web"
+                      },
+                      "scope": "local",
+                      "mountpoint": "/var/lib/docker/volumes/app-data/_data",
+                      "size_bytes": 123456789,
+                      "last_scan_at": "2025-08-08T15:11:00Z",
+                      "attachments": [
+                        {
+                          "container_id": "a1b2c3",
+                          "mount_path": "/data",
+                          "rw": true
+                        }
+                      ],
+                      "is_system": false,
+                      "is_orphaned": false,
+                      "meta": {
+                        "driver_opts": {
+                          "type": "none"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/volumes/{name}/attachments": {
+      "get": {
+        "tags": [
+          "Volumes"
+        ],
+        "summary": "Get volume attachments",
+        "description": "List containers mounting the volume, including mount paths and access modes.\n",
+        "operationId": "getVolumeAttachments",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "Volume name",
+            "schema": {
+              "type": "string"
+            },
+            "example": "app-data"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of container attachments",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Request correlation ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentsList"
+                },
+                "examples": {
+                  "attachments": {
+                    "summary": "Volume attachments",
+                    "value": {
+                      "data": [
+                        {
+                          "container_id": "a1b2c3",
+                          "container_name": "web",
+                          "mount_path": "/data",
+                          "rw": true,
+                          "first_seen": "2025-08-08T14:10:00Z",
+                          "last_seen": "2025-08-08T15:11:00Z"
+                        }
+                      ],
+                      "total": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -536,6 +620,109 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/reports/orphaned": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get orphaned volumes report",
+        "description": "Get all volumes with zero attachments (no containers mounting them).\nUseful for identifying volumes that can be cleaned up.\n",
+        "operationId": "getOrphanedVolumesReport",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Items per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 25
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field and direction",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "size_bytes:desc"
+            }
+          },
+          {
+            "name": "system",
+            "in": "query",
+            "description": "Include system/internal volumes",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of orphaned volumes",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Request correlation ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedOrphanedVolumes"
+                },
+                "examples": {
+                  "orphaned_volumes": {
+                    "summary": "Orphaned volumes sorted by size",
+                    "value": {
+                      "data": [
+                        {
+                          "name": "cache-old",
+                          "driver": "local",
+                          "size_bytes": 987654321,
+                          "created_at": "2025-07-01T12:00:00Z",
+                          "is_system": false
+                        }
+                      ],
+                      "page": 1,
+                      "page_size": 25,
+                      "total": 42
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -1479,6 +1666,101 @@
         "description": "API key for authentication (if enabled)"
       }
     },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "unauthorized",
+                "message": "Authentication required",
+                "request_id": "550e8400-e29b-41d4-a716-446655440000"
+              }
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "Forbidden",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "forbidden",
+                "message": "Insufficient permissions",
+                "request_id": "550e8400-e29b-41d4-a716-446655440000"
+              }
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Not Found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "not_found",
+                "message": "Resource not found",
+                "request_id": "550e8400-e29b-41d4-a716-446655440000"
+              }
+            }
+          }
+        }
+      },
+      "RateLimitedError": {
+        "description": "Rate Limited",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds to wait before retrying",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "rate_limited",
+                "message": "Too many requests",
+                "request_id": "550e8400-e29b-41d4-a716-446655440000"
+              }
+            }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "internal",
+                "message": "An internal error occurred",
+                "request_id": "550e8400-e29b-41d4-a716-446655440000"
+              }
+            }
+          }
+        }
+      }
+    },
     "schemas": {
       "Volume": {
         "type": "object",
@@ -1561,6 +1843,12 @@
             "description": "Timestamp of last successful scan",
             "nullable": true
           },
+          "last_scan_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of last successful scan (alias for last_scanned)",
+            "nullable": true
+          },
           "is_active": {
             "type": "boolean",
             "description": "Whether the volume is currently active",
@@ -1575,14 +1863,33 @@
             "type": "string",
             "format": "date-time",
             "description": "Last update timestamp"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Volume size in bytes",
+            "nullable": true
+          },
+          "attachments_count": {
+            "type": "integer",
+            "description": "Number of containers using this volume",
+            "default": 0
+          },
+          "is_system": {
+            "type": "boolean",
+            "description": "Whether this is a system/internal volume",
+            "default": false
+          },
+          "is_orphaned": {
+            "type": "boolean",
+            "description": "Whether this volume has no container attachments",
+            "default": false
           }
         },
         "required": [
-          "volume_id",
           "name",
           "driver",
-          "mountpoint",
-          "is_active"
+          "created_at"
         ]
       },
       "VolumeSize": {
@@ -2869,6 +3176,217 @@
         },
         "required": [
           "version"
+        ]
+      },
+      "PagedVolumes": {
+        "type": "object",
+        "description": "Paginated volumes response",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Volume"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "description": "Current page number"
+          },
+          "page_size": {
+            "type": "integer",
+            "description": "Items per page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items"
+          },
+          "sort": {
+            "type": "string",
+            "description": "Applied sort order"
+          },
+          "filters": {
+            "type": "object",
+            "description": "Applied filters"
+          }
+        },
+        "required": [
+          "data",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "VolumeDetail": {
+        "type": "object",
+        "description": "Detailed volume information with attachments",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Volume"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "attachments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              },
+              "meta": {
+                "type": "object",
+                "description": "Additional metadata",
+                "additionalProperties": true
+              }
+            }
+          }
+        ]
+      },
+      "Attachment": {
+        "type": "object",
+        "description": "Container attachment to a volume",
+        "properties": {
+          "container_id": {
+            "type": "string",
+            "description": "Container ID"
+          },
+          "container_name": {
+            "type": "string",
+            "description": "Container name"
+          },
+          "mount_path": {
+            "type": "string",
+            "description": "Mount path inside container"
+          },
+          "rw": {
+            "type": "boolean",
+            "description": "Read-write access"
+          },
+          "first_seen": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this attachment was first observed"
+          },
+          "last_seen": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this attachment was last observed"
+          }
+        },
+        "required": [
+          "container_id",
+          "mount_path",
+          "rw"
+        ]
+      },
+      "AttachmentsList": {
+        "type": "object",
+        "description": "List of volume attachments",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of attachments"
+          }
+        },
+        "required": [
+          "data",
+          "total"
+        ]
+      },
+      "PagedOrphanedVolumes": {
+        "type": "object",
+        "description": "Paginated orphaned volumes response",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "driver": {
+                  "type": "string"
+                },
+                "size_bytes": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "is_system": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "description": "Uniform error response format",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Machine-readable error code",
+                "enum": [
+                  "bad_request",
+                  "unauthorized",
+                  "forbidden",
+                  "not_found",
+                  "rate_limited",
+                  "internal"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable error message"
+              },
+              "details": {
+                "type": "object",
+                "description": "Additional error details",
+                "additionalProperties": true
+              },
+              "request_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Request correlation ID for debugging"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "request_id"
+            ]
+          }
+        },
+        "required": [
+          "error"
         ]
       },
       "ErrorResponse": {

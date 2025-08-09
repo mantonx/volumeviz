@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAtomValue } from 'jotai';
 import {
   HardDrive,
@@ -7,14 +7,17 @@ import {
   Search,
   Filter,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useVolumes, useVolumeScanning } from '@/api/services';
+import type { VolumeListParams } from '@/api/services';
 import {
-  filteredVolumesAtom,
-  volumeStatsAtom,
+  volumesAtom,
   volumesLoadingAtom,
   volumesErrorAtom,
 } from '@/store';
@@ -38,7 +41,7 @@ import type { VolumesPageProps, VolumeCardProps } from './VolumesPage.types';
  */
 const VolumeCard: React.FC<VolumeCardProps> = ({ volume }) => {
   const { scanVolume, scanResults } = useVolumeScanning();
-  const scanResult = scanResults[volume.volume_id];
+  const scanResult = scanResults[volume.volume_id || volume.name];
 
   /**
    * Initiate a volume size scan operation.
@@ -46,7 +49,8 @@ const VolumeCard: React.FC<VolumeCardProps> = ({ volume }) => {
    */
   const handleScan = async () => {
     try {
-      await scanVolume(volume.volume_id, { async: false });
+      const volumeId = volume.volume_id || volume.name;
+      await scanVolume(volumeId, { async: false });
     } catch (error) {
       console.error('Failed to scan volume:', error);
     }
@@ -93,23 +97,31 @@ const VolumeCard: React.FC<VolumeCardProps> = ({ volume }) => {
             </p>
           </div>
         </div>
-        <Badge variant={getStatusVariant(volume.is_active)}>
-          {getStatusText(volume.is_active)}
-        </Badge>
+        <div className="flex space-x-2">
+          <Badge variant={getStatusVariant(volume.is_active)}>
+            {getStatusText(volume.is_active)}
+          </Badge>
+          {volume.is_orphaned && <Badge variant="destructive">Orphaned</Badge>}
+          {volume.is_system && <Badge variant="secondary">System</Badge>}
+        </div>
       </div>
 
       <div className="space-y-3">
         <div className="flex justify-between items-center text-sm">
           <span className="text-gray-600 dark:text-gray-400">Size:</span>
           <span className="font-medium text-gray-900 dark:text-white">
-            {scanResult ? formatSize(scanResult.size_bytes) : 'Not scanned'}
+            {volume.size_bytes
+              ? formatSize(volume.size_bytes)
+              : scanResult
+                ? formatSize(scanResult.size_bytes)
+                : 'Unknown'}
           </span>
         </div>
 
         <div className="flex justify-between items-center text-sm">
           <span className="text-gray-600 dark:text-gray-400">Containers:</span>
           <span className="font-medium text-gray-900 dark:text-white">
-            {volume.container_count || 0}
+            {volume.attachments_count || 0}
           </span>
         </div>
 
@@ -182,31 +194,92 @@ const VolumeCard: React.FC<VolumeCardProps> = ({ volume }) => {
  * large volumes (background processing with progress updates).
  */
 export const VolumesPage: React.FC<VolumesPageProps> = () => {
-  const { fetchVolumes, refreshVolumes } = useVolumes();
-  const filteredVolumes = useAtomValue(filteredVolumesAtom);
-  const volumeStats = useAtomValue(volumeStatsAtom);
+  const { fetchVolumes, refreshVolumes, paginationMeta } = useVolumes();
+  const volumes = useAtomValue(volumesAtom);
   const loading = useAtomValue(volumesLoadingAtom);
   const error = useAtomValue(volumesErrorAtom);
 
+  // Local state for search and filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDriver, setSelectedDriver] = useState<string>('');
+  const [showOrphanedOnly, setShowOrphanedOnly] = useState(false);
+  const [sortField, setSortField] = useState('name:asc');
+  const [pageSize, setPageSize] = useState(25);
+
+  // Current filter parameters
+  const currentParams: VolumeListParams = {
+    page: paginationMeta.page,
+    page_size: pageSize,
+    sort: sortField,
+    q: searchQuery || undefined,
+    driver: selectedDriver || undefined,
+    orphaned: showOrphanedOnly || undefined,
+    system: false, // Default to hiding system volumes
+  };
+
   /**
-   * Load volume data when the page mounts
+   * Load volume data when the page mounts or params change
    */
   useEffect(() => {
-    fetchVolumes();
-  }, [fetchVolumes]);
+    fetchVolumes(currentParams);
+  }, [
+    paginationMeta.page,
+    pageSize,
+    sortField,
+    searchQuery,
+    selectedDriver,
+    showOrphanedOnly,
+  ]);
 
   /**
    * Handle manual refresh of volume data
    */
-  const handleRefresh = () => {
-    refreshVolumes();
-  };
+  const handleRefresh = useCallback(() => {
+    fetchVolumes(currentParams);
+  }, [fetchVolumes, currentParams]);
 
   /**
-   * Handle bulk scan operation for all volumes
+   * Handle search input changes
+   */
+  const handleSearchChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(event.target.value);
+      // Reset to first page when searching
+      fetchVolumes({
+        ...currentParams,
+        page: 1,
+        q: event.target.value || undefined,
+      });
+    },
+    [currentParams, fetchVolumes],
+  );
+
+  /**
+   * Handle page changes
+   */
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      fetchVolumes({ ...currentParams, page: newPage });
+    },
+    [currentParams, fetchVolumes],
+  );
+
+  /**
+   * Handle sort changes
+   */
+  const handleSortChange = useCallback(
+    (newSort: string) => {
+      setSortField(newSort);
+      fetchVolumes({ ...currentParams, page: 1, sort: newSort });
+    },
+    [currentParams, fetchVolumes],
+  );
+
+  /**
+   * Handle bulk scan operation for visible volumes
    */
   const handleBulkScan = async () => {
-    // TODO: Implement bulk scanning
+    // TODO: Implement bulk scanning with selected volumes
     console.log('Bulk scan not yet implemented');
   };
 
@@ -266,7 +339,7 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
                 Total Volumes
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {volumeStats.total}
+                {paginationMeta.total}
               </p>
             </div>
             <HardDrive className="h-8 w-8 text-blue-500" />
@@ -276,9 +349,11 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Current Page
+              </p>
               <p className="text-2xl font-bold text-green-600">
-                {volumeStats.active}
+                {paginationMeta.page}
               </p>
             </div>
             <Activity className="h-8 w-8 text-green-500" />
@@ -289,10 +364,10 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Inactive
+                Page Size
               </p>
               <p className="text-2xl font-bold text-gray-600">
-                {volumeStats.inactive}
+                {paginationMeta.pageSize}
               </p>
             </div>
             <Database className="h-8 w-8 text-gray-500" />
@@ -303,10 +378,10 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Total Size
+                Showing
               </p>
               <p className="text-2xl font-bold text-purple-600">
-                {volumeStats.totalSize || '0 B'}
+                {volumes.length}
               </p>
             </div>
             <Database className="h-8 w-8 text-purple-500" />
@@ -322,26 +397,55 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search volumes..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Search volumes by name..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm">
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={selectedDriver}
+              onChange={(e) => setSelectedDriver(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Drivers</option>
+              <option value="local">Local</option>
+              <option value="nfs">NFS</option>
+              <option value="cifs">CIFS</option>
+              <option value="overlay2">Overlay2</option>
+            </select>
+
+            <select
+              value={sortField}
+              onChange={(e) => handleSortChange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="name:asc">Name (A-Z)</option>
+              <option value="name:desc">Name (Z-A)</option>
+              <option value="created_at:desc">Newest First</option>
+              <option value="created_at:asc">Oldest First</option>
+              <option value="size_bytes:desc">Largest First</option>
+              <option value="size_bytes:asc">Smallest First</option>
+              <option value="attachments_count:desc">Most Used</option>
+              <option value="attachments_count:asc">Least Used</option>
+            </select>
+
+            <Button
+              variant={showOrphanedOnly ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowOrphanedOnly(!showOrphanedOnly)}
+            >
               <Filter className="h-4 w-4 mr-2" />
-              Driver
-            </Button>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Status
+              {showOrphanedOnly ? 'Show All' : 'Orphaned Only'}
             </Button>
           </div>
         </div>
       </Card>
 
       {/* Volumes Grid */}
-      {loading && filteredVolumes.length === 0 ? (
+      {loading && volumes.length === 0 ? (
         <div className="flex items-center justify-center min-h-64">
           <div className="text-center">
             <RefreshCw className="h-8 w-8 animate-spin mx-auto text-blue-500 mb-4" />
@@ -350,22 +454,99 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
             </p>
           </div>
         </div>
-      ) : filteredVolumes.length === 0 ? (
+      ) : volumes.length === 0 ? (
         <Card className="p-8 text-center">
           <HardDrive className="h-12 w-12 mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             No Volumes Found
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
-            No Docker volumes are currently available or match your filters.
+            {searchQuery || selectedDriver || showOrphanedOnly
+              ? 'No volumes match your search criteria. Try adjusting your filters.'
+              : 'No Docker volumes are currently available.'}
           </p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVolumes.map((volume) => (
-            <VolumeCard key={volume.volume_id || volume.name} volume={volume} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {volumes.map((volume) => (
+              <VolumeCard
+                key={volume.volume_id || volume.name}
+                volume={volume}
+              />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {paginationMeta.total > paginationMeta.pageSize && (
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Showing{' '}
+                  {(paginationMeta.page - 1) * paginationMeta.pageSize + 1}-
+                  {Math.min(
+                    paginationMeta.page * paginationMeta.pageSize,
+                    paginationMeta.total,
+                  )}{' '}
+                  of {paginationMeta.total} volumes
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={paginationMeta.page <= 1}
+                    onClick={() => handlePageChange(paginationMeta.page - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+
+                  <div className="flex items-center space-x-1">
+                    {Array.from(
+                      {
+                        length: Math.min(
+                          5,
+                          Math.ceil(
+                            paginationMeta.total / paginationMeta.pageSize,
+                          ),
+                        ),
+                      },
+                      (_, i) => {
+                        const pageNum = i + 1;
+                        const isActive = pageNum === paginationMeta.page;
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={isActive ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handlePageChange(pageNum)}
+                            className="min-w-[40px]"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      },
+                    )}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={
+                      paginationMeta.page >=
+                      Math.ceil(paginationMeta.total / paginationMeta.pageSize)
+                    }
+                    onClick={() => handlePageChange(paginationMeta.page + 1)}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );

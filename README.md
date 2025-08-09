@@ -209,9 +209,15 @@ VolumeViz automatically filters volumes to show only user-mounted data:
 ## API Endpoints
 
 ### Volume Management
-- `GET /api/v1/volumes` - List volumes with optional filtering
-- `GET /api/v1/volumes/{id}` - Get volume details
-- `GET /api/v1/volumes/{id}/containers` - List containers using volume
+- `GET /api/v1/volumes` - List volumes with pagination, sorting, and filtering
+  - **Pagination**: `?page=1&page_size=25` (max 200 items per page)
+  - **Sorting**: `?sort=name:asc,size_bytes:desc` (supports multiple fields)
+  - **Filtering**: `?q=search&driver=local&orphaned=true&system=false&created_after=2024-01-01T00:00:00Z`
+- `GET /api/v1/volumes/{name}` - Get detailed volume info with attachments
+- `GET /api/v1/volumes/{name}/attachments` - List containers mounting the volume
+- `GET /api/v1/reports/orphaned` - List orphaned volumes (zero attachments)
+
+**Legacy endpoints** (for backwards compatibility):
 - `GET /api/v1/volumes/{id}/size` - Get volume size (cached)
 - `POST /api/v1/volumes/{id}/size/refresh` - Trigger size rescan
 
@@ -222,6 +228,41 @@ VolumeViz automatically filters volumes to show only user-mounted data:
 
 ### Bulk Operations
 - `POST /api/v1/volumes/bulk-scan` - Scan multiple volumes
+
+### API Features
+
+**Pagination**: All list endpoints support pagination with consistent parameters:
+```
+GET /api/v1/volumes?page=2&page_size=50
+```
+
+**Sorting**: Multi-field sorting with direction control:
+```
+GET /api/v1/volumes?sort=created_at:desc,name:asc
+```
+Supported sort fields: `name`, `driver`, `created_at`, `size_bytes`, `attachments_count`
+
+**Filtering**: Advanced filtering options for volumes:
+```
+GET /api/v1/volumes?q=media&driver=local&orphaned=false&system=false
+```
+- `q`: Text search across volume names
+- `driver`: Exact driver match (local, nfs, etc.)
+- `orphaned`: Filter by orphaned status (true/false)
+- `system`: Include system volumes (default: false)
+- `created_after`/`created_before`: Date range filtering (RFC3339 format)
+
+**Error Handling**: Uniform error responses with error codes, messages, and request tracking:
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid sort field: invalid_field",
+    "details": {"allowed_fields": ["name", "driver", "created_at"]},
+    "request_id": "req_123456"
+  }
+}
+```
 
 ## Security
 

@@ -5,8 +5,7 @@
 
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
-import { useHttpClient } from './http-client';
-import type { ApiResponse } from './http-client';
+import { getErrorMessage } from '@/utils/errorHandling';
 
 // Volume atoms
 import {
@@ -14,6 +13,7 @@ import {
   volumesLoadingAtom,
   volumesErrorAtom,
   volumesLastUpdatedAtom,
+  volumesPaginationMetaAtom,
   scanLoadingAtom,
   scanErrorAtom,
   scanResultsAtom,
@@ -45,11 +45,38 @@ import type {
   RefreshRequest,
 } from './client';
 
+// Import generated API client
+import { Api, type PagedVolumes, type Volume } from './generated/volumeviz-api';
+
+// Create configured API client instance
+const volumeVizApi = new Api({
+  baseUrl:
+    (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080/api/v1',
+  baseApiParams: {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  },
+});
+
+// Updated VolumeListParams to match v1 API specification
 export interface VolumeListParams {
-  driver?: string;
-  label_key?: string;
-  label_value?: string;
-  user_only?: boolean;
+  // Pagination parameters
+  page?: number;
+  page_size?: number;
+
+  // Sorting parameter
+  sort?: string;
+
+  // Search and filter parameters
+  q?: string; // Search query
+  driver?: 'local' | 'nfs' | 'cifs' | 'overlay2';
+  orphaned?: boolean;
+  system?: boolean; // Replaces user_only (defaults to false)
+
+  // Date filters
+  created_after?: string; // ISO 8601 date string
+  created_before?: string; // ISO 8601 date string
 }
 
 export interface HealthCheckResponse {
@@ -67,43 +94,66 @@ export interface HealthCheckResponse {
   timestamp?: number;
 }
 
+// Interface for paginated volume response metadata
+export interface VolumesPaginationMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  sort?: string;
+  filters?: Record<string, any>;
+}
+
 /**
- * React hook for managing Docker volume data and operations.
+ * React hook for managing Docker volume data with v1 API pagination.
  *
  * Provides comprehensive volume management functionality including:
- * - Fetching volume lists with optional filtering (driver, labels)
+ * - Fetching volume lists with pagination, sorting, and filtering
  * - Loading states and error handling
  * - Last updated timestamp tracking
+ * - Pagination metadata tracking
  * - Automatic state management through Jotai atoms
  *
  * @returns Object containing:
  * - volumes: Current volume data array
  * - loading: Boolean indicating if a request is in progress
  * - error: Error message string or null
- * - fetchVolumes: Function to fetch volumes with optional filters
- * - refreshVolumes: Convenience function to refresh current volume list
+ * - paginationMeta: Pagination metadata (page, total, etc.)
+ * - fetchVolumes: Function to fetch volumes with pagination/filters
+ * - refreshVolumes: Convenience function to refresh with last params
  *
  * @example
  * ```tsx
- * const { volumes, loading, error, fetchVolumes } = useVolumes();
+ * const { volumes, loading, error, paginationMeta, fetchVolumes } = useVolumes();
  *
- * // Fetch all volumes
+ * // Fetch first page with default settings
  * useEffect(() => {
  *   fetchVolumes();
  * }, []);
  *
- * // Fetch volumes with driver filter
- * const handleFilterByLocal = () => {
- *   fetchVolumes({ driver: 'local' });
+ * // Fetch with pagination and filters
+ * const handleSearch = () => {
+ *   fetchVolumes({
+ *     page: 1,
+ *     page_size: 50,
+ *     q: 'web',
+ *     sort: 'size_bytes:desc'
+ *   });
  * };
  * ```
  */
 export function useVolumes() {
-  const httpClient = useHttpClient();
   const [volumes, setVolumes] = useAtom(volumesAtom);
   const [loading, setLoading] = useAtom(volumesLoadingAtom);
   const [error, setError] = useAtom(volumesErrorAtom);
   const setLastUpdated = useSetAtom(volumesLastUpdatedAtom);
+
+  // Use pagination atom instead of local state
+  const [paginationMeta, setPaginationMeta] = useAtom(
+    volumesPaginationMetaAtom,
+  );
+
+  // Store last used params for refresh functionality
+  const lastParamsRef = useRef<VolumeListParams | undefined>();
 
   const fetchVolumes = useCallback(
     async (params?: VolumeListParams) => {
@@ -111,44 +161,66 @@ export function useVolumes() {
         setLoading(true);
         setError(null);
 
-        const queryParams = new URLSearchParams();
-        if (params?.driver) queryParams.append('driver', params.driver);
-        if (params?.label_key)
-          queryParams.append('label_key', params.label_key);
-        if (params?.label_value)
-          queryParams.append('label_value', params.label_value);
-        // Default to showing only user volumes (excludes Docker infrastructure)
-        const userOnly = params?.user_only ?? true;
-        if (userOnly) queryParams.append('user_only', 'true');
+        // Store params for refresh functionality
+        lastParamsRef.current = params;
 
-        const queryString = queryParams.toString();
-        const endpoint = `volumes${queryString ? `?${queryString}` : ''}`;
+        // Build query object for generated API client
+        const queryParams = {
+          // Pagination parameters with defaults
+          page: params?.page ?? 1,
+          page_size: params?.page_size ?? 25,
 
-        const response: ApiResponse<{ volumes: VolumeResponse[] }> =
-          await httpClient.get(endpoint);
+          // Sorting parameter
+          sort: params?.sort,
 
-        const volumes = response.data.volumes || [];
-        setVolumes(volumes);
+          // Search and filter parameters
+          q: params?.q,
+          driver: params?.driver,
+          orphaned: params?.orphaned,
+          system: params?.system,
+
+          // Date filters
+          created_after: params?.created_after,
+          created_before: params?.created_before,
+        };
+
+        // Use generated API client
+        const response = await volumeVizApi.volumes.listVolumes(queryParams);
+        const pagedData: PagedVolumes = response.data;
+
+        // Update volumes array
+        const volumeData = pagedData.data || [];
+        setVolumes(volumeData as VolumeResponse[]);
+
+        // Update pagination metadata
+        setPaginationMeta({
+          page: pagedData.page,
+          pageSize: pagedData.page_size,
+          total: pagedData.total,
+          sort: pagedData.sort,
+          filters: pagedData.filters,
+        });
+
         setLastUpdated(new Date());
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'Failed to fetch volumes';
+        const errorMessage = getErrorMessage(err);
         setError(errorMessage);
       } finally {
         setLoading(false);
       }
     },
-    [httpClient, setVolumes, setLoading, setError, setLastUpdated],
+    [setVolumes, setLoading, setError, setLastUpdated, setPaginationMeta],
   );
 
   const refreshVolumes = useCallback(() => {
-    return fetchVolumes();
+    return fetchVolumes(lastParamsRef.current);
   }, [fetchVolumes]);
 
   return {
     volumes,
     loading,
     error,
+    paginationMeta,
     fetchVolumes,
     refreshVolumes,
   };
@@ -187,7 +259,6 @@ export function useVolumes() {
  * ```
  */
 export function useVolumeScanning() {
-  const httpClient = useHttpClient();
   const [scanLoading, setScanLoading] = useAtom(scanLoadingAtom);
   const [scanError, setScanError] = useAtom(scanErrorAtom);
   const [scanResults, setScanResults] = useAtom(scanResultsAtom);
@@ -200,8 +271,11 @@ export function useVolumeScanning() {
         setScanLoading((prev) => ({ ...prev, [volumeId]: true }));
         setScanError((prev) => ({ ...prev, [volumeId]: null }));
 
-        const response: ApiResponse<ScanResponse | AsyncScanResponse> =
-          await httpClient.post(`volumes/${volumeId}/size/refresh`, options);
+        // Use generated API client
+        const response = await volumeVizApi.volumes.refreshVolumeSize(
+          volumeId,
+          options,
+        );
 
         // Check if it's an async scan
         if ('scan_id' in response.data) {
@@ -220,15 +294,14 @@ export function useVolumeScanning() {
 
         return response.data;
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'Failed to scan volume';
+        const errorMessage = getErrorMessage(err);
         setScanError((prev) => ({ ...prev, [volumeId]: errorMessage }));
         throw err;
       } finally {
         setScanLoading((prev) => ({ ...prev, [volumeId]: false }));
       }
     },
-    [httpClient, setScanLoading, setScanError, setScanResults, setAsyncScans],
+    [setScanLoading, setScanError, setScanResults, setAsyncScans],
   );
 
   const getVolumeSize = useCallback(
@@ -237,35 +310,35 @@ export function useVolumeScanning() {
         setScanLoading((prev) => ({ ...prev, [volumeId]: true }));
         setScanError((prev) => ({ ...prev, [volumeId]: null }));
 
-        const response: ApiResponse<ScanResponse> = await httpClient.get(
-          `volumes/${volumeId}/size`,
-        );
+        // Use generated API client
+        const response = await volumeVizApi.volumes.getVolumeSize(volumeId);
 
         setScanResults((prev) => ({
           ...prev,
-          [volumeId]: response.data,
+          [volumeId]: response.data as ScanResponse,
         }));
 
         return response.data;
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'Failed to get volume size';
+        const errorMessage = getErrorMessage(err);
         setScanError((prev) => ({ ...prev, [volumeId]: errorMessage }));
         throw err;
       } finally {
         setScanLoading((prev) => ({ ...prev, [volumeId]: false }));
       }
     },
-    [httpClient, setScanLoading, setScanError, setScanResults],
+    [setScanLoading, setScanError, setScanResults],
   );
 
   const getScanStatus = useCallback(
-    async (volumeId: string) => {
-      const response: ApiResponse<{ status: string; progress?: number }> =
-        await httpClient.get(`volumes/${volumeId}/scan/status`);
+    async (volumeId: string, scanId?: string) => {
+      // Use generated API client
+      const response = await volumeVizApi.volumes.getScanStatus(volumeId, {
+        scan_id: scanId,
+      });
       return response.data;
     },
-    [httpClient],
+    [],
   );
 
   return {
@@ -283,7 +356,6 @@ export function useVolumeScanning() {
  * Hook for API health monitoring
  */
 export function useApiHealth() {
-  const httpClient = useHttpClient();
   const [health, setHealth] = useAtom(apiHealthAtom);
   const [loading, setLoading] = useAtom(apiHealthLoadingAtom);
   const [error, setError] = useAtom(apiHealthErrorAtom);
@@ -294,19 +366,17 @@ export function useApiHealth() {
       setLoading(true);
       setError(null);
 
-      const response: ApiResponse<HealthCheckResponse> = await httpClient.get(
-        'database/health',
-        { skipErrorHandling: true },
-      );
+      // Use generated API client
+      const response = await volumeVizApi.database.getDatabaseHealth();
+      const healthData = response.data;
 
       setHealth({
-        status: response.data.status,
-        timestamp: response.data.timestamp || Date.now(),
-        checks: response.data.checks || {},
+        status: healthData.status,
+        timestamp: Date.now(),
+        checks: {},
       });
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Health check failed';
+      const errorMessage = getErrorMessage(err);
       setError(errorMessage);
       setHealth({
         status: 'unhealthy',
@@ -316,14 +386,13 @@ export function useApiHealth() {
     } finally {
       setLoading(false);
     }
-  }, [httpClient, setHealth, setLoading, setError]);
+  }, [setHealth, setLoading, setError]);
 
   const checkDatabaseHealth = useCallback(async () => {
-    const response: ApiResponse<any> = await httpClient.get('database/health', {
-      skipErrorHandling: true,
-    });
+    // Use generated API client
+    const response = await volumeVizApi.database.getDatabaseHealth();
     return response.data;
-  }, [httpClient]);
+  }, []);
 
   return {
     health,
@@ -387,14 +456,12 @@ export function useAutoRefresh() {
  * Hook for bulk operations
  */
 export function useBulkOperations() {
-  const httpClient = useHttpClient();
   const { refreshVolumes } = useVolumes();
 
   const bulkScan = useCallback(
     async (volumeIds: string[], options?: RefreshRequest) => {
-      const response: ApiResponse<{
-        scans: Record<string, AsyncScanResponse>;
-      }> = await httpClient.post('volumes/bulk-scan', {
+      // Use generated API client for bulk scan
+      const response = await volumeVizApi.volumes.bulkScanVolumes({
         volume_ids: volumeIds,
         ...options,
       });
@@ -404,7 +471,7 @@ export function useBulkOperations() {
 
       return response.data;
     },
-    [httpClient, refreshVolumes],
+    [refreshVolumes],
   );
 
   return {
@@ -421,7 +488,6 @@ export function useBulkOperations() {
  * @returns Container management functions and state
  */
 export function useContainers() {
-  const httpClient = useHttpClient();
   const [containers, setContainers] = useAtom(containersAtom);
   const [loading, setLoading] = useAtom(containersLoadingAtom);
   const [error, setError] = useAtom(containersErrorAtom);
@@ -432,31 +498,25 @@ export function useContainers() {
       setLoading(true);
       setError(null);
 
-      // Fetch containers for each volume
+      // Fetch containers for each volume using new attachments endpoint
       const allContainers = new Map(); // Use Map to deduplicate by container ID
 
       // Fetch containers for each volume in parallel
       const containerPromises = volumes.map(async (volume) => {
-        if (!volume.id) return [];
+        if (!volume.name) return [];
 
         try {
-          const response: ApiResponse<{
-            containers: Array<{
-              id: string;
-              name: string;
-              state: string;
-              status: string;
-              mount_path: string;
-              mount_type: string;
-              access_mode: string;
-            }>;
-          }> = await httpClient.get(`volumes/${volume.id}/containers`);
+          // Use generated API client for volume attachments
+          const response = await volumeVizApi.volumes.getVolumeAttachments(
+            volume.name,
+          );
+          const attachmentsList = response.data;
 
-          return response.data.containers || [];
+          return attachmentsList.data || [];
         } catch (err) {
           // Silently ignore individual volume errors
           console.warn(
-            `Failed to fetch containers for volume ${volume.id}:`,
+            `Failed to fetch containers for volume ${volume.name}:`,
             err,
           );
           return [];
@@ -465,17 +525,17 @@ export function useContainers() {
 
       const containerArrays = await Promise.all(containerPromises);
 
-      // Aggregate and deduplicate containers
-      containerArrays.forEach((containerList) => {
-        containerList.forEach((container) => {
-          if (!allContainers.has(container.id)) {
-            allContainers.set(container.id, {
-              id: container.id,
-              name: container.name.replace(/^\//, ''), // Remove leading slash
-              status: container.state || 'unknown',
-              state: container.state,
-              image: '', // Not provided by volume containers endpoint
-              created: '', // Not provided by volume containers endpoint
+      // Aggregate and deduplicate containers from attachments
+      containerArrays.forEach((attachmentsList) => {
+        attachmentsList.forEach((attachment) => {
+          if (!allContainers.has(attachment.container_id)) {
+            allContainers.set(attachment.container_id, {
+              id: attachment.container_id,
+              name:
+                attachment.container_name?.replace(/^\//, '') ||
+                attachment.container_id, // Remove leading slash
+              status: 'unknown' as const, // State not provided by attachments endpoint
+              state: 'unknown',
             });
           }
         });
@@ -484,13 +544,12 @@ export function useContainers() {
       const uniqueContainers = Array.from(allContainers.values());
       setContainers(uniqueContainers);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Failed to fetch containers';
+      const errorMessage = getErrorMessage(err);
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [httpClient, volumes, setContainers, setLoading, setError]);
+  }, [volumes, setContainers, setLoading, setError]);
 
   // Auto-fetch containers when volumes change
   useEffect(() => {

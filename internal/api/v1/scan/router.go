@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
 	"github.com/mantonx/volumeviz/internal/database"
+	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
@@ -13,10 +14,10 @@ type Router struct {
 }
 
 // NewRouter creates a new scan router
-func NewRouter(scanner interfaces.VolumeScanner, hub *websocket.Hub, db *database.DB) *Router {
+func NewRouter(scanner interfaces.VolumeScanner, hub *websocket.Hub, db *database.DB, scanScheduler scheduler.ScanScheduler) *Router {
 	metricsRepo := database.NewVolumeMetricsRepository(db)
 	return &Router{
-		handler: NewHandler(scanner, hub, metricsRepo),
+		handler: NewHandler(scanner, hub, metricsRepo, scanScheduler),
 	}
 }
 
@@ -37,4 +38,12 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 
 	// Scan methods
 	group.GET("/scan-methods", r.handler.GetScanMethods)
+
+	// Manual scan trigger endpoints (scheduler-based)
+	group.POST("/volumes/:name/scan", r.handler.TriggerVolumeScan)    // Enqueue single volume
+	group.POST("/scan/now", r.handler.TriggerAllVolumesScan)         // Enqueue all volumes (admin-only)
+	
+	// Scheduler management endpoints
+	group.GET("/scheduler/status", r.handler.GetSchedulerStatus)     // Get scheduler status
+	group.GET("/scheduler/metrics", r.handler.GetSchedulerMetrics)   // Get scheduler metrics
 }

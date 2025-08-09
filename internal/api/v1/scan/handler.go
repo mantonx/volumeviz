@@ -12,6 +12,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
 	coremodels "github.com/mantonx/volumeviz/internal/core/models"
 	"github.com/mantonx/volumeviz/internal/database"
+	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/utils"
 	"github.com/mantonx/volumeviz/internal/websocket"
 )
@@ -22,15 +23,17 @@ type Handler struct {
 	scanner     interfaces.VolumeScanner
 	hub         *websocket.Hub
 	metricsRepo *database.VolumeMetricsRepository
+	scheduler   scheduler.ScanScheduler // Optional scheduler for manual scan triggers
 }
 
 // NewHandler creates a new scan handler
-// Pass in your volume scanner implementation, WebSocket hub, and metrics repository
-func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, metricsRepo *database.VolumeMetricsRepository) *Handler {
+// Pass in your volume scanner implementation, WebSocket hub, metrics repository, and optional scheduler
+func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, metricsRepo *database.VolumeMetricsRepository, scheduler scheduler.ScanScheduler) *Handler {
 	return &Handler{
 		scanner:     scanner,
 		hub:         hub,
 		metricsRepo: metricsRepo,
+		scheduler:   scheduler,
 	}
 }
 
@@ -397,4 +400,164 @@ func (h *Handler) ValidateVolumeID(volumeID string) error {
 	}
 
 	return nil
+}
+
+// TriggerVolumeScan enqueues a single volume for scanning via the scheduler
+// POST /api/v1/volumes/{name}/scan
+func (h *Handler) TriggerVolumeScan(c *gin.Context) {
+	if h.scheduler == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Scan scheduler not available",
+			"code":  "SCHEDULER_UNAVAILABLE",
+		})
+		return
+	}
+
+	volumeName := c.Param("name")
+	if volumeName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Volume name is required",
+			"code":  "MISSING_VOLUME_NAME",
+		})
+		return
+	}
+
+	// Validate volume name format
+	if err := h.ValidateVolumeID(volumeName); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid volume name",
+			"code":    "INVALID_VOLUME_NAME",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Enqueue the volume for scanning
+	scanID, err := h.scheduler.EnqueueVolume(volumeName)
+	if err != nil {
+		// Handle different error types
+		if strings.Contains(err.Error(), "scheduler not running") {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error":   "Scan scheduler is not running",
+				"code":    "SCHEDULER_NOT_RUNNING",
+				"details": err.Error(),
+			})
+			return
+		}
+		if strings.Contains(err.Error(), "queue full") {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":   "Scan queue is full",
+				"code":    "QUEUE_FULL",
+				"details": "Try again later when queue capacity is available",
+			})
+			return
+		}
+		if strings.Contains(err.Error(), "skip pattern") || strings.Contains(err.Error(), "not in allow list") {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":   "Volume scan not allowed",
+				"code":    "SCAN_FORBIDDEN",
+				"details": err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to enqueue volume scan",
+			"code":    "ENQUEUE_FAILED",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Return scan ID and status URL
+	c.JSON(http.StatusAccepted, gin.H{
+		"message":    "Volume scan enqueued",
+		"scan_id":    scanID,
+		"volume":     volumeName,
+		"status_url": fmt.Sprintf("/api/v1/scans/%s/status", scanID),
+	})
+}
+
+// TriggerAllVolumescan enqueues all volumes for scanning (admin-only if auth enabled)
+// POST /api/v1/scan/now
+func (h *Handler) TriggerAllVolumesScan(c *gin.Context) {
+	if h.scheduler == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Scan scheduler not available",
+			"code":  "SCHEDULER_UNAVAILABLE",
+		})
+		return
+	}
+
+	// TODO: Add admin authentication check when auth is implemented
+	// For now, anyone can trigger this endpoint
+
+	// Enqueue all volumes for scanning
+	batchID, err := h.scheduler.EnqueueAllVolumes()
+	if err != nil {
+		// Handle different error types
+		if strings.Contains(err.Error(), "scheduler not running") {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error":   "Scan scheduler is not running",
+				"code":    "SCHEDULER_NOT_RUNNING",
+				"details": err.Error(),
+			})
+			return
+		}
+		if strings.Contains(err.Error(), "rate limited") {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":   "Rate limited",
+				"code":    "RATE_LIMITED",
+				"details": err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to enqueue all volumes scan",
+			"code":    "ENQUEUE_ALL_FAILED",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Get scheduler status for additional info
+	status := h.scheduler.GetStatus()
+	
+	c.JSON(http.StatusAccepted, gin.H{
+		"message":     "All volumes scan enqueued",
+		"batch_id":    batchID,
+		"queue_depth": status.QueueDepth,
+		"workers":     status.WorkerCount,
+	})
+}
+
+// GetSchedulerStatus returns the current status of the scan scheduler
+// GET /api/v1/scheduler/status
+func (h *Handler) GetSchedulerStatus(c *gin.Context) {
+	if h.scheduler == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Scan scheduler not available",
+			"code":  "SCHEDULER_UNAVAILABLE",
+		})
+		return
+	}
+
+	status := h.scheduler.GetStatus()
+	c.JSON(http.StatusOK, status)
+}
+
+// GetSchedulerMetrics returns metrics for the scan scheduler (for Prometheus)
+// GET /api/v1/scheduler/metrics
+func (h *Handler) GetSchedulerMetrics(c *gin.Context) {
+	if h.scheduler == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Scan scheduler not available",
+			"code":  "SCHEDULER_UNAVAILABLE",
+		})
+		return
+	}
+
+	metrics := h.scheduler.GetMetrics()
+	c.JSON(http.StatusOK, metrics)
 }

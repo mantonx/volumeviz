@@ -85,10 +85,12 @@ func generateMockVolumes(count int) []models.Volume {
 func BenchmarkListVolumes_Small(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{})
+	handler := NewHandler(mockService, &websocket.Hub{}, nil)
 
 	volumes := generateMockVolumes(10)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
+	mockService.On("GetVolumeContainers", mock.Anything, mock.Anything).Return([]models.VolumeContainer{}, nil)
+	mockService.On("GetVolumeContainers", mock.Anything, mock.Anything).Return([]models.VolumeContainer{}, nil)
 
 	router := gin.New()
 	router.GET("/volumes", handler.ListVolumes)
@@ -109,11 +111,12 @@ func BenchmarkListVolumes_Small(b *testing.B) {
 func BenchmarkListVolumes_Large(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{})
+	handler := NewHandler(mockService, &websocket.Hub{}, nil)
 
 	// Generate 1000+ volumes as per enhanced requirements
 	volumes := generateMockVolumes(1000)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
+	mockService.On("GetVolumeContainers", mock.Anything, mock.Anything).Return([]models.VolumeContainer{}, nil)
 
 	router := gin.New()
 	router.GET("/volumes", handler.ListVolumes)
@@ -142,10 +145,11 @@ func BenchmarkListVolumes_Large(b *testing.B) {
 func BenchmarkListVolumes_Concurrent(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{})
+	handler := NewHandler(mockService, &websocket.Hub{}, nil)
 
 	volumes := generateMockVolumes(500)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
+	mockService.On("GetVolumeContainers", mock.Anything, mock.Anything).Return([]models.VolumeContainer{}, nil)
 
 	router := gin.New()
 	router.GET("/volumes", handler.ListVolumes)
@@ -176,7 +180,7 @@ func BenchmarkListVolumes_Concurrent(b *testing.B) {
 func BenchmarkGetVolume(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{})
+	handler := NewHandler(mockService, &websocket.Hub{}, nil)
 
 	volume := &models.Volume{
 		ID:         "test-volume",
@@ -215,10 +219,11 @@ func BenchmarkGetVolume(b *testing.B) {
 func TestSLOCompliance(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{})
+	handler := NewHandler(mockService, &websocket.Hub{}, nil)
 
 	volumes := generateMockVolumes(1000)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
+	mockService.On("GetVolumeContainers", mock.Anything, mock.Anything).Return([]models.VolumeContainer{}, nil)
 
 	router := gin.New()
 	router.GET("/volumes", handler.ListVolumes)

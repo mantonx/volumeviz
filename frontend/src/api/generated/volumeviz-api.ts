@@ -21,7 +21,7 @@ export interface Volume {
    * Docker volume identifier (unique)
    * @example "web-data"
    */
-  volume_id: string;
+  volume_id?: string;
   /**
    * Volume name
    * @example "web-data"
@@ -36,7 +36,7 @@ export interface Volume {
    * Host filesystem mount point
    * @example "/var/lib/docker/volumes/web-data/_data"
    */
-  mountpoint: string;
+  mountpoint?: string;
   /**
    * Volume labels as key-value pairs
    * @example {"environment":"production","backup":"daily"}
@@ -63,20 +63,45 @@ export interface Volume {
    */
   last_scanned?: string | null;
   /**
+   * Timestamp of last successful scan (alias for last_scanned)
+   * @format date-time
+   */
+  last_scan_at?: string | null;
+  /**
    * Whether the volume is currently active
    * @default true
    */
-  is_active: boolean;
+  is_active?: boolean;
   /**
    * Volume creation timestamp
    * @format date-time
    */
-  created_at?: string;
+  created_at: string;
   /**
    * Last update timestamp
    * @format date-time
    */
   updated_at?: string;
+  /**
+   * Volume size in bytes
+   * @format int64
+   */
+  size_bytes?: number | null;
+  /**
+   * Number of containers using this volume
+   * @default 0
+   */
+  attachments_count?: number;
+  /**
+   * Whether this is a system/internal volume
+   * @default false
+   */
+  is_system?: boolean;
+  /**
+   * Whether this volume has no container attachments
+   * @default false
+   */
+  is_orphaned?: boolean;
 }
 
 /** Volume size calculation result */
@@ -727,6 +752,96 @@ export interface VersionInfo {
   go_version?: string;
 }
 
+/** Paginated volumes response */
+export interface PagedVolumes {
+  data: Volume[];
+  /** Current page number */
+  page: number;
+  /** Items per page */
+  page_size: number;
+  /** Total number of items */
+  total: number;
+  /** Applied sort order */
+  sort?: string;
+  /** Applied filters */
+  filters?: object;
+}
+
+/** Detailed volume information with attachments */
+export type VolumeDetail = Volume & {
+  attachments?: Attachment[];
+  /** Additional metadata */
+  meta?: Record<string, any>;
+};
+
+/** Container attachment to a volume */
+export interface Attachment {
+  /** Container ID */
+  container_id: string;
+  /** Container name */
+  container_name?: string;
+  /** Mount path inside container */
+  mount_path: string;
+  /** Read-write access */
+  rw: boolean;
+  /**
+   * When this attachment was first observed
+   * @format date-time
+   */
+  first_seen?: string;
+  /**
+   * When this attachment was last observed
+   * @format date-time
+   */
+  last_seen?: string;
+}
+
+/** List of volume attachments */
+export interface AttachmentsList {
+  data: Attachment[];
+  /** Total number of attachments */
+  total: number;
+}
+
+/** Paginated orphaned volumes response */
+export interface PagedOrphanedVolumes {
+  data: {
+    name?: string;
+    driver?: string;
+    /** @format int64 */
+    size_bytes?: number;
+    /** @format date-time */
+    created_at?: string;
+    is_system?: boolean;
+  }[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+/** Uniform error response format */
+export interface Error {
+  error: {
+    /** Machine-readable error code */
+    code:
+      | "bad_request"
+      | "unauthorized"
+      | "forbidden"
+      | "not_found"
+      | "rate_limited"
+      | "internal";
+    /** Human-readable error message */
+    message: string;
+    /** Additional error details */
+    details?: Record<string, any>;
+    /**
+     * Request correlation ID for debugging
+     * @format uuid
+     */
+    request_id: string;
+  };
+}
+
 /** @example {"error":"Volume not found","code":"VOLUME_NOT_FOUND","details":"Volume 'web-data' does not exist or is not accessible","correlation_id":"req-123e4567-e89b-12d3-a456-426614174000"} */
 export interface ErrorResponse {
   /** Human-readable error message */
@@ -1195,56 +1310,64 @@ export class Api<
   };
   volumes = {
     /**
-     * @description Get a list of all Docker volumes with optional filtering. Supports filtering by driver type and labels for advanced volume management. **Performance**: Optimized for large volume sets (1000+ volumes). **SLO**: 95th percentile response time < 500ms.
+     * @description List volumes with pagination, sorting, and filters. **Performance**: Optimized for large volume sets (1000+ volumes). **SLO**: 95th percentile response time < 250ms.
      *
      * @tags Volumes
      * @name ListVolumes
      * @summary List Docker volumes
      * @request GET:/volumes
      * @secure
-     * @response `200` `VolumeListResponse` List of Docker volumes
-     * @response `500` `ErrorResponse` Internal server error
+     * @response `200` `PagedVolumes` Paginated list of volumes
+     * @response `401` `Error`
+     * @response `429` `Error`
+     * @response `500` `Error`
      */
     listVolumes: (
       query?: {
         /**
-         * Filter volumes by driver type
-         * @example "local"
-         */
-        driver?: "local" | "nfs" | "cifs" | "overlay2";
-        /**
-         * Filter volumes by label key
-         * @example "environment"
-         */
-        label_key?: string;
-        /**
-         * Filter volumes by label value (requires label_key)
-         * @example "production"
-         */
-        label_value?: string;
-        /**
-         * Limit number of results (for pagination)
+         * Page number
          * @min 1
-         * @max 1000
-         * @default 100
+         * @default 1
          */
-        limit?: number;
+        page?: number;
         /**
-         * Offset for pagination
-         * @min 0
-         * @default 0
+         * Items per page
+         * @min 1
+         * @max 200
+         * @default 25
          */
-        offset?: number;
+        page_size?: number;
         /**
-         * Filter to only show user-mounted volumes (excludes Docker infrastructure volumes)
+         * Sort field and direction (e.g., name:asc, size_bytes:desc)
+         * @default "name:asc"
+         * @example "size_bytes:desc,name:asc"
+         */
+        sort?: string;
+        /** Search query (case-insensitive substring match on name and labels) */
+        q?: string;
+        /** Filter by exact driver match */
+        driver?: "local" | "nfs" | "cifs" | "overlay2";
+        /** Filter by orphaned status */
+        orphaned?: boolean;
+        /**
+         * Include system/internal volumes
          * @default false
-         * @example true
          */
-        user_only?: boolean;
+        system?: boolean;
+        /**
+         * Filter volumes created after this timestamp
+         * @format date-time
+         */
+        created_after?: string;
+        /**
+         * Filter volumes created before this timestamp
+         * @format date-time
+         */
+        created_before?: string;
       },
       params: RequestParams = {},
     ) =>
-      this.request<VolumeListResponse, ErrorResponse>({
+      this.request<PagedVolumes, Error>({
         path: `/volumes`,
         method: "GET",
         query: query,
@@ -1254,19 +1377,22 @@ export class Api<
       }),
 
     /**
-     * @description Get detailed information about a specific Docker volume including metadata, labels, and usage statistics if available.
+     * @description Get detailed information about a specific Docker volume including metadata, labels, attachments, and usage statistics.
      *
      * @tags Volumes
      * @name GetVolume
      * @summary Get volume details
-     * @request GET:/volumes/{volumeId}
+     * @request GET:/volumes/{name}
      * @secure
-     * @response `200` `VolumeResponse` Volume details
-     * @response `404` `ErrorResponse` Volume not found
+     * @response `200` `VolumeDetail` Volume details
+     * @response `401` `Error`
+     * @response `404` `Error`
+     * @response `429` `Error`
+     * @response `500` `Error`
      */
-    getVolume: (volumeId: string, params: RequestParams = {}) =>
-      this.request<VolumeResponse, ErrorResponse>({
-        path: `/volumes/${volumeId}`,
+    getVolume: (name: string, params: RequestParams = {}) =>
+      this.request<VolumeDetail, Error>({
+        path: `/volumes/${name}`,
         method: "GET",
         secure: true,
         format: "json",
@@ -1274,28 +1400,22 @@ export class Api<
       }),
 
     /**
- * @description Get all containers that are currently using the specified volume, including mount information and access modes.
- *
- * @tags Volumes
- * @name GetVolumeContainers
- * @summary Get volume containers
- * @request GET:/volumes/{volumeId}/containers
- * @secure
- * @response `200` `{
-    volume_id?: string,
-    containers?: (VolumeContainer)[],
-
-}` List of containers using the volume
- */
-    getVolumeContainers: (volumeId: string, params: RequestParams = {}) =>
-      this.request<
-        {
-          volume_id?: string;
-          containers?: VolumeContainer[];
-        },
-        any
-      >({
-        path: `/volumes/${volumeId}/containers`,
+     * @description List containers mounting the volume, including mount paths and access modes.
+     *
+     * @tags Volumes
+     * @name GetVolumeAttachments
+     * @summary Get volume attachments
+     * @request GET:/volumes/{name}/attachments
+     * @secure
+     * @response `200` `AttachmentsList` List of container attachments
+     * @response `401` `Error`
+     * @response `404` `Error`
+     * @response `429` `Error`
+     * @response `500` `Error`
+     */
+    getVolumeAttachments: (name: string, params: RequestParams = {}) =>
+      this.request<AttachmentsList, Error>({
+        path: `/volumes/${name}/attachments`,
         method: "GET",
         secure: true,
         format: "json",
@@ -1454,6 +1574,57 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  reports = {
+    /**
+     * @description Get all volumes with zero attachments (no containers mounting them). Useful for identifying volumes that can be cleaned up.
+     *
+     * @tags Reports
+     * @name GetOrphanedVolumesReport
+     * @summary Get orphaned volumes report
+     * @request GET:/reports/orphaned
+     * @secure
+     * @response `200` `PagedOrphanedVolumes` Paginated list of orphaned volumes
+     * @response `401` `Error`
+     * @response `429` `Error`
+     * @response `500` `Error`
+     */
+    getOrphanedVolumesReport: (
+      query?: {
+        /**
+         * Page number
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * Items per page
+         * @min 1
+         * @max 200
+         * @default 25
+         */
+        page_size?: number;
+        /**
+         * Sort field and direction
+         * @default "size_bytes:desc"
+         */
+        sort?: string;
+        /**
+         * Include system/internal volumes
+         * @default false
+         */
+        system?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<PagedOrphanedVolumes, Error>({
+        path: `/reports/orphaned`,
+        method: "GET",
+        query: query,
+        secure: true,
         format: "json",
         ...params,
       }),

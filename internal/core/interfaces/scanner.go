@@ -48,6 +48,11 @@ type MetricsCollector interface {
 	SetActiveScanners(count int)
 	ScanStarted(method string)
 	ScanFinished(method string)
+	
+	// Scheduler-specific metrics
+	SetSchedulerRunningStatus(running bool)
+	UpdateSchedulerQueueDepth(depth int)
+	UpdateSchedulerWorkerUtilization(utilization float64)
 }
 
 // ScanResult represents the result of a volume scan

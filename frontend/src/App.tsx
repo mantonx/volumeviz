@@ -4,7 +4,6 @@ import { Layout } from '@/components/layout/Layout';
 import {
   Dashboard,
   VolumesPage,
-  ContainersPage,
   HealthPage,
   SettingsPage,
   NotFoundPage,
@@ -22,7 +21,6 @@ const App: React.FC = () => {
           {/* Main Routes */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/volumes" element={<VolumesPage />} />
-          <Route path="/containers" element={<ContainersPage />} />
 
           {/* Visualization Routes */}
           <Route path="/realtime" element={<RealTimeDashboard />} />

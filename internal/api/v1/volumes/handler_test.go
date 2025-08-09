@@ -208,7 +208,7 @@ func TestHandler_GetVolume(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			c.Request = httptest.NewRequest("GET", "/api/v1/volumes/"+tt.volumeID, nil)
-			c.Params = gin.Params{{Key: "id", Value: tt.volumeID}}
+			c.Params = gin.Params{{Key: "name", Value: tt.volumeID}}
 
 			handler.GetVolume(c)
 
@@ -226,7 +226,7 @@ func TestHandler_GetVolume(t *testing.T) {
 	}
 }
 
-func TestHandler_GetVolumeContainers(t *testing.T) {
+func TestHandler_GetVolumeAttachments(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockVolume := &models.Volume{
@@ -332,9 +332,9 @@ func TestHandler_GetVolumeContainers(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			c.Request = httptest.NewRequest("GET", "/api/v1/volumes/"+tt.volumeID+"/containers", nil)
-			c.Params = gin.Params{{Key: "id", Value: tt.volumeID}}
+			c.Params = gin.Params{{Key: "name", Value: tt.volumeID}}
 
-			handler.GetVolumeContainers(c)
+			handler.GetVolumeAttachments(c)
 
 			if w.Code != tt.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tt.expectedStatus, w.Code)

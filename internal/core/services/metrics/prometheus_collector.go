@@ -32,6 +32,11 @@ type PrometheusMetricsCollector struct {
 	// System metrics
 	dockerConnectionStatus prometheus.Gauge
 	activeScanners         prometheus.Gauge
+	
+	// Scheduler metrics
+	schedulerRunningStatus prometheus.Gauge
+	schedulerQueueDepthGauge prometheus.Gauge
+	schedulerWorkerUtilization prometheus.Gauge
 }
 
 // NewPrometheusMetricsCollector creates a new Prometheus metrics collector
@@ -173,6 +178,31 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Help:        "Number of active scanner goroutines",
 			ConstLabels: labels,
 		}),
+		
+		// Scheduler status metrics
+		schedulerRunningStatus: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Subsystem:   "scheduler",
+			Name:        "running_status",
+			Help:        "Status of the scan scheduler (1=running, 0=stopped)",
+			ConstLabels: labels,
+		}),
+		
+		schedulerQueueDepthGauge: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Subsystem:   "scheduler",
+			Name:        "queue_depth",
+			Help:        "Current depth of the scheduler task queue",
+			ConstLabels: labels,
+		}),
+		
+		schedulerWorkerUtilization: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Subsystem:   "scheduler",
+			Name:        "worker_utilization",
+			Help:        "Scheduler worker utilization as percentage (0.0-1.0)",
+			ConstLabels: labels,
+		}),
 	}
 }
 
@@ -257,4 +287,23 @@ func (p *PrometheusMetricsCollector) ScanStarted(method string) {
 // ScanFinished records when a scan finishes (success or failure)
 func (p *PrometheusMetricsCollector) ScanFinished(method string) {
 	p.scansInProgressGauge.WithLabelValues(method).Dec()
+}
+
+// SetSchedulerRunningStatus updates scheduler running status
+func (p *PrometheusMetricsCollector) SetSchedulerRunningStatus(running bool) {
+	if running {
+		p.schedulerRunningStatus.Set(1)
+	} else {
+		p.schedulerRunningStatus.Set(0)
+	}
+}
+
+// UpdateSchedulerQueueDepth updates scheduler queue depth
+func (p *PrometheusMetricsCollector) UpdateSchedulerQueueDepth(depth int) {
+	p.schedulerQueueDepthGauge.Set(float64(depth))
+}
+
+// UpdateSchedulerWorkerUtilization updates scheduler worker utilization
+func (p *PrometheusMetricsCollector) UpdateSchedulerWorkerUtilization(utilization float64) {
+	p.schedulerWorkerUtilization.Set(utilization)
 }

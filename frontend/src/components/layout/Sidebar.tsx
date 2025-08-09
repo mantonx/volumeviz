@@ -3,21 +3,16 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
 import {
   Home,
-  Database,
   HardDrive,
-  BarChart3,
   Settings,
-  Shield,
   Activity,
-  FileText,
   Layers,
-  Network,
   X,
   TrendingUp,
   Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { volumeStatsAtom, containerStatsAtom } from '@/store';
+import { volumeStatsAtom } from '@/store';
 import { cn } from '@/utils';
 
 interface SidebarProps {
@@ -46,18 +41,19 @@ const navigation: NavigationItem[] = [
     icon: HardDrive,
     description: 'Docker volume management',
   },
-  {
-    name: 'Containers',
-    href: '/containers',
-    icon: Database,
-    description: 'Container monitoring',
-  },
-  {
-    name: 'Networks',
-    href: '/networks',
-    icon: Network,
-    description: 'Network configurations',
-  },
+  // Temporarily hidden - container management coming in future release
+  // {
+  //   name: 'Containers',
+  //   href: '/containers',
+  //   icon: Database,
+  //   description: 'Container monitoring',
+  // },
+  // {
+  //   name: 'Networks',
+  //   href: '/networks',
+  //   icon: Network,
+  //   description: 'Network configurations',
+  // },
   {
     name: 'Real-time',
     href: '/realtime',
@@ -70,12 +66,6 @@ const navigation: NavigationItem[] = [
     icon: TrendingUp,
     description: 'Historical data & trends',
   },
-  {
-    name: 'Logs',
-    href: '/logs',
-    icon: FileText,
-    description: 'System and container logs',
-  },
 ];
 
 const secondaryNavigation: NavigationItem[] = [
@@ -84,12 +74,6 @@ const secondaryNavigation: NavigationItem[] = [
     href: '/health',
     icon: Activity,
     description: 'API and service status',
-  },
-  {
-    name: 'Security',
-    href: '/security',
-    icon: Shield,
-    description: 'Security monitoring',
   },
   {
     name: 'Settings',
@@ -102,15 +86,11 @@ const secondaryNavigation: NavigationItem[] = [
 export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   const location = useLocation();
   const volumeStats = useAtomValue(volumeStatsAtom);
-  const containerStats = useAtomValue(containerStatsAtom);
 
   // Add badges to navigation items
   const enhancedNavigation = navigation.map((item) => {
     if (item.name === 'Volumes' && volumeStats.total > 0) {
       return { ...item, badge: volumeStats.total };
-    }
-    if (item.name === 'Containers' && containerStats.total > 0) {
-      return { ...item, badge: containerStats.total };
     }
     return item;
   });
@@ -225,24 +205,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      Volumes
+                      Total Volumes
                     </span>
                     <span className="font-medium text-gray-900 dark:text-white">
-                      {volumeStats.active}/{volumeStats.total}
+                      {volumeStats.total}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      Containers
+                      Active Volumes
                     </span>
                     <span className="font-medium text-gray-900 dark:text-white">
-                      {containerStats.running}/{containerStats.total}
+                      {volumeStats.active}
                     </span>
                   </div>
                   {volumeStats.totalSize > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">
-                        Storage
+                        Total Storage
                       </span>
                       <span className="font-medium text-gray-900 dark:text-white">
                         {(volumeStats.totalSize / (1024 * 1024 * 1024)).toFixed(

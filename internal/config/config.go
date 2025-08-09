@@ -20,6 +20,8 @@ type Config struct {
 	RateLimit RateLimitConfig
 	TLS       TLSConfig
 	Lifecycle LifecycleConfig
+	Events    EventsConfig
+	Scan      ScanConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -93,6 +95,27 @@ type LifecycleConfig struct {
 	InitialDelay   time.Duration
 }
 
+// EventsConfig holds Docker events integration configuration
+type EventsConfig struct {
+	Enabled            bool
+	QueueSize          int
+	BackoffMinDuration time.Duration
+	BackoffMaxDuration time.Duration
+	ReconcileInterval  time.Duration
+}
+
+// ScanConfig holds scan scheduler configuration
+type ScanConfig struct {
+	Enabled              bool
+	Interval             time.Duration
+	Concurrency          int
+	TimeoutPerVolume     time.Duration
+	MethodsOrder         []string
+	BindMountsEnabled    bool
+	BindAllowList        []string
+	SkipPattern          string
+}
+
 // Load loads configuration from environment variables with defaults
 func Load() *Config {
 	return &Config{
@@ -154,6 +177,23 @@ func Load() *Config {
 			Interval:       getDurationEnv("LIFECYCLE_INTERVAL", time.Hour),
 			InitialDelay:   getDurationEnv("LIFECYCLE_INITIAL_DELAY", 30*time.Second),
 		},
+		Events: EventsConfig{
+			Enabled:            getBoolEnv("EVENTS_ENABLED", true),
+			QueueSize:          getIntEnv("EVENTS_QUEUE_SIZE", 1000),
+			BackoffMinDuration: getDurationEnv("EVENTS_BACKOFF_MIN", 1*time.Second),
+			BackoffMaxDuration: getDurationEnv("EVENTS_BACKOFF_MAX", 30*time.Second),
+			ReconcileInterval:  getDurationEnv("EVENTS_RECONCILE_INTERVAL", 6*time.Hour),
+		},
+		Scan: ScanConfig{
+			Enabled:              getScanEnabledDefault(),
+			Interval:             getDurationEnv("SCAN_INTERVAL", 6*time.Hour),
+			Concurrency:          getIntEnv("SCAN_CONCURRENCY", 2),
+			TimeoutPerVolume:     getDurationEnv("SCAN_TIMEOUT_PER_VOLUME", 2*time.Minute),
+			MethodsOrder:         getStringSliceEnv("SCAN_METHODS_ORDER", []string{"diskus", "du", "native"}),
+			BindMountsEnabled:    getBoolEnv("SCAN_BIND_MOUNTS_ENABLED", false),
+			BindAllowList:        getStringSliceEnv("SCAN_BIND_ALLOWLIST", []string{}),
+			SkipPattern:          getEnv("SCAN_SKIP_PATTERN", "^docker_|^builder_|^containerd"),
+		},
 	}
 }
 
@@ -205,6 +245,21 @@ func getIntEnv(key string, defaultValue int) int {
 		}
 	}
 	return defaultValue
+}
+
+// getScanEnabledDefault returns the default value for scan enabled based on environment
+func getScanEnabledDefault() bool {
+	// Check for explicit setting first
+	if value := os.Getenv("SCAN_ENABLED"); value != "" {
+		if parsed, err := strconv.ParseBool(value); err == nil {
+			return parsed
+		}
+	}
+	
+	// Default based on environment: true in dev/debug, false in production
+	ginMode := getEnv("GIN_MODE", "release")
+	isDev := ginMode == "debug" || ginMode == "test" || os.Getenv("NODE_ENV") == "development"
+	return isDev
 }
 
 // ToDatabaseConfig converts the config.DatabaseConfig to database.Config
