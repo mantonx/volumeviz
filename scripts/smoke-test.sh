@@ -251,10 +251,10 @@ main() {
     test_endpoint "/api/v1/database/stats" "Database stats" "volume_count" || ((failed_tests++))
 
     # Volumes list (with pagination)
-    test_endpoint "/api/v1/volumes?page=1&page_size=5" "Volumes list" "data meta" || ((failed_tests++))
+    test_endpoint "/api/v1/volumes?page=1&page_size=5" "Volumes list" "data page page_size total" || ((failed_tests++))
 
     # API version/info
-    test_endpoint "/api/v1/version" "Version info" "version build_time" || ((failed_tests++))
+    test_endpoint "/api/v1/system/version" "Version info" "version api_version" || ((failed_tests++))
 
     # Metrics endpoint (if enabled)
     if curl --fail --silent --max-time 5 "http://$HOST:9090/metrics" > /dev/null 2>&1; then
