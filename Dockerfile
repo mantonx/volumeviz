@@ -1,5 +1,5 @@
 # Multi-stage build for production
-FROM golang:1.24.5-alpine AS backend-builder
+FROM golang:1.24.6-alpine AS backend-builder
 
 # Version arguments
 ARG VERSION=dev
