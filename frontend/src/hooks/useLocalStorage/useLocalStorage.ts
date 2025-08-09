@@ -34,3 +34,6 @@ export const useLocalStorage = <T>(
 
   return [storedValue, setValue];
 };
+
+// Default export for compatibility
+export default useLocalStorage;

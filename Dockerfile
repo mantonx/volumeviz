@@ -31,7 +31,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
     -o volumeviz ./cmd/server
 
 # Frontend builder stage
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app
 
@@ -39,7 +39,7 @@ WORKDIR /app
 COPY frontend/package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Copy frontend source
 COPY frontend/ .
@@ -50,8 +50,8 @@ RUN npm run build
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS and coreutils for du command
-RUN apk --no-cache add ca-certificates coreutils
+# Install ca-certificates for HTTPS, coreutils for du command, and curl for health checks
+RUN apk --no-cache add ca-certificates coreutils curl
 
 WORKDIR /root/
 

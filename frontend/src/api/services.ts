@@ -184,9 +184,24 @@ export function useVolumes() {
           created_before: params?.created_before,
         };
 
-        // Use generated API client
-        const response = await volumeVizApi.volumes.listVolumes(queryParams);
-        const pagedData: PagedVolumes = response.data;
+        // Use direct fetch to bypass generated client issues
+        const baseUrl = import.meta.env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+        const searchParams = new URLSearchParams();
+        
+        Object.entries(queryParams).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            searchParams.append(key, String(value));
+          }
+        });
+        
+        const url = `${baseUrl}/volumes?${searchParams.toString()}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const pagedData = await response.json();
 
         // Update volumes array
         const volumeData = pagedData.data || [];
@@ -203,7 +218,9 @@ export function useVolumes() {
 
         setLastUpdated(new Date());
       } catch (err) {
+        console.error('fetchVolumes: Error occurred:', err);
         const errorMessage = getErrorMessage(err);
+        console.error('fetchVolumes: Error message:', errorMessage);
         setError(errorMessage);
       } finally {
         setLoading(false);
@@ -366,14 +383,20 @@ export function useApiHealth() {
       setLoading(true);
       setError(null);
 
-      // Use generated API client
-      const response = await volumeVizApi.database.getDatabaseHealth();
-      const healthData = response.data;
+      // Use direct fetch since the generated API client has wrong endpoint path
+      const baseUrl = import.meta.env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+      const response = await fetch(`${baseUrl}/health`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const healthData = await response.json();
 
       setHealth({
-        status: healthData.status,
+        status: healthData.status || 'unknown',
         timestamp: Date.now(),
-        checks: {},
+        checks: healthData.checks || {},
       });
     } catch (err) {
       const errorMessage = getErrorMessage(err);

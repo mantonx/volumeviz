@@ -24,10 +24,10 @@ func (r *Router) RegisterRoutes(rg *gin.RouterGroup) {
 	volumeRoutes := rg.Group("/volumes")
 	{
 		// Historical metrics for specific volume
-		volumeRoutes.GET("/:id/metrics", r.handler.GetVolumeMetrics)
+		volumeRoutes.GET("/:name/metrics", r.handler.GetVolumeMetrics)
 
 		// Capacity forecast for specific volume
-		volumeRoutes.GET("/:id/capacity-forecast", r.handler.GetCapacityForecast)
+		volumeRoutes.GET("/:name/capacity-forecast", r.handler.GetCapacityForecast)
 
 		// Bulk operations
 		volumeRoutes.GET("/trends", r.handler.GetVolumeTrends)

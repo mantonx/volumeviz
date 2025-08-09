@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useAtomValue } from 'jotai';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -244,8 +244,10 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
     system = false,
   } = urlState;
 
-  // Current filter parameters
-  const currentParams: VolumeListParams = {
+
+
+  // Current filter parameters - memoized to prevent unnecessary re-renders
+  const currentParams: VolumeListParams = useMemo(() => ({
     page,
     page_size,
     sort,
@@ -253,14 +255,14 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
     driver: driver || undefined,
     orphaned: orphaned || undefined,
     system: system || undefined,
-  };
+  }), [page, page_size, sort, q, driver, orphaned, system]);
 
   /**
    * Load volume data when the page mounts or params change
    */
   useEffect(() => {
     fetchVolumes(currentParams);
-  }, [page, page_size, sort, q, driver, orphaned, system]);
+  }, [page, page_size, sort, q, driver, orphaned, system]); // Track individual params, not currentParams
 
   /**
    * Handle manual refresh of volume data
@@ -274,7 +276,6 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
    */
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      // Update URL state with search query and reset to page 1
       setUrlState({
         q: event.target.value,
         page: 1,
@@ -339,7 +340,7 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
     if (loading) return 'Loading volumes...';
     if (error) return 'Error loading volumes';
     if (volumes.length === 0) {
-      return q || driver || orphaned
+      return q || driver || orphaned || system
         ? 'No volumes match your search criteria'
         : 'No volumes found';
     }
@@ -456,7 +457,7 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
                   id="volume-search"
                   ref={searchInputRef}
                   type="text"
-                  value={q}
+                  value={q || ''}
                   onChange={handleSearchChange}
                   placeholder="Search volumes by name..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -501,6 +502,15 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
               <Filter className="h-4 w-4 mr-2" />
               {orphaned ? 'Show All' : 'Orphaned Only'}
             </Button>
+
+            <Button
+              variant={system ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setUrlState({ system: !system, page: 1 })}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              {system ? 'Hide System' : 'Include System'}
+            </Button>
             </div>
           </div>
         </Card>
@@ -520,27 +530,28 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
         <EmptyState
           icon={HardDrive}
           title={
-            q || driver || orphaned
+            q || driver || orphaned || system
               ? 'No Matching Volumes'
               : 'No Volumes Found'
           }
           description={
-            q || driver || orphaned
+            q || driver || orphaned || system
               ? 'No volumes match your current search criteria. Try adjusting your filters or search terms.'
               : 'No Docker volumes are currently available. Create some volumes to get started.'
           }
           actionLabel={
-            q || driver || orphaned
+            q || driver || orphaned || system
               ? 'Clear Filters'
               : 'Refresh'
           }
           onAction={() => {
-            if (q || driver || orphaned) {
+            if (q || driver || orphaned || system) {
               // Clear all filters
               setUrlState({
                 q: '',
                 driver: '',
                 orphaned: false,
+                system: false,
                 sort: 'name:asc',
                 page: 1,
               });

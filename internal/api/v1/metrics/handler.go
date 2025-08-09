@@ -28,7 +28,7 @@ func NewHandler(db *database.DB) *Handler {
 // GetVolumeMetrics returns historical metrics for a specific volume
 // GET /api/v1/volumes/{id}/metrics?timeRange=1d&interval=1h
 func (h *Handler) GetVolumeMetrics(c *gin.Context) {
-	volumeID := c.Param("id")
+	volumeID := c.Param("name")
 	if err := validateVolumeID(volumeID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -290,7 +290,7 @@ func (h *Handler) GetGrowthRates(c *gin.Context) {
 // GetCapacityForecast returns capacity forecasting data
 // GET /api/v1/volumes/{id}/capacity-forecast?days=30
 func (h *Handler) GetCapacityForecast(c *gin.Context) {
-	volumeID := c.Param("id")
+	volumeID := c.Param("name")
 	if volumeID == "" {
 		volumeID = c.Query("volumeId") // fallback to query param
 	}

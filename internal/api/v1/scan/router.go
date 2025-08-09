@@ -24,11 +24,11 @@ func NewRouter(scanner interfaces.VolumeScanner, hub *websocket.Hub, db *databas
 // RegisterRoutes registers all scan-related routes
 func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	// Volume size endpoints
-	group.GET("/volumes/:id/size", r.handler.GetVolumeSize)
-	group.POST("/volumes/:id/size/refresh", r.handler.RefreshVolumeSize)
+	group.GET("/volumes/:name/size", r.handler.GetVolumeSize)
+	group.POST("/volumes/:name/size/refresh", r.handler.RefreshVolumeSize)
 
 	// Volume scan status endpoint (per spec)
-	group.GET("/volumes/:id/scan/status", r.handler.GetScanStatus)
+	group.GET("/volumes/:name/scan/status", r.handler.GetScanStatus)
 
 	// Scan status by scan ID (used by tests and clients)
 	group.GET("/scans/:id/status", r.handler.GetScanStatus)

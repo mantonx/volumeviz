@@ -43,20 +43,20 @@ func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, metricsRep
 // @Tags scan
 // @Accept json
 // @Produce json
-// @Param id path string true "Volume ID"
+// @Param name path string true "Volume Name"
 // @Success 200 {object} models.ScanResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /volumes/{id}/size [get]
+// @Router /volumes/{name}/size [get]
 func (h *Handler) GetVolumeSize(c *gin.Context) {
-	volumeID := c.Param("id")
+	volumeID := c.Param("name")
 
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error:   "Volume ID is required",
-			Code:    "MISSING_VOLUME_ID",
-			Details: map[string]any{"message": "Volume ID parameter is missing from the request"},
+			Error:   "Volume name is required",
+			Code:    "MISSING_VOLUME_NAME",
+			Details: map[string]any{"message": "Volume name parameter is missing from the request"},
 		})
 		return
 	}
@@ -116,21 +116,21 @@ func (h *Handler) GetVolumeSize(c *gin.Context) {
 // @Tags scan
 // @Accept json
 // @Produce json
-// @Param id path string true "Volume ID"
+// @Param name path string true "Volume Name"
 // @Param request body models.RefreshRequest false "Refresh options"
 // @Success 200 {object} models.ScanResponse "Sync scan completed"
 // @Success 202 {object} models.AsyncScanResponse "Async scan started"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /volumes/{id}/size/refresh [post]
+// @Router /volumes/{name}/size/refresh [post]
 func (h *Handler) RefreshVolumeSize(c *gin.Context) {
-	volumeID := c.Param("id")
+	volumeID := c.Param("name")
 
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Volume ID is required",
-			"code":    "MISSING_VOLUME_ID",
-			"details": "Volume ID parameter is missing from the request",
+			"error":   "Volume name is required",
+			"code":    "MISSING_VOLUME_NAME",
+			"details": "Volume name parameter is missing from the request",
 		})
 		return
 	}
