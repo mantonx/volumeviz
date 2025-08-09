@@ -15,10 +15,18 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { themeAtom, apiStatusAtom, requestCountAtom, connectionStatusAtom } from '@/store';
+import {
+  themeAtom,
+  apiStatusAtom,
+  requestCountAtom,
+  connectionStatusAtom,
+} from '@/store';
 import { cn } from '@/utils';
 import type { HeaderProps, ThemeOption, ApiStatus } from './Header.types';
-import type { ConnectionStatus, WebSocketStatus } from '@/store/atoms/websocket';
+import type {
+  ConnectionStatus,
+  WebSocketStatus,
+} from '@/store/atoms/websocket';
 
 /**
  * Theme icon component mapping theme names to appropriate icons
@@ -67,7 +75,14 @@ const WebSocketIcon = ({ status }: { status: WebSocketStatus }) => {
       return <div className={cn(baseClasses, 'rounded-full bg-green-500')} />;
     case 'connecting':
     case 'reconnecting':
-      return <div className={cn(baseClasses, 'rounded-full bg-yellow-500 animate-pulse')} />;
+      return (
+        <div
+          className={cn(
+            baseClasses,
+            'rounded-full bg-yellow-500 animate-pulse',
+          )}
+        />
+      );
     case 'disconnected':
       return <div className={cn(baseClasses, 'rounded-full bg-gray-400')} />;
     case 'error':
@@ -202,7 +217,7 @@ export const Header: React.FC<HeaderProps> = ({
                   API
                 </span>
               </div>
-              
+
               {/* WebSocket Status (if enabled) */}
               {connectionStatus.websocketEnabled && (
                 <div className="flex items-center space-x-1">
@@ -212,7 +227,7 @@ export const Header: React.FC<HeaderProps> = ({
                   </span>
                 </div>
               )}
-              
+
               {/* Request counter */}
               {requestCount > 0 && (
                 <span className="text-xs text-gray-500 dark:text-gray-400 animate-pulse">

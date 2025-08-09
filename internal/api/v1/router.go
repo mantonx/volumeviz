@@ -186,6 +186,9 @@ func (r *Router) setupMiddleware(config *config.Config) {
 	r.engine.Use(gin.Logger())
 	r.engine.Use(gin.Recovery())
 
+	// Metrics middleware (should be early in the chain)
+	r.engine.Use(middleware.MetricsMiddleware())
+
 	// Custom middleware
 	r.engine.Use(middleware.ErrorHandler())
 	r.engine.Use(middleware.DockerErrorHandler())
@@ -202,6 +205,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 		ExposedHeaders:   []string{"X-Request-ID"},
 		AllowCredentials: false,
 		MaxAge:           300,
+		SkipPaths:        []string{"/api/v1/health", "/health", "/metrics"},
 	}
 	r.engine.Use(middleware.CORSMiddleware(corsConfig))
 

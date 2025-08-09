@@ -1,7 +1,12 @@
 import { atom } from 'jotai';
 import { apiStatusAtom } from './api';
 
-export type WebSocketStatus = 'connected' | 'disconnected' | 'connecting' | 'reconnecting' | 'error';
+export type WebSocketStatus =
+  | 'connected'
+  | 'disconnected'
+  | 'connecting'
+  | 'reconnecting'
+  | 'error';
 
 export interface WebSocketState {
   status: WebSocketStatus;

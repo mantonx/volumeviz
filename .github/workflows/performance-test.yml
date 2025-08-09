@@ -1,0 +1,296 @@
+name: Performance Testing
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'internal/api/**'
+      - 'cmd/server/**'
+      - 'scripts/performance-test.sh'
+      - '.github/workflows/performance-test.yml'
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Test duration (e.g., 60s, 2m)'
+        required: false
+        default: '60s'
+      concurrent_users:
+        description: 'Number of concurrent users'
+        required: false
+        default: '10'
+
+jobs:
+  performance-test:
+    name: Run Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: volumeviz
+          POSTGRES_PASSWORD: volumeviz
+          POSTGRES_DB: volumeviz_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Build application
+        run: |
+          go mod download
+          go build -o volumeviz cmd/server/main.go
+
+      - name: Run database migrations
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: volumeviz
+          DB_PASSWORD: volumeviz
+          DB_NAME: volumeviz_test
+        run: |
+          go run cmd/migrate/main.go up
+
+      - name: Start application
+        env:
+          DB_TYPE: postgres
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: volumeviz
+          DB_PASSWORD: volumeviz
+          DB_NAME: volumeviz_test
+          DB_SSLMODE: disable
+          SERVER_PORT: 8080
+          GIN_MODE: release
+          SCAN_ENABLED: false
+          EVENTS_ENABLED: false
+          AUTH_ENABLED: false
+          RATE_LIMIT_ENABLED: false
+        run: |
+          ./volumeviz &
+          echo $! > volumeviz.pid
+          # Wait for server to be ready
+          for i in {1..30}; do
+            if curl -f http://localhost:8080/api/v1/health > /dev/null 2>&1; then
+              echo "Server is ready"
+              break
+            fi
+            echo "Waiting for server... ($i/30)"
+            sleep 1
+          done
+
+      - name: Run performance tests
+        env:
+          API_URL: http://localhost:8080/api/v1
+          CONCURRENT_USERS: ${{ github.event.inputs.concurrent_users || '10' }}
+          DURATION: ${{ github.event.inputs.duration || '60s' }}
+        run: |
+          chmod +x scripts/performance-test.sh
+          ./scripts/performance-test.sh
+
+      - name: Upload performance reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-reports-${{ github.sha }}
+          path: performance-reports/
+          retention-days: 7
+
+      - name: Performance test summary
+        if: always()
+        run: |
+          if [ -f performance-reports/summary.json ]; then
+            echo "## Performance Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Extract key metrics using jq
+            echo "### Request Metrics" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+            echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+            
+            total_requests=$(jq -r '.metrics.http_reqs.values.count' performance-reports/summary.json)
+            requests_per_sec=$(jq -r '.metrics.http_reqs.values.rate' performance-reports/summary.json)
+            failed_rate=$(jq -r '.metrics.http_req_failed.values.rate * 100' performance-reports/summary.json)
+            p95_duration=$(jq -r '.metrics.http_req_duration.values["p(95)"]' performance-reports/summary.json)
+            p99_duration=$(jq -r '.metrics.http_req_duration.values["p(99)"]' performance-reports/summary.json)
+            
+            echo "| Total Requests | $total_requests |" >> $GITHUB_STEP_SUMMARY
+            echo "| Requests/sec | ${requests_per_sec%.????} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failed Requests | ${failed_rate%.????}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| P95 Response Time | ${p95_duration%.??}ms |" >> $GITHUB_STEP_SUMMARY
+            echo "| P99 Response Time | ${p99_duration%.??}ms |" >> $GITHUB_STEP_SUMMARY
+            
+            # Check thresholds
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Threshold Results" >> $GITHUB_STEP_SUMMARY
+            if (( $(echo "$failed_rate < 10" | bc -l) )) && \
+               (( $(echo "$p95_duration < 500" | bc -l) )) && \
+               (( $(echo "$p99_duration < 1000" | bc -l) )); then
+              echo "✅ All performance thresholds passed" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ Performance thresholds failed" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Expected:" >> $GITHUB_STEP_SUMMARY
+              echo "- Error rate < 10%" >> $GITHUB_STEP_SUMMARY
+              echo "- P95 < 500ms" >> $GITHUB_STEP_SUMMARY
+              echo "- P99 < 1000ms" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+      - name: Comment PR with results
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request' && always()
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## 🎯 Performance Test Results\n\n';
+            
+            try {
+              const summary = JSON.parse(fs.readFileSync('performance-reports/summary.json', 'utf8'));
+              const metrics = summary.metrics;
+              
+              // Extract key metrics
+              const totalRequests = metrics.http_reqs.values.count;
+              const requestsPerSec = metrics.http_reqs.values.rate.toFixed(2);
+              const failedRate = (metrics.http_req_failed.values.rate * 100).toFixed(2);
+              const p95Duration = metrics.http_req_duration.values['p(95)'].toFixed(2);
+              const p99Duration = metrics.http_req_duration.values['p(99)'].toFixed(2);
+              const avgDuration = metrics.http_req_duration.values.avg.toFixed(2);
+              
+              // Build metrics table
+              comment += '### 📊 Request Metrics\n';
+              comment += '| Metric | Value |\n';
+              comment += '| --- | --- |\n';
+              comment += `| Total Requests | ${totalRequests} |\n`;
+              comment += `| Requests/sec | ${requestsPerSec} |\n`;
+              comment += `| Failed Requests | ${failedRate}% |\n`;
+              comment += `| Avg Response Time | ${avgDuration}ms |\n`;
+              comment += `| P95 Response Time | ${p95Duration}ms |\n`;
+              comment += `| P99 Response Time | ${p99Duration}ms |\n`;
+              
+              // Add endpoint performance if available
+              if (metrics.health_check_duration && metrics.volume_list_duration) {
+                comment += '\n### 🔍 Endpoint Performance\n';
+                comment += '| Endpoint | Avg Response Time |\n';
+                comment += '| --- | --- |\n';
+                comment += `| Health Check | ${metrics.health_check_duration.values.avg.toFixed(2)}ms |\n`;
+                comment += `| Volume List | ${metrics.volume_list_duration.values.avg.toFixed(2)}ms |\n`;
+                if (metrics.volume_detail_duration) {
+                  comment += `| Volume Detail | ${metrics.volume_detail_duration.values.avg.toFixed(2)}ms |\n`;
+                }
+              }
+              
+              // Threshold check
+              comment += '\n### ✅ Threshold Check\n';
+              const thresholdsPassed = failedRate < 10 && p95Duration < 500 && p99Duration < 1000;
+              
+              if (thresholdsPassed) {
+                comment += '🎉 **All performance thresholds passed!**\n\n';
+              } else {
+                comment += '⚠️ **Performance thresholds failed**\n\n';
+                comment += 'Expected thresholds:\n';
+                comment += '- Error rate < 10% ' + (failedRate < 10 ? '✅' : `❌ (actual: ${failedRate}%)`) + '\n';
+                comment += '- P95 < 500ms ' + (p95Duration < 500 ? '✅' : `❌ (actual: ${p95Duration}ms)`) + '\n';
+                comment += '- P99 < 1000ms ' + (p99Duration < 1000 ? '✅' : `❌ (actual: ${p99Duration}ms)`) + '\n';
+              }
+              
+              // Add test configuration
+              comment += '\n### ⚙️ Test Configuration\n';
+              comment += `- Concurrent Users: ${{ github.event.inputs.concurrent_users || '10' }}\n`;
+              comment += `- Test Duration: ${{ github.event.inputs.duration || '60s' }}\n`;
+              comment += `- Run ID: \\`${{ github.run_id }}\\`\n`;
+              
+            } catch (error) {
+              comment += '❌ Failed to parse performance test results\n';
+              comment += `Error: ${error.message}\n`;
+            }
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('Performance Test Results')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f volumeviz.pid ]; then
+            kill $(cat volumeviz.pid) || true
+            rm volumeviz.pid
+          fi
+
+  benchmark:
+    name: Run Benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Run benchmarks
+        run: |
+          # Run benchmarks and save results
+          go test -bench=. -benchmem -count=3 -run=^$ ./... > benchmark-results.txt
+          
+          # Create summary
+          echo "## Benchmark Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -n 20 benchmark-results.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: benchmark-results.txt
+          retention-days: 7

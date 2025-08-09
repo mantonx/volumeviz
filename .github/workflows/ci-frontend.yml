@@ -33,9 +33,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Use --legacy-peer-deps to handle Storybook 9.x + @storybook/test 8.x version mismatch
-          # TODO: Update @storybook/test when Storybook 9.x compatible version is available
-          npm ci --legacy-peer-deps
+          # All Storybook packages are now aligned to version 8.4.7
+          npm ci
 
       - name: TypeScript type checking
         run: |

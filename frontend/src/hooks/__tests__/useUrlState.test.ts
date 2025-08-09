@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import React from 'react';
-import { useUrlState, useMultipleUrlState, useVolumeListUrlState } from '../useUrlState';
+import {
+  useUrlState,
+  useMultipleUrlState,
+  useVolumeListUrlState,
+} from '../useUrlState';
 
 // Mock react-router-dom hooks
 const mockNavigate = vi.fn();
@@ -22,11 +26,9 @@ vi.mock('react-router-dom', async () => {
 
 // Create test wrapper with Router
 const createWrapper = () => {
-  return ({ children }: { children: React.ReactNode }) => (
-    <BrowserRouter>
-      {children}
-    </BrowserRouter>
-  );
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(BrowserRouter, null, children);
+  return Wrapper;
 };
 
 describe('useUrlState Hook', () => {
@@ -41,9 +43,12 @@ describe('useUrlState Hook', () => {
 
   describe('Basic URL State Management', () => {
     it('should return default value when no URL parameter exists', () => {
-      const { result } = renderHook(() => useUrlState('test', { defaultValue: 'default' }), {
-        wrapper: createWrapper(),
-      });
+      const { result } = renderHook(
+        () => useUrlState('test', { defaultValue: 'default' }),
+        {
+          wrapper: createWrapper(),
+        },
+      );
 
       expect(result.current[0]).toBe('default');
     });
@@ -67,7 +72,9 @@ describe('useUrlState Hook', () => {
         result.current[1]('newvalue');
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/volumes?test=newvalue', { replace: false });
+      expect(mockNavigate).toHaveBeenCalledWith('/volumes?test=newvalue', {
+        replace: false,
+      });
       expect(result.current[0]).toBe('newvalue');
     });
 
@@ -84,7 +91,9 @@ describe('useUrlState Hook', () => {
         result.current[1](undefined);
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/volumes?other=world', { replace: false });
+      expect(mockNavigate).toHaveBeenCalledWith('/volumes?other=world', {
+        replace: false,
+      });
     });
 
     it('should remove parameter from URL when value is empty string', () => {
@@ -111,26 +120,33 @@ describe('useUrlState Hook', () => {
           }),
         {
           wrapper: createWrapper(),
-        }
+        },
       );
 
       act(() => {
         result.current[1](42);
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/volumes?number=42', { replace: false });
+      expect(mockNavigate).toHaveBeenCalledWith('/volumes?number=42', {
+        replace: false,
+      });
     });
 
     it('should use replace mode when specified', () => {
-      const { result } = renderHook(() => useUrlState('test', { replace: true }), {
-        wrapper: createWrapper(),
-      });
+      const { result } = renderHook(
+        () => useUrlState('test', { replace: true }),
+        {
+          wrapper: createWrapper(),
+        },
+      );
 
       act(() => {
         result.current[1]('test');
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/volumes?test=test', { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith('/volumes?test=test', {
+        replace: true,
+      });
     });
 
     it('should handle deserialization errors gracefully', () => {
@@ -148,7 +164,7 @@ describe('useUrlState Hook', () => {
           }),
         {
           wrapper: createWrapper(),
-        }
+        },
       );
 
       expect(result.current[0]).toBe(0); // Should fall back to default
@@ -198,7 +214,10 @@ describe('useUrlState Hook', () => {
         result.current[1]('new');
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/volumes?existing=value&test=new', { replace: false });
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/volumes?existing=value&test=new',
+        { replace: false },
+      );
     });
   });
 });
@@ -219,11 +238,11 @@ describe('useMultipleUrlState Hook', () => {
               page: { defaultValue: 1, deserialize: (v) => parseInt(v, 10) },
               size: { defaultValue: 25, deserialize: (v) => parseInt(v, 10) },
               sort: { defaultValue: 'name:asc' },
-            }
+            },
           ),
         {
           wrapper: createWrapper(),
-        }
+        },
       );
 
       expect(result.current[0]).toEqual({
@@ -243,11 +262,11 @@ describe('useMultipleUrlState Hook', () => {
             {
               page: { deserialize: (v) => parseInt(v, 10) },
               size: { deserialize: (v) => parseInt(v, 10) },
-            }
+            },
           ),
         {
           wrapper: createWrapper(),
-        }
+        },
       );
 
       expect(result.current[0]).toEqual({
@@ -265,18 +284,20 @@ describe('useMultipleUrlState Hook', () => {
             {
               page: { serialize: String },
               size: { serialize: String },
-            }
+            },
           ),
         {
           wrapper: createWrapper(),
-        }
+        },
       );
 
       act(() => {
         result.current[1]({ page: 3, size: 100 });
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/volumes?page=3&size=100', { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith('/volumes?page=3&size=100', {
+        replace: true,
+      });
     });
 
     it('should handle partial updates', () => {
@@ -289,18 +310,21 @@ describe('useMultipleUrlState Hook', () => {
             {
               page: { serialize: String },
               size: { serialize: String },
-            }
+            },
           ),
         {
           wrapper: createWrapper(),
-        }
+        },
       );
 
       act(() => {
         result.current[1]({ page: 2 });
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/volumes?page=2&size=25&sort=name%3Aasc', { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/volumes?page=2&size=25&sort=name%3Aasc',
+        { replace: true },
+      );
     });
 
     it('should remove parameters when set to undefined', () => {
@@ -310,39 +334,38 @@ describe('useMultipleUrlState Hook', () => {
         () =>
           useMultipleUrlState<{ page: number; size: number; sort: string }>(
             ['page', 'size', 'sort'],
-            {}
+            {},
           ),
         {
           wrapper: createWrapper(),
-        }
+        },
       );
 
       act(() => {
         result.current[1]({ sort: undefined });
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/volumes?page=2&size=50', { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith('/volumes?page=2&size=50', {
+        replace: true,
+      });
     });
 
     it('should handle serialization errors gracefully', () => {
       const { result } = renderHook(
         () =>
-          useMultipleUrlState<{ page: number }>(
-            ['page'],
-            {
-              page: {
-                deserialize: (v) => {
-                  const parsed = parseInt(v, 10);
-                  if (isNaN(parsed)) throw new Error('Invalid');
-                  return parsed;
-                },
-                defaultValue: 1,
+          useMultipleUrlState<{ page: number }>(['page'], {
+            page: {
+              deserialize: (v) => {
+                const parsed = parseInt(v, 10);
+                if (isNaN(parsed)) throw new Error('Invalid');
+                return parsed;
               },
-            }
-          ),
+              defaultValue: 1,
+            },
+          }),
         {
           wrapper: createWrapper(),
-        }
+        },
       );
 
       // Should not crash and use default value
@@ -375,7 +398,8 @@ describe('useVolumeListUrlState Hook', () => {
     });
 
     it('should parse volume list parameters from URL', () => {
-      mockLocation.search = '?page=2&page_size=50&sort=size%3Adesc&q=test&driver=local&orphaned=true&system=false';
+      mockLocation.search =
+        '?page=2&page_size=50&sort=size%3Adesc&q=test&driver=local&orphaned=true&system=false';
 
       const { result } = renderHook(() => useVolumeListUrlState(), {
         wrapper: createWrapper(),
@@ -414,7 +438,7 @@ describe('useVolumeListUrlState Hook', () => {
 
       expect(mockNavigate).toHaveBeenCalledWith(
         '/volumes?orphaned=true&system=false',
-        { replace: true }
+        { replace: true },
       );
     });
 
@@ -448,7 +472,7 @@ describe('useVolumeListUrlState Hook', () => {
 
       expect(mockNavigate).toHaveBeenCalledWith(
         '/volumes?page=3&page_size=100&sort=created_at%3Adesc&q=web&driver=nfs&orphaned=true',
-        { replace: true }
+        { replace: true },
       );
     });
 
@@ -479,7 +503,7 @@ describe('useVolumeListUrlState Hook', () => {
 
       expect(mockNavigate).toHaveBeenCalledWith(
         '/volumes?page=2&page_size=25&sort=name%3Aasc&q=test',
-        { replace: true }
+        { replace: true },
       );
     });
 
@@ -497,7 +521,7 @@ describe('useVolumeListUrlState Hook', () => {
       // Should preserve the 'other' parameter
       expect(mockNavigate).toHaveBeenCalledWith(
         '/volumes?page=2&sort=name%3Aasc&other=value',
-        { replace: true }
+        { replace: true },
       );
     });
   });
@@ -544,7 +568,7 @@ describe('useVolumeListUrlState Hook', () => {
 
       expect(mockNavigate).toHaveBeenCalledWith(
         '/volumes?q=test%20%26%20query%20with%20spaces',
-        { replace: true }
+        { replace: true },
       );
     });
   });

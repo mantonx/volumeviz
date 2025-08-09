@@ -170,21 +170,24 @@ export const VolumeComparisonChart: React.FC<VolumeComparisonChartProps> = ({
         let startValue = volume.startSize;
 
         switch (activeMetric) {
-          case 'growth':
+          case 'growth': {
             currentValue = volume.totalGrowth;
             startValue = 0;
             break;
-          case 'rate':
+          }
+          case 'rate': {
             currentValue = volume.averageGrowthRate;
             startValue = 0;
             break;
-          case 'files':
+          }
+          case 'files': {
             const latestData =
               volume.historicalData[volume.historicalData.length - 1];
             const earliestData = volume.historicalData[0];
             currentValue = latestData?.fileCount || 0;
             startValue = earliestData?.fileCount || 0;
             break;
+          }
         }
 
         const changeAbsolute = currentValue - startValue;

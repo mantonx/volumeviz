@@ -33,12 +33,16 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     minify: 'esbuild',
+    chunkSizeWarningLimit: 800, // Increase limit for visualization components
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           jotai: ['jotai'],
           ui: ['lucide-react', 'clsx', 'tailwind-merge'],
+          charts: ['recharts'],
+          testing: ['@testing-library/react', '@testing-library/jest-dom', 'vitest'],
+          utils: ['lodash-es', 'date-fns', 'validator'],
         },
       },
     },

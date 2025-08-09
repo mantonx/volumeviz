@@ -15,6 +15,7 @@ type CORSConfig struct {
 	ExposedHeaders   []string
 	AllowCredentials bool
 	MaxAge           int
+	SkipPaths        []string // Paths that bypass CORS checks (e.g., health endpoints)
 }
 
 // DefaultCORSConfig returns secure default CORS configuration
@@ -41,8 +42,22 @@ func CORSMiddleware(config *CORSConfig) gin.HandlerFunc {
 	}
 
 	return gin.HandlerFunc(func(c *gin.Context) {
+		// Skip CORS checks for certain paths (health endpoints, etc.)
+		for _, skipPath := range config.SkipPaths {
+			if strings.HasPrefix(c.Request.URL.Path, skipPath) {
+				c.Next()
+				return
+			}
+		}
+
 		origin := c.Request.Header.Get("Origin")
 		method := c.Request.Method
+
+		// If there's no origin header (like health check requests), allow the request
+		if origin == "" {
+			c.Next()
+			return
+		}
 
 		// Check if origin is allowed
 		originAllowed := false

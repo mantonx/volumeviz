@@ -1,9 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-// Using console.log as a replacement for action since @storybook/test has version conflicts
-const action =
-  (name: string) =>
-  (...args: any[]) =>
-    console.log(`${name}:`, ...args);
+import { action } from '@storybook/test';
 import { Button } from './Button';
 import { Play, Download, Heart } from 'lucide-react';
 

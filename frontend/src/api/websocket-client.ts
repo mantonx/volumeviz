@@ -164,34 +164,38 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
         // Heartbeat response received
         break;
 
-      case 'volume_update':
+      case 'volume_update': {
         const volumeMessage = message as VolumeUpdateMessage;
         this.emit('volume_update', volumeMessage.data);
         break;
+      }
 
-      case 'scan_complete':
+      case 'scan_complete': {
         const completeMessage = message as ScanCompleteMessage;
         this.emit('scan_complete', {
           volume_id: completeMessage.volume_id,
           result: completeMessage.data.result,
         });
         break;
+      }
 
-      case 'scan_progress':
+      case 'scan_progress': {
         const progressMessage = message as ScanProgressMessage;
         this.emit('scan_progress', {
           volume_id: progressMessage.volume_id,
           progress: progressMessage.data,
         });
         break;
+      }
 
-      case 'scan_error':
+      case 'scan_error': {
         const errorMessage = message as ScanErrorMessage;
         this.emit('scan_error', {
           volume_id: errorMessage.volume_id,
           error: errorMessage.data,
         });
         break;
+      }
 
       default:
         console.warn('Unknown message type:', message.type);

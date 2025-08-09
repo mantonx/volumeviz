@@ -1,7 +1,7 @@
-# Dependabot Automerge Setup
+# Dependency Management & Automerge System
 
 ## Overview
-This repository has automated dependency management with safe automerge capabilities for patch and minor version updates.
+This repository features a comprehensive dependency management system with automated policy enforcement, ESLint integration, and intelligent automerge capabilities based on version update types and package risk categories.
 
 ## How it Works
 
@@ -16,10 +16,16 @@ This repository has automated dependency management with safe automerge capabili
 - PRs with the `automerge` label will be automatically approved and merged when all checks pass
 - Major version updates require manual review and will get a warning comment
 
-### 3. Weekly Review
+### 3. ESLint Policy Enforcement
+- Custom ESLint rules validate package.json against dependency policies
+- Enforces version range preferences (^, ~, exact) based on package type
+- Prevents major version updates for critical packages
+- Validates dependency categorization and risk assessment
+
+### 4. Weekly Review
 - Every Monday at 10:00 UTC, a workflow generates a dependency review digest
 - Creates/updates an issue summarizing pending PRs and security status
-- Provides maintenance suggestions
+- Provides maintenance suggestions and policy compliance reports
 
 ## Manual Operations
 
@@ -36,6 +42,15 @@ gh pr edit <PR_NUMBER> --remove-label "automerge"
 ### Trigger Manual Dependency Review
 ```bash
 gh workflow run dependency-review.yml
+```
+
+### Lint Dependency Policies
+```bash
+# Check dependency policy compliance
+cd frontend && npm run lint:deps
+
+# Auto-fix dependency policy issues  
+cd frontend && npm run lint:deps:fix
 ```
 
 ### Bulk Label Safe PRs

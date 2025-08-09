@@ -1,0 +1,133 @@
+name: Dependency Policy Check
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'go.mod'
+      - 'go.sum'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'go.mod'
+      - 'go.sum'
+
+jobs:
+  dependency-policy-check:
+    runs-on: ubuntu-latest
+    name: Check Dependency Policies
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run dependency policy linting
+        run: |
+          cd frontend
+          npm run lint:deps
+
+      - name: Check for dependency vulnerabilities
+        run: |
+          cd frontend
+          npm audit --audit-level=moderate --production
+
+      - name: Analyze dependency changes
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "## 🔍 Dependency Policy Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if there are major version updates
+          if git diff --name-only HEAD~1 | grep -E "(package\.json|go\.mod)"; then
+            echo "### 📦 Package Files Changed" >> $GITHUB_STEP_SUMMARY
+            git diff --name-only HEAD~1 | grep -E "(package\.json|go\.mod)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Analyze frontend changes
+            if git diff --name-only HEAD~1 | grep "frontend/package.json"; then
+              echo "### 🎨 Frontend Dependency Changes" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`diff" >> $GITHUB_STEP_SUMMARY
+              git diff HEAD~1 frontend/package.json | grep -E "^\+.*\"|^\-.*\"" | head -20 >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Analyze backend changes  
+            if git diff --name-only HEAD~1 | grep "go.mod"; then
+              echo "### 🚀 Backend Dependency Changes" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`diff" >> $GITHUB_STEP_SUMMARY
+              git diff HEAD~1 go.mod | grep -E "^\+.*|^\-.*" | head -20 >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "### ✅ No dependency changes detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Setup Go
+        if: contains(github.event.head_commit.modified, 'go.mod') || contains(github.event.head_commit.modified, 'go.sum')
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Check Go module vulnerabilities
+        if: contains(github.event.head_commit.modified, 'go.mod') || contains(github.event.head_commit.modified, 'go.sum')
+        run: |
+          # Install govulncheck if not available
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  # Comment on PR with policy results
+  policy-comment:
+    if: github.event_name == 'pull_request'
+    needs: dependency-policy-check
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `## 🛡️ Dependency Policy Results
+            
+            Your dependency changes have been analyzed according to our dependency policies:
+            
+            ### ✅ Checks Passed
+            - ESLint dependency policy validation
+            - Security vulnerability scan
+            - Version range compliance
+            
+            ### 📋 Policy Summary
+            - **Major updates**: Require manual review and approval
+            - **Minor updates**: Auto-approved for whitelisted packages
+            - **Patch updates**: Generally auto-approved
+            - **Security updates**: Highest priority, auto-approved
+            
+            ### 🔗 Resources
+            - [Dependency Policy Configuration](/.dependency-policy.json)
+            - [Automerge Documentation](/.github/DEPENDABOT_AUTOMERGE.md)
+            
+            *This check runs automatically on all dependency changes.*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

@@ -190,8 +190,8 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
     return `Showing ${volumes.length} volume${volumes.length !== 1 ? 's' : ''} on page ${page} of ${Math.ceil(paginationMeta.total / page_size)}`;
   };
 
-  const FilterBar: React.FC = useMemo(() => () => {
-    return (
+  const FilterBar = useMemo(
+    () => (
       <div
         className="flex flex-wrap gap-2 items-center"
         role="toolbar"
@@ -272,8 +272,21 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
           </Button>
         )}
       </div>
-    );
-  }, [driver, sort, orphaned, system, handleDriverChange, handleSortChange, toggleOrphaned, toggleSystem, handleShowAll, setUrlState, q]);
+    ),
+    [
+      driver,
+      sort,
+      orphaned,
+      system,
+      handleDriverChange,
+      handleSortChange,
+      toggleOrphaned,
+      toggleSystem,
+      handleShowAll,
+      setUrlState,
+      q,
+    ],
+  );
 
   return (
     <div className="space-y-6">
@@ -400,9 +413,7 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
                 />
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <FilterBar />
-            </div>
+            <div className="flex flex-wrap gap-2">{FilterBar}</div>
           </div>
         </Card>
       </section>

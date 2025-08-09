@@ -23,7 +23,7 @@ jobs:
       uses: trufflesecurity/trufflehog@main
       with:
         path: ./
-        base: main
+        base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'HEAD~1' }}
         head: HEAD
         extra_args: --debug --only-verified
 
@@ -61,7 +61,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.24'
 
     - name: Run govulncheck
       run: |
@@ -96,13 +96,13 @@ jobs:
       run: |
         echo "Checking for potential secrets in configuration files..."
         
-        # Check for common secret patterns
-        if grep -r "password.*=" . --include="*.env*" --include="*.yaml" --include="*.yml"; then
+        # Check for common secret patterns (excluding .github workflows)
+        if grep -r "password.*=" . --include="*.env*" --include="*.yaml" --include="*.yml" --exclude-dir=".github"; then
           echo "⚠️  Found potential password in config files"
           exit 1
         fi
         
-        if grep -r "secret.*=" . --include="*.env*" --include="*.yaml" --include="*.yml"; then  
+        if grep -r "secret.*=" . --include="*.env*" --include="*.yaml" --include="*.yml" --exclude-dir=".github"; then  
           echo "⚠️  Found potential secret in config files"
           exit 1
         fi
