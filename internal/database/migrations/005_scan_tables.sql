@@ -40,14 +40,8 @@ CREATE INDEX IF NOT EXISTS idx_volume_stats_volume_name ON volume_stats(volume_n
 CREATE INDEX IF NOT EXISTS idx_volume_stats_ts ON volume_stats(ts);
 
 -- Add foreign key constraints if volumes table exists
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'volumes') THEN
-        -- Note: Using volume_name instead of volume_id for volume_stats since the app uses volume names
-        ALTER TABLE volume_stats ADD CONSTRAINT fk_volume_stats_volume_name 
-            FOREIGN KEY (volume_name) REFERENCES volumes(name) ON DELETE CASCADE;
-    END IF;
-END $$;
+-- Note: Foreign key constraint omitted to avoid unique constraint issues
+-- Volume names should be validated at the application level
 
 -- Add update trigger for updated_at columns
 CREATE OR REPLACE FUNCTION update_updated_at_column()

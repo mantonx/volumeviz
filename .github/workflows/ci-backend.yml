@@ -3,17 +3,17 @@ name: Backend CI
 on:
   pull_request:
     paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "frontend/**"
-      - ".github/workflows/ci-frontend.yml"
+      - '**/*.md'
+      - 'docs/**'
+      - 'frontend/**'
+      - '.github/workflows/ci-frontend.yml'
   push:
     branches: [main]
     paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "frontend/**"
-      - ".github/workflows/ci-frontend.yml"
+      - '**/*.md'
+      - 'docs/**'
+      - 'frontend/**'
+      - '.github/workflows/ci-frontend.yml'
 
 jobs:
   go:
@@ -43,7 +43,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: '1.22'
           cache: true
 
       - name: Download Go modules
@@ -70,10 +70,12 @@ jobs:
           DB_PASSWORD: volumeviz
           DB_NAME: volumeviz
         run: |
+          set -euo pipefail
           go test -race -covermode=atomic -coverprofile=coverage.out -v ./...
 
       - name: Enforce coverage threshold (60%)
         run: |
+          set -euo pipefail
           echo "📊 Analyzing test coverage..."
           pct=$(go tool cover -func=coverage.out | awk '/total:/ {print substr($3, 1, length($3)-1)}')
           echo "Total coverage: ${pct}%"
@@ -123,20 +125,31 @@ jobs:
         env:
           PGPASSWORD: volumeviz
         run: |
-          psql -h localhost -p 5432 -U volumeviz -d volumeviz -v ON_ERROR_STOP=1 -f scripts/seed.sql || true
+          set -euo pipefail
+          if [[ -f "scripts/seed.sql" ]]; then
+            psql -h localhost -p 5432 -U volumeviz -d volumeviz -v ON_ERROR_STOP=1 -f scripts/seed.sql || echo "⚠️  Database seeding failed"
+          else
+            echo "⚠️  No seed file found, skipping database seeding"
+          fi
 
-      - name: Smoke: query migration status and volume count
+      - name: Smoke test - API endpoints
         if: always()
         env:
+          DB_TYPE: postgres
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: volumeviz
           DB_PASSWORD: volumeviz
           DB_NAME: volumeviz
+          DB_SSLMODE: disable
+          LOG_LEVEL: info
+          CI: true
+          # Use dynamic port to avoid conflicts
+          API_PORT: 0
+          SMOKE_TIMEOUT: 60
+          HEALTH_RETRIES: 30
         run: |
-          go run ./cmd/server &
-          SVR=$!
-          sleep 2
-          curl -sf http://localhost:8080/api/v1/health | jq '.checks.migrations.current_version' || true
-          curl -sf http://localhost:8080/api/v1/database/stats | jq '.volume_count' || true
-          kill $$SVR || true
+          set -euo pipefail
+          echo "🚀 Running smoke tests..."
+          chmod +x ./scripts/smoke-test.sh
+          ./scripts/smoke-test.sh

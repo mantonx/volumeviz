@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-build docker-run lint format migrate up down restart logs logs-api logs-web ps rebuild dev-token dev-token-admin security-check db-seed db-prune
+.PHONY: help build run test clean docker-build docker-run lint format migrate up down restart logs logs-api logs-web ps rebuild dev-token dev-token-admin security-check db-seed db-prune smoke-test
 
 # Variables
 BINARY_NAME=volumeviz
@@ -28,6 +28,7 @@ help:
 	@echo "  test-integration - Run integration tests"
 	@echo "  test-e2e      - Run end-to-end tests"
 	@echo "  test-all      - Run all tests"
+	@echo "  smoke-test    - Run API smoke tests against running server"
 	@echo "  clean         - Clean build artifacts"
 	@echo "  docker-build  - Build Docker image"
 	@echo "  docker-run    - Run Docker container"
@@ -89,6 +90,11 @@ test-e2e:
 
 # Run all tests
 test-all: test test-integration test-e2e
+
+# Run API smoke tests against running server
+smoke-test:
+	@echo "Running smoke tests..."
+	./scripts/smoke-test.sh
 
 # Clean build artifacts
 clean:
