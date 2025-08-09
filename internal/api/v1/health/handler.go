@@ -10,6 +10,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/scheduler"
+	"github.com/mantonx/volumeviz/internal/version"
 )
 
 // Handler handles health-related HTTP requests
@@ -129,6 +130,7 @@ func (h *Handler) GetAppHealth(c *gin.Context) {
 	health := gin.H{
 		"status":    "healthy",
 		"timestamp": time.Now().Unix(),
+		"version":   version.Get(),
 		"checks":    checks,
 	}
 

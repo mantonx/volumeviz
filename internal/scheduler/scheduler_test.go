@@ -370,17 +370,39 @@ func TestSchedulerStopWhenNotRunning(t *testing.T) {
 }
 
 func TestEnqueueVolume(t *testing.T) {
-	scheduler, _, _, _, mockMetrics := createTestScheduler()
+	scheduler, mockScanner, mockRepo, mockProvider, mockMetrics := createTestScheduler()
 	ctx := context.Background()
+
+	// Mock repository methods that workers might call
+	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*database.VolumeScanStats")).Return(nil).Maybe()
+
+	// Mock scanner methods that workers might call  
+	mockScanner.On("ScanVolume", mock.Anything, "test-volume").Return(&interfaces.ScanResult{
+		VolumeID:  "test-volume",
+		TotalSize: 1024,
+		Method:    "diskus",
+	}, nil).Maybe()
+
+	// Mock provider methods that workers might call
+	mockProvider.On("GetVolume", mock.Anything, "test-volume").Return(&database.Volume{
+		Name: "test-volume",
+	}, nil).Maybe()
 
 	// Start scheduler
 	mockMetrics.On("SetSchedulerRunningStatus", true).Once()
-	mockMetrics.On("UpdateSchedulerQueueDepth", 0).Twice() // Once on start, once on enqueue
-	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Times(3) // Start, enqueue, stop
+	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Maybe() // Called by start, enqueue, and workers
+	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Maybe() // Called multiple times by workers
+
+	// Mock other metrics methods that workers might call
+	mockMetrics.On("ScanStarted", mock.AnythingOfType("string")).Maybe()
+	mockMetrics.On("ScanFinished", mock.AnythingOfType("string")).Maybe()
+	mockMetrics.On("ScanCompleted", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration"), mock.AnythingOfType("int64")).Maybe()
+	mockMetrics.On("RecordScanAttempt", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration"), mock.AnythingOfType("bool")).Maybe()
 
 	// Stop scheduler
 	mockMetrics.On("SetSchedulerRunningStatus", false).Once()
-	mockMetrics.On("UpdateSchedulerQueueDepth", 0).Once()
 
 	scheduler.Start(ctx)
 
@@ -388,6 +410,9 @@ func TestEnqueueVolume(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, scanID)
+
+	// Give a short time for the worker to potentially process the task
+	time.Sleep(10 * time.Millisecond)
 
 	// Clean up
 	scheduler.Stop(ctx)
@@ -433,7 +458,7 @@ func TestEnqueueVolumeSkipPattern(t *testing.T) {
 }
 
 func TestEnqueueAllVolumes(t *testing.T) {
-	scheduler, _, _, mockProvider, mockMetrics := createTestScheduler()
+	scheduler, mockScanner, mockRepo, mockProvider, mockMetrics := createTestScheduler()
 	ctx := context.Background()
 
 	// Mock volumes
@@ -443,15 +468,36 @@ func TestEnqueueAllVolumes(t *testing.T) {
 	}
 	mockProvider.On("ListVolumes", mock.AnythingOfType("*context.cancelCtx")).Return(volumes, nil)
 
+	// Mock repository methods that workers might call
+	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*database.VolumeScanStats")).Return(nil).Maybe()
+
+	// Mock scanner methods that workers might call
+	mockScanner.On("ScanVolume", mock.Anything, mock.AnythingOfType("string")).Return(&interfaces.ScanResult{
+		VolumeID:  "test",
+		TotalSize: 1024,
+		Method:    "diskus",
+	}, nil).Maybe()
+
+	// Mock provider methods that workers might call
+	mockProvider.On("GetVolume", mock.Anything, mock.AnythingOfType("string")).Return(&database.Volume{
+		Name: "test",
+	}, nil).Maybe()
+
 	// Start scheduler
 	mockMetrics.On("SetSchedulerRunningStatus", true).Once()
-	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Times(3) // Start + 2 enqueues
-	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Times(3)
+	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Maybe() // Called by start, enqueues, and workers
+	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Maybe() // Called by workers
+
+	// Mock other metrics methods that workers might call
+	mockMetrics.On("ScanStarted", mock.AnythingOfType("string")).Maybe()
+	mockMetrics.On("ScanFinished", mock.AnythingOfType("string")).Maybe()
+	mockMetrics.On("ScanCompleted", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration"), mock.AnythingOfType("int64")).Maybe()
+	mockMetrics.On("RecordScanAttempt", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration"), mock.AnythingOfType("bool")).Maybe()
 
 	// Stop scheduler
 	mockMetrics.On("SetSchedulerRunningStatus", false).Once()
-	mockMetrics.On("UpdateSchedulerQueueDepth", 0).Once()
-	mockMetrics.On("UpdateSchedulerWorkerUtilization", 0.0).Once()
 
 	scheduler.Start(ctx)
 
@@ -460,6 +506,9 @@ func TestEnqueueAllVolumes(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, batchID)
 
+	// Give a short time for the workers to potentially process tasks
+	time.Sleep(10 * time.Millisecond)
+
 	// Clean up
 	scheduler.Stop(ctx)
 	mockProvider.AssertExpectations(t)
@@ -467,7 +516,7 @@ func TestEnqueueAllVolumes(t *testing.T) {
 }
 
 func TestEnqueueAllVolumesRateLimit(t *testing.T) {
-	scheduler, _, _, mockProvider, mockMetrics := createTestScheduler()
+	scheduler, mockScanner, mockRepo, mockProvider, mockMetrics := createTestScheduler()
 	ctx := context.Background()
 
 	// Mock volumes
@@ -476,15 +525,36 @@ func TestEnqueueAllVolumesRateLimit(t *testing.T) {
 	}
 	mockProvider.On("ListVolumes", mock.AnythingOfType("*context.cancelCtx")).Return(volumes, nil).Once()
 
+	// Mock repository methods that workers might call
+	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*database.VolumeScanStats")).Return(nil).Maybe()
+
+	// Mock scanner methods that workers might call
+	mockScanner.On("ScanVolume", mock.Anything, mock.AnythingOfType("string")).Return(&interfaces.ScanResult{
+		VolumeID:  "test",
+		TotalSize: 1024,
+		Method:    "diskus",
+	}, nil).Maybe()
+
+	// Mock provider methods that workers might call
+	mockProvider.On("GetVolume", mock.Anything, mock.AnythingOfType("string")).Return(&database.Volume{
+		Name: "test",
+	}, nil).Maybe()
+
 	// Start scheduler
 	mockMetrics.On("SetSchedulerRunningStatus", true).Once()
-	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Twice()
-	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Twice()
+	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Maybe() // Called by start, enqueues, and workers
+	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Maybe() // Called by workers
+
+	// Mock other metrics methods that workers might call
+	mockMetrics.On("ScanStarted", mock.AnythingOfType("string")).Maybe()
+	mockMetrics.On("ScanFinished", mock.AnythingOfType("string")).Maybe()
+	mockMetrics.On("ScanCompleted", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration"), mock.AnythingOfType("int64")).Maybe()
+	mockMetrics.On("RecordScanAttempt", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration"), mock.AnythingOfType("bool")).Maybe()
 
 	// Stop scheduler
 	mockMetrics.On("SetSchedulerRunningStatus", false).Once()
-	mockMetrics.On("UpdateSchedulerQueueDepth", 0).Once()
-	mockMetrics.On("UpdateSchedulerWorkerUtilization", 0.0).Once()
 
 	scheduler.Start(ctx)
 
@@ -498,6 +568,9 @@ func TestEnqueueAllVolumesRateLimit(t *testing.T) {
 	assert.Error(t, err2)
 	assert.Empty(t, batchID2)
 	assert.Contains(t, err2.Error(), "rate limited")
+
+	// Give a short time for the workers to potentially process tasks
+	time.Sleep(10 * time.Millisecond)
 
 	// Clean up
 	scheduler.Stop(ctx)

@@ -1,6 +1,12 @@
 # Multi-stage build for production
 FROM golang:1.24.5-alpine AS backend-builder
 
+# Version arguments
+ARG VERSION=dev
+ARG GIT_COMMIT=unknown
+ARG GIT_BRANCH=unknown
+ARG BUILD_DATE=unknown
+
 # Install dependencies for building and scanning
 RUN apk add --no-cache git coreutils
 
@@ -16,8 +22,13 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o volumeviz ./cmd/server
+# Build the application with version information
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
+    -ldflags "-X github.com/mantonx/volumeviz/internal/version.Version=${VERSION} \
+              -X github.com/mantonx/volumeviz/internal/version.GitCommit=${GIT_COMMIT} \
+              -X github.com/mantonx/volumeviz/internal/version.GitBranch=${GIT_BRANCH} \
+              -X github.com/mantonx/volumeviz/internal/version.BuildDate=${BUILD_DATE}" \
+    -o volumeviz ./cmd/server
 
 # Frontend builder stage
 FROM node:18-alpine AS frontend-builder

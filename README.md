@@ -101,6 +101,109 @@ make logs
 
 **First-time setup**: The application will automatically run database migrations on startup. Services include health checks and will restart automatically if they become unhealthy.
 
+## Install with Docker
+
+VolumeViz is available as a multi-architecture Docker image supporting **amd64** and **arm64** platforms.
+
+### Single Container (Lightweight)
+
+Run VolumeViz with built-in SQLite database:
+
+```bash
+# Using Docker CLI
+docker run -d \
+  --name volumeviz \
+  -p 8080:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -v volumeviz-data:/app/data \
+  ghcr.io/mantonx/volumeviz:latest
+
+# Access the application
+# - Web UI: http://localhost:8080 (built-in frontend)
+# - API: http://localhost:8080/api/v1
+# - Health: http://localhost:8080/api/v1/health
+```
+
+### Docker Compose (Recommended)
+
+For production setups with PostgreSQL database:
+
+```yaml
+version: '3.8'
+
+services:
+  volumeviz:
+    image: ghcr.io/mantonx/volumeviz:latest
+    container_name: volumeviz
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=volumeviz
+      - DB_PASSWORD=volumeviz
+      - DB_NAME=volumeviz
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: volumeviz-postgres
+    environment:
+      - POSTGRES_USER=volumeviz
+      - POSTGRES_PASSWORD=volumeviz
+      - POSTGRES_DB=volumeviz
+    volumes:
+      - volumeviz-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U volumeviz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  volumeviz-postgres-data:
+```
+
+### Image Tags
+
+- `ghcr.io/mantonx/volumeviz:latest` - Latest stable release (tracks `v*` tags)
+- `ghcr.io/mantonx/volumeviz:v0.1.0` - Specific version 
+- `ghcr.io/mantonx/volumeviz:main` - Latest development build (main branch)
+
+### Multi-Architecture Support
+
+VolumeViz images are built for multiple architectures:
+- **linux/amd64** - x86_64 systems (Intel/AMD)
+- **linux/arm64** - ARM64 systems (Apple Silicon, ARM servers)
+
+Docker will automatically pull the correct architecture for your platform.
+
+### Environment Variables (Docker)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DB_TYPE` | Database type (sqlite, postgres) | sqlite |
+| `DB_PATH` | SQLite database file path | /app/data/volumeviz.db |
+| `DB_HOST` | PostgreSQL host | localhost |
+| `DB_PORT` | PostgreSQL port | 5432 |
+| `DB_USER` | Database username | volumeviz |
+| `DB_PASSWORD` | Database password | - |
+| `DB_NAME` | Database name | volumeviz |
+| `SERVER_PORT` | HTTP server port | 8080 |
+| `DOCKER_HOST` | Docker daemon socket | unix:///var/run/docker.sock |
+| `LOG_LEVEL` | Log level (debug, info, warn, error) | info |
+
 ### Development Setup
 
 ```bash

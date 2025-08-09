@@ -94,7 +94,7 @@ func TestHandler_GetDockerHealth(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := tt.setupMock()
 			dockerService := services.NewDockerServiceWithClient(mockClient)
-			handler := NewHandler(dockerService, nil)
+			handler := NewHandler(dockerService, nil, nil, nil)
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
@@ -144,7 +144,7 @@ func TestHandler_GetAppHealth(t *testing.T) {
 				},
 			}
 			dockerService := services.NewDockerServiceWithClient(mockClient)
-			handler := NewHandler(dockerService, nil)
+			handler := NewHandler(dockerService, nil, nil, nil)
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
@@ -194,7 +194,7 @@ func TestHandler_GetReadiness(t *testing.T) {
 				},
 			}
 			dockerService := services.NewDockerServiceWithClient(mockClient)
-			handler := NewHandler(dockerService, nil)
+			handler := NewHandler(dockerService, nil, nil, nil)
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
@@ -219,7 +219,7 @@ func TestHandler_GetReadiness(t *testing.T) {
 func TestHandler_GetLiveness(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	handler := NewHandler(nil, nil) // Liveness doesn't need Docker service
+	handler := NewHandler(nil, nil, nil, nil) // Liveness doesn't need Docker service
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)

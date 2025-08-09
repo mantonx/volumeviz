@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
@@ -54,9 +56,20 @@ func (s *DockerService) Ping(ctx context.Context) error {
 	return s.client.Ping(ctx)
 }
 
+// IsConnected checks if the Docker daemon is connected
+// Returns true if connected, false otherwise
+func (s *DockerService) IsConnected(ctx context.Context) bool {
+	return s.client.IsConnected(ctx)
+}
+
 // GetVersion returns Docker daemon version information
 // Useful for compatibility checks and debugging
 func (s *DockerService) GetVersion(ctx context.Context) (types.Version, error) {
+	return s.client.Version(ctx)
+}
+
+// Version is an alias for GetVersion to satisfy the DockerClient interface
+func (s *DockerService) Version(ctx context.Context) (types.Version, error) {
 	return s.client.Version(ctx)
 }
 
@@ -228,3 +241,34 @@ func (s *DockerService) GetVolumesByLabel(ctx context.Context, labelKey, labelVa
 
 	return volumes, nil
 }
+
+// ContainerInspect returns detailed information about a container
+// This is needed for the events service to inspect containers
+func (s *DockerService) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
+	return s.client.ContainerInspect(ctx, containerID)
+}
+
+// Events returns a channel of Docker events and errors
+// Used by the events service to monitor Docker daemon events
+func (s *DockerService) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {
+	return s.client.Events(ctx, options)
+}
+
+// ListContainers returns a list of containers
+// Needed for event reconciliation
+func (s *DockerService) ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error) {
+	return s.client.ListContainers(ctx, filterMap)
+}
+
+// InspectVolume returns detailed information about a volume
+// Needed for events processing
+func (s *DockerService) InspectVolume(ctx context.Context, volumeID string) (volume.Volume, error) {
+	return s.client.InspectVolume(ctx, volumeID)
+}
+
+// InspectContainer is an alias for GetVolumeContainers' internal implementation
+// Returns detailed container information in the Docker API format
+func (s *DockerService) InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error) {
+	return s.client.InspectContainer(ctx, containerID)
+}
+

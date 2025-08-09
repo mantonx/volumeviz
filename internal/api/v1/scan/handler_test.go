@@ -57,7 +57,7 @@ func (m *MockVolumeScanner) ClearCache(volumeID string) error {
 func setupTestRouter(scanner interfaces.VolumeScanner) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	handler := NewHandler(scanner, &websocket.Hub{}, nil)
+	handler := NewHandler(scanner, &websocket.Hub{}, nil, nil)
 
 	r.GET("/volumes/:id/size", handler.GetVolumeSize)
 	r.POST("/volumes/:id/size/refresh", handler.RefreshVolumeSize)

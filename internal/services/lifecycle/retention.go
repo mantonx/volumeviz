@@ -85,6 +85,25 @@ func (s *Service) runOnce(ctx context.Context) {
 		}
 	}
 
+	// Prune old volume_stats entries (scan history)
+	if s.cfg.SizesTTLDays > 0 {
+		if n, err := s.pruneOlderThan(ctx, "volume_stats", "ts", s.cfg.SizesTTLDays); err != nil {
+			log.Printf("retention: prune volume_stats failed: %v", err)
+		} else if n > 0 {
+			log.Printf("retention: pruned %d rows from volume_stats", n)
+		}
+	}
+
+	// Prune old scan_runs entries (scan job history) - keep only completed/failed runs older than TTL
+	if s.cfg.SizesTTLDays > 0 {
+		// Only clean up completed and failed runs, leave queued/running ones
+		if n, err := s.pruneOlderThanWithCondition(ctx, "scan_runs", "created_at", s.cfg.SizesTTLDays, "status IN ('completed', 'failed', 'canceled')"); err != nil {
+			log.Printf("retention: prune scan_runs failed: %v", err)
+		} else if n > 0 {
+			log.Printf("retention: pruned %d rows from scan_runs", n)
+		}
+	}
+
 	if s.cfg.RollupEnabled {
 		if err := s.rollupDaily(ctx); err != nil {
 			log.Printf("retention: rollup failed: %v", err)
@@ -93,14 +112,28 @@ func (s *Service) runOnce(ctx context.Context) {
 }
 
 func (s *Service) pruneOlderThan(ctx context.Context, table, tsCol string, ttlDays int) (int64, error) {
+	return s.pruneOlderThanWithCondition(ctx, table, tsCol, ttlDays, "")
+}
+
+func (s *Service) pruneOlderThanWithCondition(ctx context.Context, table, tsCol string, ttlDays int, condition string) (int64, error) {
 	// Different SQL dialects for Postgres vs SQLite
 	// Use CURRENT_TIMESTAMP - interval in Postgres; datetime('now', ...) for SQLite
 	// Try Postgres first; if it fails due to syntax, fallback to SQLite form
-	pg := fmt.Sprintf("DELETE FROM %s WHERE %s < (CURRENT_TIMESTAMP - INTERVAL '%d days')", table, tsCol, ttlDays)
+	
+	whereClause := fmt.Sprintf("%s < (CURRENT_TIMESTAMP - INTERVAL '%d days')", tsCol, ttlDays)
+	if condition != "" {
+		whereClause = fmt.Sprintf("%s AND %s", whereClause, condition)
+	}
+	
+	pg := fmt.Sprintf("DELETE FROM %s WHERE %s", table, whereClause)
 	res, err := s.db.ExecContext(ctx, pg)
 	if err != nil {
 		// likely SQLite
-		sqlite := fmt.Sprintf("DELETE FROM %s WHERE %s < datetime('now', '-%d days')", table, tsCol, ttlDays)
+		whereClauseSQLite := fmt.Sprintf("%s < datetime('now', '-%d days')", tsCol, ttlDays)
+		if condition != "" {
+			whereClauseSQLite = fmt.Sprintf("%s AND %s", whereClauseSQLite, condition)
+		}
+		sqlite := fmt.Sprintf("DELETE FROM %s WHERE %s", table, whereClauseSQLite)
 		res, err = s.db.ExecContext(ctx, sqlite)
 		if err != nil {
 			return 0, err

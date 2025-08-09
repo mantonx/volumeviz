@@ -1,9 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
+import { ToastProvider } from '@/components/ui';
 import {
   Dashboard,
   VolumesPage,
+  VolumeDetailsPage,
   HealthPage,
   SettingsPage,
   NotFoundPage,
@@ -15,12 +17,14 @@ import {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <Layout>
+    <ToastProvider>
+      <Router>
+        <Layout>
         <Routes>
           {/* Main Routes */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/volumes" element={<VolumesPage />} />
+          <Route path="/volumes/:name" element={<VolumeDetailsPage />} />
 
           {/* Visualization Routes */}
           <Route path="/realtime" element={<RealTimeDashboard />} />
@@ -33,8 +37,9 @@ const App: React.FC = () => {
           {/* 404 Route */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </Layout>
-    </Router>
+        </Layout>
+      </Router>
+    </ToastProvider>
   );
 };
 

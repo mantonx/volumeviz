@@ -180,8 +180,7 @@ func TestWorkerProcessTaskDatabaseError(t *testing.T) {
 	dbError := errors.New("database connection failed")
 	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*database.ScanJob")).Return(dbError)
 
-	// Expect metrics calls
-	mockMetrics.On("ScanStarted", "diskus").Once()
+	// Expect metrics calls - ScanStarted should NOT be called if DB insert fails
 	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Times(2) // Start and end
 
 	// Process the task - should handle DB error gracefully
@@ -280,6 +279,7 @@ func TestWorkerConcurrency(t *testing.T) {
 	// Start scheduler with multiple workers
 	ctx := context.Background()
 	mockMetrics.On("SetSchedulerRunningStatus", true).Once()
+	mockMetrics.On("SetSchedulerRunningStatus", false).Once() // For Stop()
 	mockMetrics.On("UpdateSchedulerQueueDepth", mock.AnythingOfType("int")).Maybe()
 	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Maybe()
 	mockMetrics.On("ScanStarted", mock.AnythingOfType("string")).Maybe()

@@ -52,12 +52,19 @@ export function isApiError(error: any): error is ApiError {
  * Extract user-friendly error message from API error
  */
 export function getErrorMessage(error: any): string {
+  // First check if it's a structured API error
   if (isApiError(error)) {
     const { code, message } = error.error;
 
     // Return custom message if available, otherwise use code-based message
     const friendlyMessage = ERROR_MESSAGES[code];
     return friendlyMessage || message || 'An error occurred';
+  }
+
+  // Check for HTTP status codes
+  const statusCode = getHttpStatusCode(error);
+  if (statusCode) {
+    return getStatusCodeMessage(statusCode);
   }
 
   // Handle non-API errors
@@ -165,6 +172,65 @@ export function formatErrorForDisplay(error: any): {
     variant: 'error',
     showRetry: true,
   };
+}
+
+/**
+ * Get HTTP status code from error response
+ */
+export function getHttpStatusCode(error: any): number | null {
+  // Check if error has response.status (axios-like)
+  if (error?.response?.status) {
+    return error.response.status;
+  }
+  
+  // Check if error has status property directly
+  if (typeof error?.status === 'number') {
+    return error.status;
+  }
+  
+  // Check if error has response.status (fetch-like)
+  if (error?.response && typeof error.response.status === 'number') {
+    return error.response.status;
+  }
+  
+  return null;
+}
+
+/**
+ * Get user-friendly message based on HTTP status code
+ */
+export function getStatusCodeMessage(statusCode: number): string {
+  switch (statusCode) {
+    case 400:
+      return 'Bad request. Please check your input and try again.';
+    case 401:
+      return 'Authentication required. Please log in and try again.';
+    case 403:
+      return 'Access denied. You don\'t have permission to perform this action.';
+    case 404:
+      return 'The requested resource was not found.';
+    case 409:
+      return 'Conflict. The resource already exists or is being modified.';
+    case 422:
+      return 'Invalid input. Please check your data and try again.';
+    case 429:
+      return 'Too many requests. Please wait a moment and try again.';
+    case 500:
+      return 'Internal server error. Please try again later.';
+    case 502:
+      return 'Service temporarily unavailable. Please try again later.';
+    case 503:
+      return 'Service temporarily unavailable. Please try again later.';
+    case 504:
+      return 'Request timeout. Please try again.';
+    default:
+      if (statusCode >= 400 && statusCode < 500) {
+        return 'Client error. Please check your request and try again.';
+      } else if (statusCode >= 500) {
+        return 'Server error. Please try again later.';
+      }
+      return 'An error occurred. Please try again.';
+  }
 }
 
 /**

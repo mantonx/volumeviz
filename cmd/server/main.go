@@ -17,6 +17,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/services"
 	lifecycle "github.com/mantonx/volumeviz/internal/services/lifecycle"
+	"github.com/mantonx/volumeviz/internal/version"
 
 	_ "github.com/mantonx/volumeviz/docs" // Generated docs
 )
@@ -47,6 +48,12 @@ import (
 // @tag.description Volume scanning operations
 
 func main() {
+	// Print version information
+	versionInfo := version.Get()
+	log.Printf("Starting VolumeViz %s", versionInfo.Version)
+	log.Printf("Build info: commit=%s, date=%s, go=%s, platform=%s", 
+		versionInfo.GitCommit, versionInfo.BuildDate, versionInfo.GoVersion, versionInfo.Platform)
+
 	// Load configuration
 	cfg := config.Load()
 
@@ -106,6 +113,20 @@ func main() {
 	// Setup v1 API router
 	apiRouter := v1.NewRouter(dockerService, db, cfg)
 	router := apiRouter.Engine()
+	
+	// Start events service if enabled
+	if cfg.Events.Enabled && apiRouter.EventsService() != nil {
+		if err := apiRouter.EventsService().Start(context.Background()); err != nil {
+			log.Printf("[WARN] Failed to start events service: %v", err)
+		}
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			if err := apiRouter.EventsService().Stop(ctx); err != nil {
+				log.Printf("[ERROR] Failed to stop events service: %v", err)
+			}
+		}()
+	}
 
 	// Create server
 	srv := &http.Server{
@@ -142,6 +163,13 @@ func main() {
 	// Graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+	
+	// Stop scheduler if running
+	if apiRouter.Scheduler() != nil {
+		if err := apiRouter.Scheduler().Stop(ctx); err != nil {
+			log.Printf("[ERROR] Failed to stop scan scheduler: %v", err)
+		}
+	}
 
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server forced to shutdown:", err)

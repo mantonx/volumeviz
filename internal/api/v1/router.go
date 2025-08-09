@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,7 @@ import (
 	coreMetrics "github.com/mantonx/volumeviz/internal/core/services/metrics"
 	"github.com/mantonx/volumeviz/internal/core/services/scanner"
 	databasePkg "github.com/mantonx/volumeviz/internal/database"
+	"github.com/mantonx/volumeviz/internal/events"
 	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/services"
 	"github.com/mantonx/volumeviz/internal/websocket"
@@ -37,6 +39,7 @@ type Router struct {
 	database      *databasePkg.DB
 	websocketHub  *websocket.Hub
 	scheduler     scheduler.ScanScheduler // Optional scan scheduler
+	eventsService events.EventService    // Optional events service
 }
 
 // NewRouter creates a new v1 API router
@@ -87,8 +90,47 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, 
 			log.Printf("[WARN] Failed to initialize scan scheduler: %v", err)
 		} else {
 			scanScheduler = schedulerInstance
-			log.Printf("[INFO] Scan scheduler initialized")
+			// Start the scheduler
+			if err := scanScheduler.Start(context.Background()); err != nil {
+				log.Printf("[ERROR] Failed to start scan scheduler: %v", err)
+			} else {
+				log.Printf("[INFO] Scan scheduler started")
+			}
 		}
+	}
+
+	// Initialize events service if enabled
+	var eventsService events.EventService
+	if config.Events.Enabled {
+		// Create event repository
+		eventRepo := databasePkg.NewEventRepository(database)
+		
+		// Create event metrics collector
+		eventMetrics := events.NewEventMetricsCollector(
+			"volumeviz",
+			"events",
+			prometheus.Labels{"instance": "main"},
+		)
+		
+		// Create Docker client adapter for events service
+		dockerClient := services.NewDockerClientAdapter(dockerService)
+		
+		// Create event handler service
+		eventHandler := events.NewEventHandlerService(dockerClient, eventRepo, eventMetrics)
+		
+		// Create event reconciler
+		eventReconcileMetrics := &events.EventMetrics{
+			ProcessedTotal: make(map[events.EventType]int64),
+			ErrorsTotal:    make(map[string]int64),
+			ReconcileRuns:  make(map[string]int64),
+		}
+		eventReconciler := events.NewReconcilerService(dockerClient, eventRepo, &config.Events, eventReconcileMetrics, eventMetrics)
+		
+		// Create events client
+		eventsClient := events.NewEventsClient(dockerClient, &config.Events, eventHandler, eventReconciler, eventMetrics)
+		eventsService = eventsClient
+		
+		log.Printf("[INFO] Docker events integration initialized")
 	}
 
 	router := &Router{
@@ -98,6 +140,7 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, 
 		database:      database,
 		websocketHub:  hub,
 		scheduler:     scanScheduler,
+		eventsService: eventsService,
 	}
 
 	router.setupMiddleware(config)
@@ -114,6 +157,16 @@ func (r *Router) Engine() *gin.Engine {
 // GetWebSocketHub returns the WebSocket hub for broadcasting messages
 func (r *Router) GetWebSocketHub() *websocket.Hub {
 	return r.websocketHub
+}
+
+// EventsService returns the events service if configured
+func (r *Router) EventsService() events.EventService {
+	return r.eventsService
+}
+
+// Scheduler returns the scan scheduler if configured
+func (r *Router) Scheduler() scheduler.ScanScheduler {
+	return r.scheduler
 }
 
 // setupMiddleware configures all middleware for the router
@@ -193,7 +246,7 @@ func (r *Router) setupRoutes() {
 		websocketHandler.RegisterRoutes(v1)
 
 		// Register sub-routers
-		healthRouter := health.NewRouter(r.dockerService, r.database, nil, r.scheduler)
+		healthRouter := health.NewRouter(r.dockerService, r.database, r.eventsService, r.scheduler)
 		healthRouter.RegisterRoutes(v1)
 
 		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub, r.database)

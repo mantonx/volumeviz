@@ -397,8 +397,7 @@ func TestGetOrphanedVolumes(t *testing.T) {
 					},
 				}
 				m.On("ListVolumes", mock.Anything).Return(volumes, nil)
-				// Both volumes are orphaned, but system volume should be excluded
-				m.On("GetVolumeContainers", mock.Anything, "vol1").Return([]coremodels.VolumeContainer{}, nil)
+				// Only the user volume will be checked since system volume is filtered out first
 				m.On("GetVolumeContainers", mock.Anything, "vol2").Return([]coremodels.VolumeContainer{}, nil)
 			},
 			expectedStatus: 200,

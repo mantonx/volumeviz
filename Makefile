@@ -6,6 +6,18 @@ DOCKER_IMAGE=volumeviz:latest
 GO_FILES=$(shell find . -name '*.go' -type f)
 MAIN_PACKAGE=./cmd/server
 
+# Version information
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+GIT_COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
+GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Build flags
+LDFLAGS=-ldflags "-X github.com/mantonx/volumeviz/internal/version.Version=$(VERSION) \
+	-X github.com/mantonx/volumeviz/internal/version.GitCommit=$(GIT_COMMIT) \
+	-X github.com/mantonx/volumeviz/internal/version.GitBranch=$(GIT_BRANCH) \
+	-X github.com/mantonx/volumeviz/internal/version.BuildDate=$(BUILD_DATE)"
+
 # Default target
 help:
 	@echo "Available targets:"
@@ -38,10 +50,17 @@ help:
 	@echo "  db-seed       - Seed the database with sample data"
 	@echo "  db-prune      - Prune the database"
 
+# Show version information
+version:
+	@echo "Version: $(VERSION)"
+	@echo "Git commit: $(GIT_COMMIT)"
+	@echo "Git branch: $(GIT_BRANCH)"
+	@echo "Build date: $(BUILD_DATE)"
+
 # Build the binary
 build:
-	@echo "Building..."
-	go build -o $(BINARY_NAME) $(MAIN_PACKAGE)
+	@echo "Building $(BINARY_NAME) version $(VERSION)..."
+	go build $(LDFLAGS) -o $(BINARY_NAME) $(MAIN_PACKAGE)
 	@echo "Build complete: $(BINARY_NAME)"
 
 # Run the application
