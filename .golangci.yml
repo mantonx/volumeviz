@@ -48,6 +48,10 @@ issues:
         - dupl
         - gocyclo
         - gosec
+    # Exclude errcheck for mock files as they contain test doubles
+    - path: .*mock.*\.go
+      linters:
+        - errcheck
     # Exclude known WIP file from unused warnings (until implemented)
     - path: internal/database/metrics_repository\.go
       linters:

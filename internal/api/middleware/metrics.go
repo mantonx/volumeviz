@@ -44,8 +44,8 @@ var (
 	// HTTP request size histogram
 	httpRequestSize = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "http_request_size_bytes",
-			Help: "Size of HTTP requests in bytes",
+			Name:    "http_request_size_bytes",
+			Help:    "Size of HTTP requests in bytes",
 			Buckets: prometheus.ExponentialBuckets(100, 10, 7), // 100B to 100MB
 		},
 		[]string{"method", "path"},
@@ -54,8 +54,8 @@ var (
 	// HTTP response size histogram
 	httpResponseSize = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "http_response_size_bytes",
-			Help: "Size of HTTP responses in bytes",
+			Name:    "http_response_size_bytes",
+			Help:    "Size of HTTP responses in bytes",
 			Buckets: prometheus.ExponentialBuckets(100, 10, 7), // 100B to 100MB
 		},
 		[]string{"method", "path", "status"},
@@ -73,8 +73,8 @@ var (
 	// Database query duration histogram
 	dbQueryDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "database_query_duration_seconds",
-			Help: "Duration of database queries in seconds",
+			Name:    "database_query_duration_seconds",
+			Help:    "Duration of database queries in seconds",
 			Buckets: prometheus.DefBuckets,
 		},
 		[]string{"query_type", "table"},
@@ -91,8 +91,8 @@ var (
 	// API-specific metrics
 	volumeScanDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "volume_scan_duration_seconds",
-			Help: "Duration of volume scan operations in seconds",
+			Name:    "volume_scan_duration_seconds",
+			Help:    "Duration of volume scan operations in seconds",
 			Buckets: []float64{1, 5, 10, 30, 60, 120, 300, 600}, // Up to 10 minutes
 		},
 		[]string{"volume_id", "scan_type"},
@@ -147,7 +147,7 @@ func MetricsMiddleware() gin.HandlerFunc {
 		// Record metrics
 		httpDuration.WithLabelValues(method, path, status).Observe(duration)
 		httpRequestsTotal.WithLabelValues(method, path, status).Inc()
-		
+
 		// Record response size
 		responseSize := float64(c.Writer.Size())
 		if responseSize > 0 {
@@ -168,11 +168,11 @@ func normalizePath(path string) string {
 
 	// Common patterns to normalize
 	patterns := map[string]string{
-		"/api/v1/volumes/:id":             "/api/v1/volumes/{id}",
-		"/api/v1/volumes/:id/size":        "/api/v1/volumes/{id}/size",
+		"/api/v1/volumes/:id":              "/api/v1/volumes/{id}",
+		"/api/v1/volumes/:id/size":         "/api/v1/volumes/{id}/size",
 		"/api/v1/volumes/:id/size/refresh": "/api/v1/volumes/{id}/size/refresh",
-		"/api/v1/scans/:id":               "/api/v1/scans/{id}",
-		"/api/v1/scans/:id/status":        "/api/v1/scans/{id}/status",
+		"/api/v1/scans/:id":                "/api/v1/scans/{id}",
+		"/api/v1/scans/:id/status":         "/api/v1/scans/{id}/status",
 	}
 
 	if normalized, ok := patterns[path]; ok {
@@ -190,10 +190,10 @@ func RecordDatabaseQuery(queryType, table string, duration time.Duration) {
 // RecordVolumeScan records volume scan metrics
 func RecordVolumeScan(volumeID, scanType string, duration time.Duration, err error) {
 	volumeScanDuration.WithLabelValues(volumeID, scanType).Observe(duration.Seconds())
-	
+
 	if err != nil {
-		errorType := "unknown"
 		// Categorize errors for better insights
+		var errorType string
 		switch {
 		case err.Error() == "volume not found":
 			errorType = "not_found"
