@@ -1,0 +1,126 @@
+{
+  "dependencyPolicies": {
+    "major": {
+      "description": "Major version updates require manual review",
+      "allowedPatterns": [],
+      "blockedPatterns": ["*"],
+      "autoMerge": false,
+      "requiresApproval": true,
+      "requiredChecks": ["ci", "security-audit", "manual-review"]
+    },
+    "minor": {
+      "description": "Minor updates for stable libraries",
+      "allowedPatterns": [
+        "react",
+        "react-dom", 
+        "@types/*",
+        "typescript",
+        "eslint*",
+        "prettier",
+        "@testing-library/*",
+        "vitest",
+        "date-fns",
+        "clsx",
+        "lucide-react",
+        "recharts",
+        "lodash-es",
+        "jotai"
+      ],
+      "blockedPatterns": [
+        "vite",
+        "@vitejs/*",
+        "@storybook/*",
+        "tailwindcss"
+      ],
+      "autoMerge": true,
+      "requiresApproval": false,
+      "requiredChecks": ["ci"]
+    },
+    "patch": {
+      "description": "Patch updates are generally safe",
+      "allowedPatterns": ["*"],
+      "blockedPatterns": [],
+      "autoMerge": true,
+      "requiresApproval": false,
+      "requiredChecks": ["ci"]
+    },
+    "security": {
+      "description": "Security updates take priority",
+      "allowedPatterns": ["*"],
+      "blockedPatterns": [],
+      "autoMerge": true,
+      "requiresApproval": false,
+      "requiredChecks": ["security-audit"],
+      "priority": "high"
+    }
+  },
+  "versionRanges": {
+    "dependencies": {
+      "preferred": "^",
+      "description": "Use caret ranges for runtime dependencies to allow minor updates"
+    },
+    "devDependencies": {
+      "preferred": "^",
+      "description": "Use caret ranges for dev dependencies, more permissive"
+    },
+    "peerDependencies": {
+      "preferred": ">=",
+      "description": "Use flexible ranges for peer dependencies"
+    }
+  },
+  "riskCategories": {
+    "low": {
+      "description": "Utilities and type packages",
+      "patterns": [
+        "@types/*",
+        "clsx", 
+        "date-fns",
+        "lodash-es",
+        "validator"
+      ]
+    },
+    "medium": {
+      "description": "Framework and build tools",
+      "patterns": [
+        "react*",
+        "typescript",
+        "eslint*",
+        "prettier",
+        "vitest"
+      ]
+    },
+    "high": {
+      "description": "Core infrastructure and build systems",
+      "patterns": [
+        "vite",
+        "@vitejs/*",
+        "@storybook/*", 
+        "tailwindcss",
+        "postcss"
+      ]
+    }
+  },
+  "customRules": [
+    {
+      "name": "no-major-breaking-changes",
+      "description": "Prevent automatic major version updates for critical packages",
+      "packages": ["react", "react-dom", "vite", "typescript"],
+      "maxVersion": "minor",
+      "severity": "error"
+    },
+    {
+      "name": "prefer-exact-versions-for-tools",
+      "description": "Use exact versions for CLI tools and build utilities",
+      "packages": ["prettier", "eslint"],
+      "versionRange": "exact",
+      "severity": "warn"
+    },
+    {
+      "name": "security-update-priority",
+      "description": "Security updates should be applied immediately",
+      "updateTypes": ["security"],
+      "autoMerge": true,
+      "priority": "critical"
+    }
+  ]
+}
