@@ -130,11 +130,11 @@ format:
 # Run database migrations
 migrate:
 	@echo "Running database migrations..."
-	@if [ -f ./scripts/migrate.sh ]; then \
-		./scripts/migrate.sh up; \
-	else \
-		echo "Migration script not found"; \
-	fi
+	@go run ./cmd/migrate up
+
+migrate-status:
+	@echo "Checking migration status..."
+	@go run ./cmd/migrate status
 
 # Download dependencies
 deps:

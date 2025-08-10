@@ -549,10 +549,6 @@ func (w *TestDockerClientWrapper) InspectContainer(ctx context.Context, containe
 	return w.client.ContainerInspect(ctx, containerID)
 }
 
-func (w *TestDockerClientWrapper) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
-	return w.client.ContainerInspect(ctx, containerID)
-}
-
 func (w *TestDockerClientWrapper) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {
 	return w.client.Events(ctx, options)
 }

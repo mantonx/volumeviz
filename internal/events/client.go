@@ -288,7 +288,7 @@ func (c *EventsClient) convertEvent(rawEvent events.Message) (*DockerEvent, erro
 
 	dockerEvent := &DockerEvent{
 		Type:       eventType,
-		ID:         rawEvent.ID,
+		ID:         rawEvent.Actor.ID,
 		Action:     string(rawEvent.Action),
 		Time:       time.Unix(rawEvent.Time, rawEvent.TimeNano),
 		Attributes: rawEvent.Actor.Attributes,
@@ -299,7 +299,7 @@ func (c *EventsClient) convertEvent(rawEvent events.Message) (*DockerEvent, erro
 	if name, ok := rawEvent.Actor.Attributes["name"]; ok {
 		dockerEvent.Name = name
 	} else {
-		dockerEvent.Name = rawEvent.ID
+		dockerEvent.Name = rawEvent.Actor.ID
 	}
 
 	return dockerEvent, nil

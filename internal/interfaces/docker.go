@@ -26,7 +26,6 @@ type DockerClient interface {
 	// Container operations
 	ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error)
 	InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error)
-	ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error)
 
 	// Events operations
 	Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error)

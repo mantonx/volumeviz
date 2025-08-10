@@ -73,11 +73,11 @@ func TestEventHandlerProcessEvent(t *testing.T) {
 				Time:   time.Now(),
 			},
 			setupMocks: func() {
-				mockDocker.On("ContainerInspect", mock.Anything, "container_abc").Return(types.ContainerJSON{
-					ContainerJSONBase: &types.ContainerJSONBase{
+				mockDocker.On("InspectContainer", mock.Anything, "container_abc").Return(containertypes.InspectResponse{
+					ContainerJSONBase: &containertypes.ContainerJSONBase{
 						ID:   "container_abc",
 						Name: "/test-container",
-						State: &types.ContainerState{
+						State: &containertypes.State{
 							Status:     "running",
 							StartedAt:  "2023-01-01T00:00:00Z",
 							FinishedAt: "",
@@ -87,7 +87,7 @@ func TestEventHandlerProcessEvent(t *testing.T) {
 						Image:  "nginx:latest",
 						Labels: map[string]string{},
 					},
-					Mounts: []types.MountPoint{},
+					Mounts: []containertypes.MountPoint{},
 				}, nil)
 				mockRepo.On("UpsertContainer", mock.Anything, mock.AnythingOfType("*database.Container")).Return(nil)
 				mockRepo.On("DeactivateVolumeMounts", mock.Anything, "container_abc").Return(nil)
@@ -236,11 +236,11 @@ func TestHandleContainerStart(t *testing.T) {
 		Time:   time.Now(),
 	}
 
-	containerJSON := types.ContainerJSON{
-		ContainerJSONBase: &types.ContainerJSONBase{
+	containerJSON := containertypes.InspectResponse{
+		ContainerJSONBase: &containertypes.ContainerJSONBase{
 			ID:   "container_abc",
 			Name: "/test-container",
-			State: &types.ContainerState{
+			State: &containertypes.State{
 				Status:     "running",
 				StartedAt:  "2023-01-01T00:00:00Z",
 				FinishedAt: "",
@@ -250,7 +250,7 @@ func TestHandleContainerStart(t *testing.T) {
 			Image:  "nginx:latest",
 			Labels: map[string]string{},
 		},
-		Mounts: []types.MountPoint{
+		Mounts: []containertypes.MountPoint{
 			{
 				Type:        "volume",
 				Name:        "test-vol",
@@ -260,7 +260,7 @@ func TestHandleContainerStart(t *testing.T) {
 		},
 	}
 
-	mockDocker.On("ContainerInspect", ctx, "container_abc").Return(containerJSON, nil)
+	mockDocker.On("InspectContainer", ctx, "container_abc").Return(containerJSON, nil)
 	mockRepo.On("UpsertContainer", ctx, mock.MatchedBy(func(c *database.Container) bool {
 		return c.ContainerID == "container_abc" &&
 			c.Name == "/test-container" &&
@@ -318,7 +318,7 @@ func TestUpdateVolumeMounts(t *testing.T) {
 	containerID := "container_123"
 	eventTime := time.Now()
 
-	mounts := []types.MountPoint{
+	mounts := []containertypes.MountPoint{
 		{
 			Type:        "volume",
 			Name:        "vol1",
@@ -443,9 +443,9 @@ func (m *MockDockerClient) InspectVolume(ctx context.Context, volumeID string) (
 	return args.Get(0).(volume.Volume), args.Error(1)
 }
 
-func (m *MockDockerClient) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
+func (m *MockDockerClient) InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error) {
 	args := m.Called(ctx, containerID)
-	return args.Get(0).(types.ContainerJSON), args.Error(1)
+	return args.Get(0).(containertypes.InspectResponse), args.Error(1)
 }
 
 // Implement other interface methods as no-ops for testing
@@ -460,9 +460,6 @@ func (m *MockDockerClient) ListVolumes(ctx context.Context, filterMap map[string
 }
 func (m *MockDockerClient) ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error) {
 	return nil, nil
-}
-func (m *MockDockerClient) InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error) {
-	return containertypes.InspectResponse{}, nil
 }
 func (m *MockDockerClient) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {
 	return nil, nil

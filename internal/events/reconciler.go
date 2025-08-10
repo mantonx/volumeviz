@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/database"
@@ -139,7 +139,7 @@ func (r *ReconcilerService) ReconcileContainers(ctx context.Context) error {
 	}
 
 	// Create maps for efficient lookup
-	dockerContainerMap := make(map[string]types.Container)
+	dockerContainerMap := make(map[string]containertypes.Summary)
 	for _, container := range dockerContainers {
 		dockerContainerMap[container.ID] = container
 	}
@@ -152,7 +152,7 @@ func (r *ReconcilerService) ReconcileContainers(ctx context.Context) error {
 	// Sync containers and their mounts
 	for _, dockerContainer := range dockerContainers {
 		// Get detailed container information for mounts
-		containerJSON, err := r.dockerClient.ContainerInspect(ctx, dockerContainer.ID)
+		containerJSON, err := r.dockerClient.InspectContainer(ctx, dockerContainer.ID)
 		if err != nil {
 			log.Printf("[WARN] Failed to inspect container %s during reconciliation: %v", dockerContainer.ID, err)
 			continue
@@ -231,7 +231,7 @@ func (r *ReconcilerService) FullReconcile(ctx context.Context) error {
 }
 
 // reconcileContainerMounts syncs volume mounts for a specific container
-func (r *ReconcilerService) reconcileContainerMounts(ctx context.Context, containerID string, dockerMounts []types.MountPoint) error {
+func (r *ReconcilerService) reconcileContainerMounts(ctx context.Context, containerID string, dockerMounts []containertypes.MountPoint) error {
 	// Get current mounts from database
 	dbMounts, err := r.repository.GetVolumeMountsByContainer(ctx, containerID)
 	if err != nil {
@@ -239,7 +239,7 @@ func (r *ReconcilerService) reconcileContainerMounts(ctx context.Context, contai
 	}
 
 	// Create maps for efficient lookup
-	dockerMountMap := make(map[string]types.MountPoint)
+	dockerMountMap := make(map[string]containertypes.MountPoint)
 	for _, mount := range dockerMounts {
 		if mount.Type == "volume" { // Only process volume mounts
 			dockerMountMap[mount.Name] = mount
@@ -321,7 +321,7 @@ func (r *ReconcilerService) convertDockerVolumeToModel(dockerVol *volume.Volume,
 	}
 }
 
-func (r *ReconcilerService) convertDockerContainerToModel(containerJSON types.ContainerJSON, state string, eventTime time.Time) *database.Container {
+func (r *ReconcilerService) convertDockerContainerToModel(containerJSON containertypes.InspectResponse, state string, eventTime time.Time) *database.Container {
 	container := &database.Container{
 		ContainerID: containerJSON.ID,
 		Name:        containerJSON.Name,
@@ -359,7 +359,7 @@ func (r *ReconcilerService) shouldUpdateVolume(dbVol *database.Volume, dockerVol
 		!dbVol.IsActive
 }
 
-func (r *ReconcilerService) shouldUpdateContainer(dbContainer *database.Container, dockerContainer types.Container, newState string) bool {
+func (r *ReconcilerService) shouldUpdateContainer(dbContainer *database.Container, dockerContainer containertypes.Summary, newState string) bool {
 	return dbContainer.State != newState ||
 		dbContainer.Status != dockerContainer.Status ||
 		(newState == "running") != dbContainer.IsActive

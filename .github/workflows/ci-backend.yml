@@ -120,6 +120,20 @@ jobs:
           path: coverage.html
           retention-days: 30
 
+      - name: Run database migrations
+        env:
+          DB_TYPE: postgres
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: volumeviz
+          DB_PASSWORD: volumeviz
+          DB_NAME: volumeviz
+          DB_SSLMODE: disable
+        run: |
+          set -euo pipefail
+          echo "🔧 Running database migrations..."
+          go run ./cmd/migrate up
+
       - name: Seed database for smoke checks (optional)
         if: always()
         env:
@@ -127,9 +141,13 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -f "scripts/seed.sql" ]]; then
-            psql -h localhost -p 5432 -U volumeviz -d volumeviz -v ON_ERROR_STOP=1 -f scripts/seed.sql || echo "⚠️  Database seeding failed"
+            echo "🌱 Seeding database with test data..."
+            psql -h localhost -p 5432 -U volumeviz -d volumeviz -v ON_ERROR_STOP=1 -f scripts/seed.sql || {
+              echo "⚠️  Database seeding failed - this is non-critical for smoke tests"
+              echo "Continuing without seed data..."
+            }
           else
-            echo "⚠️  No seed file found, skipping database seeding"
+            echo "ℹ️  No seed file found, skipping database seeding"
           fi
 
       - name: Smoke test - API endpoints
@@ -150,6 +168,8 @@ jobs:
           HEALTH_RETRIES: 30
           AUTH_ENABLED: false
           RATE_LIMIT_ENABLED: false
+          # Disable Docker events in CI environment
+          EVENTS_ENABLED: false
         run: |
           set -euo pipefail
           echo "🚀 Running smoke tests..."

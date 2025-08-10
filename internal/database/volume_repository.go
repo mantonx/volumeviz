@@ -216,7 +216,7 @@ func (r *VolumeRepository) GetActiveCount() (int, error) {
 // GetVolumeStats returns volume statistics
 func (r *VolumeRepository) GetVolumeStats() (*VolumeStats, error) {
 	var query string
-	
+
 	// Use different query syntax based on database type
 	if r.db.GetDatabaseType() == DatabaseTypeSQLite {
 		// SQLite doesn't support FILTER clause, use CASE instead

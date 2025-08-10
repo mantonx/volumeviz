@@ -298,7 +298,7 @@ func (r *ScanJobRepository) CleanupOldJobs(olderThan time.Duration) (int, error)
 // GetJobStats returns scan job statistics
 func (r *ScanJobRepository) GetJobStats() (*ScanJobStats, error) {
 	var query string
-	
+
 	// Use different query syntax based on database type
 	if r.db.GetDatabaseType() == DatabaseTypeSQLite {
 		// SQLite-compatible version

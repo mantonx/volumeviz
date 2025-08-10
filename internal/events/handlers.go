@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 )
@@ -143,7 +143,7 @@ func (h *EventHandlerService) HandleContainerDestroy(ctx context.Context, event 
 // updateContainerAndMounts updates container state and its volume mounts
 func (h *EventHandlerService) updateContainerAndMounts(ctx context.Context, event *DockerEvent, state string) error {
 	// Get container details from Docker API
-	containerJSON, err := h.dockerClient.ContainerInspect(ctx, event.ID)
+	containerJSON, err := h.dockerClient.InspectContainer(ctx, event.ID)
 	if err != nil {
 		return fmt.Errorf("failed to inspect container %s: %w", event.ID, err)
 	}
@@ -164,7 +164,7 @@ func (h *EventHandlerService) updateContainerAndMounts(ctx context.Context, even
 }
 
 // convertContainerToModel converts Docker container JSON to database model
-func (h *EventHandlerService) convertContainerToModel(containerJSON types.ContainerJSON, state string, eventTime time.Time) *database.Container {
+func (h *EventHandlerService) convertContainerToModel(containerJSON containertypes.InspectResponse, state string, eventTime time.Time) *database.Container {
 	container := &database.Container{
 		ContainerID: containerJSON.ID,
 		Name:        containerJSON.Name,
@@ -196,7 +196,7 @@ func (h *EventHandlerService) convertContainerToModel(containerJSON types.Contai
 }
 
 // updateVolumeMounts processes container mounts and updates volume_mounts table
-func (h *EventHandlerService) updateVolumeMounts(ctx context.Context, containerID string, mounts []types.MountPoint, eventTime time.Time) error {
+func (h *EventHandlerService) updateVolumeMounts(ctx context.Context, containerID string, mounts []containertypes.MountPoint, eventTime time.Time) error {
 	// First, deactivate all existing mounts for this container
 	if err := h.repository.DeactivateVolumeMounts(ctx, containerID); err != nil {
 		return fmt.Errorf("failed to deactivate existing mounts: %w", err)

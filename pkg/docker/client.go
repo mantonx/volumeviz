@@ -160,18 +160,6 @@ func (c *Client) IsConnected(ctx context.Context) bool {
 	return c.Ping(ctx) == nil
 }
 
-// ContainerInspect gets detailed information about a specific container (alternative method name)
-func (c *Client) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
-	ctx, cancel := c.contextWithTimeout(ctx)
-	defer cancel()
-
-	container, err := c.cli.ContainerInspect(ctx, containerID)
-	if err != nil {
-		return types.ContainerJSON{}, fmt.Errorf("failed to inspect container %s: %w", containerID, err)
-	}
-	return container, nil
-}
-
 // Events streams Docker events with the given options
 func (c *Client) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {
 	return c.cli.Events(ctx, options)

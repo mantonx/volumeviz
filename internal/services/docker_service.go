@@ -242,12 +242,6 @@ func (s *DockerService) GetVolumesByLabel(ctx context.Context, labelKey, labelVa
 	return volumes, nil
 }
 
-// ContainerInspect returns detailed information about a container
-// This is needed for the events service to inspect containers
-func (s *DockerService) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
-	return s.client.ContainerInspect(ctx, containerID)
-}
-
 // Events returns a channel of Docker events and errors
 // Used by the events service to monitor Docker daemon events
 func (s *DockerService) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {

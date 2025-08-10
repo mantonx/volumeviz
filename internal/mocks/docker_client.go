@@ -27,7 +27,6 @@ type MockDockerClient struct {
 	// Containers
 	ListContainersFunc   func(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error)
 	InspectContainerFunc func(ctx context.Context, containerID string) (containertypes.InspectResponse, error)
-	ContainerInspectFunc func(ctx context.Context, containerID string) (types.ContainerJSON, error)
 
 	// Events
 	EventsFunc func(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error)
@@ -41,7 +40,6 @@ type MockDockerClient struct {
 	InspectVolumeCalls    int
 	ListContainersCalls   int
 	InspectContainerCalls int
-	ContainerInspectCalls int
 	EventsCalls           int
 }
 
@@ -121,15 +119,6 @@ func (m *MockDockerClient) InspectContainer(ctx context.Context, containerID str
 		return m.InspectContainerFunc(ctx, containerID)
 	}
 	return containertypes.InspectResponse{}, fmt.Errorf("container not found")
-}
-
-// ContainerInspect mocks the ContainerInspect method (returns types.ContainerJSON)
-func (m *MockDockerClient) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
-	m.ContainerInspectCalls++
-	if m.ContainerInspectFunc != nil {
-		return m.ContainerInspectFunc(ctx, containerID)
-	}
-	return types.ContainerJSON{}, fmt.Errorf("container not found")
 }
 
 // Events mocks the Events method

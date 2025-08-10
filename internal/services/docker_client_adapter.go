@@ -59,10 +59,6 @@ func (a *DockerClientAdapter) InspectContainer(ctx context.Context, containerID 
 	return a.service.InspectContainer(ctx, containerID)
 }
 
-func (a *DockerClientAdapter) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
-	return a.service.ContainerInspect(ctx, containerID)
-}
-
 // Events operations
 func (a *DockerClientAdapter) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {
 	return a.service.Events(ctx, options)
