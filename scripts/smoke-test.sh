@@ -341,18 +341,14 @@ main() {
     # Summary
     if [[ $failed_tests -eq 0 ]]; then
         log_success "🎉 All smoke tests passed!"
-        # Explicitly return 0 without calling exit to avoid trap issues
-        return 0
+        # Success - exit cleanly, cleanup will happen via trap
+        exit 0
     else
         log_error "💥 $failed_tests test(s) failed"
-        # Explicitly return 1 for failed tests
-        return 1
+        # Failure - exit with error code, cleanup will happen via trap
+        exit 1
     fi
 }
 
-# Run main function and capture its exit code
+# Run main function - let it handle its own exit
 main "$@"
-main_exit_code=$?
-
-# Exit with the main function's return code
-exit $main_exit_code
