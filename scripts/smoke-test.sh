@@ -248,7 +248,7 @@ main() {
     test_endpoint "/api/v1/health" "Health endpoint" "status timestamp" || ((failed_tests++))
 
     # Database migrations status
-    test_endpoint "/api/v1/database/migrations/status" "Migration status" "current_version" || ((failed_tests++))
+    test_endpoint "/api/v1/database/migrations/status" "Migration status" "total_migrations applied_count pending_count" || ((failed_tests++))
 
     # Database statistics (skip field validation due to SQLite compatibility issues - will be addressed separately)
     test_endpoint "/api/v1/database/stats" "Database stats" "" || ((failed_tests++))
