@@ -131,3 +131,151 @@ func TestClient_ErrorScenarios(t *testing.T) {
 		t.Skip("Docker client validation varies by version")
 	})
 }
+
+func TestClient_Ping(t *testing.T) {
+	client, err := NewClient("", 30*time.Second)
+	if err != nil {
+		t.Skip("Docker not available")
+	}
+	defer client.Close()
+
+	ctx := context.Background()
+	err = client.Ping(ctx)
+	// If Docker daemon is not running, skip the test
+	if err != nil && errors.Is(err, context.DeadlineExceeded) {
+		t.Skip("Docker daemon not responding")
+	}
+}
+
+func TestClient_Version(t *testing.T) {
+	client, err := NewClient("", 30*time.Second)
+	if err != nil {
+		t.Skip("Docker not available")
+	}
+	defer client.Close()
+
+	ctx := context.Background()
+	version, err := client.Version(ctx)
+	if err != nil {
+		t.Skip("Docker daemon not responding")
+	}
+
+	if version.Version == "" {
+		t.Error("Expected non-empty version")
+	}
+	if version.APIVersion == "" {
+		t.Error("Expected non-empty API version")
+	}
+}
+
+func TestClient_ListVolumes(t *testing.T) {
+	client, err := NewClient("", 30*time.Second)
+	if err != nil {
+		t.Skip("Docker not available")
+	}
+	defer client.Close()
+
+	ctx := context.Background()
+	volumes, err := client.ListVolumes(ctx)
+	if err != nil {
+		t.Skip("Docker daemon not responding")
+	}
+
+	// Should return a slice (even if empty)
+	if volumes == nil {
+		t.Error("Expected non-nil volumes slice")
+	}
+}
+
+func TestClient_InspectVolume(t *testing.T) {
+	client, err := NewClient("", 30*time.Second)
+	if err != nil {
+		t.Skip("Docker not available")
+	}
+	defer client.Close()
+
+	ctx := context.Background()
+	// Test with non-existent volume
+	_, err = client.InspectVolume(ctx, "non-existent-volume-test-123")
+	if err == nil {
+		t.Error("Expected error for non-existent volume")
+	}
+}
+
+func TestClient_ListContainers(t *testing.T) {
+	client, err := NewClient("", 30*time.Second)
+	if err != nil {
+		t.Skip("Docker not available")
+	}
+	defer client.Close()
+
+	ctx := context.Background()
+	
+	// Test listing all containers
+	containers, err := client.ListContainers(ctx, true)
+	if err != nil {
+		t.Skip("Docker daemon not responding")
+	}
+
+	// Should return a slice (even if empty)
+	if containers == nil {
+		t.Error("Expected non-nil containers slice")
+	}
+
+	// Test listing only running containers
+	runningContainers, err := client.ListContainers(ctx, false)
+	if err != nil {
+		t.Skip("Docker daemon not responding")
+	}
+
+	// Running containers should be <= all containers
+	if len(runningContainers) > len(containers) {
+		t.Error("Running containers count should be <= all containers")
+	}
+}
+
+func TestClient_InspectContainer(t *testing.T) {
+	client, err := NewClient("", 30*time.Second)
+	if err != nil {
+		t.Skip("Docker not available")
+	}
+	defer client.Close()
+
+	ctx := context.Background()
+	// Test with non-existent container
+	_, err = client.InspectContainer(ctx, "non-existent-container-test-123")
+	if err == nil {
+		t.Error("Expected error for non-existent container")
+	}
+}
+
+func TestClient_Events(t *testing.T) {
+	client, err := NewClient("", 30*time.Second)
+	if err != nil {
+		t.Skip("Docker not available")
+	}
+	defer client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	eventsChan, errChan := client.Events(ctx, "")
+	
+	// Should receive channels
+	if eventsChan == nil {
+		t.Error("Expected non-nil events channel")
+	}
+	if errChan == nil {
+		t.Error("Expected non-nil error channel")
+	}
+
+	// Wait for context to timeout
+	select {
+	case <-ctx.Done():
+		// Expected
+	case err := <-errChan:
+		if err != nil && !errors.Is(err, context.Canceled) {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	}
+}
