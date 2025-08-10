@@ -153,8 +153,8 @@ cleanup_only() {
         rm -f "$TEMP_LOG" 2>/dev/null || true
     fi
 
-    # Don't change the exit code
-    exit $saved_exit_code
+    # Preserve the original exit code
+    return $saved_exit_code
 }
 
 # Set up cleanup trap (but don't let it affect exit codes)
@@ -350,5 +350,5 @@ main() {
     fi
 }
 
-# Run main function - let it handle its own exit
+# Run main function
 main "$@"
