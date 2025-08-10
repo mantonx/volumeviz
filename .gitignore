@@ -90,8 +90,10 @@ target/
 
 # Database
 *.db
+*.db-*
 *.sqlite
 *.sqlite3
+*.sqlite-*
 
 # Certificates
 *.pem
