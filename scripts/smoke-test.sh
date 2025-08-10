@@ -62,12 +62,70 @@ cleanup() {
     local exit_code=$?
     log_info "Cleaning up..."
 
+    # Server cleanup with better error handling
     if [[ -n "$SVR_PID" ]] && kill -0 "$SVR_PID" 2>/dev/null; then
         log_info "Stopping server (PID: $SVR_PID)..."
         
         # Try graceful shutdown first
-        kill -TERM "$SVR_PID" 2>/dev/null || true
+        if kill -TERM "$SVR_PID" 2>/dev/null; then
+            # Give it time to shut down gracefully
+            local wait_count=0
+            while [[ $wait_count -lt 5 ]] && kill -0 "$SVR_PID" 2>/dev/null; do
+                sleep 1
+                ((wait_count++))
+            done
 
+            # Force kill if still running
+            if kill -0 "$SVR_PID" 2>/dev/null; then
+                log_warning "Force killing server..."
+                kill -9 "$SVR_PID" 2>/dev/null || true
+                sleep 1
+            fi
+
+            # Wait for process to complete, but don't let it affect exit code
+            if wait "$SVR_PID" 2>/dev/null; then
+                # Process exited normally
+                true
+            else
+                # Process was terminated by signal, this is expected in cleanup
+                true
+            fi
+        fi
+        log_success "Server stopped"
+    fi
+
+    # Fallback: kill any remaining volumeviz processes (don't affect exit code)
+    if pgrep -f "go.*server" > /dev/null 2>&1; then
+        log_warning "Cleaning up remaining processes..."
+        pkill -f "go.*server" 2>/dev/null || true
+    fi
+
+    # Show logs on failure only
+    if [[ $exit_code -ne 0 ]] && [[ -n "$TEMP_LOG" ]] && [[ -f "$TEMP_LOG" ]]; then
+        log_error "Smoke test failed. Recent server logs:"
+        tail -20 "$TEMP_LOG" 2>/dev/null || echo "(no logs available)"
+    fi
+
+    # Clean up temp log file (don't affect exit code)
+    if [[ -n "$TEMP_LOG" ]] && [[ -f "$TEMP_LOG" ]]; then
+        rm -f "$TEMP_LOG" 2>/dev/null || true
+    fi
+
+    log_success "Cleanup complete"
+    
+    # Preserve the original exit code - but ensure cleanup issues don't override success
+    exit $exit_code
+}
+
+# Cleanup function that doesn't affect exit codes
+cleanup_only() {
+    local saved_exit_code=$?
+    
+    # Server cleanup with better error handling
+    if [[ -n "$SVR_PID" ]] && kill -0 "$SVR_PID" 2>/dev/null; then
+        # Try graceful shutdown first
+        kill -TERM "$SVR_PID" 2>/dev/null || true
+        
         # Give it time to shut down gracefully
         local wait_count=0
         while [[ $wait_count -lt 5 ]] && kill -0 "$SVR_PID" 2>/dev/null; do
@@ -77,25 +135,17 @@ cleanup() {
 
         # Force kill if still running
         if kill -0 "$SVR_PID" 2>/dev/null; then
-            log_warning "Force killing server..."
             kill -9 "$SVR_PID" 2>/dev/null || true
             sleep 1
         fi
 
+        # Wait but don't let it affect the exit code
         wait "$SVR_PID" 2>/dev/null || true
-        log_success "Server stopped"
     fi
 
     # Fallback: kill any remaining volumeviz processes
     if pgrep -f "go.*server" > /dev/null 2>&1; then
-        log_warning "Cleaning up remaining processes..."
         pkill -f "go.*server" 2>/dev/null || true
-    fi
-
-    # Show logs on failure
-    if [[ $exit_code -ne 0 ]] && [[ -n "$TEMP_LOG" ]] && [[ -f "$TEMP_LOG" ]]; then
-        log_error "Smoke test failed. Recent server logs:"
-        tail -20 "$TEMP_LOG" 2>/dev/null || echo "(no logs available)"
     fi
 
     # Clean up temp log file
@@ -103,14 +153,12 @@ cleanup() {
         rm -f "$TEMP_LOG" 2>/dev/null || true
     fi
 
-    log_success "Cleanup complete"
-    
-    # Preserve the original exit code
-    exit $exit_code
+    # Don't change the exit code
+    exit $saved_exit_code
 }
 
-# Set up cleanup trap
-trap cleanup EXIT
+# Set up cleanup trap (but don't let it affect exit codes)
+trap 'cleanup_only' EXIT
 
 # Test API endpoint
 test_endpoint() {
@@ -170,11 +218,35 @@ main() {
     # Start server in background with the selected port
     log_info "🏗️  Starting API server on port $PORT..."
     if [[ -n "${CI:-}" ]]; then
-        # In CI, run with minimal logging
-        SERVER_PORT=$PORT go run ./cmd/server > "$TEMP_LOG" 2>&1 &
+        # In CI, run with minimal logging and pass through environment variables
+        env SERVER_PORT=$PORT \
+            ${DB_TYPE:+DB_TYPE="$DB_TYPE"} \
+            ${DB_HOST:+DB_HOST="$DB_HOST"} \
+            ${DB_PORT:+DB_PORT="$DB_PORT"} \
+            ${DB_USER:+DB_USER="$DB_USER"} \
+            ${DB_PASSWORD:+DB_PASSWORD="$DB_PASSWORD"} \
+            ${DB_NAME:+DB_NAME="$DB_NAME"} \
+            ${DB_SSLMODE:+DB_SSLMODE="$DB_SSLMODE"} \
+            ${EVENTS_ENABLED:+EVENTS_ENABLED="$EVENTS_ENABLED"} \
+            ${AUTH_ENABLED:+AUTH_ENABLED="$AUTH_ENABLED"} \
+            ${RATE_LIMIT_ENABLED:+RATE_LIMIT_ENABLED="$RATE_LIMIT_ENABLED"} \
+            ${LOG_LEVEL:+LOG_LEVEL="$LOG_LEVEL"} \
+            go run ./cmd/server > "$TEMP_LOG" 2>&1 &
     else
-        # Local development, show logs
-        SERVER_PORT=$PORT go run ./cmd/server 2>&1 | tee "$TEMP_LOG" &
+        # Local development, show logs and pass through environment
+        env SERVER_PORT=$PORT \
+            ${DB_TYPE:+DB_TYPE="$DB_TYPE"} \
+            ${DB_HOST:+DB_HOST="$DB_HOST"} \
+            ${DB_PORT:+DB_PORT="$DB_PORT"} \
+            ${DB_USER:+DB_USER="$DB_USER"} \
+            ${DB_PASSWORD:+DB_PASSWORD="$DB_PASSWORD"} \
+            ${DB_NAME:+DB_NAME="$DB_NAME"} \
+            ${DB_SSLMODE:+DB_SSLMODE="$DB_SSLMODE"} \
+            ${EVENTS_ENABLED:+EVENTS_ENABLED="$EVENTS_ENABLED"} \
+            ${AUTH_ENABLED:+AUTH_ENABLED="$AUTH_ENABLED"} \
+            ${RATE_LIMIT_ENABLED:+RATE_LIMIT_ENABLED="$RATE_LIMIT_ENABLED"} \
+            ${LOG_LEVEL:+LOG_LEVEL="$LOG_LEVEL"} \
+            go run ./cmd/server 2>&1 | tee "$TEMP_LOG" &
     fi
     SVR_PID=$!
     log_info "Server PID: $SVR_PID"
@@ -269,12 +341,18 @@ main() {
     # Summary
     if [[ $failed_tests -eq 0 ]]; then
         log_success "🎉 All smoke tests passed!"
-        exit 0
+        # Explicitly return 0 without calling exit to avoid trap issues
+        return 0
     else
         log_error "💥 $failed_tests test(s) failed"
-        exit 1
+        # Explicitly return 1 for failed tests
+        return 1
     fi
 }
 
-# Run main function
+# Run main function and capture its exit code
 main "$@"
+main_exit_code=$?
+
+# Exit with the main function's return code
+exit $main_exit_code
