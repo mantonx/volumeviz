@@ -21,6 +21,12 @@ go.work
 /cmd/server/server
 /volumeviz
 
+# Binary files and executables (prevent accidental commits)
+*.bin
+main
+!*/main.go
+!cmd/*/main.go
+
 # IDE specific files
 .idea/
 .vscode/
@@ -75,10 +81,12 @@ coverage/
 *.tmp
 *.temp
 .cache/
+tmp/
 
 # Build artifacts
 build/
 out/
+target/
 
 # Database
 *.db
