@@ -216,7 +216,7 @@ func (s *Scheduler) GetMetrics() *SchedulerMetrics {
 		CompletedScans:    make(map[string]int64),
 		ScanDurations:     make(map[string]float64),
 		ErrorCounts:       make(map[string]int64),
-		WorkerUtilization: s.calculateWorkerUtilization(),
+		WorkerUtilization: s.calculateWorkerUtilizationLocked(),
 	}
 
 	// Copy maps
@@ -452,6 +452,13 @@ func (s *Scheduler) selectScanMethod() string {
 }
 
 func (s *Scheduler) calculateWorkerUtilization() float64 {
+	s.statusMutex.RLock()
+	defer s.statusMutex.RUnlock()
+	return s.calculateWorkerUtilizationLocked()
+}
+
+// calculateWorkerUtilizationLocked calculates utilization without locking (caller must hold lock)
+func (s *Scheduler) calculateWorkerUtilizationLocked() float64 {
 	if s.config.Concurrency == 0 {
 		return 0.0
 	}
@@ -593,7 +600,7 @@ func (w *worker) updateActiveScans(delta int) {
 
 	// Update worker utilization metrics
 	if w.scheduler.metricsCollector != nil {
-		utilization := w.scheduler.calculateWorkerUtilization()
+		utilization := w.scheduler.calculateWorkerUtilizationLocked()
 		w.scheduler.metricsCollector.UpdateSchedulerWorkerUtilization(utilization)
 	}
 	w.scheduler.statusMutex.Unlock()
