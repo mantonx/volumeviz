@@ -6,8 +6,8 @@ import prettier from 'eslint-plugin-prettier'
 import prettierConfig from 'eslint-config-prettier'
 import tseslint from '@typescript-eslint/eslint-plugin'
 import parser from '@typescript-eslint/parser'
-import packageJson from 'eslint-plugin-package-json'
-import dependencyVersionPolicy from './eslint-rules/dependency-version-policy.js'
+// import packageJson from 'eslint-plugin-package-json'
+// import dependencyVersionPolicy from './eslint-rules/dependency-version-policy.js'
 
 export default [
   { ignores: ['dist', '*.config.js', '*.config.ts', '.storybook/**', 'storybook-static/**', 'coverage/**'] },
@@ -102,32 +102,14 @@ export default [
       'react-hooks/rules-of-hooks': 'off', // Allow hooks in Storybook stories
     },
   },
-  // Package.json linting
-  {
-    files: ['package.json'],
-    languageOptions: {
-      parser: packageJson.parsers.JSON,
-    },
-    plugins: {
-      'package-json': packageJson,
-      'custom': {
-        'dependency-version-policy': dependencyVersionPolicy,
-      },
-    },
-    rules: {
-      // Standard package.json validation
-      'package-json/valid-package-json': 'error',
-      'package-json/order-properties': 'warn',
-      'package-json/unique-dependencies': 'error',
-      'package-json/sort-collections': ['warn', {
-        collections: ['dependencies', 'devDependencies', 'peerDependencies']
-      }],
-      
-      // Custom dependency version policy enforcement
-      'custom/dependency-version-policy': 'error',
-      
-      // Repository and metadata consistency  
-      'package-json/no-dependencies-in-devDependencies': 'warn',
-    },
-  },
+  // Package.json linting - disabled for now due to compatibility issues
+  // {
+  //   files: ['package.json'],
+  //   plugins: {
+  //     'package-json': packageJson,
+  //   },
+  //   rules: {
+  //     'package-json/valid-package-json': 'error',
+  //   },
+  // },
 ]

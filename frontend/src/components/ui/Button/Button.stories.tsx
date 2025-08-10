@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/test';
+import { action } from '@storybook/addon-actions';
 import { Button } from './Button';
 import { Play, Download, Heart } from 'lucide-react';
 

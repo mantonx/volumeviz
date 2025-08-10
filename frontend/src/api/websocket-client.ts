@@ -26,19 +26,49 @@ class SimpleEventEmitter {
     this.events[event].forEach((listener) => listener(...args));
   }
 }
-import type {
-  WebSocketMessageType,
-  VolumeUpdateMessageType,
-  ScanProgressMessageType,
-  ScanCompleteMessageType,
-  ScanErrorMessageType,
-} from './generated/volumeviz-api';
+// WebSocket message types (local definitions since not in generated API)
+export interface WebSocketMessage {
+  type: string;
+  data?: any;
+  timestamp?: string;
+}
 
-export type WebSocketMessage = WebSocketMessageType;
-export type VolumeUpdateMessage = VolumeUpdateMessageType;
-export type ScanProgressMessage = ScanProgressMessageType;
-export type ScanCompleteMessage = ScanCompleteMessageType;
-export type ScanErrorMessage = ScanErrorMessageType;
+export interface VolumeUpdateMessage extends WebSocketMessage {
+  type: 'volume_update';
+  data: {
+    volume_id: string;
+    action: 'create' | 'update' | 'delete';
+    volume?: any;
+  };
+}
+
+export interface ScanProgressMessage extends WebSocketMessage {
+  type: 'scan_progress';
+  volume_id: string;
+  data: {
+    progress: number;
+    status: string;
+  };
+}
+
+export interface ScanCompleteMessage extends WebSocketMessage {
+  type: 'scan_complete';
+  volume_id: string;
+  data: {
+    result: {
+      size?: number;
+      error?: string;
+    };
+  };
+}
+
+export interface ScanErrorMessage extends WebSocketMessage {
+  type: 'scan_error';
+  volume_id: string;
+  data: {
+    error: string;
+  };
+}
 
 export interface WebSocketClientOptions {
   url: string;
@@ -192,7 +222,7 @@ export class VolumeWebSocketClient extends SimpleEventEmitter {
         const errorMessage = message as ScanErrorMessage;
         this.emit('scan_error', {
           volume_id: errorMessage.volume_id,
-          error: errorMessage.data,
+          error: errorMessage.data.error,
         });
         break;
       }

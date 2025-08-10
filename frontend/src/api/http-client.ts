@@ -15,6 +15,9 @@ import {
 import type { ApiError } from '@/store/atoms/api';
 
 export interface RequestOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: any;
   timeout?: number;
   retryAttempts?: number;
   retryDelay?: number;

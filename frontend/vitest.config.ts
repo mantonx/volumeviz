@@ -12,7 +12,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
-    globals: true,
+    globals: false,
     coverage: {
       reporter: ['text', 'json', 'html'],
       exclude: [

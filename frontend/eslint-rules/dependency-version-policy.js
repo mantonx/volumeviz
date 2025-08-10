@@ -2,8 +2,8 @@
  * ESLint rule to enforce dependency version policies
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 // Load policy configuration
 let policyConfig;
@@ -91,7 +91,7 @@ function validateVersionRange(packageName, version, depType) {
 /**
  * Main rule implementation
  */
-module.exports = {
+export default {
   meta: {
     type: 'problem',
     docs: {

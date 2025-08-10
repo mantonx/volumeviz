@@ -10,7 +10,6 @@ import { Button } from '../Button';
 import { Card } from '../Card';
 import { cn } from '@/utils';
 import {
-  getErrorMessage,
   getErrorDetails,
   getHttpStatusCode,
   formatErrorForDisplay,

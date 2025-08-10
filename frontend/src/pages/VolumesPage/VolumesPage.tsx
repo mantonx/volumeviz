@@ -165,31 +165,6 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
     console.log('Bulk scan not yet implemented');
   };
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <ErrorState
-          error={error}
-          onRetry={handleRefresh}
-          title="Failed to Load Volumes"
-          description="Unable to fetch volume data. Please check your connection and try again."
-          showErrorDetails={true}
-        />
-      </div>
-    );
-  }
-
-  const getAnnouncementText = () => {
-    if (loading) return 'Loading volumes...';
-    if (error) return 'Error loading volumes';
-    if (!volumes || volumes.length === 0) {
-      return q || driver || orphaned || system
-        ? 'No volumes match your search criteria'
-        : 'No volumes found';
-    }
-    return `Showing ${volumes.length} volume${volumes.length !== 1 ? 's' : ''} on page ${page} of ${Math.ceil(paginationMeta.total / page_size)}`;
-  };
-
   const FilterBar = useMemo(
     () => (
       <div
@@ -287,6 +262,31 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
       q,
     ],
   );
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <ErrorState
+          error={error}
+          onRetry={handleRefresh}
+          title="Failed to Load Volumes"
+          description="Unable to fetch volume data. Please check your connection and try again."
+          showErrorDetails={true}
+        />
+      </div>
+    );
+  }
+
+  const getAnnouncementText = () => {
+    if (loading) return 'Loading volumes...';
+    if (error) return 'Error loading volumes';
+    if (!volumes || volumes.length === 0) {
+      return q || driver || orphaned || system
+        ? 'No volumes match your search criteria'
+        : 'No volumes found';
+    }
+    return `Showing ${volumes.length} volume${volumes.length !== 1 ? 's' : ''} on page ${page} of ${Math.ceil(paginationMeta.total / page_size)}`;
+  };
 
   return (
     <div className="space-y-6">

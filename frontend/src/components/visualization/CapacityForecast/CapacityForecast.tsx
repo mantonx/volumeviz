@@ -80,6 +80,8 @@ export const CapacityForecast: React.FC<CapacityForecastProps> = ({
   const [volumeVisibility, setVolumeVisibility] = useState<
     Record<string, boolean>
   >({});
+  const [activeShowConfidence, setShowConfidence] = useState(showConfidence);
+  const [activeShowThresholds, setShowThresholds] = useState(showThresholds);
   const [showModelComparison, setShowModelComparison] = useState(false);
 
   // Filter data based on selected volumes
@@ -482,7 +484,7 @@ export const CapacityForecast: React.FC<CapacityForecastProps> = ({
             <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <input
                 type="checkbox"
-                checked={showConfidence}
+                checked={activeShowConfidence}
                 onChange={(e) => setShowConfidence(e.target.checked)}
                 className="rounded"
               />
@@ -491,7 +493,7 @@ export const CapacityForecast: React.FC<CapacityForecastProps> = ({
             <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <input
                 type="checkbox"
-                checked={showThresholds}
+                checked={activeShowThresholds}
                 onChange={(e) => setShowThresholds(e.target.checked)}
                 className="rounded"
               />
@@ -597,7 +599,7 @@ export const CapacityForecast: React.FC<CapacityForecastProps> = ({
                   />
 
                   {/* Confidence interval */}
-                  {showConfidence && (
+                  {activeShowConfidence && (
                     <Area
                       type="monotone"
                       dataKey={`${volumeId}_upper`}
@@ -612,7 +614,7 @@ export const CapacityForecast: React.FC<CapacityForecastProps> = ({
             })}
 
             {/* Capacity threshold lines */}
-            {showThresholds &&
+            {activeShowThresholds &&
               Object.entries(capacityLimits).map(([volumeId, limit]) => {
                 if (!filteredVolumes.includes(volumeId)) return null;
 

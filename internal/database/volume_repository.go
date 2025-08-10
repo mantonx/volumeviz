@@ -223,9 +223,9 @@ func (r *VolumeRepository) GetVolumeStats() (*VolumeStats, error) {
 		query = `
 			SELECT 
 				COUNT(*) as total_volumes,
-				SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_volumes,
+				COALESCE(SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END), 0) as active_volumes,
 				COUNT(DISTINCT driver) as unique_drivers,
-				SUM(CASE WHEN last_scanned IS NOT NULL THEN 1 ELSE 0 END) as scanned_volumes,
+				COALESCE(SUM(CASE WHEN last_scanned IS NOT NULL THEN 1 ELSE 0 END), 0) as scanned_volumes,
 				MAX(created_at) as newest_volume,
 				MIN(created_at) as oldest_volume
 			FROM volumes
@@ -235,9 +235,9 @@ func (r *VolumeRepository) GetVolumeStats() (*VolumeStats, error) {
 		query = `
 			SELECT 
 				COUNT(*) as total_volumes,
-				COUNT(*) FILTER (WHERE is_active = true) as active_volumes,
+				COALESCE(COUNT(*) FILTER (WHERE is_active = true), 0) as active_volumes,
 				COUNT(DISTINCT driver) as unique_drivers,
-				COUNT(*) FILTER (WHERE last_scanned IS NOT NULL) as scanned_volumes,
+				COALESCE(COUNT(*) FILTER (WHERE last_scanned IS NOT NULL), 0) as scanned_volumes,
 				MAX(created_at) as newest_volume,
 				MIN(created_at) as oldest_volume
 			FROM volumes

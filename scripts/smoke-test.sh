@@ -60,6 +60,7 @@ TEMP_LOG=""
 # Cleanup function
 cleanup() {
     local exit_code=$?
+    set +e  # Disable errexit for cleanup
     log_info "Cleaning up..."
 
     # Server cleanup with better error handling
@@ -83,13 +84,7 @@ cleanup() {
             fi
 
             # Wait for process to complete, but don't let it affect exit code
-            if wait "$SVR_PID" 2>/dev/null; then
-                # Process exited normally
-                true
-            else
-                # Process was terminated by signal, this is expected in cleanup
-                true
-            fi
+            wait "$SVR_PID" 2>/dev/null || true
         fi
         log_success "Server stopped"
     fi
@@ -111,54 +106,15 @@ cleanup() {
         rm -f "$TEMP_LOG" 2>/dev/null || true
     fi
 
-    log_success "Cleanup complete"
+    log_success "Cleanup complete (exit code: $exit_code)"
     
     # Preserve the original exit code - but ensure cleanup issues don't override success
     exit $exit_code
 }
 
-# Cleanup function that doesn't affect exit codes
-cleanup_only() {
-    local saved_exit_code=$?
-    
-    # Server cleanup with better error handling
-    if [[ -n "$SVR_PID" ]] && kill -0 "$SVR_PID" 2>/dev/null; then
-        # Try graceful shutdown first
-        kill -TERM "$SVR_PID" 2>/dev/null || true
-        
-        # Give it time to shut down gracefully
-        local wait_count=0
-        while [[ $wait_count -lt 5 ]] && kill -0 "$SVR_PID" 2>/dev/null; do
-            sleep 1
-            ((wait_count++))
-        done
 
-        # Force kill if still running
-        if kill -0 "$SVR_PID" 2>/dev/null; then
-            kill -9 "$SVR_PID" 2>/dev/null || true
-            sleep 1
-        fi
-
-        # Wait but don't let it affect the exit code
-        wait "$SVR_PID" 2>/dev/null || true
-    fi
-
-    # Fallback: kill any remaining volumeviz processes
-    if pgrep -f "go.*server" > /dev/null 2>&1; then
-        pkill -f "go.*server" 2>/dev/null || true
-    fi
-
-    # Clean up temp log file
-    if [[ -n "$TEMP_LOG" ]] && [[ -f "$TEMP_LOG" ]]; then
-        rm -f "$TEMP_LOG" 2>/dev/null || true
-    fi
-
-    # Preserve the original exit code
-    return $saved_exit_code
-}
-
-# Set up cleanup trap (but don't let it affect exit codes)
-trap 'cleanup_only' EXIT
+# Set up cleanup trap
+trap 'cleanup' EXIT INT TERM
 
 # Test API endpoint
 test_endpoint() {

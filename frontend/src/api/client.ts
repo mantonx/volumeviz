@@ -6,9 +6,12 @@
 
 import {
   Api,
-  type VolumeListResponse,
+  type PagedVolumes,
+  type VolumeDetail,
   type ScanResponse,
-  type AsyncScanResponse,
+  type ScanProgress,
+  type Volume,
+  type RefreshRequest,
 } from './generated/volumeviz-api';
 
 // Create configured API client
@@ -26,53 +29,62 @@ const volumeVizApi = new Api({
 export const volumeApi = {
   // Volume operations
   async listVolumes(filters?: {
-    driver?: string;
-    label_key?: string;
-    label_value?: string;
-    user_only?: boolean;
+    page?: number;
+    page_size?: number;
+    sort?: string;
+    q?: string;
+    driver?: 'local' | 'nfs' | 'cifs' | 'overlay2';
+    orphaned?: boolean;
+    system?: boolean;
+    created_after?: string;
+    created_before?: string;
   }) {
     const response = await volumeVizApi.volumes.listVolumes(filters);
-    return response.data as VolumeListResponse;
+    return response.data;
   },
 
-  async getVolume(id: string) {
-    const response = await volumeVizApi.volumes.volumesDetail(id);
+  async getVolume(name: string) {
+    const response = await volumeVizApi.volumes.getVolume(name);
     return response.data;
   },
 
   // Scan operations
-  async getVolumeSize(id: string) {
-    const response = await volumeVizApi.volumes.sizeList(id);
-    return response.data as ScanResponse;
+  async getVolumeSize(volumeId: string) {
+    const response = await volumeVizApi.volumes.getVolumeSize(volumeId);
+    return response.data;
   },
 
   async refreshVolumeSize(
-    id: string,
-    options?: { async?: boolean; method?: string },
+    volumeId: string,
+    options?: RefreshRequest,
   ) {
-    const response = await volumeVizApi.volumes.sizeRefreshCreate(
-      id,
+    const response = await volumeVizApi.volumes.refreshVolumeSize(
+      volumeId,
       options || {},
     );
-    return response.data as ScanResponse | AsyncScanResponse;
+    return response.data;
   },
 
   // Health checks
   async checkDockerHealth() {
-    const response = await volumeVizApi.health.dockerList();
+    const response = await volumeVizApi.health.getDockerHealth();
     return response.data;
   },
 };
 
 // Export types for use in components
 export type {
-  VolumeListResponse,
-  VolumeResponse,
+  PagedVolumes,
+  Volume as VolumeResponse,
+  VolumeDetail,
   ScanResponse,
-  ScanResult,
-  AsyncScanResponse,
+  ScanProgress,
   ErrorResponse,
   RefreshRequest,
 } from './generated/volumeviz-api';
+
+// Legacy type aliases for backwards compatibility
+export type VolumeListResponse = PagedVolumes;
+export type AsyncScanResponse = ScanResponse;
 
 export default volumeVizApi;

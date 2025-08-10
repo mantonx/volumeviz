@@ -3,7 +3,7 @@
  */
 
 import '@testing-library/jest-dom';
-import { expect, afterEach, vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Cleanup after each test case (e.g. clearing jsdom)
@@ -68,13 +68,5 @@ Object.defineProperty(window, 'sessionStorage', {
   value: sessionStorageMock,
 });
 
-// Extend expect with custom matchers
-expect.extend({
-  toBeInTheDocument: expect.any(Function),
-  toHaveClass: expect.any(Function),
-  toHaveStyle: expect.any(Function),
-  toBeVisible: expect.any(Function),
-  toBeDisabled: expect.any(Function),
-  toHaveAttribute: expect.any(Function),
-  toHaveTextContent: expect.any(Function),
-});
+// The jest-dom matchers are automatically extended by importing '@testing-library/jest-dom'
+// No need to manually extend expect - this happens automatically with the import above

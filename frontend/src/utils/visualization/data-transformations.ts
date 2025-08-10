@@ -7,7 +7,7 @@ import type {
   VolumeChartData,
   SystemStorageData,
   TopVolumeData,
-} from './useVisualizationData.types';
+} from '../../hooks/useVisualizationData/useVisualizationData.types';
 import {
   getVolumeColor,
   getDriverColor,

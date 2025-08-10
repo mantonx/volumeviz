@@ -49,7 +49,7 @@ const VisualizationErrorFallback: React.FC<VisualizationErrorFallbackProps> = ({
           Retry
         </Button>
 
-        {process.env.NODE_ENV === 'development' && (
+        {import.meta.env.DEV && (
           <details className="mt-4 text-left">
             <summary className="text-xs cursor-pointer text-gray-500 hover:text-gray-700">
               Debug Info ({eventId?.slice(-8)})

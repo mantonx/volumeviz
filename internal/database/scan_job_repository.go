@@ -305,11 +305,11 @@ func (r *ScanJobRepository) GetJobStats() (*ScanJobStats, error) {
 		query = `
 			SELECT 
 				COUNT(*) as total_jobs,
-				SUM(CASE WHEN status = 'queued' THEN 1 ELSE 0 END) as queued_jobs,
-				SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END) as running_jobs,
-				SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_jobs,
-				SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed_jobs,
-				SUM(CASE WHEN status = 'canceled' THEN 1 ELSE 0 END) as canceled_jobs,
+				COALESCE(SUM(CASE WHEN status = 'queued' THEN 1 ELSE 0 END), 0) as queued_jobs,
+				COALESCE(SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END), 0) as running_jobs,
+				COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) as completed_jobs,
+				COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0) as failed_jobs,
+				COALESCE(SUM(CASE WHEN status = 'canceled' THEN 1 ELSE 0 END), 0) as canceled_jobs,
 				AVG(CASE 
 					WHEN status = 'completed' AND started_at IS NOT NULL AND completed_at IS NOT NULL 
 					THEN (julianday(completed_at) - julianday(started_at)) * 86400 
@@ -323,11 +323,11 @@ func (r *ScanJobRepository) GetJobStats() (*ScanJobStats, error) {
 		query = `
 			SELECT 
 				COUNT(*) as total_jobs,
-				COUNT(*) FILTER (WHERE status = 'queued') as queued_jobs,
-				COUNT(*) FILTER (WHERE status = 'running') as running_jobs,
-				COUNT(*) FILTER (WHERE status = 'completed') as completed_jobs,
-				COUNT(*) FILTER (WHERE status = 'failed') as failed_jobs,
-				COUNT(*) FILTER (WHERE status = 'canceled') as canceled_jobs,
+				COALESCE(COUNT(*) FILTER (WHERE status = 'queued'), 0) as queued_jobs,
+				COALESCE(COUNT(*) FILTER (WHERE status = 'running'), 0) as running_jobs,
+				COALESCE(COUNT(*) FILTER (WHERE status = 'completed'), 0) as completed_jobs,
+				COALESCE(COUNT(*) FILTER (WHERE status = 'failed'), 0) as failed_jobs,
+				COALESCE(COUNT(*) FILTER (WHERE status = 'canceled'), 0) as canceled_jobs,
 				AVG(EXTRACT(EPOCH FROM (completed_at - started_at))) FILTER (WHERE status = 'completed' AND started_at IS NOT NULL AND completed_at IS NOT NULL) as avg_duration_seconds
 			FROM scan_jobs
 			WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
