@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -262,6 +263,11 @@ func WithPostgreSQLContainer(t *testing.T, dbName string, testFunc func(*Postgre
 func DockerRequiredOrSkip(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping Docker-based integration test in short mode")
+	}
+
+	// Skip container-based tests in CI where we use services
+	if os.Getenv("CI") != "" {
+		t.Skip("Skipping container-based tests in CI environment")
 	}
 
 	// Try to create a simple container to check if Docker is available

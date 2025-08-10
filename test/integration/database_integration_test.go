@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -20,6 +21,11 @@ import (
 func TestDatabaseIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration tests in short mode")
+	}
+
+	// Skip container-based tests in CI where we use services
+	if os.Getenv("CI") != "" {
+		t.Skip("Skipping container-based tests in CI environment")
 	}
 
 	ctx := context.Background()
@@ -493,6 +499,11 @@ func testDatabasePerformance(t *testing.T, db *database.DB) {
 func TestDatabaseConnectionPool(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping connection pool tests in short mode")
+	}
+
+	// Skip container-based tests in CI where we use services
+	if os.Getenv("CI") != "" {
+		t.Skip("Skipping container-based tests in CI environment")
 	}
 
 	ctx := context.Background()

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -23,6 +24,11 @@ import (
 func TestDatabaseAPIIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping API integration tests in short mode")
+	}
+
+	// Skip container-based tests in CI where we use services
+	if os.Getenv("CI") != "" {
+		t.Skip("Skipping container-based tests in CI environment")
 	}
 
 	ctx := context.Background()
@@ -385,6 +391,11 @@ func TestDatabaseAPIErrorHandling(t *testing.T) {
 func TestDatabaseAPIConcurrency(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping concurrency tests in short mode")
+	}
+
+	// Skip container-based tests in CI where we use services
+	if os.Getenv("CI") != "" {
+		t.Skip("Skipping container-based tests in CI environment")
 	}
 
 	ctx := context.Background()
