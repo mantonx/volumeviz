@@ -101,10 +101,10 @@ func TestConvertEvent(t *testing.T) {
 			rawEvent: events.Message{
 				Type:     "volume",
 				Action:   "create",
-				ID:       "vol_123456",
 				Time:     timeUnix,
 				TimeNano: timeNano,
 				Actor: events.Actor{
+					ID: "vol_123456",
 					Attributes: map[string]string{
 						"name": "test-volume",
 					},
@@ -126,10 +126,10 @@ func TestConvertEvent(t *testing.T) {
 			rawEvent: events.Message{
 				Type:     "container",
 				Action:   "start",
-				ID:       "container_abcdef",
 				Time:     timeUnix,
 				TimeNano: timeNano,
 				Actor: events.Actor{
+					ID: "container_abcdef",
 					Attributes: map[string]string{
 						"name": "test-container",
 					},
@@ -151,10 +151,10 @@ func TestConvertEvent(t *testing.T) {
 			rawEvent: events.Message{
 				Type:     "volume",
 				Action:   "remove",
-				ID:       "vol_no_name",
 				Time:     timeUnix,
 				TimeNano: timeNano,
 				Actor: events.Actor{
+					ID:         "vol_no_name",
 					Attributes: map[string]string{},
 				},
 			},
