@@ -215,16 +215,34 @@ func (r *VolumeRepository) GetActiveCount() (int, error) {
 
 // GetVolumeStats returns volume statistics
 func (r *VolumeRepository) GetVolumeStats() (*VolumeStats, error) {
-	query := `
-		SELECT 
-			COUNT(*) as total_volumes,
-			COUNT(*) FILTER (WHERE is_active = true) as active_volumes,
-			COUNT(DISTINCT driver) as unique_drivers,
-			COUNT(*) FILTER (WHERE last_scanned IS NOT NULL) as scanned_volumes,
-			MAX(created_at) as newest_volume,
-			MIN(created_at) as oldest_volume
-		FROM volumes
-	`
+	var query string
+	
+	// Use different query syntax based on database type
+	if r.db.GetDatabaseType() == DatabaseTypeSQLite {
+		// SQLite doesn't support FILTER clause, use CASE instead
+		query = `
+			SELECT 
+				COUNT(*) as total_volumes,
+				SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_volumes,
+				COUNT(DISTINCT driver) as unique_drivers,
+				SUM(CASE WHEN last_scanned IS NOT NULL THEN 1 ELSE 0 END) as scanned_volumes,
+				MAX(created_at) as newest_volume,
+				MIN(created_at) as oldest_volume
+			FROM volumes
+		`
+	} else {
+		// PostgreSQL supports FILTER clause
+		query = `
+			SELECT 
+				COUNT(*) as total_volumes,
+				COUNT(*) FILTER (WHERE is_active = true) as active_volumes,
+				COUNT(DISTINCT driver) as unique_drivers,
+				COUNT(*) FILTER (WHERE last_scanned IS NOT NULL) as scanned_volumes,
+				MAX(created_at) as newest_volume,
+				MIN(created_at) as oldest_volume
+			FROM volumes
+		`
+	}
 
 	executor := r.getExecutor()
 	stats := &VolumeStats{}

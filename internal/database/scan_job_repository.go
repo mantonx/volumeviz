@@ -297,18 +297,42 @@ func (r *ScanJobRepository) CleanupOldJobs(olderThan time.Duration) (int, error)
 
 // GetJobStats returns scan job statistics
 func (r *ScanJobRepository) GetJobStats() (*ScanJobStats, error) {
-	query := `
-		SELECT 
-			COUNT(*) as total_jobs,
-			COUNT(*) FILTER (WHERE status = 'queued') as queued_jobs,
-			COUNT(*) FILTER (WHERE status = 'running') as running_jobs,
-			COUNT(*) FILTER (WHERE status = 'completed') as completed_jobs,
-			COUNT(*) FILTER (WHERE status = 'failed') as failed_jobs,
-			COUNT(*) FILTER (WHERE status = 'canceled') as canceled_jobs,
-			AVG(EXTRACT(EPOCH FROM (completed_at - started_at))) FILTER (WHERE status = 'completed' AND started_at IS NOT NULL AND completed_at IS NOT NULL) as avg_duration_seconds
-		FROM scan_jobs
-		WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
-	`
+	var query string
+	
+	// Use different query syntax based on database type
+	if r.db.GetDatabaseType() == DatabaseTypeSQLite {
+		// SQLite-compatible version
+		query = `
+			SELECT 
+				COUNT(*) as total_jobs,
+				SUM(CASE WHEN status = 'queued' THEN 1 ELSE 0 END) as queued_jobs,
+				SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END) as running_jobs,
+				SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_jobs,
+				SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed_jobs,
+				SUM(CASE WHEN status = 'canceled' THEN 1 ELSE 0 END) as canceled_jobs,
+				AVG(CASE 
+					WHEN status = 'completed' AND started_at IS NOT NULL AND completed_at IS NOT NULL 
+					THEN (julianday(completed_at) - julianday(started_at)) * 86400 
+					ELSE NULL 
+				END) as avg_duration_seconds
+			FROM scan_jobs
+			WHERE created_at >= date('now', '-30 days')
+		`
+	} else {
+		// PostgreSQL version with FILTER and EXTRACT
+		query = `
+			SELECT 
+				COUNT(*) as total_jobs,
+				COUNT(*) FILTER (WHERE status = 'queued') as queued_jobs,
+				COUNT(*) FILTER (WHERE status = 'running') as running_jobs,
+				COUNT(*) FILTER (WHERE status = 'completed') as completed_jobs,
+				COUNT(*) FILTER (WHERE status = 'failed') as failed_jobs,
+				COUNT(*) FILTER (WHERE status = 'canceled') as canceled_jobs,
+				AVG(EXTRACT(EPOCH FROM (completed_at - started_at))) FILTER (WHERE status = 'completed' AND started_at IS NOT NULL AND completed_at IS NOT NULL) as avg_duration_seconds
+			FROM scan_jobs
+			WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+		`
+	}
 
 	executor := r.getExecutor()
 	stats := &ScanJobStats{}
