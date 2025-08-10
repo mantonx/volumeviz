@@ -40,6 +40,13 @@ func main() {
 
 	db, err := database.NewDB(dbConfig)
 	if err != nil {
+		log.Printf("Database configuration:")
+		log.Printf("  Type: %s", dbConfig.Type)
+		log.Printf("  Host: %s", dbConfig.Host)
+		log.Printf("  Port: %d", dbConfig.Port)
+		log.Printf("  User: %s", dbConfig.User)
+		log.Printf("  Database: %s", dbConfig.Database)
+		log.Printf("  SSLMode: %s", dbConfig.SSLMode)
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()

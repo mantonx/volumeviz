@@ -120,7 +120,7 @@ jobs:
           path: coverage.html
           retention-days: 30
 
-      - name: Run database migrations
+      - name: Verify database connection and run migrations
         env:
           DB_TYPE: postgres
           DB_HOST: localhost
@@ -129,8 +129,36 @@ jobs:
           DB_PASSWORD: volumeviz
           DB_NAME: volumeviz
           DB_SSLMODE: disable
+          PGPASSWORD: volumeviz
         run: |
           set -euo pipefail
+          echo "🔍 Verifying PostgreSQL connection..."
+          
+          # Wait for PostgreSQL to be fully ready
+          max_attempts=30
+          attempt=1
+          while [ $attempt -le $max_attempts ]; do
+            if psql -h localhost -p 5432 -U volumeviz -d volumeviz -c "SELECT 1;" >/dev/null 2>&1; then
+              echo "✅ PostgreSQL connection successful"
+              break
+            fi
+            echo "⏳ Waiting for PostgreSQL... (attempt $attempt/$max_attempts)"
+            sleep 2
+            attempt=$((attempt + 1))
+          done
+          
+          if [ $attempt -gt $max_attempts ]; then
+            echo "❌ Failed to connect to PostgreSQL after $max_attempts attempts"
+            echo "🔍 Debugging information:"
+            echo "PostgreSQL processes:"
+            ps aux | grep postgres || echo "No postgres processes found"
+            echo "Network connections:"
+            netstat -tlnp | grep 5432 || echo "Port 5432 not listening"
+            echo "Trying basic connection:"
+            psql -h localhost -p 5432 -U volumeviz -d volumeviz -c "SELECT version();" || echo "Connection failed"
+            exit 1
+          fi
+          
           echo "🔧 Running database migrations..."
           go run ./cmd/migrate up
 
