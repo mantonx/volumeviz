@@ -2,10 +2,10 @@ package lifecycle
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"log"
 	"time"
+
+	"github.com/mantonx/volumeviz/internal/store"
 )
 
 // Config controls retention and rollup behaviors
@@ -20,14 +20,14 @@ type Config struct {
 
 // Service runs background lifecycle maintenance
 type Service struct {
-	db     *sql.DB
+	store  store.Store
 	cfg    Config
 	stopCh chan struct{}
 	doneCh chan struct{}
 }
 
-func New(db *sql.DB, cfg Config) *Service {
-	return &Service{db: db, cfg: cfg, stopCh: make(chan struct{}), doneCh: make(chan struct{})}
+func New(store store.Store, cfg Config) *Service {
+	return &Service{store: store, cfg: cfg, stopCh: make(chan struct{}), doneCh: make(chan struct{})}
 }
 
 // Start begins the background ticker
@@ -70,137 +70,41 @@ func (s *Service) runOnce(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
+	retention := s.store.Retention()
+
 	if s.cfg.MetricsTTLDays > 0 {
-		if n, err := s.pruneOlderThan(ctx, "volume_metrics", "metric_timestamp", s.cfg.MetricsTTLDays); err != nil {
+		if n, err := retention.PruneVolumeMetrics(ctx, s.cfg.MetricsTTLDays); err != nil {
 			log.Printf("retention: prune volume_metrics failed: %v", err)
 		} else if n > 0 {
 			log.Printf("retention: pruned %d rows from volume_metrics", n)
 		}
 	}
 	if s.cfg.SizesTTLDays > 0 {
-		if n, err := s.pruneOlderThan(ctx, "volume_sizes", "created_at", s.cfg.SizesTTLDays); err != nil {
+		if n, err := retention.PruneVolumeSizes(ctx, s.cfg.SizesTTLDays); err != nil {
 			log.Printf("retention: prune volume_sizes failed: %v", err)
 		} else if n > 0 {
 			log.Printf("retention: pruned %d rows from volume_sizes", n)
 		}
 	}
 
-	// Prune old volume_stats entries (scan history)
+	// Prune old scan_jobs entries (scan job history) - keep only completed/failed runs older than TTL
 	if s.cfg.SizesTTLDays > 0 {
-		if n, err := s.pruneOlderThan(ctx, "volume_stats", "ts", s.cfg.SizesTTLDays); err != nil {
-			log.Printf("retention: prune volume_stats failed: %v", err)
+		if n, err := retention.PruneScanJobs(ctx, s.cfg.SizesTTLDays); err != nil {
+			log.Printf("retention: prune scan_jobs failed: %v", err)
 		} else if n > 0 {
-			log.Printf("retention: pruned %d rows from volume_stats", n)
-		}
-	}
-
-	// Prune old scan_runs entries (scan job history) - keep only completed/failed runs older than TTL
-	if s.cfg.SizesTTLDays > 0 {
-		// Only clean up completed and failed runs, leave queued/running ones
-		if n, err := s.pruneOlderThanWithCondition(ctx, "scan_runs", "created_at", s.cfg.SizesTTLDays, "status IN ('completed', 'failed', 'canceled')"); err != nil {
-			log.Printf("retention: prune scan_runs failed: %v", err)
-		} else if n > 0 {
-			log.Printf("retention: pruned %d rows from scan_runs", n)
+			log.Printf("retention: pruned %d rows from scan_jobs", n)
 		}
 	}
 
 	if s.cfg.RollupEnabled {
-		if err := s.rollupDaily(ctx); err != nil {
+		// Ensure table exists
+		if err := retention.CreateDailyRollupTable(ctx); err != nil {
+			log.Printf("retention: create rollup table failed: %v", err)
+			return
+		}
+		// Perform rollup
+		if err := retention.RollupDailyMetrics(ctx); err != nil {
 			log.Printf("retention: rollup failed: %v", err)
 		}
 	}
-}
-
-func (s *Service) pruneOlderThan(ctx context.Context, table, tsCol string, ttlDays int) (int64, error) {
-	return s.pruneOlderThanWithCondition(ctx, table, tsCol, ttlDays, "")
-}
-
-func (s *Service) pruneOlderThanWithCondition(ctx context.Context, table, tsCol string, ttlDays int, condition string) (int64, error) {
-	// Different SQL dialects for Postgres vs SQLite
-	// Use CURRENT_TIMESTAMP - interval in Postgres; datetime('now', ...) for SQLite
-	// Try Postgres first; if it fails due to syntax, fallback to SQLite form
-
-	whereClause := fmt.Sprintf("%s < (CURRENT_TIMESTAMP - INTERVAL '%d days')", tsCol, ttlDays)
-	if condition != "" {
-		whereClause = fmt.Sprintf("%s AND %s", whereClause, condition)
-	}
-
-	pg := fmt.Sprintf("DELETE FROM %s WHERE %s", table, whereClause)
-	res, err := s.db.ExecContext(ctx, pg)
-	if err != nil {
-		// likely SQLite
-		whereClauseSQLite := fmt.Sprintf("%s < datetime('now', '-%d days')", tsCol, ttlDays)
-		if condition != "" {
-			whereClauseSQLite = fmt.Sprintf("%s AND %s", whereClauseSQLite, condition)
-		}
-		sqlite := fmt.Sprintf("DELETE FROM %s WHERE %s", table, whereClauseSQLite)
-		res, err = s.db.ExecContext(ctx, sqlite)
-		if err != nil {
-			return 0, err
-		}
-	}
-	if res == nil {
-		return 0, nil
-	}
-	if n, err := res.RowsAffected(); err != nil {
-		return 0, err
-	} else {
-		return n, nil
-	}
-}
-
-// rollupDaily maintains a simple daily aggregate table volume_metrics_daily
-func (s *Service) rollupDaily(ctx context.Context) error {
-	// create table if not exists (portable-ish)
-	create := `
-CREATE TABLE IF NOT EXISTS volume_metrics_daily (
-	id INTEGER PRIMARY KEY,
-	volume_id VARCHAR(255) NOT NULL,
-	day DATE NOT NULL,
-	total_size_avg BIGINT,
-	file_count_avg BIGINT,
-	directory_count_avg BIGINT,
-	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	UNIQUE(volume_id, day)
-);`
-	if _, err := s.db.ExecContext(ctx, create); err != nil {
-		return err
-	}
-
-	// Upsert daily aggregates for the last 7 days
-	// We attempt Postgres syntax first, then fallback to SQLite
-	upsertPG := `
-INSERT INTO volume_metrics_daily (volume_id, day, total_size_avg, file_count_avg, directory_count_avg)
-SELECT volume_id,
-       DATE(metric_timestamp) AS day,
-       AVG(total_size)::BIGINT,
-       AVG(file_count)::BIGINT,
-       AVG(directory_count)::BIGINT
-FROM volume_metrics
-WHERE metric_timestamp >= (CURRENT_DATE - INTERVAL '7 days')
-GROUP BY volume_id, DATE(metric_timestamp)
-ON CONFLICT (volume_id, day) DO UPDATE SET
-  total_size_avg = EXCLUDED.total_size_avg,
-  file_count_avg = EXCLUDED.file_count_avg,
-  directory_count_avg = EXCLUDED.directory_count_avg;`
-	if _, err := s.db.ExecContext(ctx, upsertPG); err != nil {
-		upsertSQLite := `
-INSERT INTO volume_metrics_daily (volume_id, day, total_size_avg, file_count_avg, directory_count_avg)
-SELECT volume_id,
-       DATE(metric_timestamp) AS day,
-       CAST(AVG(total_size) AS INTEGER),
-       CAST(AVG(file_count) AS INTEGER),
-       CAST(AVG(directory_count) AS INTEGER)
-FROM volume_metrics
-WHERE metric_timestamp >= DATE('now', '-7 days')
-GROUP BY volume_id, DATE(metric_timestamp)
-ON CONFLICT(volume_id, day) DO UPDATE SET
-  total_size_avg = excluded.total_size_avg,
-  file_count_avg = excluded.file_count_avg,
-  directory_count_avg = excluded.directory_count_avg;`
-		if _, err2 := s.db.ExecContext(ctx, upsertSQLite); err2 != nil {
-			return err2
-		}
-	}
-	return nil
 }

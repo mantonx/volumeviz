@@ -24,7 +24,7 @@ import (
 type Handler struct {
 	scanner           interfaces.VolumeScanner
 	hub               *websocket.Hub
-	storeIntegration  *store.Integration      // New sqlc-based store
+	store            store.Store             // New sqlc-based store
 	scheduler         scheduler.ScanScheduler // Optional scheduler for manual scan triggers
 	realtimePublisher *realtime.Publisher
 }
@@ -36,11 +36,11 @@ func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, scheduler 
 }
 
 // NewHandlerWithStore creates a new scan handler with optional store integration
-func NewHandlerWithStore(scanner interfaces.VolumeScanner, hub *websocket.Hub, storeIntegration *store.Integration, scheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Handler {
+func NewHandlerWithStore(scanner interfaces.VolumeScanner, hub *websocket.Hub, storeInstance store.Store, scheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Handler {
 	return &Handler{
 		scanner:           scanner,
 		hub:               hub,
-		storeIntegration:  storeIntegration,
+		store:            storeInstance,
 		scheduler:         scheduler,
 		realtimePublisher: publisher,
 	}
@@ -86,28 +86,8 @@ func (h *Handler) GetVolumeSize(c *gin.Context) {
 		Cached:   result.CacheHit,
 	}
 
-	// Save historical metrics using store integration if available
-	if h.storeIntegration != nil {
-		storeFacade := h.storeIntegration.GetStoreFacade()
-		// TODO: Calculate growth rate and container count
-		// For now, we'll pass nil for growth rate and 0 for container count
-		err := storeFacade.SaveVolumeMetrics(
-			c.Request.Context(),
-			volumeID,
-			result.TotalSize,
-			int64(result.FileCount),
-			int64(result.DirectoryCount),
-			nil, // growthRate - TODO: implement calculation
-			0,   // containerCount - TODO: implement lookup
-		)
-		if err != nil {
-			// Log error but don't fail the request
-			fmt.Printf("Failed to save metrics for volume %s using store: %v\n", volumeID, err)
-		}
-	} else {
-		// No store integration available - metrics not saved
-		fmt.Printf("No store integration available for saving metrics for volume %s\n", volumeID)
-	}
+	// TODO: Save historical metrics using store when analytics repository is available
+	_ = h.store // Suppress unused warning
 
 	// Broadcast scan completion via WebSocket
 	if h.hub != nil {

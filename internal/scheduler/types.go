@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/config"
-	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/models"
 )
 
 // ScanScheduler defines the interface for the scan scheduling system
@@ -23,25 +23,25 @@ type ScanScheduler interface {
 // ScanRepository defines database operations for scan persistence
 type ScanRepository interface {
 	// Volume stats operations
-	InsertVolumeStats(ctx context.Context, stats *store.VolumeSizeResult) error
-	GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*store.VolumeSizeResult, error)
-	GetLatestVolumeStats(ctx context.Context, volumeName string) (*store.VolumeSizeResult, error)
+	InsertVolumeStats(ctx context.Context, stats *models.DirRollup) error
+	GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*models.DirRollup, error)
+	GetLatestVolumeStats(ctx context.Context, volumeName string) (*models.DirRollup, error)
 
 	// Scan runs operations
-	InsertScanRun(ctx context.Context, run *store.ScanJobResult) error
-	UpdateScanRun(ctx context.Context, run *store.ScanJobResult) error
-	GetScanRunByID(ctx context.Context, scanID string) (*store.ScanJobResult, error)
-	GetActiveScanRuns(ctx context.Context) ([]*store.ScanJobResult, error)
+	InsertScanRun(ctx context.Context, run *models.ScanJob) error
+	UpdateScanRun(ctx context.Context, run *models.ScanJob) error
+	GetScanRunByID(ctx context.Context, scanID string) (*models.ScanJob, error)
+	GetActiveScanRuns(ctx context.Context) ([]*models.ScanJob, error)
 
 	// Volume operations
-	ListVolumes(ctx context.Context) ([]*store.Volume, error)
-	UpsertVolume(ctx context.Context, volume *store.Volume) error
+	ListVolumes(ctx context.Context) ([]*models.Volume, error)
+	UpsertVolume(ctx context.Context, volume *models.Volume) error
 }
 
 // VolumeProvider defines interface for getting volume information
 type VolumeProvider interface {
-	ListVolumes(ctx context.Context) ([]*store.Volume, error)
-	GetVolume(ctx context.Context, volumeName string) (*store.Volume, error)
+	ListVolumes(ctx context.Context) ([]*models.Volume, error)
+	GetVolume(ctx context.Context, volumeName string) (*models.Volume, error)
 }
 
 // ScanTask represents a scan task in the queue

@@ -33,6 +33,9 @@ help:
 	@echo "  docker-build  - Build Docker image"
 	@echo "  docker-run    - Run Docker container"
 	@echo "  lint          - Run Go linter"
+	@echo "  lint-imports  - Check import boundaries (three-layer architecture)"
+	@echo "  lint-clean    - Check clean architecture boundaries + sqlc (CI-friendly)"
+	@echo "  lint-all      - Run all lint checks (code + transactions + imports)"
 	@echo "  format        - Format Go code"
 	@echo "  migrate       - Show migration info (migrations run automatically on startup)"
 	@echo "  migrate-test  - Test migrations on both PostgreSQL and SQLite"
@@ -104,6 +107,31 @@ lint-transactions:
 	@echo "Linting transaction patterns..."
 	go run cmd/lint-transactions/main.go ./internal/
 	@echo "Transaction linting complete"
+
+# Lint import boundaries to enforce three-layer architecture
+lint-imports:
+	@echo "Checking import boundaries..."
+	go run cmd/lint-imports/main.go ./internal/
+	@echo "Import boundary checks complete"
+
+# Lint import boundaries for new three-layer architecture only (CI-friendly)
+lint-imports-clean:
+	@echo "Checking import boundaries for clean three-layer architecture..."
+	@echo "Checking db layer..."
+	@go run cmd/lint-imports/main.go ./internal/db/
+	@echo "Checking repo layer..."
+	@go run cmd/lint-imports/main.go ./internal/repo/
+	@echo "Checking models layer..."
+	@go run cmd/lint-imports/main.go ./internal/models/
+	@echo "✅ Clean three-layer architecture import boundaries are properly enforced"
+
+# Run all lint checks
+lint-all: lint lint-transactions lint-imports
+	@echo "All lint checks complete"
+
+# Run clean architecture lint checks (for CI)
+lint-clean: lint-imports-clean db-generate-check
+	@echo "✅ All clean architecture checks passed"
 
 # Clean build artifacts
 clean:
@@ -181,7 +209,7 @@ migrate-status:
 	@ls -1 internal/store/migrations/sqlite/*.sql 2>/dev/null || echo "  No SQLite schemas found"
 
 # Generate Go code from SQL queries
-sqlc:
+sqlc db-generate:
 	@echo "Generating Go code from SQL queries..."
 	@if command -v sqlc > /dev/null 2>&1; then \
 		sqlc generate; \
@@ -191,6 +219,23 @@ sqlc:
 		go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest; \
 		PATH="$$PATH:$$(go env GOPATH)/bin" sqlc generate; \
 		echo "sqlc generation complete"; \
+	fi
+
+# Alias for backward compatibility
+db-generate: sqlc
+
+# CI check to ensure sqlc generation is idempotent
+db-generate-check:
+	@echo "Checking if sqlc generation is idempotent..."
+	@git status --porcelain internal/db/sqlc* > /tmp/git-status-before
+	@$(MAKE) db-generate
+	@git status --porcelain internal/db/sqlc* > /tmp/git-status-after
+	@if ! diff -q /tmp/git-status-before /tmp/git-status-after > /dev/null 2>&1; then \
+		echo "❌ sqlc generation produced changes. Run 'make db-generate' and commit the changes."; \
+		git diff internal/db/sqlc*; \
+		exit 1; \
+	else \
+		echo "✅ sqlc generation is idempotent"; \
 	fi
 
 # Download dependencies

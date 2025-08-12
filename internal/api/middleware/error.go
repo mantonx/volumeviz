@@ -46,8 +46,8 @@ func ErrorHandler() gin.HandlerFunc {
 
 		c.AbortWithStatusJSON(statusCode, models.ErrorResponse{
 			Error:   "Request failed due to an unexpected error",
+			Message: msg,
 			Code:    errorCode,
-			Details: msg,
 		})
 	})
 }
@@ -84,8 +84,8 @@ func DockerErrorHandler() gin.HandlerFunc {
 
 			c.AbortWithStatusJSON(statusCode, models.ErrorResponse{
 				Error:   message,
+				Message: err.Error(),
 				Code:    errorCode,
-				Details: err.Error(),
 			})
 		}
 	}

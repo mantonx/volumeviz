@@ -9,7 +9,7 @@ import (
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/realtime"
-	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/models"
 )
 
 // EventHandlerService implements EventHandler and EventProcessor interfaces
@@ -61,7 +61,7 @@ func (h *EventHandlerService) HandleVolumeCreate(ctx context.Context, event *Doc
 	}
 
 	// Convert to store model
-	volume := &store.Volume{
+	volume := &models.Volume{
 		VolumeID:   volumeResp.Name,
 		Name:       volumeResp.Name,
 		Driver:     volumeResp.Driver,
@@ -194,8 +194,8 @@ func (h *EventHandlerService) updateContainerAndMounts(ctx context.Context, even
 }
 
 // convertContainerToModel converts Docker container JSON to store model
-func (h *EventHandlerService) convertContainerToModel(containerJSON containertypes.InspectResponse, state string, eventTime time.Time) *store.Container {
-	container := &store.Container{
+func (h *EventHandlerService) convertContainerToModel(containerJSON containertypes.InspectResponse, state string, eventTime time.Time) *models.Container {
+	container := &models.Container{
 		ContainerID: containerJSON.ID,
 		Name:        containerJSON.Name,
 		Image:       containerJSON.Config.Image,
@@ -245,7 +245,7 @@ func (h *EventHandlerService) updateVolumeMounts(ctx context.Context, containerI
 		}
 
 		// Create volume mount record
-		volumeMount := &store.VolumeMount{
+		volumeMount := &models.VolumeMount{
 			VolumeID:    mount.Name,
 			ContainerID: containerID,
 			MountPath:   mount.Destination,

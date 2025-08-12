@@ -127,13 +127,18 @@ func (s *DockerService) GetVolumeContainers(ctx context.Context, volumeName stri
 			// For volumes, the mount name matches the volume name
 			if mount.Type == "volume" && mount.Name == volumeName {
 				volumeContainer := models.VolumeContainer{
-					ID:         container.ID,
-					Name:       containerInfo.Name,
-					State:      container.State,
-					Status:     container.Status,
-					MountPath:  mount.Destination,
-					MountType:  string(mount.Type),
-					AccessMode: "rw", // Default
+					ID:          1, // Auto-increment ID
+					ContainerID: container.ID,
+					VolumeID:    volumeName,
+					Name:        containerInfo.Name,
+					Image:       containerInfo.Config.Image,
+					State:       container.State,
+					Status:      container.Status,
+					MountPath:   mount.Destination,
+					AccessMode:  "rw", // Default
+					IsActive:    container.State == "running",
+					CreatedAt:   time.Now(),
+					UpdatedAt:   time.Now(),
 				}
 
 				// Determine read/write permissions from mount
@@ -153,7 +158,8 @@ func (s *DockerService) GetVolumeContainers(ctx context.Context, volumeName stri
 // convertToVolumeModel converts Docker API volume to our model
 func (s *DockerService) convertToVolumeModel(vol volume.Volume) models.Volume {
 	volume := models.Volume{
-		ID:         vol.Name, // Docker volumes use name as ID
+		ID:         1,        // Auto-increment ID (will be set by database)
+		VolumeID:   vol.Name, // Docker volumes use name as volume ID
 		Name:       vol.Name,
 		Driver:     vol.Driver,
 		Mountpoint: vol.Mountpoint,
@@ -169,22 +175,14 @@ func (s *DockerService) convertToVolumeModel(vol volume.Volume) models.Volume {
 		}
 	}
 
-	// Convert status map from interface{} to string for compatibility
-	if vol.Status != nil {
-		volume.Status = make(map[string]string)
-		for key, value := range vol.Status {
-			if strValue, ok := value.(string); ok {
-				volume.Status[key] = strValue
-			} else {
-				volume.Status[key] = fmt.Sprintf("%v", value)
-			}
-		}
-	}
+	// Set basic status - Docker volumes are typically "active" if they exist
+	volume.Status = "active"
+	volume.IsActive = true
 
 	// Set usage data if available
 	if vol.UsageData != nil {
 		volume.UsageData = &models.VolumeUsage{
-			RefCount: vol.UsageData.RefCount,
+			RefCount: int(vol.UsageData.RefCount),
 			Size:     vol.UsageData.Size,
 		}
 	}

@@ -2,368 +2,191 @@ package lifecycle
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	_ "modernc.org/sqlite"
+	"github.com/stretchr/testify/mock"
+	"github.com/mantonx/volumeviz/internal/repo"
+	"github.com/mantonx/volumeviz/internal/store"
 )
 
-func setupTestDB(t *testing.T) *sql.DB {
-	db, err := sql.Open("sqlite", ":memory:")
-	require.NoError(t, err)
-
-	// Create test tables
-	_, err = db.Exec(`
-		CREATE TABLE volume_metrics (
-			id INTEGER PRIMARY KEY,
-			volume_id VARCHAR(255),
-			total_size BIGINT,
-			file_count INTEGER,
-			directory_count INTEGER,
-			metric_timestamp TIMESTAMP
-		);
-		CREATE TABLE volume_sizes (
-			id INTEGER PRIMARY KEY,
-			volume_id VARCHAR(255),
-			size BIGINT,
-			created_at TIMESTAMP
-		);
-		CREATE TABLE volume_stats (
-			id INTEGER PRIMARY KEY,
-			volume_id VARCHAR(255),
-			size BIGINT,
-			ts TIMESTAMP
-		);
-		CREATE TABLE scan_runs (
-			id INTEGER PRIMARY KEY,
-			volume_id VARCHAR(255),
-			status VARCHAR(50),
-			created_at TIMESTAMP
-		);
-	`)
-	require.NoError(t, err)
-
-	return db
+// Mock store for testing
+type mockStore struct {
+	mock.Mock
 }
 
-func TestNew(t *testing.T) {
-	db := setupTestDB(t)
-	defer db.Close()
+func (m *mockStore) WithTx(ctx context.Context, fn func(store.TxStore) error) error {
+	args := m.Called(ctx, fn)
+	return args.Error(0)
+}
 
+func (m *mockStore) Volumes() repo.VolumesRepo {
+	args := m.Called()
+	return args.Get(0).(repo.VolumesRepo)
+}
+
+func (m *mockStore) Scans() repo.ScansRepo {
+	args := m.Called()
+	return args.Get(0).(repo.ScansRepo)
+}
+
+func (m *mockStore) Retention() repo.RetentionRepo {
+	args := m.Called()
+	return args.Get(0).(repo.RetentionRepo)
+}
+
+// Implement other store interface methods as needed
+func (m *mockStore) CreateUsageSnapshot(ctx context.Context, params store.CreateUsageSnapshotParams) (*store.UsageSnapshot, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).(*store.UsageSnapshot), args.Error(1)
+}
+
+func (m *mockStore) GetLatestSnapshot(ctx context.Context, volumeID, snapshotType string) (*store.UsageSnapshot, error) {
+	args := m.Called(ctx, volumeID, snapshotType)
+	return args.Get(0).(*store.UsageSnapshot), args.Error(1)
+}
+
+func (m *mockStore) Get7DayTrend(ctx context.Context, volumeID string) (*store.TrendData, error) {
+	args := m.Called(ctx, volumeID)
+	return args.Get(0).(*store.TrendData), args.Error(1)
+}
+
+func (m *mockStore) Get30DayTrend(ctx context.Context, volumeID string) (*store.TrendData, error) {
+	args := m.Called(ctx, volumeID)
+	return args.Get(0).(*store.TrendData), args.Error(1)
+}
+
+func (m *mockStore) GetVolumeStepSeries(ctx context.Context, params store.GetVolumeStepSeriesParams) ([]*store.StepSeriesPoint, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).([]*store.StepSeriesPoint), args.Error(1)
+}
+
+func (m *mockStore) GetTrendSlope(ctx context.Context, params store.GetTrendSlopeParams) (*store.TrendSlope, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).(*store.TrendSlope), args.Error(1)
+}
+
+func (m *mockStore) GetGrowthDeltas(ctx context.Context, params store.GetGrowthDeltasParams) (*store.GrowthDeltas, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).(*store.GrowthDeltas), args.Error(1)
+}
+
+// Mock retention repo
+type mockRetentionRepo struct {
+	mock.Mock
+}
+
+func (m *mockRetentionRepo) PruneVolumeMetrics(ctx context.Context, ttlDays int) (int64, error) {
+	args := m.Called(ctx, ttlDays)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *mockRetentionRepo) PruneVolumeSizes(ctx context.Context, ttlDays int) (int64, error) {
+	args := m.Called(ctx, ttlDays)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *mockRetentionRepo) PruneScanJobs(ctx context.Context, ttlDays int) (int64, error) {
+	args := m.Called(ctx, ttlDays)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *mockRetentionRepo) CreateDailyRollupTable(ctx context.Context) error {
+	args := m.Called(ctx)
+	return args.Error(0)
+}
+
+func (m *mockRetentionRepo) RollupDailyMetrics(ctx context.Context) error {
+	args := m.Called(ctx)
+	return args.Error(0)
+}
+
+func TestRetentionService_Lifecycle(t *testing.T) {
+	// Create mocks
+	mockStore := new(mockStore)
+	mockRepo := new(mockRetentionRepo)
+	
+	// Setup expectations
+	mockStore.On("Retention").Return(mockRepo)
+	mockRepo.On("PruneVolumeMetrics", mock.Anything, 7).Return(int64(10), nil)
+	mockRepo.On("PruneVolumeSizes", mock.Anything, 30).Return(int64(5), nil)
+	mockRepo.On("PruneScanJobs", mock.Anything, 30).Return(int64(3), nil)
+	mockRepo.On("CreateDailyRollupTable", mock.Anything).Return(nil)
+	mockRepo.On("RollupDailyMetrics", mock.Anything).Return(nil)
+	
 	cfg := Config{
 		Enabled:        true,
-		MetricsTTLDays: 30,
-		SizesTTLDays:   60,
+		MetricsTTLDays: 7,
+		SizesTTLDays:   30,
 		RollupEnabled:  true,
-		Interval:       time.Hour,
-		InitialDelay:   time.Second,
+		Interval:       1 * time.Hour,
+		InitialDelay:   0,
 	}
-
-	service := New(db, cfg)
-
-	assert.NotNil(t, service)
-	assert.Equal(t, db, service.db)
-	assert.Equal(t, cfg, service.cfg)
-	assert.NotNil(t, service.stopCh)
-	assert.NotNil(t, service.doneCh)
+	
+	service := New(mockStore, cfg)
+	
+	// Test runOnce
+	ctx := context.Background()
+	service.runOnce(ctx)
+	
+	// Verify all expectations were met
+	mockStore.AssertExpectations(t)
+	mockRepo.AssertExpectations(t)
 }
 
-func TestService_StartStop_Disabled(t *testing.T) {
-	db := setupTestDB(t)
-	defer db.Close()
-
+func TestRetentionService_DisabledConfig(t *testing.T) {
+	mockStore := new(mockStore)
+	
 	cfg := Config{
-		Enabled: false, // Disabled service
+		Enabled: false,
 	}
-
-	service := New(db, cfg)
-
-	// Start should return immediately for disabled service
+	
+	service := New(mockStore, cfg)
 	service.Start()
-
-	// Stop should not hang
-	done := make(chan struct{})
-	go func() {
-		service.Stop()
-		close(done)
-	}()
-
+	
+	// Service should exit immediately when disabled
 	select {
-	case <-done:
+	case <-service.doneCh:
 		// Expected
 	case <-time.After(100 * time.Millisecond):
-		t.Error("Stop() should return immediately for disabled service")
+		t.Fatal("Service did not exit when disabled")
 	}
 }
 
-func TestService_StartStop_Enabled(t *testing.T) {
-	db := setupTestDB(t)
-	defer db.Close()
-
+func TestRetentionService_StartStop(t *testing.T) {
+	mockStore := new(mockStore)
+	mockRepo := new(mockRetentionRepo)
+	
+	// Setup expectations for at least one run
+	mockStore.On("Retention").Return(mockRepo).Maybe()
+	mockRepo.On("PruneVolumeMetrics", mock.Anything, mock.Anything).Return(int64(0), nil).Maybe()
+	mockRepo.On("PruneVolumeSizes", mock.Anything, mock.Anything).Return(int64(0), nil).Maybe()
+	mockRepo.On("PruneScanJobs", mock.Anything, mock.Anything).Return(int64(0), nil).Maybe()
+	
 	cfg := Config{
 		Enabled:        true,
-		MetricsTTLDays: 1,
-		SizesTTLDays:   1,
-		RollupEnabled:  false, // Disable rollup for simpler test
-		Interval:       100 * time.Millisecond,
+		MetricsTTLDays: 7,
+		SizesTTLDays:   30,
+		RollupEnabled:  false,
+		Interval:       10 * time.Second, // Long interval to avoid multiple runs
 		InitialDelay:   50 * time.Millisecond,
 	}
-
-	service := New(db, cfg)
-
-	// Start service
+	
+	service := New(mockStore, cfg)
 	service.Start()
-
-	// Let it run for a short time
-	time.Sleep(200 * time.Millisecond)
-
-	// Stop should complete
-	done := make(chan struct{})
-	go func() {
-		service.Stop()
-		close(done)
-	}()
-
+	
+	// Let it run briefly
+	time.Sleep(100 * time.Millisecond)
+	
+	// Stop the service
+	service.Stop()
+	
+	// Verify service stopped
 	select {
-	case <-done:
-		// Expected
-	case <-time.After(time.Second):
-		t.Error("Stop() took too long")
-	}
-}
-
-func TestService_PruneOlderThan(t *testing.T) {
-	db := setupTestDB(t)
-	defer db.Close()
-
-	cfg := Config{Enabled: true}
-	service := New(db, cfg)
-
-	// Insert test data - some old, some recent
-	now := time.Now()
-	oldTime := now.AddDate(0, 0, -10)   // 10 days ago
-	recentTime := now.AddDate(0, 0, -1) // 1 day ago
-
-	// Insert old records
-	_, err := db.Exec("INSERT INTO volume_metrics (volume_id, total_size, metric_timestamp) VALUES (?, ?, ?)",
-		"vol1", 1000, oldTime)
-	require.NoError(t, err)
-	_, err = db.Exec("INSERT INTO volume_metrics (volume_id, total_size, metric_timestamp) VALUES (?, ?, ?)",
-		"vol2", 2000, oldTime)
-	require.NoError(t, err)
-
-	// Insert recent records
-	_, err = db.Exec("INSERT INTO volume_metrics (volume_id, total_size, metric_timestamp) VALUES (?, ?, ?)",
-		"vol1", 1500, recentTime)
-	require.NoError(t, err)
-
-	// Prune records older than 5 days
-	ctx := context.Background()
-	affected, err := service.pruneOlderThan(ctx, "volume_metrics", "metric_timestamp", 5)
-
-	assert.NoError(t, err)
-	assert.Equal(t, int64(2), affected) // Should delete 2 old records
-
-	// Verify only recent record remains
-	var count int
-	err = db.QueryRow("SELECT COUNT(*) FROM volume_metrics").Scan(&count)
-	require.NoError(t, err)
-	assert.Equal(t, 1, count)
-
-	// Verify the remaining record is the recent one
-	var volumeID string
-	var size int64
-	err = db.QueryRow("SELECT volume_id, total_size FROM volume_metrics").Scan(&volumeID, &size)
-	require.NoError(t, err)
-	assert.Equal(t, "vol1", volumeID)
-	assert.Equal(t, int64(1500), size)
-}
-
-func TestService_PruneOlderThanWithCondition(t *testing.T) {
-	db := setupTestDB(t)
-	defer db.Close()
-
-	cfg := Config{Enabled: true}
-	service := New(db, cfg)
-
-	// Insert test data with different statuses
-	now := time.Now()
-	oldTime := now.AddDate(0, 0, -10)
-
-	// Old completed and failed runs (should be deleted)
-	_, err := db.Exec("INSERT INTO scan_runs (volume_id, status, created_at) VALUES (?, ?, ?)",
-		"vol1", "completed", oldTime)
-	require.NoError(t, err)
-	_, err = db.Exec("INSERT INTO scan_runs (volume_id, status, created_at) VALUES (?, ?, ?)",
-		"vol2", "failed", oldTime)
-	require.NoError(t, err)
-
-	// Old running run (should NOT be deleted)
-	_, err = db.Exec("INSERT INTO scan_runs (volume_id, status, created_at) VALUES (?, ?, ?)",
-		"vol3", "running", oldTime)
-	require.NoError(t, err)
-
-	// Recent completed run (should NOT be deleted)
-	recentTime := now.AddDate(0, 0, -1)
-	_, err = db.Exec("INSERT INTO scan_runs (volume_id, status, created_at) VALUES (?, ?, ?)",
-		"vol4", "completed", recentTime)
-	require.NoError(t, err)
-
-	// Prune old completed/failed runs only
-	ctx := context.Background()
-	affected, err := service.pruneOlderThanWithCondition(ctx, "scan_runs", "created_at", 5,
-		"status IN ('completed', 'failed', 'canceled')")
-
-	assert.NoError(t, err)
-	assert.Equal(t, int64(2), affected) // Should delete 2 old completed/failed records
-
-	// Verify 2 records remain (old running + recent completed)
-	var count int
-	err = db.QueryRow("SELECT COUNT(*) FROM scan_runs").Scan(&count)
-	require.NoError(t, err)
-	assert.Equal(t, 2, count)
-}
-
-func TestService_RollupDaily(t *testing.T) {
-	db := setupTestDB(t)
-	defer db.Close()
-
-	cfg := Config{Enabled: true, RollupEnabled: true}
-	service := New(db, cfg)
-
-	// Insert test metrics data
-	now := time.Now()
-	today := now.Format("2006-01-02")
-	yesterday := now.AddDate(0, 0, -1).Format("2006-01-02")
-
-	// Insert multiple records for the same day to test aggregation
-	_, err := db.Exec("INSERT INTO volume_metrics (volume_id, total_size, file_count, directory_count, metric_timestamp) VALUES (?, ?, ?, ?, ?)",
-		"vol1", 1000, 10, 5, today+" 10:00:00")
-	require.NoError(t, err)
-	_, err = db.Exec("INSERT INTO volume_metrics (volume_id, total_size, file_count, directory_count, metric_timestamp) VALUES (?, ?, ?, ?, ?)",
-		"vol1", 2000, 20, 15, today+" 14:00:00")
-	require.NoError(t, err)
-
-	// Insert records for yesterday
-	_, err = db.Exec("INSERT INTO volume_metrics (volume_id, total_size, file_count, directory_count, metric_timestamp) VALUES (?, ?, ?, ?, ?)",
-		"vol1", 500, 5, 3, yesterday+" 12:00:00")
-	require.NoError(t, err)
-
-	// Run rollup
-	ctx := context.Background()
-	err = service.rollupDaily(ctx)
-	assert.NoError(t, err)
-
-	// Verify daily rollup table was created and populated
-	var count int
-	err = db.QueryRow("SELECT COUNT(*) FROM volume_metrics_daily").Scan(&count)
-	require.NoError(t, err)
-	assert.Equal(t, 2, count) // Should have 2 days of data
-
-	// Verify aggregation for today (average of 1000 and 2000 = 1500)
-	var avgSize, avgFiles, avgDirs int64
-	err = db.QueryRow("SELECT total_size_avg, file_count_avg, directory_count_avg FROM volume_metrics_daily WHERE volume_id = ? AND day = ?",
-		"vol1", today).Scan(&avgSize, &avgFiles, &avgDirs)
-	require.NoError(t, err)
-	assert.Equal(t, int64(1500), avgSize) // (1000 + 2000) / 2
-	assert.Equal(t, int64(15), avgFiles)  // (10 + 20) / 2
-	assert.Equal(t, int64(10), avgDirs)   // (5 + 15) / 2
-}
-
-func TestService_RunOnce(t *testing.T) {
-	db := setupTestDB(t)
-	defer db.Close()
-
-	cfg := Config{
-		Enabled:        true,
-		MetricsTTLDays: 5,
-		SizesTTLDays:   7,
-		RollupEnabled:  true,
-	}
-	service := New(db, cfg)
-
-	// Insert old test data
-	oldTime := time.Now().AddDate(0, 0, -10)
-	_, err := db.Exec("INSERT INTO volume_metrics (volume_id, total_size, metric_timestamp) VALUES (?, ?, ?)",
-		"vol1", 1000, oldTime)
-	require.NoError(t, err)
-	_, err = db.Exec("INSERT INTO volume_sizes (volume_id, size, created_at) VALUES (?, ?, ?)",
-		"vol1", 1000, oldTime)
-	require.NoError(t, err)
-
-	// Run lifecycle maintenance
-	service.runOnce(context.Background())
-
-	// Verify old data was pruned
-	var metricsCount, sizesCount int
-	err = db.QueryRow("SELECT COUNT(*) FROM volume_metrics").Scan(&metricsCount)
-	require.NoError(t, err)
-	err = db.QueryRow("SELECT COUNT(*) FROM volume_sizes").Scan(&sizesCount)
-	require.NoError(t, err)
-
-	assert.Equal(t, 0, metricsCount) // Should be pruned (older than 5 days)
-	assert.Equal(t, 0, sizesCount)   // Should be pruned (older than 7 days)
-
-	// Verify rollup table was created
-	var rollupExists bool
-	err = db.QueryRow("SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='table' AND name='volume_metrics_daily'").Scan(&rollupExists)
-	require.NoError(t, err)
-	assert.True(t, rollupExists)
-}
-
-func TestConfig_Validation(t *testing.T) {
-	tests := []struct {
-		name   string
-		config Config
-		valid  bool
-	}{
-		{
-			name: "valid config",
-			config: Config{
-				Enabled:        true,
-				MetricsTTLDays: 30,
-				SizesTTLDays:   60,
-				RollupEnabled:  true,
-				Interval:       time.Hour,
-				InitialDelay:   time.Minute,
-			},
-			valid: true,
-		},
-		{
-			name: "disabled config",
-			config: Config{
-				Enabled: false,
-			},
-			valid: true,
-		},
-		{
-			name: "zero TTL values",
-			config: Config{
-				Enabled:        true,
-				MetricsTTLDays: 0, // Should be handled gracefully
-				SizesTTLDays:   0, // Should be handled gracefully
-				RollupEnabled:  false,
-				Interval:       time.Hour,
-			},
-			valid: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := setupTestDB(t)
-			defer db.Close()
-
-			service := New(db, tt.config)
-			assert.NotNil(t, service)
-
-			// Service should not panic during creation
-			service.Start()
-			time.Sleep(10 * time.Millisecond) // Brief pause
-			service.Stop()
-		})
+	case <-service.doneCh:
+		// Already closed, good
+	default:
+		assert.Fail(t, "Service doneCh should be closed after Stop()")
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/mantonx/volumeviz/internal/services"
-	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/models"
 )
 
 // DockerVolumeProvider implements VolumeProvider using DockerService
@@ -19,17 +19,17 @@ func NewDockerVolumeProvider(dockerService *services.DockerService) VolumeProvid
 	}
 }
 
-// ListVolumes returns all volumes from Docker as store.Volume types
-func (p *DockerVolumeProvider) ListVolumes(ctx context.Context) ([]*store.Volume, error) {
+// ListVolumes returns all volumes from Docker as models.Volume types
+func (p *DockerVolumeProvider) ListVolumes(ctx context.Context) ([]*models.Volume, error) {
 	volumes, err := p.dockerService.ListVolumes(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	storeVolumes := make([]*store.Volume, len(volumes))
+	storeVolumes := make([]*models.Volume, len(volumes))
 	for i, vol := range volumes {
-		storeVolumes[i] = &store.Volume{
-			VolumeID:   vol.ID,
+		storeVolumes[i] = &models.Volume{
+			VolumeID:   vol.VolumeID,
 			Name:       vol.Name,
 			Driver:     vol.Driver,
 			Mountpoint: vol.Mountpoint,
@@ -44,14 +44,14 @@ func (p *DockerVolumeProvider) ListVolumes(ctx context.Context) ([]*store.Volume
 }
 
 // GetVolume returns a specific volume by name as store.Volume type
-func (p *DockerVolumeProvider) GetVolume(ctx context.Context, volumeName string) (*store.Volume, error) {
+func (p *DockerVolumeProvider) GetVolume(ctx context.Context, volumeName string) (*models.Volume, error) {
 	vol, err := p.dockerService.GetVolume(ctx, volumeName)
 	if err != nil {
 		return nil, err
 	}
 
-	return &store.Volume{
-		VolumeID:   vol.ID,
+	return &models.Volume{
+		VolumeID:   vol.VolumeID,
 		Name:       vol.Name,
 		Driver:     vol.Driver,
 		Mountpoint: vol.Mountpoint,

@@ -78,14 +78,11 @@ func NewRouter(dockerService *services.DockerService, storeInstance store.Store,
 	// Initialize scan scheduler if enabled - using store façade
 	var scanScheduler scheduler.ScanScheduler
 	if config.Scan.Enabled {
-		// Create store facade for scheduler
-		storeFacadeInterface := storeInstance.GetFacade()
-		storeFacade, ok := storeFacadeInterface.(*store.StoreFacade)
-		if !ok {
-			log.Printf("Warning: Could not type assert store facade, scan scheduler disabled")
+		// Create scheduler repository from store
+		scanRepository := scheduler.NewScanRepository(storeInstance)
+		if scanRepository == nil {
+			log.Printf("Warning: Could not create scan repository, scan scheduler disabled")
 		} else {
-			// Create scan repository using store adapter
-			scanRepository := scheduler.NewScanRepository(storeFacade)
 		
 			// Create scheduler config
 			schedulerConfig := scheduler.NewSchedulerConfig(&config.Scan)
@@ -124,17 +121,19 @@ func NewRouter(dockerService *services.DockerService, storeInstance store.Store,
 		)
 		
 		// Create event handler service (implements EventProcessor)
+		// TODO: Create proper adapter between store.Store and events.Repository
 		eventHandler := events.NewEventHandlerService(
 			dockerClient,
-			storeInstance, // Store interface satisfies Repository interface
+			nil, // Temporary: use nil until events repository adapter is implemented
 			eventsMetrics,
 			publisher,
 		)
 		
 		// Create reconciler service
+		// TODO: Create proper adapter between store.Store and events.Repository
 		reconciler := events.NewReconcilerService(
 			dockerClient,
-			storeInstance, // Store interface satisfies Repository interface
+			nil, // Temporary: use nil until events repository adapter is implemented
 			&config.Events,
 			&events.EventMetrics{
 				ProcessedTotal:    make(map[events.EventType]int64),

@@ -148,33 +148,36 @@ func CreateTestContainerJSON(id, name, volumeName string) containertypes.Inspect
 // CreateTestVolumeModel creates a test volume model for unit tests
 func CreateTestVolumeModel(name string) models.Volume {
 	return models.Volume{
-		ID:         name,
+		ID:         1,
+		VolumeID:   name,
 		Name:       name,
 		Driver:     "local",
 		Mountpoint: "/var/lib/docker/volumes/" + name + "/_data",
 		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 		Labels:     map[string]string{"test": "true"},
 		Options:    map[string]string{},
 		Scope:      "local",
-		Status:     map[string]string{"active": "true"},
-		UsageData: &models.VolumeUsage{
-			RefCount: 1,
-			Size:     1024 * 1024, // 1MB
-		},
+		Status:     "active",
+		IsActive:   true,
 	}
 }
 
 // CreateTestVolumeContainer creates a test volume container for unit tests
 func CreateTestVolumeContainer(id, name, volumeName string) models.VolumeContainer {
 	return models.VolumeContainer{
-		ID:          id,
+		ID:          1,
+		ContainerID: id,
+		VolumeID:    volumeName,
 		Name:        name,
+		Image:       "nginx:latest",
 		State:       "running",
 		Status:      "Up 2 hours",
 		MountPath:   "/data",
-		MountType:   "volume",
 		AccessMode:  "rw",
-		Propagation: "rprivate",
+		IsActive:    true,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 }
 

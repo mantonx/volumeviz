@@ -44,11 +44,11 @@ func (ss *SnapshotService) CreateDailySnapshot(ctx context.Context, params Creat
 		FileCount:             params.FileCount,
 		DirectoryCount:        params.DirectoryCount,
 		LargestFile:           params.LargestFile,
-		GrowthBytes:           growth.SizeGrowth,
-		GrowthFiles:           growth.FileGrowth,
-		GrowthRateBytesPerDay: growthRate,
+		GrowthBytes:           &growth.SizeGrowth,
+		GrowthFiles:           &growth.FileGrowth,
+		GrowthRateBytesPerDay: &growthRate,
 		ScanMethod:            params.ScanMethod,
-		ScanDurationMs:        params.ScanDurationMs,
+		ScanDurationMs:        &params.ScanDurationMs,
 	})
 
 	if err != nil {
@@ -126,7 +126,7 @@ func (ss *SnapshotService) GetTrendsData(ctx context.Context, volumeID string, d
 		Trend7Day:  trend7Day,
 		Trend30Day: trend30Day,
 		StepSeries: stepSeries,
-		TrendSlope: slope.Slope,
+		TrendSlope: slope.SizeSlope,
 		DataPoints: len(stepSeries),
 		PeriodDays: days,
 	}, nil

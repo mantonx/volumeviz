@@ -51,13 +51,16 @@ VolumeViz is a Docker volume visualization and management tool with a Go backend
 ### Backend (Go)
 - `/internal/api/` - API handlers, routers, and models
 - `/internal/core/` - Core business logic and interfaces
-- `/internal/store/` - **Refactored store package with split architecture:**
-  - `postgres/` - PostgreSQL-specific store implementations
-  - `sqlite/` - SQLite-specific store implementations  
-  - `interfaces/` - Store interfaces and contracts
-  - `models/` - Data models and transfer objects
-  - `config/` - Database configuration management
-  - `migration/` - golang-migrate integration
+- `/internal/db/` - **Clean database layer:**
+  - `connect.go` - Database connections (PostgreSQL)
+  - `sqlc/` - Generated code from SQL queries (no business logic)
+- `/internal/repo/` - **Repository layer:**
+  - `queries/` - Domain-organized SQL queries (volumes.sql, scans.sql, etc.)
+  - `*_repo.go` - Repository implementations returning domain models
+- `/internal/store/` - **Transaction orchestration layer:**
+  - `store.go` - Store interfaces for transaction management
+  - `store_pg.go` - PostgreSQL store implementation
+- `/internal/models/` - **Domain models independent of database**
 - `/internal/events/` - Docker event handling
 - `/internal/scheduler/` - Task scheduling
 - `/pkg/docker/` - Docker client implementation
@@ -97,19 +100,12 @@ go build -o volumeviz cmd/server/main.go
 cd frontend && npm run build
 ```
 
-## Database Migration Commands
+## Database Setup
+The new architecture uses PostgreSQL with sqlc-generated code. Database schema is defined in SQL files:
 ```bash
-# Run migrations (SQLite)
-DB_TYPE=sqlite DB_PATH=/path/to/database.db go run ./cmd/migrate up
-
-# Run migrations (PostgreSQL) 
-DB_TYPE=postgres DB_HOST=localhost DB_PORT=5432 DB_USER=user DB_PASSWORD=pass DB_NAME=volumeviz go run ./cmd/migrate up
-
-# Check migration status
-go run ./cmd/migrate version
-
-# Create new migration
-go run ./cmd/migrate create migration_name
+# SQL schema files are in migrations/ directory
+# Application automatically applies schema on startup
+# No manual migration commands needed with the new architecture
 ```
 
 ## API Client Generation
@@ -128,11 +124,13 @@ cd frontend && npm run api:generate:remote
 ```
 
 ## Development Notes
-- **Store Architecture**: Fully refactored with domain-driven design - use interface-based dependency injection
-- **Database Migrations**: Use `cmd/migrate` for all migration operations (professional golang-migrate integration)  
+- **Three-Layer Architecture**: Clean separation between db/ (connections + sqlc), repo/ (SQL + domain models), store/ (transactions)
+- **sqlc Integration**: All SQL queries in `internal/repo/queries/*.sql` with type-safe generated code
+- **Import Boundaries**: CI enforces layer separation - services only import store + models
+- **PostgreSQL Focus**: Optimized for PostgreSQL with pgx/v5 driver and connection pooling
+- **Context-First**: All methods accept context.Context for proper cancellation and tracing
 - **Performance Optimized**: Bulk operations are highly optimized for large datasets
-- **Testing**: All store tests pass - use them as examples for proper store usage
-- **Multi-DB Support**: Code works identically with PostgreSQL and SQLite
+- **Testing**: Comprehensive test coverage with architecture compliance verification
 - API responses follow a consistent structure defined in internal/api/models/
 - Docker events are handled asynchronously for real-time updates
 - Test coverage is enforced at ≥60% in CI

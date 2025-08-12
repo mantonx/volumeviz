@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "internal/store/queries/postgres"
+    queries: "internal/repo/queries"
     schema: "migrations/schema_postgres.sql"
     gen:
       go:
-        package: "postgres"
-        out: "internal/store/generated/postgres"
+        package: "sqlc"
+        out: "internal/db/sqlc"
         sql_package: "pgx/v5"
         emit_json_tags: true
         emit_prepared_queries: true
@@ -36,40 +36,3 @@ sql:
           - column: "*.snapshot_date"
             go_type:
               type: "time.Time"
-  - engine: "sqlite"
-    queries: "internal/store/queries/sqlite" 
-    schema: "migrations"
-    gen:
-      go:
-        package: "sqlite"
-        out: "internal/store/generated/sqlite"
-        emit_json_tags: true
-        emit_prepared_queries: true
-        emit_interface: true
-        emit_exact_table_names: true
-        emit_empty_slices: true
-        overrides:
-          - column: "*.path_hash"
-            go_type:
-              type: "[]byte"
-          - column: "*.created_at"
-            go_type:
-              type: "string"
-          - column: "*.updated_at"
-            go_type:
-              type: "string"
-          - column: "*.mtime"
-            go_type:
-              type: "string"
-          - column: "*.ctime"
-            go_type:
-              type: "string"
-          - column: "*.computed_at"
-            go_type:
-              type: "string"
-          - column: "*.hidden"
-            go_type:
-              type: "int64"
-          - column: "*.snapshot_date"
-            go_type:
-              type: "string"

@@ -211,7 +211,7 @@ func (h *Handler) filterVolumes(volumes []coremodels.Volume, filters *apiutils.V
 
 		// Apply orphaned filter (requires container check)
 		if filters.Orphaned != nil {
-			containers, err := h.dockerService.GetVolumeContainers(context.Background(), vol.ID)
+			containers, err := h.dockerService.GetVolumeContainers(context.Background(), vol.VolumeID)
 			if err != nil {
 				// Skip this volume if we can't check containers
 				continue
@@ -231,7 +231,7 @@ func (h *Handler) filterVolumes(volumes []coremodels.Volume, filters *apiutils.V
 // convertToAPIVolume converts internal volume model to API format
 func (h *Handler) convertToAPIVolume(vol coremodels.Volume) models.VolumeV1 {
 	// Get container count for attachments_count
-	containers, err := h.dockerService.GetVolumeContainers(context.Background(), vol.ID)
+	containers, err := h.dockerService.GetVolumeContainers(context.Background(), vol.VolumeID)
 	if err != nil {
 		containers = []coremodels.VolumeContainer{}
 	}
@@ -410,7 +410,7 @@ func (h *Handler) GetVolume(c *gin.Context) {
 	attachments := make([]models.AttachmentV1, len(containers))
 	for i, container := range containers {
 		attachments[i] = models.AttachmentV1{
-			ContainerID:   container.ID,
+			ContainerID:   container.ContainerID,
 			ContainerName: container.Name,
 			MountPath:     container.MountPath,
 			RW:            container.AccessMode == "rw",
@@ -476,7 +476,7 @@ func (h *Handler) GetVolumeAttachments(c *gin.Context) {
 	attachments := make([]models.AttachmentV1, len(containers))
 	for i, container := range containers {
 		attachments[i] = models.AttachmentV1{
-			ContainerID:   container.ID,
+			ContainerID:   container.ContainerID,
 			ContainerName: container.Name,
 			MountPath:     container.MountPath,
 			RW:            container.AccessMode == "rw",
@@ -718,7 +718,7 @@ func (h *Handler) GetOrphanedVolumes(c *gin.Context) {
 		}
 
 		// Check if volume has any containers
-		containers, err := h.dockerService.GetVolumeContainers(ctx, vol.ID)
+		containers, err := h.dockerService.GetVolumeContainers(ctx, vol.VolumeID)
 		if err != nil {
 			// Skip this volume if we can't check containers
 			continue
