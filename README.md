@@ -511,6 +511,18 @@ Headers can be customized via environment variables (see `.env.example`).
 
 See [SECURITY.md](SECURITY.md) for detailed security guidelines and vulnerability reporting.
 
+## Documentation
+
+Comprehensive documentation is available in the [docs](./docs) directory:
+
+- **[Architecture Documentation](./docs/architecture/)** - System design and architectural decisions
+- **[Development Guides](./docs/development/)** - Setup and development environment
+- **[Implementation Details](./docs/implementation/)** - Technical implementation documentation
+- **[Database Documentation](./docs/)** - Database design and performance guides
+- **[API Documentation](./docs/api/)** - API specifications and guides
+
+See the [Documentation Index](./docs/README.md) for a complete overview.
+
 ## Development
 
 ### Project Structure
