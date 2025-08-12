@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -142,14 +143,16 @@ func fromSQLiteDirNode(row sqlite.DirNodes) (*models.DirNode, error) {
 	}
 
 	return &models.DirNode{
-		ID:          row.ID,
-		VolumeID:    row.VolumeID,
-		ParentDirID: fromSQLiteInt64(row.ParentDirID),
-		Name:        row.Name,
-		FullPath:    row.FullPath,
-		Depth:       int32(row.Depth),
-		CreatedAt:   createdAt,
-		UpdatedAt:   updatedAt,
+		ID:              row.ID,
+		VolumeID:        row.VolumeID,
+		ParentDirID:     fromSQLiteInt64(row.ParentDirID),
+		Name:            row.Name,
+		FullPath:        row.FullPath,
+		Depth:           int32(row.Depth),
+		LatestSizeBytes: row.LatestSizeBytes,
+		LatestFileCount: row.LatestFileCount,
+		CreatedAt:       createdAt,
+		UpdatedAt:       updatedAt,
 	}, nil
 }
 
@@ -203,12 +206,148 @@ func fromSQLiteUsageSnapshot(row sqlite.UsageSnapshots) (*models.UsageSnapshot, 
 		return nil, fmt.Errorf("failed to parse updated_at: %w", err)
 	}
 
+	snapshotDate, err := parseSQLiteTime(row.SnapshotDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse snapshot_date: %w", err)
+	}
+
 	return &models.UsageSnapshot{
-		ID:           row.ID,
-		VolumeID:     row.VolumeID,
-		SnapshotType: row.SnapshotType,
-		CreatedAt:    createdAt,
-		UpdatedAt:    updatedAt,
+		ID:                    row.ID,
+		VolumeID:              row.VolumeID,
+		SnapshotDate:          snapshotDate,
+		SnapshotType:          row.SnapshotType,
+		TotalSize:             row.TotalSize,
+		FileCount:             row.FileCount,
+		DirectoryCount:        row.DirectoryCount,
+		LargestFile:           row.LargestFile,
+		GrowthBytes:           nullInt64ToInt64(row.GrowthBytes),
+		GrowthFiles:           nullInt64ToInt64(row.GrowthFiles),
+		GrowthRateBytesPerDay: nullFloat64ToFloat64(row.GrowthRateBytesPerDay),
+		ScanMethod:            row.ScanMethod,
+		ScanDurationMs:        nullInt64ToInt64(row.ScanDurationMs),
+		CreatedAt:             createdAt,
+		UpdatedAt:             updatedAt,
+	}, nil
+}
+
+// Helper functions for nullable types
+func nullInt64ToInt64(nullInt sql.NullInt64) int64 {
+	if nullInt.Valid {
+		return nullInt.Int64
+	}
+	return 0
+}
+
+func nullFloat64ToFloat64(nullFloat sql.NullFloat64) float64 {
+	if nullFloat.Valid {
+		return nullFloat.Float64
+	}
+	return 0.0
+}
+
+func int64ToNullInt64(val int64) sql.NullInt64 {
+	return sql.NullInt64{Int64: val, Valid: true}
+}
+
+func float64ToNullFloat64(val float64) sql.NullFloat64 {
+	return sql.NullFloat64{Float64: val, Valid: true}
+}
+
+// Helper functions for converting maps to JSON strings and back
+func mapStringToNullString(m map[string]string) sql.NullString {
+	if len(m) == 0 {
+		return sql.NullString{Valid: false}
+	}
+	
+	jsonBytes, err := json.Marshal(m)
+	if err != nil {
+		// Log error and return empty map as fallback
+		return sql.NullString{String: "{}", Valid: true}
+	}
+	
+	return sql.NullString{String: string(jsonBytes), Valid: true}
+}
+
+func nullStringToMapString(ns sql.NullString) map[string]string {
+	if !ns.Valid || ns.String == "" {
+		return make(map[string]string)
+	}
+	
+	var result map[string]string
+	if err := json.Unmarshal([]byte(ns.String), &result); err != nil {
+		// Log error and return empty map as fallback
+		return make(map[string]string)
+	}
+	
+	if result == nil {
+		return make(map[string]string)
+	}
+	
+	return result
+}
+
+func nullStringToString(ns sql.NullString) string {
+	if !ns.Valid {
+		return ""
+	}
+	return ns.String
+}
+
+func fromSQLiteContainer(row sqlite.Containers) (*models.Container, error) {
+	createdAt, err := parseSQLiteTime(row.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse created_at: %w", err)
+	}
+
+	updatedAt, err := parseSQLiteTime(row.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse updated_at: %w", err)
+	}
+
+	var startedAt, finishedAt *time.Time
+	if row.StartedAt.Valid {
+		startedAt = &row.StartedAt.Time
+	}
+	if row.FinishedAt.Valid {
+		finishedAt = &row.FinishedAt.Time
+	}
+
+	return &models.Container{
+		ID:          row.ID,
+		ContainerID: row.ContainerID,
+		Name:        row.Name,
+		Image:       row.Image,
+		State:       row.State,
+		Status:      nullStringToString(row.Status),
+		Labels:      nullStringToMapString(row.Labels),
+		StartedAt:   startedAt,
+		FinishedAt:  finishedAt,
+		IsActive:    sqliteIntToBool(nullInt64ToInt64(row.IsActive)),
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
+	}, nil
+}
+
+func fromSQLiteVolumeMount(row sqlite.VolumeMounts) (*models.VolumeMount, error) {
+	createdAt, err := parseSQLiteTime(row.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse created_at: %w", err)
+	}
+
+	updatedAt, err := parseSQLiteTime(row.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse updated_at: %w", err)
+	}
+
+	return &models.VolumeMount{
+		ID:          row.ID,
+		VolumeID:    row.VolumeID,
+		ContainerID: row.ContainerID,
+		MountPath:   row.MountPath,
+		AccessMode:  row.AccessMode,
+		IsActive:    sqliteIntToBool(nullInt64ToInt64(row.IsActive)),
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
 	}, nil
 }
 
@@ -263,5 +402,31 @@ func defaultChunkSize() int {
 	return 1000 // Default chunk size for bulk operations
 }
 
-// Docker-related conversion helpers (placeholder implementations)
-// TODO: Implement these when Docker SQL queries are added
+// Docker-related conversion helpers
+
+func fromSQLiteVolume(row sqlite.Volumes) (*models.Volume, error) {
+	createdAt, err := parseSQLiteTime(row.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse created_at: %w", err)
+	}
+
+	updatedAt, err := parseSQLiteTime(row.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse updated_at: %w", err)
+	}
+
+	return &models.Volume{
+		ID:         row.ID,
+		VolumeID:   row.VolumeID,
+		Name:       row.Name,
+		Driver:     row.Driver,
+		Mountpoint: row.Mountpoint,
+		Labels:     nullStringToMapString(row.Labels),
+		Options:    nullStringToMapString(row.Options),
+		Scope:      nullStringToString(row.Scope),
+		Status:     nullStringToString(row.Status),
+		IsActive:   sqliteIntToBool(nullInt64ToInt64(row.IsActive)),
+		CreatedAt:  createdAt,
+		UpdatedAt:  updatedAt,
+	}, nil
+}

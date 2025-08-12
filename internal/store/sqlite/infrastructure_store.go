@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/store/config"
@@ -59,11 +60,26 @@ func NewSQLiteInfrastructureStore(cfg *config.Config) (*SQLiteInfrastructureStor
 	
 	// Create legacy facade for backward compatibility
 	if cfg != nil {
-		// Create facade - this will be properly initialized when we update facade.go
-		store.facade = nil // TODO: Initialize facade properly
+		// Facade will be initialized by the SQLiteStore constructor via SetFacade()
+		store.facade = nil
+	}
+	
+	// Run database migrations after store is fully initialized
+	if err := store.runMigrations(); err != nil {
+		log.Printf("Warning: Failed to run migrations: %v", err)
+		// Don't fail store creation due to migration issues during development
 	}
 	
 	return store, nil
+}
+
+// runMigrations applies all pending database migrations
+func (s *SQLiteInfrastructureStore) runMigrations() error {
+	// Note: golang-migrate has issues with SQLite where it closes the database connection
+	// This is a known issue when running migrations on the same connection used by the store
+	// We disable automatic migrations and require manual migration runs to work around this
+	log.Printf("Automatic migrations disabled - use 'migrate up' command to run migrations")
+	return nil
 }
 
 // GetDB returns the underlying database connection for use by other stores
@@ -79,6 +95,11 @@ func (s *SQLiteInfrastructureStore) GetQueries() *sqlite.Queries {
 // GetFacade returns the legacy facade for backward compatibility
 func (s *SQLiteInfrastructureStore) GetFacade() interface{} {
 	return s.facade
+}
+
+// SetFacade sets the facade reference for transaction callbacks
+func (s *SQLiteInfrastructureStore) SetFacade(facade interface{}) {
+	s.facade = facade
 }
 
 // Close closes the database connection

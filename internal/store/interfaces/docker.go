@@ -55,12 +55,14 @@ type DockerStore interface {
 	UpsertVolume(ctx context.Context, volume *Volume) error
 	DeleteVolume(ctx context.Context, volumeID string) error
 	GetVolumeByName(ctx context.Context, name string) (*Volume, error)
+	GetVolumeByVolumeID(ctx context.Context, volumeID string) (*Volume, error)
 	ListAllVolumes(ctx context.Context) ([]*Volume, error)
 	
 	// Container operations
 	UpsertContainer(ctx context.Context, container *Container) error
 	DeleteContainer(ctx context.Context, containerID string) error
 	GetContainerByID(ctx context.Context, containerID string) (*Container, error)
+	GetContainerByContainerID(ctx context.Context, containerID string) (*Container, error)
 	ListAllContainers(ctx context.Context) ([]*Container, error)
 	
 	// Volume mount operations

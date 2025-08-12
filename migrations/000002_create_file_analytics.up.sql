@@ -1,5 +1,5 @@
--- SQLite File Analytics Schema for VolumeViz
--- This is an idempotent schema file - can be run multiple times safely
+-- File Analytics Schema Migration
+-- Creates tables for file system analysis and analytics
 
 -- File entries table
 CREATE TABLE IF NOT EXISTS file_entries (
@@ -54,6 +54,9 @@ CREATE INDEX IF NOT EXISTS idx_file_entries_path_hash ON file_entries(path_hash)
 CREATE INDEX IF NOT EXISTS idx_file_entries_volume_parent ON file_entries(volume_id, parent_dir_id);
 CREATE INDEX IF NOT EXISTS idx_file_entries_volume_size ON file_entries(volume_id, size_bytes DESC);
 
+-- Create unique constraint for file entries
+CREATE UNIQUE INDEX IF NOT EXISTS idx_file_entries_volume_path_hash_unique ON file_entries(volume_id, path_hash);
+
 -- Create indexes for dir_nodes
 CREATE INDEX IF NOT EXISTS idx_dir_nodes_volume_id ON dir_nodes(volume_id);
 CREATE INDEX IF NOT EXISTS idx_dir_nodes_parent_dir_id ON dir_nodes(parent_dir_id);
@@ -63,20 +66,10 @@ CREATE INDEX IF NOT EXISTS idx_dir_nodes_volume_depth ON dir_nodes(volume_id, de
 CREATE INDEX IF NOT EXISTS idx_dir_nodes_volume_parent ON dir_nodes(volume_id, parent_dir_id);
 CREATE INDEX IF NOT EXISTS idx_dir_nodes_latest_size ON dir_nodes(latest_size_bytes DESC);
 
+-- Create unique constraint for dir nodes
+CREATE UNIQUE INDEX IF NOT EXISTS idx_dir_nodes_volume_path ON dir_nodes(volume_id, full_path);
+
 -- Create indexes for dir_rollups
 CREATE INDEX IF NOT EXISTS idx_dir_rollups_dir_id ON dir_rollups(dir_id);
 CREATE INDEX IF NOT EXISTS idx_dir_rollups_computed_at ON dir_rollups(computed_at);
 CREATE INDEX IF NOT EXISTS idx_dir_rollups_dir_computed ON dir_rollups(dir_id, computed_at DESC);
-
--- Add updated_at triggers for file analytics tables
-CREATE TRIGGER IF NOT EXISTS update_file_entries_updated_at 
-AFTER UPDATE ON file_entries
-BEGIN
-    UPDATE file_entries SET updated_at = datetime('now') WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_dir_nodes_updated_at 
-AFTER UPDATE ON dir_nodes
-BEGIN
-    UPDATE dir_nodes SET updated_at = datetime('now') WHERE id = NEW.id;
-END;

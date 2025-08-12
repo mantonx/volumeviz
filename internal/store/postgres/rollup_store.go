@@ -80,9 +80,9 @@ func (s *PostgresRollupStore) GetDirRollupHistory(ctx context.Context, dirID int
 // GetDirRollupsInTimeRange retrieves rollups within a time range
 func (s *PostgresRollupStore) GetDirRollupsInTimeRange(ctx context.Context, dirID int64, startTime, endTime time.Time) ([]*models.DirRollup, error) {
 	rows, err := s.queries.GetDirRollupsInTimeRange(ctx, postgres.GetDirRollupsInTimeRangeParams{
-		DirID:     dirID,
-		StartTime: startTime,
-		EndTime:   endTime,
+		DirID:        dirID,
+		ComputedAt:   startTime,
+		ComputedAt_2: endTime,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get directory rollups in time range: %w", err)
@@ -107,7 +107,7 @@ func (s *PostgresRollupStore) DeleteOldRollups(ctx context.Context, cutoffTime t
 
 // DeleteRollupsByDirID deletes all rollups for a directory
 func (s *PostgresRollupStore) DeleteRollupsByDirID(ctx context.Context, dirID int64) error {
-	err := s.queries.DeleteRollupsByDirID(ctx, dirID)
+	err := s.queries.DeleteRollupsByDirId(ctx, dirID)
 	if err != nil {
 		return fmt.Errorf("failed to delete rollups by directory ID: %w", err)
 	}
@@ -116,7 +116,7 @@ func (s *PostgresRollupStore) DeleteRollupsByDirID(ctx context.Context, dirID in
 
 // CountRollupsByDirID counts rollups for a directory
 func (s *PostgresRollupStore) CountRollupsByDirID(ctx context.Context, dirID int64) (int64, error) {
-	count, err := s.queries.CountRollupsByDirID(ctx, dirID)
+	count, err := s.queries.CountRollupsByDirId(ctx, dirID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count rollups by directory ID: %w", err)
 	}
@@ -130,12 +130,24 @@ func (s *PostgresRollupStore) GetRollupStats(ctx context.Context) (*models.Rollu
 		return nil, fmt.Errorf("failed to get rollup stats: %w", err)
 	}
 
+	// Convert interface{} values to appropriate types
+	var oldestRollup, newestRollup *time.Time
+	if row.OldestRollup != nil {
+		if t, ok := row.OldestRollup.(time.Time); ok {
+			oldestRollup = &t
+		}
+	}
+	if row.NewestRollup != nil {
+		if t, ok := row.NewestRollup.(time.Time); ok {
+			newestRollup = &t
+		}
+	}
+
 	return &models.RollupStats{
-		TotalRollups:    row.TotalRollups,
-		OldestRollup:    row.OldestRollup,
-		NewestRollup:    row.NewestRollup,
-		AvgRollupSize:   row.AvgRollupSize,
-		TotalSizeBytes:  row.TotalSizeBytes,
+		TotalRollups:           row.TotalRollups,
+		DirectoriesWithRollups: row.DirectoriesWithRollups,
+		OldestRollup:           oldestRollup,
+		NewestRollup:           newestRollup,
 	}, nil
 }
 

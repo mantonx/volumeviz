@@ -99,11 +99,13 @@ func (ss *SnapshotService) GetTrendsData(ctx context.Context, volumeID string, d
 	}
 
 	// Get step series data
-	startDate := time.Now().UTC().AddDate(0, 0, -days).Truncate(24 * time.Hour)
+	endDate := time.Now().UTC().Truncate(24 * time.Hour)
+	startDate := endDate.AddDate(0, 0, -days)
 	stepSeries, err := ss.store.GetVolumeStepSeries(ctx, store.GetVolumeStepSeriesParams{
-		VolumeID:     volumeID,
-		SnapshotType: "daily",
-		Date:         startDate,
+		VolumeID:  volumeID,
+		StartDate: startDate,
+		EndDate:   endDate,
+		StepSize:  "day",
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get step series: %w", err)
@@ -111,9 +113,9 @@ func (ss *SnapshotService) GetTrendsData(ctx context.Context, volumeID string, d
 
 	// Calculate slope for trend line
 	slope, err := ss.store.GetTrendSlope(ctx, store.GetTrendSlopeParams{
-		VolumeID:     volumeID,
-		SnapshotType: "daily",
-		Date:         startDate,
+		VolumeID:  volumeID,
+		StartDate: startDate,
+		EndDate:   endDate,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trend slope: %w", err)
@@ -125,7 +127,7 @@ func (ss *SnapshotService) GetTrendsData(ctx context.Context, volumeID string, d
 		Trend30Day: trend30Day,
 		StepSeries: stepSeries,
 		TrendSlope: slope.Slope,
-		DataPoints: int(slope.DataPoints),
+		DataPoints: len(stepSeries),
 		PeriodDays: days,
 	}, nil
 }

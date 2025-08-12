@@ -17,10 +17,14 @@ type Querier interface {
 	BulkInsertFileEntries(ctx context.Context, arg []BulkInsertFileEntriesParams) (int64, error)
 	CompactDailyToWeekly(ctx context.Context) error
 	CompleteScanJob(ctx context.Context, arg CompleteScanJobParams) (CompleteScanJobRow, error)
+	CountContainers(ctx context.Context) (int64, error)
 	CountDirNodesByVolume(ctx context.Context, volumeID string) (int64, error)
 	CountFileEntriesByVolume(ctx context.Context, volumeID string) (int64, error)
 	CountRollupsByDirId(ctx context.Context, dirID int64) (int64, error)
+	CountVolumeMounts(ctx context.Context) (int64, error)
 	CountVolumes(ctx context.Context) (int64, error)
+	// Container CRUD operations (PostgreSQL)
+	CreateContainer(ctx context.Context, arg CreateContainerParams) (CreateContainerRow, error)
 	CreateDirNode(ctx context.Context, arg CreateDirNodeParams) (DirNodes, error)
 	CreateDirRollup(ctx context.Context, arg CreateDirRollupParams) (DirRollups, error)
 	CreateFileEntry(ctx context.Context, arg CreateFileEntryParams) (FileEntries, error)
@@ -29,12 +33,15 @@ type Querier interface {
 	CreateUsageSnapshot(ctx context.Context, arg CreateUsageSnapshotParams) (UsageSnapshots, error)
 	// Volume CRUD operations
 	CreateVolume(ctx context.Context, arg CreateVolumeParams) (CreateVolumeRow, error)
+	// Volume Mount CRUD operations (PostgreSQL)
+	CreateVolumeMount(ctx context.Context, arg CreateVolumeMountParams) (CreateVolumeMountRow, error)
+	DeactivateVolumeMounts(ctx context.Context, containerID string) error
 	DeleteDirNodesByVolume(ctx context.Context, volumeID string) error
 	DeleteFileEntriesByVolume(ctx context.Context, volumeID string) error
 	DeleteOldDailySnapshots(ctx context.Context) error
 	DeleteOldRollups(ctx context.Context, computedAt time.Time) error
 	DeleteOldScanJobs(ctx context.Context, createdAt time.Time) error
-	DeleteOldVolumeMetrics(ctx context.Context, metricTimestamp pgtype.Timestamptz) error
+	DeleteOldVolumeMetrics(ctx context.Context, metricTimestamp pgtype.Timestamp) error
 	DeleteOldVolumeSizes(ctx context.Context, createdAt time.Time) error
 	DeleteOldWeeklySnapshots(ctx context.Context) error
 	DeleteRollupsByDirId(ctx context.Context, dirID int64) error
@@ -42,11 +49,18 @@ type Querier interface {
 	FindFilesByPathHash(ctx context.Context, arg FindFilesByPathHashParams) ([]FileEntries, error)
 	Get30DayTrend(ctx context.Context, volumeID string) (Get30DayTrendRow, error)
 	Get7DayTrend(ctx context.Context, volumeID string) (Get7DayTrendRow, error)
+	GetActiveContainerCount(ctx context.Context) (int64, error)
 	GetActiveScanJobs(ctx context.Context) ([]ScanJobs, error)
 	GetActiveVolumeCount(ctx context.Context) (int64, error)
-	GetAllActiveVolumeIDs(ctx context.Context, metricTimestamp pgtype.Timestamptz) ([]string, error)
+	GetActiveVolumeMountCount(ctx context.Context) (int64, error)
+	GetAllActiveVolumeIDs(ctx context.Context, metricTimestamp pgtype.Timestamp) ([]string, error)
 	GetChildDirNodes(ctx context.Context, arg GetChildDirNodesParams) ([]DirNodes, error)
+	GetContainerByContainerID(ctx context.Context, containerID string) (Containers, error)
+	GetContainerByID(ctx context.Context, id int64) (Containers, error)
 	GetContainerCountForVolume(ctx context.Context, volumeID string) (int64, error)
+	GetContainerStats(ctx context.Context) (GetContainerStatsRow, error)
+	GetContainersByImage(ctx context.Context, image string) ([]Containers, error)
+	GetContainersByState(ctx context.Context, state string) ([]Containers, error)
 	GetDirNode(ctx context.Context, arg GetDirNodeParams) (DirNodes, error)
 	GetDirNodeByPath(ctx context.Context, arg GetDirNodeByPathParams) (DirNodes, error)
 	GetDirRollup(ctx context.Context, id int64) (DirRollups, error)
@@ -99,7 +113,7 @@ type Querier interface {
 	GetRecentScanJobs(ctx context.Context, arg GetRecentScanJobsParams) ([]ScanJobs, error)
 	GetRollupStats(ctx context.Context) (GetRollupStatsRow, error)
 	GetRootDirNodes(ctx context.Context, volumeID string) ([]DirNodes, error)
-	GetScanJobByID(ctx context.Context, id int32) (ScanJobs, error)
+	GetScanJobByID(ctx context.Context, id int64) (ScanJobs, error)
 	GetScanJobByScanID(ctx context.Context, scanID string) (ScanJobs, error)
 	GetScanJobStats(ctx context.Context) (GetScanJobStatsRow, error)
 	GetSnapshotsByDateRange(ctx context.Context, arg GetSnapshotsByDateRangeParams) ([]UsageSnapshots, error)
@@ -121,12 +135,17 @@ type Querier interface {
 	GetTotalScanJobCount(ctx context.Context) (int64, error)
 	GetTotalVolumeCount(ctx context.Context) (int64, error)
 	GetTrendSlope(ctx context.Context, arg GetTrendSlopeParams) (GetTrendSlopeRow, error)
-	GetVolumeByID(ctx context.Context, id int32) (Volumes, error)
+	GetVolumeByID(ctx context.Context, id int64) (Volumes, error)
 	GetVolumeByVolumeID(ctx context.Context, volumeID string) (Volumes, error)
 	GetVolumeFileStats(ctx context.Context, volumeID string) (GetVolumeFileStatsRow, error)
 	GetVolumeGrowthTrend(ctx context.Context, arg GetVolumeGrowthTrendParams) ([]GetVolumeGrowthTrendRow, error)
 	GetVolumeMetrics(ctx context.Context, arg GetVolumeMetricsParams) ([]GetVolumeMetricsRow, error)
 	GetVolumeMetricsTrends(ctx context.Context, arg GetVolumeMetricsTrendsParams) ([]GetVolumeMetricsTrendsRow, error)
+	GetVolumeMountByID(ctx context.Context, id int64) (VolumeMounts, error)
+	GetVolumeMountByVolumeContainer(ctx context.Context, arg GetVolumeMountByVolumeContainerParams) (VolumeMounts, error)
+	GetVolumeMountStats(ctx context.Context) (GetVolumeMountStatsRow, error)
+	GetVolumeMountsByContainer(ctx context.Context, containerID string) ([]VolumeMounts, error)
+	GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]VolumeMounts, error)
 	// =============================================================================
 	// ROOT LEVEL QUERIES (Volume root navigation)
 	// =============================================================================
@@ -138,12 +157,17 @@ type Querier interface {
 	GetVolumeStepSeries(ctx context.Context, arg GetVolumeStepSeriesParams) ([]GetVolumeStepSeriesRow, error)
 	GetVolumesByDriver(ctx context.Context, driver string) ([]Volumes, error)
 	GetVolumesByLabel(ctx context.Context, arg GetVolumesByLabelParams) ([]Volumes, error)
-	HardDeleteVolume(ctx context.Context, id int32) error
+	HardDeleteContainer(ctx context.Context, id int64) error
+	HardDeleteVolume(ctx context.Context, id int64) error
+	HardDeleteVolumeMount(ctx context.Context, id int64) error
+	HardDeleteVolumeMountByVolumeContainer(ctx context.Context, arg HardDeleteVolumeMountByVolumeContainerParams) error
 	// Health and diagnostic queries
 	HealthCheck(ctx context.Context) (int32, error)
 	// Volume sizes (scan stats) operations
 	InsertVolumeSize(ctx context.Context, arg InsertVolumeSizeParams) (InsertVolumeSizeRow, error)
+	ListContainers(ctx context.Context, arg ListContainersParams) ([]Containers, error)
 	ListScanJobs(ctx context.Context, arg ListScanJobsParams) ([]ScanJobs, error)
+	ListVolumeMounts(ctx context.Context, arg ListVolumeMountsParams) ([]VolumeMounts, error)
 	ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Volumes, error)
 	// Volume metrics operations
 	SaveVolumeMetrics(ctx context.Context, arg SaveVolumeMetricsParams) error
@@ -155,17 +179,24 @@ type Querier interface {
 	// =============================================================================
 	// Search for files by name pattern (supports LIKE patterns)
 	SearchFilesByName(ctx context.Context, arg SearchFilesByNameParams) ([]SearchFilesByNameRow, error)
-	SoftDeleteVolume(ctx context.Context, id int32) error
+	SoftDeleteContainer(ctx context.Context, id int64) error
+	SoftDeleteVolume(ctx context.Context, id int64) error
+	SoftDeleteVolumeMount(ctx context.Context, id int64) error
+	SoftDeleteVolumeMountByVolumeContainer(ctx context.Context, arg SoftDeleteVolumeMountByVolumeContainerParams) error
 	StartScanJob(ctx context.Context, arg StartScanJobParams) (StartScanJobRow, error)
+	UpdateContainer(ctx context.Context, arg UpdateContainerParams) (time.Time, error)
 	UpdateDirNodeStats(ctx context.Context, arg UpdateDirNodeStatsParams) error
 	UpdateLastScanned(ctx context.Context, arg UpdateLastScannedParams) error
 	UpdateScanJobProgress(ctx context.Context, arg UpdateScanJobProgressParams) error
 	UpdateScanJobStatus(ctx context.Context, arg UpdateScanJobStatusParams) (time.Time, error)
 	UpdateScanJobStatusAndProgress(ctx context.Context, arg UpdateScanJobStatusAndProgressParams) (UpdateScanJobStatusAndProgressRow, error)
 	UpdateVolume(ctx context.Context, arg UpdateVolumeParams) (time.Time, error)
+	UpdateVolumeMount(ctx context.Context, arg UpdateVolumeMountParams) (time.Time, error)
+	UpsertContainer(ctx context.Context, arg UpsertContainerParams) (UpsertContainerRow, error)
 	UpsertDirNode(ctx context.Context, arg UpsertDirNodeParams) (DirNodes, error)
 	UpsertFileEntry(ctx context.Context, arg UpsertFileEntryParams) (FileEntries, error)
 	UpsertVolume(ctx context.Context, arg UpsertVolumeParams) (UpsertVolumeRow, error)
+	UpsertVolumeMount(ctx context.Context, arg UpsertVolumeMountParams) (UpsertVolumeMountRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

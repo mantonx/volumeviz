@@ -3,8 +3,14 @@ package store
 
 // Re-export interfaces for backward compatibility
 import (
+	"context"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mantonx/volumeviz/internal/store/config"
 	"github.com/mantonx/volumeviz/internal/store/interfaces"
 	"github.com/mantonx/volumeviz/internal/store/models"
+	"github.com/mantonx/volumeviz/internal/store/postgres"
+	"github.com/mantonx/volumeviz/internal/store/sqlite"
 )
 
 // Re-export all interfaces for backward compatibility
@@ -70,3 +76,37 @@ var (
 // Legacy compatibility - keep the StoreFacade reference for existing code
 // This will be populated by the facade.go file to maintain backward compatibility
 var LegacyStoreFacade interface{}
+
+// Factory functions that delegate to the new split store implementations
+
+// NewPostgresStore creates a PostgreSQL store using the new split architecture
+func NewPostgresStore(cfg *config.Config) (Store, error) {
+	// Create connection pool
+	poolConfig, err := pgxpool.ParseConfig(cfg.DSN())
+	if err != nil {
+		return nil, err
+	}
+	
+	// Configure pool settings
+	poolConfig.MaxConns = int32(cfg.MaxOpenConns)
+	if cfg.MaxIdleConns > 0 {
+		poolConfig.MinConns = int32(cfg.MaxIdleConns)
+	}
+	poolConfig.MaxConnLifetime = cfg.ConnMaxLife
+	poolConfig.MaxConnIdleTime = cfg.ConnMaxIdleTime
+	
+	// Create the pool
+	pool, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Use the new split store
+	return postgres.NewPostgresStore(pool), nil
+}
+
+// NewSQLiteStore creates a SQLite store using the new split architecture  
+func NewSQLiteStore(cfg *config.Config) (Store, error) {
+	// Use the new split store directly
+	return sqlite.NewSQLiteStore(cfg)
+}

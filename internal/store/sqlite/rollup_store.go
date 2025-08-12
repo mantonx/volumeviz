@@ -16,7 +16,7 @@ type SQLiteRollupStore struct {
 }
 
 // NewSQLiteRollupStore creates a new SQLite rollup store
-func NewSQLiteRollupStore(infraStore *SQLiteInfrastructureStore) *SQLiteRollupStore {
+func NewSQLiteRollupStore(infraStore *SQLiteInfrastructureStore) interfaces.RollupStore {
 	return &SQLiteRollupStore{
 		infraStore: infraStore,
 	}

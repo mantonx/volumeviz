@@ -73,7 +73,7 @@ func (s *PostgresInfrastructureStore) Tx(ctx context.Context, fn interfaces.TxFu
 	defer tx.Rollback(ctx)
 
 	// Create transactional queries
-	qtx := s.queries.WithTx(tx)
+	_ = s.queries.WithTx(tx)
 
 	// Create transactional store if facade is set
 	var txStore interfaces.TransactionalStore
@@ -114,7 +114,7 @@ func (s *PostgresInfrastructureStore) ReadOnlyTx(ctx context.Context, fn interfa
 	}
 
 	// Create transactional queries
-	qtx := s.queries.WithTx(tx)
+	_ = s.queries.WithTx(tx)
 
 	// Create transactional store if facade is set
 	var txStore interfaces.TransactionalStore
@@ -146,7 +146,7 @@ func (s *PostgresInfrastructureStore) FastTx(ctx context.Context, fn interfaces.
 	}
 
 	// Create transactional queries
-	qtx := s.queries.WithTx(tx)
+	_ = s.queries.WithTx(tx)
 
 	// Create transactional store if facade is set
 	var txStore interfaces.TransactionalStore
@@ -187,7 +187,7 @@ func (s *PostgresInfrastructureStore) BulkTx(ctx context.Context, fn interfaces.
 	}
 
 	// Create transactional queries
-	qtx := s.queries.WithTx(tx)
+	_ = s.queries.WithTx(tx)
 
 	// Create transactional store if facade is set
 	var txStore interfaces.TransactionalStore

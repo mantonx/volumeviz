@@ -1,6 +1,9 @@
 package postgres
 
 import (
+	"encoding/json"
+	"time"
+
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mantonx/volumeviz/internal/store/generated/postgres"
 	"github.com/mantonx/volumeviz/internal/store/models"
@@ -104,12 +107,24 @@ func fromPostgresVolume(row *postgres.Volumes) *models.Volume {
 
 // fromPostgresContainer converts a PostgreSQL Containers row to a domain Container
 func fromPostgresContainer(row *postgres.Containers) *models.Container {
+	var startedAt, finishedAt *time.Time
+	if row.StartedAt.Valid {
+		startedAt = &row.StartedAt.Time
+	}
+	if row.FinishedAt.Valid {
+		finishedAt = &row.FinishedAt.Time
+	}
+
 	return &models.Container{
-		ID:          int64(row.ID),
+		ID:          row.ID,
 		ContainerID: row.ContainerID,
 		Name:        row.Name,
 		Image:       row.Image,
 		State:       row.State,
+		Status:      textToString(row.Status),
+		Labels:      nullStringToMapString(row.Labels),
+		StartedAt:   startedAt,
+		FinishedAt:  finishedAt,
 		IsActive:    boolFromNullBool(row.IsActive),
 		CreatedAt:   row.CreatedAt,
 		UpdatedAt:   row.UpdatedAt,
@@ -119,7 +134,7 @@ func fromPostgresContainer(row *postgres.Containers) *models.Container {
 // fromPostgresVolumeMount converts a PostgreSQL VolumeMounts row to a domain VolumeMount
 func fromPostgresVolumeMount(row *postgres.VolumeMounts) *models.VolumeMount {
 	return &models.VolumeMount{
-		ID:          int64(row.ID),
+		ID:          row.ID,
 		VolumeID:    row.VolumeID,
 		ContainerID: row.ContainerID,
 		MountPath:   row.MountPath,
@@ -169,4 +184,44 @@ func boolFromNullBool(n pgtype.Bool) bool {
 
 func nullBoolFromBool(b bool) pgtype.Bool {
 	return pgtype.Bool{Bool: b, Valid: true}
+}
+
+// Helper functions for JSON map conversion
+func mapStringToNullString(m map[string]string) pgtype.Text {
+	if len(m) == 0 {
+		return pgtype.Text{Valid: false}
+	}
+	
+	jsonBytes, err := json.Marshal(m)
+	if err != nil {
+		// Log error and return empty map as fallback
+		return pgtype.Text{String: "{}", Valid: true}
+	}
+	
+	return pgtype.Text{String: string(jsonBytes), Valid: true}
+}
+
+func nullStringToMapString(ns pgtype.Text) map[string]string {
+	if !ns.Valid || ns.String == "" {
+		return make(map[string]string)
+	}
+	
+	var result map[string]string
+	if err := json.Unmarshal([]byte(ns.String), &result); err != nil {
+		// Log error and return empty map as fallback
+		return make(map[string]string)
+	}
+	
+	if result == nil {
+		return make(map[string]string)
+	}
+	
+	return result
+}
+
+func textToString(t pgtype.Text) string {
+	if !t.Valid {
+		return ""
+	}
+	return t.String
 }

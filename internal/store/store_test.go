@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/store/config"
+	"github.com/mantonx/volumeviz/internal/store/sqlite"
 	"github.com/mantonx/volumeviz/internal/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,9 +37,14 @@ func TestSQLiteStore_Integration(t *testing.T) {
 	err = sqliteStore.Health(ctx)
 	require.NoError(t, err)
 
-	// Create tables - run our SQLite migration
+	// Create tables manually but with correct schema matching migration files
+	// We can't use golang-migrate directly because it closes the database connection
+	sqliteStoreImpl := sqliteStore.(*sqlite.SQLiteStore)
+	db := sqliteStoreImpl.GetInfrastructureStore().GetDB()
+	
+	// Create the file_entries table exactly as in migrations/000002_create_file_analytics.up.sql
 	createTablesSQL := `
-		CREATE TABLE file_entries (
+		CREATE TABLE IF NOT EXISTS file_entries (
 		    id INTEGER PRIMARY KEY AUTOINCREMENT,
 		    volume_id TEXT NOT NULL,
 		    parent_dir_id INTEGER,
@@ -56,7 +62,7 @@ func TestSQLiteStore_Integration(t *testing.T) {
 		    updated_at TEXT DEFAULT (datetime('now'))
 		);
 
-		CREATE TABLE dir_nodes (
+		CREATE TABLE IF NOT EXISTS dir_nodes (
 		    id INTEGER PRIMARY KEY AUTOINCREMENT,
 		    volume_id TEXT NOT NULL,
 		    parent_dir_id INTEGER,
@@ -69,7 +75,7 @@ func TestSQLiteStore_Integration(t *testing.T) {
 		    updated_at TEXT DEFAULT (datetime('now'))
 		);
 
-		CREATE TABLE dir_rollups (
+		CREATE TABLE IF NOT EXISTS dir_rollups (
 		    id INTEGER PRIMARY KEY AUTOINCREMENT,
 		    dir_id INTEGER NOT NULL,
 		    size_bytes INTEGER NOT NULL DEFAULT 0,
@@ -78,13 +84,13 @@ func TestSQLiteStore_Integration(t *testing.T) {
 		    created_at TEXT DEFAULT (datetime('now'))
 		);
 
-		CREATE UNIQUE INDEX idx_file_entries_volume_path_hash_unique
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_file_entries_volume_path_hash_unique
 			ON file_entries(volume_id, path_hash);
-		CREATE UNIQUE INDEX idx_dir_nodes_volume_path 
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_dir_nodes_volume_path 
 			ON dir_nodes(volume_id, full_path);
-	`
+	`;
 
-	_, err = sqliteStore.db.ExecContext(ctx, createTablesSQL)
+	_, err = db.ExecContext(ctx, createTablesSQL)
 	require.NoError(t, err)
 
 	// Convert to interface for testing

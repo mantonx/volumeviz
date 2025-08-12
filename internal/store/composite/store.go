@@ -200,6 +200,14 @@ func (c *CompositeStore) GetContainerByID(ctx context.Context, containerID strin
 	return c.dockerStore.GetContainerByID(ctx, containerID)
 }
 
+func (c *CompositeStore) GetContainerByContainerID(ctx context.Context, containerID string) (*interfaces.Container, error) {
+	return c.dockerStore.GetContainerByContainerID(ctx, containerID)
+}
+
+func (c *CompositeStore) GetVolumeByVolumeID(ctx context.Context, volumeID string) (*interfaces.Volume, error) {
+	return c.dockerStore.GetVolumeByVolumeID(ctx, volumeID)
+}
+
 func (c *CompositeStore) ListAllContainers(ctx context.Context) ([]*interfaces.Container, error) {
 	return c.dockerStore.ListAllContainers(ctx)
 }

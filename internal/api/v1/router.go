@@ -79,30 +79,34 @@ func NewRouter(dockerService *services.DockerService, storeInstance store.Store,
 	var scanScheduler scheduler.ScanScheduler
 	if config.Scan.Enabled {
 		// Create store facade for scheduler
-		storeFacade := storeInstance.GetFacade()
-		
-		// Create scan repository using store adapter
-		scanRepository := scheduler.NewScanRepository(storeFacade)
-		
-		// Create scheduler config
-		schedulerConfig := scheduler.NewSchedulerConfig(&config.Scan)
-		
-		// Create volume provider
-		volumeProvider := scheduler.NewDockerVolumeProvider(dockerService)
-		
-		// Create scheduler
-		sch, err := scheduler.NewScheduler(
-			schedulerConfig,
-			volumeScanner,
-			scanRepository,
-			volumeProvider,
-			metricsCollector,
-		)
-		if err != nil {
-			log.Printf("[ERROR] Failed to create scan scheduler: %v", err)
+		storeFacadeInterface := storeInstance.GetFacade()
+		storeFacade, ok := storeFacadeInterface.(*store.StoreFacade)
+		if !ok {
+			log.Printf("Warning: Could not type assert store facade, scan scheduler disabled")
 		} else {
-			scanScheduler = sch
-			log.Printf("[INFO] Scan scheduler initialized successfully")
+			// Create scan repository using store adapter
+			scanRepository := scheduler.NewScanRepository(storeFacade)
+		
+			// Create scheduler config
+			schedulerConfig := scheduler.NewSchedulerConfig(&config.Scan)
+			
+			// Create volume provider
+			volumeProvider := scheduler.NewDockerVolumeProvider(dockerService)
+			
+			// Create scheduler
+			sch, err := scheduler.NewScheduler(
+				schedulerConfig,
+				volumeScanner,
+				scanRepository,
+				volumeProvider,
+				metricsCollector,
+			)
+			if err != nil {
+				log.Printf("[ERROR] Failed to create scan scheduler: %v", err)
+			} else {
+				scanScheduler = sch
+				log.Printf("[INFO] Scan scheduler initialized successfully")
+			}
 		}
 	}
 

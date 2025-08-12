@@ -1,25 +1,24 @@
 package sqlite
 
 import (
+	"context"
+	"time"
+
 	"github.com/mantonx/volumeviz/internal/store/config"
 	"github.com/mantonx/volumeviz/internal/store/interfaces"
 )
 
 // SQLiteStore is a complete store implementation using SQLite with domain-specific stores
 type SQLiteStore struct {
+	// Embed TransactionalStore to implement all Store interface methods
+	interfaces.TransactionalStore
+	
 	// Infrastructure store handles connections, transactions, and health
 	infraStore *SQLiteInfrastructureStore
-
-	// Domain-specific stores
-	fileStore      *SQLiteFileStore
-	directoryStore *SQLiteDirectoryStore
-	rollupStore    *SQLiteRollupStore
-	dockerStore    *SQLiteDockerStore
-	analyticsStore *SQLiteAnalyticsStore
 }
 
 // NewSQLiteStore creates a new complete SQLite store with all domain stores
-func NewSQLiteStore(cfg *config.Config) (*SQLiteStore, error) {
+func NewSQLiteStore(cfg *config.Config) (interfaces.Store, error) {
 	// Create the infrastructure store
 	infraStore, err := NewSQLiteInfrastructureStore(cfg)
 	if err != nil {
@@ -33,52 +32,55 @@ func NewSQLiteStore(cfg *config.Config) (*SQLiteStore, error) {
 	dockerStore := NewSQLiteDockerStore(infraStore)
 	analyticsStore := NewSQLiteAnalyticsStore(infraStore)
 
-	return &SQLiteStore{
-		infraStore:     infraStore,
-		fileStore:      fileStore,
-		directoryStore: directoryStore,
-		rollupStore:    rollupStore,
-		dockerStore:    dockerStore,
-		analyticsStore: analyticsStore,
-	}, nil
+	// Create the transactional store
+	txStore := NewSQLiteTransactionalStore(fileStore, directoryStore, rollupStore, dockerStore, analyticsStore)
+
+	store := &SQLiteStore{
+		TransactionalStore: txStore,
+		infraStore:         infraStore,
+	}
+
+	// Set facade reference for transaction callbacks
+	infraStore.SetFacade(store)
+
+	return store, nil
 }
 
-// GetInfrastructureStore returns the infrastructure store for direct access
-func (s *SQLiteStore) GetInfrastructureStore() interfaces.InfrastructureStore {
-	return s.infraStore
-}
-
-// GetFileStore returns the file store for direct access
-func (s *SQLiteStore) GetFileStore() interfaces.FileStore {
-	return s.fileStore
-}
-
-// GetDirectoryStore returns the directory store for direct access
-func (s *SQLiteStore) GetDirectoryStore() interfaces.DirectoryStore {
-	return s.directoryStore
-}
-
-// GetRollupStore returns the rollup store for direct access
-func (s *SQLiteStore) GetRollupStore() interfaces.RollupStore {
-	return s.rollupStore
-}
-
-// GetDockerStore returns the docker store for direct access
-func (s *SQLiteStore) GetDockerStore() interfaces.DockerStore {
-	return s.dockerStore
-}
-
-// GetAnalyticsStore returns the analytics store for direct access
-func (s *SQLiteStore) GetAnalyticsStore() interfaces.AnalyticsStore {
-	return s.analyticsStore
-}
-
-// Close closes all store connections
+// Infrastructure methods delegated to infraStore
 func (s *SQLiteStore) Close() error {
 	return s.infraStore.Close()
 }
 
+func (s *SQLiteStore) Health(ctx context.Context) error {
+	return s.infraStore.Health(ctx)
+}
+
+func (s *SQLiteStore) BulkTx(ctx context.Context, fn interfaces.TxFunc) error {
+	return s.infraStore.BulkTx(ctx, fn)
+}
+
+func (s *SQLiteStore) Tx(ctx context.Context, fn interfaces.TxFunc) error {
+	return s.infraStore.Tx(ctx, fn)
+}
+
+func (s *SQLiteStore) TxWithTimeout(ctx context.Context, timeout time.Duration, fn interfaces.TxFunc) error {
+	return s.infraStore.TxWithTimeout(ctx, timeout, fn)
+}
+
+func (s *SQLiteStore) ReadOnlyTx(ctx context.Context, fn interfaces.TxFunc) error {
+	return s.infraStore.ReadOnlyTx(ctx, fn)
+}
+
+func (s *SQLiteStore) FastTx(ctx context.Context, fn interfaces.TxFunc) error {
+	return s.infraStore.FastTx(ctx, fn)
+}
+
 // GetFacade returns the legacy facade for backward compatibility
 func (s *SQLiteStore) GetFacade() interface{} {
-	return s.infraStore.GetFacade()
+	return s
+}
+
+// GetInfrastructureStore returns the infrastructure store for testing purposes
+func (s *SQLiteStore) GetInfrastructureStore() *SQLiteInfrastructureStore {
+	return s.infraStore
 }

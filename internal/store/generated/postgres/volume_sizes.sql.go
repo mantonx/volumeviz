@@ -162,7 +162,7 @@ type InsertVolumeSizeParams struct {
 }
 
 type InsertVolumeSizeRow struct {
-	ID        int32     `json:"id"`
+	ID        int64     `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

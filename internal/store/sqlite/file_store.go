@@ -16,7 +16,7 @@ type SQLiteFileStore struct {
 }
 
 // NewSQLiteFileStore creates a new SQLite file store
-func NewSQLiteFileStore(infraStore *SQLiteInfrastructureStore) *SQLiteFileStore {
+func NewSQLiteFileStore(infraStore *SQLiteInfrastructureStore) interfaces.FileStore {
 	return &SQLiteFileStore{
 		infraStore: infraStore,
 	}
@@ -196,15 +196,18 @@ func (s *SQLiteFileStore) GetVolumeFileStats(ctx context.Context, volumeID strin
 	}
 
 	return &models.VolumeFileStats{
-		TotalFiles: stats.TotalFiles,
-		TotalSize:  totalSize,
+		TotalFiles:   stats.TotalFiles,
+		TotalSize:    totalSize,
+		RegularFiles: stats.RegularFiles,
+		Directories:  stats.Directories,
+		HiddenFiles:  stats.HiddenFiles,
 	}, nil
 }
 
 // executeBatchInsertFileEntries executes a batch insert for file entries
 func (s *SQLiteFileStore) executeBatchInsertFileEntries(ctx context.Context, entries []*models.FileEntry) error {
 	for _, entry := range entries {
-		_, err := s.infraStore.GetQueries().CreateFileEntry(ctx, sqlite.CreateFileEntryParams{
+		err := s.infraStore.GetQueries().BulkInsertFileEntry(ctx, sqlite.BulkInsertFileEntryParams{
 			VolumeID:    entry.VolumeID,
 			ParentDirID: toSQLiteInt64(entry.ParentDirID),
 			Name:        entry.Name,

@@ -1,19 +1,5 @@
--- SQLite Core Schema for VolumeViz
--- This is an idempotent schema file - can be run multiple times safely
-
--- Migration history table
-CREATE TABLE IF NOT EXISTS migration_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    version TEXT NOT NULL UNIQUE,
-    description TEXT NOT NULL,
-    applied_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    rollback_sql TEXT,
-    checksum TEXT NOT NULL,
-    execution_time INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE INDEX IF NOT EXISTS idx_migration_history_version ON migration_history(version);
-CREATE INDEX IF NOT EXISTS idx_migration_history_applied_at ON migration_history(applied_at);
+-- VolumeViz Core Schema Migration
+-- Creates the foundational tables for the application
 
 -- Volumes table
 CREATE TABLE IF NOT EXISTS volumes (
@@ -161,55 +147,6 @@ CREATE TABLE IF NOT EXISTS docker_events (
     error_message TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
--- Create updated_at triggers
-CREATE TRIGGER IF NOT EXISTS update_volumes_updated_at 
-AFTER UPDATE ON volumes
-BEGIN
-    UPDATE volumes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_volume_sizes_updated_at 
-AFTER UPDATE ON volume_sizes
-BEGIN
-    UPDATE volume_sizes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_containers_updated_at 
-AFTER UPDATE ON containers
-BEGIN
-    UPDATE containers SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_volume_mounts_updated_at 
-AFTER UPDATE ON volume_mounts
-BEGIN
-    UPDATE volume_mounts SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_scan_jobs_updated_at 
-AFTER UPDATE ON scan_jobs
-BEGIN
-    UPDATE scan_jobs SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_volume_metrics_updated_at 
-AFTER UPDATE ON volume_metrics
-BEGIN
-    UPDATE volume_metrics SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_system_health_updated_at 
-AFTER UPDATE ON system_health
-BEGIN
-    UPDATE system_health SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_scan_cache_updated_at 
-AFTER UPDATE ON scan_cache
-BEGIN
-    UPDATE scan_cache SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_volumes_volume_id ON volumes(volume_id);

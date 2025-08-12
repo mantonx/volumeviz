@@ -17,7 +17,7 @@ DELETE FROM volume_metrics
 WHERE metric_timestamp < $1
 `
 
-func (q *Queries) DeleteOldVolumeMetrics(ctx context.Context, metricTimestamp pgtype.Timestamptz) error {
+func (q *Queries) DeleteOldVolumeMetrics(ctx context.Context, metricTimestamp pgtype.Timestamp) error {
 	_, err := q.db.Exec(ctx, deleteOldVolumeMetrics, metricTimestamp)
 	return err
 }
@@ -29,7 +29,7 @@ WHERE metric_timestamp >= $1
 ORDER BY volume_id
 `
 
-func (q *Queries) GetAllActiveVolumeIDs(ctx context.Context, metricTimestamp pgtype.Timestamptz) ([]string, error) {
+func (q *Queries) GetAllActiveVolumeIDs(ctx context.Context, metricTimestamp pgtype.Timestamp) ([]string, error) {
 	rows, err := q.db.Query(ctx, getAllActiveVolumeIDs, metricTimestamp)
 	if err != nil {
 		return nil, err
@@ -71,8 +71,8 @@ LIMIT 1
 `
 
 type GetLatestVolumeMetricRow struct {
-	TotalSize       int64              `json:"total_size"`
-	MetricTimestamp pgtype.Timestamptz `json:"metric_timestamp"`
+	TotalSize       int64            `json:"total_size"`
+	MetricTimestamp pgtype.Timestamp `json:"metric_timestamp"`
 }
 
 func (q *Queries) GetLatestVolumeMetric(ctx context.Context, volumeID string) (GetLatestVolumeMetricRow, error) {
@@ -93,24 +93,24 @@ LIMIT $4
 `
 
 type GetVolumeMetricsParams struct {
-	VolumeID          string             `json:"volume_id"`
-	MetricTimestamp   pgtype.Timestamptz `json:"metric_timestamp"`
-	MetricTimestamp_2 pgtype.Timestamptz `json:"metric_timestamp_2"`
-	Limit             int32              `json:"limit"`
+	VolumeID          string           `json:"volume_id"`
+	MetricTimestamp   pgtype.Timestamp `json:"metric_timestamp"`
+	MetricTimestamp_2 pgtype.Timestamp `json:"metric_timestamp_2"`
+	Limit             int32            `json:"limit"`
 }
 
 type GetVolumeMetricsRow struct {
-	ID              int32              `json:"id"`
-	CreatedAt       time.Time          `json:"created_at"`
-	UpdatedAt       time.Time          `json:"updated_at"`
-	VolumeID        string             `json:"volume_id"`
-	MetricTimestamp pgtype.Timestamptz `json:"metric_timestamp"`
-	TotalSize       int64              `json:"total_size"`
-	FileCount       int64              `json:"file_count"`
-	DirectoryCount  int64              `json:"directory_count"`
-	GrowthRate      pgtype.Float8      `json:"growth_rate"`
-	AccessFrequency pgtype.Int4        `json:"access_frequency"`
-	ContainerCount  pgtype.Int4        `json:"container_count"`
+	ID              int64            `json:"id"`
+	CreatedAt       time.Time        `json:"created_at"`
+	UpdatedAt       time.Time        `json:"updated_at"`
+	VolumeID        string           `json:"volume_id"`
+	MetricTimestamp pgtype.Timestamp `json:"metric_timestamp"`
+	TotalSize       int64            `json:"total_size"`
+	FileCount       int64            `json:"file_count"`
+	DirectoryCount  int64            `json:"directory_count"`
+	GrowthRate      pgtype.Float8    `json:"growth_rate"`
+	AccessFrequency pgtype.Int8      `json:"access_frequency"`
+	ContainerCount  pgtype.Int8      `json:"container_count"`
 }
 
 func (q *Queries) GetVolumeMetrics(ctx context.Context, arg GetVolumeMetricsParams) ([]GetVolumeMetricsRow, error) {
@@ -162,8 +162,8 @@ GROUP BY volume_id
 `
 
 type GetVolumeMetricsTrendsParams struct {
-	VolumeID        string             `json:"volume_id"`
-	MetricTimestamp pgtype.Timestamptz `json:"metric_timestamp"`
+	VolumeID        string           `json:"volume_id"`
+	MetricTimestamp pgtype.Timestamp `json:"metric_timestamp"`
 }
 
 type GetVolumeMetricsTrendsRow struct {
@@ -218,16 +218,16 @@ DO UPDATE SET
 `
 
 type SaveVolumeMetricsParams struct {
-	VolumeID        string             `json:"volume_id"`
-	MetricTimestamp pgtype.Timestamptz `json:"metric_timestamp"`
-	TotalSize       int64              `json:"total_size"`
-	FileCount       int64              `json:"file_count"`
-	DirectoryCount  int64              `json:"directory_count"`
-	GrowthRate      pgtype.Float8      `json:"growth_rate"`
-	AccessFrequency pgtype.Int4        `json:"access_frequency"`
-	ContainerCount  pgtype.Int4        `json:"container_count"`
-	CreatedAt       time.Time          `json:"created_at"`
-	UpdatedAt       time.Time          `json:"updated_at"`
+	VolumeID        string           `json:"volume_id"`
+	MetricTimestamp pgtype.Timestamp `json:"metric_timestamp"`
+	TotalSize       int64            `json:"total_size"`
+	FileCount       int64            `json:"file_count"`
+	DirectoryCount  int64            `json:"directory_count"`
+	GrowthRate      pgtype.Float8    `json:"growth_rate"`
+	AccessFrequency pgtype.Int8      `json:"access_frequency"`
+	ContainerCount  pgtype.Int8      `json:"container_count"`
+	CreatedAt       time.Time        `json:"created_at"`
+	UpdatedAt       time.Time        `json:"updated_at"`
 }
 
 // Volume metrics operations

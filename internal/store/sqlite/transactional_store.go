@@ -10,20 +10,20 @@ import (
 // SQLiteTransactionalStore combines all domain stores to implement TransactionalStore interface
 // This allows domain stores to participate in transactions
 type SQLiteTransactionalStore struct {
-	fileStore      *SQLiteFileStore
-	directoryStore *SQLiteDirectoryStore
-	rollupStore    *SQLiteRollupStore
-	dockerStore    *SQLiteDockerStore
-	analyticsStore *SQLiteAnalyticsStore
+	fileStore      interfaces.FileStore
+	directoryStore interfaces.DirectoryStore
+	rollupStore    interfaces.RollupStore
+	dockerStore    interfaces.DockerStore
+	analyticsStore interfaces.AnalyticsStore
 }
 
 // NewSQLiteTransactionalStore creates a new transactional store from individual domain stores
 func NewSQLiteTransactionalStore(
-	fileStore *SQLiteFileStore,
-	directoryStore *SQLiteDirectoryStore,
-	rollupStore *SQLiteRollupStore,
-	dockerStore *SQLiteDockerStore,
-	analyticsStore *SQLiteAnalyticsStore,
+	fileStore interfaces.FileStore,
+	directoryStore interfaces.DirectoryStore,
+	rollupStore interfaces.RollupStore,
+	dockerStore interfaces.DockerStore,
+	analyticsStore interfaces.AnalyticsStore,
 ) interfaces.TransactionalStore {
 	return &SQLiteTransactionalStore{
 		fileStore:      fileStore,
@@ -194,6 +194,14 @@ func (s *SQLiteTransactionalStore) DeleteContainer(ctx context.Context, containe
 
 func (s *SQLiteTransactionalStore) GetContainerByID(ctx context.Context, containerID string) (*interfaces.Container, error) {
 	return s.dockerStore.GetContainerByID(ctx, containerID)
+}
+
+func (s *SQLiteTransactionalStore) GetContainerByContainerID(ctx context.Context, containerID string) (*interfaces.Container, error) {
+	return s.dockerStore.GetContainerByContainerID(ctx, containerID)
+}
+
+func (s *SQLiteTransactionalStore) GetVolumeByVolumeID(ctx context.Context, volumeID string) (*interfaces.Volume, error) {
+	return s.dockerStore.GetVolumeByVolumeID(ctx, volumeID)
 }
 
 func (s *SQLiteTransactionalStore) ListAllContainers(ctx context.Context) ([]*interfaces.Container, error) {

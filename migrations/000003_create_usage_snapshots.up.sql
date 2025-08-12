@@ -1,6 +1,5 @@
--- SQLite Usage Snapshots Schema
--- Migration: 007_usage_snapshots_sqlite
--- Description: Add usage_snapshots table for time-series data and trends analysis (SQLite version)
+-- Usage Snapshots Schema Migration
+-- Creates table for time-series data and trends analysis
 
 -- Usage snapshots table for time-series data
 CREATE TABLE IF NOT EXISTS usage_snapshots (
@@ -33,7 +32,7 @@ CREATE INDEX IF NOT EXISTS idx_usage_snapshots_date_type
 CREATE INDEX IF NOT EXISTS idx_usage_snapshots_volume_type_date 
     ON usage_snapshots(volume_id, snapshot_type, snapshot_date DESC);
 
--- Create partial indexes for performance optimization (SQLite style)
+-- Create partial indexes for performance optimization
 CREATE INDEX IF NOT EXISTS idx_usage_snapshots_daily_recent 
     ON usage_snapshots(volume_id, snapshot_date DESC) 
     WHERE snapshot_type = 'daily' AND snapshot_date >= date('now', '-90 days');
@@ -45,11 +44,3 @@ CREATE INDEX IF NOT EXISTS idx_usage_snapshots_weekly_recent
 -- Add growth rate index for trend queries
 CREATE INDEX IF NOT EXISTS idx_usage_snapshots_growth_rate 
     ON usage_snapshots(volume_id, growth_rate_bytes_per_day DESC);
-
--- Create update trigger for updated_at
-CREATE TRIGGER IF NOT EXISTS update_usage_snapshots_updated_at
-    AFTER UPDATE ON usage_snapshots
-    FOR EACH ROW
-    BEGIN
-        UPDATE usage_snapshots SET updated_at = datetime('now') WHERE id = OLD.id;
-    END;

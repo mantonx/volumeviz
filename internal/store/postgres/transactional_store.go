@@ -191,6 +191,14 @@ func (s *PostgresTransactionalStore) GetContainerByID(ctx context.Context, conta
 	return s.dockerStore.GetContainerByID(ctx, containerID)
 }
 
+func (s *PostgresTransactionalStore) GetContainerByContainerID(ctx context.Context, containerID string) (*models.Container, error) {
+	return s.dockerStore.GetContainerByContainerID(ctx, containerID)
+}
+
+func (s *PostgresTransactionalStore) GetVolumeByVolumeID(ctx context.Context, volumeID string) (*models.Volume, error) {
+	return s.dockerStore.GetVolumeByVolumeID(ctx, volumeID)
+}
+
 func (s *PostgresTransactionalStore) ListAllContainers(ctx context.Context) ([]*models.Container, error) {
 	return s.dockerStore.ListAllContainers(ctx)
 }

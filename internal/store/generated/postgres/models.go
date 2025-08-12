@@ -11,62 +11,42 @@ import (
 )
 
 type Containers struct {
-	ID          int32              `json:"id"`
-	ContainerID string             `json:"container_id"`
-	Name        string             `json:"name"`
-	Image       string             `json:"image"`
-	State       string             `json:"state"`
-	Status      pgtype.Text        `json:"status"`
-	Labels      []byte             `json:"labels"`
-	StartedAt   pgtype.Timestamptz `json:"started_at"`
-	FinishedAt  pgtype.Timestamptz `json:"finished_at"`
-	IsActive    pgtype.Bool        `json:"is_active"`
-	CreatedAt   time.Time          `json:"created_at"`
-	UpdatedAt   time.Time          `json:"updated_at"`
+	ID          int64            `json:"id"`
+	ContainerID string           `json:"container_id"`
+	Name        string           `json:"name"`
+	Image       string           `json:"image"`
+	State       string           `json:"state"`
+	Status      pgtype.Text      `json:"status"`
+	Labels      pgtype.Text      `json:"labels"`
+	StartedAt   pgtype.Timestamp `json:"started_at"`
+	FinishedAt  pgtype.Timestamp `json:"finished_at"`
+	IsActive    pgtype.Bool      `json:"is_active"`
+	CreatedAt   time.Time        `json:"created_at"`
+	UpdatedAt   time.Time        `json:"updated_at"`
 }
 
-// Directory structure with hierarchical relationships and latest size calculations
 type DirNodes struct {
-	ID          int64       `json:"id"`
-	VolumeID    string      `json:"volume_id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
-	Name        string      `json:"name"`
-	// Complete path from volume root, must be unique within volume
-	FullPath        string    `json:"full_path"`
-	Depth           int32     `json:"depth"`
-	LatestSizeBytes int64     `json:"latest_size_bytes"`
-	LatestFileCount int64     `json:"latest_file_count"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID              int64       `json:"id"`
+	VolumeID        string      `json:"volume_id"`
+	ParentDirID     pgtype.Int8 `json:"parent_dir_id"`
+	Name            string      `json:"name"`
+	FullPath        string      `json:"full_path"`
+	Depth           int32       `json:"depth"`
+	LatestSizeBytes int64       `json:"latest_size_bytes"`
+	LatestFileCount int64       `json:"latest_file_count"`
+	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
 }
 
-// Time-series aggregated directory statistics for historical analysis
 type DirRollups struct {
-	ID        int64 `json:"id"`
-	DirID     int64 `json:"dir_id"`
-	SizeBytes int64 `json:"size_bytes"`
-	FileCount int64 `json:"file_count"`
-	// When this rollup was calculated, indexed for time-series queries
+	ID         int64     `json:"id"`
+	DirID      int64     `json:"dir_id"`
+	SizeBytes  int64     `json:"size_bytes"`
+	FileCount  int64     `json:"file_count"`
 	ComputedAt time.Time `json:"computed_at"`
 	CreatedAt  time.Time `json:"created_at"`
 }
 
-type DockerEvents struct {
-	ID              int32              `json:"id"`
-	EventID         string             `json:"event_id"`
-	EventType       string             `json:"event_type"`
-	EventAction     string             `json:"event_action"`
-	EventTime       pgtype.Timestamptz `json:"event_time"`
-	ActorID         pgtype.Text        `json:"actor_id"`
-	ActorType       pgtype.Text        `json:"actor_type"`
-	ActorAttributes []byte             `json:"actor_attributes"`
-	Processed       pgtype.Bool        `json:"processed"`
-	ProcessedAt     pgtype.Timestamptz `json:"processed_at"`
-	ErrorMessage    pgtype.Text        `json:"error_message"`
-	CreatedAt       time.Time          `json:"created_at"`
-}
-
-// Individual files and directories with detailed metadata for fast filesystem queries
 type FileEntries struct {
 	ID          int64       `json:"id"`
 	VolumeID    string      `json:"volume_id"`
@@ -80,78 +60,38 @@ type FileEntries struct {
 	Gid         pgtype.Int4 `json:"gid"`
 	Type        string      `json:"type"`
 	Hidden      bool        `json:"hidden"`
-	// xxhash of full path to avoid long-path index bloat
-	PathHash  []byte    `json:"path_hash"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type MigrationHistory struct {
-	ID            int32              `json:"id"`
-	Version       string             `json:"version"`
-	Description   string             `json:"description"`
-	AppliedAt     pgtype.Timestamptz `json:"applied_at"`
-	RollbackSql   pgtype.Text        `json:"rollback_sql"`
-	Checksum      string             `json:"checksum"`
-	ExecutionTime int64              `json:"execution_time"`
-}
-
-type ScanCache struct {
-	ID             int32              `json:"id"`
-	CacheKey       string             `json:"cache_key"`
-	VolumeID       string             `json:"volume_id"`
-	CachedResult   string             `json:"cached_result"`
-	ExpiresAt      pgtype.Timestamptz `json:"expires_at"`
-	HitCount       pgtype.Int4        `json:"hit_count"`
-	LastAccessedAt pgtype.Timestamptz `json:"last_accessed_at"`
-	IsValid        pgtype.Bool        `json:"is_valid"`
-	CreatedAt      time.Time          `json:"created_at"`
-	UpdatedAt      time.Time          `json:"updated_at"`
+	PathHash    []byte      `json:"path_hash"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
 }
 
 type ScanJobs struct {
-	ID                int32              `json:"id"`
-	ScanID            string             `json:"scan_id"`
-	VolumeID          string             `json:"volume_id"`
-	Status            string             `json:"status"`
-	Progress          pgtype.Int4        `json:"progress"`
-	Method            string             `json:"method"`
-	StartedAt         pgtype.Timestamptz `json:"started_at"`
-	CompletedAt       pgtype.Timestamptz `json:"completed_at"`
-	ErrorMessage      pgtype.Text        `json:"error_message"`
-	ResultID          pgtype.Int4        `json:"result_id"`
-	EstimatedDuration pgtype.Int8        `json:"estimated_duration"`
-	CreatedAt         time.Time          `json:"created_at"`
-	UpdatedAt         time.Time          `json:"updated_at"`
+	ID                int64            `json:"id"`
+	ScanID            string           `json:"scan_id"`
+	VolumeID          string           `json:"volume_id"`
+	Status            string           `json:"status"`
+	Progress          pgtype.Int4      `json:"progress"`
+	Method            string           `json:"method"`
+	StartedAt         pgtype.Timestamp `json:"started_at"`
+	CompletedAt       pgtype.Timestamp `json:"completed_at"`
+	ErrorMessage      pgtype.Text      `json:"error_message"`
+	ResultID          pgtype.Int8      `json:"result_id"`
+	EstimatedDuration pgtype.Int8      `json:"estimated_duration"`
+	CreatedAt         time.Time        `json:"created_at"`
+	UpdatedAt         time.Time        `json:"updated_at"`
 }
 
-type SystemHealth struct {
-	ID           int32              `json:"id"`
-	Component    string             `json:"component"`
-	Status       string             `json:"status"`
-	LastCheckAt  pgtype.Timestamptz `json:"last_check_at"`
-	ResponseTime pgtype.Int8        `json:"response_time"`
-	ErrorMessage pgtype.Text        `json:"error_message"`
-	Metadata     []byte             `json:"metadata"`
-	CreatedAt    time.Time          `json:"created_at"`
-	UpdatedAt    time.Time          `json:"updated_at"`
-}
-
-// Time-series snapshots of volume usage for trends analysis and historical data retention
 type UsageSnapshots struct {
-	ID           int64     `json:"id"`
-	VolumeID     string    `json:"volume_id"`
-	SnapshotDate time.Time `json:"snapshot_date"`
-	// Type of snapshot: daily (kept 90 days) or weekly (kept 1 year)
-	SnapshotType   string `json:"snapshot_type"`
-	TotalSize      int64  `json:"total_size"`
-	FileCount      int64  `json:"file_count"`
-	DirectoryCount int64  `json:"directory_count"`
-	LargestFile    int64  `json:"largest_file"`
-	// Size growth in bytes since previous snapshot of same type
-	GrowthBytes pgtype.Int8 `json:"growth_bytes"`
-	GrowthFiles pgtype.Int8 `json:"growth_files"`
-	// Calculated growth rate in bytes per day based on time delta
+	ID                    int64         `json:"id"`
+	VolumeID              string        `json:"volume_id"`
+	SnapshotDate          time.Time     `json:"snapshot_date"`
+	SnapshotType          string        `json:"snapshot_type"`
+	TotalSize             int64         `json:"total_size"`
+	FileCount             int64         `json:"file_count"`
+	DirectoryCount        int64         `json:"directory_count"`
+	LargestFile           int64         `json:"largest_file"`
+	GrowthBytes           pgtype.Int8   `json:"growth_bytes"`
+	GrowthFiles           pgtype.Int8   `json:"growth_files"`
 	GrowthRateBytesPerDay pgtype.Float8 `json:"growth_rate_bytes_per_day"`
 	ScanMethod            string        `json:"scan_method"`
 	ScanDurationMs        pgtype.Int8   `json:"scan_duration_ms"`
@@ -160,21 +100,21 @@ type UsageSnapshots struct {
 }
 
 type VolumeMetrics struct {
-	ID              int32              `json:"id"`
-	VolumeID        string             `json:"volume_id"`
-	MetricTimestamp pgtype.Timestamptz `json:"metric_timestamp"`
-	TotalSize       int64              `json:"total_size"`
-	FileCount       int64              `json:"file_count"`
-	DirectoryCount  int64              `json:"directory_count"`
-	GrowthRate      pgtype.Float8      `json:"growth_rate"`
-	AccessFrequency pgtype.Int4        `json:"access_frequency"`
-	ContainerCount  pgtype.Int4        `json:"container_count"`
-	CreatedAt       time.Time          `json:"created_at"`
-	UpdatedAt       time.Time          `json:"updated_at"`
+	ID              int64            `json:"id"`
+	VolumeID        string           `json:"volume_id"`
+	MetricTimestamp pgtype.Timestamp `json:"metric_timestamp"`
+	TotalSize       int64            `json:"total_size"`
+	FileCount       int64            `json:"file_count"`
+	DirectoryCount  int64            `json:"directory_count"`
+	GrowthRate      pgtype.Float8    `json:"growth_rate"`
+	AccessFrequency pgtype.Int8      `json:"access_frequency"`
+	ContainerCount  pgtype.Int8      `json:"container_count"`
+	CreatedAt       time.Time        `json:"created_at"`
+	UpdatedAt       time.Time        `json:"updated_at"`
 }
 
 type VolumeMounts struct {
-	ID          int32       `json:"id"`
+	ID          int64       `json:"id"`
 	VolumeID    string      `json:"volume_id"`
 	ContainerID string      `json:"container_id"`
 	MountPath   string      `json:"mount_path"`
@@ -185,7 +125,7 @@ type VolumeMounts struct {
 }
 
 type VolumeSizes struct {
-	ID             int32       `json:"id"`
+	ID             int64       `json:"id"`
 	VolumeID       string      `json:"volume_id"`
 	TotalSize      int64       `json:"total_size"`
 	FileCount      int64       `json:"file_count"`
@@ -202,17 +142,17 @@ type VolumeSizes struct {
 }
 
 type Volumes struct {
-	ID          int32              `json:"id"`
-	VolumeID    string             `json:"volume_id"`
-	Name        string             `json:"name"`
-	Driver      string             `json:"driver"`
-	Mountpoint  string             `json:"mountpoint"`
-	Labels      []byte             `json:"labels"`
-	Options     []byte             `json:"options"`
-	Scope       pgtype.Text        `json:"scope"`
-	Status      pgtype.Text        `json:"status"`
-	LastScanned pgtype.Timestamptz `json:"last_scanned"`
-	IsActive    pgtype.Bool        `json:"is_active"`
-	CreatedAt   time.Time          `json:"created_at"`
-	UpdatedAt   time.Time          `json:"updated_at"`
+	ID          int64            `json:"id"`
+	VolumeID    string           `json:"volume_id"`
+	Name        string           `json:"name"`
+	Driver      string           `json:"driver"`
+	Mountpoint  string           `json:"mountpoint"`
+	Labels      pgtype.Text      `json:"labels"`
+	Options     pgtype.Text      `json:"options"`
+	Scope       pgtype.Text      `json:"scope"`
+	Status      pgtype.Text      `json:"status"`
+	LastScanned pgtype.Timestamp `json:"last_scanned"`
+	IsActive    pgtype.Bool      `json:"is_active"`
+	CreatedAt   time.Time        `json:"created_at"`
+	UpdatedAt   time.Time        `json:"updated_at"`
 }

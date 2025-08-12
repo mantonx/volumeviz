@@ -39,6 +39,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.completeScanJobStmt, err = db.PrepareContext(ctx, completeScanJob); err != nil {
 		return nil, fmt.Errorf("error preparing query CompleteScanJob: %w", err)
 	}
+	if q.countContainersStmt, err = db.PrepareContext(ctx, countContainers); err != nil {
+		return nil, fmt.Errorf("error preparing query CountContainers: %w", err)
+	}
 	if q.countDirNodesByVolumeStmt, err = db.PrepareContext(ctx, countDirNodesByVolume); err != nil {
 		return nil, fmt.Errorf("error preparing query CountDirNodesByVolume: %w", err)
 	}
@@ -48,8 +51,14 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.countRollupsByDirIdStmt, err = db.PrepareContext(ctx, countRollupsByDirId); err != nil {
 		return nil, fmt.Errorf("error preparing query CountRollupsByDirId: %w", err)
 	}
+	if q.countVolumeMountsStmt, err = db.PrepareContext(ctx, countVolumeMounts); err != nil {
+		return nil, fmt.Errorf("error preparing query CountVolumeMounts: %w", err)
+	}
 	if q.countVolumesStmt, err = db.PrepareContext(ctx, countVolumes); err != nil {
 		return nil, fmt.Errorf("error preparing query CountVolumes: %w", err)
+	}
+	if q.createContainerStmt, err = db.PrepareContext(ctx, createContainer); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateContainer: %w", err)
 	}
 	if q.createDirNodeStmt, err = db.PrepareContext(ctx, createDirNode); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateDirNode: %w", err)
@@ -68,6 +77,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.createVolumeStmt, err = db.PrepareContext(ctx, createVolume); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateVolume: %w", err)
+	}
+	if q.createVolumeMountStmt, err = db.PrepareContext(ctx, createVolumeMount); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateVolumeMount: %w", err)
+	}
+	if q.deactivateVolumeMountsStmt, err = db.PrepareContext(ctx, deactivateVolumeMounts); err != nil {
+		return nil, fmt.Errorf("error preparing query DeactivateVolumeMounts: %w", err)
 	}
 	if q.deleteDirNodesByVolumeStmt, err = db.PrepareContext(ctx, deleteDirNodesByVolume); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteDirNodesByVolume: %w", err)
@@ -108,11 +123,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.get7DayTrendStmt, err = db.PrepareContext(ctx, get7DayTrend); err != nil {
 		return nil, fmt.Errorf("error preparing query Get7DayTrend: %w", err)
 	}
+	if q.getActiveContainerCountStmt, err = db.PrepareContext(ctx, getActiveContainerCount); err != nil {
+		return nil, fmt.Errorf("error preparing query GetActiveContainerCount: %w", err)
+	}
 	if q.getActiveScanJobsStmt, err = db.PrepareContext(ctx, getActiveScanJobs); err != nil {
 		return nil, fmt.Errorf("error preparing query GetActiveScanJobs: %w", err)
 	}
 	if q.getActiveVolumeCountStmt, err = db.PrepareContext(ctx, getActiveVolumeCount); err != nil {
 		return nil, fmt.Errorf("error preparing query GetActiveVolumeCount: %w", err)
+	}
+	if q.getActiveVolumeMountCountStmt, err = db.PrepareContext(ctx, getActiveVolumeMountCount); err != nil {
+		return nil, fmt.Errorf("error preparing query GetActiveVolumeMountCount: %w", err)
 	}
 	if q.getAllActiveVolumeIDsStmt, err = db.PrepareContext(ctx, getAllActiveVolumeIDs); err != nil {
 		return nil, fmt.Errorf("error preparing query GetAllActiveVolumeIDs: %w", err)
@@ -120,8 +141,23 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getChildDirNodesStmt, err = db.PrepareContext(ctx, getChildDirNodes); err != nil {
 		return nil, fmt.Errorf("error preparing query GetChildDirNodes: %w", err)
 	}
+	if q.getContainerByContainerIDStmt, err = db.PrepareContext(ctx, getContainerByContainerID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetContainerByContainerID: %w", err)
+	}
+	if q.getContainerByIDStmt, err = db.PrepareContext(ctx, getContainerByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetContainerByID: %w", err)
+	}
 	if q.getContainerCountForVolumeStmt, err = db.PrepareContext(ctx, getContainerCountForVolume); err != nil {
 		return nil, fmt.Errorf("error preparing query GetContainerCountForVolume: %w", err)
+	}
+	if q.getContainerStatsStmt, err = db.PrepareContext(ctx, getContainerStats); err != nil {
+		return nil, fmt.Errorf("error preparing query GetContainerStats: %w", err)
+	}
+	if q.getContainersByImageStmt, err = db.PrepareContext(ctx, getContainersByImage); err != nil {
+		return nil, fmt.Errorf("error preparing query GetContainersByImage: %w", err)
+	}
+	if q.getContainersByStateStmt, err = db.PrepareContext(ctx, getContainersByState); err != nil {
+		return nil, fmt.Errorf("error preparing query GetContainersByState: %w", err)
 	}
 	if q.getDirNodeStmt, err = db.PrepareContext(ctx, getDirNode); err != nil {
 		return nil, fmt.Errorf("error preparing query GetDirNode: %w", err)
@@ -255,6 +291,21 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getVolumeMetricsTrendsStmt, err = db.PrepareContext(ctx, getVolumeMetricsTrends); err != nil {
 		return nil, fmt.Errorf("error preparing query GetVolumeMetricsTrends: %w", err)
 	}
+	if q.getVolumeMountByIDStmt, err = db.PrepareContext(ctx, getVolumeMountByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetVolumeMountByID: %w", err)
+	}
+	if q.getVolumeMountByVolumeContainerStmt, err = db.PrepareContext(ctx, getVolumeMountByVolumeContainer); err != nil {
+		return nil, fmt.Errorf("error preparing query GetVolumeMountByVolumeContainer: %w", err)
+	}
+	if q.getVolumeMountStatsStmt, err = db.PrepareContext(ctx, getVolumeMountStats); err != nil {
+		return nil, fmt.Errorf("error preparing query GetVolumeMountStats: %w", err)
+	}
+	if q.getVolumeMountsByContainerStmt, err = db.PrepareContext(ctx, getVolumeMountsByContainer); err != nil {
+		return nil, fmt.Errorf("error preparing query GetVolumeMountsByContainer: %w", err)
+	}
+	if q.getVolumeMountsByVolumeStmt, err = db.PrepareContext(ctx, getVolumeMountsByVolume); err != nil {
+		return nil, fmt.Errorf("error preparing query GetVolumeMountsByVolume: %w", err)
+	}
 	if q.getVolumeRootChildrenStmt, err = db.PrepareContext(ctx, getVolumeRootChildren); err != nil {
 		return nil, fmt.Errorf("error preparing query GetVolumeRootChildren: %w", err)
 	}
@@ -276,8 +327,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getVolumesByLabelStmt, err = db.PrepareContext(ctx, getVolumesByLabel); err != nil {
 		return nil, fmt.Errorf("error preparing query GetVolumesByLabel: %w", err)
 	}
+	if q.hardDeleteContainerStmt, err = db.PrepareContext(ctx, hardDeleteContainer); err != nil {
+		return nil, fmt.Errorf("error preparing query HardDeleteContainer: %w", err)
+	}
 	if q.hardDeleteVolumeStmt, err = db.PrepareContext(ctx, hardDeleteVolume); err != nil {
 		return nil, fmt.Errorf("error preparing query HardDeleteVolume: %w", err)
+	}
+	if q.hardDeleteVolumeMountStmt, err = db.PrepareContext(ctx, hardDeleteVolumeMount); err != nil {
+		return nil, fmt.Errorf("error preparing query HardDeleteVolumeMount: %w", err)
+	}
+	if q.hardDeleteVolumeMountByVolumeContainerStmt, err = db.PrepareContext(ctx, hardDeleteVolumeMountByVolumeContainer); err != nil {
+		return nil, fmt.Errorf("error preparing query HardDeleteVolumeMountByVolumeContainer: %w", err)
 	}
 	if q.healthCheckStmt, err = db.PrepareContext(ctx, healthCheck); err != nil {
 		return nil, fmt.Errorf("error preparing query HealthCheck: %w", err)
@@ -285,8 +345,14 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.insertVolumeSizeStmt, err = db.PrepareContext(ctx, insertVolumeSize); err != nil {
 		return nil, fmt.Errorf("error preparing query InsertVolumeSize: %w", err)
 	}
+	if q.listContainersStmt, err = db.PrepareContext(ctx, listContainers); err != nil {
+		return nil, fmt.Errorf("error preparing query ListContainers: %w", err)
+	}
 	if q.listScanJobsStmt, err = db.PrepareContext(ctx, listScanJobs); err != nil {
 		return nil, fmt.Errorf("error preparing query ListScanJobs: %w", err)
+	}
+	if q.listVolumeMountsStmt, err = db.PrepareContext(ctx, listVolumeMounts); err != nil {
+		return nil, fmt.Errorf("error preparing query ListVolumeMounts: %w", err)
 	}
 	if q.listVolumesStmt, err = db.PrepareContext(ctx, listVolumes); err != nil {
 		return nil, fmt.Errorf("error preparing query ListVolumes: %w", err)
@@ -300,11 +366,23 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.searchFilesByNameStmt, err = db.PrepareContext(ctx, searchFilesByName); err != nil {
 		return nil, fmt.Errorf("error preparing query SearchFilesByName: %w", err)
 	}
+	if q.softDeleteContainerStmt, err = db.PrepareContext(ctx, softDeleteContainer); err != nil {
+		return nil, fmt.Errorf("error preparing query SoftDeleteContainer: %w", err)
+	}
 	if q.softDeleteVolumeStmt, err = db.PrepareContext(ctx, softDeleteVolume); err != nil {
 		return nil, fmt.Errorf("error preparing query SoftDeleteVolume: %w", err)
 	}
+	if q.softDeleteVolumeMountStmt, err = db.PrepareContext(ctx, softDeleteVolumeMount); err != nil {
+		return nil, fmt.Errorf("error preparing query SoftDeleteVolumeMount: %w", err)
+	}
+	if q.softDeleteVolumeMountByVolumeContainerStmt, err = db.PrepareContext(ctx, softDeleteVolumeMountByVolumeContainer); err != nil {
+		return nil, fmt.Errorf("error preparing query SoftDeleteVolumeMountByVolumeContainer: %w", err)
+	}
 	if q.startScanJobStmt, err = db.PrepareContext(ctx, startScanJob); err != nil {
 		return nil, fmt.Errorf("error preparing query StartScanJob: %w", err)
+	}
+	if q.updateContainerStmt, err = db.PrepareContext(ctx, updateContainer); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateContainer: %w", err)
 	}
 	if q.updateDirNodeStatsStmt, err = db.PrepareContext(ctx, updateDirNodeStats); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateDirNodeStats: %w", err)
@@ -324,6 +402,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updateVolumeStmt, err = db.PrepareContext(ctx, updateVolume); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateVolume: %w", err)
 	}
+	if q.updateVolumeMountStmt, err = db.PrepareContext(ctx, updateVolumeMount); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateVolumeMount: %w", err)
+	}
+	if q.upsertContainerStmt, err = db.PrepareContext(ctx, upsertContainer); err != nil {
+		return nil, fmt.Errorf("error preparing query UpsertContainer: %w", err)
+	}
 	if q.upsertDirNodeStmt, err = db.PrepareContext(ctx, upsertDirNode); err != nil {
 		return nil, fmt.Errorf("error preparing query UpsertDirNode: %w", err)
 	}
@@ -332,6 +416,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.upsertVolumeStmt, err = db.PrepareContext(ctx, upsertVolume); err != nil {
 		return nil, fmt.Errorf("error preparing query UpsertVolume: %w", err)
+	}
+	if q.upsertVolumeMountStmt, err = db.PrepareContext(ctx, upsertVolumeMount); err != nil {
+		return nil, fmt.Errorf("error preparing query UpsertVolumeMount: %w", err)
 	}
 	return &q, nil
 }
@@ -363,6 +450,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing completeScanJobStmt: %w", cerr)
 		}
 	}
+	if q.countContainersStmt != nil {
+		if cerr := q.countContainersStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countContainersStmt: %w", cerr)
+		}
+	}
 	if q.countDirNodesByVolumeStmt != nil {
 		if cerr := q.countDirNodesByVolumeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countDirNodesByVolumeStmt: %w", cerr)
@@ -378,9 +470,19 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing countRollupsByDirIdStmt: %w", cerr)
 		}
 	}
+	if q.countVolumeMountsStmt != nil {
+		if cerr := q.countVolumeMountsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countVolumeMountsStmt: %w", cerr)
+		}
+	}
 	if q.countVolumesStmt != nil {
 		if cerr := q.countVolumesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countVolumesStmt: %w", cerr)
+		}
+	}
+	if q.createContainerStmt != nil {
+		if cerr := q.createContainerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createContainerStmt: %w", cerr)
 		}
 	}
 	if q.createDirNodeStmt != nil {
@@ -411,6 +513,16 @@ func (q *Queries) Close() error {
 	if q.createVolumeStmt != nil {
 		if cerr := q.createVolumeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createVolumeStmt: %w", cerr)
+		}
+	}
+	if q.createVolumeMountStmt != nil {
+		if cerr := q.createVolumeMountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createVolumeMountStmt: %w", cerr)
+		}
+	}
+	if q.deactivateVolumeMountsStmt != nil {
+		if cerr := q.deactivateVolumeMountsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deactivateVolumeMountsStmt: %w", cerr)
 		}
 	}
 	if q.deleteDirNodesByVolumeStmt != nil {
@@ -478,6 +590,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing get7DayTrendStmt: %w", cerr)
 		}
 	}
+	if q.getActiveContainerCountStmt != nil {
+		if cerr := q.getActiveContainerCountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getActiveContainerCountStmt: %w", cerr)
+		}
+	}
 	if q.getActiveScanJobsStmt != nil {
 		if cerr := q.getActiveScanJobsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getActiveScanJobsStmt: %w", cerr)
@@ -486,6 +603,11 @@ func (q *Queries) Close() error {
 	if q.getActiveVolumeCountStmt != nil {
 		if cerr := q.getActiveVolumeCountStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getActiveVolumeCountStmt: %w", cerr)
+		}
+	}
+	if q.getActiveVolumeMountCountStmt != nil {
+		if cerr := q.getActiveVolumeMountCountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getActiveVolumeMountCountStmt: %w", cerr)
 		}
 	}
 	if q.getAllActiveVolumeIDsStmt != nil {
@@ -498,9 +620,34 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getChildDirNodesStmt: %w", cerr)
 		}
 	}
+	if q.getContainerByContainerIDStmt != nil {
+		if cerr := q.getContainerByContainerIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getContainerByContainerIDStmt: %w", cerr)
+		}
+	}
+	if q.getContainerByIDStmt != nil {
+		if cerr := q.getContainerByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getContainerByIDStmt: %w", cerr)
+		}
+	}
 	if q.getContainerCountForVolumeStmt != nil {
 		if cerr := q.getContainerCountForVolumeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getContainerCountForVolumeStmt: %w", cerr)
+		}
+	}
+	if q.getContainerStatsStmt != nil {
+		if cerr := q.getContainerStatsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getContainerStatsStmt: %w", cerr)
+		}
+	}
+	if q.getContainersByImageStmt != nil {
+		if cerr := q.getContainersByImageStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getContainersByImageStmt: %w", cerr)
+		}
+	}
+	if q.getContainersByStateStmt != nil {
+		if cerr := q.getContainersByStateStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getContainersByStateStmt: %w", cerr)
 		}
 	}
 	if q.getDirNodeStmt != nil {
@@ -723,6 +870,31 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getVolumeMetricsTrendsStmt: %w", cerr)
 		}
 	}
+	if q.getVolumeMountByIDStmt != nil {
+		if cerr := q.getVolumeMountByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getVolumeMountByIDStmt: %w", cerr)
+		}
+	}
+	if q.getVolumeMountByVolumeContainerStmt != nil {
+		if cerr := q.getVolumeMountByVolumeContainerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getVolumeMountByVolumeContainerStmt: %w", cerr)
+		}
+	}
+	if q.getVolumeMountStatsStmt != nil {
+		if cerr := q.getVolumeMountStatsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getVolumeMountStatsStmt: %w", cerr)
+		}
+	}
+	if q.getVolumeMountsByContainerStmt != nil {
+		if cerr := q.getVolumeMountsByContainerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getVolumeMountsByContainerStmt: %w", cerr)
+		}
+	}
+	if q.getVolumeMountsByVolumeStmt != nil {
+		if cerr := q.getVolumeMountsByVolumeStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getVolumeMountsByVolumeStmt: %w", cerr)
+		}
+	}
 	if q.getVolumeRootChildrenStmt != nil {
 		if cerr := q.getVolumeRootChildrenStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getVolumeRootChildrenStmt: %w", cerr)
@@ -758,9 +930,24 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getVolumesByLabelStmt: %w", cerr)
 		}
 	}
+	if q.hardDeleteContainerStmt != nil {
+		if cerr := q.hardDeleteContainerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing hardDeleteContainerStmt: %w", cerr)
+		}
+	}
 	if q.hardDeleteVolumeStmt != nil {
 		if cerr := q.hardDeleteVolumeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing hardDeleteVolumeStmt: %w", cerr)
+		}
+	}
+	if q.hardDeleteVolumeMountStmt != nil {
+		if cerr := q.hardDeleteVolumeMountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing hardDeleteVolumeMountStmt: %w", cerr)
+		}
+	}
+	if q.hardDeleteVolumeMountByVolumeContainerStmt != nil {
+		if cerr := q.hardDeleteVolumeMountByVolumeContainerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing hardDeleteVolumeMountByVolumeContainerStmt: %w", cerr)
 		}
 	}
 	if q.healthCheckStmt != nil {
@@ -773,9 +960,19 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing insertVolumeSizeStmt: %w", cerr)
 		}
 	}
+	if q.listContainersStmt != nil {
+		if cerr := q.listContainersStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listContainersStmt: %w", cerr)
+		}
+	}
 	if q.listScanJobsStmt != nil {
 		if cerr := q.listScanJobsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listScanJobsStmt: %w", cerr)
+		}
+	}
+	if q.listVolumeMountsStmt != nil {
+		if cerr := q.listVolumeMountsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listVolumeMountsStmt: %w", cerr)
 		}
 	}
 	if q.listVolumesStmt != nil {
@@ -798,14 +995,34 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing searchFilesByNameStmt: %w", cerr)
 		}
 	}
+	if q.softDeleteContainerStmt != nil {
+		if cerr := q.softDeleteContainerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing softDeleteContainerStmt: %w", cerr)
+		}
+	}
 	if q.softDeleteVolumeStmt != nil {
 		if cerr := q.softDeleteVolumeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing softDeleteVolumeStmt: %w", cerr)
 		}
 	}
+	if q.softDeleteVolumeMountStmt != nil {
+		if cerr := q.softDeleteVolumeMountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing softDeleteVolumeMountStmt: %w", cerr)
+		}
+	}
+	if q.softDeleteVolumeMountByVolumeContainerStmt != nil {
+		if cerr := q.softDeleteVolumeMountByVolumeContainerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing softDeleteVolumeMountByVolumeContainerStmt: %w", cerr)
+		}
+	}
 	if q.startScanJobStmt != nil {
 		if cerr := q.startScanJobStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing startScanJobStmt: %w", cerr)
+		}
+	}
+	if q.updateContainerStmt != nil {
+		if cerr := q.updateContainerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateContainerStmt: %w", cerr)
 		}
 	}
 	if q.updateDirNodeStatsStmt != nil {
@@ -838,6 +1055,16 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing updateVolumeStmt: %w", cerr)
 		}
 	}
+	if q.updateVolumeMountStmt != nil {
+		if cerr := q.updateVolumeMountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateVolumeMountStmt: %w", cerr)
+		}
+	}
+	if q.upsertContainerStmt != nil {
+		if cerr := q.upsertContainerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing upsertContainerStmt: %w", cerr)
+		}
+	}
 	if q.upsertDirNodeStmt != nil {
 		if cerr := q.upsertDirNodeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing upsertDirNodeStmt: %w", cerr)
@@ -851,6 +1078,11 @@ func (q *Queries) Close() error {
 	if q.upsertVolumeStmt != nil {
 		if cerr := q.upsertVolumeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing upsertVolumeStmt: %w", cerr)
+		}
+	}
+	if q.upsertVolumeMountStmt != nil {
+		if cerr := q.upsertVolumeMountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing upsertVolumeMountStmt: %w", cerr)
 		}
 	}
 	return err
@@ -890,219 +1122,277 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                                  DBTX
-	tx                                  *sql.Tx
-	bulkInsertDirNodeStmt               *sql.Stmt
-	bulkInsertDirRollupStmt             *sql.Stmt
-	bulkInsertFileEntryStmt             *sql.Stmt
-	compactDailyToWeeklyStmt            *sql.Stmt
-	completeScanJobStmt                 *sql.Stmt
-	countDirNodesByVolumeStmt           *sql.Stmt
-	countFileEntriesByVolumeStmt        *sql.Stmt
-	countRollupsByDirIdStmt             *sql.Stmt
-	countVolumesStmt                    *sql.Stmt
-	createDirNodeStmt                   *sql.Stmt
-	createDirRollupStmt                 *sql.Stmt
-	createFileEntryStmt                 *sql.Stmt
-	createScanJobStmt                   *sql.Stmt
-	createUsageSnapshotStmt             *sql.Stmt
-	createVolumeStmt                    *sql.Stmt
-	deleteDirNodesByVolumeStmt          *sql.Stmt
-	deleteFileEntriesByVolumeStmt       *sql.Stmt
-	deleteOldDailySnapshotsStmt         *sql.Stmt
-	deleteOldRollupsStmt                *sql.Stmt
-	deleteOldScanJobsStmt               *sql.Stmt
-	deleteOldVolumeMetricsStmt          *sql.Stmt
-	deleteOldVolumeSizesStmt            *sql.Stmt
-	deleteOldWeeklySnapshotsStmt        *sql.Stmt
-	deleteRollupsByDirIdStmt            *sql.Stmt
-	failScanJobStmt                     *sql.Stmt
-	findFilesByPathHashStmt             *sql.Stmt
-	get30DayTrendStmt                   *sql.Stmt
-	get7DayTrendStmt                    *sql.Stmt
-	getActiveScanJobsStmt               *sql.Stmt
-	getActiveVolumeCountStmt            *sql.Stmt
-	getAllActiveVolumeIDsStmt           *sql.Stmt
-	getChildDirNodesStmt                *sql.Stmt
-	getContainerCountForVolumeStmt      *sql.Stmt
-	getDirNodeStmt                      *sql.Stmt
-	getDirNodeByPathStmt                *sql.Stmt
-	getDirRollupStmt                    *sql.Stmt
-	getDirRollupHistoryStmt             *sql.Stmt
-	getDirRollupsInTimeRangeStmt        *sql.Stmt
-	getDirectoryByPathStmt              *sql.Stmt
-	getDirectoryChildrenStmt            *sql.Stmt
-	getDirectoryChildrenCountStmt       *sql.Stmt
-	getDirectoryChildrenPaginatedStmt   *sql.Stmt
-	getDirectoryHierarchyStmt           *sql.Stmt
-	getDirectorySummaryStmt             *sql.Stmt
-	getDirectoryTreeStmt                *sql.Stmt
-	getFileEntriesByVolumeAndParentStmt *sql.Stmt
-	getFileEntryStmt                    *sql.Stmt
-	getGrowthDeltasStmt                 *sql.Stmt
-	getLargestDirectoriesStmt           *sql.Stmt
-	getLargestFilesStmt                 *sql.Stmt
-	getLatestDirRollupStmt              *sql.Stmt
-	getLatestScanJobByVolumeIDStmt      *sql.Stmt
-	getLatestSnapshotStmt               *sql.Stmt
-	getLatestVolumeMetricStmt           *sql.Stmt
-	getLatestVolumeSizeStmt             *sql.Stmt
-	getRecentScanJobsStmt               *sql.Stmt
-	getRollupStatsStmt                  *sql.Stmt
-	getRootDirNodesStmt                 *sql.Stmt
-	getScanJobByIDStmt                  *sql.Stmt
-	getScanJobByScanIDStmt              *sql.Stmt
-	getScanJobStatsStmt                 *sql.Stmt
-	getSnapshotsByDateRangeStmt         *sql.Stmt
-	getSnapshotsByVolumeStmt            *sql.Stmt
-	getTopDirectoriesBySizeStmt         *sql.Stmt
-	getTopFilesByCountStmt              *sql.Stmt
-	getTopFilesBySizeStmt               *sql.Stmt
-	getTopNChildrenWithOtherStmt        *sql.Stmt
-	getTotalMetricsCountStmt            *sql.Stmt
-	getTotalScanJobCountStmt            *sql.Stmt
-	getTotalVolumeCountStmt             *sql.Stmt
-	getTrendSlopeStmt                   *sql.Stmt
-	getVolumeByIDStmt                   *sql.Stmt
-	getVolumeByVolumeIDStmt             *sql.Stmt
-	getVolumeFileStatsStmt              *sql.Stmt
-	getVolumeGrowthTrendStmt            *sql.Stmt
-	getVolumeMetricsStmt                *sql.Stmt
-	getVolumeMetricsTrendsStmt          *sql.Stmt
-	getVolumeRootChildrenStmt           *sql.Stmt
-	getVolumeSizeStatsStmt              *sql.Stmt
-	getVolumeSizesByVolumeIDStmt        *sql.Stmt
-	getVolumeStatsStmt                  *sql.Stmt
-	getVolumeStepSeriesStmt             *sql.Stmt
-	getVolumesByDriverStmt              *sql.Stmt
-	getVolumesByLabelStmt               *sql.Stmt
-	hardDeleteVolumeStmt                *sql.Stmt
-	healthCheckStmt                     *sql.Stmt
-	insertVolumeSizeStmt                *sql.Stmt
-	listScanJobsStmt                    *sql.Stmt
-	listVolumesStmt                     *sql.Stmt
-	saveVolumeMetricsStmt               *sql.Stmt
-	searchDirectoriesByNameStmt         *sql.Stmt
-	searchFilesByNameStmt               *sql.Stmt
-	softDeleteVolumeStmt                *sql.Stmt
-	startScanJobStmt                    *sql.Stmt
-	updateDirNodeStatsStmt              *sql.Stmt
-	updateLastScannedStmt               *sql.Stmt
-	updateScanJobProgressStmt           *sql.Stmt
-	updateScanJobStatusStmt             *sql.Stmt
-	updateScanJobStatusAndProgressStmt  *sql.Stmt
-	updateVolumeStmt                    *sql.Stmt
-	upsertDirNodeStmt                   *sql.Stmt
-	upsertFileEntryStmt                 *sql.Stmt
-	upsertVolumeStmt                    *sql.Stmt
+	db                                         DBTX
+	tx                                         *sql.Tx
+	bulkInsertDirNodeStmt                      *sql.Stmt
+	bulkInsertDirRollupStmt                    *sql.Stmt
+	bulkInsertFileEntryStmt                    *sql.Stmt
+	compactDailyToWeeklyStmt                   *sql.Stmt
+	completeScanJobStmt                        *sql.Stmt
+	countContainersStmt                        *sql.Stmt
+	countDirNodesByVolumeStmt                  *sql.Stmt
+	countFileEntriesByVolumeStmt               *sql.Stmt
+	countRollupsByDirIdStmt                    *sql.Stmt
+	countVolumeMountsStmt                      *sql.Stmt
+	countVolumesStmt                           *sql.Stmt
+	createContainerStmt                        *sql.Stmt
+	createDirNodeStmt                          *sql.Stmt
+	createDirRollupStmt                        *sql.Stmt
+	createFileEntryStmt                        *sql.Stmt
+	createScanJobStmt                          *sql.Stmt
+	createUsageSnapshotStmt                    *sql.Stmt
+	createVolumeStmt                           *sql.Stmt
+	createVolumeMountStmt                      *sql.Stmt
+	deactivateVolumeMountsStmt                 *sql.Stmt
+	deleteDirNodesByVolumeStmt                 *sql.Stmt
+	deleteFileEntriesByVolumeStmt              *sql.Stmt
+	deleteOldDailySnapshotsStmt                *sql.Stmt
+	deleteOldRollupsStmt                       *sql.Stmt
+	deleteOldScanJobsStmt                      *sql.Stmt
+	deleteOldVolumeMetricsStmt                 *sql.Stmt
+	deleteOldVolumeSizesStmt                   *sql.Stmt
+	deleteOldWeeklySnapshotsStmt               *sql.Stmt
+	deleteRollupsByDirIdStmt                   *sql.Stmt
+	failScanJobStmt                            *sql.Stmt
+	findFilesByPathHashStmt                    *sql.Stmt
+	get30DayTrendStmt                          *sql.Stmt
+	get7DayTrendStmt                           *sql.Stmt
+	getActiveContainerCountStmt                *sql.Stmt
+	getActiveScanJobsStmt                      *sql.Stmt
+	getActiveVolumeCountStmt                   *sql.Stmt
+	getActiveVolumeMountCountStmt              *sql.Stmt
+	getAllActiveVolumeIDsStmt                  *sql.Stmt
+	getChildDirNodesStmt                       *sql.Stmt
+	getContainerByContainerIDStmt              *sql.Stmt
+	getContainerByIDStmt                       *sql.Stmt
+	getContainerCountForVolumeStmt             *sql.Stmt
+	getContainerStatsStmt                      *sql.Stmt
+	getContainersByImageStmt                   *sql.Stmt
+	getContainersByStateStmt                   *sql.Stmt
+	getDirNodeStmt                             *sql.Stmt
+	getDirNodeByPathStmt                       *sql.Stmt
+	getDirRollupStmt                           *sql.Stmt
+	getDirRollupHistoryStmt                    *sql.Stmt
+	getDirRollupsInTimeRangeStmt               *sql.Stmt
+	getDirectoryByPathStmt                     *sql.Stmt
+	getDirectoryChildrenStmt                   *sql.Stmt
+	getDirectoryChildrenCountStmt              *sql.Stmt
+	getDirectoryChildrenPaginatedStmt          *sql.Stmt
+	getDirectoryHierarchyStmt                  *sql.Stmt
+	getDirectorySummaryStmt                    *sql.Stmt
+	getDirectoryTreeStmt                       *sql.Stmt
+	getFileEntriesByVolumeAndParentStmt        *sql.Stmt
+	getFileEntryStmt                           *sql.Stmt
+	getGrowthDeltasStmt                        *sql.Stmt
+	getLargestDirectoriesStmt                  *sql.Stmt
+	getLargestFilesStmt                        *sql.Stmt
+	getLatestDirRollupStmt                     *sql.Stmt
+	getLatestScanJobByVolumeIDStmt             *sql.Stmt
+	getLatestSnapshotStmt                      *sql.Stmt
+	getLatestVolumeMetricStmt                  *sql.Stmt
+	getLatestVolumeSizeStmt                    *sql.Stmt
+	getRecentScanJobsStmt                      *sql.Stmt
+	getRollupStatsStmt                         *sql.Stmt
+	getRootDirNodesStmt                        *sql.Stmt
+	getScanJobByIDStmt                         *sql.Stmt
+	getScanJobByScanIDStmt                     *sql.Stmt
+	getScanJobStatsStmt                        *sql.Stmt
+	getSnapshotsByDateRangeStmt                *sql.Stmt
+	getSnapshotsByVolumeStmt                   *sql.Stmt
+	getTopDirectoriesBySizeStmt                *sql.Stmt
+	getTopFilesByCountStmt                     *sql.Stmt
+	getTopFilesBySizeStmt                      *sql.Stmt
+	getTopNChildrenWithOtherStmt               *sql.Stmt
+	getTotalMetricsCountStmt                   *sql.Stmt
+	getTotalScanJobCountStmt                   *sql.Stmt
+	getTotalVolumeCountStmt                    *sql.Stmt
+	getTrendSlopeStmt                          *sql.Stmt
+	getVolumeByIDStmt                          *sql.Stmt
+	getVolumeByVolumeIDStmt                    *sql.Stmt
+	getVolumeFileStatsStmt                     *sql.Stmt
+	getVolumeGrowthTrendStmt                   *sql.Stmt
+	getVolumeMetricsStmt                       *sql.Stmt
+	getVolumeMetricsTrendsStmt                 *sql.Stmt
+	getVolumeMountByIDStmt                     *sql.Stmt
+	getVolumeMountByVolumeContainerStmt        *sql.Stmt
+	getVolumeMountStatsStmt                    *sql.Stmt
+	getVolumeMountsByContainerStmt             *sql.Stmt
+	getVolumeMountsByVolumeStmt                *sql.Stmt
+	getVolumeRootChildrenStmt                  *sql.Stmt
+	getVolumeSizeStatsStmt                     *sql.Stmt
+	getVolumeSizesByVolumeIDStmt               *sql.Stmt
+	getVolumeStatsStmt                         *sql.Stmt
+	getVolumeStepSeriesStmt                    *sql.Stmt
+	getVolumesByDriverStmt                     *sql.Stmt
+	getVolumesByLabelStmt                      *sql.Stmt
+	hardDeleteContainerStmt                    *sql.Stmt
+	hardDeleteVolumeStmt                       *sql.Stmt
+	hardDeleteVolumeMountStmt                  *sql.Stmt
+	hardDeleteVolumeMountByVolumeContainerStmt *sql.Stmt
+	healthCheckStmt                            *sql.Stmt
+	insertVolumeSizeStmt                       *sql.Stmt
+	listContainersStmt                         *sql.Stmt
+	listScanJobsStmt                           *sql.Stmt
+	listVolumeMountsStmt                       *sql.Stmt
+	listVolumesStmt                            *sql.Stmt
+	saveVolumeMetricsStmt                      *sql.Stmt
+	searchDirectoriesByNameStmt                *sql.Stmt
+	searchFilesByNameStmt                      *sql.Stmt
+	softDeleteContainerStmt                    *sql.Stmt
+	softDeleteVolumeStmt                       *sql.Stmt
+	softDeleteVolumeMountStmt                  *sql.Stmt
+	softDeleteVolumeMountByVolumeContainerStmt *sql.Stmt
+	startScanJobStmt                           *sql.Stmt
+	updateContainerStmt                        *sql.Stmt
+	updateDirNodeStatsStmt                     *sql.Stmt
+	updateLastScannedStmt                      *sql.Stmt
+	updateScanJobProgressStmt                  *sql.Stmt
+	updateScanJobStatusStmt                    *sql.Stmt
+	updateScanJobStatusAndProgressStmt         *sql.Stmt
+	updateVolumeStmt                           *sql.Stmt
+	updateVolumeMountStmt                      *sql.Stmt
+	upsertContainerStmt                        *sql.Stmt
+	upsertDirNodeStmt                          *sql.Stmt
+	upsertFileEntryStmt                        *sql.Stmt
+	upsertVolumeStmt                           *sql.Stmt
+	upsertVolumeMountStmt                      *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                                  tx,
-		tx:                                  tx,
-		bulkInsertDirNodeStmt:               q.bulkInsertDirNodeStmt,
-		bulkInsertDirRollupStmt:             q.bulkInsertDirRollupStmt,
-		bulkInsertFileEntryStmt:             q.bulkInsertFileEntryStmt,
-		compactDailyToWeeklyStmt:            q.compactDailyToWeeklyStmt,
-		completeScanJobStmt:                 q.completeScanJobStmt,
-		countDirNodesByVolumeStmt:           q.countDirNodesByVolumeStmt,
-		countFileEntriesByVolumeStmt:        q.countFileEntriesByVolumeStmt,
-		countRollupsByDirIdStmt:             q.countRollupsByDirIdStmt,
-		countVolumesStmt:                    q.countVolumesStmt,
-		createDirNodeStmt:                   q.createDirNodeStmt,
-		createDirRollupStmt:                 q.createDirRollupStmt,
-		createFileEntryStmt:                 q.createFileEntryStmt,
-		createScanJobStmt:                   q.createScanJobStmt,
-		createUsageSnapshotStmt:             q.createUsageSnapshotStmt,
-		createVolumeStmt:                    q.createVolumeStmt,
-		deleteDirNodesByVolumeStmt:          q.deleteDirNodesByVolumeStmt,
-		deleteFileEntriesByVolumeStmt:       q.deleteFileEntriesByVolumeStmt,
-		deleteOldDailySnapshotsStmt:         q.deleteOldDailySnapshotsStmt,
-		deleteOldRollupsStmt:                q.deleteOldRollupsStmt,
-		deleteOldScanJobsStmt:               q.deleteOldScanJobsStmt,
-		deleteOldVolumeMetricsStmt:          q.deleteOldVolumeMetricsStmt,
-		deleteOldVolumeSizesStmt:            q.deleteOldVolumeSizesStmt,
-		deleteOldWeeklySnapshotsStmt:        q.deleteOldWeeklySnapshotsStmt,
-		deleteRollupsByDirIdStmt:            q.deleteRollupsByDirIdStmt,
-		failScanJobStmt:                     q.failScanJobStmt,
-		findFilesByPathHashStmt:             q.findFilesByPathHashStmt,
-		get30DayTrendStmt:                   q.get30DayTrendStmt,
-		get7DayTrendStmt:                    q.get7DayTrendStmt,
-		getActiveScanJobsStmt:               q.getActiveScanJobsStmt,
-		getActiveVolumeCountStmt:            q.getActiveVolumeCountStmt,
-		getAllActiveVolumeIDsStmt:           q.getAllActiveVolumeIDsStmt,
-		getChildDirNodesStmt:                q.getChildDirNodesStmt,
-		getContainerCountForVolumeStmt:      q.getContainerCountForVolumeStmt,
-		getDirNodeStmt:                      q.getDirNodeStmt,
-		getDirNodeByPathStmt:                q.getDirNodeByPathStmt,
-		getDirRollupStmt:                    q.getDirRollupStmt,
-		getDirRollupHistoryStmt:             q.getDirRollupHistoryStmt,
-		getDirRollupsInTimeRangeStmt:        q.getDirRollupsInTimeRangeStmt,
-		getDirectoryByPathStmt:              q.getDirectoryByPathStmt,
-		getDirectoryChildrenStmt:            q.getDirectoryChildrenStmt,
-		getDirectoryChildrenCountStmt:       q.getDirectoryChildrenCountStmt,
-		getDirectoryChildrenPaginatedStmt:   q.getDirectoryChildrenPaginatedStmt,
-		getDirectoryHierarchyStmt:           q.getDirectoryHierarchyStmt,
-		getDirectorySummaryStmt:             q.getDirectorySummaryStmt,
-		getDirectoryTreeStmt:                q.getDirectoryTreeStmt,
-		getFileEntriesByVolumeAndParentStmt: q.getFileEntriesByVolumeAndParentStmt,
-		getFileEntryStmt:                    q.getFileEntryStmt,
-		getGrowthDeltasStmt:                 q.getGrowthDeltasStmt,
-		getLargestDirectoriesStmt:           q.getLargestDirectoriesStmt,
-		getLargestFilesStmt:                 q.getLargestFilesStmt,
-		getLatestDirRollupStmt:              q.getLatestDirRollupStmt,
-		getLatestScanJobByVolumeIDStmt:      q.getLatestScanJobByVolumeIDStmt,
-		getLatestSnapshotStmt:               q.getLatestSnapshotStmt,
-		getLatestVolumeMetricStmt:           q.getLatestVolumeMetricStmt,
-		getLatestVolumeSizeStmt:             q.getLatestVolumeSizeStmt,
-		getRecentScanJobsStmt:               q.getRecentScanJobsStmt,
-		getRollupStatsStmt:                  q.getRollupStatsStmt,
-		getRootDirNodesStmt:                 q.getRootDirNodesStmt,
-		getScanJobByIDStmt:                  q.getScanJobByIDStmt,
-		getScanJobByScanIDStmt:              q.getScanJobByScanIDStmt,
-		getScanJobStatsStmt:                 q.getScanJobStatsStmt,
-		getSnapshotsByDateRangeStmt:         q.getSnapshotsByDateRangeStmt,
-		getSnapshotsByVolumeStmt:            q.getSnapshotsByVolumeStmt,
-		getTopDirectoriesBySizeStmt:         q.getTopDirectoriesBySizeStmt,
-		getTopFilesByCountStmt:              q.getTopFilesByCountStmt,
-		getTopFilesBySizeStmt:               q.getTopFilesBySizeStmt,
-		getTopNChildrenWithOtherStmt:        q.getTopNChildrenWithOtherStmt,
-		getTotalMetricsCountStmt:            q.getTotalMetricsCountStmt,
-		getTotalScanJobCountStmt:            q.getTotalScanJobCountStmt,
-		getTotalVolumeCountStmt:             q.getTotalVolumeCountStmt,
-		getTrendSlopeStmt:                   q.getTrendSlopeStmt,
-		getVolumeByIDStmt:                   q.getVolumeByIDStmt,
-		getVolumeByVolumeIDStmt:             q.getVolumeByVolumeIDStmt,
-		getVolumeFileStatsStmt:              q.getVolumeFileStatsStmt,
-		getVolumeGrowthTrendStmt:            q.getVolumeGrowthTrendStmt,
-		getVolumeMetricsStmt:                q.getVolumeMetricsStmt,
-		getVolumeMetricsTrendsStmt:          q.getVolumeMetricsTrendsStmt,
-		getVolumeRootChildrenStmt:           q.getVolumeRootChildrenStmt,
-		getVolumeSizeStatsStmt:              q.getVolumeSizeStatsStmt,
-		getVolumeSizesByVolumeIDStmt:        q.getVolumeSizesByVolumeIDStmt,
-		getVolumeStatsStmt:                  q.getVolumeStatsStmt,
-		getVolumeStepSeriesStmt:             q.getVolumeStepSeriesStmt,
-		getVolumesByDriverStmt:              q.getVolumesByDriverStmt,
-		getVolumesByLabelStmt:               q.getVolumesByLabelStmt,
-		hardDeleteVolumeStmt:                q.hardDeleteVolumeStmt,
-		healthCheckStmt:                     q.healthCheckStmt,
-		insertVolumeSizeStmt:                q.insertVolumeSizeStmt,
-		listScanJobsStmt:                    q.listScanJobsStmt,
-		listVolumesStmt:                     q.listVolumesStmt,
-		saveVolumeMetricsStmt:               q.saveVolumeMetricsStmt,
-		searchDirectoriesByNameStmt:         q.searchDirectoriesByNameStmt,
-		searchFilesByNameStmt:               q.searchFilesByNameStmt,
-		softDeleteVolumeStmt:                q.softDeleteVolumeStmt,
-		startScanJobStmt:                    q.startScanJobStmt,
-		updateDirNodeStatsStmt:              q.updateDirNodeStatsStmt,
-		updateLastScannedStmt:               q.updateLastScannedStmt,
-		updateScanJobProgressStmt:           q.updateScanJobProgressStmt,
-		updateScanJobStatusStmt:             q.updateScanJobStatusStmt,
-		updateScanJobStatusAndProgressStmt:  q.updateScanJobStatusAndProgressStmt,
-		updateVolumeStmt:                    q.updateVolumeStmt,
-		upsertDirNodeStmt:                   q.upsertDirNodeStmt,
-		upsertFileEntryStmt:                 q.upsertFileEntryStmt,
-		upsertVolumeStmt:                    q.upsertVolumeStmt,
+		db:                                         tx,
+		tx:                                         tx,
+		bulkInsertDirNodeStmt:                      q.bulkInsertDirNodeStmt,
+		bulkInsertDirRollupStmt:                    q.bulkInsertDirRollupStmt,
+		bulkInsertFileEntryStmt:                    q.bulkInsertFileEntryStmt,
+		compactDailyToWeeklyStmt:                   q.compactDailyToWeeklyStmt,
+		completeScanJobStmt:                        q.completeScanJobStmt,
+		countContainersStmt:                        q.countContainersStmt,
+		countDirNodesByVolumeStmt:                  q.countDirNodesByVolumeStmt,
+		countFileEntriesByVolumeStmt:               q.countFileEntriesByVolumeStmt,
+		countRollupsByDirIdStmt:                    q.countRollupsByDirIdStmt,
+		countVolumeMountsStmt:                      q.countVolumeMountsStmt,
+		countVolumesStmt:                           q.countVolumesStmt,
+		createContainerStmt:                        q.createContainerStmt,
+		createDirNodeStmt:                          q.createDirNodeStmt,
+		createDirRollupStmt:                        q.createDirRollupStmt,
+		createFileEntryStmt:                        q.createFileEntryStmt,
+		createScanJobStmt:                          q.createScanJobStmt,
+		createUsageSnapshotStmt:                    q.createUsageSnapshotStmt,
+		createVolumeStmt:                           q.createVolumeStmt,
+		createVolumeMountStmt:                      q.createVolumeMountStmt,
+		deactivateVolumeMountsStmt:                 q.deactivateVolumeMountsStmt,
+		deleteDirNodesByVolumeStmt:                 q.deleteDirNodesByVolumeStmt,
+		deleteFileEntriesByVolumeStmt:              q.deleteFileEntriesByVolumeStmt,
+		deleteOldDailySnapshotsStmt:                q.deleteOldDailySnapshotsStmt,
+		deleteOldRollupsStmt:                       q.deleteOldRollupsStmt,
+		deleteOldScanJobsStmt:                      q.deleteOldScanJobsStmt,
+		deleteOldVolumeMetricsStmt:                 q.deleteOldVolumeMetricsStmt,
+		deleteOldVolumeSizesStmt:                   q.deleteOldVolumeSizesStmt,
+		deleteOldWeeklySnapshotsStmt:               q.deleteOldWeeklySnapshotsStmt,
+		deleteRollupsByDirIdStmt:                   q.deleteRollupsByDirIdStmt,
+		failScanJobStmt:                            q.failScanJobStmt,
+		findFilesByPathHashStmt:                    q.findFilesByPathHashStmt,
+		get30DayTrendStmt:                          q.get30DayTrendStmt,
+		get7DayTrendStmt:                           q.get7DayTrendStmt,
+		getActiveContainerCountStmt:                q.getActiveContainerCountStmt,
+		getActiveScanJobsStmt:                      q.getActiveScanJobsStmt,
+		getActiveVolumeCountStmt:                   q.getActiveVolumeCountStmt,
+		getActiveVolumeMountCountStmt:              q.getActiveVolumeMountCountStmt,
+		getAllActiveVolumeIDsStmt:                  q.getAllActiveVolumeIDsStmt,
+		getChildDirNodesStmt:                       q.getChildDirNodesStmt,
+		getContainerByContainerIDStmt:              q.getContainerByContainerIDStmt,
+		getContainerByIDStmt:                       q.getContainerByIDStmt,
+		getContainerCountForVolumeStmt:             q.getContainerCountForVolumeStmt,
+		getContainerStatsStmt:                      q.getContainerStatsStmt,
+		getContainersByImageStmt:                   q.getContainersByImageStmt,
+		getContainersByStateStmt:                   q.getContainersByStateStmt,
+		getDirNodeStmt:                             q.getDirNodeStmt,
+		getDirNodeByPathStmt:                       q.getDirNodeByPathStmt,
+		getDirRollupStmt:                           q.getDirRollupStmt,
+		getDirRollupHistoryStmt:                    q.getDirRollupHistoryStmt,
+		getDirRollupsInTimeRangeStmt:               q.getDirRollupsInTimeRangeStmt,
+		getDirectoryByPathStmt:                     q.getDirectoryByPathStmt,
+		getDirectoryChildrenStmt:                   q.getDirectoryChildrenStmt,
+		getDirectoryChildrenCountStmt:              q.getDirectoryChildrenCountStmt,
+		getDirectoryChildrenPaginatedStmt:          q.getDirectoryChildrenPaginatedStmt,
+		getDirectoryHierarchyStmt:                  q.getDirectoryHierarchyStmt,
+		getDirectorySummaryStmt:                    q.getDirectorySummaryStmt,
+		getDirectoryTreeStmt:                       q.getDirectoryTreeStmt,
+		getFileEntriesByVolumeAndParentStmt:        q.getFileEntriesByVolumeAndParentStmt,
+		getFileEntryStmt:                           q.getFileEntryStmt,
+		getGrowthDeltasStmt:                        q.getGrowthDeltasStmt,
+		getLargestDirectoriesStmt:                  q.getLargestDirectoriesStmt,
+		getLargestFilesStmt:                        q.getLargestFilesStmt,
+		getLatestDirRollupStmt:                     q.getLatestDirRollupStmt,
+		getLatestScanJobByVolumeIDStmt:             q.getLatestScanJobByVolumeIDStmt,
+		getLatestSnapshotStmt:                      q.getLatestSnapshotStmt,
+		getLatestVolumeMetricStmt:                  q.getLatestVolumeMetricStmt,
+		getLatestVolumeSizeStmt:                    q.getLatestVolumeSizeStmt,
+		getRecentScanJobsStmt:                      q.getRecentScanJobsStmt,
+		getRollupStatsStmt:                         q.getRollupStatsStmt,
+		getRootDirNodesStmt:                        q.getRootDirNodesStmt,
+		getScanJobByIDStmt:                         q.getScanJobByIDStmt,
+		getScanJobByScanIDStmt:                     q.getScanJobByScanIDStmt,
+		getScanJobStatsStmt:                        q.getScanJobStatsStmt,
+		getSnapshotsByDateRangeStmt:                q.getSnapshotsByDateRangeStmt,
+		getSnapshotsByVolumeStmt:                   q.getSnapshotsByVolumeStmt,
+		getTopDirectoriesBySizeStmt:                q.getTopDirectoriesBySizeStmt,
+		getTopFilesByCountStmt:                     q.getTopFilesByCountStmt,
+		getTopFilesBySizeStmt:                      q.getTopFilesBySizeStmt,
+		getTopNChildrenWithOtherStmt:               q.getTopNChildrenWithOtherStmt,
+		getTotalMetricsCountStmt:                   q.getTotalMetricsCountStmt,
+		getTotalScanJobCountStmt:                   q.getTotalScanJobCountStmt,
+		getTotalVolumeCountStmt:                    q.getTotalVolumeCountStmt,
+		getTrendSlopeStmt:                          q.getTrendSlopeStmt,
+		getVolumeByIDStmt:                          q.getVolumeByIDStmt,
+		getVolumeByVolumeIDStmt:                    q.getVolumeByVolumeIDStmt,
+		getVolumeFileStatsStmt:                     q.getVolumeFileStatsStmt,
+		getVolumeGrowthTrendStmt:                   q.getVolumeGrowthTrendStmt,
+		getVolumeMetricsStmt:                       q.getVolumeMetricsStmt,
+		getVolumeMetricsTrendsStmt:                 q.getVolumeMetricsTrendsStmt,
+		getVolumeMountByIDStmt:                     q.getVolumeMountByIDStmt,
+		getVolumeMountByVolumeContainerStmt:        q.getVolumeMountByVolumeContainerStmt,
+		getVolumeMountStatsStmt:                    q.getVolumeMountStatsStmt,
+		getVolumeMountsByContainerStmt:             q.getVolumeMountsByContainerStmt,
+		getVolumeMountsByVolumeStmt:                q.getVolumeMountsByVolumeStmt,
+		getVolumeRootChildrenStmt:                  q.getVolumeRootChildrenStmt,
+		getVolumeSizeStatsStmt:                     q.getVolumeSizeStatsStmt,
+		getVolumeSizesByVolumeIDStmt:               q.getVolumeSizesByVolumeIDStmt,
+		getVolumeStatsStmt:                         q.getVolumeStatsStmt,
+		getVolumeStepSeriesStmt:                    q.getVolumeStepSeriesStmt,
+		getVolumesByDriverStmt:                     q.getVolumesByDriverStmt,
+		getVolumesByLabelStmt:                      q.getVolumesByLabelStmt,
+		hardDeleteContainerStmt:                    q.hardDeleteContainerStmt,
+		hardDeleteVolumeStmt:                       q.hardDeleteVolumeStmt,
+		hardDeleteVolumeMountStmt:                  q.hardDeleteVolumeMountStmt,
+		hardDeleteVolumeMountByVolumeContainerStmt: q.hardDeleteVolumeMountByVolumeContainerStmt,
+		healthCheckStmt:                            q.healthCheckStmt,
+		insertVolumeSizeStmt:                       q.insertVolumeSizeStmt,
+		listContainersStmt:                         q.listContainersStmt,
+		listScanJobsStmt:                           q.listScanJobsStmt,
+		listVolumeMountsStmt:                       q.listVolumeMountsStmt,
+		listVolumesStmt:                            q.listVolumesStmt,
+		saveVolumeMetricsStmt:                      q.saveVolumeMetricsStmt,
+		searchDirectoriesByNameStmt:                q.searchDirectoriesByNameStmt,
+		searchFilesByNameStmt:                      q.searchFilesByNameStmt,
+		softDeleteContainerStmt:                    q.softDeleteContainerStmt,
+		softDeleteVolumeStmt:                       q.softDeleteVolumeStmt,
+		softDeleteVolumeMountStmt:                  q.softDeleteVolumeMountStmt,
+		softDeleteVolumeMountByVolumeContainerStmt: q.softDeleteVolumeMountByVolumeContainerStmt,
+		startScanJobStmt:                           q.startScanJobStmt,
+		updateContainerStmt:                        q.updateContainerStmt,
+		updateDirNodeStatsStmt:                     q.updateDirNodeStatsStmt,
+		updateLastScannedStmt:                      q.updateLastScannedStmt,
+		updateScanJobProgressStmt:                  q.updateScanJobProgressStmt,
+		updateScanJobStatusStmt:                    q.updateScanJobStatusStmt,
+		updateScanJobStatusAndProgressStmt:         q.updateScanJobStatusAndProgressStmt,
+		updateVolumeStmt:                           q.updateVolumeStmt,
+		updateVolumeMountStmt:                      q.updateVolumeMountStmt,
+		upsertContainerStmt:                        q.upsertContainerStmt,
+		upsertDirNodeStmt:                          q.upsertDirNodeStmt,
+		upsertFileEntryStmt:                        q.upsertFileEntryStmt,
+		upsertVolumeStmt:                           q.upsertVolumeStmt,
+		upsertVolumeMountStmt:                      q.upsertVolumeMountStmt,
 	}
 }

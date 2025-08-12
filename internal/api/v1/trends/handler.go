@@ -97,11 +97,20 @@ func (h *Handler) GetVolumeGrowthDeltas(c *gin.Context) {
 		limit = parsed
 	}
 
+	// Calculate date range based on snapshot type and limit
+	endDate := time.Now().UTC()
+	var startDate time.Time
+	if snapshotType == "daily" {
+		startDate = endDate.AddDate(0, 0, -limit)
+	} else {
+		startDate = endDate.AddDate(0, 0, -limit*7) // weekly
+	}
+
 	// Get growth deltas
 	deltas, err := h.store.GetGrowthDeltas(c.Request.Context(), store.GetGrowthDeltasParams{
-		VolumeID:     volumeID,
-		SnapshotType: snapshotType,
-		Limit:        int32(limit),
+		VolumeID:  volumeID,
+		StartDate: startDate,
+		EndDate:   endDate,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -154,14 +163,16 @@ func (h *Handler) GetVolumeStepSeries(c *gin.Context) {
 		days = parsed
 	}
 
-	// Calculate start date
-	startDate := time.Now().UTC().AddDate(0, 0, -days).Truncate(24 * time.Hour)
+	// Calculate date range
+	endDate := time.Now().UTC().Truncate(24 * time.Hour)
+	startDate := endDate.AddDate(0, 0, -days)
 
 	// Get step series data
 	series, err := h.store.GetVolumeStepSeries(c.Request.Context(), store.GetVolumeStepSeriesParams{
-		VolumeID:     volumeID,
-		SnapshotType: snapshotType,
-		Date:         startDate,
+		VolumeID:  volumeID,
+		StartDate: startDate,
+		EndDate:   endDate,
+		StepSize:  "day",
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -216,14 +227,15 @@ func (h *Handler) GetVolumeTrendSlope(c *gin.Context) {
 		days = parsed
 	}
 
-	// Calculate start date
-	startDate := time.Now().UTC().AddDate(0, 0, -days).Truncate(24 * time.Hour)
+	// Calculate date range
+	endDate := time.Now().UTC().Truncate(24 * time.Hour)
+	startDate := endDate.AddDate(0, 0, -days)
 
 	// Get trend slope
 	slope, err := h.store.GetTrendSlope(c.Request.Context(), store.GetTrendSlopeParams{
-		VolumeID:     volumeID,
-		SnapshotType: snapshotType,
-		Date:         startDate,
+		VolumeID:  volumeID,
+		StartDate: startDate,
+		EndDate:   endDate,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

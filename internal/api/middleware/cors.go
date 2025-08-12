@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -80,10 +81,10 @@ func CORSMiddleware(config *CORSConfig) gin.HandlerFunc {
 			}
 		}
 
-		// If origin is not allowed and this is not a preflight request, block it
-		if !originAllowed && method != "OPTIONS" {
+		// If origin is not allowed and this is a preflight request, deny it
+		if !originAllowed && method == "OPTIONS" {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": "CORS policy violation",
+				"error": "CORS preflight denied",
 				"code":  "CORS_DENIED",
 			})
 			return
@@ -113,7 +114,7 @@ func CORSMiddleware(config *CORSConfig) gin.HandlerFunc {
 
 			// Max age for preflight requests
 			if config.MaxAge > 0 {
-				c.Header("Access-Control-Max-Age", string(rune(config.MaxAge)))
+				c.Header("Access-Control-Max-Age", fmt.Sprintf("%d", config.MaxAge))
 			}
 		}
 

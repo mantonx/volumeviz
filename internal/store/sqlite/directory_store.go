@@ -15,7 +15,7 @@ type SQLiteDirectoryStore struct {
 }
 
 // NewSQLiteDirectoryStore creates a new SQLite directory store
-func NewSQLiteDirectoryStore(infraStore *SQLiteInfrastructureStore) *SQLiteDirectoryStore {
+func NewSQLiteDirectoryStore(infraStore *SQLiteInfrastructureStore) interfaces.DirectoryStore {
 	return &SQLiteDirectoryStore{
 		infraStore: infraStore,
 	}
@@ -29,8 +29,8 @@ func (s *SQLiteDirectoryStore) CreateDirNode(ctx context.Context, node *models.D
 		Name:            node.Name,
 		FullPath:        node.FullPath,
 		Depth:           int64(node.Depth),
-		LatestSizeBytes: 0, // Will be updated later
-		LatestFileCount: 0, // Will be updated later
+		LatestSizeBytes: node.LatestSizeBytes,
+		LatestFileCount: node.LatestFileCount,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dir node: %w", err)

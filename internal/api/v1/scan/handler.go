@@ -88,7 +88,7 @@ func (h *Handler) GetVolumeSize(c *gin.Context) {
 
 	// Save historical metrics using store integration if available
 	if h.storeIntegration != nil {
-		storeFacade := h.storeIntegration.GetFullStoreFacade()
+		storeFacade := h.storeIntegration.GetStoreFacade()
 		// TODO: Calculate growth rate and container count
 		// For now, we'll pass nil for growth rate and 0 for container count
 		err := storeFacade.SaveVolumeMetrics(

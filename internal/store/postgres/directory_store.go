@@ -124,7 +124,24 @@ func (s *PostgresDirectoryStore) GetDirectoryTree(ctx context.Context, volumeID 
 
 	nodes := make([]*models.DirNode, len(rows))
 	for i, row := range rows {
-		nodes[i] = fromPostgresDirNode(&row)
+		// Convert GetDirectoryTreeRow to DirNode
+		var parentDirID *int64
+		if row.ParentDirID.Valid {
+			parentDirID = &row.ParentDirID.Int64
+		}
+		
+		nodes[i] = &models.DirNode{
+			ID:              row.ID,
+			VolumeID:        row.VolumeID,
+			ParentDirID:     parentDirID,
+			Name:            row.Name,
+			FullPath:        row.FullPath,
+			Depth:           row.Depth,
+			LatestSizeBytes: row.LatestSizeBytes,
+			LatestFileCount: row.LatestFileCount,
+			CreatedAt:       row.CreatedAt,
+			UpdatedAt:       row.UpdatedAt,
+		}
 	}
 
 	return nodes, nil

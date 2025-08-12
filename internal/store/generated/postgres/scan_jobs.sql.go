@@ -20,14 +20,14 @@ RETURNING id, updated_at
 `
 
 type CompleteScanJobParams struct {
-	ScanID      string             `json:"scan_id"`
-	Status      string             `json:"status"`
-	CompletedAt pgtype.Timestamptz `json:"completed_at"`
-	ResultID    pgtype.Int4        `json:"result_id"`
+	ScanID      string           `json:"scan_id"`
+	Status      string           `json:"status"`
+	CompletedAt pgtype.Timestamp `json:"completed_at"`
+	ResultID    pgtype.Int8      `json:"result_id"`
 }
 
 type CompleteScanJobRow struct {
-	ID        int32     `json:"id"`
+	ID        int64     `json:"id"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
@@ -51,20 +51,20 @@ RETURNING id, created_at, updated_at
 `
 
 type CreateScanJobParams struct {
-	ScanID            string             `json:"scan_id"`
-	VolumeID          string             `json:"volume_id"`
-	Status            string             `json:"status"`
-	Progress          pgtype.Int4        `json:"progress"`
-	Method            string             `json:"method"`
-	StartedAt         pgtype.Timestamptz `json:"started_at"`
-	CompletedAt       pgtype.Timestamptz `json:"completed_at"`
-	ErrorMessage      pgtype.Text        `json:"error_message"`
-	ResultID          pgtype.Int4        `json:"result_id"`
-	EstimatedDuration pgtype.Int8        `json:"estimated_duration"`
+	ScanID            string           `json:"scan_id"`
+	VolumeID          string           `json:"volume_id"`
+	Status            string           `json:"status"`
+	Progress          pgtype.Int4      `json:"progress"`
+	Method            string           `json:"method"`
+	StartedAt         pgtype.Timestamp `json:"started_at"`
+	CompletedAt       pgtype.Timestamp `json:"completed_at"`
+	ErrorMessage      pgtype.Text      `json:"error_message"`
+	ResultID          pgtype.Int8      `json:"result_id"`
+	EstimatedDuration pgtype.Int8      `json:"estimated_duration"`
 }
 
 type CreateScanJobRow struct {
-	ID        int32     `json:"id"`
+	ID        int64     `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -106,13 +106,13 @@ RETURNING id, updated_at
 `
 
 type FailScanJobParams struct {
-	ScanID       string             `json:"scan_id"`
-	ErrorMessage pgtype.Text        `json:"error_message"`
-	CompletedAt  pgtype.Timestamptz `json:"completed_at"`
+	ScanID       string           `json:"scan_id"`
+	ErrorMessage pgtype.Text      `json:"error_message"`
+	CompletedAt  pgtype.Timestamp `json:"completed_at"`
 }
 
 type FailScanJobRow struct {
-	ID        int32     `json:"id"`
+	ID        int64     `json:"id"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
@@ -246,7 +246,7 @@ FROM scan_jobs
 WHERE id = $1
 `
 
-func (q *Queries) GetScanJobByID(ctx context.Context, id int32) (ScanJobs, error) {
+func (q *Queries) GetScanJobByID(ctx context.Context, id int64) (ScanJobs, error) {
 	row := q.db.QueryRow(ctx, getScanJobByID, id)
 	var i ScanJobs
 	err := row.Scan(
@@ -379,12 +379,12 @@ RETURNING id, updated_at
 `
 
 type StartScanJobParams struct {
-	ScanID    string             `json:"scan_id"`
-	StartedAt pgtype.Timestamptz `json:"started_at"`
+	ScanID    string           `json:"scan_id"`
+	StartedAt pgtype.Timestamp `json:"started_at"`
 }
 
 type StartScanJobRow struct {
-	ID        int32     `json:"id"`
+	ID        int64     `json:"id"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
@@ -419,7 +419,7 @@ RETURNING updated_at
 `
 
 type UpdateScanJobStatusParams struct {
-	ID           int32       `json:"id"`
+	ID           int64       `json:"id"`
 	Status       string      `json:"status"`
 	Progress     pgtype.Int4 `json:"progress"`
 	ErrorMessage pgtype.Text `json:"error_message"`
@@ -451,7 +451,7 @@ type UpdateScanJobStatusAndProgressParams struct {
 }
 
 type UpdateScanJobStatusAndProgressRow struct {
-	ID        int32     `json:"id"`
+	ID        int64     `json:"id"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 

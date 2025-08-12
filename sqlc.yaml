@@ -2,7 +2,7 @@ version: "2"
 sql:
   - engine: "postgresql"
     queries: "internal/store/queries/postgres"
-    schema: "internal/store/migrations/postgres"
+    schema: "migrations/schema_postgres.sql"
     gen:
       go:
         package: "postgres"
@@ -38,7 +38,7 @@ sql:
               type: "time.Time"
   - engine: "sqlite"
     queries: "internal/store/queries/sqlite" 
-    schema: "internal/store/migrations/sqlite"
+    schema: "migrations"
     gen:
       go:
         package: "sqlite"

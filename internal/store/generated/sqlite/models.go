@@ -79,16 +79,6 @@ type FileEntries struct {
 	UpdatedAt   string        `json:"updated_at"`
 }
 
-type MigrationHistory struct {
-	ID            int64          `json:"id"`
-	Version       string         `json:"version"`
-	Description   string         `json:"description"`
-	AppliedAt     sql.NullTime   `json:"applied_at"`
-	RollbackSql   sql.NullString `json:"rollback_sql"`
-	Checksum      string         `json:"checksum"`
-	ExecutionTime int64          `json:"execution_time"`
-}
-
 type ScanCache struct {
 	ID             int64         `json:"id"`
 	CacheKey       string        `json:"cache_key"`

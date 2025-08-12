@@ -35,15 +35,15 @@ type CreateVolumeParams struct {
 	Name       string      `json:"name"`
 	Driver     string      `json:"driver"`
 	Mountpoint string      `json:"mountpoint"`
-	Labels     []byte      `json:"labels"`
-	Options    []byte      `json:"options"`
+	Labels     pgtype.Text `json:"labels"`
+	Options    pgtype.Text `json:"options"`
 	Scope      pgtype.Text `json:"scope"`
 	Status     pgtype.Text `json:"status"`
 	IsActive   pgtype.Bool `json:"is_active"`
 }
 
 type CreateVolumeRow struct {
-	ID        int32     `json:"id"`
+	ID        int64     `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -83,7 +83,7 @@ FROM volumes
 WHERE id = $1
 `
 
-func (q *Queries) GetVolumeByID(ctx context.Context, id int32) (Volumes, error) {
+func (q *Queries) GetVolumeByID(ctx context.Context, id int64) (Volumes, error) {
 	row := q.db.QueryRow(ctx, getVolumeByID, id)
 	var i Volumes
 	err := row.Scan(
@@ -214,8 +214,8 @@ ORDER BY created_at DESC
 `
 
 type GetVolumesByLabelParams struct {
-	Labels   []byte `json:"labels"`
-	Labels_2 []byte `json:"labels_2"`
+	Labels   pgtype.Text `json:"labels"`
+	Labels_2 pgtype.Text `json:"labels_2"`
 }
 
 func (q *Queries) GetVolumesByLabel(ctx context.Context, arg GetVolumesByLabelParams) ([]Volumes, error) {
@@ -256,7 +256,7 @@ const hardDeleteVolume = `-- name: HardDeleteVolume :exec
 DELETE FROM volumes WHERE id = $1
 `
 
-func (q *Queries) HardDeleteVolume(ctx context.Context, id int32) error {
+func (q *Queries) HardDeleteVolume(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, hardDeleteVolume, id)
 	return err
 }
@@ -314,7 +314,7 @@ SET is_active = false, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 `
 
-func (q *Queries) SoftDeleteVolume(ctx context.Context, id int32) error {
+func (q *Queries) SoftDeleteVolume(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, softDeleteVolume, id)
 	return err
 }
@@ -326,8 +326,8 @@ WHERE volume_id = $1
 `
 
 type UpdateLastScannedParams struct {
-	VolumeID    string             `json:"volume_id"`
-	LastScanned pgtype.Timestamptz `json:"last_scanned"`
+	VolumeID    string           `json:"volume_id"`
+	LastScanned pgtype.Timestamp `json:"last_scanned"`
 }
 
 func (q *Queries) UpdateLastScanned(ctx context.Context, arg UpdateLastScannedParams) error {
@@ -343,12 +343,12 @@ RETURNING updated_at
 `
 
 type UpdateVolumeParams struct {
-	ID         int32       `json:"id"`
+	ID         int64       `json:"id"`
 	Name       string      `json:"name"`
 	Driver     string      `json:"driver"`
 	Mountpoint string      `json:"mountpoint"`
-	Labels     []byte      `json:"labels"`
-	Options    []byte      `json:"options"`
+	Labels     pgtype.Text `json:"labels"`
+	Options    pgtype.Text `json:"options"`
 	Scope      pgtype.Text `json:"scope"`
 	Status     pgtype.Text `json:"status"`
 	IsActive   pgtype.Bool `json:"is_active"`
@@ -393,15 +393,15 @@ type UpsertVolumeParams struct {
 	Name       string      `json:"name"`
 	Driver     string      `json:"driver"`
 	Mountpoint string      `json:"mountpoint"`
-	Labels     []byte      `json:"labels"`
-	Options    []byte      `json:"options"`
+	Labels     pgtype.Text `json:"labels"`
+	Options    pgtype.Text `json:"options"`
 	Scope      pgtype.Text `json:"scope"`
 	Status     pgtype.Text `json:"status"`
 	IsActive   pgtype.Bool `json:"is_active"`
 }
 
 type UpsertVolumeRow struct {
-	ID        int32     `json:"id"`
+	ID        int64     `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
