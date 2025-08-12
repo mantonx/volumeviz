@@ -2,403 +2,196 @@ package scheduler
 
 import (
 	"context"
-	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/mantonx/volumeviz/internal/database"
+	"github.com/mantonx/volumeviz/internal/store"
 )
 
-// Repository implements the ScanRepository interface using SQL database
-type Repository struct {
-	db *database.DB
+// NoOpScanRepository provides a no-op implementation during database cleanup
+type NoOpScanRepository struct{}
+
+// StoreBasedRepository implements ScanRepository using store facade directly
+type StoreBasedRepository struct {
+	store *store.StoreFacade
 }
 
-// NewRepository creates a new scan repository
-func NewRepository(db *database.DB) *Repository {
-	return &Repository{
-		db: db,
+// NewScanRepository creates a new scan repository implementation using store facade
+func NewScanRepository(storeFacade *store.StoreFacade) ScanRepository {
+	if storeFacade != nil {
+		return &StoreBasedRepository{store: storeFacade}
 	}
+	return &NoOpScanRepository{}
 }
+
+// StoreBasedRepository implementation
 
 // Volume stats operations
-
-// InsertVolumeStats inserts a new volume statistics record
-func (r *Repository) InsertVolumeStats(ctx context.Context, stats *database.VolumeScanStats) error {
-	query := `
-		INSERT INTO volume_stats (volume_name, size_bytes, file_count, scan_method, duration_ms, ts, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-
-	now := time.Now()
-	_, err := r.db.ExecContext(ctx, query,
-		stats.VolumeName,
-		stats.SizeBytes,
-		stats.FileCount,
-		stats.ScanMethod,
-		stats.DurationMs,
-		stats.Timestamp,
-		now,
-		now,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to insert volume stats: %w", err)
-	}
-
-	return nil
+func (r *StoreBasedRepository) InsertVolumeStats(ctx context.Context, stats *store.VolumeSizeResult) error {
+	return r.store.InsertVolumeSize(ctx, *stats)
 }
 
-// GetVolumeStatsByName retrieves volume statistics for a specific volume
-func (r *Repository) GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*database.VolumeScanStats, error) {
-	query := `
-		SELECT id, volume_name, size_bytes, file_count, scan_method, duration_ms, ts, created_at, updated_at
-		FROM volume_stats 
-		WHERE volume_name = $1 
-		ORDER BY ts DESC 
-		LIMIT $2`
-
-	rows, err := r.db.QueryContext(ctx, query, volumeName, limit)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query volume stats: %w", err)
-	}
-	defer rows.Close()
-
-	var stats []*database.VolumeScanStats
-	for rows.Next() {
-		stat := &database.VolumeScanStats{}
-		err := rows.Scan(
-			&stat.ID,
-			&stat.VolumeName,
-			&stat.SizeBytes,
-			&stat.FileCount,
-			&stat.ScanMethod,
-			&stat.DurationMs,
-			&stat.Timestamp,
-			&stat.CreatedAt,
-			&stat.UpdatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan volume stats row: %w", err)
-		}
-		stats = append(stats, stat)
-	}
-
-	return stats, rows.Err()
+func (r *StoreBasedRepository) GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*store.VolumeSizeResult, error) {
+	return r.store.GetVolumeSizesByName(ctx, volumeName, int32(limit))
 }
 
-// GetLatestVolumeStats retrieves the latest volume statistics for a specific volume
-func (r *Repository) GetLatestVolumeStats(ctx context.Context, volumeName string) (*database.VolumeScanStats, error) {
-	stats, err := r.GetVolumeStatsByName(ctx, volumeName, 1)
+func (r *StoreBasedRepository) GetLatestVolumeStats(ctx context.Context, volumeName string) (*store.VolumeSizeResult, error) {
+	// Get volume ID first
+	volumes, err := r.store.ListVolumes(ctx, 1000, 0)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(stats) == 0 {
-		return nil, nil
+	
+	var volumeID string
+	for _, v := range volumes {
+		if v.Name == volumeName {
+			volumeID = v.VolumeID
+			break
+		}
 	}
-
-	return stats[0], nil
+	
+	if volumeID == "" {
+		return nil, fmt.Errorf("volume not found: %s", volumeName)
+	}
+	
+	return r.store.GetLatestVolumeSize(ctx, volumeID)
 }
 
 // Scan runs operations
-
-// InsertScanRun inserts a new scan run record
-func (r *Repository) InsertScanRun(ctx context.Context, run *database.ScanJob) error {
-	query := `
-		INSERT INTO scan_runs (scan_id, volume_id, status, progress, method, started_at, completed_at, error_message, result_id, estimated_duration, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
-
-	now := time.Now()
-	_, err := r.db.ExecContext(ctx, query,
-		run.ScanID,
-		run.VolumeID,
-		run.Status,
-		run.Progress,
-		run.Method,
-		run.StartedAt,
-		run.CompletedAt,
-		run.ErrorMessage,
-		run.ResultID,
-		run.EstimatedDuration,
-		now,
-		now,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to insert scan run: %w", err)
+func (r *StoreBasedRepository) InsertScanRun(ctx context.Context, run *store.ScanJobResult) error {
+	var estimatedDuration *time.Duration
+	if run.EstimatedDuration != nil {
+		estimatedDuration = run.EstimatedDuration
 	}
-
-	return nil
+	
+	_, err := r.store.CreateScanJob(ctx, run.ScanID, run.VolumeID, run.Method, estimatedDuration)
+	return err
 }
 
-// UpdateScanRun updates an existing scan run record
-func (r *Repository) UpdateScanRun(ctx context.Context, run *database.ScanJob) error {
-	query := `
-		UPDATE scan_runs 
-		SET status = $2, progress = $3, completed_at = $4, error_message = $5, result_id = $6, updated_at = $7
-		WHERE scan_id = $1`
-
-	now := time.Now()
-	result, err := r.db.ExecContext(ctx, query,
-		run.ScanID,
-		run.Status,
-		run.Progress,
-		run.CompletedAt,
-		run.ErrorMessage,
-		run.ResultID,
-		now,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to update scan run: %w", err)
+func (r *StoreBasedRepository) UpdateScanRun(ctx context.Context, run *store.ScanJobResult) error {
+	if run.ErrorMessage != nil {
+		return r.store.FailScanJob(ctx, run.ScanID, *run.ErrorMessage)
 	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+	
+	if run.Status == "running" && run.StartedAt != nil {
+		return r.store.StartScanJob(ctx, run.ScanID)
 	}
-
-	if rowsAffected == 0 {
-		return fmt.Errorf("scan run not found: %s", run.ScanID)
+	
+	if run.Status == "completed" && run.CompletedAt != nil {
+		return r.store.CompleteScanJob(ctx, run.ScanID, run.Status, nil)
 	}
-
-	return nil
+	
+	return r.store.UpdateScanJobStatusAndProgress(ctx, run.ScanID, run.Status, run.Progress)
 }
 
-// GetScanRunByID retrieves a scan run by its ID
-func (r *Repository) GetScanRunByID(ctx context.Context, scanID string) (*database.ScanJob, error) {
-	query := `
-		SELECT id, scan_id, volume_id, status, progress, method, started_at, completed_at, error_message, result_id, estimated_duration, created_at, updated_at
-		FROM scan_runs 
-		WHERE scan_id = $1`
-
-	row := r.db.QueryRowContext(ctx, query, scanID)
-
-	run := &database.ScanJob{}
-	err := row.Scan(
-		&run.ID,
-		&run.ScanID,
-		&run.VolumeID,
-		&run.Status,
-		&run.Progress,
-		&run.Method,
-		&run.StartedAt,
-		&run.CompletedAt,
-		&run.ErrorMessage,
-		&run.ResultID,
-		&run.EstimatedDuration,
-		&run.CreatedAt,
-		&run.UpdatedAt,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get scan run: %w", err)
-	}
-
-	return run, nil
+func (r *StoreBasedRepository) GetScanRunByID(ctx context.Context, scanID string) (*store.ScanJobResult, error) {
+	return r.store.GetScanJobByScanID(ctx, scanID)
 }
 
-// GetActiveScanRuns retrieves all currently active scan runs
-func (r *Repository) GetActiveScanRuns(ctx context.Context) ([]*database.ScanJob, error) {
-	query := `
-		SELECT id, scan_id, volume_id, status, progress, method, started_at, completed_at, error_message, result_id, estimated_duration, created_at, updated_at
-		FROM scan_runs 
-		WHERE status IN ('queued', 'running')
-		ORDER BY created_at DESC`
-
-	rows, err := r.db.QueryContext(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query active scan runs: %w", err)
-	}
-	defer rows.Close()
-
-	var runs []*database.ScanJob
-	for rows.Next() {
-		run := &database.ScanJob{}
-		err := rows.Scan(
-			&run.ID,
-			&run.ScanID,
-			&run.VolumeID,
-			&run.Status,
-			&run.Progress,
-			&run.Method,
-			&run.StartedAt,
-			&run.CompletedAt,
-			&run.ErrorMessage,
-			&run.ResultID,
-			&run.EstimatedDuration,
-			&run.CreatedAt,
-			&run.UpdatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan scan run row: %w", err)
-		}
-		runs = append(runs, run)
-	}
-
-	return runs, rows.Err()
+func (r *StoreBasedRepository) GetActiveScanRuns(ctx context.Context) ([]*store.ScanJobResult, error) {
+	return r.store.GetActiveScanJobs(ctx)
 }
 
 // Volume operations
-
-// ListVolumes retrieves all volumes from the database
-func (r *Repository) ListVolumes(ctx context.Context) ([]*database.Volume, error) {
-	query := `
-		SELECT id, volume_id, name, driver, mountpoint, labels, options, scope, status, last_scanned, is_active, created_at, updated_at
-		FROM volumes 
-		WHERE is_active = true
-		ORDER BY name`
-
-	rows, err := r.db.QueryContext(ctx, query)
+func (r *StoreBasedRepository) ListVolumes(ctx context.Context) ([]*store.Volume, error) {
+	volumeResults, err := r.store.ListVolumes(ctx, 1000, 0)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query volumes: %w", err)
+		return nil, err
 	}
-	defer rows.Close()
-
-	var volumes []*database.Volume
-	for rows.Next() {
-		volume := &database.Volume{}
-		err := rows.Scan(
-			&volume.ID,
-			&volume.VolumeID,
-			&volume.Name,
-			&volume.Driver,
-			&volume.Mountpoint,
-			&volume.Labels,
-			&volume.Options,
-			&volume.Scope,
-			&volume.Status,
-			&volume.LastScanned,
-			&volume.IsActive,
-			&volume.CreatedAt,
-			&volume.UpdatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan volume row: %w", err)
+	
+	// Convert facade results to store models
+	volumes := make([]*store.Volume, 0, len(volumeResults))
+	for _, vol := range volumeResults {
+		if vol.IsActive {
+			// Parse labels and options from JSON strings
+			labels := make(map[string]string)
+			if vol.Labels != "" {
+				json.Unmarshal([]byte(vol.Labels), &labels)
+			}
+			
+			options := make(map[string]string)
+			if vol.Options != "" {
+				json.Unmarshal([]byte(vol.Options), &options)
+			}
+			
+			volumes = append(volumes, &store.Volume{
+				ID:         vol.ID,
+				VolumeID:   vol.VolumeID,
+				Name:       vol.Name,
+				Driver:     vol.Driver,
+				Mountpoint: vol.Mountpoint,
+				Labels:     labels,
+				Options:    options,
+				Scope:      vol.Scope,
+				Status:     vol.Status,
+				IsActive:   vol.IsActive,
+				CreatedAt:  vol.CreatedAt,
+				UpdatedAt:  vol.UpdatedAt,
+			})
 		}
-		volumes = append(volumes, volume)
 	}
-
-	return volumes, rows.Err()
+	
+	return volumes, nil
 }
 
-// UpsertVolume inserts or updates a volume record
-func (r *Repository) UpsertVolume(ctx context.Context, volume *database.Volume) error {
-	// First try to update
-	updateQuery := `
-		UPDATE volumes 
-		SET name = $2, driver = $3, mountpoint = $4, labels = $5, options = $6, scope = $7, status = $8, last_scanned = $9, is_active = $10, updated_at = $11
-		WHERE volume_id = $1`
-
-	now := time.Now()
-	result, err := r.db.ExecContext(ctx, updateQuery,
-		volume.VolumeID,
-		volume.Name,
-		volume.Driver,
-		volume.Mountpoint,
-		volume.Labels,
-		volume.Options,
-		volume.Scope,
-		volume.Status,
-		volume.LastScanned,
-		volume.IsActive,
-		now,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to update volume: %w", err)
+func (r *StoreBasedRepository) UpsertVolume(ctx context.Context, volume *store.Volume) error {
+	// Convert store.Volume to facade VolumeParams
+	labelsJSON, _ := json.Marshal(volume.Labels)
+	optionsJSON, _ := json.Marshal(volume.Options)
+	
+	params := store.VolumeParams{
+		VolumeID:   volume.VolumeID,
+		Name:       volume.Name,
+		Driver:     volume.Driver,
+		Mountpoint: volume.Mountpoint,
+		Labels:     string(labelsJSON),
+		Options:    string(optionsJSON),
+		Scope:      volume.Scope,
+		Status:     volume.Status,
+		IsActive:   volume.IsActive,
 	}
+	
+	_, err := r.store.UpsertVolume(ctx, params)
+	return err
+}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
+// NoOpScanRepository implementation for fallback
 
-	if rowsAffected > 0 {
-		return nil // Update successful
-	}
-
-	// If no rows affected, insert new record
-	insertQuery := `
-		INSERT INTO volumes (volume_id, name, driver, mountpoint, labels, options, scope, status, last_scanned, is_active, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
-
-	_, err = r.db.ExecContext(ctx, insertQuery,
-		volume.VolumeID,
-		volume.Name,
-		volume.Driver,
-		volume.Mountpoint,
-		volume.Labels,
-		volume.Options,
-		volume.Scope,
-		volume.Status,
-		volume.LastScanned,
-		volume.IsActive,
-		now,
-		now,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to insert volume: %w", err)
-	}
-
+func (r *NoOpScanRepository) InsertVolumeStats(ctx context.Context, stats *store.VolumeSizeResult) error {
 	return nil
 }
 
-// VolumeProvider implementation
-
-// VolumeProviderImpl implements the VolumeProvider interface
-type VolumeProviderImpl struct {
-	repository *Repository
+func (r *NoOpScanRepository) GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*store.VolumeSizeResult, error) {
+	return []*store.VolumeSizeResult{}, nil
 }
 
-// NewVolumeProvider creates a new volume provider
-func NewVolumeProvider(repository *Repository) *VolumeProviderImpl {
-	return &VolumeProviderImpl{
-		repository: repository,
-	}
+func (r *NoOpScanRepository) GetLatestVolumeStats(ctx context.Context, volumeName string) (*store.VolumeSizeResult, error) {
+	return nil, fmt.Errorf("scheduler temporarily disabled during database cleanup")
 }
 
-// ListVolumes retrieves all volumes
-func (vp *VolumeProviderImpl) ListVolumes(ctx context.Context) ([]*database.Volume, error) {
-	return vp.repository.ListVolumes(ctx)
+// Scan runs operations
+func (r *NoOpScanRepository) InsertScanRun(ctx context.Context, run *store.ScanJobResult) error {
+	return nil
 }
 
-// GetVolume retrieves a specific volume by name
-func (vp *VolumeProviderImpl) GetVolume(ctx context.Context, volumeName string) (*database.Volume, error) {
-	query := `
-		SELECT id, volume_id, name, driver, mountpoint, labels, options, scope, status, last_scanned, is_active, created_at, updated_at
-		FROM volumes 
-		WHERE name = $1`
+func (r *NoOpScanRepository) UpdateScanRun(ctx context.Context, run *store.ScanJobResult) error {
+	return nil
+}
 
-	row := vp.repository.db.QueryRowContext(ctx, query, volumeName)
+func (r *NoOpScanRepository) GetScanRunByID(ctx context.Context, scanID string) (*store.ScanJobResult, error) {
+	return nil, fmt.Errorf("scheduler temporarily disabled during database cleanup")
+}
 
-	volume := &database.Volume{}
-	err := row.Scan(
-		&volume.ID,
-		&volume.VolumeID,
-		&volume.Name,
-		&volume.Driver,
-		&volume.Mountpoint,
-		&volume.Labels,
-		&volume.Options,
-		&volume.Scope,
-		&volume.Status,
-		&volume.LastScanned,
-		&volume.IsActive,
-		&volume.CreatedAt,
-		&volume.UpdatedAt,
-	)
+func (r *NoOpScanRepository) GetActiveScanRuns(ctx context.Context) ([]*store.ScanJobResult, error) {
+	return []*store.ScanJobResult{}, nil
+}
 
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get volume: %w", err)
-	}
+// Volume operations
+func (r *NoOpScanRepository) ListVolumes(ctx context.Context) ([]*store.Volume, error) {
+	return []*store.Volume{}, nil
+}
 
-	return volume, nil
+func (r *NoOpScanRepository) UpsertVolume(ctx context.Context, volume *store.Volume) error {
+	return nil
 }

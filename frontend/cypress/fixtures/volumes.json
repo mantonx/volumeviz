@@ -1,0 +1,68 @@
+{
+  "empty": [],
+  "singleVolume": [
+    {
+      "name": "test-volume",
+      "driver": "local",
+      "created_at": "2023-01-01T00:00:00Z",
+      "size_bytes": 1048576,
+      "attachments_count": 1,
+      "is_system": false,
+      "is_orphaned": false,
+      "labels": {
+        "environment": "test"
+      }
+    }
+  ],
+  "multipleVolumes": [
+    {
+      "name": "app-data",
+      "driver": "local",
+      "created_at": "2023-01-01T00:00:00Z",
+      "size_bytes": 2097152,
+      "attachments_count": 1,
+      "is_system": false,
+      "is_orphaned": false,
+      "labels": {
+        "app": "frontend",
+        "environment": "production"
+      }
+    },
+    {
+      "name": "database-storage",
+      "driver": "local", 
+      "created_at": "2023-01-02T00:00:00Z",
+      "size_bytes": 10485760,
+      "attachments_count": 1,
+      "is_system": false,
+      "is_orphaned": false,
+      "labels": {
+        "app": "database",
+        "backup": "enabled"
+      }
+    },
+    {
+      "name": "orphaned-volume",
+      "driver": "local",
+      "created_at": "2023-01-03T00:00:00Z", 
+      "size_bytes": 524288,
+      "attachments_count": 0,
+      "is_system": false,
+      "is_orphaned": true,
+      "labels": {}
+    },
+    {
+      "name": "system-logs",
+      "driver": "local",
+      "created_at": "2023-01-04T00:00:00Z",
+      "size_bytes": 1048576,
+      "attachments_count": 1,
+      "is_system": true,
+      "is_orphaned": false,
+      "labels": {
+        "system": "true"
+      }
+    }
+  ],
+  "largeDataset": []
+}

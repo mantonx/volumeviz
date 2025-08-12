@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestErrorResponse_Structure(t *testing.T) {
@@ -68,7 +68,7 @@ func TestVolumeListResponse_Structure(t *testing.T) {
 		{ID: "vol1", Name: "volume1"},
 		{ID: "vol2", Name: "volume2"},
 	}
-	
+
 	response := VolumeListResponse{
 		Volumes: volumes,
 		Total:   2,
@@ -83,7 +83,7 @@ func TestVolumeListResponse_Structure(t *testing.T) {
 func TestScanResult_Structure(t *testing.T) {
 	now := time.Now()
 	duration := 30 * time.Second
-	
+
 	result := ScanResult{
 		VolumeID:       "test-vol",
 		TotalSize:      1024000,
@@ -114,7 +114,7 @@ func TestScanResponse_Structure(t *testing.T) {
 		VolumeID: "test-vol",
 		Method:   "native",
 	}
-	
+
 	response := ScanResponse{
 		VolumeID: "test-vol",
 		Result:   scanResult,
@@ -142,7 +142,7 @@ func TestAsyncScanResponse_Structure(t *testing.T) {
 func TestScanProgress_Structure(t *testing.T) {
 	now := time.Now()
 	remaining := 2 * time.Minute
-	
+
 	progress := ScanProgress{
 		ScanID:             "scan-123",
 		VolumeID:           "test-vol",
@@ -188,7 +188,7 @@ func TestBulkScanResponse_Structure(t *testing.T) {
 	failed := map[string]string{
 		"vol3": "permission denied",
 	}
-	
+
 	response := BulkScanResponse{
 		ScanID:   "bulk-123",
 		Results:  results,
@@ -236,18 +236,18 @@ func TestMethodInfo_Structure(t *testing.T) {
 
 func TestSystemInfoResponse_Structure(t *testing.T) {
 	response := SystemInfoResponse{}
-	
+
 	// Test Docker info
 	response.Docker.Version = "24.0.6"
 	response.Docker.APIVersion = "1.43"
 	response.Docker.ServerVersion = "24.0.6"
 	response.Docker.Connected = true
-	
+
 	// Test VolumeViz info
 	response.VolumeViz.Version = "1.0.0"
 	response.VolumeViz.BuildTime = "2025-01-31T22:30:00Z"
 	response.VolumeViz.GoVersion = "go1.24.5"
-	
+
 	// Test System info
 	response.System.Platform = "linux"
 	response.System.Architecture = "amd64"
@@ -267,12 +267,12 @@ func TestVolumeDetailResponse_Structure(t *testing.T) {
 		ID:   "test-vol",
 		Name: "test-volume",
 	}
-	
+
 	containers := []VolumeContainer{
 		{ID: "container1", Name: "app1", State: "running"},
 		{ID: "container2", Name: "app2", State: "stopped"},
 	}
-	
+
 	response := VolumeDetailResponse{
 		Volume:     volume,
 		Containers: containers,
@@ -299,7 +299,7 @@ func TestVolumeContainer_Structure(t *testing.T) {
 func TestConvertScanResult_Success(t *testing.T) {
 	now := time.Now()
 	duration := 45 * time.Second
-	
+
 	coreResult := &interfaces.ScanResult{
 		VolumeID:       "test-vol",
 		TotalSize:      2048000,
@@ -336,7 +336,7 @@ func TestConvertScanResult_Nil(t *testing.T) {
 func TestConvertScanProgress_Success(t *testing.T) {
 	now := time.Now()
 	remaining := 3 * time.Minute
-	
+
 	coreProgress := &interfaces.ScanProgress{
 		ScanID:             "scan-456",
 		VolumeID:           "test-vol",
@@ -393,7 +393,7 @@ func TestConvertMethodInfo_Success(t *testing.T) {
 	converted := ConvertMethodInfo(coreMethods)
 
 	assert.Len(t, converted, 2)
-	
+
 	// First method
 	assert.Equal(t, "du", converted[0].Name)
 	assert.True(t, converted[0].Available)
@@ -401,7 +401,7 @@ func TestConvertMethodInfo_Success(t *testing.T) {
 	assert.Equal(t, "fast", converted[0].Performance)
 	assert.Equal(t, "high", converted[0].Accuracy)
 	assert.Equal(t, []string{"reliable"}, converted[0].Features)
-	
+
 	// Second method
 	assert.Equal(t, "native", converted[1].Name)
 	assert.True(t, converted[1].Available)

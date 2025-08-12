@@ -3,7 +3,7 @@
   "info": {
     "title": "VolumeViz API",
     "version": "1.0.0",
-    "description": "Docker volume monitoring API with comprehensive volume discovery, size calculation, \nand container attachment tracking. Focus on user-mounted volumes only.\n\n## Volume-First Approach\n- Automatic discovery and filtering of user-mounted volumes\n- Excludes Docker infrastructure volumes (container filesystems, tmp volumes)\n- Real-time volume usage monitoring and size calculation\n- Container attachment tracking for each volume\n\n## Features  \n- Multi-method volume size calculation (du, find, stat)\n- Asynchronous scanning with progress tracking for large volumes\n- High-performance caching with TTL-based invalidation\n- Comprehensive Prometheus metrics integration\n- Circuit breaker patterns for resilience\n\n## Performance SLO\n- 95th percentile response time < 500ms for volume listing\n- Supports 1000+ volumes with concurrent access\n- Memory usage < 100MB during large volume scans\n",
+    "description": "Docker volume monitoring API with comprehensive volume discovery, size calculation,\nand container attachment tracking. Focus on user-mounted volumes only.\n\n## Volume-First Approach\n- Automatic discovery and filtering of user-mounted volumes\n- Excludes Docker infrastructure volumes (container filesystems, tmp volumes)\n- Real-time volume usage monitoring and size calculation\n- Container attachment tracking for each volume\n\n## Features\n- Multi-method volume size calculation (du, find, stat)\n- Asynchronous scanning with progress tracking for large volumes\n- High-performance caching with TTL-based invalidation\n- Comprehensive Prometheus metrics integration\n- Circuit breaker patterns for resilience\n\n## Performance SLO\n- 95th percentile response time < 500ms for volume listing\n- Supports 1000+ volumes with concurrent access\n- Memory usage < 100MB during large volume scans\n",
     "contact": {
       "name": "API Support",
       "url": "https://github.com/mantonx/volumeviz/issues",
@@ -30,40 +30,6 @@
       "ApiKeyAuth": []
     }
   ],
-  "tags": [
-    {
-      "name": "Health",
-      "description": "Health check and monitoring endpoints"
-    },
-    {
-      "name": "Real-time",
-      "description": "WebSocket endpoints for real-time updates and notifications"
-    },
-    {
-      "name": "Volumes",
-      "description": "Docker volume discovery and management"
-    },
-    {
-      "name": "Reports",
-      "description": "Volume reports and analytics"
-    },
-    {
-      "name": "Scanning",
-      "description": "Volume size calculation and scanning operations"
-    },
-    {
-      "name": "System",
-      "description": "System information and diagnostics"
-    },
-    {
-      "name": "Database",
-      "description": "Database management and operations"
-    }
-  ],
-  "externalDocs": {
-    "description": "VolumeViz Documentation",
-    "url": "https://github.com/mantonx/volumeviz/blob/main/docs/"
-  },
   "paths": {
     "/health/docker": {
       "get": {
@@ -733,7 +699,7 @@
           "Scanning"
         ],
         "summary": "Get volume size",
-        "description": "Get the current size and file statistics of a Docker volume.\nResults are cached with TTL-based invalidation for performance.\n\n**Performance**: \n- Cache hit: < 5ms response time\n- Cache miss: varies by volume size and scan method\n- Large volumes (100GB+): typically < 30 seconds\n",
+        "description": "Get the current size and file statistics of a Docker volume.\nResults are cached with TTL-based invalidation for performance.\n\n**Performance**:\n- Cache hit: < 5ms response time\n- Cache miss: varies by volume size and scan method\n- Large volumes (100GB+): typically < 30 seconds\n",
         "operationId": "getVolumeSize",
         "parameters": [
           {
@@ -1255,7 +1221,7 @@
           "Database"
         ],
         "summary": "Get database health",
-        "description": "Get comprehensive database health information including connection status, \nperformance metrics, and resource usage for monitoring and alerting.\n",
+        "description": "Get comprehensive database health information including connection status,\nperformance metrics, and resource usage for monitoring and alerting.\n",
         "operationId": "getDatabaseHealth",
         "responses": {
           "200": {
@@ -1344,7 +1310,7 @@
           "Database"
         ],
         "summary": "Get database statistics",
-        "description": "Get comprehensive database statistics including volume counts, \nscan job metrics, and performance data for operational monitoring.\n",
+        "description": "Get comprehensive database statistics including volume counts,\nscan job metrics, and performance data for operational monitoring.\n",
         "operationId": "getDatabaseStats",
         "responses": {
           "200": {
@@ -1376,7 +1342,7 @@
           "Database"
         ],
         "summary": "Get migration status",
-        "description": "Get detailed information about database migrations including applied, \npending, and completion status for deployment monitoring.\n",
+        "description": "Get detailed information about database migrations including applied,\npending, and completion status for deployment monitoring.\n",
         "operationId": "getMigrationStatus",
         "responses": {
           "200": {
@@ -1514,7 +1480,7 @@
           "Database"
         ],
         "summary": "Rollback migration",
-        "description": "Rollback a specific database migration by version. Use with extreme caution \nin production environments as this can result in data loss.\n",
+        "description": "Rollback a specific database migration by version. Use with extreme caution\nin production environments as this can result in data loss.\n",
         "operationId": "rollbackMigration",
         "parameters": [
           {
@@ -3610,5 +3576,39 @@
         ]
       }
     }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Health check and monitoring endpoints"
+    },
+    {
+      "name": "Real-time",
+      "description": "WebSocket endpoints for real-time updates and notifications"
+    },
+    {
+      "name": "Volumes",
+      "description": "Docker volume discovery and management"
+    },
+    {
+      "name": "Reports",
+      "description": "Volume reports and analytics"
+    },
+    {
+      "name": "Scanning",
+      "description": "Volume size calculation and scanning operations"
+    },
+    {
+      "name": "System",
+      "description": "System information and diagnostics"
+    },
+    {
+      "name": "Database",
+      "description": "Database management and operations"
+    }
+  ],
+  "externalDocs": {
+    "description": "VolumeViz Documentation",
+    "url": "https://github.com/mantonx/volumeviz/blob/main/docs/"
   }
 }

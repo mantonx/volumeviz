@@ -6,7 +6,8 @@ import (
 	"strconv"
 
 	"github.com/mantonx/volumeviz/internal/config"
-	"github.com/mantonx/volumeviz/internal/database"
+	storeConfig "github.com/mantonx/volumeviz/internal/store/config"
+	"github.com/mantonx/volumeviz/internal/store/migrations_manager"
 )
 
 func main() {
@@ -27,8 +28,8 @@ func main() {
 	}
 
 	// Initialize database connection
-	dbConfig := &database.Config{
-		Type:     database.DatabaseType(cfg.Database.Type),
+	dbConfig := &storeConfig.Config{
+		Type:     storeConfig.DatabaseType(cfg.Database.Type),
 		Host:     cfg.Database.Host,
 		Port:     dbPort,
 		User:     cfg.Database.User,
@@ -38,7 +39,7 @@ func main() {
 		Path:     cfg.Database.Path,
 	}
 
-	db, err := database.NewDB(dbConfig)
+	db, err := storeConfig.NewDB(dbConfig)
 	if err != nil {
 		log.Printf("Database configuration:")
 		log.Printf("  Type: %s", dbConfig.Type)
@@ -51,7 +52,7 @@ func main() {
 	}
 	defer db.Close()
 
-	migrationManager := database.NewMigrationManager(db)
+	migrationManager := migrations_manager.NewMigrationManager(db)
 
 	switch command {
 	case "up":

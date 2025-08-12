@@ -13,8 +13,10 @@ import {
   Wifi,
   WifiOff,
   AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useWebSocket } from '@/providers/WebSocketProvider';
 import {
   themeAtom,
   apiStatusAtom,
@@ -65,15 +67,24 @@ const StatusIcon = ({ status }: { status: ApiStatus }) => {
 };
 
 /**
- * WebSocket status icon component
+ * WebSocket status icon component with enhanced visual feedback
  */
-const WebSocketIcon = ({ status }: { status: WebSocketStatus }) => {
+const WebSocketIcon = ({ status }: { status: WebSocketStatus; latency?: number | null }) => {
   const baseClasses = 'h-3 w-3';
 
   switch (status) {
     case 'connected':
-      return <div className={cn(baseClasses, 'rounded-full bg-green-500')} />;
+      return (
+        <div className="relative">
+          <div className={cn(baseClasses, 'rounded-full bg-green-500')} />
+          {/* Pulse animation for active connection */}
+          <div className={cn(baseClasses, 'absolute inset-0 rounded-full bg-green-400 animate-ping opacity-20')} />
+        </div>
+      );
     case 'connecting':
+      return (
+        <RefreshCw className={cn(baseClasses, 'text-yellow-500 animate-spin')} />
+      );
     case 'reconnecting':
       return (
         <div
@@ -86,7 +97,7 @@ const WebSocketIcon = ({ status }: { status: WebSocketStatus }) => {
     case 'disconnected':
       return <div className={cn(baseClasses, 'rounded-full bg-gray-400')} />;
     case 'error':
-      return <div className={cn(baseClasses, 'rounded-full bg-red-500')} />;
+      return <div className={cn(baseClasses, 'rounded-full bg-red-500 animate-pulse')} />;
     default:
       return <div className={cn(baseClasses, 'rounded-full bg-gray-400')} />;
   }
@@ -112,9 +123,9 @@ export const Header: React.FC<HeaderProps> = ({
   setSidebarOpen,
 }) => {
   const [theme, setTheme] = useAtom(themeAtom);
-  const apiStatus = useAtomValue(apiStatusAtom);
   const requestCount = useAtomValue(requestCountAtom);
   const connectionStatus = useAtomValue(connectionStatusAtom);
+  const ws = useWebSocket();
 
   /**
    * Cycle through available themes: system -> light -> dark -> system
@@ -170,9 +181,35 @@ export const Header: React.FC<HeaderProps> = ({
   const getCombinedStatusText = (conn: ConnectionStatus): string => {
     let text = getStatusText(conn.api);
     if (conn.websocketEnabled) {
-      text += ` | ${getWebSocketStatusText(conn.websocket)}`;
+      text += ` | ${getWebSocketStatusText(ws.status)}`;
+      if (ws.latency) {
+        text += ` (${ws.latency}ms)`;
+      }
+      if (ws.reconnectAttempts > 0) {
+        text += ` - Attempt ${ws.reconnectAttempts}`;
+      }
     }
     return text;
+  };
+
+  /**
+   * Get WebSocket status text for display
+   */
+  const getWebSocketDisplayText = (status: WebSocketStatus): string => {
+    switch (status) {
+      case 'connected':
+        return 'Connected';
+      case 'connecting':
+        return 'Connecting...';
+      case 'reconnecting':
+        return 'Reconnecting...';
+      case 'disconnected':
+        return 'Disconnected';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Unknown';
+    }
   };
 
   return (
@@ -206,35 +243,62 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-4">
           {/* Combined API and WebSocket Status */}
           <div className="flex items-center space-x-2">
-            <div
-              className="flex items-center space-x-2 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700"
-              title={getCombinedStatusText(connectionStatus)}
-            >
-              {/* API Status Icon */}
-              <div className="flex items-center space-x-1">
+            {!connectionStatus.websocketEnabled ? (
+              /* REST-only status */
+              <div
+                data-testid="status-pill"
+                className="flex items-center space-x-2 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700"
+                title={getStatusText(connectionStatus.api)}
+              >
                 <StatusIcon status={connectionStatus.api} />
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                  API
+                  API: {connectionStatus.api === 'online' ? 'OK' : 'Error'}
                 </span>
+                {requestCount > 0 && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400 animate-pulse">
+                    {requestCount}
+                  </span>
+                )}
               </div>
-
-              {/* WebSocket Status (if enabled) */}
-              {connectionStatus.websocketEnabled && (
+            ) : (
+              /* REST + WebSocket status */
+              <div
+                data-testid="status-pill"
+                className="flex items-center space-x-3 px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700"
+                title={getCombinedStatusText(connectionStatus)}
+              >
+                {/* API Status */}
                 <div className="flex items-center space-x-1">
-                  <WebSocketIcon status={connectionStatus.websocket} />
+                  <StatusIcon status={connectionStatus.api} />
                   <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                    RT
+                    API: {connectionStatus.api === 'online' ? 'OK' : 'Error'}
                   </span>
                 </div>
-              )}
 
-              {/* Request counter */}
-              {requestCount > 0 && (
-                <span className="text-xs text-gray-500 dark:text-gray-400 animate-pulse">
-                  {requestCount}
-                </span>
-              )}
-            </div>
+                {/* Separator dot */}
+                <div className="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500 separator-dot" />
+
+                {/* WebSocket Status */}
+                <div className="flex items-center space-x-1">
+                  <div data-testid="ws-status-icon">
+                    <WebSocketIcon status={ws.status} latency={ws.latency} />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                    RT: {getWebSocketDisplayText(ws.status)}
+                  </span>
+                </div>
+
+                {/* Request counter */}
+                {requestCount > 0 && (
+                  <>
+                    <div className="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500 separator-dot" />
+                    <span className="text-xs text-gray-500 dark:text-gray-400 animate-pulse">
+                      {requestCount}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Theme Toggle */}

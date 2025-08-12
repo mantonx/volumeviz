@@ -7,7 +7,7 @@ import (
 
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
-	"github.com/mantonx/volumeviz/internal/database"
+	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -53,53 +53,53 @@ type MockScanRepository struct {
 	mock.Mock
 }
 
-func (m *MockScanRepository) InsertVolumeStats(ctx context.Context, stats *database.VolumeScanStats) error {
+func (m *MockScanRepository) InsertVolumeStats(ctx context.Context, stats *store.VolumeSizeResult) error {
 	args := m.Called(ctx, stats)
 	return args.Error(0)
 }
 
-func (m *MockScanRepository) GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*database.VolumeScanStats, error) {
+func (m *MockScanRepository) GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*store.VolumeSizeResult, error) {
 	args := m.Called(ctx, volumeName, limit)
-	return args.Get(0).([]*database.VolumeScanStats), args.Error(1)
+	return args.Get(0).([]*store.VolumeSizeResult), args.Error(1)
 }
 
-func (m *MockScanRepository) GetLatestVolumeStats(ctx context.Context, volumeName string) (*database.VolumeScanStats, error) {
+func (m *MockScanRepository) GetLatestVolumeStats(ctx context.Context, volumeName string) (*store.VolumeSizeResult, error) {
 	args := m.Called(ctx, volumeName)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*database.VolumeScanStats), args.Error(1)
+	return args.Get(0).(*store.VolumeSizeResult), args.Error(1)
 }
 
-func (m *MockScanRepository) InsertScanRun(ctx context.Context, run *database.ScanJob) error {
+func (m *MockScanRepository) InsertScanRun(ctx context.Context, run *store.ScanJobResult) error {
 	args := m.Called(ctx, run)
 	return args.Error(0)
 }
 
-func (m *MockScanRepository) UpdateScanRun(ctx context.Context, run *database.ScanJob) error {
+func (m *MockScanRepository) UpdateScanRun(ctx context.Context, run *store.ScanJobResult) error {
 	args := m.Called(ctx, run)
 	return args.Error(0)
 }
 
-func (m *MockScanRepository) GetScanRunByID(ctx context.Context, scanID string) (*database.ScanJob, error) {
+func (m *MockScanRepository) GetScanRunByID(ctx context.Context, scanID string) (*store.ScanJobResult, error) {
 	args := m.Called(ctx, scanID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*database.ScanJob), args.Error(1)
+	return args.Get(0).(*store.ScanJobResult), args.Error(1)
 }
 
-func (m *MockScanRepository) GetActiveScanRuns(ctx context.Context) ([]*database.ScanJob, error) {
+func (m *MockScanRepository) GetActiveScanRuns(ctx context.Context) ([]*store.ScanJobResult, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]*database.ScanJob), args.Error(1)
+	return args.Get(0).([]*store.ScanJobResult), args.Error(1)
 }
 
-func (m *MockScanRepository) ListVolumes(ctx context.Context) ([]*database.Volume, error) {
+func (m *MockScanRepository) ListVolumes(ctx context.Context) ([]*store.Volume, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]*database.Volume), args.Error(1)
+	return args.Get(0).([]*store.Volume), args.Error(1)
 }
 
-func (m *MockScanRepository) UpsertVolume(ctx context.Context, volume *database.Volume) error {
+func (m *MockScanRepository) UpsertVolume(ctx context.Context, volume *store.Volume) error {
 	args := m.Called(ctx, volume)
 	return args.Error(0)
 }
@@ -109,17 +109,17 @@ type MockVolumeProvider struct {
 	mock.Mock
 }
 
-func (m *MockVolumeProvider) ListVolumes(ctx context.Context) ([]*database.Volume, error) {
+func (m *MockVolumeProvider) ListVolumes(ctx context.Context) ([]*store.Volume, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]*database.Volume), args.Error(1)
+	return args.Get(0).([]*store.Volume), args.Error(1)
 }
 
-func (m *MockVolumeProvider) GetVolume(ctx context.Context, volumeName string) (*database.Volume, error) {
+func (m *MockVolumeProvider) GetVolume(ctx context.Context, volumeName string) (*store.Volume, error) {
 	args := m.Called(ctx, volumeName)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*database.Volume), args.Error(1)
+	return args.Get(0).(*store.Volume), args.Error(1)
 }
 
 // MockMetricsCollector implements interfaces.MetricsCollector for testing
@@ -374,9 +374,9 @@ func TestEnqueueVolume(t *testing.T) {
 	ctx := context.Background()
 
 	// Mock repository methods that workers might call
-	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
-	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
-	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*database.VolumeScanStats")).Return(nil).Maybe()
+	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
+	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
+	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*store.VolumeSizeResult")).Return(nil).Maybe()
 
 	// Mock scanner methods that workers might call
 	mockScanner.On("ScanVolume", mock.Anything, "test-volume").Return(&interfaces.ScanResult{
@@ -386,7 +386,7 @@ func TestEnqueueVolume(t *testing.T) {
 	}, nil).Maybe()
 
 	// Mock provider methods that workers might call
-	mockProvider.On("GetVolume", mock.Anything, "test-volume").Return(&database.Volume{
+	mockProvider.On("GetVolume", mock.Anything, "test-volume").Return(&store.Volume{
 		Name: "test-volume",
 	}, nil).Maybe()
 
@@ -462,16 +462,16 @@ func TestEnqueueAllVolumes(t *testing.T) {
 	ctx := context.Background()
 
 	// Mock volumes
-	volumes := []*database.Volume{
+	volumes := []*store.Volume{
 		{Name: "volume1"},
 		{Name: "volume2"},
 	}
 	mockProvider.On("ListVolumes", mock.AnythingOfType("*context.cancelCtx")).Return(volumes, nil)
 
 	// Mock repository methods that workers might call
-	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
-	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
-	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*database.VolumeScanStats")).Return(nil).Maybe()
+	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
+	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
+	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*store.VolumeSizeResult")).Return(nil).Maybe()
 
 	// Mock scanner methods that workers might call
 	mockScanner.On("ScanVolume", mock.Anything, mock.AnythingOfType("string")).Return(&interfaces.ScanResult{
@@ -481,7 +481,7 @@ func TestEnqueueAllVolumes(t *testing.T) {
 	}, nil).Maybe()
 
 	// Mock provider methods that workers might call
-	mockProvider.On("GetVolume", mock.Anything, mock.AnythingOfType("string")).Return(&database.Volume{
+	mockProvider.On("GetVolume", mock.Anything, mock.AnythingOfType("string")).Return(&store.Volume{
 		Name: "test",
 	}, nil).Maybe()
 
@@ -520,15 +520,15 @@ func TestEnqueueAllVolumesRateLimit(t *testing.T) {
 	ctx := context.Background()
 
 	// Mock volumes
-	volumes := []*database.Volume{
+	volumes := []*store.Volume{
 		{Name: "volume1"},
 	}
 	mockProvider.On("ListVolumes", mock.AnythingOfType("*context.cancelCtx")).Return(volumes, nil).Once()
 
 	// Mock repository methods that workers might call
-	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
-	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*database.ScanJob")).Return(nil).Maybe()
-	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*database.VolumeScanStats")).Return(nil).Maybe()
+	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
+	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
+	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*store.VolumeSizeResult")).Return(nil).Maybe()
 
 	// Mock scanner methods that workers might call
 	mockScanner.On("ScanVolume", mock.Anything, mock.AnythingOfType("string")).Return(&interfaces.ScanResult{
@@ -538,7 +538,7 @@ func TestEnqueueAllVolumesRateLimit(t *testing.T) {
 	}, nil).Maybe()
 
 	// Mock provider methods that workers might call
-	mockProvider.On("GetVolume", mock.Anything, mock.AnythingOfType("string")).Return(&database.Volume{
+	mockProvider.On("GetVolume", mock.Anything, mock.AnythingOfType("string")).Return(&store.Volume{
 		Name: "test",
 	}, nil).Maybe()
 

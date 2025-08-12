@@ -60,10 +60,7 @@ export const volumeSortAtom = atom<VolumeSortConfig>({
 // Scan state atoms
 export const scanLoadingAtom = atom<Record<string, boolean>>({});
 export const scanErrorAtom = atom<Record<string, string | null>>({});
-export const scanResultsAtom = atomWithStorage<Record<string, ScanResponse>>(
-  'volumeviz-scan-results',
-  {},
-);
+export const scanResultsAtom = atom<Record<string, ScanResponse>>({});
 export const asyncScansAtom = atom<Record<string, AsyncScanResponse>>({});
 
 // Auto-refresh settings

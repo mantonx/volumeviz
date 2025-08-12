@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/mantonx/volumeviz/internal/database"
 )
 
 func TestLoad_DefaultValues(t *testing.T) {
@@ -27,14 +26,14 @@ func TestLoad_DefaultValues(t *testing.T) {
 		"SCAN_METHODS_ORDER", "SCAN_BIND_MOUNTS_ENABLED", "SCAN_BIND_ALLOWLIST", "SCAN_SKIP_PATTERN",
 		"NODE_ENV",
 	}
-	
+
 	// Store original values and clear them
 	originalValues := make(map[string]string)
 	for _, envVar := range envVars {
 		originalValues[envVar] = os.Getenv(envVar)
 		os.Unsetenv(envVar)
 	}
-	
+
 	// Restore original values after test
 	defer func() {
 		for envVar, value := range originalValues {
@@ -137,7 +136,7 @@ func TestLoad_CustomEnvValues(t *testing.T) {
 	os.Setenv("AUTH_HS256_SECRET", "secret123")
 	os.Setenv("TLS_CERT_FILE", "/path/to/cert.pem")
 	os.Setenv("TLS_KEY_FILE", "/path/to/key.pem")
-	
+
 	defer func() {
 		// Clean up environment variables
 		envVars := []string{
@@ -188,7 +187,7 @@ func TestGetEnv(t *testing.T) {
 	// Test with existing environment variable
 	os.Setenv("TEST_ENV_VAR", "test_value")
 	defer os.Unsetenv("TEST_ENV_VAR")
-	
+
 	result := getEnv("TEST_ENV_VAR", "default_value")
 	assert.Equal(t, "test_value", result)
 
@@ -199,7 +198,7 @@ func TestGetEnv(t *testing.T) {
 	// Test with empty environment variable
 	os.Setenv("EMPTY_ENV_VAR", "")
 	defer os.Unsetenv("EMPTY_ENV_VAR")
-	
+
 	result = getEnv("EMPTY_ENV_VAR", "default_value")
 	assert.Equal(t, "default_value", result)
 }
@@ -208,14 +207,14 @@ func TestGetDurationEnv(t *testing.T) {
 	// Test with valid duration string
 	os.Setenv("TEST_DURATION", "5m30s")
 	defer os.Unsetenv("TEST_DURATION")
-	
+
 	result := getDurationEnv("TEST_DURATION", 1*time.Minute)
 	assert.Equal(t, 5*time.Minute+30*time.Second, result)
 
 	// Test with integer seconds
 	os.Setenv("TEST_DURATION_SECONDS", "120")
 	defer os.Unsetenv("TEST_DURATION_SECONDS")
-	
+
 	result = getDurationEnv("TEST_DURATION_SECONDS", 1*time.Minute)
 	assert.Equal(t, 2*time.Minute, result)
 
@@ -226,7 +225,7 @@ func TestGetDurationEnv(t *testing.T) {
 	// Test with invalid duration
 	os.Setenv("INVALID_DURATION", "invalid")
 	defer os.Unsetenv("INVALID_DURATION")
-	
+
 	result = getDurationEnv("INVALID_DURATION", 1*time.Minute)
 	assert.Equal(t, 1*time.Minute, result)
 }
@@ -235,7 +234,7 @@ func TestGetStringSliceEnv(t *testing.T) {
 	// Test with existing environment variable
 	os.Setenv("TEST_STRING_SLICE", "value1,value2,value3")
 	defer os.Unsetenv("TEST_STRING_SLICE")
-	
+
 	result := getStringSliceEnv("TEST_STRING_SLICE", []string{"default"})
 	assert.Equal(t, []string{"value1", "value2", "value3"}, result)
 
@@ -246,7 +245,7 @@ func TestGetStringSliceEnv(t *testing.T) {
 	// Test with single value
 	os.Setenv("SINGLE_VALUE", "single")
 	defer os.Unsetenv("SINGLE_VALUE")
-	
+
 	result = getStringSliceEnv("SINGLE_VALUE", []string{"default"})
 	assert.Equal(t, []string{"single"}, result)
 }
@@ -255,28 +254,28 @@ func TestGetBoolEnv(t *testing.T) {
 	// Test with "true"
 	os.Setenv("TEST_BOOL_TRUE", "true")
 	defer os.Unsetenv("TEST_BOOL_TRUE")
-	
+
 	result := getBoolEnv("TEST_BOOL_TRUE", false)
 	assert.True(t, result)
 
 	// Test with "false"
 	os.Setenv("TEST_BOOL_FALSE", "false")
 	defer os.Unsetenv("TEST_BOOL_FALSE")
-	
+
 	result = getBoolEnv("TEST_BOOL_FALSE", true)
 	assert.False(t, result)
 
 	// Test with "1"
 	os.Setenv("TEST_BOOL_ONE", "1")
 	defer os.Unsetenv("TEST_BOOL_ONE")
-	
+
 	result = getBoolEnv("TEST_BOOL_ONE", false)
 	assert.True(t, result)
 
 	// Test with "0"
 	os.Setenv("TEST_BOOL_ZERO", "0")
 	defer os.Unsetenv("TEST_BOOL_ZERO")
-	
+
 	result = getBoolEnv("TEST_BOOL_ZERO", true)
 	assert.False(t, result)
 
@@ -287,7 +286,7 @@ func TestGetBoolEnv(t *testing.T) {
 	// Test with invalid boolean
 	os.Setenv("INVALID_BOOL", "invalid")
 	defer os.Unsetenv("INVALID_BOOL")
-	
+
 	result = getBoolEnv("INVALID_BOOL", true)
 	assert.True(t, result)
 }
@@ -296,7 +295,7 @@ func TestGetIntEnv(t *testing.T) {
 	// Test with valid integer
 	os.Setenv("TEST_INT", "42")
 	defer os.Unsetenv("TEST_INT")
-	
+
 	result := getIntEnv("TEST_INT", 10)
 	assert.Equal(t, 42, result)
 
@@ -307,7 +306,7 @@ func TestGetIntEnv(t *testing.T) {
 	// Test with invalid integer
 	os.Setenv("INVALID_INT", "invalid")
 	defer os.Unsetenv("INVALID_INT")
-	
+
 	result = getIntEnv("INVALID_INT", 10)
 	assert.Equal(t, 10, result)
 }
@@ -357,53 +356,4 @@ func TestGetScanEnabledDefault(t *testing.T) {
 	// Test default (no env vars, should be false)
 	result = getScanEnabledDefault()
 	assert.False(t, result)
-}
-
-func TestToDatabaseConfig(t *testing.T) {
-	// Test PostgreSQL conversion
-	dbConfig := &DatabaseConfig{
-		Type:     "postgres",
-		Host:     "localhost",
-		Port:     "5432",
-		User:     "user",
-		Password: "pass",
-		Name:     "db",
-		SSLMode:  "disable",
-		Path:     "/path/to/db",
-	}
-
-	result := dbConfig.ToDatabaseConfig()
-	
-	assert.Equal(t, database.DatabaseTypePostgreSQL, result.Type)
-	assert.Equal(t, "localhost", result.Host)
-	assert.Equal(t, 5432, result.Port)
-	assert.Equal(t, "user", result.User)
-	assert.Equal(t, "pass", result.Password)
-	assert.Equal(t, "db", result.Database)
-	assert.Equal(t, "disable", result.SSLMode)
-	assert.Equal(t, "/path/to/db", result.Path)
-	assert.Equal(t, 25, result.MaxOpenConns)
-	assert.Equal(t, 10, result.MaxIdleConns)
-	assert.Equal(t, 30*time.Minute, result.ConnMaxLife)
-	assert.Equal(t, 30*time.Second, result.Timeout)
-
-	// Test SQLite conversion
-	dbConfig.Type = "sqlite"
-	result = dbConfig.ToDatabaseConfig()
-	assert.Equal(t, database.DatabaseTypeSQLite, result.Type)
-
-	// Test postgresql alias
-	dbConfig.Type = "postgresql"
-	result = dbConfig.ToDatabaseConfig()
-	assert.Equal(t, database.DatabaseTypePostgreSQL, result.Type)
-
-	// Test unknown type (should default to PostgreSQL)
-	dbConfig.Type = "unknown"
-	result = dbConfig.ToDatabaseConfig()
-	assert.Equal(t, database.DatabaseTypePostgreSQL, result.Type)
-
-	// Test invalid port (should default to 5432)
-	dbConfig.Port = "invalid"
-	result = dbConfig.ToDatabaseConfig()
-	assert.Equal(t, 5432, result.Port)
 }

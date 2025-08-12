@@ -9,8 +9,8 @@ import (
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/mantonx/volumeviz/internal/config"
-	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/interfaces"
+	"github.com/mantonx/volumeviz/internal/store"
 )
 
 // ReconcilerService implements the Reconciler interface
@@ -64,7 +64,7 @@ func (r *ReconcilerService) ReconcileVolumes(ctx context.Context) error {
 		dockerVolumeMap[vol.Name] = true
 	}
 
-	dbVolumeMap := make(map[string]*database.Volume)
+	dbVolumeMap := make(map[string]*store.Volume)
 	for _, vol := range dbVolumes {
 		dbVolumeMap[vol.VolumeID] = vol
 	}
@@ -144,7 +144,7 @@ func (r *ReconcilerService) ReconcileContainers(ctx context.Context) error {
 		dockerContainerMap[container.ID] = container
 	}
 
-	dbContainerMap := make(map[string]*database.Container)
+	dbContainerMap := make(map[string]*store.Container)
 	for _, container := range dbContainers {
 		dbContainerMap[container.ContainerID] = container
 	}
@@ -246,7 +246,7 @@ func (r *ReconcilerService) reconcileContainerMounts(ctx context.Context, contai
 		}
 	}
 
-	dbMountMap := make(map[string]*database.VolumeMount)
+	dbMountMap := make(map[string]*store.VolumeMount)
 	for _, mount := range dbMounts {
 		dbMountMap[mount.VolumeID] = mount
 	}
@@ -272,16 +272,14 @@ func (r *ReconcilerService) reconcileContainerMounts(ctx context.Context, contai
 			}
 		} else {
 			// Mount exists in Docker but not in database - add it
-			newMount := &database.VolumeMount{
+			newMount := &store.VolumeMount{
 				VolumeID:    volumeName,
 				ContainerID: containerID,
 				MountPath:   dockerMount.Destination,
 				AccessMode:  accessMode,
 				IsActive:    true,
-				BaseModel: database.BaseModel{
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
 			}
 			if err := r.repository.UpsertVolumeMount(ctx, newMount); err != nil {
 				log.Printf("[WARN] Failed to add mount %s->%s: %v", volumeName, containerID, err)
@@ -303,43 +301,40 @@ func (r *ReconcilerService) reconcileContainerMounts(ctx context.Context, contai
 
 // Helper functions for conversion and comparison
 
-func (r *ReconcilerService) convertDockerVolumeToModel(dockerVol *volume.Volume, eventTime time.Time) *database.Volume {
-	return &database.Volume{
+func (r *ReconcilerService) convertDockerVolumeToModel(dockerVol *volume.Volume, eventTime time.Time) *store.Volume {
+	return &store.Volume{
 		VolumeID:   dockerVol.Name,
 		Name:       dockerVol.Name,
 		Driver:     dockerVol.Driver,
 		Mountpoint: dockerVol.Mountpoint,
-		Labels:     database.Labels(dockerVol.Labels),
-		Options:    database.Labels(dockerVol.Options),
+		Labels:     dockerVol.Labels,
+		Options:    dockerVol.Options,
 		Scope:      dockerVol.Scope,
 		Status:     "active",
 		IsActive:   true,
-		BaseModel: database.BaseModel{
-			CreatedAt: eventTime,
-			UpdatedAt: eventTime,
-		},
+		CreatedAt:  eventTime,
+		UpdatedAt:  eventTime,
 	}
 }
 
-func (r *ReconcilerService) convertDockerContainerToModel(containerJSON containertypes.InspectResponse, state string, eventTime time.Time) *database.Container {
-	container := &database.Container{
+func (r *ReconcilerService) convertDockerContainerToModel(containerJSON containertypes.InspectResponse, state string, eventTime time.Time) *store.Container {
+	container := &store.Container{
 		ContainerID: containerJSON.ID,
 		Name:        containerJSON.Name,
 		Image:       containerJSON.Config.Image,
 		State:       state,
 		Status:      containerJSON.State.Status,
-		Labels:      database.Labels(containerJSON.Config.Labels),
+		Labels:      containerJSON.Config.Labels,
 		IsActive:    state == "running",
-		BaseModel: database.BaseModel{
-			UpdatedAt: eventTime,
-		},
+		CreatedAt:   eventTime,
+		UpdatedAt:   eventTime,
 	}
 
 	// Parse timestamps
 	if containerJSON.State.StartedAt != "" {
 		if startTime, err := time.Parse(time.RFC3339Nano, containerJSON.State.StartedAt); err == nil {
 			container.StartedAt = &startTime
-			container.BaseModel.CreatedAt = startTime
+			container.CreatedAt = startTime
 		}
 	}
 
@@ -352,14 +347,14 @@ func (r *ReconcilerService) convertDockerContainerToModel(containerJSON containe
 	return container
 }
 
-func (r *ReconcilerService) shouldUpdateVolume(dbVol *database.Volume, dockerVol *volume.Volume) bool {
+func (r *ReconcilerService) shouldUpdateVolume(dbVol *store.Volume, dockerVol *volume.Volume) bool {
 	return dbVol.Driver != dockerVol.Driver ||
 		dbVol.Mountpoint != dockerVol.Mountpoint ||
 		dbVol.Scope != dockerVol.Scope ||
 		!dbVol.IsActive
 }
 
-func (r *ReconcilerService) shouldUpdateContainer(dbContainer *database.Container, dockerContainer containertypes.Summary, newState string) bool {
+func (r *ReconcilerService) shouldUpdateContainer(dbContainer *store.Container, dockerContainer containertypes.Summary, newState string) bool {
 	return dbContainer.State != newState ||
 		dbContainer.Status != dockerContainer.Status ||
 		(newState == "running") != dbContainer.IsActive

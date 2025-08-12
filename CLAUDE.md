@@ -82,6 +82,21 @@ go build -o volumeviz cmd/server/main.go
 cd frontend && npm run build
 ```
 
+## API Client Generation
+```bash
+# Generate TypeScript client from local OpenAPI spec
+cd frontend && npm run api:gen
+
+# Bundle YAML spec to JSON
+cd frontend && npm run api:bundle
+
+# Alternative: generate from running server
+cd frontend && npm run api:generate:local
+
+# Alternative: generate from GitHub
+cd frontend && npm run api:generate:remote
+```
+
 ## Development Notes
 - The project has shifted focus from general container management to specialized volume management
 - API responses follow a consistent structure defined in internal/api/models/

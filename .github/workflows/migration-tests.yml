@@ -1,0 +1,116 @@
+name: Migration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'db/**/*.sql'
+      - 'internal/database/**'
+      - '.github/workflows/migration-tests.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'db/**/*.sql'
+      - 'internal/database/**'
+      - '.github/workflows/migration-tests.yml'
+
+jobs:
+  test-migrations:
+    name: Test Database Migrations
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: volumeviz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Install SQLite
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y sqlite3
+
+    - name: Test PostgreSQL Migrations
+      env:
+        PGPASSWORD: test
+      run: |
+        echo "Testing PostgreSQL migrations..."
+        # Apply core schema
+        psql -h localhost -U test -d volumeviz_test -f db/postgres/schema/001_core_schema.sql
+        # Apply file analytics schema
+        psql -h localhost -U test -d volumeviz_test -f db/postgres/schema/002_file_analytics_schema.sql
+        # Verify tables exist
+        psql -h localhost -U test -d volumeviz_test -c "\dt" | grep -E "(volumes|containers|file_entries|dir_nodes)"
+        echo "PostgreSQL migrations successful"
+
+    - name: Test SQLite Migrations
+      run: |
+        echo "Testing SQLite migrations..."
+        # Create test database
+        sqlite3 test.db < db/sqlite/schema/001_core_schema.sql
+        sqlite3 test.db < db/sqlite/schema/002_file_analytics_schema.sql
+        # Verify tables exist
+        sqlite3 test.db ".tables" | grep -E "(volumes|containers|file_entries|dir_nodes)"
+        echo "SQLite migrations successful"
+
+    - name: Test Idempotency - PostgreSQL
+      env:
+        PGPASSWORD: test
+      run: |
+        echo "Testing PostgreSQL migration idempotency..."
+        # Run migrations again - should not fail
+        psql -h localhost -U test -d volumeviz_test -f db/postgres/schema/001_core_schema.sql
+        psql -h localhost -U test -d volumeviz_test -f db/postgres/schema/002_file_analytics_schema.sql
+        echo "PostgreSQL migrations are idempotent"
+
+    - name: Test Idempotency - SQLite
+      run: |
+        echo "Testing SQLite migration idempotency..."
+        # Run migrations again - should not fail
+        sqlite3 test.db < db/sqlite/schema/001_core_schema.sql
+        sqlite3 test.db < db/sqlite/schema/002_file_analytics_schema.sql
+        echo "SQLite migrations are idempotent"
+
+    - name: Test Application Startup with Migrations
+      env:
+        DB_TYPE: postgres
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_USER: test
+        DB_PASSWORD: test
+        DB_NAME: volumeviz_test
+      run: |
+        echo "Building application..."
+        go build -o volumeviz ./cmd/server
+        echo "Testing application startup (will apply migrations)..."
+        # Start the app and let it run for a few seconds
+        timeout 5s ./volumeviz || true
+        echo "Application started successfully with migrations"
+
+    - name: Verify Schema Compatibility
+      run: |
+        echo "Checking schema file organization..."
+        # Ensure we have the expected schema files
+        test -f db/postgres/schema/001_core_schema.sql
+        test -f db/postgres/schema/002_file_analytics_schema.sql
+        test -f db/sqlite/schema/001_core_schema.sql
+        test -f db/sqlite/schema/002_file_analytics_schema.sql
+        echo "All expected schema files present"

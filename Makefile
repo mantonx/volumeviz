@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-build docker-run lint format migrate up down restart logs logs-api logs-web ps rebuild dev-token dev-token-admin security-check db-seed db-prune smoke-test
+.PHONY: help build run test clean docker-build docker-run lint format migrate up down restart logs logs-api logs-web ps rebuild dev-token dev-token-admin security-check db-seed db-prune smoke-test sqlc
 
 # Variables
 BINARY_NAME=volumeviz
@@ -34,7 +34,10 @@ help:
 	@echo "  docker-run    - Run Docker container"
 	@echo "  lint          - Run Go linter"
 	@echo "  format        - Format Go code"
-	@echo "  migrate       - Run database migrations"
+	@echo "  migrate       - Show migration info (migrations run automatically on startup)"
+	@echo "  migrate-test  - Test migrations on both PostgreSQL and SQLite"
+	@echo "  migrate-status - Show current migration files"
+	@echo "  sqlc          - Generate Go code from SQL queries"
 	@echo "  deps          - Download Go dependencies"
 	@echo "  dev           - Run in development mode with hot reload"
 	@echo "  up            - Start services with docker compose up -d"
@@ -96,6 +99,12 @@ smoke-test:
 	@echo "Running smoke tests..."
 	./scripts/smoke-test.sh
 
+# Lint transaction usage patterns
+lint-transactions:
+	@echo "Linting transaction patterns..."
+	go run cmd/lint-transactions/main.go ./internal/
+	@echo "Transaction linting complete"
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning..."
@@ -130,11 +139,59 @@ format:
 # Run database migrations
 migrate:
 	@echo "Running database migrations..."
-	@go run ./cmd/migrate up
+	@echo "Applying migrations for configured database type..."
+	@echo "Note: The server applies migrations automatically on startup"
+	@echo "To test migrations, use migrate-test-postgres or migrate-test-sqlite"
+
+migrate-test-postgres:
+	@echo "Testing PostgreSQL migrations in a container..."
+	@docker run --rm -d --name volumeviz-migrate-pg \
+		-e POSTGRES_USER=test \
+		-e POSTGRES_PASSWORD=test \
+		-e POSTGRES_DB=volumeviz_test \
+		-p 15432:5432 \
+		postgres:15-alpine
+	@echo "Waiting for PostgreSQL to start..."
+	@sleep 3
+	@echo "Applying PostgreSQL schemas..."
+	@docker exec volumeviz-migrate-pg sh -c "PGPASSWORD=test psql -U test -d volumeviz_test -f -" < internal/store/migrations/postgres/001_core_schema.sql
+	@docker exec volumeviz-migrate-pg sh -c "PGPASSWORD=test psql -U test -d volumeviz_test -f -" < internal/store/migrations/postgres/002_file_analytics_schema.sql
+	@echo "PostgreSQL migration test completed"
+	@docker stop volumeviz-migrate-pg
+	@echo "Container cleaned up"
+
+migrate-test-sqlite:
+	@echo "Testing SQLite migrations..."
+	@rm -f /tmp/volumeviz_migrate_test.db
+	@sqlite3 /tmp/volumeviz_migrate_test.db < internal/store/migrations/sqlite/001_core_schema.sql
+	@sqlite3 /tmp/volumeviz_migrate_test.db < internal/store/migrations/sqlite/002_file_analytics_schema.sql
+	@echo "SQLite migration test completed"
+	@echo "Test database at: /tmp/volumeviz_migrate_test.db"
+
+migrate-test: migrate-test-postgres migrate-test-sqlite
+	@echo "All migration tests completed"
 
 migrate-status:
 	@echo "Checking migration status..."
-	@go run ./cmd/migrate status
+	@echo "Migrations are now idempotent SQL files in internal/store/migrations/postgres and internal/store/migrations/sqlite"
+	@echo "PostgreSQL schemas:"
+	@ls -1 internal/store/migrations/postgres/*.sql 2>/dev/null || echo "  No PostgreSQL schemas found"
+	@echo ""
+	@echo "SQLite schemas:"
+	@ls -1 internal/store/migrations/sqlite/*.sql 2>/dev/null || echo "  No SQLite schemas found"
+
+# Generate Go code from SQL queries
+sqlc:
+	@echo "Generating Go code from SQL queries..."
+	@if command -v sqlc > /dev/null 2>&1; then \
+		sqlc generate; \
+		echo "sqlc generation complete"; \
+	else \
+		echo "sqlc not installed. Installing..."; \
+		go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest; \
+		PATH="$$PATH:$$(go env GOPATH)/bin" sqlc generate; \
+		echo "sqlc generation complete"; \
+	fi
 
 # Download dependencies
 deps:
@@ -159,6 +216,7 @@ install-tools:
 	@echo "Installing development tools..."
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/air-verse/air@latest
+	go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 	@echo "Tools installed"
 
 # Docker Compose convenience commands

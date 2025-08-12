@@ -52,6 +52,27 @@ jobs:
       - name: Verify Go modules
         run: go mod verify
 
+      - name: Validate sqlc generated code
+        run: |
+          set -euo pipefail
+          echo "🔍 Validating sqlc generated code..."
+          
+          # Generate fresh sqlc code
+          make sqlc
+          
+          # Check if any files changed (indicating generated code was out of sync)
+          if ! git diff --quiet --exit-code internal/store/sqlc/; then
+            echo "❌ Generated sqlc code is out of sync!"
+            echo "The following files have changes:"
+            git diff --name-only internal/store/sqlc/
+            echo ""
+            echo "Please run 'make sqlc' and commit the updated generated code."
+            echo "Generated code should always be in sync with query files."
+            exit 1
+          else
+            echo "✅ Generated sqlc code is up to date"
+          fi
+
       - name: Build
         run: go build -v ./...
 

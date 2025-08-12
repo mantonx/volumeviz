@@ -1,0 +1,270 @@
+name: OpenAPI Validation
+
+on:
+  pull_request:
+    paths:
+      - "docs/openapi.yaml"
+      - "docs/swagger.json"
+      - ".github/workflows/openapi-validation.yml"
+      - "frontend/src/api/**"
+  push:
+    branches: [main]
+    paths:
+      - "docs/openapi.yaml"
+      - "docs/swagger.json" 
+      - ".github/workflows/openapi-validation.yml"
+      - "frontend/src/api/**"
+
+jobs:
+  validate-openapi:
+    name: Validate OpenAPI Specification
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install OpenAPI tools
+        run: |
+          npm install -g @redocly/cli swagger-cli
+
+      - name: Validate OpenAPI spec with Redocly
+        run: |
+          echo "🔍 Validating OpenAPI spec with Redocly..."
+          redocly lint docs/openapi.yaml --extends=recommended
+
+      - name: Validate OpenAPI spec with swagger-cli
+        run: |
+          echo "🔍 Validating OpenAPI spec with swagger-cli..."
+          swagger-cli validate docs/openapi.yaml
+
+      - name: Check swagger.json is in sync with openapi.yaml
+        run: |
+          echo "🔄 Checking if swagger.json is in sync with openapi.yaml..."
+          
+          # Convert YAML to JSON for comparison
+          npx js-yaml docs/openapi.yaml > temp_openapi.json
+          
+          # Compare with existing swagger.json (ignoring whitespace differences)
+          if ! diff -u --ignore-all-space docs/swagger.json temp_openapi.json; then
+            echo "❌ swagger.json is out of sync with openapi.yaml"
+            echo "Please run 'npm run api:bundle' to update swagger.json"
+            rm temp_openapi.json
+            exit 1
+          else
+            echo "✅ swagger.json is in sync with openapi.yaml"
+          fi
+          
+          rm temp_openapi.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Generate TypeScript client
+        working-directory: frontend
+        run: |
+          echo "🔧 Generating TypeScript client..."
+          npm run api:generate
+
+      - name: Check if generated client is up to date
+        working-directory: frontend
+        run: |
+          echo "🔍 Checking if generated TypeScript client is up to date..."
+          
+          if git diff --exit-code src/api/generated/; then
+            echo "✅ Generated TypeScript client is up to date"
+          else
+            echo "❌ Generated TypeScript client is out of sync"
+            echo "Please run 'npm run api:generate' to update the client"
+            echo ""
+            echo "Changes detected:"
+            git diff src/api/generated/
+            exit 1
+          fi
+
+      - name: TypeScript compilation test
+        working-directory: frontend
+        run: |
+          echo "🔧 Testing TypeScript compilation with generated client..."
+          npm run type-check
+
+      - name: Test tree-shaking capability
+        working-directory: frontend
+        run: |
+          echo "🌲 Testing tree-shaking capability..."
+          
+          # Create a test file that imports only specific parts
+          cat > tree-shake-test.ts << 'EOF'
+          import { Volume, VolumeApi } from './src/api/generated/volumeviz-api';
+          
+          // Test that we can import specific types and APIs
+          const volume: Volume = {
+            name: 'test',
+            driver: 'local',
+            created_at: new Date().toISOString()
+          };
+          
+          const api = new VolumeApi();
+          console.log('Tree-shaking test passed');
+          EOF
+          
+          # Try to compile the test file
+          npx tsc tree-shake-test.ts --noEmit --skipLibCheck
+          
+          echo "✅ Tree-shaking test passed"
+          rm tree-shake-test.ts
+
+  validate-integration:
+    name: Validate API Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate-openapi
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: volumeviz
+          POSTGRES_PASSWORD: volumeviz
+          POSTGRES_DB: volumeviz
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Build backend
+        run: |
+          echo "🔧 Building backend..."
+          go build -v -o volumeviz cmd/server/main.go
+
+      - name: Run database migrations
+        env:
+          DB_TYPE: postgres
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: volumeviz
+          DB_PASSWORD: volumeviz
+          DB_NAME: volumeviz
+          DB_SSLMODE: disable
+        run: |
+          echo "🔧 Running database migrations..."
+          go run ./cmd/migrate up
+
+      - name: Start backend server
+        env:
+          DB_TYPE: postgres
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: volumeviz
+          DB_PASSWORD: volumeviz
+          DB_NAME: volumeviz
+          DB_SSLMODE: disable
+          LOG_LEVEL: info
+          PORT: 8080
+          EVENTS_ENABLED: false
+        run: |
+          echo "🚀 Starting backend server..."
+          ./volumeviz &
+          SERVER_PID=$!
+          echo $SERVER_PID > server.pid
+          
+          # Wait for server to be ready
+          echo "⏳ Waiting for server to be ready..."
+          timeout 30s bash -c 'until curl -f http://localhost:8080/api/v1/health; do sleep 1; done'
+          echo "✅ Backend server is ready"
+
+      - name: Verify OpenAPI spec endpoint
+        run: |
+          echo "🔍 Verifying OpenAPI spec is served correctly..."
+          
+          # Test that the spec endpoint returns valid JSON/YAML
+          curl -f http://localhost:8080/api/docs/openapi.yaml > served_spec.yaml
+          curl -f http://localhost:8080/api/docs/swagger.json > served_swagger.json
+          
+          # Validate the served spec
+          npx js-yaml served_spec.yaml > /dev/null
+          echo "✅ Served OpenAPI spec is valid YAML"
+          
+          # Basic validation that served spec matches repo spec
+          if diff -u docs/openapi.yaml served_spec.yaml; then
+            echo "✅ Served spec matches repository spec"
+          else
+            echo "⚠️  Served spec differs from repository spec"
+            echo "This might indicate the spec is being modified at runtime"
+          fi
+
+      - name: Test generated client against live API
+        working-directory: frontend
+        run: |
+          echo "🧪 Testing generated client against live API..."
+          
+          npm ci
+          npm run api:generate
+          
+          # Create a test script to verify the client works
+          cat > api-integration-test.mjs << 'EOF'
+          import { Api } from './src/api/generated/volumeviz-api.js';
+          
+          const api = new Api({
+            baseUrl: 'http://localhost:8080/api/v1'
+          });
+          
+          try {
+            // Test health endpoint
+            console.log('Testing health endpoint...');
+            const health = await api.health.getHealth();
+            console.log('Health check:', health.data);
+            
+            // Test volumes endpoint
+            console.log('Testing volumes endpoint...');
+            const volumes = await api.volumes.getVolumes({ page: 1, page_size: 10 });
+            console.log('Volumes response structure:', {
+              hasData: 'data' in volumes.data,
+              hasPagination: 'pagination' in volumes.data || 'page' in volumes.data
+            });
+            
+            console.log('✅ Generated client integration test passed');
+          } catch (error) {
+            console.error('❌ Generated client integration test failed:', error.message);
+            process.exit(1);
+          }
+          EOF
+          
+          node api-integration-test.mjs
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+            rm server.pid
+          fi

@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
-	"github.com/mantonx/volumeviz/internal/database"
+	"github.com/mantonx/volumeviz/internal/store"
 )
 
 // Scheduler implements the ScanScheduler interface
@@ -350,7 +350,7 @@ func (s *Scheduler) GetScanStatus(scanID string) (*ScanStatus, error) {
 		VolumeName:  scanRun.VolumeID, // Note: VolumeID in ScanJob corresponds to volume name
 		Status:      scanRun.Status,
 		Method:      scanRun.Method,
-		Progress:    scanRun.Progress,
+		Progress:    int(scanRun.Progress),
 		StartedAt:   scanRun.StartedAt,
 		CompletedAt: scanRun.CompletedAt,
 	}
@@ -493,8 +493,8 @@ func (w *worker) processTask(task *ScanTask) {
 
 	log.Printf("[INFO] Worker %d processing scan %s (volume: %s)", w.id, task.ScanID, task.VolumeName)
 
-	// Create scan run record
-	scanRun := &database.ScanJob{
+	// Create scan run record - using store types now
+	scanRun := &store.ScanJobResult{
 		ScanID:   task.ScanID,
 		VolumeID: task.VolumeName,
 		Status:   "running",
@@ -552,17 +552,18 @@ func (w *worker) processTask(task *ScanTask) {
 		log.Printf("[INFO] Worker %d completed scan for volume %s (size: %d bytes, duration: %v)",
 			w.id, task.VolumeName, result.TotalSize, duration)
 
-		// Insert volume stats
-		stats := &database.VolumeScanStats{
-			VolumeName: task.VolumeName,
-			SizeBytes:  result.TotalSize,
-			ScanMethod: result.Method,
-			DurationMs: duration.Milliseconds(),
-			Timestamp:  completedAt,
+		// Insert volume stats - using store types now
+		stats := &store.VolumeSizeResult{
+			VolumeID:     task.VolumeName, // Note: VolumeID field name change
+			TotalSize:    result.TotalSize,
+			ScanMethod:   result.Method,
+			ScanDuration: duration.Nanoseconds(), // Note: ScanDuration is in nanoseconds
+			IsValid:      true,
+			CreatedAt:    completedAt,
 		}
 
 		if result.FileCount > 0 {
-			stats.FileCount = &result.FileCount
+			stats.FileCount = int64(result.FileCount)
 		}
 
 		if err := w.scheduler.repository.InsertVolumeStats(w.ctx, stats); err != nil {

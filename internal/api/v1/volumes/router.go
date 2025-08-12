@@ -2,9 +2,9 @@ package volumes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/realtime"
+	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
@@ -14,9 +14,9 @@ type Router struct {
 }
 
 // NewRouter creates a new volume router
-func NewRouter(dockerService interfaces.DockerService, hub *websocket.Hub, db *database.DB, publisher *realtime.Publisher) *Router {
+func NewRouter(dockerService interfaces.DockerService, hub *websocket.Hub, store store.Store, publisher *realtime.Publisher) *Router {
 	return &Router{
-		handler: NewHandler(dockerService, hub, db, publisher),
+		handler: NewHandler(dockerService, hub, store, publisher),
 	}
 }
 

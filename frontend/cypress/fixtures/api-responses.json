@@ -1,0 +1,103 @@
+{
+  "health": {
+    "ok": {
+      "status": "ok",
+      "timestamp": "2023-01-01T00:00:00Z",
+      "version": "1.0.0"
+    },
+    "error": {
+      "error": "Internal server error",
+      "timestamp": "2023-01-01T00:00:00Z"
+    },
+    "unavailable": {
+      "error": "Service unavailable",
+      "timestamp": "2023-01-01T00:00:00Z"
+    }
+  },
+  "system": {
+    "info": {
+      "data": {
+        "docker_version": "20.10.0",
+        "volumes_count": 4,
+        "containers_count": 12
+      }
+    }
+  },
+  "volumes": {
+    "empty": {
+      "data": [],
+      "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 0,
+        "has_more": false
+      }
+    },
+    "withData": {
+      "data": [
+        {
+          "name": "app-data",
+          "driver": "local",
+          "created_at": "2023-01-01T00:00:00Z",
+          "size_bytes": 2097152,
+          "attachments_count": 1,
+          "is_system": false,
+          "is_orphaned": false,
+          "labels": {
+            "app": "frontend",
+            "environment": "production"
+          }
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 1,
+        "has_more": false
+      }
+    }
+  },
+  "scans": {
+    "started": {
+      "data": {
+        "scan_id": "scan-123",
+        "volume_id": "test-volume",
+        "status": "started",
+        "method": "du"
+      }
+    },
+    "progress": {
+      "type": "scan_progress",
+      "ts": "2023-01-01T00:00:00Z",
+      "data": {
+        "volume_id": "test-volume",
+        "progress": 50,
+        "current_size": 512000,
+        "files_processed": 25,
+        "method": "du",
+        "started_at": "2023-01-01T00:00:00Z"
+      }
+    },
+    "completed": {
+      "type": "scan_complete",
+      "ts": "2023-01-01T00:00:00Z", 
+      "data": {
+        "volume_id": "test-volume",
+        "total_size": 1024000,
+        "file_count": 50,
+        "directory_count": 5,
+        "method": "du",
+        "duration": 3000,
+        "scanned_at": "2023-01-01T00:00:00Z"
+      }
+    },
+    "error": {
+      "type": "scan_error",
+      "ts": "2023-01-01T00:00:00Z",
+      "data": {
+        "volume_id": "test-volume",
+        "error": "Permission denied"
+      }
+    }
+  }
+}

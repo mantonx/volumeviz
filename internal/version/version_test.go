@@ -25,7 +25,7 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, GitBranch, info.GitBranch)
 	assert.Equal(t, BuildDate, info.BuildDate)
 	assert.Equal(t, GoVersion, info.GoVersion)
-	
+
 	// Test platform format
 	expectedPlatform := runtime.GOOS + "/" + runtime.GOARCH
 	assert.Equal(t, expectedPlatform, info.Platform)
@@ -91,24 +91,24 @@ func TestInfoStruct(t *testing.T) {
 
 func TestPlatformFormat(t *testing.T) {
 	info := Get()
-	
+
 	// Platform should be in format OS/ARCH
 	parts := strings.Split(info.Platform, "/")
 	assert.Len(t, parts, 2, "Platform should be in format OS/ARCH")
-	
+
 	// First part should be the OS
 	assert.Contains(t, []string{"linux", "darwin", "windows", "freebsd"}, parts[0])
-	
+
 	// Second part should be the architecture
 	assert.Contains(t, []string{"amd64", "386", "arm64", "arm"}, parts[1])
 }
 
 func TestGoVersionFormat(t *testing.T) {
 	info := Get()
-	
+
 	// GoVersion should start with "go"
 	assert.True(t, strings.HasPrefix(info.GoVersion, "go"), "Go version should start with 'go'")
-	
+
 	// Should match runtime.Version()
 	assert.Equal(t, runtime.Version(), info.GoVersion)
 }

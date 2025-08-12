@@ -265,3 +265,9 @@ func (s *DockerService) InspectVolume(ctx context.Context, volumeID string) (vol
 func (s *DockerService) InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error) {
 	return s.client.InspectContainer(ctx, containerID)
 }
+
+// GetDockerClient returns the underlying Docker client for events processing
+// This provides access to the raw Docker API for services that need it
+func (s *DockerService) GetDockerClient() interfaces.DockerClient {
+	return s.client
+}

@@ -1,18 +1,17 @@
 package v1
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/middleware"
-	"github.com/mantonx/volumeviz/internal/api/v1/database"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
-	"github.com/mantonx/volumeviz/internal/api/v1/metrics"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
 	"github.com/mantonx/volumeviz/internal/api/v1/system"
+	"github.com/mantonx/volumeviz/internal/api/v1/trends"
 	"github.com/mantonx/volumeviz/internal/api/v1/volumes"
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
@@ -20,11 +19,11 @@ import (
 	"github.com/mantonx/volumeviz/internal/core/services/cache"
 	coreMetrics "github.com/mantonx/volumeviz/internal/core/services/metrics"
 	"github.com/mantonx/volumeviz/internal/core/services/scanner"
-	databasePkg "github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/events"
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/services"
+	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -37,15 +36,16 @@ type Router struct {
 	engine            *gin.Engine
 	dockerService     *services.DockerService
 	scanner           interfaces.VolumeScanner
-	database          *databasePkg.DB
+	store             store.Store // Modern store interface using sqlc
 	websocketHub      *websocket.Hub
 	realtimePublisher *realtime.Publisher
-	scheduler         scheduler.ScanScheduler // Optional scan scheduler
-	eventsService     events.EventService     // Optional events service
+	scheduler         scheduler.ScanScheduler // Optional scan scheduler - using store façade
+	eventsService     events.EventService     // Optional events service - using store façade
+	healthRouter      *health.Router          // Health router for external access
 }
 
 // NewRouter creates a new v1 API router
-func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, config *config.Config) *Router {
+func NewRouter(dockerService *services.DockerService, storeInstance store.Store, config *config.Config) *Router {
 	// Initialize WebSocket hub
 	hub := websocket.NewHub()
 	go hub.Run()
@@ -75,74 +75,95 @@ func NewRouter(dockerService *services.DockerService, database *databasePkg.DB, 
 		scannerConfig,
 	)
 
-	// Initialize scan scheduler if enabled
+	// Initialize scan scheduler if enabled - using store façade
 	var scanScheduler scheduler.ScanScheduler
 	if config.Scan.Enabled {
+		// Create store facade for scheduler
+		storeFacade := storeInstance.GetFacade()
+		
+		// Create scan repository using store adapter
+		scanRepository := scheduler.NewScanRepository(storeFacade)
+		
+		// Create scheduler config
 		schedulerConfig := scheduler.NewSchedulerConfig(&config.Scan)
-
-		// Create repository and volume provider for the scheduler
-		repository := scheduler.NewRepository(database)
-		volumeProvider := scheduler.NewVolumeProvider(repository)
-
-		schedulerInstance, err := scheduler.NewScheduler(
+		
+		// Create volume provider
+		volumeProvider := scheduler.NewDockerVolumeProvider(dockerService)
+		
+		// Create scheduler
+		sch, err := scheduler.NewScheduler(
 			schedulerConfig,
 			volumeScanner,
-			repository,
+			scanRepository,
 			volumeProvider,
 			metricsCollector,
 		)
 		if err != nil {
-			log.Printf("[WARN] Failed to initialize scan scheduler: %v", err)
+			log.Printf("[ERROR] Failed to create scan scheduler: %v", err)
 		} else {
-			scanScheduler = schedulerInstance
-			// Start the scheduler
-			if err := scanScheduler.Start(context.Background()); err != nil {
-				log.Printf("[ERROR] Failed to start scan scheduler: %v", err)
-			} else {
-				log.Printf("[INFO] Scan scheduler started")
-			}
+			scanScheduler = sch
+			log.Printf("[INFO] Scan scheduler initialized successfully")
 		}
 	}
 
-	// Initialize events service if enabled
+	// Initialize events service if enabled - using store interface
 	var eventsService events.EventService
 	if config.Events.Enabled {
-		// Create event repository
-		eventRepo := databasePkg.NewEventRepository(database)
-
-		// Create event metrics collector
-		eventMetrics := events.NewEventMetricsCollector(
+		// Get raw Docker client for events processing
+		dockerClient := dockerService.GetDockerClient()
+		
+		// Create events metrics collector
+		eventsMetrics := events.NewEventMetricsCollector(
 			"volumeviz",
 			"events",
 			prometheus.Labels{"instance": "main"},
 		)
-
-		// Create Docker client adapter for events service
-		dockerClient := services.NewDockerClientAdapter(dockerService)
-
-		// Create event handler service
-		eventHandler := events.NewEventHandlerService(dockerClient, eventRepo, eventMetrics)
-
-		// Create event reconciler
-		eventReconcileMetrics := &events.EventMetrics{
-			ProcessedTotal: make(map[events.EventType]int64),
-			ErrorsTotal:    make(map[string]int64),
-			ReconcileRuns:  make(map[string]int64),
-		}
-		eventReconciler := events.NewReconcilerService(dockerClient, eventRepo, &config.Events, eventReconcileMetrics, eventMetrics)
-
-		// Create events client
-		eventsClient := events.NewEventsClient(dockerClient, &config.Events, eventHandler, eventReconciler, eventMetrics)
+		
+		// Create event handler service (implements EventProcessor)
+		eventHandler := events.NewEventHandlerService(
+			dockerClient,
+			storeInstance, // Store interface satisfies Repository interface
+			eventsMetrics,
+			publisher,
+		)
+		
+		// Create reconciler service
+		reconciler := events.NewReconcilerService(
+			dockerClient,
+			storeInstance, // Store interface satisfies Repository interface
+			&config.Events,
+			&events.EventMetrics{
+				ProcessedTotal:    make(map[events.EventType]int64),
+				ErrorsTotal:       make(map[string]int64),
+				DroppedTotal:      0,
+				ReconnectsTotal:   0,
+				ReconcileRuns:     make(map[string]int64),
+				LastEventTime:     nil,
+				LastReconnectTime: nil,
+				Connected:         false,
+				QueueSize:         0,
+			},
+			eventsMetrics,
+		)
+		
+		// Create events client (implements EventService)
+		eventsClient := events.NewEventsClient(
+			dockerClient,
+			&config.Events,
+			eventHandler, // EventProcessor
+			reconciler,   // Reconciler
+			eventsMetrics,
+		)
+		
 		eventsService = eventsClient
-
-		log.Printf("[INFO] Docker events integration initialized")
+		log.Printf("[INFO] Events service initialized successfully")
 	}
 
 	router := &Router{
 		engine:            gin.New(),
 		dockerService:     dockerService,
 		scanner:           volumeScanner,
-		database:          database,
+		store:             storeInstance,
 		websocketHub:      hub,
 		realtimePublisher: publisher,
 		scheduler:         scanScheduler,
@@ -209,15 +230,39 @@ func (r *Router) setupMiddleware(config *config.Config) {
 	}
 	r.engine.Use(middleware.CORSMiddleware(corsConfig))
 
-	// Rate limiting
-	rateLimitConfig := &middleware.RateLimitConfig{
+	// Rate limiting with tiered limits for heavy operations
+	tieredRateLimitConfig := &middleware.TieredRateLimitConfig{
 		Enabled:   config.RateLimit.Enabled,
-		RPM:       config.RateLimit.RPM,
-		Burst:     config.RateLimit.Burst,
-		SkipPaths: []string{"/api/v1/health", "/health", "/metrics"},
 		KeyFunc:   middleware.DefaultKeyFunc,
+		SkipPaths: []string{"/api/v1/health", "/health", "/metrics"},
+
+		// Standard endpoints: 120 RPM, 60 burst
+		DefaultRPM:   config.RateLimit.RPM,
+		DefaultBurst: config.RateLimit.Burst,
+
+		// Heavy operations: 30 RPM, 10 burst (scans, refreshes)
+		HeavyRPM:   30,
+		HeavyBurst: 10,
+
+		// Admin operations: 10 RPM, 5 burst (migrations)
+		AdminRPM:   10,
+		AdminBurst: 5,
+
+		// Critical operations: 2 RPM, 1 burst (bulk scan all)
+		CriticalRPM:   2,
+		CriticalBurst: 1,
 	}
-	r.engine.Use(middleware.RateLimitMiddleware(rateLimitConfig))
+	r.engine.Use(middleware.TieredRateLimitMiddleware(tieredRateLimitConfig))
+
+	// Error budget tracking for 5xx errors with circuit breaker
+	errorBudgetConfig := &middleware.ErrorBudgetConfig{
+		Enabled:        true,
+		WindowDuration: time.Hour,        // 1 hour window
+		ErrorThreshold: 100,              // 100 5xx errors per hour max
+		CircuitBreaker: true,             // Enable circuit breaker
+		RecoveryTime:   time.Minute * 10, // 10 minute recovery
+	}
+	r.engine.Use(middleware.ErrorBudgetMiddleware(errorBudgetConfig))
 
 	// Authentication middleware (if enabled)
 	authConfig := &middleware.AuthConfig{
@@ -260,25 +305,27 @@ func (r *Router) setupRoutes() {
 		websocketHandler := websocket.NewHandler(r.websocketHub)
 		websocketHandler.RegisterRoutes(v1)
 
-		// Register sub-routers
-		healthRouter := health.NewRouter(r.dockerService, r.database, r.eventsService, r.scheduler)
-		healthRouter.RegisterRoutes(v1)
+		// Register sub-routers with store interface
+		r.healthRouter = health.NewRouter(r.dockerService, r.store, r.eventsService, r.scheduler)
+		r.healthRouter.RegisterRoutes(v1)
 
-		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub, r.database, r.realtimePublisher)
+		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub, r.store, r.realtimePublisher)
 		volumesRouter.RegisterRoutes(v1)
 
 		systemRouter := system.NewRouter(r.dockerService)
 		systemRouter.RegisterRoutes(v1)
 
-		scanRouter := scan.NewRouter(r.scanner, r.websocketHub, r.database, r.scheduler, r.realtimePublisher)
+		scanRouter := scan.NewRouter(r.scanner, r.websocketHub, r.store, r.scheduler, r.realtimePublisher)
 		scanRouter.RegisterRoutes(v1)
 
-		databaseRouter := database.NewRouter(r.database)
-		databaseRouter.RegisterRoutes(v1)
+		// Note: Database admin API removed as part of database cleanup
+		// Database operations now handled through store facade
 
-		// Initialize metrics router with database access
-		metricsRouter := metrics.New(r.database)
-		metricsRouter.RegisterRoutes(v1)
+		// Note: Metrics API temporarily removed during database cleanup
+
+		// Trends router with Store interface
+		trendsRouter := trends.NewRouter(r.store)
+		trendsRouter.RegisterRoutes(v1)
 	}
 }
 
@@ -290,3 +337,14 @@ func (r *Router) getRootHealth(c *gin.Context) {
 		"version": "v1",
 	})
 }
+
+// GetHealthHandler returns the health handler for external configuration
+func (r *Router) GetHealthHandler() *health.Handler {
+	if r.healthRouter != nil {
+		return r.healthRouter.GetHandler()
+	}
+	return nil
+}
+
+// createStoreInstance is no longer needed - using store directly
+// Store instance is now passed in during router construction

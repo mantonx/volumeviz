@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VolumeViz Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .status-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: #e5e7eb;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .status-pill.connected {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status-pill.error {
+            background: #fecaca;
+            color: #991b1b;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .volume-list {
+            margin-top: 20px;
+        }
+        .volume-item {
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .volume-item:hover {
+            background: #f9fafb;
+        }
+        .scan-button {
+            padding: 6px 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .scan-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div data-testid="app-root">
+        <h1>VolumeViz Test Dashboard</h1>
+        
+        <div data-testid="status-pill" class="status-pill">
+            API: OK
+        </div>
+
+        <div style="margin: 20px 0;">
+            <input 
+                data-testid="search-input" 
+                class="search-input" 
+                type="text" 
+                placeholder="Search volumes..."
+                role="searchbox"
+                aria-label="Search volumes"
+            >
+        </div>
+
+        <div data-testid="volume-list" class="volume-list">
+            <div data-testid="volume-item" class="volume-item">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>app-data</strong>
+                        <div style="font-size: 14px; color: #6b7280;">2.1 MB • Created: 2023-01-01</div>
+                    </div>
+                    <div>
+                        <button data-testid="scan-button" class="scan-button">Scan</button>
+                        <div data-testid="scan-progress-bar" class="progress-bar hidden">
+                            <div data-testid="progress-fill" class="progress-fill"></div>
+                        </div>
+                        <div data-testid="scan-status" style="font-size: 12px; color: #6b7280;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div data-testid="volume-item" class="volume-item">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>database-storage</strong>
+                        <div style="font-size: 14px; color: #6b7280;">10.5 MB • Created: 2023-01-02</div>
+                    </div>
+                    <div>
+                        <button data-testid="scan-button" class="scan-button">Scan</button>
+                        <div data-testid="scan-progress-bar" class="progress-bar hidden">
+                            <div data-testid="progress-fill" class="progress-fill"></div>
+                        </div>
+                        <div data-testid="scan-status" style="font-size: 12px; color: #6b7280;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dev panel trigger -->
+        <div style="margin-top: 40px; font-size: 12px; color: #6b7280;">
+            Press Ctrl+Shift+W to open WebSocket dev panel (when WebSocket is enabled)
+        </div>
+    </div>
+
+    <script>
+        // Simple test app functionality
+        const searchInput = document.querySelector('[data-testid="search-input"]');
+        const volumeItems = document.querySelectorAll('[data-testid="volume-item"]');
+        
+        // Debounced search
+        let searchTimeout;
+        searchInput?.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase();
+                volumeItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    item.style.display = text.includes(searchTerm) ? 'block' : 'none';
+                });
+            }, 300);
+        });
+
+        // Scan button functionality
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('[data-testid="scan-button"]')) {
+                const volumeItem = e.target.closest('[data-testid="volume-item"]');
+                const scanButton = volumeItem.querySelector('[data-testid="scan-button"]');
+                const progressBar = volumeItem.querySelector('[data-testid="scan-progress-bar"]');
+                const progressFill = volumeItem.querySelector('[data-testid="progress-fill"]');
+                const scanStatus = volumeItem.querySelector('[data-testid="scan-status"]');
+                
+                // Start scanning
+                scanButton.disabled = true;
+                scanButton.textContent = 'Scanning...';
+                progressBar.classList.remove('hidden');
+                scanStatus.textContent = 'Scanning';
+                
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 20;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(progressInterval);
+                        
+                        // Complete scan
+                        setTimeout(() => {
+                            scanButton.disabled = false;
+                            scanButton.textContent = 'Scan';
+                            progressBar.classList.add('hidden');
+                            scanStatus.textContent = 'Complete';
+                            progressFill.style.width = '0%';
+                        }, 500);
+                    }
+                    progressFill.style.width = progress + '%';
+                }, 200);
+            }
+        });
+
+        // WebSocket dev panel keyboard shortcut
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'W') {
+                e.preventDefault();
+                alert('WebSocket dev panel would open here (if WebSocket is enabled)');
+            }
+        });
+
+        // Make app available for testing
+        window.__TEST_MODE__ = true;
+        
+        console.log('VolumeViz test page loaded');
+    </script>
+</body>
+</html>

@@ -5,27 +5,27 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/events"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/scheduler"
+	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/version"
 )
 
 // Handler handles health-related HTTP requests
 type Handler struct {
 	dockerService interfaces.DockerService
-	db            *database.DB
+	store         store.Store // Modern store interface using sqlc
 	eventsService events.EventService
 	scheduler     scheduler.ScanScheduler // Optional scan scheduler
 }
 
 // NewHandler creates a new health handler
-func NewHandler(dockerService interfaces.DockerService, db *database.DB, eventsService events.EventService, scanScheduler scheduler.ScanScheduler) *Handler {
+func NewHandler(dockerService interfaces.DockerService, store store.Store, eventsService events.EventService, scanScheduler scheduler.ScanScheduler) *Handler {
 	return &Handler{
 		dockerService: dockerService,
-		db:            db,
+		store:         store,
 		eventsService: eventsService,
 		scheduler:     scanScheduler,
 	}
@@ -107,24 +107,22 @@ func (h *Handler) GetAppHealth(c *gin.Context) {
 		checks["scheduler"] = schedulerHealth
 	}
 
-	// Optionally add DB connectivity and migration version if DB is wired
-	if h.db != nil {
+	// Database connectivity via store interface
+	if h.store != nil {
 		dbHealth := gin.H{"status": "unknown"}
-		migrationVersion := "unknown"
-		if st := h.db.Health(); st != nil {
-			dbHealth["status"] = st.Status
-			dbHealth["response_ms"] = st.ResponseTime.Milliseconds()
-		}
-		mm := database.NewMigrationManager(h.db)
-		if status, err := mm.GetMigrationStatus(); err == nil {
-			if status.LastApplied != nil {
-				migrationVersion = status.LastApplied.Version
-			} else {
-				migrationVersion = "none"
-			}
+
+		// Use store health check
+		ctx := c.Request.Context()
+		if err := h.store.Health(ctx); err == nil {
+			dbHealth["status"] = "healthy"
+		} else {
+			dbHealth["status"] = "unhealthy"
+			dbHealth["error"] = err.Error()
 		}
 		checks["database"] = dbHealth
-		checks["migrations"] = gin.H{"current_version": migrationVersion}
+
+		// Migration status via store - simplified for now
+		checks["migrations"] = gin.H{"status": "store-managed"}
 	}
 
 	health := gin.H{
@@ -137,7 +135,7 @@ func (h *Handler) GetAppHealth(c *gin.Context) {
 	// Set overall status based on dependencies
 	if !dockerAvailable {
 		health["status"] = "degraded"
-	} else if h.db != nil {
+	} else if h.store != nil {
 		if db, ok := checks["database"].(gin.H); ok && db["status"] != "healthy" {
 			health["status"] = "degraded"
 		}
@@ -363,4 +361,45 @@ func (h *Handler) GetSchedulerHealth(c *gin.Context) {
 	}
 
 	c.JSON(statusCode, schedulerHealth)
+}
+
+// GetDatabaseHealth returns detailed database health status
+// @Summary Check database health
+// @Description Get database connection status via store interface
+// @Tags health
+// @Accept json
+// @Produce json
+// @Success 200 {object} gin.H
+// @Failure 503 {object} models.ErrorResponse
+// @Router /health/database [get]
+func (h *Handler) GetDatabaseHealth(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	if h.store == nil {
+		c.JSON(http.StatusNotImplemented, gin.H{
+			"status":  "not_configured",
+			"message": "Store is not configured",
+		})
+		return
+	}
+
+	response := gin.H{
+		"status": "unknown",
+		"type":   "store-managed",
+	}
+
+	// Check store health
+	if err := h.store.Health(ctx); err == nil {
+		response["status"] = "healthy"
+	} else {
+		response["status"] = "unhealthy"
+		response["error"] = err.Error()
+	}
+
+	statusCode := http.StatusOK
+	if response["status"] == "unhealthy" {
+		statusCode = http.StatusServiceUnavailable
+	}
+
+	c.JSON(statusCode, response)
 }

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mantonx/volumeviz/internal/database"
+	storeconfig "github.com/mantonx/volumeviz/internal/store/config"
 )
 
 // Config holds application configuration
@@ -262,16 +262,16 @@ func getScanEnabledDefault() bool {
 	return isDev
 }
 
-// ToDatabaseConfig converts the config.DatabaseConfig to database.Config
-func (dc *DatabaseConfig) ToDatabaseConfig() *database.Config {
-	var dbType database.DatabaseType
+// ToStoreConfig converts the config.DatabaseConfig to store config.Config
+func (dc *DatabaseConfig) ToStoreConfig() *storeconfig.Config {
+	var dbType storeconfig.DatabaseType
 	switch dc.Type {
 	case "sqlite":
-		dbType = database.DatabaseTypeSQLite
+		dbType = storeconfig.DatabaseTypeSQLite
 	case "postgres", "postgresql":
-		dbType = database.DatabaseTypePostgreSQL
+		dbType = storeconfig.DatabaseTypePostgreSQL
 	default:
-		dbType = database.DatabaseTypePostgreSQL // Default to PostgreSQL
+		dbType = storeconfig.DatabaseTypePostgreSQL // Default to PostgreSQL
 	}
 
 	// Convert port string to int
@@ -280,7 +280,7 @@ func (dc *DatabaseConfig) ToDatabaseConfig() *database.Config {
 		port = portInt
 	}
 
-	return &database.Config{
+	return &storeconfig.Config{
 		Type:         dbType,
 		Host:         dc.Host,
 		Port:         port,

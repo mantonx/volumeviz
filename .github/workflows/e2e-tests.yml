@@ -1,0 +1,313 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/e2e-tests.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/e2e-tests.yml'
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: volumeviz_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install backend dependencies
+        run: go mod download
+
+      - name: Build backend
+        run: go build -o volumeviz cmd/server/main.go
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/volumeviz_test?sslmode=disable
+        run: |
+          # Run database migrations
+          go run cmd/migrate/main.go up
+
+      - name: Start backend server
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/volumeviz_test?sslmode=disable
+          PORT: 8080
+          ENABLE_WEBSOCKET: true
+          LOG_LEVEL: info
+        run: |
+          ./volumeviz &
+          echo $! > backend.pid
+          
+          # Wait for server to be ready
+          timeout 30s bash -c 'until curl -f http://localhost:8080/api/v1/health; do sleep 1; done'
+
+      - name: Start frontend dev server
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: http://localhost:8080
+          VITE_WS_URL: ws://localhost:8080/api/v1/ws
+          VITE_ENABLE_WEBSOCKET: true
+        run: |
+          npm run dev &
+          echo $! > frontend.pid
+          
+          # Wait for dev server to be ready
+          timeout 60s bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
+
+      - name: Run Cypress E2E Tests
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: frontend
+          start: echo "Servers already started"
+          wait-on: 'http://localhost:5173, http://localhost:8080/api/v1/health'
+          wait-on-timeout: 120
+          browser: chrome
+          record: false
+          spec: cypress/e2e/**/*.cy.ts
+        env:
+          CYPRESS_baseUrl: http://localhost:5173
+          CYPRESS_API_BASE_URL: http://localhost:8080
+          CYPRESS_WS_URL: ws://localhost:8080/api/v1/ws
+          CYPRESS_ENABLE_WEBSOCKET: true
+
+      - name: Upload Cypress Screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: frontend/cypress/screenshots
+          retention-days: 7
+
+      - name: Upload Cypress Videos
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-videos
+          path: frontend/cypress/videos
+          retention-days: 7
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-results
+          path: |
+            frontend/cypress/reports
+            frontend/cypress/results
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: |
+          # Kill servers
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid) || true
+            rm backend.pid
+          fi
+          if [ -f frontend/frontend.pid ]; then
+            kill $(cat frontend/frontend.pid) || true
+            rm frontend/frontend.pid
+          fi
+
+  e2e-tests-firefox:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: volumeviz_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install backend dependencies
+        run: go mod download
+
+      - name: Build backend
+        run: go build -o volumeviz cmd/server/main.go
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/volumeviz_test?sslmode=disable
+        run: |
+          go run cmd/migrate/main.go up
+
+      - name: Start backend server
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/volumeviz_test?sslmode=disable
+          PORT: 8080
+          ENABLE_WEBSOCKET: true
+          LOG_LEVEL: info
+        run: |
+          ./volumeviz &
+          echo $! > backend.pid
+          timeout 30s bash -c 'until curl -f http://localhost:8080/api/v1/health; do sleep 1; done'
+
+      - name: Start frontend dev server
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: http://localhost:8080
+          VITE_WS_URL: ws://localhost:8080/api/v1/ws
+          VITE_ENABLE_WEBSOCKET: true
+        run: |
+          npm run dev &
+          echo $! > frontend.pid
+          timeout 60s bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
+
+      - name: Run Cypress E2E Tests (Firefox)
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: frontend
+          start: echo "Servers already started"
+          wait-on: 'http://localhost:5173, http://localhost:8080/api/v1/health'
+          wait-on-timeout: 120
+          browser: firefox
+          record: false
+          spec: cypress/e2e/**/*.cy.ts
+        env:
+          CYPRESS_baseUrl: http://localhost:5173
+          CYPRESS_API_BASE_URL: http://localhost:8080
+          CYPRESS_WS_URL: ws://localhost:8080/api/v1/ws
+          CYPRESS_ENABLE_WEBSOCKET: true
+
+      - name: Upload Firefox Screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-firefox
+          path: frontend/cypress/screenshots
+          retention-days: 7
+
+      - name: Upload Firefox Videos
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-videos-firefox
+          path: frontend/cypress/videos
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid) || true
+            rm backend.pid
+          fi
+          if [ -f frontend/frontend.pid ]; then
+            kill $(cat frontend/frontend.pid) || true
+            rm frontend/frontend.pid
+          fi
+
+  component-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run Cypress Component Tests
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: frontend
+          component: true
+          browser: chrome
+          record: false
+
+      - name: Upload Component Test Screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-component-screenshots
+          path: frontend/cypress/screenshots
+          retention-days: 7
+
+      - name: Upload Component Test Videos
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-component-videos
+          path: frontend/cypress/videos
+          retention-days: 7

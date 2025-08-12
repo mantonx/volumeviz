@@ -7,16 +7,15 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	v1 "github.com/mantonx/volumeviz/internal/api/v1"
 	"github.com/mantonx/volumeviz/internal/config"
-	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/services"
-	lifecycle "github.com/mantonx/volumeviz/internal/services/lifecycle"
+	"github.com/mantonx/volumeviz/internal/store"
+	storeconfig "github.com/mantonx/volumeviz/internal/store/config"
 	"github.com/mantonx/volumeviz/internal/version"
 
 	_ "github.com/mantonx/volumeviz/docs" // Generated docs
@@ -47,6 +46,25 @@ import (
 // @tag.name scan
 // @tag.description Volume scanning operations
 
+// connectionManagerAdapter adapts store.ConnectionManager to health.ConnectionManager
+type connectionManagerAdapter struct {
+	cm *store.ConnectionManager
+}
+
+func (a *connectionManagerAdapter) HealthCheck(ctx context.Context) interface{} {
+	status := a.cm.HealthCheck(ctx)
+	// Convert to map[string]interface{} for JSON marshaling
+	return map[string]interface{}{
+		"type":             status.Type,
+		"status":           status.Status,
+		"latency_ms":       status.LatencyMS,
+		"query_latency_ms": status.QueryLatencyMS,
+		"connections":      status.Connections,
+		"last_check_at":    status.LastCheckAt,
+		"error":            status.Error,
+	}
+}
+
 func main() {
 	// Print version information
 	versionInfo := version.Get()
@@ -60,48 +78,54 @@ func main() {
 	// Set Gin mode
 	gin.SetMode(cfg.Server.Mode)
 
-	// Parse database port
-	dbPort, err := strconv.Atoi(cfg.Database.Port)
+	// Initialize store configuration using config method
+	dbConfig := cfg.Database.ToStoreConfig()
+
+	// Use database-specific optimizations
+	if dbConfig.Type == storeconfig.DatabaseTypePostgreSQL {
+		postgresConfig := storeconfig.DefaultPostgreSQLConfig()
+		dbConfig.MaxOpenConns = postgresConfig.MaxOpenConns
+		dbConfig.MaxIdleConns = postgresConfig.MaxIdleConns
+		dbConfig.ConnMaxLife = postgresConfig.ConnMaxLife
+		dbConfig.ConnMaxIdleTime = postgresConfig.ConnMaxIdleTime
+		dbConfig.Timeout = postgresConfig.Timeout
+	} else if dbConfig.Type == storeconfig.DatabaseTypeSQLite {
+		sqliteConfig := storeconfig.DefaultSQLiteConfig()
+		dbConfig.MaxOpenConns = sqliteConfig.MaxOpenConns
+		dbConfig.MaxIdleConns = sqliteConfig.MaxIdleConns
+		dbConfig.ConnMaxLife = sqliteConfig.ConnMaxLife
+		dbConfig.ConnMaxIdleTime = sqliteConfig.ConnMaxIdleTime
+		dbConfig.Timeout = sqliteConfig.Timeout
+	}
+
+	// Initialize connection manager for enhanced health checks
+	log.Printf("Initializing connection manager for %s database...", dbConfig.Type)
+	connManager, err := store.NewConnectionManager(dbConfig)
 	if err != nil {
-		log.Printf("Invalid database port '%s', using default 5432", cfg.Database.Port)
-		dbPort = 5432
+		log.Fatalf("Failed to initialize connection manager: %v", err)
 	}
+	defer connManager.Close()
+	log.Printf("Connection manager initialized successfully")
 
-	// Initialize database connection
-	dbConfig := &database.Config{
-		Type:     database.DatabaseType(cfg.Database.Type),
-		Host:     cfg.Database.Host,
-		Port:     dbPort,
-		User:     cfg.Database.User,
-		Password: cfg.Database.Password,
-		Database: cfg.Database.Name,
-		SSLMode:  cfg.Database.SSLMode,
-		Path:     cfg.Database.Path,
+	// Create store instance from connection manager
+	log.Printf("Creating store instance...")
+	var storeInstance store.Store
+	switch dbConfig.Type {
+	case storeconfig.DatabaseTypePostgreSQL:
+		storeInstance, err = store.NewPostgresStore(dbConfig)
+	case storeconfig.DatabaseTypeSQLite:
+		storeInstance, err = store.NewSQLiteStore(dbConfig)
+	default:
+		log.Fatalf("Unsupported database type: %s", dbConfig.Type)
 	}
-
-	db, err := database.NewDB(dbConfig)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Fatalf("Failed to create store instance: %v", err)
 	}
-	defer db.Close()
+	defer storeInstance.Close()
+	log.Printf("Store instance created successfully")
 
-	// Run database migrations
-	migrationManager := database.NewMigrationManager(db)
-	if err := migrationManager.ApplyAllPending(); err != nil {
-		log.Fatalf("Failed to run database migrations: %v", err)
-	}
-
-	// Start lifecycle retention service
-	lc := lifecycle.New(db.DB, lifecycle.Config{
-		Enabled:        cfg.Lifecycle.Enabled,
-		MetricsTTLDays: cfg.Lifecycle.MetricsTTLDays,
-		SizesTTLDays:   cfg.Lifecycle.SizesTTLDays,
-		RollupEnabled:  cfg.Lifecycle.RollupEnabled,
-		Interval:       cfg.Lifecycle.Interval,
-		InitialDelay:   cfg.Lifecycle.InitialDelay,
-	})
-	lc.Start()
-	defer lc.Stop()
+	// Note: Database migrations are now handled by the store layer
+	log.Printf("Database migrations managed by store layer")
 
 	// Initialize Docker service
 	dockerService, err := services.NewDockerService(cfg.Docker.Host, cfg.Docker.Timeout)
@@ -110,9 +134,12 @@ func main() {
 	}
 	defer dockerService.Close()
 
-	// Setup v1 API router
-	apiRouter := v1.NewRouter(dockerService, db, cfg)
+	// Setup v1 API router with store instance
+	apiRouter := v1.NewRouter(dockerService, storeInstance, cfg)
 	router := apiRouter.Engine()
+
+	// Health handler is now configured with store directly
+	log.Printf("Health handler configured with store interface")
 
 	// Start events service if enabled
 	if cfg.Events.Enabled && apiRouter.EventsService() != nil {

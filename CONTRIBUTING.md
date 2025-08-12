@@ -105,6 +105,60 @@ make test-all
   go tool cover -func=coverage.out | tail -n1
   ```
 
+### Database and SQL Guidelines
+
+#### sqlc Code Generation
+VolumeViz uses [sqlc](https://sqlc.dev) for type-safe SQL queries. After modifying any `.sql` files in `internal/store/queries/`, you must regenerate the Go code:
+
+```bash
+make sqlc
+```
+
+Or manually:
+```bash
+sqlc generate
+```
+
+#### SQL File Organization
+- Place PostgreSQL queries in `internal/store/queries/postgres/`
+- Place SQLite queries in `internal/store/queries/sqlite/`
+- Group related queries in the same file (e.g., `file_entries.sql`, `dir_nodes.sql`)
+- Use consistent query names across both dialects when possible
+
+#### SQL Query Guidelines
+1. **Naming Convention**: Use descriptive names for queries
+   ```sql
+   -- name: GetFileEntriesByVolume :many
+   SELECT * FROM file_entries WHERE volume_id = $1;
+   ```
+
+2. **Parameter Placeholders**: 
+   - PostgreSQL: Use `$1`, `$2`, etc.
+   - SQLite: Use `?` placeholders
+
+3. **Comments**: Document complex queries
+   ```sql
+   -- name: GetDirectoryTree :many
+   -- Recursively fetch directory tree up to specified depth
+   WITH RECURSIVE dir_tree AS (...)
+   ```
+
+4. **Performance**: Consider indexes and query plans
+   - Add appropriate indexes in migration files
+   - Test query performance with realistic data volumes
+
+5. **Bulk Operations**:
+   - PostgreSQL: Use `COPY` operations via `pgx.CopyFrom` for >1000 rows
+   - SQLite: Use multi-row INSERT with batches respecting the 999 parameter limit
+
+#### Review Checklist for SQL Changes
+- [ ] Run `make sqlc` after modifying queries
+- [ ] Ensure generated code compiles without errors
+- [ ] Add/update tests for new queries
+- [ ] Consider performance implications
+- [ ] Document complex queries with comments
+- [ ] Maintain consistency between PostgreSQL and SQLite versions
+
 ### Commit Guidelines
 
 We follow the Conventional Commits specification:

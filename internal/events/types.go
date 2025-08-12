@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/events"
-	"github.com/mantonx/volumeviz/internal/database"
+	"github.com/mantonx/volumeviz/internal/store"
 )
 
 // EventType represents the type of Docker event we're interested in
@@ -81,24 +81,24 @@ type EventMetrics struct {
 // Repository defines database operations for events
 type Repository interface {
 	// Volume operations
-	UpsertVolume(ctx context.Context, volume *database.Volume) error
+	UpsertVolume(ctx context.Context, volume *store.Volume) error
 	DeleteVolume(ctx context.Context, volumeID string) error
-	GetVolumeByName(ctx context.Context, name string) (*database.Volume, error)
+	GetVolumeByName(ctx context.Context, name string) (*store.Volume, error)
 
 	// Container operations
-	UpsertContainer(ctx context.Context, container *database.Container) error
+	UpsertContainer(ctx context.Context, container *store.Container) error
 	DeleteContainer(ctx context.Context, containerID string) error
-	GetContainerByID(ctx context.Context, containerID string) (*database.Container, error)
+	GetContainerByID(ctx context.Context, containerID string) (*store.Container, error)
 
 	// Volume mount operations
-	UpsertVolumeMount(ctx context.Context, mount *database.VolumeMount) error
+	UpsertVolumeMount(ctx context.Context, mount *store.VolumeMount) error
 	DeleteVolumeMount(ctx context.Context, volumeID, containerID string) error
-	GetVolumeMountsByContainer(ctx context.Context, containerID string) ([]*database.VolumeMount, error)
-	GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*database.VolumeMount, error)
+	GetVolumeMountsByContainer(ctx context.Context, containerID string) ([]*store.VolumeMount, error)
+	GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*store.VolumeMount, error)
 	DeactivateVolumeMounts(ctx context.Context, containerID string) error
 
 	// Bulk operations for reconciliation
-	ListAllVolumes(ctx context.Context) ([]*database.Volume, error)
-	ListAllContainers(ctx context.Context) ([]*database.Container, error)
-	ListAllVolumeMounts(ctx context.Context) ([]*database.VolumeMount, error)
+	ListAllVolumes(ctx context.Context) ([]*store.Volume, error)
+	ListAllContainers(ctx context.Context) ([]*store.Container, error)
+	ListAllVolumeMounts(ctx context.Context) ([]*store.VolumeMount, error)
 }

@@ -37,11 +37,9 @@ import {
   containersLoadingAtom,
 } from '@/store/atoms/containers';
 
-// Import types from generated API client
-import type { AsyncScanResponse, RefreshRequest, ScanResponse } from './client';
-
-// Import generated API client
-import { Api, type Volume } from './generated/volumeviz-api';
+// Import generated API client and types
+import { Api } from './generated/Api';
+import type { Volume, AsyncScanResponse, RefreshRequest, ScanResponse } from './generated/Api';
 
 // Create configured API client instance
 const volumeVizApi = new Api({
@@ -165,22 +163,13 @@ export function useVolumes() {
           created_after: params?.created_after,
           created_before: params?.created_before,
         };
-        const baseUrl =
-          import.meta.env?.VITE_API_URL || 'http://localhost:8080/api/v1';
-        const searchParams = new URLSearchParams();
-        Object.entries(queryParams).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            searchParams.append(key, String(value));
-          }
-        });
-        const url = `${baseUrl}/volumes?${searchParams.toString()}`;
-        const response = await fetch(url, { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        // Use generated API client for volumes list
+        const response = await volumeVizApi.volumes.listVolumes(queryParams);
+        
         // Ignore stale responses
         if (seq !== requestSeqRef.current) return;
-        const pagedData = await response.json();
+        
+        const pagedData = response.data;
         const volumeData = pagedData.data || [];
         setVolumes(volumeData as Volume[]);
         setPaginationMeta({

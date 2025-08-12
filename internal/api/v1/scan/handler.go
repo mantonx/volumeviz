@@ -12,9 +12,9 @@ import (
 	"github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
 	coremodels "github.com/mantonx/volumeviz/internal/core/models"
-	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/scheduler"
+	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/utils"
 	"github.com/mantonx/volumeviz/internal/websocket"
 )
@@ -24,18 +24,23 @@ import (
 type Handler struct {
 	scanner           interfaces.VolumeScanner
 	hub               *websocket.Hub
-	metricsRepo       *database.VolumeMetricsRepository
+	storeIntegration  *store.Integration      // New sqlc-based store
 	scheduler         scheduler.ScanScheduler // Optional scheduler for manual scan triggers
 	realtimePublisher *realtime.Publisher
 }
 
 // NewHandler creates a new scan handler
-// Pass in your volume scanner implementation, WebSocket hub, metrics repository, optional scheduler, and realtime publisher
-func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, metricsRepo *database.VolumeMetricsRepository, scheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Handler {
+// Pass in your volume scanner implementation, WebSocket hub, optional scheduler, and realtime publisher
+func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, scheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Handler {
+	return NewHandlerWithStore(scanner, hub, nil, scheduler, publisher)
+}
+
+// NewHandlerWithStore creates a new scan handler with optional store integration
+func NewHandlerWithStore(scanner interfaces.VolumeScanner, hub *websocket.Hub, storeIntegration *store.Integration, scheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Handler {
 	return &Handler{
 		scanner:           scanner,
 		hub:               hub,
-		metricsRepo:       metricsRepo,
+		storeIntegration:  storeIntegration,
 		scheduler:         scheduler,
 		realtimePublisher: publisher,
 	}
@@ -81,21 +86,27 @@ func (h *Handler) GetVolumeSize(c *gin.Context) {
 		Cached:   result.CacheHit,
 	}
 
-	// Save historical metrics if repository is available
-	if h.metricsRepo != nil {
-		err := h.metricsRepo.SaveMetrics(
+	// Save historical metrics using store integration if available
+	if h.storeIntegration != nil {
+		storeFacade := h.storeIntegration.GetFullStoreFacade()
+		// TODO: Calculate growth rate and container count
+		// For now, we'll pass nil for growth rate and 0 for container count
+		err := storeFacade.SaveVolumeMetrics(
 			c.Request.Context(),
 			volumeID,
 			result.TotalSize,
 			int64(result.FileCount),
 			int64(result.DirectoryCount),
-			result.Method,
+			nil, // growthRate - TODO: implement calculation
+			0,   // containerCount - TODO: implement lookup
 		)
 		if err != nil {
 			// Log error but don't fail the request
-			// In production, use proper logging
-			fmt.Printf("Failed to save metrics for volume %s: %v\n", volumeID, err)
+			fmt.Printf("Failed to save metrics for volume %s using store: %v\n", volumeID, err)
 		}
+	} else {
+		// No store integration available - metrics not saved
+		fmt.Printf("No store integration available for saving metrics for volume %s\n", volumeID)
 	}
 
 	// Broadcast scan completion via WebSocket

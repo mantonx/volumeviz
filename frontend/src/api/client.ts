@@ -7,12 +7,10 @@
 import {
   Api,
   type PagedVolumes,
-  type VolumeDetail,
   type ScanResponse,
-  type ScanProgress,
   type Volume,
   type RefreshRequest,
-} from './generated/volumeviz-api';
+} from './generated/Api';
 
 // Create configured API client
 const volumeVizApi = new Api({
@@ -81,7 +79,7 @@ export type {
   ScanProgress,
   ErrorResponse,
   RefreshRequest,
-} from './generated/volumeviz-api';
+} from './generated/Api';
 
 // Legacy type aliases for backwards compatibility
 export type VolumeListResponse = PagedVolumes;

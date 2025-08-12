@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewSimpleMetricsCollector(t *testing.T) {
@@ -31,13 +31,13 @@ func TestSimpleMetricsCollector_CacheHit(t *testing.T) {
 
 	// Record first cache hit
 	collector.CacheHit("vol-1")
-	
+
 	stats := collector.GetStats()
 	assert.Equal(t, 1, stats["cache_hits"])
 
 	// Record second cache hit
 	collector.CacheHit("vol-2")
-	
+
 	stats = collector.GetStats()
 	assert.Equal(t, 2, stats["cache_hits"])
 
@@ -55,7 +55,7 @@ func TestSimpleMetricsCollector_CacheMiss(t *testing.T) {
 	// Record cache misses
 	collector.CacheMiss("vol-1")
 	collector.CacheMiss("vol-2")
-	
+
 	stats := collector.GetStats()
 	assert.Equal(t, 2, stats["cache_misses"])
 
@@ -101,7 +101,7 @@ func TestSimpleMetricsCollector_RecordScanAttempt(t *testing.T) {
 	// Record successful attempts
 	collector.RecordScanAttempt("du", duration, true)
 	collector.RecordScanAttempt("native", duration, true)
-	
+
 	// Record failed attempts
 	collector.RecordScanAttempt("du", duration, false)
 
@@ -309,7 +309,7 @@ func TestSimpleMetricsCollector_GetStats(t *testing.T) {
 
 	// Modify returned stats (should not affect internal state)
 	stats["cache_hits"] = 999
-	
+
 	// Verify internal state unchanged
 	newStats := collector.GetStats()
 	assert.Equal(t, 1, newStats["cache_hits"])
@@ -358,17 +358,17 @@ func TestSimpleMetricsCollector_ConcurrentAccess(t *testing.T) {
 
 	// Test concurrent writes don't cause data races
 	done := make(chan bool, 10)
-	
+
 	for i := 0; i < 10; i++ {
 		go func(id int) {
 			defer func() { done <- true }()
-			
+
 			// Perform various operations
 			collector.CacheHit("vol-" + string(rune(id)))
 			collector.CacheMiss("vol-miss-" + string(rune(id)))
 			collector.ScanCompleted("vol-scan-"+string(rune(id)), "du", time.Second, 1024)
 			collector.SetCacheSize(id * 10)
-			
+
 			// Read stats
 			stats := collector.GetStats()
 			assert.NotNil(t, stats)
@@ -395,7 +395,7 @@ func TestSimpleMetricsCollector_InvalidStateCoverage(t *testing.T) {
 
 	// This should reset the invalid value and set it to 1
 	collector.CacheHit("vol-1")
-	
+
 	stats := collector.GetStats()
 	assert.Equal(t, 1, stats["cache_hits"])
 

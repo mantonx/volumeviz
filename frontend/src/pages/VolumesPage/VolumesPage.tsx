@@ -214,18 +214,22 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
           Show All
         </Button>
         <Button
+          data-testid="filter-orphaned"
           variant={orphaned ? 'secondary' : 'outline'}
           size="sm"
           onClick={toggleOrphaned}
           aria-pressed={orphaned}
+          role="button"
         >
           Orphaned Only
         </Button>
         <Button
+          data-testid="filter-system"
           variant={system ? 'secondary' : 'outline'}
           size="sm"
           onClick={toggleSystem}
           aria-pressed={system}
+          role="button"
         >
           Include System
         </Button>
@@ -267,6 +271,7 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
     return (
       <div className="flex items-center justify-center min-h-96">
         <ErrorState
+          data-testid="error-state"
           error={error}
           onRetry={handleRefresh}
           title="Failed to Load Volumes"
@@ -289,8 +294,9 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div data-testid="volumes-page" className="space-y-6">
       <div
+        data-testid="search-results-status"
         className="sr-only"
         aria-live="polite"
         aria-atomic="true"
@@ -404,11 +410,14 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
                 />
                 <input
                   id="volume-search"
+                  data-testid="search-input"
                   ref={searchInputRef}
                   type="text"
                   value={qInput}
                   onChange={handleSearchChange}
                   placeholder="Search volumes…"
+                  role="searchbox"
+                  aria-label="Search volumes"
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -429,6 +438,7 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
         </div>
       ) : !volumes || volumes.length === 0 ? (
         <EmptyState
+          data-testid="no-results-message"
           icon={HardDrive}
           title={
             q || driver || orphaned || system
@@ -462,8 +472,9 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
         <main>
           <div
             ref={contentRef}
+            data-testid="volume-list"
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            role="grid"
+            role="list"
             aria-label={`Volume list showing ${volumes.length} volume${volumes.length !== 1 ? 's' : ''}`}
             tabIndex={-1}
           >

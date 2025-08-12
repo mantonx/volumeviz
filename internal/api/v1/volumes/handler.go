@@ -13,10 +13,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	apiutils "github.com/mantonx/volumeviz/internal/api/utils"
-	"github.com/mantonx/volumeviz/internal/database"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	coremodels "github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/realtime"
+	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/utils"
 	"github.com/mantonx/volumeviz/internal/websocket"
 )
@@ -26,14 +26,14 @@ import (
 type Handler struct {
 	dockerService     interfaces.DockerService
 	hub               *websocket.Hub
-	database          *database.DB
+	store             store.Store // Modern store interface using sqlc
 	realtimePublisher *realtime.Publisher
 	systemVolumeRegex *regexp.Regexp
 }
 
-// NewHandler creates a new volume handler
-// Pass in your Docker service, WebSocket hub, database, and realtime publisher to get started
-func NewHandler(dockerService interfaces.DockerService, hub *websocket.Hub, db *database.DB, publisher *realtime.Publisher) *Handler {
+// NewHandler creates a new volume handler with store interface
+// Pass in your Docker service, WebSocket hub, store, and realtime publisher to get started
+func NewHandler(dockerService interfaces.DockerService, hub *websocket.Hub, store store.Store, publisher *realtime.Publisher) *Handler {
 	// Default system volume regex pattern
 	pattern := `^(docker_|builder_|containerd|_data$)`
 	regex, err := regexp.Compile(pattern)
@@ -45,11 +45,13 @@ func NewHandler(dockerService interfaces.DockerService, hub *websocket.Hub, db *
 	return &Handler{
 		dockerService:     dockerService,
 		hub:               hub,
-		database:          db,
+		store:             store,
 		realtimePublisher: publisher,
 		systemVolumeRegex: regex,
 	}
 }
+
+// Helper function to determine if volume is system-managed
 
 // ListVolumes returns paginated Docker volumes with metadata
 // Implements GET /api/v1/volumes with pagination, sorting, and filtering
@@ -78,20 +80,9 @@ func (h *Handler) ListVolumes(c *gin.Context) {
 		return
 	}
 
-	// Try to get volumes from database first
-	var apiVolumes []models.VolumeV1
-	var total int64
-
-	if h.database != nil {
-		apiVolumes, total, err = h.getVolumesFromDB(ctx, pagination, sortParams, filters)
-		if err != nil {
-			// Fall back to Docker API if DB fails
-			apiVolumes, total, err = h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
-		}
-	} else {
-		// No database, use Docker API
-		apiVolumes, total, err = h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
-	}
+	// Get volumes from Docker API (primary source for volume metadata)
+	// Store is used for file/directory data, but Docker is source of truth for volumes
+	apiVolumes, total, err := h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
 
 	if err != nil {
 		apiutils.RespondWithInternalError(c, "Failed to list volumes", err)
@@ -118,11 +109,38 @@ func (h *Handler) ListVolumes(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// getVolumesFromDB retrieves volumes from the database with filtering and pagination
-func (h *Handler) getVolumesFromDB(ctx context.Context, pagination *apiutils.PaginationParams, sortParams []apiutils.SortParam, filters *apiutils.VolumeFilters) ([]models.VolumeV1, int64, error) {
-	// TODO: Implement database query with filters
-	// For now, return empty to fall back to Docker API
-	return nil, 0, fmt.Errorf("database query not yet implemented")
+// volumePassesFilters checks if a volume passes the given filters
+func (h *Handler) volumePassesFilters(vol models.VolumeV1, filters *apiutils.VolumeFilters) bool {
+	// Apply system filter
+	if !filters.System && vol.IsSystem {
+		return false
+	}
+
+	// Apply driver filter
+	if filters.Driver != "" && vol.Driver != filters.Driver {
+		return false
+	}
+
+	// Apply search query
+	if filters.Query != "" {
+		query := strings.ToLower(filters.Query)
+		if !strings.Contains(strings.ToLower(vol.Name), query) &&
+			!strings.Contains(strings.ToLower(vol.Driver), query) {
+			return false
+		}
+	}
+
+	// Apply date filters
+	if filters.CreatedAfter != nil && vol.CreatedAt.Before(*filters.CreatedAfter) {
+		return false
+	}
+	if filters.CreatedBefore != nil && vol.CreatedAt.After(*filters.CreatedBefore) {
+		return false
+	}
+
+	// TODO: Apply orphaned filter (requires container check)
+
+	return true
 }
 
 // getVolumesFromDocker retrieves volumes from Docker API with filtering
@@ -369,8 +387,9 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		return
 	}
 
-	// Get volume from Docker
+	// Get volume from Docker as the source of truth for volume metadata
 	volume, err := h.dockerService.GetVolume(ctx, volumeName)
+
 	if err != nil {
 		if isNotFoundError(err) {
 			apiutils.RespondWithNotFound(c, fmt.Sprintf("Volume '%s' not found", volumeName))
