@@ -43,6 +43,22 @@ func NewStoreFacade(dbType config.DatabaseType, pgPool *pgxpool.Pool, sqliteDB *
 	return facade
 }
 
+// GetDatabaseType returns the database type
+func (f *StoreFacade) GetDatabaseType() config.DatabaseType {
+	return f.dbType
+}
+
+
+// GetPgPool returns the PostgreSQL connection pool
+func (f *StoreFacade) GetPgPool() *pgxpool.Pool {
+	return f.pgPool
+}
+
+// GetSQLiteDB returns the SQLite database connection
+func (f *StoreFacade) GetSQLiteDB() *sql.DB {
+	return f.sqliteDB
+}
+
 // Volume operations
 
 // VolumeParams represents parameters for volume operations

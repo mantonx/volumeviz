@@ -10,7 +10,6 @@ import (
 // Integration provides a bridge between the existing ConnectionManager and the new StoreFacade
 type Integration struct {
 	connManager      *ConnectionManager
-	simpleFacade     *SimpleFacade
 	storeFacade      *StoreFacade // Full facade with all query methods
 	bulkIngestFacade *BulkIngestFacade
 	pgPool           interface{} // pgxpool.Pool for PostgreSQL
@@ -23,14 +22,7 @@ func NewIntegration(connManager *ConnectionManager) (*Integration, error) {
 		return nil, fmt.Errorf("connection manager is required")
 	}
 
-	// Create simple facade for bulk ingestion
-	simpleFacade := NewSimpleFacade(
-		connManager.dbType,
-		connManager.pgPool,
-		connManager.sqliteDB,
-	)
-
-	// Create full store facade for query operations
+	// Create store facade for all operations
 	storeFacade := NewStoreFacade(
 		connManager.dbType,
 		connManager.pgPool,
@@ -38,9 +30,8 @@ func NewIntegration(connManager *ConnectionManager) (*Integration, error) {
 	)
 
 	integration := &Integration{
-		connManager:  connManager,
-		simpleFacade: simpleFacade,
-		storeFacade:  storeFacade,
+		connManager: connManager,
+		storeFacade: storeFacade,
 		pgPool:       connManager.pgPool,
 		sqliteDB:     connManager.sqliteDB,
 	}
@@ -55,13 +46,8 @@ func NewIntegration(connManager *ConnectionManager) (*Integration, error) {
 	return integration, nil
 }
 
-// GetStoreFacade returns the simple facade for basic database operations (legacy method)
-func (i *Integration) GetStoreFacade() *SimpleFacade {
-	return i.simpleFacade
-}
-
-// GetFullStoreFacade returns the full store facade with all query methods
-func (i *Integration) GetFullStoreFacade() *StoreFacade {
+// GetStoreFacade returns the store facade for all database operations
+func (i *Integration) GetStoreFacade() *StoreFacade {
 	return i.storeFacade
 }
 
@@ -83,12 +69,7 @@ func (i *Integration) HealthCheck(ctx context.Context) error {
 		return fmt.Errorf("connection manager health check failed: %s", status.Error)
 	}
 
-	// Check simple facade health
-	if err := i.simpleFacade.HealthCheck(ctx); err != nil {
-		return fmt.Errorf("simple facade health check failed: %w", err)
-	}
-
-	// Check full store facade health
+	// Check store facade health
 	if err := i.storeFacade.HealthCheck(ctx); err != nil {
 		return fmt.Errorf("store facade health check failed: %w", err)
 	}
