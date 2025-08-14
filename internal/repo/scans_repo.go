@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -20,8 +21,17 @@ type ScansRepo interface {
 	UpdateScanJobProgress(ctx context.Context, scanID string, progress int32) error
 	CompletesScanJob(ctx context.Context, scanID string) error
 	ListScanJobs(ctx context.Context, limit, offset int32) ([]*models.ScanJob, error)
-	// Additional operations that would be available if queries existed
-	// ListScanJobsByVolume(ctx context.Context, volumeID string) ([]*models.ScanJob, error)
+	// Atomic claim and hardened worker operations
+	ClaimNextScanJob(ctx context.Context, startedAt time.Time) (*models.ScanJob, error)
+	UpdateScanJobHeartbeat(ctx context.Context, scanID string, progress int32) error
+	MarkStaleScanJobsAsFailed(ctx context.Context, timeoutSeconds int) ([]string, error)
+	MarkInFlightJobsAsFailed(ctx context.Context, reason string) ([]string, error)
+	
+	// Metrics and monitoring
+	GetQueueDepth(ctx context.Context) (int64, error)
+	GetActiveScanCount(ctx context.Context) (int64, error)
+	GetScanJobsByVolume(ctx context.Context, volumeID string, limit int32) ([]*models.ScanJob, error)
+	HasActiveScanForVolume(ctx context.Context, volumeID string) (bool, error)
 }
 
 // scansRepo implements ScansRepo using sqlc generated queries
@@ -176,7 +186,82 @@ func (r *scansRepo) ListScanJobs(ctx context.Context, limit, offset int32) ([]*m
 	return jobs, nil
 }
 
+// =============================================================================
+// ATOMIC CLAIM AND HARDENED WORKER OPERATIONS
+// =============================================================================
 
+func (r *scansRepo) ClaimNextScanJob(ctx context.Context, startedAt time.Time) (*models.ScanJob, error) {
+	result, err := r.queries.ClaimNextScanJob(ctx, pgtype.Timestamp{Time: startedAt, Valid: true})
+	if err != nil {
+		return nil, err
+	}
+
+	return r.convertScanJobToModel(result), nil
+}
+
+func (r *scansRepo) UpdateScanJobHeartbeat(ctx context.Context, scanID string, progress int32) error {
+	return r.queries.UpdateScanJobHeartbeat(ctx, sqlc.UpdateScanJobHeartbeatParams{
+		ScanID:   scanID,
+		Progress: pgtype.Int4{Int32: progress, Valid: true},
+	})
+}
+
+func (r *scansRepo) MarkStaleScanJobsAsFailed(ctx context.Context, timeoutSeconds int) ([]string, error) {
+	// Convert int to pgtype.Text for the timeout parameter
+	timeoutParam := pgtype.Text{String: fmt.Sprintf("%d", timeoutSeconds), Valid: true}
+	return r.queries.MarkStaleScanJobsAsFailed(ctx, timeoutParam)
+}
+
+func (r *scansRepo) MarkInFlightJobsAsFailed(ctx context.Context, reason string) ([]string, error) {
+	// Convert string to pgtype.Text for the reason parameter
+	reasonParam := pgtype.Text{String: reason, Valid: true}
+	return r.queries.MarkInFlightJobsAsFailed(ctx, reasonParam)
+}
+
+// =============================================================================
+// METRICS AND MONITORING OPERATIONS
+// =============================================================================
+
+func (r *scansRepo) GetQueueDepth(ctx context.Context) (int64, error) {
+	depth, err := r.queries.GetQueueDepth(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return depth, nil
+}
+
+func (r *scansRepo) GetActiveScanCount(ctx context.Context) (int64, error) {
+	count, err := r.queries.GetActiveScanCount(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *scansRepo) GetScanJobsByVolume(ctx context.Context, volumeID string, limit int32) ([]*models.ScanJob, error) {
+	results, err := r.queries.GetScanJobsByVolume(ctx, sqlc.GetScanJobsByVolumeParams{
+		VolumeID: volumeID,
+		Limit:    limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make([]*models.ScanJob, 0, len(results))
+	for _, result := range results {
+		jobs = append(jobs, r.convertScanJobToModel(result))
+	}
+
+	return jobs, nil
+}
+
+func (r *scansRepo) HasActiveScanForVolume(ctx context.Context, volumeID string) (bool, error) {
+	hasActive, err := r.queries.HasActiveScanForVolume(ctx, volumeID)
+	if err != nil {
+		return false, err
+	}
+	return hasActive, nil
+}
 
 // =============================================================================
 // HELPER FUNCTIONS

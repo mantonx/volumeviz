@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 )
 
 // ErrorResponse represents an API error response

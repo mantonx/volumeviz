@@ -52,10 +52,7 @@ export const volumeApi = {
     return response.data;
   },
 
-  async refreshVolumeSize(
-    volumeId: string,
-    options?: RefreshRequest,
-  ) {
+  async refreshVolumeSize(volumeId: string, options?: RefreshRequest) {
     const response = await volumeVizApi.volumes.refreshVolumeSize(
       volumeId,
       options || {},

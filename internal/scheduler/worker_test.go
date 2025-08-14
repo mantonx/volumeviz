@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -45,9 +45,9 @@ func TestWorkerProcessTaskSuccess(t *testing.T) {
 	}
 
 	mockScanner.On("ScanVolume", mock.AnythingOfType("*context.timerCtx"), "test-volume").Return(scanResult, nil)
-	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*store.ScanJobResult")).Return(nil)
-	mockRepo.On("UpdateScanRun", ctx, mock.AnythingOfType("*store.ScanJobResult")).Return(nil)
-	mockRepo.On("InsertVolumeStats", ctx, mock.AnythingOfType("*store.VolumeSizeResult")).Return(nil)
+	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*models.ScanJob")).Return(nil)
+	mockRepo.On("UpdateScanRun", ctx, mock.AnythingOfType("*models.ScanJob")).Return(nil)
+	mockRepo.On("InsertVolumeStats", ctx, mock.AnythingOfType("*models.DirRollup")).Return(nil)
 
 	// Expect metrics calls
 	mockMetrics.On("ScanStarted", "diskus").Once()
@@ -89,8 +89,8 @@ func TestWorkerProcessTaskFailure(t *testing.T) {
 	// Mock failed scan
 	scanError := errors.New("scan failed: permission denied")
 	mockScanner.On("ScanVolume", mock.AnythingOfType("*context.timerCtx"), "test-volume").Return(nil, scanError)
-	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*store.ScanJobResult")).Return(nil)
-	mockRepo.On("UpdateScanRun", ctx, mock.AnythingOfType("*store.ScanJobResult")).Return(nil)
+	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*models.ScanJob")).Return(nil)
+	mockRepo.On("UpdateScanRun", ctx, mock.AnythingOfType("*models.ScanJob")).Return(nil)
 
 	// Expect metrics calls for failure
 	mockMetrics.On("ScanStarted", "diskus").Once()
@@ -136,8 +136,8 @@ func TestWorkerProcessTaskTimeout(t *testing.T) {
 
 	// Mock scan that takes longer than timeout
 	mockScanner.On("ScanVolume", mock.AnythingOfType("*context.timerCtx"), "test-volume").Return(nil, context.DeadlineExceeded)
-	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*store.ScanJobResult")).Return(nil)
-	mockRepo.On("UpdateScanRun", ctx, mock.AnythingOfType("*store.ScanJobResult")).Return(nil)
+	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*models.ScanJob")).Return(nil)
+	mockRepo.On("UpdateScanRun", ctx, mock.AnythingOfType("*models.ScanJob")).Return(nil)
 
 	// Expect metrics calls for failure
 	mockMetrics.On("ScanStarted", "diskus").Once()
@@ -178,7 +178,7 @@ func TestWorkerProcessTaskDatabaseError(t *testing.T) {
 
 	// Mock database error when inserting scan run
 	dbError := errors.New("database connection failed")
-	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*store.ScanJobResult")).Return(dbError)
+	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*models.ScanJob")).Return(dbError)
 
 	// Expect metrics calls - ScanStarted should NOT be called if DB insert fails
 	mockMetrics.On("UpdateSchedulerWorkerUtilization", mock.AnythingOfType("float64")).Times(2) // Start and end
@@ -225,12 +225,12 @@ func TestWorkerProcessTaskVolumeStatsError(t *testing.T) {
 	}
 
 	mockScanner.On("ScanVolume", mock.AnythingOfType("*context.timerCtx"), "test-volume").Return(scanResult, nil)
-	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*store.ScanJobResult")).Return(nil)
-	mockRepo.On("UpdateScanRun", ctx, mock.AnythingOfType("*store.ScanJobResult")).Return(nil)
+	mockRepo.On("InsertScanRun", ctx, mock.AnythingOfType("*models.ScanJob")).Return(nil)
+	mockRepo.On("UpdateScanRun", ctx, mock.AnythingOfType("*models.ScanJob")).Return(nil)
 
 	// Mock error when inserting volume stats
 	statsError := errors.New("failed to insert volume stats")
-	mockRepo.On("InsertVolumeStats", ctx, mock.AnythingOfType("*store.VolumeSizeResult")).Return(statsError)
+	mockRepo.On("InsertVolumeStats", ctx, mock.AnythingOfType("*models.DirRollup")).Return(statsError)
 
 	// Expect metrics calls - scan should still be considered successful
 	mockMetrics.On("ScanStarted", "diskus").Once()
@@ -305,9 +305,9 @@ func TestWorkerConcurrency(t *testing.T) {
 		tasksDone <- true
 	})
 
-	mockRepo.On("InsertScanRun", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("*store.ScanJobResult")).Return(nil)
-	mockRepo.On("UpdateScanRun", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("*store.ScanJobResult")).Return(nil)
-	mockRepo.On("InsertVolumeStats", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("*store.VolumeSizeResult")).Return(nil)
+	mockRepo.On("InsertScanRun", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("*models.ScanJob")).Return(nil)
+	mockRepo.On("UpdateScanRun", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("*models.ScanJob")).Return(nil)
+	mockRepo.On("InsertVolumeStats", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("*models.DirRollup")).Return(nil)
 
 	// Enqueue multiple volumes
 	scanIDs := make([]string, numTasks)

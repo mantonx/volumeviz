@@ -1,4 +1,5 @@
 // Export all page components
+export { AlertsPage } from './AlertsPage';
 export { Dashboard } from './Dashboard';
 export { VolumesPage } from './VolumesPage';
 export { VolumeDetailsPage } from './VolumeDetailsPage';

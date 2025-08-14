@@ -11,17 +11,20 @@ import (
 
 // Config holds application configuration
 type Config struct {
-	Server    ServerConfig
-	Docker    DockerConfig
-	Database  DatabaseConfig
-	CORS      CORSConfig
-	Auth      AuthConfig
-	Security  SecurityConfig
-	RateLimit RateLimitConfig
-	TLS       TLSConfig
-	Lifecycle LifecycleConfig
-	Events    EventsConfig
-	Scan      ScanConfig
+	Server               ServerConfig
+	Docker               DockerConfig
+	Database             DatabaseConfig
+	CORS                 CORSConfig
+	Auth                 AuthConfig
+	Security             SecurityConfig
+	RateLimit            RateLimitConfig
+	TLS                  TLSConfig
+	Lifecycle            LifecycleConfig
+	Events               EventsConfig
+	Scan                 ScanConfig
+	FilesystemIndexing   FilesystemIndexingConfig
+	MediaEnrichment      MediaEnrichmentConfig
+	Alerts               AlertsConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -116,6 +119,59 @@ type ScanConfig struct {
 	SkipPattern       string
 }
 
+// FilesystemIndexingConfig holds filesystem indexing configuration
+type FilesystemIndexingConfig struct {
+	// Enable/disable filesystem indexing
+	Enabled         bool     `env:"VV_FILESYSTEM_INDEXING_ENABLED" envDefault:"false"`
+	
+	// Hashing configuration
+	EnableHashing      bool   `env:"VV_ENABLE_HASHING" envDefault:"false"`
+	MaxFileBytesForHash int64 `env:"VV_MAX_FILE_BYTES_FOR_HASH" envDefault:"10485760"` // 10MB
+	HashAlgorithm      string `env:"VV_HASH_ALGO" envDefault:"sha256"`
+	
+	// Skip rules
+	SkipPatterns []string `env:"VV_SKIP_PATTERNS" envSeparator:","`
+	SkipHidden   bool     `env:"VV_SKIP_HIDDEN" envDefault:"true"`
+	
+	// Performance settings  
+	MaxDepth         int `env:"VV_MAX_DEPTH" envDefault:"20"`
+	ConcurrentReads  int `env:"VV_CONCURRENT_READS" envDefault:"5"`
+	BatchSize        int `env:"VV_BATCH_SIZE" envDefault:"1000"`
+	
+	// Metadata collection
+	CollectExtendedAttributes bool `env:"VV_COLLECT_EXTENDED_ATTRS" envDefault:"false"`
+	DetectMimeTypes          bool `env:"VV_DETECT_MIME_TYPES" envDefault:"true"`
+}
+
+// MediaEnrichmentConfig holds media metadata enrichment configuration
+type MediaEnrichmentConfig struct {
+	// Global settings
+	Enabled              bool          `env:"VV_ENABLE_ENRICHERS" envDefault:"true"`
+	MaxConcurrentWorkers int           `env:"VV_MAX_CONCURRENT_ENRICHERS" envDefault:"3"`
+	TimeoutPerFile       time.Duration `env:"VV_ENRICHER_TIMEOUT_PER_FILE" envDefault:"30s"`
+	
+	// FFprobe settings
+	FFprobeEnabled    bool          `env:"VV_ENABLE_FFPROBE" envDefault:"true"`
+	FFprobePath       string        `env:"VV_FFPROBE_PATH" envDefault:"ffprobe"`
+	FFprobeTimeout    time.Duration `env:"VV_FFPROBE_TIMEOUT" envDefault:"15s"`
+	
+	// EXIF settings
+	EXIFEnabled    bool `env:"VV_ENABLE_EXIF" envDefault:"true"`
+	EnableGPS      bool `env:"VV_ENABLE_EXIF_GPS" envDefault:"false"`
+	RedactGPS      bool `env:"VV_REDACT_GPS" envDefault:"true"`
+	GPSPrecision   int  `env:"VV_GPS_PRECISION" envDefault:"3"` // decimal places for GPS coordinates
+	
+	// Subtitle settings
+	SubtitleEnabled bool `env:"VV_ENABLE_SUBTITLE_ENRICHMENT" envDefault:"true"`
+}
+
+// AlertsConfig holds alerts engine configuration
+type AlertsConfig struct {
+	Enabled                    bool `env:"ALERTS_ENABLED" envDefault:"false"`
+	EvaluationIntervalMinutes  int  `env:"ALERTS_EVALUATION_INTERVAL_MINUTES" envDefault:"1"`
+	DeliveryWorkers            int  `env:"ALERTS_DELIVERY_WORKERS" envDefault:"3"`
+}
+
 // Load loads configuration from environment variables with defaults
 func Load() *Config {
 	return &Config{
@@ -194,6 +250,37 @@ func Load() *Config {
 			BindAllowList:     getStringSliceEnv("SCAN_BIND_ALLOWLIST", []string{}),
 			SkipPattern:       getEnv("SCAN_SKIP_PATTERN", "^docker_|^builder_|^containerd"),
 		},
+		FilesystemIndexing: FilesystemIndexingConfig{
+			Enabled:                   getBoolEnv("VV_FILESYSTEM_INDEXING_ENABLED", false),
+			EnableHashing:             getBoolEnv("VV_ENABLE_HASHING", false),
+			MaxFileBytesForHash:       getInt64Env("VV_MAX_FILE_BYTES_FOR_HASH", 10485760), // 10MB
+			HashAlgorithm:             getEnv("VV_HASH_ALGO", "sha256"),
+			SkipPatterns:              getStringSliceEnv("VV_SKIP_PATTERNS", []string{`\.git`, `\.tmp$`, `node_modules`}),
+			SkipHidden:                getBoolEnv("VV_SKIP_HIDDEN", true),
+			MaxDepth:                  getIntEnv("VV_MAX_DEPTH", 20),
+			ConcurrentReads:           getIntEnv("VV_CONCURRENT_READS", 5),
+			BatchSize:                 getIntEnv("VV_BATCH_SIZE", 1000),
+			CollectExtendedAttributes: getBoolEnv("VV_COLLECT_EXTENDED_ATTRS", false),
+			DetectMimeTypes:           getBoolEnv("VV_DETECT_MIME_TYPES", true),
+		},
+		MediaEnrichment: MediaEnrichmentConfig{
+			Enabled:              getBoolEnv("VV_ENABLE_ENRICHERS", true),
+			MaxConcurrentWorkers: getIntEnv("VV_MAX_CONCURRENT_ENRICHERS", 3),
+			TimeoutPerFile:       getDurationEnv("VV_ENRICHER_TIMEOUT_PER_FILE", 30*time.Second),
+			FFprobeEnabled:       getBoolEnv("VV_ENABLE_FFPROBE", true),
+			FFprobePath:          getEnv("VV_FFPROBE_PATH", "ffprobe"),
+			FFprobeTimeout:       getDurationEnv("VV_FFPROBE_TIMEOUT", 15*time.Second),
+			EXIFEnabled:          getBoolEnv("VV_ENABLE_EXIF", true),
+			EnableGPS:            getBoolEnv("VV_ENABLE_EXIF_GPS", false),
+			RedactGPS:            getBoolEnv("VV_REDACT_GPS", true),
+			GPSPrecision:         getIntEnv("VV_GPS_PRECISION", 3),
+			SubtitleEnabled:      getBoolEnv("VV_ENABLE_SUBTITLE_ENRICHMENT", true),
+		},
+		Alerts: AlertsConfig{
+			Enabled:                   getBoolEnv("ALERTS_ENABLED", false),
+			EvaluationIntervalMinutes: getIntEnv("ALERTS_EVALUATION_INTERVAL_MINUTES", 1),
+			DeliveryWorkers:           getIntEnv("ALERTS_DELIVERY_WORKERS", 3),
+		},
 	}
 }
 
@@ -247,6 +334,16 @@ func getIntEnv(key string, defaultValue int) int {
 	return defaultValue
 }
 
+// getInt64Env gets int64 environment variable with default value
+func getInt64Env(key string, defaultValue int64) int64 {
+	if value := os.Getenv(key); value != "" {
+		if parsed, err := strconv.ParseInt(value, 10, 64); err == nil {
+			return parsed
+		}
+	}
+	return defaultValue
+}
+
 // getScanEnabledDefault returns the default value for scan enabled based on environment
 func getScanEnabledDefault() bool {
 	// Check for explicit setting first
@@ -293,5 +390,42 @@ func (dc *DatabaseConfig) ToStoreConfig() *storeconfig.Config {
 		MaxIdleConns: 10,
 		ConnMaxLife:  30 * time.Minute,
 		Timeout:      30 * time.Second,
+	}
+}
+
+// ToIndexerConfig converts FilesystemIndexingConfig to services.IndexerConfig
+func (fic *FilesystemIndexingConfig) ToIndexerConfig() interface{} {
+	// Note: This would need to import the services package, but that would create a circular dependency.
+	// Instead, this method is just for documentation. The actual conversion would be done in the main app.
+	return map[string]interface{}{
+		"enable_hashing":               fic.EnableHashing,
+		"max_file_bytes_for_hash":      fic.MaxFileBytesForHash,
+		"hash_algorithm":               fic.HashAlgorithm,
+		"skip_patterns":                fic.SkipPatterns,
+		"skip_hidden":                  fic.SkipHidden,
+		"max_depth":                    fic.MaxDepth,
+		"concurrent_reads":             fic.ConcurrentReads,
+		"batch_size":                   fic.BatchSize,
+		"collect_extended_attributes":  fic.CollectExtendedAttributes,
+		"detect_mime_types":            fic.DetectMimeTypes,
+	}
+}
+
+// ToEnricherConfig converts MediaEnrichmentConfig to enrichers.EnricherConfig
+func (mec *MediaEnrichmentConfig) ToEnricherConfig() interface{} {
+	// Note: This would need to import the enrichers package, but that would create a circular dependency.
+	// Instead, this method is just for documentation. The actual conversion would be done in the main app.
+	return map[string]interface{}{
+		"enabled":                mec.Enabled,
+		"max_concurrent_workers": mec.MaxConcurrentWorkers,
+		"timeout_per_file":       mec.TimeoutPerFile,
+		"ffprobe_enabled":        mec.FFprobeEnabled,
+		"ffprobe_path":           mec.FFprobePath,
+		"ffprobe_timeout":        mec.FFprobeTimeout,
+		"exif_enabled":           mec.EXIFEnabled,
+		"enable_gps":             mec.EnableGPS,
+		"redact_gps":             mec.RedactGPS,
+		"gps_precision":          mec.GPSPrecision,
+		"subtitle_enabled":       mec.SubtitleEnabled,
 	}
 }

@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { useAtomValue } from 'jotai';
 import { Header } from '../Header';
 import { Sidebar } from '../Sidebar';
-import { WebSocketDevPanel, useWebSocketDevPanel } from '@/components/dev/WebSocketDevPanel';
+import {
+  WebSocketDevPanel,
+  useWebSocketDevPanel,
+} from '@/components/dev/WebSocketDevPanel';
 import { resolvedThemeAtom } from '@/store';
 import { cn } from '@/utils';
 import type { LayoutProps } from './Layout.types';
@@ -58,9 +61,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
 
       {/* WebSocket Dev Panel (DEV mode only) */}
       {import.meta.env.DEV && (
-        <WebSocketDevPanel 
-          isOpen={devPanel.isOpen} 
-          onClose={devPanel.closePanel} 
+        <WebSocketDevPanel
+          isOpen={devPanel.isOpen}
+          onClose={devPanel.closePanel}
         />
       )}
     </div>

@@ -74,17 +74,27 @@ export const VolumeCard: React.FC<VolumeCardProps> = React.memo(
         volume.status !== 'active');
 
     return (
-      <Card data-testid="volume-item" role="listitem" className="p-6 hover:shadow-md transition-shadow">
+      <Card
+        data-testid="volume-item"
+        role="listitem"
+        className="p-6 hover:shadow-md transition-shadow"
+      >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
               <HardDrive className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h3 data-testid="volume-name" className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3
+                data-testid="volume-name"
+                className="text-lg font-semibold text-gray-900 dark:text-white"
+              >
                 {volume.name || 'Unnamed Volume'}
               </h3>
-              <p data-testid="volume-driver" className="text-sm text-gray-500 dark:text-gray-400">
+              <p
+                data-testid="volume-driver"
+                className="text-sm text-gray-500 dark:text-gray-400"
+              >
                 {volume.driver || 'local'} driver
               </p>
             </div>
@@ -93,14 +103,21 @@ export const VolumeCard: React.FC<VolumeCardProps> = React.memo(
             <Badge variant={getStatusVariant(volume.is_active)}>
               {getStatusText(volume.is_active)}
             </Badge>
-            {isOrphaned && <Badge data-testid="orphaned-badge" variant="error">Orphaned</Badge>}
+            {isOrphaned && (
+              <Badge data-testid="orphaned-badge" variant="error">
+                Orphaned
+              </Badge>
+            )}
           </div>
         </div>
 
         <div className="space-y-3">
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-600 dark:text-gray-400">Size:</span>
-            <span data-testid="volume-size" className="font-medium text-gray-900 dark:text-white">
+            <span
+              data-testid="volume-size"
+              className="font-medium text-gray-900 dark:text-white"
+            >
               {getVolumeSize()}
             </span>
           </div>

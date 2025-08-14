@@ -1,44 +1,58 @@
--- name: PruneVolumeMetrics :execrows
--- Removes volume_metrics entries older than the specified date
+-- Retention queries for data lifecycle management
+
+-- name: PruneVolumeMetrics :exec
 DELETE FROM volume_metrics 
-WHERE metric_timestamp < (CURRENT_TIMESTAMP - INTERVAL '@ttl_days days');
+WHERE metric_timestamp < NOW() - INTERVAL '1 day' * $1;
 
--- name: PruneVolumeSizes :execrows
--- Removes volume_sizes entries older than the specified date
-DELETE FROM volume_sizes 
-WHERE created_at < (CURRENT_TIMESTAMP - INTERVAL '@ttl_days days');
+-- name: CountVolumeMetrics :one
+SELECT COUNT(*) FROM volume_metrics 
+WHERE metric_timestamp < NOW() - INTERVAL '1 day' * $1;
 
--- name: PruneScanJobs :execrows
--- Removes completed/failed scan_jobs entries older than the specified date
+-- name: PruneScanJobs :exec  
 DELETE FROM scan_jobs 
-WHERE created_at < (CURRENT_TIMESTAMP - INTERVAL '@ttl_days days')
-  AND status IN ('completed', 'failed', 'canceled');
+WHERE (status = 'completed' OR status = 'failed' OR status = 'cancelled')
+AND created_at < NOW() - INTERVAL '1 day' * $1;
 
--- name: CreateDailyRollupTable :exec
--- Creates the daily rollup table if it doesn't exist
-CREATE TABLE IF NOT EXISTS volume_metrics_daily (
-    id SERIAL PRIMARY KEY,
-    volume_id VARCHAR(255) NOT NULL,
-    day DATE NOT NULL,
-    total_size_avg BIGINT,
-    file_count_avg BIGINT,
-    directory_count_avg BIGINT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(volume_id, day)
-);
+-- name: CountOldScanJobs :one
+SELECT COUNT(*) FROM scan_jobs 
+WHERE (status = 'completed' OR status = 'failed' OR status = 'cancelled')
+AND created_at < NOW() - INTERVAL '1 day' * $1;
 
--- name: RollupDailyMetrics :exec
--- Creates or updates daily aggregates for the last 7 days
-INSERT INTO volume_metrics_daily (volume_id, day, total_size_avg, file_count_avg, directory_count_avg)
-SELECT volume_id,
-       DATE(metric_timestamp) AS day,
-       AVG(total_size)::BIGINT,
-       AVG(file_count)::BIGINT,
-       AVG(directory_count)::BIGINT
-FROM volume_metrics
-WHERE metric_timestamp >= (CURRENT_DATE - INTERVAL '7 days')
-GROUP BY volume_id, DATE(metric_timestamp)
-ON CONFLICT (volume_id, day) DO UPDATE SET
-  total_size_avg = EXCLUDED.total_size_avg,
-  file_count_avg = EXCLUDED.file_count_avg,
-  directory_count_avg = EXCLUDED.directory_count_avg;
+-- name: PruneDailyStats :exec
+DELETE FROM stats_daily 
+WHERE date < CURRENT_DATE - INTERVAL '1 day' * $1;
+
+-- name: CountOldDailyStats :one
+SELECT COUNT(*) FROM stats_daily 
+WHERE date < CURRENT_DATE - INTERVAL '1 day' * $1;
+
+-- name: PruneFileMetadata :exec
+DELETE FROM file_metadata 
+WHERE enriched_at < NOW() - INTERVAL '1 day' * $1;
+
+-- name: CountOldFileMetadata :one
+SELECT COUNT(*) FROM file_metadata 
+WHERE enriched_at < NOW() - INTERVAL '1 day' * $1;
+
+-- name: PruneInactiveFolders :exec
+DELETE FROM folders 
+WHERE volume_id NOT IN (SELECT volume_id FROM volumes WHERE is_active = true)
+AND updated_at < NOW() - INTERVAL '1 day' * $1;
+
+-- name: CountInactiveFolders :one  
+SELECT COUNT(*) FROM folders 
+WHERE volume_id NOT IN (SELECT volume_id FROM volumes WHERE is_active = true)
+AND updated_at < NOW() - INTERVAL '1 day' * $1;
+
+-- name: PruneInactiveFiles :exec
+DELETE FROM files 
+WHERE volume_id NOT IN (SELECT volume_id FROM volumes WHERE is_active = true)
+AND updated_at < NOW() - INTERVAL '1 day' * $1;
+
+-- name: CountInactiveFiles :one
+SELECT COUNT(*) FROM files 
+WHERE volume_id NOT IN (SELECT volume_id FROM volumes WHERE is_active = true)
+AND updated_at < NOW() - INTERVAL '1 day' * $1;
+
+-- name: VacuumAnalyze :exec
+VACUUM ANALYZE;

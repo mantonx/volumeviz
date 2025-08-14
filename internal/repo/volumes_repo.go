@@ -19,7 +19,7 @@ type VolumesRepo interface {
 	GetVolumeByID(ctx context.Context, id int64) (*models.Volume, error)
 	GetVolumeByVolumeID(ctx context.Context, volumeID string) (*models.Volume, error)
 	ListVolumes(ctx context.Context, limit, offset int32) ([]*models.Volume, error)
-	UpdateVolume(ctx context.Context, params models.UpdateVolumeParams) (*time.Time, error)
+	UpdateVolume(ctx context.Context, params models.UpdateVolumeParams) (*models.Volume, error)
 	UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error
 	SoftDeleteVolume(ctx context.Context, id int64) error
 	UpsertVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error)
@@ -125,11 +125,11 @@ func (r *volumesRepo) ListVolumes(ctx context.Context, limit, offset int32) ([]*
 	return volumes, nil
 }
 
-func (r *volumesRepo) UpdateVolume(ctx context.Context, params models.UpdateVolumeParams) (*time.Time, error) {
+func (r *volumesRepo) UpdateVolume(ctx context.Context, params models.UpdateVolumeParams) (*models.Volume, error) {
 	labels, _ := json.Marshal(params.Labels)
 	options, _ := json.Marshal(params.Options)
 
-	updatedAt, err := r.queries.UpdateVolume(ctx, sqlc.UpdateVolumeParams{
+	_, err := r.queries.UpdateVolume(ctx, sqlc.UpdateVolumeParams{
 		ID:         params.ID,
 		Name:       params.Name,
 		Driver:     params.Driver,
@@ -144,7 +144,13 @@ func (r *volumesRepo) UpdateVolume(ctx context.Context, params models.UpdateVolu
 		return nil, fmt.Errorf("failed to update volume: %w", err)
 	}
 
-	return &updatedAt, nil
+	// Get the updated volume to return the complete object
+	volume, err := r.queries.GetVolumeByID(ctx, params.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get updated volume: %w", err)
+	}
+
+	return r.convertRowToVolume(volume)
 }
 
 func (r *volumesRepo) UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error {

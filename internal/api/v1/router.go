@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/middleware"
+	"github.com/mantonx/volumeviz/internal/api/v1/alerts"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
 	"github.com/mantonx/volumeviz/internal/api/v1/system"
@@ -15,14 +16,17 @@ import (
 	"github.com/mantonx/volumeviz/internal/api/v1/volumes"
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
-	"github.com/mantonx/volumeviz/internal/core/models"
-	"github.com/mantonx/volumeviz/internal/core/services/cache"
-	coreMetrics "github.com/mantonx/volumeviz/internal/core/services/metrics"
-	"github.com/mantonx/volumeviz/internal/core/services/scanner"
 	"github.com/mantonx/volumeviz/internal/events"
+	oldInterfaces "github.com/mantonx/volumeviz/internal/interfaces"
+	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/scheduler"
-	"github.com/mantonx/volumeviz/internal/services"
+	alertsService "github.com/mantonx/volumeviz/internal/services/alerts"
+	"github.com/mantonx/volumeviz/internal/services/cache"
+	dockerService "github.com/mantonx/volumeviz/internal/services/docker"
+	coreMetrics "github.com/mantonx/volumeviz/internal/services/metrics"
+	"github.com/mantonx/volumeviz/internal/services/scanner"
+	statsService "github.com/mantonx/volumeviz/internal/services/stats"
 	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/websocket"
 	"github.com/prometheus/client_golang/prometheus"
@@ -34,18 +38,19 @@ import (
 // Router manages all v1 API routes
 type Router struct {
 	engine            *gin.Engine
-	dockerService     *services.DockerService
-	scanner           interfaces.VolumeScanner
+	dockerService     *dockerService.DockerService
+	scanner           oldInterfaces.VolumeScanner
 	store             store.Store // Modern store interface using sqlc
 	websocketHub      *websocket.Hub
 	realtimePublisher *realtime.Publisher
 	scheduler         scheduler.ScanScheduler // Optional scan scheduler - using store façade
 	eventsService     events.EventService     // Optional events service - using store façade
+	alertsEngine      interfaces.AlertEngine  // Alerts engine for alert management
 	healthRouter      *health.Router          // Health router for external access
 }
 
 // NewRouter creates a new v1 API router
-func NewRouter(dockerService *services.DockerService, storeInstance store.Store, config *config.Config) *Router {
+func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store, config *config.Config) *Router {
 	// Initialize WebSocket hub
 	hub := websocket.NewHub()
 	go hub.Run()
@@ -68,7 +73,7 @@ func NewRouter(dockerService *services.DockerService, storeInstance store.Store,
 	scannerConfig := models.DefaultConfig()
 
 	volumeScanner := scanner.NewVolumeScanner(
-		dockerService,
+		dockerSvc,
 		cache,
 		metricsCollector,
 		logger,
@@ -88,7 +93,7 @@ func NewRouter(dockerService *services.DockerService, storeInstance store.Store,
 			schedulerConfig := scheduler.NewSchedulerConfig(&config.Scan)
 			
 			// Create volume provider
-			volumeProvider := scheduler.NewDockerVolumeProvider(dockerService)
+			volumeProvider := scheduler.NewDockerVolumeProvider(dockerSvc)
 			
 			// Create scheduler
 			sch, err := scheduler.NewScheduler(
@@ -97,6 +102,7 @@ func NewRouter(dockerService *services.DockerService, storeInstance store.Store,
 				scanRepository,
 				volumeProvider,
 				metricsCollector,
+				storeInstance,
 			)
 			if err != nil {
 				log.Printf("[ERROR] Failed to create scan scheduler: %v", err)
@@ -111,7 +117,7 @@ func NewRouter(dockerService *services.DockerService, storeInstance store.Store,
 	var eventsService events.EventService
 	if config.Events.Enabled {
 		// Get raw Docker client for events processing
-		dockerClient := dockerService.GetDockerClient()
+		dockerClient := dockerSvc.GetDockerClient()
 		
 		// Create events metrics collector
 		eventsMetrics := events.NewEventMetricsCollector(
@@ -121,19 +127,20 @@ func NewRouter(dockerService *services.DockerService, storeInstance store.Store,
 		)
 		
 		// Create event handler service (implements EventProcessor)
-		// TODO: Create proper adapter between store.Store and events.Repository
+		// Use store-based repository implementation
+		eventsRepo := events.NewStoreRepository(storeInstance)
 		eventHandler := events.NewEventHandlerService(
 			dockerClient,
-			nil, // Temporary: use nil until events repository adapter is implemented
+			eventsRepo,
 			eventsMetrics,
 			publisher,
 		)
 		
 		// Create reconciler service
-		// TODO: Create proper adapter between store.Store and events.Repository
+		// Use store-based repository implementation
 		reconciler := events.NewReconcilerService(
 			dockerClient,
-			nil, // Temporary: use nil until events repository adapter is implemented
+			eventsRepo,
 			&config.Events,
 			&events.EventMetrics{
 				ProcessedTotal:    make(map[events.EventType]int64),
@@ -162,15 +169,31 @@ func NewRouter(dockerService *services.DockerService, storeInstance store.Store,
 		log.Printf("[INFO] Events service initialized successfully")
 	}
 
+	// Initialize alerts engine if enabled
+	var alertsEngine interfaces.AlertEngine
+	if config.Alerts.Enabled {
+		// Create alerts engine config
+		engineConfig := &alertsService.EngineConfig{
+			EvaluationInterval: time.Duration(config.Alerts.EvaluationIntervalMinutes) * time.Minute,
+			DeliveryWorkers:    config.Alerts.DeliveryWorkers,
+			Enabled:           true,
+		}
+
+		// Create alerts engine
+		alertsEngine = alertsService.NewAlertEngine(storeInstance, engineConfig)
+		log.Printf("[INFO] Alerts engine initialized successfully")
+	}
+
 	router := &Router{
 		engine:            gin.New(),
-		dockerService:     dockerService,
+		dockerService:     dockerSvc,
 		scanner:           volumeScanner,
 		store:             storeInstance,
 		websocketHub:      hub,
 		realtimePublisher: publisher,
 		scheduler:         scanScheduler,
 		eventsService:     eventsService,
+		alertsEngine:      alertsEngine,
 	}
 
 	router.setupMiddleware(config)
@@ -326,9 +349,25 @@ func (r *Router) setupRoutes() {
 
 		// Note: Metrics API temporarily removed during database cleanup
 
-		// Trends router with Store interface
-		trendsRouter := trends.NewRouter(r.store)
+		// Initialize StatsService for trends API
+		statsRepo := r.store.Stats()
+		logger := log.New(os.Stdout, "[STATS] ", log.LstdFlags)
+		metricsCollector := coreMetrics.NewPrometheusMetricsCollector(
+			"volumeviz",
+			"stats", 
+			prometheus.Labels{"instance": "main"},
+		)
+		statsSvc := statsService.NewStatsService(statsRepo, metricsCollector, logger)
+
+		// Trends router with Store interface and StatsService
+		trendsRouter := trends.NewRouter(r.store, statsSvc)
 		trendsRouter.RegisterRoutes(v1)
+
+		// Alerts router if alerts engine is available
+		if r.alertsEngine != nil {
+			alertsRouter := alerts.NewRouter(r.store, r.alertsEngine)
+			alertsRouter.RegisterRoutes(v1)
+		}
 	}
 }
 

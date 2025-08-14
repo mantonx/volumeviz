@@ -10,7 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/mocks"
-	"github.com/mantonx/volumeviz/internal/services"
+	"github.com/mantonx/volumeviz/internal/services/docker"
 )
 
 func TestHandler_GetDockerHealth(t *testing.T) {
@@ -93,7 +93,7 @@ func TestHandler_GetDockerHealth(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := tt.setupMock()
-			dockerService := services.NewDockerServiceWithClient(mockClient)
+			dockerService := docker.NewDockerServiceWithClient(mockClient)
 			handler := NewHandler(dockerService, nil, nil, nil)
 
 			w := httptest.NewRecorder()
@@ -143,7 +143,7 @@ func TestHandler_GetAppHealth(t *testing.T) {
 					return tt.dockerAvailable
 				},
 			}
-			dockerService := services.NewDockerServiceWithClient(mockClient)
+			dockerService := docker.NewDockerServiceWithClient(mockClient)
 			handler := NewHandler(dockerService, nil, nil, nil)
 
 			w := httptest.NewRecorder()
@@ -193,7 +193,7 @@ func TestHandler_GetReadiness(t *testing.T) {
 					return tt.dockerAvailable
 				},
 			}
-			dockerService := services.NewDockerServiceWithClient(mockClient)
+			dockerService := docker.NewDockerServiceWithClient(mockClient)
 			handler := NewHandler(dockerService, nil, nil, nil)
 
 			w := httptest.NewRecorder()

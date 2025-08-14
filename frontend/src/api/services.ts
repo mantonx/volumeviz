@@ -39,7 +39,12 @@ import {
 
 // Import generated API client and types
 import { Api } from './generated/Api';
-import type { Volume, AsyncScanResponse, RefreshRequest, ScanResponse } from './generated/Api';
+import type {
+  Volume,
+  AsyncScanResponse,
+  RefreshRequest,
+  ScanResponse,
+} from './generated/Api';
 
 // Create configured API client instance
 const volumeVizApi = new Api({
@@ -165,10 +170,10 @@ export function useVolumes() {
         };
         // Use generated API client for volumes list
         const response = await volumeVizApi.volumes.listVolumes(queryParams);
-        
+
         // Ignore stale responses
         if (seq !== requestSeqRef.current) return;
-        
+
         const pagedData = response.data;
         const volumeData = pagedData.data || [];
         setVolumes(volumeData as Volume[]);

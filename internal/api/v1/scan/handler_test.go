@@ -12,8 +12,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
-	"github.com/mantonx/volumeviz/internal/core/interfaces"
-	coremodels "github.com/mantonx/volumeviz/internal/core/models"
+	"github.com/mantonx/volumeviz/internal/interfaces"
+	coremodels "github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

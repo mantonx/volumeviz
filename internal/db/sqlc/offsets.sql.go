@@ -12,6 +12,46 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const claimNextScanJob = `-- name: ClaimNextScanJob :one
+
+UPDATE scan_jobs 
+SET status = 'running', started_at = $1, updated_at = CURRENT_TIMESTAMP
+WHERE id IN (
+    SELECT id 
+    FROM scan_jobs
+    WHERE status = 'queued'
+    ORDER BY created_at ASC
+    FOR UPDATE SKIP LOCKED
+    LIMIT 1
+)
+RETURNING id, scan_id, volume_id, status, progress, method, started_at, completed_at, error_message, result_id, estimated_duration, created_at, updated_at
+`
+
+// =============================================================================
+// ATOMIC CLAIM AND WORKER HARDENING OPERATIONS
+// =============================================================================
+// Atomically claim the next available scan job using SKIP LOCKED
+func (q *Queries) ClaimNextScanJob(ctx context.Context, startedAt pgtype.Timestamp) (ScanJobs, error) {
+	row := q.db.QueryRow(ctx, claimNextScanJob, startedAt)
+	var i ScanJobs
+	err := row.Scan(
+		&i.ID,
+		&i.ScanID,
+		&i.VolumeID,
+		&i.Status,
+		&i.Progress,
+		&i.Method,
+		&i.StartedAt,
+		&i.CompletedAt,
+		&i.ErrorMessage,
+		&i.ResultID,
+		&i.EstimatedDuration,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const completeScanJob = `-- name: CompleteScanJob :one
 UPDATE scan_jobs 
 SET status = $2, progress = 100, completed_at = $3, result_id = $4, updated_at = CURRENT_TIMESTAMP
@@ -128,6 +168,20 @@ func (q *Queries) FailScanJob(ctx context.Context, arg FailScanJobParams) (FailS
 	return i, err
 }
 
+const getActiveScanCount = `-- name: GetActiveScanCount :one
+SELECT COUNT(*) as active_count
+FROM scan_jobs 
+WHERE status = 'running'
+`
+
+// Get current active scan count for metrics
+func (q *Queries) GetActiveScanCount(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getActiveScanCount)
+	var active_count int64
+	err := row.Scan(&active_count)
+	return active_count, err
+}
+
 const getActiveScanJobs = `-- name: GetActiveScanJobs :many
 SELECT id, scan_id, volume_id, status, progress, method, started_at, completed_at, error_message, result_id, estimated_duration, created_at, updated_at
 FROM scan_jobs 
@@ -196,6 +250,20 @@ func (q *Queries) GetLatestScanJobByVolumeID(ctx context.Context, volumeID strin
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getQueueDepth = `-- name: GetQueueDepth :one
+SELECT COUNT(*) as queue_depth 
+FROM scan_jobs 
+WHERE status = 'queued'
+`
+
+// Get current queue depth for metrics
+func (q *Queries) GetQueueDepth(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getQueueDepth)
+	var queue_depth int64
+	err := row.Scan(&queue_depth)
+	return queue_depth, err
 }
 
 const getRecentScanJobs = `-- name: GetRecentScanJobs :many
@@ -330,6 +398,54 @@ func (q *Queries) GetScanJobStats(ctx context.Context) (GetScanJobStatsRow, erro
 	return i, err
 }
 
+const getScanJobsByVolume = `-- name: GetScanJobsByVolume :many
+SELECT id, scan_id, volume_id, status, progress, method, started_at, completed_at, error_message, result_id, estimated_duration, created_at, updated_at
+FROM scan_jobs 
+WHERE volume_id = $1 
+ORDER BY created_at DESC
+LIMIT $2
+`
+
+type GetScanJobsByVolumeParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
+}
+
+// Get all scan jobs for a specific volume (for volume concurrency check)
+func (q *Queries) GetScanJobsByVolume(ctx context.Context, arg GetScanJobsByVolumeParams) ([]ScanJobs, error) {
+	rows, err := q.db.Query(ctx, getScanJobsByVolume, arg.VolumeID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ScanJobs{}
+	for rows.Next() {
+		var i ScanJobs
+		if err := rows.Scan(
+			&i.ID,
+			&i.ScanID,
+			&i.VolumeID,
+			&i.Status,
+			&i.Progress,
+			&i.Method,
+			&i.StartedAt,
+			&i.CompletedAt,
+			&i.ErrorMessage,
+			&i.ResultID,
+			&i.EstimatedDuration,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getTotalMetricsCount = `-- name: GetTotalMetricsCount :one
 SELECT COUNT(*) FROM volume_metrics
 `
@@ -361,6 +477,21 @@ func (q *Queries) GetTotalVolumeCount(ctx context.Context) (int64, error) {
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const hasActiveScanForVolume = `-- name: HasActiveScanForVolume :one
+SELECT EXISTS(
+    SELECT 1 FROM scan_jobs 
+    WHERE volume_id = $1 AND status IN ('queued', 'running')
+) as has_active_scan
+`
+
+// Check if there's already an active scan for a volume (enforces max 1 per volume)
+func (q *Queries) HasActiveScanForVolume(ctx context.Context, volumeID string) (bool, error) {
+	row := q.db.QueryRow(ctx, hasActiveScanForVolume, volumeID)
+	var has_active_scan bool
+	err := row.Scan(&has_active_scan)
+	return has_active_scan, err
 }
 
 const healthCheck = `-- name: HealthCheck :one
@@ -424,6 +555,70 @@ func (q *Queries) ListScanJobs(ctx context.Context, arg ListScanJobsParams) ([]S
 	return items, nil
 }
 
+const markInFlightJobsAsFailed = `-- name: MarkInFlightJobsAsFailed :many
+UPDATE scan_jobs 
+SET status = 'failed',
+    error_message = $1,
+    completed_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP  
+WHERE status = 'running'
+RETURNING scan_id
+`
+
+// Mark all running scan jobs as failed (used during graceful restart)
+func (q *Queries) MarkInFlightJobsAsFailed(ctx context.Context, errorMessage pgtype.Text) ([]string, error) {
+	rows, err := q.db.Query(ctx, markInFlightJobsAsFailed, errorMessage)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var scan_id string
+		if err := rows.Scan(&scan_id); err != nil {
+			return nil, err
+		}
+		items = append(items, scan_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markStaleScanJobsAsFailed = `-- name: MarkStaleScanJobsAsFailed :many
+UPDATE scan_jobs 
+SET status = 'failed', 
+    error_message = 'Scan job timed out - no heartbeat received within ' || $1 || ' seconds',
+    completed_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
+WHERE status = 'running' 
+AND updated_at < (CURRENT_TIMESTAMP - INTERVAL '1 second' * $1)
+RETURNING scan_id
+`
+
+// Mark scan jobs as failed if they haven't been updated within the timeout period
+// This is the watchdog functionality
+func (q *Queries) MarkStaleScanJobsAsFailed(ctx context.Context, dollar_1 pgtype.Text) ([]string, error) {
+	rows, err := q.db.Query(ctx, markStaleScanJobsAsFailed, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var scan_id string
+		if err := rows.Scan(&scan_id); err != nil {
+			return nil, err
+		}
+		items = append(items, scan_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const startScanJob = `-- name: StartScanJob :one
 UPDATE scan_jobs 
 SET status = 'running', started_at = $2, updated_at = CURRENT_TIMESTAMP
@@ -446,6 +641,23 @@ func (q *Queries) StartScanJob(ctx context.Context, arg StartScanJobParams) (Sta
 	var i StartScanJobRow
 	err := row.Scan(&i.ID, &i.UpdatedAt)
 	return i, err
+}
+
+const updateScanJobHeartbeat = `-- name: UpdateScanJobHeartbeat :exec
+UPDATE scan_jobs 
+SET updated_at = CURRENT_TIMESTAMP, progress = $2
+WHERE scan_id = $1 AND status = 'running'
+`
+
+type UpdateScanJobHeartbeatParams struct {
+	ScanID   string      `json:"scan_id"`
+	Progress pgtype.Int4 `json:"progress"`
+}
+
+// Update heartbeat timestamp for an active scan job
+func (q *Queries) UpdateScanJobHeartbeat(ctx context.Context, arg UpdateScanJobHeartbeatParams) error {
+	_, err := q.db.Exec(ctx, updateScanJobHeartbeat, arg.ScanID, arg.Progress)
+	return err
 }
 
 const updateScanJobProgress = `-- name: UpdateScanJobProgress :exec

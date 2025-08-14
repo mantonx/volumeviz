@@ -3,17 +3,17 @@ package scheduler
 import (
 	"context"
 
-	"github.com/mantonx/volumeviz/internal/services"
+	docker "github.com/mantonx/volumeviz/internal/services/docker"
 	"github.com/mantonx/volumeviz/internal/models"
 )
 
 // DockerVolumeProvider implements VolumeProvider using DockerService
 type DockerVolumeProvider struct {
-	dockerService *services.DockerService
+	dockerService *docker.DockerService
 }
 
 // NewDockerVolumeProvider creates a new DockerVolumeProvider
-func NewDockerVolumeProvider(dockerService *services.DockerService) VolumeProvider {
+func NewDockerVolumeProvider(dockerService *docker.DockerService) VolumeProvider {
 	return &DockerVolumeProvider{
 		dockerService: dockerService,
 	}

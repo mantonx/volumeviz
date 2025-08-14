@@ -10,6 +10,7 @@ import {
   X,
   TrendingUp,
   Zap,
+  Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { volumeStatsAtom } from '@/store';
@@ -65,6 +66,12 @@ const navigation: NavigationItem[] = [
     href: '/historical',
     icon: TrendingUp,
     description: 'Historical data & trends',
+  },
+  {
+    name: 'Alerts',
+    href: '/alerts',
+    icon: Bell,
+    description: 'Alert management & notifications',
   },
 ];
 

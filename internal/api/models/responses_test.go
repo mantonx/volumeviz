@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/stretchr/testify/assert"
 )
 

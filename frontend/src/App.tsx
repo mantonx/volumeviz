@@ -4,6 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { ToastProvider } from '@/components/ui';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
 import {
+  AlertsPage,
   Dashboard,
   VolumesPage,
   VolumeDetailsPage,
@@ -31,7 +32,13 @@ const App: React.FC = () => {
 
                 {/* Visualization Routes */}
                 <Route path="/realtime" element={<RealTimeDashboard />} />
-                <Route path="/historical" element={<HistoricalDataDashboard />} />
+                <Route
+                  path="/historical"
+                  element={<HistoricalDataDashboard />}
+                />
+
+                {/* Alerts Routes */}
+                <Route path="/alerts" element={<AlertsPage />} />
 
                 {/* System Routes */}
                 <Route path="/health" element={<HealthPage />} />

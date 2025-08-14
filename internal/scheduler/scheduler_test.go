@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/config"
-	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/interfaces"
+	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/repo"
 	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -53,53 +55,53 @@ type MockScanRepository struct {
 	mock.Mock
 }
 
-func (m *MockScanRepository) InsertVolumeStats(ctx context.Context, stats *store.VolumeSizeResult) error {
+func (m *MockScanRepository) InsertVolumeStats(ctx context.Context, stats *models.DirRollup) error {
 	args := m.Called(ctx, stats)
 	return args.Error(0)
 }
 
-func (m *MockScanRepository) GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*store.VolumeSizeResult, error) {
+func (m *MockScanRepository) GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*models.DirRollup, error) {
 	args := m.Called(ctx, volumeName, limit)
-	return args.Get(0).([]*store.VolumeSizeResult), args.Error(1)
+	return args.Get(0).([]*models.DirRollup), args.Error(1)
 }
 
-func (m *MockScanRepository) GetLatestVolumeStats(ctx context.Context, volumeName string) (*store.VolumeSizeResult, error) {
+func (m *MockScanRepository) GetLatestVolumeStats(ctx context.Context, volumeName string) (*models.DirRollup, error) {
 	args := m.Called(ctx, volumeName)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*store.VolumeSizeResult), args.Error(1)
+	return args.Get(0).(*models.DirRollup), args.Error(1)
 }
 
-func (m *MockScanRepository) InsertScanRun(ctx context.Context, run *store.ScanJobResult) error {
+func (m *MockScanRepository) InsertScanRun(ctx context.Context, run *models.ScanJob) error {
 	args := m.Called(ctx, run)
 	return args.Error(0)
 }
 
-func (m *MockScanRepository) UpdateScanRun(ctx context.Context, run *store.ScanJobResult) error {
+func (m *MockScanRepository) UpdateScanRun(ctx context.Context, run *models.ScanJob) error {
 	args := m.Called(ctx, run)
 	return args.Error(0)
 }
 
-func (m *MockScanRepository) GetScanRunByID(ctx context.Context, scanID string) (*store.ScanJobResult, error) {
+func (m *MockScanRepository) GetScanRunByID(ctx context.Context, scanID string) (*models.ScanJob, error) {
 	args := m.Called(ctx, scanID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*store.ScanJobResult), args.Error(1)
+	return args.Get(0).(*models.ScanJob), args.Error(1)
 }
 
-func (m *MockScanRepository) GetActiveScanRuns(ctx context.Context) ([]*store.ScanJobResult, error) {
+func (m *MockScanRepository) GetActiveScanRuns(ctx context.Context) ([]*models.ScanJob, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]*store.ScanJobResult), args.Error(1)
+	return args.Get(0).([]*models.ScanJob), args.Error(1)
 }
 
-func (m *MockScanRepository) ListVolumes(ctx context.Context) ([]*store.Volume, error) {
+func (m *MockScanRepository) ListVolumes(ctx context.Context) ([]*models.Volume, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]*store.Volume), args.Error(1)
+	return args.Get(0).([]*models.Volume), args.Error(1)
 }
 
-func (m *MockScanRepository) UpsertVolume(ctx context.Context, volume *store.Volume) error {
+func (m *MockScanRepository) UpsertVolume(ctx context.Context, volume *models.Volume) error {
 	args := m.Called(ctx, volume)
 	return args.Error(0)
 }
@@ -109,17 +111,78 @@ type MockVolumeProvider struct {
 	mock.Mock
 }
 
-func (m *MockVolumeProvider) ListVolumes(ctx context.Context) ([]*store.Volume, error) {
-	args := m.Called(ctx)
-	return args.Get(0).([]*store.Volume), args.Error(1)
+// MockStore implements store.Store for testing  
+type MockStore struct {
+	mock.Mock
 }
 
-func (m *MockVolumeProvider) GetVolume(ctx context.Context, volumeName string) (*store.Volume, error) {
+func (m *MockStore) WithTx(ctx context.Context, fn func(store.TxStore) error) error {
+	args := m.Called(ctx, fn)
+	return args.Error(0)
+}
+
+func (m *MockStore) Volumes() repo.VolumesRepo {
+	args := m.Called()
+	return args.Get(0).(repo.VolumesRepo)
+}
+
+func (m *MockStore) Scans() repo.ScansRepo {
+	args := m.Called()
+	return args.Get(0).(repo.ScansRepo)
+}
+
+func (m *MockStore) Retention() repo.RetentionRepo {
+	args := m.Called()
+	return args.Get(0).(repo.RetentionRepo)
+}
+
+// Analytics and snapshots methods
+func (m *MockStore) CreateUsageSnapshot(ctx context.Context, params store.CreateUsageSnapshotParams) (*store.UsageSnapshot, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).(*store.UsageSnapshot), args.Error(1)
+}
+
+func (m *MockStore) GetLatestSnapshot(ctx context.Context, volumeID, snapshotType string) (*store.UsageSnapshot, error) {
+	args := m.Called(ctx, volumeID, snapshotType)
+	return args.Get(0).(*store.UsageSnapshot), args.Error(1)
+}
+
+func (m *MockStore) Get7DayTrend(ctx context.Context, volumeID string) (*store.TrendData, error) {
+	args := m.Called(ctx, volumeID)
+	return args.Get(0).(*store.TrendData), args.Error(1)
+}
+
+func (m *MockStore) Get30DayTrend(ctx context.Context, volumeID string) (*store.TrendData, error) {
+	args := m.Called(ctx, volumeID)
+	return args.Get(0).(*store.TrendData), args.Error(1)
+}
+
+func (m *MockStore) GetVolumeStepSeries(ctx context.Context, params store.GetVolumeStepSeriesParams) ([]*store.StepSeriesPoint, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).([]*store.StepSeriesPoint), args.Error(1)
+}
+
+func (m *MockStore) GetTrendSlope(ctx context.Context, params store.GetTrendSlopeParams) (*store.TrendSlope, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).(*store.TrendSlope), args.Error(1)
+}
+
+func (m *MockStore) GetGrowthDeltas(ctx context.Context, params store.GetGrowthDeltasParams) (*store.GrowthDeltas, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).(*store.GrowthDeltas), args.Error(1)
+}
+
+func (m *MockVolumeProvider) ListVolumes(ctx context.Context) ([]*models.Volume, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumeProvider) GetVolume(ctx context.Context, volumeName string) (*models.Volume, error) {
 	args := m.Called(ctx, volumeName)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*store.Volume), args.Error(1)
+	return args.Get(0).(*models.Volume), args.Error(1)
 }
 
 // MockMetricsCollector implements interfaces.MetricsCollector for testing
@@ -208,7 +271,7 @@ func createTestScheduler() (*Scheduler, *MockVolumeScanner, *MockScanRepository,
 		QueueSize: 10,
 	}
 
-	scheduler, _ := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics)
+	scheduler, _ := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil)
 	return scheduler, mockScanner, mockRepo, mockProvider, mockMetrics
 }
 
@@ -232,7 +295,7 @@ func TestNewScheduler(t *testing.T) {
 	mockProvider := &MockVolumeProvider{}
 	mockMetrics := &MockMetricsCollector{}
 
-	scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics)
+	scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, scheduler)
@@ -264,7 +327,7 @@ func TestNewSchedulerWithInvalidSkipPattern(t *testing.T) {
 	mockProvider := &MockVolumeProvider{}
 	mockMetrics := &MockMetricsCollector{}
 
-	scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics)
+	scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil)
 
 	assert.Error(t, err)
 	assert.Nil(t, scheduler)
@@ -374,9 +437,9 @@ func TestEnqueueVolume(t *testing.T) {
 	ctx := context.Background()
 
 	// Mock repository methods that workers might call
-	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
-	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
-	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*store.VolumeSizeResult")).Return(nil).Maybe()
+	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*models.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*models.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*models.DirRollup")).Return(nil).Maybe()
 
 	// Mock scanner methods that workers might call
 	mockScanner.On("ScanVolume", mock.Anything, "test-volume").Return(&interfaces.ScanResult{
@@ -386,7 +449,7 @@ func TestEnqueueVolume(t *testing.T) {
 	}, nil).Maybe()
 
 	// Mock provider methods that workers might call
-	mockProvider.On("GetVolume", mock.Anything, "test-volume").Return(&store.Volume{
+	mockProvider.On("GetVolume", mock.Anything, "test-volume").Return(&models.Volume{
 		Name: "test-volume",
 	}, nil).Maybe()
 
@@ -462,16 +525,16 @@ func TestEnqueueAllVolumes(t *testing.T) {
 	ctx := context.Background()
 
 	// Mock volumes
-	volumes := []*store.Volume{
+	volumes := []*models.Volume{
 		{Name: "volume1"},
 		{Name: "volume2"},
 	}
 	mockProvider.On("ListVolumes", mock.AnythingOfType("*context.cancelCtx")).Return(volumes, nil)
 
 	// Mock repository methods that workers might call
-	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
-	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
-	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*store.VolumeSizeResult")).Return(nil).Maybe()
+	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*models.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*models.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*models.DirRollup")).Return(nil).Maybe()
 
 	// Mock scanner methods that workers might call
 	mockScanner.On("ScanVolume", mock.Anything, mock.AnythingOfType("string")).Return(&interfaces.ScanResult{
@@ -481,7 +544,7 @@ func TestEnqueueAllVolumes(t *testing.T) {
 	}, nil).Maybe()
 
 	// Mock provider methods that workers might call
-	mockProvider.On("GetVolume", mock.Anything, mock.AnythingOfType("string")).Return(&store.Volume{
+	mockProvider.On("GetVolume", mock.Anything, mock.AnythingOfType("string")).Return(&models.Volume{
 		Name: "test",
 	}, nil).Maybe()
 
@@ -520,15 +583,15 @@ func TestEnqueueAllVolumesRateLimit(t *testing.T) {
 	ctx := context.Background()
 
 	// Mock volumes
-	volumes := []*store.Volume{
+	volumes := []*models.Volume{
 		{Name: "volume1"},
 	}
 	mockProvider.On("ListVolumes", mock.AnythingOfType("*context.cancelCtx")).Return(volumes, nil).Once()
 
 	// Mock repository methods that workers might call
-	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
-	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*store.ScanJobResult")).Return(nil).Maybe()
-	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*store.VolumeSizeResult")).Return(nil).Maybe()
+	mockRepo.On("InsertScanRun", mock.Anything, mock.AnythingOfType("*models.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("UpdateScanRun", mock.Anything, mock.AnythingOfType("*models.ScanJob")).Return(nil).Maybe()
+	mockRepo.On("InsertVolumeStats", mock.Anything, mock.AnythingOfType("*models.DirRollup")).Return(nil).Maybe()
 
 	// Mock scanner methods that workers might call
 	mockScanner.On("ScanVolume", mock.Anything, mock.AnythingOfType("string")).Return(&interfaces.ScanResult{
@@ -538,7 +601,7 @@ func TestEnqueueAllVolumesRateLimit(t *testing.T) {
 	}, nil).Maybe()
 
 	// Mock provider methods that workers might call
-	mockProvider.On("GetVolume", mock.Anything, mock.AnythingOfType("string")).Return(&store.Volume{
+	mockProvider.On("GetVolume", mock.Anything, mock.AnythingOfType("string")).Return(&models.Volume{
 		Name: "test",
 	}, nil).Maybe()
 
@@ -651,6 +714,74 @@ func TestSelectScanMethod(t *testing.T) {
 	scheduler.config.MethodsOrder = []string{}
 	method = scheduler.selectScanMethod()
 	assert.Equal(t, "du", method) // Fallback
+}
+
+func TestEnhancedFeatures(t *testing.T) {
+	t.Run("Non-hardened mode", func(t *testing.T) {
+		schedulerConfig := &SchedulerConfig{
+			ScanConfig: &config.ScanConfig{
+				Enabled:     true,
+				Concurrency: 2,
+			},
+			QueueSize: 10,
+		}
+
+		mockScanner := &MockVolumeScanner{}
+		mockRepo := &MockScanRepository{}
+		mockProvider := &MockVolumeProvider{}
+		mockMetrics := &MockMetricsCollector{}
+
+		scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, scheduler)
+
+		// Test enhanced interface methods (before starting)
+		assert.False(t, scheduler.IsHardenedMode())
+		assert.Nil(t, scheduler.GetWatchdogStats())
+		
+		// Workers are only created after Start() is called
+		workerStats := scheduler.GetWorkerStats()
+		assert.Len(t, workerStats, 0) // No workers before Start()
+		
+		detailedMetrics := scheduler.GetDetailedMetrics()
+		assert.NotNil(t, detailedMetrics)
+		assert.False(t, detailedMetrics.IsHardened)
+		assert.False(t, detailedMetrics.WatchdogEnabled)
+		assert.Nil(t, detailedMetrics.WatchdogStats)
+		assert.Len(t, detailedMetrics.WorkerStats, 0) // No workers before Start()
+	})
+
+	t.Run("Hardened mode with mock store", func(t *testing.T) {
+		schedulerConfig := &SchedulerConfig{
+			ScanConfig: &config.ScanConfig{
+				Enabled:     true,
+				Concurrency: 2,
+			},
+			QueueSize: 10,
+		}
+
+		mockScanner := &MockVolumeScanner{}
+		mockRepo := &MockScanRepository{}
+		mockProvider := &MockVolumeProvider{}
+		mockMetrics := &MockMetricsCollector{}
+		mockStore := &MockStore{}
+
+		scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, mockStore)
+		assert.NoError(t, err)
+		assert.NotNil(t, scheduler)
+
+		// Test hardened mode features
+		assert.True(t, scheduler.IsHardenedMode())
+		
+		watchdogStats := scheduler.GetWatchdogStats()
+		assert.NotNil(t, watchdogStats) // Watchdog should be enabled with store
+		
+		detailedMetrics := scheduler.GetDetailedMetrics()
+		assert.NotNil(t, detailedMetrics)
+		assert.True(t, detailedMetrics.IsHardened)
+		assert.True(t, detailedMetrics.WatchdogEnabled)
+		assert.NotNil(t, detailedMetrics.WatchdogStats)
+	})
 }
 
 func TestCalculateWorkerUtilization(t *testing.T) {

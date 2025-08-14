@@ -118,9 +118,13 @@ func (h *Handler) GetAppHealth(c *gin.Context) {
 	if h.store != nil {
 		dbHealth := gin.H{"status": "unknown"}
 
-		// TODO: Implement store health check when available
-		// For now, assume healthy if store exists
-		dbHealth["status"] = "healthy"
+		// Perform actual health check on database
+		if err := h.store.Health(c.Request.Context()); err != nil {
+			dbHealth["status"] = "unhealthy"
+			dbHealth["error"] = err.Error()
+		} else {
+			dbHealth["status"] = "healthy"
+		}
 		checks["database"] = dbHealth
 
 		// Migration status via store - simplified for now
@@ -391,10 +395,13 @@ func (h *Handler) GetDatabaseHealth(c *gin.Context) {
 	}
 
 	// Check store health
-	// TODO: Implement store health check when available  
-	// For now, assume healthy if store exists
 	if h.store != nil {
-		response["status"] = "healthy"
+		if err := h.store.Health(c.Request.Context()); err != nil {
+			response["status"] = "unhealthy"
+			response["error"] = err.Error()
+		} else {
+			response["status"] = "healthy"
+		}
 	} else {
 		response["status"] = "unhealthy"
 		response["error"] = "store not available"

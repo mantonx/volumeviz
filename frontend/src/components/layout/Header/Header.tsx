@@ -69,7 +69,12 @@ const StatusIcon = ({ status }: { status: ApiStatus }) => {
 /**
  * WebSocket status icon component with enhanced visual feedback
  */
-const WebSocketIcon = ({ status }: { status: WebSocketStatus; latency?: number | null }) => {
+const WebSocketIcon = ({
+  status,
+}: {
+  status: WebSocketStatus;
+  latency?: number | null;
+}) => {
   const baseClasses = 'h-3 w-3';
 
   switch (status) {
@@ -78,12 +83,19 @@ const WebSocketIcon = ({ status }: { status: WebSocketStatus; latency?: number |
         <div className="relative">
           <div className={cn(baseClasses, 'rounded-full bg-green-500')} />
           {/* Pulse animation for active connection */}
-          <div className={cn(baseClasses, 'absolute inset-0 rounded-full bg-green-400 animate-ping opacity-20')} />
+          <div
+            className={cn(
+              baseClasses,
+              'absolute inset-0 rounded-full bg-green-400 animate-ping opacity-20',
+            )}
+          />
         </div>
       );
     case 'connecting':
       return (
-        <RefreshCw className={cn(baseClasses, 'text-yellow-500 animate-spin')} />
+        <RefreshCw
+          className={cn(baseClasses, 'text-yellow-500 animate-spin')}
+        />
       );
     case 'reconnecting':
       return (
@@ -97,7 +109,11 @@ const WebSocketIcon = ({ status }: { status: WebSocketStatus; latency?: number |
     case 'disconnected':
       return <div className={cn(baseClasses, 'rounded-full bg-gray-400')} />;
     case 'error':
-      return <div className={cn(baseClasses, 'rounded-full bg-red-500 animate-pulse')} />;
+      return (
+        <div
+          className={cn(baseClasses, 'rounded-full bg-red-500 animate-pulse')}
+        />
+      );
     default:
       return <div className={cn(baseClasses, 'rounded-full bg-gray-400')} />;
   }

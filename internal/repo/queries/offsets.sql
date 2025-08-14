@@ -95,6 +95,79 @@ WHERE scan_id = $1
 RETURNING id, updated_at;
 
 -- =============================================================================
+-- ATOMIC CLAIM AND WORKER HARDENING OPERATIONS
+-- =============================================================================
+
+-- name: ClaimNextScanJob :one
+-- Atomically claim the next available scan job using SKIP LOCKED
+UPDATE scan_jobs 
+SET status = 'running', started_at = $1, updated_at = CURRENT_TIMESTAMP
+WHERE id IN (
+    SELECT id 
+    FROM scan_jobs
+    WHERE status = 'queued'
+    ORDER BY created_at ASC
+    FOR UPDATE SKIP LOCKED
+    LIMIT 1
+)
+RETURNING id, scan_id, volume_id, status, progress, method, started_at, completed_at, error_message, result_id, estimated_duration, created_at, updated_at;
+
+-- name: UpdateScanJobHeartbeat :exec
+-- Update heartbeat timestamp for an active scan job
+UPDATE scan_jobs 
+SET updated_at = CURRENT_TIMESTAMP, progress = $2
+WHERE scan_id = $1 AND status = 'running';
+
+-- name: MarkStaleScanJobsAsFailed :many
+-- Mark scan jobs as failed if they haven't been updated within the timeout period
+-- This is the watchdog functionality
+UPDATE scan_jobs 
+SET status = 'failed', 
+    error_message = 'Scan job timed out - no heartbeat received within ' || $1 || ' seconds',
+    completed_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
+WHERE status = 'running' 
+AND updated_at < (CURRENT_TIMESTAMP - INTERVAL '1 second' * $1)
+RETURNING scan_id;
+
+-- name: MarkInFlightJobsAsFailed :many
+-- Mark all running scan jobs as failed (used during graceful restart)
+UPDATE scan_jobs 
+SET status = 'failed',
+    error_message = $1,
+    completed_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP  
+WHERE status = 'running'
+RETURNING scan_id;
+
+-- name: GetQueueDepth :one
+-- Get current queue depth for metrics
+SELECT COUNT(*) as queue_depth 
+FROM scan_jobs 
+WHERE status = 'queued';
+
+-- name: GetActiveScanCount :one  
+-- Get current active scan count for metrics
+SELECT COUNT(*) as active_count
+FROM scan_jobs 
+WHERE status = 'running';
+
+-- name: GetScanJobsByVolume :many
+-- Get all scan jobs for a specific volume (for volume concurrency check)
+SELECT id, scan_id, volume_id, status, progress, method, started_at, completed_at, error_message, result_id, estimated_duration, created_at, updated_at
+FROM scan_jobs 
+WHERE volume_id = $1 
+ORDER BY created_at DESC
+LIMIT $2;
+
+-- name: HasActiveScanForVolume :one
+-- Check if there's already an active scan for a volume (enforces max 1 per volume)
+SELECT EXISTS(
+    SELECT 1 FROM scan_jobs 
+    WHERE volume_id = $1 AND status IN ('queued', 'running')
+) as has_active_scan;
+
+-- =============================================================================
 -- HEALTH AND DIAGNOSTIC OPERATIONS
 -- =============================================================================
 

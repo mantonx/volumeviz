@@ -10,6 +10,77 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AlertDeliveries struct {
+	ID              int64              `json:"id"`
+	AlertID         int64              `json:"alert_id"`
+	DestinationID   int64              `json:"destination_id"`
+	RouteID         int64              `json:"route_id"`
+	Status          string             `json:"status"`
+	AttemptCount    pgtype.Int4        `json:"attempt_count"`
+	MaxAttempts     pgtype.Int4        `json:"max_attempts"`
+	NextAttemptAt   pgtype.Timestamptz `json:"next_attempt_at"`
+	LastAttemptAt   pgtype.Timestamptz `json:"last_attempt_at"`
+	ErrorMessage    pgtype.Text        `json:"error_message"`
+	DeliveredAt     pgtype.Timestamptz `json:"delivered_at"`
+	RequestPayload  pgtype.Text        `json:"request_payload"`
+	ResponsePayload pgtype.Text        `json:"response_payload"`
+	ResponseStatus  pgtype.Int4        `json:"response_status"`
+	CreatedAt       time.Time          `json:"created_at"`
+	UpdatedAt       time.Time          `json:"updated_at"`
+}
+
+type AlertDestinations struct {
+	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
+	Type      string      `json:"type"`
+	Config    []byte      `json:"config"`
+	IsEnabled pgtype.Bool `json:"is_enabled"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
+}
+
+type AlertRoutes struct {
+	ID            int64       `json:"id"`
+	Name          string      `json:"name"`
+	Matchers      []byte      `json:"matchers"`
+	DestinationID int64       `json:"destination_id"`
+	Priority      pgtype.Int4 `json:"priority"`
+	IsEnabled     pgtype.Bool `json:"is_enabled"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
+}
+
+type AlertRules struct {
+	ID              int64       `json:"id"`
+	Name            string      `json:"name"`
+	Description     pgtype.Text `json:"description"`
+	Query           string      `json:"query"`
+	Condition       string      `json:"condition"`
+	Threshold       float64     `json:"threshold"`
+	IntervalSeconds int32       `json:"interval_seconds"`
+	ForSeconds      pgtype.Int4 `json:"for_seconds"`
+	Labels          []byte      `json:"labels"`
+	IsEnabled       pgtype.Bool `json:"is_enabled"`
+	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
+}
+
+type Alerts struct {
+	ID          int64              `json:"id"`
+	RuleID      int64              `json:"rule_id"`
+	EntityID    string             `json:"entity_id"`
+	EntityType  string             `json:"entity_type"`
+	DedupeKey   string             `json:"dedupe_key"`
+	Status      string             `json:"status"`
+	Value       pgtype.Float8      `json:"value"`
+	Labels      []byte             `json:"labels"`
+	Annotations []byte             `json:"annotations"`
+	StartsAt    pgtype.Timestamptz `json:"starts_at"`
+	EndsAt      pgtype.Timestamptz `json:"ends_at"`
+	CreatedAt   time.Time          `json:"created_at"`
+	UpdatedAt   time.Time          `json:"updated_at"`
+}
+
 type Containers struct {
 	ID          int64            `json:"id"`
 	ContainerID string           `json:"container_id"`
@@ -25,44 +96,91 @@ type Containers struct {
 	UpdatedAt   time.Time        `json:"updated_at"`
 }
 
-type DirNodes struct {
-	ID              int64       `json:"id"`
-	VolumeID        string      `json:"volume_id"`
-	ParentDirID     pgtype.Int8 `json:"parent_dir_id"`
-	Name            string      `json:"name"`
-	FullPath        string      `json:"full_path"`
-	Depth           int32       `json:"depth"`
-	LatestSizeBytes int64       `json:"latest_size_bytes"`
-	LatestFileCount int64       `json:"latest_file_count"`
-	CreatedAt       time.Time   `json:"created_at"`
-	UpdatedAt       time.Time   `json:"updated_at"`
+type FileMetadata struct {
+	ID         int64              `json:"id"`
+	FileID     int64              `json:"file_id"`
+	Kind       string             `json:"kind"`
+	DataJson   []byte             `json:"data_json"`
+	EnrichedAt pgtype.Timestamptz `json:"enriched_at"`
+	CreatedAt  time.Time          `json:"created_at"`
 }
 
-type DirRollups struct {
-	ID         int64     `json:"id"`
-	DirID      int64     `json:"dir_id"`
-	SizeBytes  int64     `json:"size_bytes"`
-	FileCount  int64     `json:"file_count"`
-	ComputedAt time.Time `json:"computed_at"`
-	CreatedAt  time.Time `json:"created_at"`
+type Files struct {
+	ID                     int64              `json:"id"`
+	FolderID               int64              `json:"folder_id"`
+	VolumeID               string             `json:"volume_id"`
+	Name                   string             `json:"name"`
+	Path                   string             `json:"path"`
+	Extension              pgtype.Text        `json:"extension"`
+	SizeBytes              int64              `json:"size_bytes"`
+	DiskUsageBytes         int64              `json:"disk_usage_bytes"`
+	Mtime                  time.Time          `json:"mtime"`
+	Ctime                  time.Time          `json:"ctime"`
+	Birthtime              pgtype.Timestamp   `json:"birthtime"`
+	Uid                    pgtype.Int4        `json:"uid"`
+	Gid                    pgtype.Int4        `json:"gid"`
+	Mode                   pgtype.Int4        `json:"mode"`
+	Inode                  pgtype.Int8        `json:"inode"`
+	Device                 pgtype.Text        `json:"device"`
+	IsSymlink              pgtype.Bool        `json:"is_symlink"`
+	SymlinkTarget          pgtype.Text        `json:"symlink_target"`
+	Mime                   pgtype.Text        `json:"mime"`
+	MediaKind              pgtype.Text        `json:"media_kind"`
+	Encoding               pgtype.Text        `json:"encoding"`
+	HashAlgo               pgtype.Text        `json:"hash_algo"`
+	Hash                   []byte             `json:"hash"`
+	PathHash               []byte             `json:"path_hash"`
+	DurationMs             pgtype.Int8        `json:"duration_ms"`
+	BitrateKbps            pgtype.Int4        `json:"bitrate_kbps"`
+	Width                  pgtype.Int4        `json:"width"`
+	Height                 pgtype.Int4        `json:"height"`
+	Fps                    pgtype.Numeric     `json:"fps"`
+	ColorPrimaries         pgtype.Text        `json:"color_primaries"`
+	TransferCharacteristic pgtype.Text        `json:"transfer_characteristic"`
+	HdrFormat              interface{}        `json:"hdr_format"`
+	CaptureDatetime        pgtype.Timestamptz `json:"capture_datetime"`
+	CameraMake             pgtype.Text        `json:"camera_make"`
+	CameraModel            pgtype.Text        `json:"camera_model"`
+	LensModel              pgtype.Text        `json:"lens_model"`
+	Orientation            pgtype.Int4        `json:"orientation"`
+	GpsLatitude            pgtype.Numeric     `json:"gps_latitude"`
+	GpsLongitude           pgtype.Numeric     `json:"gps_longitude"`
+	SubtitleLanguage       pgtype.Text        `json:"subtitle_language"`
+	SubtitleFormat         pgtype.Text        `json:"subtitle_format"`
+	CueCount               pgtype.Int4        `json:"cue_count"`
+	CoveragePercent        pgtype.Numeric     `json:"coverage_percent"`
+	AudioChannels          pgtype.Int4        `json:"audio_channels"`
+	AudioCodec             pgtype.Text        `json:"audio_codec"`
+	AudioSampleRate        pgtype.Int4        `json:"audio_sample_rate"`
+	VideoCodec             pgtype.Text        `json:"video_codec"`
+	VideoProfile           pgtype.Text        `json:"video_profile"`
+	VideoLevel             pgtype.Text        `json:"video_level"`
+	CreatedAt              time.Time          `json:"created_at"`
+	UpdatedAt              time.Time          `json:"updated_at"`
 }
 
-type FileEntries struct {
-	ID          int64       `json:"id"`
-	VolumeID    string      `json:"volume_id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
-	Name        string      `json:"name"`
-	SizeBytes   int64       `json:"size_bytes"`
-	Mtime       time.Time   `json:"mtime"`
-	Ctime       time.Time   `json:"ctime"`
-	Inode       pgtype.Int8 `json:"inode"`
-	Uid         pgtype.Int4 `json:"uid"`
-	Gid         pgtype.Int4 `json:"gid"`
-	Type        string      `json:"type"`
-	Hidden      bool        `json:"hidden"`
-	PathHash    []byte      `json:"path_hash"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+type Folders struct {
+	ID                      int64       `json:"id"`
+	ParentID                pgtype.Int8 `json:"parent_id"`
+	VolumeID                string      `json:"volume_id"`
+	Name                    string      `json:"name"`
+	Path                    string      `json:"path"`
+	PathHash                []byte      `json:"path_hash"`
+	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
+	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
+	FileCount               int64       `json:"file_count"`
+	DirCount                int64       `json:"dir_count"`
+	Depth                   int32       `json:"depth"`
+	MediaKind               pgtype.Text `json:"media_kind"`
+	Mtime                   time.Time   `json:"mtime"`
+	Ctime                   time.Time   `json:"ctime"`
+	Uid                     pgtype.Int4 `json:"uid"`
+	Gid                     pgtype.Int4 `json:"gid"`
+	Mode                    pgtype.Int4 `json:"mode"`
+	IsSymlink               pgtype.Bool `json:"is_symlink"`
+	SymlinkTarget           pgtype.Text `json:"symlink_target"`
+	CreatedAt               time.Time   `json:"created_at"`
+	UpdatedAt               time.Time   `json:"updated_at"`
 }
 
 type ScanJobs struct {
@@ -79,6 +197,70 @@ type ScanJobs struct {
 	EstimatedDuration pgtype.Int8      `json:"estimated_duration"`
 	CreatedAt         time.Time        `json:"created_at"`
 	UpdatedAt         time.Time        `json:"updated_at"`
+}
+
+type StatsDaily struct {
+	ID            int64       `json:"id"`
+	Date          pgtype.Date `json:"date"`
+	VolumeID      string      `json:"volume_id"`
+	FolderID      pgtype.Int8 `json:"folder_id"`
+	MediaKind     pgtype.Text `json:"media_kind"`
+	FilesCount    int64       `json:"files_count"`
+	TotalBytes    int64       `json:"total_bytes"`
+	AddedBytes    int64       `json:"added_bytes"`
+	RemovedBytes  int64       `json:"removed_bytes"`
+	AddedFiles    int64       `json:"added_files"`
+	RemovedFiles  int64       `json:"removed_files"`
+	ComputedAt    time.Time   `json:"computed_at"`
+	ScanID        pgtype.Text `json:"scan_id"`
+	JobDurationMs pgtype.Int8 `json:"job_duration_ms"`
+}
+
+type StatsDailySummary struct {
+	Date               pgtype.Date `json:"date"`
+	VolumeID           string      `json:"volume_id"`
+	VolumeFilesTotal   int64       `json:"volume_files_total"`
+	VolumeBytesTotal   int64       `json:"volume_bytes_total"`
+	VolumeAddedBytes   int64       `json:"volume_added_bytes"`
+	VolumeRemovedBytes int64       `json:"volume_removed_bytes"`
+	MediaKindsTracked  int64       `json:"media_kinds_tracked"`
+	FoldersTracked     int64       `json:"folders_tracked"`
+	LastComputedAt     interface{} `json:"last_computed_at"`
+	TotalStatsRows     int64       `json:"total_stats_rows"`
+}
+
+type StatsDailyTrends struct {
+	Date               pgtype.Date `json:"date"`
+	VolumeID           string      `json:"volume_id"`
+	FolderID           pgtype.Int8 `json:"folder_id"`
+	MediaKind          pgtype.Text `json:"media_kind"`
+	FilesCount         int64       `json:"files_count"`
+	TotalBytes         int64       `json:"total_bytes"`
+	AddedBytes         int64       `json:"added_bytes"`
+	RemovedBytes       int64       `json:"removed_bytes"`
+	AddedFiles         int64       `json:"added_files"`
+	RemovedFiles       int64       `json:"removed_files"`
+	BytesChange7d      int32       `json:"bytes_change_7d"`
+	FilesChange7d      int32       `json:"files_change_7d"`
+	BytesChange30d     int32       `json:"bytes_change_30d"`
+	FilesChange30d     int32       `json:"files_change_30d"`
+	BytesGrowthRate7d  interface{} `json:"bytes_growth_rate_7d"`
+	BytesGrowthRate30d interface{} `json:"bytes_growth_rate_30d"`
+	ComputedAt         time.Time   `json:"computed_at"`
+}
+
+type StatsJobs struct {
+	ID             int64              `json:"id"`
+	JobType        string             `json:"job_type"`
+	VolumeID       pgtype.Text        `json:"volume_id"`
+	StartedAt      pgtype.Timestamptz `json:"started_at"`
+	CompletedAt    pgtype.Timestamptz `json:"completed_at"`
+	DurationMs     pgtype.Int8        `json:"duration_ms"`
+	Status         string             `json:"status"`
+	ErrorMessage   pgtype.Text        `json:"error_message"`
+	ProcessedDates pgtype.Int4        `json:"processed_dates"`
+	RecordsCreated pgtype.Int4        `json:"records_created"`
+	RecordsUpdated pgtype.Int4        `json:"records_updated"`
 }
 
 type UsageSnapshots struct {

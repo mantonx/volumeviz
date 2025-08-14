@@ -13,39 +13,16 @@ import (
 )
 
 type BulkInsertDirNodesParams struct {
-	VolumeID        string      `json:"volume_id"`
-	ParentDirID     pgtype.Int8 `json:"parent_dir_id"`
-	Name            string      `json:"name"`
-	FullPath        string      `json:"full_path"`
-	Depth           int32       `json:"depth"`
-	LatestSizeBytes int64       `json:"latest_size_bytes"`
-	LatestFileCount int64       `json:"latest_file_count"`
-}
-
-type BulkInsertDirRollupsParams struct {
-	DirID      int64     `json:"dir_id"`
-	SizeBytes  int64     `json:"size_bytes"`
-	FileCount  int64     `json:"file_count"`
-	ComputedAt time.Time `json:"computed_at"`
-}
-
-type BulkInsertFileEntriesParams struct {
-	VolumeID    string      `json:"volume_id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
-	Name        string      `json:"name"`
-	SizeBytes   int64       `json:"size_bytes"`
-	Mtime       time.Time   `json:"mtime"`
-	Ctime       time.Time   `json:"ctime"`
-	Inode       pgtype.Int8 `json:"inode"`
-	Uid         pgtype.Int4 `json:"uid"`
-	Gid         pgtype.Int4 `json:"gid"`
-	Type        string      `json:"type"`
-	Hidden      bool        `json:"hidden"`
-	PathHash    []byte      `json:"path_hash"`
+	VolumeID string      `json:"volume_id"`
+	ParentID pgtype.Int8 `json:"parent_id"`
+	Name     string      `json:"name"`
+	Path     string      `json:"path"`
+	PathHash []byte      `json:"path_hash"`
+	Depth    int32       `json:"depth"`
 }
 
 const countDirNodesByVolume = `-- name: CountDirNodesByVolume :one
-SELECT COUNT(*) FROM dir_nodes WHERE volume_id = $1
+SELECT COUNT(*) FROM folders WHERE volume_id = $1
 `
 
 func (q *Queries) CountDirNodesByVolume(ctx context.Context, volumeID string) (int64, error) {
@@ -55,38 +32,36 @@ func (q *Queries) CountDirNodesByVolume(ctx context.Context, volumeID string) (i
 	return count, err
 }
 
-const countFileEntriesByVolume = `-- name: CountFileEntriesByVolume :one
-SELECT COUNT(*) FROM file_entries WHERE volume_id = $1
+const countDirRollupsByVolume = `-- name: CountDirRollupsByVolume :one
+SELECT COUNT(*) FROM folders WHERE volume_id = $1
 `
 
-func (q *Queries) CountFileEntriesByVolume(ctx context.Context, volumeID string) (int64, error) {
-	row := q.db.QueryRow(ctx, countFileEntriesByVolume, volumeID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const countRollupsByDirId = `-- name: CountRollupsByDirId :one
-SELECT COUNT(*) FROM dir_rollups WHERE dir_id = $1
-`
-
-func (q *Queries) CountRollupsByDirId(ctx context.Context, dirID int64) (int64, error) {
-	row := q.db.QueryRow(ctx, countRollupsByDirId, dirID)
+func (q *Queries) CountDirRollupsByVolume(ctx context.Context, volumeID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countDirRollupsByVolume, volumeID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
 const createDirNode = `-- name: CreateDirNode :one
-INSERT INTO dir_nodes (
-    volume_id, parent_dir_id, name, full_path, depth, 
-    latest_size_bytes, latest_file_count
+INSERT INTO folders (
+    volume_id, parent_id, name, path, path_hash, depth
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, volume_id, parent_dir_id, name, full_path, depth, latest_size_bytes, latest_file_count, created_at, updated_at
+    $1, $2, $3, $4, gen_random_bytes(32), $5
+) RETURNING id, volume_id, parent_id as parent_dir_id, name, path as full_path, depth, 
+            size_bytes_recursive as latest_size_bytes, file_count as latest_file_count, created_at, updated_at
 `
 
 type CreateDirNodeParams struct {
+	VolumeID string      `json:"volume_id"`
+	ParentID pgtype.Int8 `json:"parent_id"`
+	Name     string      `json:"name"`
+	Path     string      `json:"path"`
+	Depth    int32       `json:"depth"`
+}
+
+type CreateDirNodeRow struct {
+	ID              int64       `json:"id"`
 	VolumeID        string      `json:"volume_id"`
 	ParentDirID     pgtype.Int8 `json:"parent_dir_id"`
 	Name            string      `json:"name"`
@@ -94,19 +69,19 @@ type CreateDirNodeParams struct {
 	Depth           int32       `json:"depth"`
 	LatestSizeBytes int64       `json:"latest_size_bytes"`
 	LatestFileCount int64       `json:"latest_file_count"`
+	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
 }
 
-func (q *Queries) CreateDirNode(ctx context.Context, arg CreateDirNodeParams) (DirNodes, error) {
+func (q *Queries) CreateDirNode(ctx context.Context, arg CreateDirNodeParams) (CreateDirNodeRow, error) {
 	row := q.db.QueryRow(ctx, createDirNode,
 		arg.VolumeID,
-		arg.ParentDirID,
+		arg.ParentID,
 		arg.Name,
-		arg.FullPath,
+		arg.Path,
 		arg.Depth,
-		arg.LatestSizeBytes,
-		arg.LatestFileCount,
 	)
-	var i DirNodes
+	var i CreateDirNodeRow
 	err := row.Scan(
 		&i.ID,
 		&i.VolumeID,
@@ -123,28 +98,28 @@ func (q *Queries) CreateDirNode(ctx context.Context, arg CreateDirNodeParams) (D
 }
 
 const createDirRollup = `-- name: CreateDirRollup :one
-INSERT INTO dir_rollups (
-    dir_id, size_bytes, file_count, computed_at
-) VALUES (
-    $1, $2, $3, $4
-) RETURNING id, dir_id, size_bytes, file_count, computed_at, created_at
+SELECT 
+    $1::bigint as id,
+    $1::bigint as dir_id,
+    0::bigint as size_bytes,
+    0::bigint as file_count,
+    CURRENT_TIMESTAMP as computed_at,
+    CURRENT_TIMESTAMP as created_at
 `
 
-type CreateDirRollupParams struct {
-	DirID      int64     `json:"dir_id"`
-	SizeBytes  int64     `json:"size_bytes"`
-	FileCount  int64     `json:"file_count"`
-	ComputedAt time.Time `json:"computed_at"`
+type CreateDirRollupRow struct {
+	ID         int64       `json:"id"`
+	DirID      int64       `json:"dir_id"`
+	SizeBytes  int64       `json:"size_bytes"`
+	FileCount  int64       `json:"file_count"`
+	ComputedAt interface{} `json:"computed_at"`
+	CreatedAt  interface{} `json:"created_at"`
 }
 
-func (q *Queries) CreateDirRollup(ctx context.Context, arg CreateDirRollupParams) (DirRollups, error) {
-	row := q.db.QueryRow(ctx, createDirRollup,
-		arg.DirID,
-		arg.SizeBytes,
-		arg.FileCount,
-		arg.ComputedAt,
-	)
-	var i DirRollups
+// This is a no-op in the new schema since rollups are maintained by triggers
+func (q *Queries) CreateDirRollup(ctx context.Context, dollar_1 int64) (CreateDirRollupRow, error) {
+	row := q.db.QueryRow(ctx, createDirRollup, dollar_1)
+	var i CreateDirRollupRow
 	err := row.Scan(
 		&i.ID,
 		&i.DirID,
@@ -156,18 +131,41 @@ func (q *Queries) CreateDirRollup(ctx context.Context, arg CreateDirRollupParams
 	return i, err
 }
 
-const createFileEntry = `-- name: CreateFileEntry :one
-INSERT INTO file_entries (
-    volume_id, parent_dir_id, name, size_bytes, mtime, ctime, 
-    inode, uid, gid, type, hidden, path_hash
-) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-) RETURNING id, volume_id, parent_dir_id, name, size_bytes, mtime, ctime, inode, uid, gid, type, hidden, path_hash, created_at, updated_at
+const deleteDirNodesByVolume = `-- name: DeleteDirNodesByVolume :exec
+DELETE FROM folders WHERE volume_id = $1
 `
 
-type CreateFileEntryParams struct {
+func (q *Queries) DeleteDirNodesByVolume(ctx context.Context, volumeID string) error {
+	_, err := q.db.Exec(ctx, deleteDirNodesByVolume, volumeID)
+	return err
+}
+
+const deleteDirRollupsByVolume = `-- name: DeleteDirRollupsByVolume :exec
+SELECT 1 WHERE false
+`
+
+// This is a no-op in the new schema
+func (q *Queries) DeleteDirRollupsByVolume(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteDirRollupsByVolume)
+	return err
+}
+
+const findFilesByPathHashLegacy = `-- name: FindFilesByPathHashLegacy :many
+SELECT id, volume_id, folder_id as parent_dir_id, name, size_bytes, mtime, ctime, inode, uid, gid,
+       CASE WHEN is_symlink THEN 'symlink' ELSE 'file' END as type, false as hidden, path_hash, created_at, updated_at
+FROM files 
+WHERE volume_id = $1 AND path_hash = $2
+`
+
+type FindFilesByPathHashLegacyParams struct {
+	VolumeID string `json:"volume_id"`
+	PathHash []byte `json:"path_hash"`
+}
+
+type FindFilesByPathHashLegacyRow struct {
+	ID          int64       `json:"id"`
 	VolumeID    string      `json:"volume_id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
+	ParentDirID int64       `json:"parent_dir_id"`
 	Name        string      `json:"name"`
 	SizeBytes   int64       `json:"size_bytes"`
 	Mtime       time.Time   `json:"mtime"`
@@ -178,100 +176,19 @@ type CreateFileEntryParams struct {
 	Type        string      `json:"type"`
 	Hidden      bool        `json:"hidden"`
 	PathHash    []byte      `json:"path_hash"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
 }
 
-func (q *Queries) CreateFileEntry(ctx context.Context, arg CreateFileEntryParams) (FileEntries, error) {
-	row := q.db.QueryRow(ctx, createFileEntry,
-		arg.VolumeID,
-		arg.ParentDirID,
-		arg.Name,
-		arg.SizeBytes,
-		arg.Mtime,
-		arg.Ctime,
-		arg.Inode,
-		arg.Uid,
-		arg.Gid,
-		arg.Type,
-		arg.Hidden,
-		arg.PathHash,
-	)
-	var i FileEntries
-	err := row.Scan(
-		&i.ID,
-		&i.VolumeID,
-		&i.ParentDirID,
-		&i.Name,
-		&i.SizeBytes,
-		&i.Mtime,
-		&i.Ctime,
-		&i.Inode,
-		&i.Uid,
-		&i.Gid,
-		&i.Type,
-		&i.Hidden,
-		&i.PathHash,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const deleteDirNodesByVolume = `-- name: DeleteDirNodesByVolume :exec
-DELETE FROM dir_nodes WHERE volume_id = $1
-`
-
-func (q *Queries) DeleteDirNodesByVolume(ctx context.Context, volumeID string) error {
-	_, err := q.db.Exec(ctx, deleteDirNodesByVolume, volumeID)
-	return err
-}
-
-const deleteFileEntriesByVolume = `-- name: DeleteFileEntriesByVolume :exec
-DELETE FROM file_entries WHERE volume_id = $1
-`
-
-func (q *Queries) DeleteFileEntriesByVolume(ctx context.Context, volumeID string) error {
-	_, err := q.db.Exec(ctx, deleteFileEntriesByVolume, volumeID)
-	return err
-}
-
-const deleteOldRollups = `-- name: DeleteOldRollups :exec
-DELETE FROM dir_rollups WHERE computed_at < $1
-`
-
-func (q *Queries) DeleteOldRollups(ctx context.Context, computedAt time.Time) error {
-	_, err := q.db.Exec(ctx, deleteOldRollups, computedAt)
-	return err
-}
-
-const deleteRollupsByDirId = `-- name: DeleteRollupsByDirId :exec
-DELETE FROM dir_rollups WHERE dir_id = $1
-`
-
-func (q *Queries) DeleteRollupsByDirId(ctx context.Context, dirID int64) error {
-	_, err := q.db.Exec(ctx, deleteRollupsByDirId, dirID)
-	return err
-}
-
-const findFilesByPathHash = `-- name: FindFilesByPathHash :many
-SELECT id, volume_id, parent_dir_id, name, size_bytes, mtime, ctime, inode, uid, gid, type, hidden, path_hash, created_at, updated_at
-FROM file_entries 
-WHERE volume_id = $1 AND path_hash = $2
-`
-
-type FindFilesByPathHashParams struct {
-	VolumeID string `json:"volume_id"`
-	PathHash []byte `json:"path_hash"`
-}
-
-func (q *Queries) FindFilesByPathHash(ctx context.Context, arg FindFilesByPathHashParams) ([]FileEntries, error) {
-	rows, err := q.db.Query(ctx, findFilesByPathHash, arg.VolumeID, arg.PathHash)
+func (q *Queries) FindFilesByPathHashLegacy(ctx context.Context, arg FindFilesByPathHashLegacyParams) ([]FindFilesByPathHashLegacyRow, error) {
+	rows, err := q.db.Query(ctx, findFilesByPathHashLegacy, arg.VolumeID, arg.PathHash)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []FileEntries{}
+	items := []FindFilesByPathHashLegacyRow{}
 	for rows.Next() {
-		var i FileEntries
+		var i FindFilesByPathHashLegacyRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.VolumeID,
@@ -299,53 +216,11 @@ func (q *Queries) FindFilesByPathHash(ctx context.Context, arg FindFilesByPathHa
 	return items, nil
 }
 
-const getChildDirNodes = `-- name: GetChildDirNodes :many
-SELECT id, volume_id, parent_dir_id, name, full_path, depth, latest_size_bytes, latest_file_count, created_at, updated_at
-FROM dir_nodes 
-WHERE volume_id = $1 AND parent_dir_id = $2
-ORDER BY name ASC
-`
-
-type GetChildDirNodesParams struct {
-	VolumeID    string      `json:"volume_id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
-}
-
-func (q *Queries) GetChildDirNodes(ctx context.Context, arg GetChildDirNodesParams) ([]DirNodes, error) {
-	rows, err := q.db.Query(ctx, getChildDirNodes, arg.VolumeID, arg.ParentDirID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []DirNodes{}
-	for rows.Next() {
-		var i DirNodes
-		if err := rows.Scan(
-			&i.ID,
-			&i.VolumeID,
-			&i.ParentDirID,
-			&i.Name,
-			&i.FullPath,
-			&i.Depth,
-			&i.LatestSizeBytes,
-			&i.LatestFileCount,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getDirNode = `-- name: GetDirNode :one
 
-SELECT id, volume_id, parent_dir_id, name, full_path, depth, latest_size_bytes, latest_file_count, created_at, updated_at
-FROM dir_nodes 
+SELECT id, volume_id, parent_id as parent_dir_id, name, path as full_path, depth, 
+       size_bytes_recursive as latest_size_bytes, file_count as latest_file_count, created_at, updated_at
+FROM folders 
 WHERE id = $1 AND volume_id = $2
 `
 
@@ -354,627 +229,7 @@ type GetDirNodeParams struct {
 	VolumeID string `json:"volume_id"`
 }
 
-// =============================================================================
-// DIRECTORY NODES QUERIES
-// =============================================================================
-func (q *Queries) GetDirNode(ctx context.Context, arg GetDirNodeParams) (DirNodes, error) {
-	row := q.db.QueryRow(ctx, getDirNode, arg.ID, arg.VolumeID)
-	var i DirNodes
-	err := row.Scan(
-		&i.ID,
-		&i.VolumeID,
-		&i.ParentDirID,
-		&i.Name,
-		&i.FullPath,
-		&i.Depth,
-		&i.LatestSizeBytes,
-		&i.LatestFileCount,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getDirNodeByPath = `-- name: GetDirNodeByPath :one
-SELECT id, volume_id, parent_dir_id, name, full_path, depth, latest_size_bytes, latest_file_count, created_at, updated_at
-FROM dir_nodes 
-WHERE volume_id = $1 AND full_path = $2
-`
-
-type GetDirNodeByPathParams struct {
-	VolumeID string `json:"volume_id"`
-	FullPath string `json:"full_path"`
-}
-
-func (q *Queries) GetDirNodeByPath(ctx context.Context, arg GetDirNodeByPathParams) (DirNodes, error) {
-	row := q.db.QueryRow(ctx, getDirNodeByPath, arg.VolumeID, arg.FullPath)
-	var i DirNodes
-	err := row.Scan(
-		&i.ID,
-		&i.VolumeID,
-		&i.ParentDirID,
-		&i.Name,
-		&i.FullPath,
-		&i.Depth,
-		&i.LatestSizeBytes,
-		&i.LatestFileCount,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getDirRollup = `-- name: GetDirRollup :one
-
-SELECT id, dir_id, size_bytes, file_count, computed_at, created_at
-FROM dir_rollups 
-WHERE id = $1
-`
-
-// =============================================================================
-// DIRECTORY ROLLUPS QUERIES
-// =============================================================================
-func (q *Queries) GetDirRollup(ctx context.Context, id int64) (DirRollups, error) {
-	row := q.db.QueryRow(ctx, getDirRollup, id)
-	var i DirRollups
-	err := row.Scan(
-		&i.ID,
-		&i.DirID,
-		&i.SizeBytes,
-		&i.FileCount,
-		&i.ComputedAt,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const getDirRollupHistory = `-- name: GetDirRollupHistory :many
-SELECT id, dir_id, size_bytes, file_count, computed_at, created_at
-FROM dir_rollups 
-WHERE dir_id = $1
-ORDER BY computed_at DESC
-LIMIT $2
-`
-
-type GetDirRollupHistoryParams struct {
-	DirID int64 `json:"dir_id"`
-	Limit int32 `json:"limit"`
-}
-
-func (q *Queries) GetDirRollupHistory(ctx context.Context, arg GetDirRollupHistoryParams) ([]DirRollups, error) {
-	rows, err := q.db.Query(ctx, getDirRollupHistory, arg.DirID, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []DirRollups{}
-	for rows.Next() {
-		var i DirRollups
-		if err := rows.Scan(
-			&i.ID,
-			&i.DirID,
-			&i.SizeBytes,
-			&i.FileCount,
-			&i.ComputedAt,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getDirRollupsInTimeRange = `-- name: GetDirRollupsInTimeRange :many
-SELECT id, dir_id, size_bytes, file_count, computed_at, created_at
-FROM dir_rollups 
-WHERE dir_id = $1 AND computed_at >= $2 AND computed_at <= $3
-ORDER BY computed_at DESC
-`
-
-type GetDirRollupsInTimeRangeParams struct {
-	DirID        int64     `json:"dir_id"`
-	ComputedAt   time.Time `json:"computed_at"`
-	ComputedAt_2 time.Time `json:"computed_at_2"`
-}
-
-func (q *Queries) GetDirRollupsInTimeRange(ctx context.Context, arg GetDirRollupsInTimeRangeParams) ([]DirRollups, error) {
-	rows, err := q.db.Query(ctx, getDirRollupsInTimeRange, arg.DirID, arg.ComputedAt, arg.ComputedAt_2)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []DirRollups{}
-	for rows.Next() {
-		var i DirRollups
-		if err := rows.Scan(
-			&i.ID,
-			&i.DirID,
-			&i.SizeBytes,
-			&i.FileCount,
-			&i.ComputedAt,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getDirectoryByPath = `-- name: GetDirectoryByPath :one
-
-SELECT 
-    id,
-    name,
-    full_path,
-    parent_dir_id,
-    depth,
-    latest_size_bytes,
-    latest_file_count,
-    updated_at
-FROM dir_nodes 
-WHERE volume_id = $1 AND full_path = $2
-`
-
-type GetDirectoryByPathParams struct {
-	VolumeID string `json:"volume_id"`
-	FullPath string `json:"full_path"`
-}
-
-type GetDirectoryByPathRow struct {
-	ID              int64       `json:"id"`
-	Name            string      `json:"name"`
-	FullPath        string      `json:"full_path"`
-	ParentDirID     pgtype.Int8 `json:"parent_dir_id"`
-	Depth           int32       `json:"depth"`
-	LatestSizeBytes int64       `json:"latest_size_bytes"`
-	LatestFileCount int64       `json:"latest_file_count"`
-	UpdatedAt       time.Time   `json:"updated_at"`
-}
-
-// =============================================================================
-// PATH-BASED NAVIGATION QUERIES
-// =============================================================================
-// Find a directory by its full path
-func (q *Queries) GetDirectoryByPath(ctx context.Context, arg GetDirectoryByPathParams) (GetDirectoryByPathRow, error) {
-	row := q.db.QueryRow(ctx, getDirectoryByPath, arg.VolumeID, arg.FullPath)
-	var i GetDirectoryByPathRow
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.FullPath,
-		&i.ParentDirID,
-		&i.Depth,
-		&i.LatestSizeBytes,
-		&i.LatestFileCount,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getDirectoryChildren = `-- name: GetDirectoryChildren :many
-
-
-SELECT 
-    'dir' as entry_type,
-    dn.id::BIGINT as entry_id,
-    dn.name,
-    dn.full_path,
-    COALESCE(dr.size_bytes, dn.latest_size_bytes) as size_bytes,
-    COALESCE(dr.file_count, dn.latest_file_count) as file_count,
-    dn.depth,
-    dn.updated_at as last_modified,
-    NULL::BIGINT as inode,
-    NULL::INTEGER as uid,
-    NULL::INTEGER as gid,
-    false as hidden
-FROM dir_nodes dn
-LEFT JOIN LATERAL (
-    SELECT size_bytes, file_count 
-    FROM dir_rollups dr 
-    WHERE dr.dir_id = dn.id 
-    ORDER BY dr.computed_at DESC 
-    LIMIT 1
-) dr ON true
-WHERE dn.volume_id = $1 
-  AND dn.parent_dir_id = $2
-  AND ($3::BIGINT IS NULL OR COALESCE(dr.size_bytes, dn.latest_size_bytes) >= $3)
-
-UNION ALL
-
-SELECT 
-    'file' as entry_type,
-    fe.id::BIGINT as entry_id,
-    fe.name,
-    '' as full_path, -- Files don't have full_path in this context
-    fe.size_bytes,
-    1 as file_count, -- Files always count as 1
-    0 as depth, -- Files don't have depth
-    fe.mtime as last_modified,
-    fe.inode,
-    fe.uid,
-    fe.gid,
-    fe.hidden
-FROM file_entries fe
-WHERE fe.volume_id = $1 
-  AND fe.parent_dir_id = $2
-  AND fe.type = 'file'
-  AND ($3::BIGINT IS NULL OR fe.size_bytes >= $3)
-  AND ($4::BOOLEAN IS NULL OR fe.hidden = $4)
-
-ORDER BY 
-    entry_type DESC, -- 'dir' comes before 'file' (directories first)
-    size_bytes DESC, -- Largest first within each type
-    name ASC
-`
-
-type GetDirectoryChildrenParams struct {
-	VolumeID      string      `json:"volume_id"`
-	ParentDirID   pgtype.Int8 `json:"parent_dir_id"`
-	MinSizeBytes  int64       `json:"min_size_bytes"`
-	IncludeHidden bool        `json:"include_hidden"`
-}
-
-type GetDirectoryChildrenRow struct {
-	EntryType    string      `json:"entry_type"`
-	EntryID      int64       `json:"entry_id"`
-	Name         string      `json:"name"`
-	FullPath     string      `json:"full_path"`
-	SizeBytes    int64       `json:"size_bytes"`
-	FileCount    int64       `json:"file_count"`
-	Depth        int32       `json:"depth"`
-	LastModified time.Time   `json:"last_modified"`
-	Inode        pgtype.Int8 `json:"inode"`
-	Uid          pgtype.Int4 `json:"uid"`
-	Gid          pgtype.Int4 `json:"gid"`
-	Hidden       bool        `json:"hidden"`
-}
-
-// =============================================================================
-// EXPLORER QUERIES (Drill-down navigation and heavy hitters analysis)
-// Optimized for sub-150ms performance with proper indexing
-// =============================================================================
-// =============================================================================
-// DIRECTORY CHILDREN QUERIES (Drill-down navigation)
-// =============================================================================
-// Get immediate children (subdirectories and files) of a directory with rollup data
-// Returns mixed result set with directories first (from rollups), then files
-// Uses UNION ALL for optimal performance with deterministic sorting
-func (q *Queries) GetDirectoryChildren(ctx context.Context, arg GetDirectoryChildrenParams) ([]GetDirectoryChildrenRow, error) {
-	rows, err := q.db.Query(ctx, getDirectoryChildren,
-		arg.VolumeID,
-		arg.ParentDirID,
-		arg.MinSizeBytes,
-		arg.IncludeHidden,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetDirectoryChildrenRow{}
-	for rows.Next() {
-		var i GetDirectoryChildrenRow
-		if err := rows.Scan(
-			&i.EntryType,
-			&i.EntryID,
-			&i.Name,
-			&i.FullPath,
-			&i.SizeBytes,
-			&i.FileCount,
-			&i.Depth,
-			&i.LastModified,
-			&i.Inode,
-			&i.Uid,
-			&i.Gid,
-			&i.Hidden,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getDirectoryChildrenCount = `-- name: GetDirectoryChildrenCount :one
-SELECT 
-    (SELECT COUNT(*) FROM dir_nodes dn WHERE dn.volume_id = $1 AND dn.parent_dir_id = $2) +
-    (SELECT COUNT(*) FROM file_entries fe WHERE fe.volume_id = $1 AND fe.parent_dir_id = $2 AND fe.type = 'file') 
-    as total_count
-`
-
-type GetDirectoryChildrenCountParams struct {
-	VolumeID    string      `json:"volume_id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
-}
-
-// Get total count of children for pagination
-func (q *Queries) GetDirectoryChildrenCount(ctx context.Context, arg GetDirectoryChildrenCountParams) (int32, error) {
-	row := q.db.QueryRow(ctx, getDirectoryChildrenCount, arg.VolumeID, arg.ParentDirID)
-	var total_count int32
-	err := row.Scan(&total_count)
-	return total_count, err
-}
-
-const getDirectoryChildrenPaginated = `-- name: GetDirectoryChildrenPaginated :many
-
-SELECT 
-    'dir' as entry_type,
-    dn.id::BIGINT as entry_id,
-    dn.name,
-    dn.full_path,
-    COALESCE(dr.size_bytes, dn.latest_size_bytes) as size_bytes,
-    COALESCE(dr.file_count, dn.latest_file_count) as file_count,
-    dn.depth,
-    dn.updated_at as last_modified,
-    NULL::BIGINT as inode,
-    NULL::INTEGER as uid,
-    NULL::INTEGER as gid,
-    false as hidden
-FROM dir_nodes dn
-LEFT JOIN LATERAL (
-    SELECT size_bytes, file_count 
-    FROM dir_rollups dr 
-    WHERE dr.dir_id = dn.id 
-    ORDER BY dr.computed_at DESC 
-    LIMIT 1
-) dr ON true
-WHERE dn.volume_id = $1 
-  AND dn.parent_dir_id = $2
-
-UNION ALL
-
-SELECT 
-    'file' as entry_type,
-    fe.id::BIGINT as entry_id,
-    fe.name,
-    '' as full_path,
-    fe.size_bytes,
-    1 as file_count,
-    0 as depth,
-    fe.mtime as last_modified,
-    fe.inode,
-    fe.uid,
-    fe.gid,
-    fe.hidden
-FROM file_entries fe
-WHERE fe.volume_id = $1 
-  AND fe.parent_dir_id = $2
-  AND fe.type = 'file'
-
-ORDER BY 
-    entry_type DESC,
-    size_bytes DESC,
-    name ASC
-LIMIT $3 OFFSET $4
-`
-
-type GetDirectoryChildrenPaginatedParams struct {
-	VolumeID    string      `json:"volume_id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
-	Limit       int32       `json:"limit"`
-	Offset      int32       `json:"offset"`
-}
-
-type GetDirectoryChildrenPaginatedRow struct {
-	EntryType    string      `json:"entry_type"`
-	EntryID      int64       `json:"entry_id"`
-	Name         string      `json:"name"`
-	FullPath     string      `json:"full_path"`
-	SizeBytes    int64       `json:"size_bytes"`
-	FileCount    int64       `json:"file_count"`
-	Depth        int32       `json:"depth"`
-	LastModified time.Time   `json:"last_modified"`
-	Inode        pgtype.Int8 `json:"inode"`
-	Uid          pgtype.Int4 `json:"uid"`
-	Gid          pgtype.Int4 `json:"gid"`
-	Hidden       bool        `json:"hidden"`
-}
-
-// Deterministic secondary sort
-// Paginated version for large directories
-// Uses deterministic sorting for consistent pagination
-func (q *Queries) GetDirectoryChildrenPaginated(ctx context.Context, arg GetDirectoryChildrenPaginatedParams) ([]GetDirectoryChildrenPaginatedRow, error) {
-	rows, err := q.db.Query(ctx, getDirectoryChildrenPaginated,
-		arg.VolumeID,
-		arg.ParentDirID,
-		arg.Limit,
-		arg.Offset,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetDirectoryChildrenPaginatedRow{}
-	for rows.Next() {
-		var i GetDirectoryChildrenPaginatedRow
-		if err := rows.Scan(
-			&i.EntryType,
-			&i.EntryID,
-			&i.Name,
-			&i.FullPath,
-			&i.SizeBytes,
-			&i.FileCount,
-			&i.Depth,
-			&i.LastModified,
-			&i.Inode,
-			&i.Uid,
-			&i.Gid,
-			&i.Hidden,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getDirectoryHierarchy = `-- name: GetDirectoryHierarchy :many
-WITH RECURSIVE hierarchy AS (
-    -- Base case: the target directory
-    SELECT 
-        dn.id, dn.parent_dir_id, dn.name, dn.full_path, dn.depth, 0 as level
-    FROM dir_nodes dn 
-    WHERE dn.volume_id = $1 AND dn.id = $2
-    
-    UNION ALL
-    
-    -- Recursive case: find parent directories
-    SELECT 
-        dn.id, dn.parent_dir_id, dn.name, dn.full_path, dn.depth, h.level + 1
-    FROM dir_nodes dn
-    JOIN hierarchy h ON dn.id = h.parent_dir_id
-    WHERE dn.volume_id = $1
-)
-SELECT 
-    id,
-    parent_dir_id,
-    name,
-    full_path,
-    depth
-FROM hierarchy 
-ORDER BY level DESC
-`
-
-type GetDirectoryHierarchyParams struct {
-	VolumeID string `json:"volume_id"`
-	ID       int64  `json:"id"`
-}
-
-type GetDirectoryHierarchyRow struct {
-	ID          int64       `json:"id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
-	Name        string      `json:"name"`
-	FullPath    string      `json:"full_path"`
-	Depth       int32       `json:"depth"`
-}
-
-// Get the full hierarchy path from root to a specific directory
-// Returns all ancestor directories in order from root to target
-func (q *Queries) GetDirectoryHierarchy(ctx context.Context, arg GetDirectoryHierarchyParams) ([]GetDirectoryHierarchyRow, error) {
-	rows, err := q.db.Query(ctx, getDirectoryHierarchy, arg.VolumeID, arg.ID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetDirectoryHierarchyRow{}
-	for rows.Next() {
-		var i GetDirectoryHierarchyRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.ParentDirID,
-			&i.Name,
-			&i.FullPath,
-			&i.Depth,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getDirectorySummary = `-- name: GetDirectorySummary :one
-
-SELECT 
-    dn.id,
-    dn.name,
-    dn.full_path,
-    dn.parent_dir_id,
-    COALESCE(dr.size_bytes, dn.latest_size_bytes) as total_size,
-    COALESCE(dr.file_count, dn.latest_file_count) as total_files,
-    (SELECT COUNT(*) FROM dir_nodes WHERE parent_dir_id = dn.id) as subdirectory_count,
-    (SELECT COUNT(*) FROM file_entries WHERE parent_dir_id = dn.id AND type = 'file') as direct_file_count
-FROM dir_nodes dn
-LEFT JOIN LATERAL (
-    SELECT size_bytes, file_count
-    FROM dir_rollups dr 
-    WHERE dr.dir_id = dn.id 
-    ORDER BY dr.computed_at DESC 
-    LIMIT 1
-) dr ON true
-WHERE dn.volume_id = $1 AND dn.id = $2
-`
-
-type GetDirectorySummaryParams struct {
-	VolumeID string `json:"volume_id"`
-	ID       int64  `json:"id"`
-}
-
-type GetDirectorySummaryRow struct {
-	ID                int64       `json:"id"`
-	Name              string      `json:"name"`
-	FullPath          string      `json:"full_path"`
-	ParentDirID       pgtype.Int8 `json:"parent_dir_id"`
-	TotalSize         int64       `json:"total_size"`
-	TotalFiles        int64       `json:"total_files"`
-	SubdirectoryCount int64       `json:"subdirectory_count"`
-	DirectFileCount   int64       `json:"direct_file_count"`
-}
-
-// =============================================================================
-// SUMMARY AND "OTHER" BUCKET CALCULATIONS
-// =============================================================================
-// Get summary statistics for a directory including "other" calculations
-// Used for showing Top-N + "Other" bucket in UI
-func (q *Queries) GetDirectorySummary(ctx context.Context, arg GetDirectorySummaryParams) (GetDirectorySummaryRow, error) {
-	row := q.db.QueryRow(ctx, getDirectorySummary, arg.VolumeID, arg.ID)
-	var i GetDirectorySummaryRow
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.FullPath,
-		&i.ParentDirID,
-		&i.TotalSize,
-		&i.TotalFiles,
-		&i.SubdirectoryCount,
-		&i.DirectFileCount,
-	)
-	return i, err
-}
-
-const getDirectoryTree = `-- name: GetDirectoryTree :many
-
-WITH RECURSIVE dir_tree AS (
-    -- Base case: start with root directories
-    SELECT d.id, d.volume_id, d.parent_dir_id, d.name, d.full_path, d.depth, d.latest_size_bytes, d.latest_file_count, d.created_at, d.updated_at
-    FROM dir_nodes d
-    WHERE d.volume_id = $1 AND d.parent_dir_id IS NULL
-    
-    UNION ALL
-    
-    -- Recursive case: get children
-    SELECT d.id, d.volume_id, d.parent_dir_id, d.name, d.full_path, d.depth, d.latest_size_bytes, d.latest_file_count, d.created_at, d.updated_at
-    FROM dir_nodes d
-    INNER JOIN dir_tree dt ON d.parent_dir_id = dt.id
-    WHERE d.volume_id = dt.volume_id AND d.depth <= $2  -- Limit depth to prevent runaway queries
-)
-SELECT id, volume_id, parent_dir_id, name, full_path, depth, latest_size_bytes, latest_file_count, created_at, updated_at
-FROM dir_tree
-ORDER BY depth, full_path
-`
-
-type GetDirectoryTreeParams struct {
-	VolumeID string `json:"volume_id"`
-	MaxDepth int32  `json:"max_depth"`
-}
-
-type GetDirectoryTreeRow struct {
+type GetDirNodeRow struct {
 	ID              int64       `json:"id"`
 	VolumeID        string      `json:"volume_id"`
 	ParentDirID     pgtype.Int8 `json:"parent_dir_id"`
@@ -988,18 +243,90 @@ type GetDirectoryTreeRow struct {
 }
 
 // =============================================================================
-// DIRECTORY TREE QUERIES
+// DIRECTORY NODES QUERIES (now mapped to 'folders' table)
 // =============================================================================
-// Get directory tree with optional depth limiting
-func (q *Queries) GetDirectoryTree(ctx context.Context, arg GetDirectoryTreeParams) ([]GetDirectoryTreeRow, error) {
-	rows, err := q.db.Query(ctx, getDirectoryTree, arg.VolumeID, arg.MaxDepth)
+func (q *Queries) GetDirNode(ctx context.Context, arg GetDirNodeParams) (GetDirNodeRow, error) {
+	row := q.db.QueryRow(ctx, getDirNode, arg.ID, arg.VolumeID)
+	var i GetDirNodeRow
+	err := row.Scan(
+		&i.ID,
+		&i.VolumeID,
+		&i.ParentDirID,
+		&i.Name,
+		&i.FullPath,
+		&i.Depth,
+		&i.LatestSizeBytes,
+		&i.LatestFileCount,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getDirNodeStats = `-- name: GetDirNodeStats :one
+SELECT 
+    COUNT(*) as total_dirs,
+    MAX(depth) as max_depth,
+    SUM(size_bytes_recursive) as total_size,
+    AVG(file_count) as avg_files_per_dir
+FROM folders
+WHERE volume_id = $1
+`
+
+type GetDirNodeStatsRow struct {
+	TotalDirs      int64       `json:"total_dirs"`
+	MaxDepth       interface{} `json:"max_depth"`
+	TotalSize      int64       `json:"total_size"`
+	AvgFilesPerDir float64     `json:"avg_files_per_dir"`
+}
+
+func (q *Queries) GetDirNodeStats(ctx context.Context, volumeID string) (GetDirNodeStatsRow, error) {
+	row := q.db.QueryRow(ctx, getDirNodeStats, volumeID)
+	var i GetDirNodeStatsRow
+	err := row.Scan(
+		&i.TotalDirs,
+		&i.MaxDepth,
+		&i.TotalSize,
+		&i.AvgFilesPerDir,
+	)
+	return i, err
+}
+
+const getDirNodesByVolumeAndParent = `-- name: GetDirNodesByVolumeAndParent :many
+SELECT id, volume_id, parent_id as parent_dir_id, name, path as full_path, depth,
+       size_bytes_recursive as latest_size_bytes, file_count as latest_file_count, created_at, updated_at
+FROM folders 
+WHERE volume_id = $1 AND parent_id = $2
+ORDER BY name ASC
+`
+
+type GetDirNodesByVolumeAndParentParams struct {
+	VolumeID string      `json:"volume_id"`
+	ParentID pgtype.Int8 `json:"parent_id"`
+}
+
+type GetDirNodesByVolumeAndParentRow struct {
+	ID              int64       `json:"id"`
+	VolumeID        string      `json:"volume_id"`
+	ParentDirID     pgtype.Int8 `json:"parent_dir_id"`
+	Name            string      `json:"name"`
+	FullPath        string      `json:"full_path"`
+	Depth           int32       `json:"depth"`
+	LatestSizeBytes int64       `json:"latest_size_bytes"`
+	LatestFileCount int64       `json:"latest_file_count"`
+	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
+}
+
+func (q *Queries) GetDirNodesByVolumeAndParent(ctx context.Context, arg GetDirNodesByVolumeAndParentParams) ([]GetDirNodesByVolumeAndParentRow, error) {
+	rows, err := q.db.Query(ctx, getDirNodesByVolumeAndParent, arg.VolumeID, arg.ParentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetDirectoryTreeRow{}
+	items := []GetDirNodesByVolumeAndParentRow{}
 	for rows.Next() {
-		var i GetDirectoryTreeRow
+		var i GetDirNodesByVolumeAndParentRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.VolumeID,
@@ -1022,27 +349,155 @@ func (q *Queries) GetDirectoryTree(ctx context.Context, arg GetDirectoryTreePara
 	return items, nil
 }
 
+const getDirRollup = `-- name: GetDirRollup :one
+
+
+SELECT 
+    f.id as id,
+    f.id as dir_id,
+    f.size_bytes_recursive as size_bytes,
+    f.file_count as file_count,
+    f.updated_at as computed_at,
+    f.created_at as created_at
+FROM folders f
+WHERE f.id = $1
+`
+
+type GetDirRollupRow struct {
+	ID         int64     `json:"id"`
+	DirID      int64     `json:"dir_id"`
+	SizeBytes  int64     `json:"size_bytes"`
+	FileCount  int64     `json:"file_count"`
+	ComputedAt time.Time `json:"computed_at"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+// =============================================================================
+// DIRECTORY ROLLUPS QUERIES (legacy compatibility - not implemented in new schema)
+// =============================================================================
+// Note: Directory rollups are now handled by triggers in the new schema
+// These queries are kept for compatibility but may return empty results
+func (q *Queries) GetDirRollup(ctx context.Context, id int64) (GetDirRollupRow, error) {
+	row := q.db.QueryRow(ctx, getDirRollup, id)
+	var i GetDirRollupRow
+	err := row.Scan(
+		&i.ID,
+		&i.DirID,
+		&i.SizeBytes,
+		&i.FileCount,
+		&i.ComputedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getExplorerEntry = `-- name: GetExplorerEntry :one
+
+SELECT 
+    CASE 
+        WHEN f.id IS NOT NULL THEN 'folder'
+        WHEN fl.id IS NOT NULL THEN 'file'
+        ELSE 'unknown'
+    END as type,
+    COALESCE(f.id, fl.id) as id,
+    COALESCE(f.name, fl.name) as name,
+    COALESCE(f.path, fl.path) as path,
+    COALESCE(f.size_bytes_recursive, fl.size_bytes) as size_bytes,
+    f.file_count,
+    f.dir_count,
+    fl.extension,
+    fl.mime,
+    fl.media_kind,
+    COALESCE(f.mtime, fl.mtime) as mtime,
+    COALESCE(f.created_at, fl.created_at) as created_at
+FROM folders f
+FULL OUTER JOIN files fl ON false  -- This join will never match, we use UNION instead
+WHERE (f.volume_id = $1 AND f.id = $2) OR (fl.volume_id = $1 AND fl.id = $2)
+`
+
+type GetExplorerEntryParams struct {
+	VolumeID string `json:"volume_id"`
+	ID       int64  `json:"id"`
+}
+
+type GetExplorerEntryRow struct {
+	Type      string      `json:"type"`
+	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
+	Path      string      `json:"path"`
+	SizeBytes int64       `json:"size_bytes"`
+	FileCount pgtype.Int8 `json:"file_count"`
+	DirCount  pgtype.Int8 `json:"dir_count"`
+	Extension pgtype.Text `json:"extension"`
+	Mime      pgtype.Text `json:"mime"`
+	MediaKind pgtype.Text `json:"media_kind"`
+	Mtime     time.Time   `json:"mtime"`
+	CreatedAt time.Time   `json:"created_at"`
+}
+
+// =============================================================================
+// EXPLORER QUERIES (updated for new schema)
+// =============================================================================
+func (q *Queries) GetExplorerEntry(ctx context.Context, arg GetExplorerEntryParams) (GetExplorerEntryRow, error) {
+	row := q.db.QueryRow(ctx, getExplorerEntry, arg.VolumeID, arg.ID)
+	var i GetExplorerEntryRow
+	err := row.Scan(
+		&i.Type,
+		&i.ID,
+		&i.Name,
+		&i.Path,
+		&i.SizeBytes,
+		&i.FileCount,
+		&i.DirCount,
+		&i.Extension,
+		&i.Mime,
+		&i.MediaKind,
+		&i.Mtime,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getFileEntriesByVolumeAndParent = `-- name: GetFileEntriesByVolumeAndParent :many
-SELECT id, volume_id, parent_dir_id, name, size_bytes, mtime, ctime, inode, uid, gid, type, hidden, path_hash, created_at, updated_at
-FROM file_entries 
-WHERE volume_id = $1 AND parent_dir_id = $2
+SELECT id, volume_id, folder_id as parent_dir_id, name, size_bytes, mtime, ctime, inode, uid, gid,
+       CASE WHEN is_symlink THEN 'symlink' ELSE 'file' END as type, false as hidden, path_hash, created_at, updated_at
+FROM files 
+WHERE volume_id = $1 AND folder_id = $2
 ORDER BY name ASC
 `
 
 type GetFileEntriesByVolumeAndParentParams struct {
-	VolumeID    string      `json:"volume_id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
+	VolumeID string `json:"volume_id"`
+	FolderID int64  `json:"folder_id"`
 }
 
-func (q *Queries) GetFileEntriesByVolumeAndParent(ctx context.Context, arg GetFileEntriesByVolumeAndParentParams) ([]FileEntries, error) {
-	rows, err := q.db.Query(ctx, getFileEntriesByVolumeAndParent, arg.VolumeID, arg.ParentDirID)
+type GetFileEntriesByVolumeAndParentRow struct {
+	ID          int64       `json:"id"`
+	VolumeID    string      `json:"volume_id"`
+	ParentDirID int64       `json:"parent_dir_id"`
+	Name        string      `json:"name"`
+	SizeBytes   int64       `json:"size_bytes"`
+	Mtime       time.Time   `json:"mtime"`
+	Ctime       time.Time   `json:"ctime"`
+	Inode       pgtype.Int8 `json:"inode"`
+	Uid         pgtype.Int4 `json:"uid"`
+	Gid         pgtype.Int4 `json:"gid"`
+	Type        string      `json:"type"`
+	Hidden      bool        `json:"hidden"`
+	PathHash    []byte      `json:"path_hash"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
+}
+
+func (q *Queries) GetFileEntriesByVolumeAndParent(ctx context.Context, arg GetFileEntriesByVolumeAndParentParams) ([]GetFileEntriesByVolumeAndParentRow, error) {
+	rows, err := q.db.Query(ctx, getFileEntriesByVolumeAndParent, arg.VolumeID, arg.FolderID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []FileEntries{}
+	items := []GetFileEntriesByVolumeAndParentRow{}
 	for rows.Next() {
-		var i FileEntries
+		var i GetFileEntriesByVolumeAndParentRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.VolumeID,
@@ -1073,8 +528,9 @@ func (q *Queries) GetFileEntriesByVolumeAndParent(ctx context.Context, arg GetFi
 const getFileEntry = `-- name: GetFileEntry :one
 
 
-SELECT id, volume_id, parent_dir_id, name, size_bytes, mtime, ctime, inode, uid, gid, type, hidden, path_hash, created_at, updated_at
-FROM file_entries 
+SELECT id, volume_id, folder_id as parent_dir_id, name, size_bytes, mtime, ctime, inode, uid, gid, 
+       CASE WHEN is_symlink THEN 'symlink' ELSE 'file' END as type, false as hidden, path_hash, created_at, updated_at
+FROM files 
 WHERE id = $1 AND volume_id = $2
 `
 
@@ -1083,16 +539,34 @@ type GetFileEntryParams struct {
 	VolumeID string `json:"volume_id"`
 }
 
+type GetFileEntryRow struct {
+	ID          int64       `json:"id"`
+	VolumeID    string      `json:"volume_id"`
+	ParentDirID int64       `json:"parent_dir_id"`
+	Name        string      `json:"name"`
+	SizeBytes   int64       `json:"size_bytes"`
+	Mtime       time.Time   `json:"mtime"`
+	Ctime       time.Time   `json:"ctime"`
+	Inode       pgtype.Int8 `json:"inode"`
+	Uid         pgtype.Int4 `json:"uid"`
+	Gid         pgtype.Int4 `json:"gid"`
+	Type        string      `json:"type"`
+	Hidden      bool        `json:"hidden"`
+	PathHash    []byte      `json:"path_hash"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
+}
+
 // =============================================================================
-// SCAN-RELATED QUERIES CONSOLIDATED
-// Consolidated from: file_entries.sql, dir_nodes.sql, dir_rollups.sql, explorer.sql
+// LEGACY SCAN-RELATED QUERIES (UPDATED FOR NEW SCHEMA)
+// Updated to use new 'folders' and 'files' tables instead of old schema
 // =============================================================================
 // =============================================================================
-// FILE ENTRIES QUERIES
+// FILE ENTRIES QUERIES (now mapped to 'files' table)
 // =============================================================================
-func (q *Queries) GetFileEntry(ctx context.Context, arg GetFileEntryParams) (FileEntries, error) {
+func (q *Queries) GetFileEntry(ctx context.Context, arg GetFileEntryParams) (GetFileEntryRow, error) {
 	row := q.db.QueryRow(ctx, getFileEntry, arg.ID, arg.VolumeID)
-	var i FileEntries
+	var i GetFileEntryRow
 	err := row.Scan(
 		&i.ID,
 		&i.VolumeID,
@@ -1113,72 +587,47 @@ func (q *Queries) GetFileEntry(ctx context.Context, arg GetFileEntryParams) (Fil
 	return i, err
 }
 
-const getLargestDirectories = `-- name: GetLargestDirectories :many
-SELECT id, volume_id, parent_dir_id, name, full_path, depth, latest_size_bytes, latest_file_count, created_at, updated_at
-FROM dir_nodes 
+const getLargestFilesLegacy = `-- name: GetLargestFilesLegacy :many
+SELECT id, volume_id, folder_id as parent_dir_id, name, size_bytes, mtime, ctime, inode, uid, gid,
+       CASE WHEN is_symlink THEN 'symlink' ELSE 'file' END as type, false as hidden, path_hash, created_at, updated_at
+FROM files 
 WHERE volume_id = $1
-ORDER BY latest_size_bytes DESC
-LIMIT $2
-`
-
-type GetLargestDirectoriesParams struct {
-	VolumeID string `json:"volume_id"`
-	Limit    int32  `json:"limit"`
-}
-
-func (q *Queries) GetLargestDirectories(ctx context.Context, arg GetLargestDirectoriesParams) ([]DirNodes, error) {
-	rows, err := q.db.Query(ctx, getLargestDirectories, arg.VolumeID, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []DirNodes{}
-	for rows.Next() {
-		var i DirNodes
-		if err := rows.Scan(
-			&i.ID,
-			&i.VolumeID,
-			&i.ParentDirID,
-			&i.Name,
-			&i.FullPath,
-			&i.Depth,
-			&i.LatestSizeBytes,
-			&i.LatestFileCount,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLargestFiles = `-- name: GetLargestFiles :many
-SELECT id, volume_id, parent_dir_id, name, size_bytes, mtime, ctime, inode, uid, gid, type, hidden, path_hash, created_at, updated_at
-FROM file_entries 
-WHERE volume_id = $1 AND type = 'file'
 ORDER BY size_bytes DESC
 LIMIT $2
 `
 
-type GetLargestFilesParams struct {
+type GetLargestFilesLegacyParams struct {
 	VolumeID string `json:"volume_id"`
 	Limit    int32  `json:"limit"`
 }
 
-func (q *Queries) GetLargestFiles(ctx context.Context, arg GetLargestFilesParams) ([]FileEntries, error) {
-	rows, err := q.db.Query(ctx, getLargestFiles, arg.VolumeID, arg.Limit)
+type GetLargestFilesLegacyRow struct {
+	ID          int64       `json:"id"`
+	VolumeID    string      `json:"volume_id"`
+	ParentDirID int64       `json:"parent_dir_id"`
+	Name        string      `json:"name"`
+	SizeBytes   int64       `json:"size_bytes"`
+	Mtime       time.Time   `json:"mtime"`
+	Ctime       time.Time   `json:"ctime"`
+	Inode       pgtype.Int8 `json:"inode"`
+	Uid         pgtype.Int4 `json:"uid"`
+	Gid         pgtype.Int4 `json:"gid"`
+	Type        string      `json:"type"`
+	Hidden      bool        `json:"hidden"`
+	PathHash    []byte      `json:"path_hash"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
+}
+
+func (q *Queries) GetLargestFilesLegacy(ctx context.Context, arg GetLargestFilesLegacyParams) ([]GetLargestFilesLegacyRow, error) {
+	rows, err := q.db.Query(ctx, getLargestFilesLegacy, arg.VolumeID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []FileEntries{}
+	items := []GetLargestFilesLegacyRow{}
 	for rows.Next() {
-		var i FileEntries
+		var i GetLargestFilesLegacyRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.VolumeID,
@@ -1206,72 +655,91 @@ func (q *Queries) GetLargestFiles(ctx context.Context, arg GetLargestFilesParams
 	return items, nil
 }
 
-const getLatestDirRollup = `-- name: GetLatestDirRollup :one
-SELECT id, dir_id, size_bytes, file_count, computed_at, created_at
-FROM dir_rollups 
-WHERE dir_id = $1
-ORDER BY computed_at DESC
-LIMIT 1
-`
-
-func (q *Queries) GetLatestDirRollup(ctx context.Context, dirID int64) (DirRollups, error) {
-	row := q.db.QueryRow(ctx, getLatestDirRollup, dirID)
-	var i DirRollups
-	err := row.Scan(
-		&i.ID,
-		&i.DirID,
-		&i.SizeBytes,
-		&i.FileCount,
-		&i.ComputedAt,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const getRollupStats = `-- name: GetRollupStats :one
+const getLatestDirRollups = `-- name: GetLatestDirRollups :many
 SELECT 
-    COUNT(*) as total_rollups,
-    COUNT(DISTINCT dir_id) as directories_with_rollups,
-    MIN(computed_at) as oldest_rollup,
-    MAX(computed_at) as newest_rollup
-FROM dir_rollups
+    f.id as id,
+    f.id as dir_id,
+    f.size_bytes_recursive as size_bytes,
+    f.file_count as file_count,
+    f.updated_at as computed_at,
+    f.created_at as created_at
+FROM folders f
+WHERE f.volume_id = $1
+ORDER BY f.updated_at DESC
+LIMIT $2
 `
 
-type GetRollupStatsRow struct {
-	TotalRollups           int64       `json:"total_rollups"`
-	DirectoriesWithRollups int64       `json:"directories_with_rollups"`
-	OldestRollup           interface{} `json:"oldest_rollup"`
-	NewestRollup           interface{} `json:"newest_rollup"`
+type GetLatestDirRollupsParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
 }
 
-func (q *Queries) GetRollupStats(ctx context.Context) (GetRollupStatsRow, error) {
-	row := q.db.QueryRow(ctx, getRollupStats)
-	var i GetRollupStatsRow
-	err := row.Scan(
-		&i.TotalRollups,
-		&i.DirectoriesWithRollups,
-		&i.OldestRollup,
-		&i.NewestRollup,
-	)
-	return i, err
+type GetLatestDirRollupsRow struct {
+	ID         int64     `json:"id"`
+	DirID      int64     `json:"dir_id"`
+	SizeBytes  int64     `json:"size_bytes"`
+	FileCount  int64     `json:"file_count"`
+	ComputedAt time.Time `json:"computed_at"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+func (q *Queries) GetLatestDirRollups(ctx context.Context, arg GetLatestDirRollupsParams) ([]GetLatestDirRollupsRow, error) {
+	rows, err := q.db.Query(ctx, getLatestDirRollups, arg.VolumeID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetLatestDirRollupsRow{}
+	for rows.Next() {
+		var i GetLatestDirRollupsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.DirID,
+			&i.SizeBytes,
+			&i.FileCount,
+			&i.ComputedAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getRootDirNodes = `-- name: GetRootDirNodes :many
-SELECT id, volume_id, parent_dir_id, name, full_path, depth, latest_size_bytes, latest_file_count, created_at, updated_at
-FROM dir_nodes 
-WHERE volume_id = $1 AND parent_dir_id IS NULL
+SELECT id, volume_id, parent_id as parent_dir_id, name, path as full_path, depth,
+       size_bytes_recursive as latest_size_bytes, file_count as latest_file_count, created_at, updated_at
+FROM folders 
+WHERE volume_id = $1 AND parent_id IS NULL
 ORDER BY name ASC
 `
 
-func (q *Queries) GetRootDirNodes(ctx context.Context, volumeID string) ([]DirNodes, error) {
+type GetRootDirNodesRow struct {
+	ID              int64       `json:"id"`
+	VolumeID        string      `json:"volume_id"`
+	ParentDirID     pgtype.Int8 `json:"parent_dir_id"`
+	Name            string      `json:"name"`
+	FullPath        string      `json:"full_path"`
+	Depth           int32       `json:"depth"`
+	LatestSizeBytes int64       `json:"latest_size_bytes"`
+	LatestFileCount int64       `json:"latest_file_count"`
+	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
+}
+
+func (q *Queries) GetRootDirNodes(ctx context.Context, volumeID string) ([]GetRootDirNodesRow, error) {
 	rows, err := q.db.Query(ctx, getRootDirNodes, volumeID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []DirNodes{}
+	items := []GetRootDirNodesRow{}
 	for rows.Next() {
-		var i DirNodes
+		var i GetRootDirNodesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.VolumeID,
@@ -1294,630 +762,95 @@ func (q *Queries) GetRootDirNodes(ctx context.Context, volumeID string) ([]DirNo
 	return items, nil
 }
 
-const getTopDirectoriesBySize = `-- name: GetTopDirectoriesBySize :many
-
-SELECT 
-    dn.id,
-    dn.name,
-    dn.full_path,
-    dn.depth,
-    COALESCE(dr.size_bytes, dn.latest_size_bytes) as size_bytes,
-    COALESCE(dr.file_count, dn.latest_file_count) as file_count,
-    dn.updated_at as last_updated,
-    dr.computed_at as rollup_date
-FROM dir_nodes dn
-LEFT JOIN LATERAL (
-    SELECT size_bytes, file_count, computed_at
-    FROM dir_rollups dr 
-    WHERE dr.dir_id = dn.id 
-    ORDER BY dr.computed_at DESC 
-    LIMIT 1
-) dr ON true
-WHERE dn.volume_id = $1
-  AND ($2::VARCHAR IS NULL OR dn.full_path LIKE $2 || '%') -- Path prefix filter
-  AND ($3::BIGINT IS NULL OR COALESCE(dr.size_bytes, dn.latest_size_bytes) >= $3) -- Min size filter
-ORDER BY 
-    COALESCE(dr.size_bytes, dn.latest_size_bytes) DESC,
-    dn.full_path ASC -- Deterministic secondary sort
-LIMIT $4
-`
-
-type GetTopDirectoriesBySizeParams struct {
-	VolumeID     string `json:"volume_id"`
-	PathPrefix   string `json:"path_prefix"`
-	MinSizeBytes int64  `json:"min_size_bytes"`
-	LimitCount   int32  `json:"limit_count"`
-}
-
-type GetTopDirectoriesBySizeRow struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	FullPath    string    `json:"full_path"`
-	Depth       int32     `json:"depth"`
-	SizeBytes   int64     `json:"size_bytes"`
-	FileCount   int64     `json:"file_count"`
-	LastUpdated time.Time `json:"last_updated"`
-	RollupDate  time.Time `json:"rollup_date"`
-}
-
-// =============================================================================
-// TOP-N HEAVY HITTERS QUERIES
-// =============================================================================
-// Get top N largest directories in a volume
-// Uses latest rollup data where available, falls back to dir_nodes data
-func (q *Queries) GetTopDirectoriesBySize(ctx context.Context, arg GetTopDirectoriesBySizeParams) ([]GetTopDirectoriesBySizeRow, error) {
-	rows, err := q.db.Query(ctx, getTopDirectoriesBySize,
-		arg.VolumeID,
-		arg.PathPrefix,
-		arg.MinSizeBytes,
-		arg.LimitCount,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetTopDirectoriesBySizeRow{}
-	for rows.Next() {
-		var i GetTopDirectoriesBySizeRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.FullPath,
-			&i.Depth,
-			&i.SizeBytes,
-			&i.FileCount,
-			&i.LastUpdated,
-			&i.RollupDate,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getTopFilesByCount = `-- name: GetTopFilesByCount :many
-SELECT 
-    dn.id,
-    dn.name,
-    dn.full_path,
-    dn.depth,
-    COALESCE(dr.size_bytes, dn.latest_size_bytes) as size_bytes,
-    COALESCE(dr.file_count, dn.latest_file_count) as file_count,
-    -- Calculate average file size
-    CASE 
-        WHEN COALESCE(dr.file_count, dn.latest_file_count) > 0 
-        THEN COALESCE(dr.size_bytes, dn.latest_size_bytes) / COALESCE(dr.file_count, dn.latest_file_count)
-        ELSE 0 
-    END as avg_file_size,
-    dn.updated_at as last_updated
-FROM dir_nodes dn
-LEFT JOIN LATERAL (
-    SELECT size_bytes, file_count, computed_at
-    FROM dir_rollups dr 
-    WHERE dr.dir_id = dn.id 
-    ORDER BY dr.computed_at DESC 
-    LIMIT 1
-) dr ON true
-WHERE dn.volume_id = $1
-  AND ($2::VARCHAR IS NULL OR dn.full_path LIKE $2 || '%') -- Path prefix filter
-  AND ($3::BIGINT IS NULL OR COALESCE(dr.file_count, dn.latest_file_count) >= $3) -- Min file count
-ORDER BY 
-    COALESCE(dr.file_count, dn.latest_file_count) DESC,
-    dn.full_path ASC
-LIMIT $4
-`
-
-type GetTopFilesByCountParams struct {
-	VolumeID string `json:"volume_id"`
-	Column2  string `json:"column_2"`
-	Column3  int64  `json:"column_3"`
-	Limit    int32  `json:"limit"`
-}
-
-type GetTopFilesByCountRow struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	FullPath    string    `json:"full_path"`
-	Depth       int32     `json:"depth"`
-	SizeBytes   int64     `json:"size_bytes"`
-	FileCount   int64     `json:"file_count"`
-	AvgFileSize int32     `json:"avg_file_size"`
-	LastUpdated time.Time `json:"last_updated"`
-}
-
-// Get directories with the most files (useful for identifying directories with many small files)
-func (q *Queries) GetTopFilesByCount(ctx context.Context, arg GetTopFilesByCountParams) ([]GetTopFilesByCountRow, error) {
-	rows, err := q.db.Query(ctx, getTopFilesByCount,
-		arg.VolumeID,
-		arg.Column2,
-		arg.Column3,
-		arg.Limit,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetTopFilesByCountRow{}
-	for rows.Next() {
-		var i GetTopFilesByCountRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.FullPath,
-			&i.Depth,
-			&i.SizeBytes,
-			&i.FileCount,
-			&i.AvgFileSize,
-			&i.LastUpdated,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getTopFilesBySize = `-- name: GetTopFilesBySize :many
-SELECT 
-    fe.id,
-    fe.name,
-    fe.parent_dir_id,
-    fe.size_bytes,
-    fe.type,
-    fe.mtime as last_modified,
-    fe.hidden,
-    fe.uid,
-    fe.gid,
-    dn.full_path as parent_path
-FROM file_entries fe
-LEFT JOIN dir_nodes dn ON fe.parent_dir_id = dn.id
-WHERE fe.volume_id = $1
-  AND fe.type = 'file'
-  AND ($2::VARCHAR IS NULL OR dn.full_path LIKE $2 || '%') -- Path prefix filter  
-  AND ($3::BIGINT IS NULL OR fe.size_bytes >= $3) -- Min size filter
-  AND ($4::BOOLEAN IS NULL OR fe.hidden = $4) -- Hidden filter
-ORDER BY 
-    fe.size_bytes DESC,
-    fe.name ASC -- Deterministic secondary sort
-LIMIT $5
-`
-
-type GetTopFilesBySizeParams struct {
-	VolumeID      string `json:"volume_id"`
-	PathPrefix    string `json:"path_prefix"`
-	MinSizeBytes  int64  `json:"min_size_bytes"`
-	IncludeHidden bool   `json:"include_hidden"`
-	LimitCount    int32  `json:"limit_count"`
-}
-
-type GetTopFilesBySizeRow struct {
-	ID           int64       `json:"id"`
-	Name         string      `json:"name"`
-	ParentDirID  pgtype.Int8 `json:"parent_dir_id"`
-	SizeBytes    int64       `json:"size_bytes"`
-	Type         string      `json:"type"`
-	LastModified time.Time   `json:"last_modified"`
-	Hidden       bool        `json:"hidden"`
-	Uid          pgtype.Int4 `json:"uid"`
-	Gid          pgtype.Int4 `json:"gid"`
-	ParentPath   pgtype.Text `json:"parent_path"`
-}
-
-// Get top N largest files in a volume
-func (q *Queries) GetTopFilesBySize(ctx context.Context, arg GetTopFilesBySizeParams) ([]GetTopFilesBySizeRow, error) {
-	rows, err := q.db.Query(ctx, getTopFilesBySize,
-		arg.VolumeID,
-		arg.PathPrefix,
-		arg.MinSizeBytes,
-		arg.IncludeHidden,
-		arg.LimitCount,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetTopFilesBySizeRow{}
-	for rows.Next() {
-		var i GetTopFilesBySizeRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.ParentDirID,
-			&i.SizeBytes,
-			&i.Type,
-			&i.LastModified,
-			&i.Hidden,
-			&i.Uid,
-			&i.Gid,
-			&i.ParentPath,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getTopNChildrenWithOther = `-- name: GetTopNChildrenWithOther :many
-SELECT 
-    'dir' as entry_type,
-    dn.id::BIGINT as entry_id,
-    dn.name,
-    dn.full_path,
-    COALESCE(dr.size_bytes, dn.latest_size_bytes) as size_bytes,
-    COALESCE(dr.file_count, dn.latest_file_count) as file_count
-FROM dir_nodes dn
-LEFT JOIN LATERAL (
-    SELECT size_bytes, file_count 
-    FROM dir_rollups dr 
-    WHERE dr.dir_id = dn.id 
-    ORDER BY dr.computed_at DESC 
-    LIMIT 1
-) dr ON true
-WHERE dn.volume_id = $1 AND dn.parent_dir_id = $2
-
+const listExplorerEntries = `-- name: ListExplorerEntries :many
+(
+    SELECT 
+        'folder' as type,
+        f.id,
+        f.name,
+        f.path,
+        f.size_bytes_recursive as size_bytes,
+        f.file_count,
+        f.dir_count,
+        NULL::text as extension,
+        NULL::text as mime,
+        NULL::text as media_kind,
+        f.mtime,
+        f.created_at
+    FROM folders f
+    WHERE f.volume_id = $1 AND f.parent_id = $2
+)
 UNION ALL
-
-SELECT 
-    'file' as entry_type,
-    fe.id::BIGINT as entry_id,
-    fe.name,
-    '' as full_path,
-    fe.size_bytes,
-    1 as file_count
-FROM file_entries fe
-WHERE fe.volume_id = $1 
-  AND fe.parent_dir_id = $2
-  AND fe.type = 'file'
-
-ORDER BY 
-    size_bytes DESC,
-    name ASC
-LIMIT $3
+(
+    SELECT 
+        'file' as type,
+        fl.id,
+        fl.name,
+        fl.path,
+        fl.size_bytes,
+        NULL::bigint as file_count,
+        NULL::bigint as dir_count,
+        fl.extension,
+        fl.mime,
+        fl.media_kind,
+        fl.mtime,
+        fl.created_at
+    FROM files fl
+    WHERE fl.volume_id = $1 AND fl.folder_id = $2
+)
+ORDER BY type, name
+LIMIT $3 OFFSET $4
 `
 
-type GetTopNChildrenWithOtherParams struct {
-	VolumeID    string      `json:"volume_id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
-	Limit       int32       `json:"limit"`
+type ListExplorerEntriesParams struct {
+	VolumeID string      `json:"volume_id"`
+	ParentID pgtype.Int8 `json:"parent_id"`
+	Limit    int32       `json:"limit"`
+	Offset   int32       `json:"offset"`
 }
 
-type GetTopNChildrenWithOtherRow struct {
-	EntryType string `json:"entry_type"`
-	EntryID   int64  `json:"entry_id"`
-	Name      string `json:"name"`
-	FullPath  string `json:"full_path"`
-	SizeBytes int64  `json:"size_bytes"`
-	FileCount int64  `json:"file_count"`
+type ListExplorerEntriesRow struct {
+	Type      string      `json:"type"`
+	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
+	Path      string      `json:"path"`
+	SizeBytes int64       `json:"size_bytes"`
+	FileCount int64       `json:"file_count"`
+	DirCount  int64       `json:"dir_count"`
+	Extension pgtype.Text `json:"extension"`
+	Mime      pgtype.Text `json:"mime"`
+	MediaKind pgtype.Text `json:"media_kind"`
+	Mtime     time.Time   `json:"mtime"`
+	CreatedAt time.Time   `json:"created_at"`
 }
 
-// Get top N children with "other" bucket calculation (simplified version)
-// Returns top N directories and files
-func (q *Queries) GetTopNChildrenWithOther(ctx context.Context, arg GetTopNChildrenWithOtherParams) ([]GetTopNChildrenWithOtherRow, error) {
-	rows, err := q.db.Query(ctx, getTopNChildrenWithOther, arg.VolumeID, arg.ParentDirID, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetTopNChildrenWithOtherRow{}
-	for rows.Next() {
-		var i GetTopNChildrenWithOtherRow
-		if err := rows.Scan(
-			&i.EntryType,
-			&i.EntryID,
-			&i.Name,
-			&i.FullPath,
-			&i.SizeBytes,
-			&i.FileCount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getVolumeFileStats = `-- name: GetVolumeFileStats :one
-SELECT 
-    COUNT(*) as total_files,
-    COALESCE(SUM(size_bytes), 0) as total_size,
-    COUNT(*) FILTER (WHERE type = 'file') as regular_files,
-    COUNT(*) FILTER (WHERE type = 'dir') as directories,
-    COUNT(*) FILTER (WHERE hidden = true) as hidden_files
-FROM file_entries 
-WHERE volume_id = $1
-`
-
-type GetVolumeFileStatsRow struct {
-	TotalFiles   int64       `json:"total_files"`
-	TotalSize    interface{} `json:"total_size"`
-	RegularFiles int64       `json:"regular_files"`
-	Directories  int64       `json:"directories"`
-	HiddenFiles  int64       `json:"hidden_files"`
-}
-
-func (q *Queries) GetVolumeFileStats(ctx context.Context, volumeID string) (GetVolumeFileStatsRow, error) {
-	row := q.db.QueryRow(ctx, getVolumeFileStats, volumeID)
-	var i GetVolumeFileStatsRow
-	err := row.Scan(
-		&i.TotalFiles,
-		&i.TotalSize,
-		&i.RegularFiles,
-		&i.Directories,
-		&i.HiddenFiles,
-	)
-	return i, err
-}
-
-const getVolumeRootChildren = `-- name: GetVolumeRootChildren :many
-
-SELECT 
-    'dir' as entry_type,
-    dn.id::BIGINT as entry_id,
-    dn.name,
-    dn.full_path,
-    COALESCE(dr.size_bytes, dn.latest_size_bytes) as size_bytes,
-    COALESCE(dr.file_count, dn.latest_file_count) as file_count,
-    dn.depth,
-    dn.updated_at as last_modified,
-    NULL::BIGINT as inode,
-    NULL::INTEGER as uid,
-    NULL::INTEGER as gid,
-    false as hidden
-FROM dir_nodes dn
-LEFT JOIN LATERAL (
-    SELECT size_bytes, file_count 
-    FROM dir_rollups dr 
-    WHERE dr.dir_id = dn.id 
-    ORDER BY dr.computed_at DESC 
-    LIMIT 1
-) dr ON true
-WHERE dn.volume_id = $1 
-  AND dn.parent_dir_id IS NULL
-
-UNION ALL
-
-SELECT 
-    'file' as entry_type,
-    fe.id::BIGINT as entry_id,
-    fe.name,
-    '' as full_path,
-    fe.size_bytes,
-    1 as file_count,
-    0 as depth,
-    fe.mtime as last_modified,
-    fe.inode,
-    fe.uid,
-    fe.gid,
-    fe.hidden
-FROM file_entries fe
-WHERE fe.volume_id = $1 
-  AND fe.parent_dir_id IS NULL
-  AND fe.type = 'file'
-
-ORDER BY 
-    entry_type DESC,
-    size_bytes DESC,
-    name ASC
-LIMIT $2
-`
-
-type GetVolumeRootChildrenParams struct {
-	VolumeID string `json:"volume_id"`
-	Limit    int32  `json:"limit"`
-}
-
-type GetVolumeRootChildrenRow struct {
-	EntryType    string      `json:"entry_type"`
-	EntryID      int64       `json:"entry_id"`
-	Name         string      `json:"name"`
-	FullPath     string      `json:"full_path"`
-	SizeBytes    int64       `json:"size_bytes"`
-	FileCount    int64       `json:"file_count"`
-	Depth        int32       `json:"depth"`
-	LastModified time.Time   `json:"last_modified"`
-	Inode        pgtype.Int8 `json:"inode"`
-	Uid          pgtype.Int4 `json:"uid"`
-	Gid          pgtype.Int4 `json:"gid"`
-	Hidden       bool        `json:"hidden"`
-}
-
-// =============================================================================
-// ROOT LEVEL QUERIES (Volume root navigation)
-// =============================================================================
-// Get top-level directories and files in a volume (parent_dir_id IS NULL)
-func (q *Queries) GetVolumeRootChildren(ctx context.Context, arg GetVolumeRootChildrenParams) ([]GetVolumeRootChildrenRow, error) {
-	rows, err := q.db.Query(ctx, getVolumeRootChildren, arg.VolumeID, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetVolumeRootChildrenRow{}
-	for rows.Next() {
-		var i GetVolumeRootChildrenRow
-		if err := rows.Scan(
-			&i.EntryType,
-			&i.EntryID,
-			&i.Name,
-			&i.FullPath,
-			&i.SizeBytes,
-			&i.FileCount,
-			&i.Depth,
-			&i.LastModified,
-			&i.Inode,
-			&i.Uid,
-			&i.Gid,
-			&i.Hidden,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const searchDirectoriesByName = `-- name: SearchDirectoriesByName :many
-SELECT 
-    dn.id,
-    dn.name,
-    dn.full_path,
-    dn.depth,
-    COALESCE(dr.size_bytes, dn.latest_size_bytes) as size_bytes,
-    COALESCE(dr.file_count, dn.latest_file_count) as file_count
-FROM dir_nodes dn
-LEFT JOIN LATERAL (
-    SELECT size_bytes, file_count
-    FROM dir_rollups dr 
-    WHERE dr.dir_id = dn.id 
-    ORDER BY dr.computed_at DESC 
-    LIMIT 1
-) dr ON true
-WHERE dn.volume_id = $1
-  AND dn.name ILIKE $2 -- Case-insensitive pattern matching  
-  AND ($3::INTEGER IS NULL OR dn.depth <= $3) -- Max depth filter
-ORDER BY 
-    COALESCE(dr.size_bytes, dn.latest_size_bytes) DESC,
-    dn.full_path ASC
-LIMIT $4
-`
-
-type SearchDirectoriesByNameParams struct {
-	VolumeID string `json:"volume_id"`
-	Name     string `json:"name"`
-	Column3  int32  `json:"column_3"`
-	Limit    int32  `json:"limit"`
-}
-
-type SearchDirectoriesByNameRow struct {
-	ID        int64  `json:"id"`
-	Name      string `json:"name"`
-	FullPath  string `json:"full_path"`
-	Depth     int32  `json:"depth"`
-	SizeBytes int64  `json:"size_bytes"`
-	FileCount int64  `json:"file_count"`
-}
-
-// Search for directories by name pattern
-func (q *Queries) SearchDirectoriesByName(ctx context.Context, arg SearchDirectoriesByNameParams) ([]SearchDirectoriesByNameRow, error) {
-	rows, err := q.db.Query(ctx, searchDirectoriesByName,
+func (q *Queries) ListExplorerEntries(ctx context.Context, arg ListExplorerEntriesParams) ([]ListExplorerEntriesRow, error) {
+	rows, err := q.db.Query(ctx, listExplorerEntries,
 		arg.VolumeID,
-		arg.Name,
-		arg.Column3,
+		arg.ParentID,
 		arg.Limit,
+		arg.Offset,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []SearchDirectoriesByNameRow{}
+	items := []ListExplorerEntriesRow{}
 	for rows.Next() {
-		var i SearchDirectoriesByNameRow
+		var i ListExplorerEntriesRow
 		if err := rows.Scan(
+			&i.Type,
 			&i.ID,
 			&i.Name,
-			&i.FullPath,
-			&i.Depth,
+			&i.Path,
 			&i.SizeBytes,
 			&i.FileCount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const searchFilesByName = `-- name: SearchFilesByName :many
-
-
-SELECT 
-    fe.id,
-    fe.name,
-    fe.size_bytes,
-    fe.type,
-    fe.mtime as last_modified,
-    fe.hidden,
-    dn.full_path as parent_path,
-    dn.name as parent_name
-FROM file_entries fe
-LEFT JOIN dir_nodes dn ON fe.parent_dir_id = dn.id
-WHERE fe.volume_id = $1
-  AND fe.name ILIKE $2 -- Case-insensitive pattern matching
-  AND ($3::VARCHAR IS NULL OR fe.type = $3) -- Type filter
-  AND ($4::BIGINT IS NULL OR fe.size_bytes >= $4) -- Min size filter
-ORDER BY 
-    fe.size_bytes DESC,
-    fe.name ASC
-LIMIT $5
-`
-
-type SearchFilesByNameParams struct {
-	VolumeID     string `json:"volume_id"`
-	NamePattern  string `json:"name_pattern"`
-	FileType     string `json:"file_type"`
-	MinSizeBytes int64  `json:"min_size_bytes"`
-	LimitCount   int32  `json:"limit_count"`
-}
-
-type SearchFilesByNameRow struct {
-	ID           int64       `json:"id"`
-	Name         string      `json:"name"`
-	SizeBytes    int64       `json:"size_bytes"`
-	Type         string      `json:"type"`
-	LastModified time.Time   `json:"last_modified"`
-	Hidden       bool        `json:"hidden"`
-	ParentPath   pgtype.Text `json:"parent_path"`
-	ParentName   pgtype.Text `json:"parent_name"`
-}
-
-// Root first, target last
-// =============================================================================
-// SEARCH AND FILTER QUERIES
-// =============================================================================
-// Search for files by name pattern (supports LIKE patterns)
-func (q *Queries) SearchFilesByName(ctx context.Context, arg SearchFilesByNameParams) ([]SearchFilesByNameRow, error) {
-	rows, err := q.db.Query(ctx, searchFilesByName,
-		arg.VolumeID,
-		arg.NamePattern,
-		arg.FileType,
-		arg.MinSizeBytes,
-		arg.LimitCount,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []SearchFilesByNameRow{}
-	for rows.Next() {
-		var i SearchFilesByNameRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.SizeBytes,
-			&i.Type,
-			&i.LastModified,
-			&i.Hidden,
-			&i.ParentPath,
-			&i.ParentName,
+			&i.DirCount,
+			&i.Extension,
+			&i.Mime,
+			&i.MediaKind,
+			&i.Mtime,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -1930,148 +863,21 @@ func (q *Queries) SearchFilesByName(ctx context.Context, arg SearchFilesByNamePa
 }
 
 const updateDirNodeStats = `-- name: UpdateDirNodeStats :exec
-UPDATE dir_nodes 
-SET latest_size_bytes = $3, latest_file_count = $4, updated_at = CURRENT_TIMESTAMP 
-WHERE id = $1 AND volume_id = $2
+UPDATE folders 
+SET 
+    size_bytes_recursive = $2,
+    file_count = $3,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
 `
 
 type UpdateDirNodeStatsParams struct {
-	ID              int64  `json:"id"`
-	VolumeID        string `json:"volume_id"`
-	LatestSizeBytes int64  `json:"latest_size_bytes"`
-	LatestFileCount int64  `json:"latest_file_count"`
+	ID                 int64 `json:"id"`
+	SizeBytesRecursive int64 `json:"size_bytes_recursive"`
+	FileCount          int64 `json:"file_count"`
 }
 
 func (q *Queries) UpdateDirNodeStats(ctx context.Context, arg UpdateDirNodeStatsParams) error {
-	_, err := q.db.Exec(ctx, updateDirNodeStats,
-		arg.ID,
-		arg.VolumeID,
-		arg.LatestSizeBytes,
-		arg.LatestFileCount,
-	)
+	_, err := q.db.Exec(ctx, updateDirNodeStats, arg.ID, arg.SizeBytesRecursive, arg.FileCount)
 	return err
-}
-
-const upsertDirNode = `-- name: UpsertDirNode :one
-INSERT INTO dir_nodes (
-    volume_id, parent_dir_id, name, full_path, depth, 
-    latest_size_bytes, latest_file_count
-) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
-) ON CONFLICT (volume_id, full_path) DO UPDATE SET
-    parent_dir_id = EXCLUDED.parent_dir_id,
-    name = EXCLUDED.name,
-    depth = EXCLUDED.depth,
-    latest_size_bytes = EXCLUDED.latest_size_bytes,
-    latest_file_count = EXCLUDED.latest_file_count,
-    updated_at = CURRENT_TIMESTAMP
-RETURNING id, volume_id, parent_dir_id, name, full_path, depth, latest_size_bytes, latest_file_count, created_at, updated_at
-`
-
-type UpsertDirNodeParams struct {
-	VolumeID        string      `json:"volume_id"`
-	ParentDirID     pgtype.Int8 `json:"parent_dir_id"`
-	Name            string      `json:"name"`
-	FullPath        string      `json:"full_path"`
-	Depth           int32       `json:"depth"`
-	LatestSizeBytes int64       `json:"latest_size_bytes"`
-	LatestFileCount int64       `json:"latest_file_count"`
-}
-
-func (q *Queries) UpsertDirNode(ctx context.Context, arg UpsertDirNodeParams) (DirNodes, error) {
-	row := q.db.QueryRow(ctx, upsertDirNode,
-		arg.VolumeID,
-		arg.ParentDirID,
-		arg.Name,
-		arg.FullPath,
-		arg.Depth,
-		arg.LatestSizeBytes,
-		arg.LatestFileCount,
-	)
-	var i DirNodes
-	err := row.Scan(
-		&i.ID,
-		&i.VolumeID,
-		&i.ParentDirID,
-		&i.Name,
-		&i.FullPath,
-		&i.Depth,
-		&i.LatestSizeBytes,
-		&i.LatestFileCount,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const upsertFileEntry = `-- name: UpsertFileEntry :one
-INSERT INTO file_entries (
-    volume_id, parent_dir_id, name, size_bytes, mtime, ctime, 
-    inode, uid, gid, type, hidden, path_hash
-) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-) ON CONFLICT (volume_id, path_hash) DO UPDATE SET
-    parent_dir_id = EXCLUDED.parent_dir_id,
-    name = EXCLUDED.name,
-    size_bytes = EXCLUDED.size_bytes,
-    mtime = EXCLUDED.mtime,
-    ctime = EXCLUDED.ctime,
-    inode = EXCLUDED.inode,
-    uid = EXCLUDED.uid,
-    gid = EXCLUDED.gid,
-    type = EXCLUDED.type,
-    hidden = EXCLUDED.hidden,
-    updated_at = CURRENT_TIMESTAMP
-RETURNING id, volume_id, parent_dir_id, name, size_bytes, mtime, ctime, inode, uid, gid, type, hidden, path_hash, created_at, updated_at
-`
-
-type UpsertFileEntryParams struct {
-	VolumeID    string      `json:"volume_id"`
-	ParentDirID pgtype.Int8 `json:"parent_dir_id"`
-	Name        string      `json:"name"`
-	SizeBytes   int64       `json:"size_bytes"`
-	Mtime       time.Time   `json:"mtime"`
-	Ctime       time.Time   `json:"ctime"`
-	Inode       pgtype.Int8 `json:"inode"`
-	Uid         pgtype.Int4 `json:"uid"`
-	Gid         pgtype.Int4 `json:"gid"`
-	Type        string      `json:"type"`
-	Hidden      bool        `json:"hidden"`
-	PathHash    []byte      `json:"path_hash"`
-}
-
-func (q *Queries) UpsertFileEntry(ctx context.Context, arg UpsertFileEntryParams) (FileEntries, error) {
-	row := q.db.QueryRow(ctx, upsertFileEntry,
-		arg.VolumeID,
-		arg.ParentDirID,
-		arg.Name,
-		arg.SizeBytes,
-		arg.Mtime,
-		arg.Ctime,
-		arg.Inode,
-		arg.Uid,
-		arg.Gid,
-		arg.Type,
-		arg.Hidden,
-		arg.PathHash,
-	)
-	var i FileEntries
-	err := row.Scan(
-		&i.ID,
-		&i.VolumeID,
-		&i.ParentDirID,
-		&i.Name,
-		&i.SizeBytes,
-		&i.Mtime,
-		&i.Ctime,
-		&i.Inode,
-		&i.Uid,
-		&i.Gid,
-		&i.Type,
-		&i.Hidden,
-		&i.PathHash,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

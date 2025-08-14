@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mantonx/volumeviz/internal/db"
@@ -46,86 +45,43 @@ func (s *pgStore) Retention() repo.RetentionRepo {
 	return repo.NewRetentionRepo(s.conn.Queries)
 }
 
-// Analytics and snapshots methods - these will delegate to the appropriate repositories
-// For now, returning stub implementations to maintain interface compatibility
-
-func (s *pgStore) CreateUsageSnapshot(ctx context.Context, params CreateUsageSnapshotParams) (*UsageSnapshot, error) {
-	// TODO: Implement when analytics repository is added
-	return &UsageSnapshot{
-		ID:             1,
-		VolumeID:       params.VolumeID,
-		SnapshotDate:   params.SnapshotDate,
-		SnapshotType:   params.SnapshotType,
-		TotalSize:      params.TotalSize,
-		FileCount:      params.FileCount,
-		DirectoryCount: params.DirectoryCount,
-		LargestFile:    params.LargestFile,
-		ScanMethod:     params.ScanMethod,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-	}, nil
+// Stats returns a stats repository using the pool connection
+func (s *pgStore) Stats() *repo.StatsRepo {
+	return repo.NewStatsRepo(s.conn.Queries)
 }
 
-func (s *pgStore) GetLatestSnapshot(ctx context.Context, volumeID, snapshotType string) (*UsageSnapshot, error) {
-	// TODO: Implement when analytics repository is added
-	return &UsageSnapshot{
-		ID:           1,
-		VolumeID:     volumeID,
-		SnapshotType: snapshotType,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}, nil
+// Files returns a files repository using the pool connection
+func (s *pgStore) Files() *repo.FilesRepo {
+	// Note: FilesRepo constructor expects sqlc.DBTX, not *sqlc.Queries
+	return repo.NewFilesRepo(s.conn.Pool)
 }
 
-func (s *pgStore) Get7DayTrend(ctx context.Context, volumeID string) (*TrendData, error) {
-	// TODO: Implement when analytics repository is added
-	return &TrendData{
-		VolumeID:              volumeID,
-		TrendPeriod:           "7day",
-		GrowthRateBytesPerDay: 0,
-		GrowthRateFilesPerDay: 0,
-	}, nil
+// Folders returns a folders repository using the pool connection
+func (s *pgStore) Folders() *repo.FoldersRepo {
+	// Note: FoldersRepo constructor expects sqlc.DBTX, not *sqlc.Queries
+	return repo.NewFoldersRepo(s.conn.Pool)
 }
 
-func (s *pgStore) Get30DayTrend(ctx context.Context, volumeID string) (*TrendData, error) {
-	// TODO: Implement when analytics repository is added
-	return &TrendData{
-		VolumeID:              volumeID,
-		TrendPeriod:           "30day",
-		GrowthRateBytesPerDay: 0,
-		GrowthRateFilesPerDay: 0,
-	}, nil
+// FileMetadata returns a file metadata repository using the pool connection
+func (s *pgStore) FileMetadata() *repo.FileMetadataRepo {
+	return repo.NewFileMetadataRepo(s.conn.Queries)
 }
 
-func (s *pgStore) GetVolumeStepSeries(ctx context.Context, params GetVolumeStepSeriesParams) ([]*StepSeriesPoint, error) {
-	// TODO: Implement when analytics repository is added
-	return []*StepSeriesPoint{
-		{
-			Timestamp: time.Now(),
-			Size:      0,
-			FileCount: 0,
-		},
-	}, nil
+// Alerts returns an alerts repository using the pool connection
+func (s *pgStore) Alerts() repo.AlertsRepo {
+	return repo.NewAlertsRepo(s.conn.Queries)
 }
 
-func (s *pgStore) GetTrendSlope(ctx context.Context, params GetTrendSlopeParams) (*TrendSlope, error) {
-	// TODO: Implement when analytics repository is added
-	return &TrendSlope{
-		SizeSlope:      0,
-		FileCountSlope: 0,
-	}, nil
+// Health performs a health check on the database connection
+func (s *pgStore) Health(ctx context.Context) error {
+	return s.conn.Pool.Ping(ctx)
 }
 
-func (s *pgStore) GetGrowthDeltas(ctx context.Context, params GetGrowthDeltasParams) (*GrowthDeltas, error) {
-	// TODO: Implement when analytics repository is added
-	return &GrowthDeltas{
-		VolumeID:   params.VolumeID,
-		SizeGrowth: 0,
-		FileGrowth: 0,
-		GrowthRate: 0,
-		Period:     "7d",
-	}, nil
-}
+
+
+
+
+
 
 // pgTxStore implements TxStore for PostgreSQL transactions
 type pgTxStore struct {
@@ -146,4 +102,31 @@ func (s *pgTxStore) Scans() repo.ScansRepo {
 // Retention returns a retention repository using the transaction connection
 func (s *pgTxStore) Retention() repo.RetentionRepo {
 	return repo.NewRetentionRepo(s.queries)
+}
+
+// Stats returns a stats repository using the transaction connection
+func (s *pgTxStore) Stats() *repo.StatsRepo {
+	return repo.NewStatsRepo(s.queries)
+}
+
+// Files returns a files repository using the transaction connection
+func (s *pgTxStore) Files() *repo.FilesRepo {
+	// Note: FilesRepo constructor expects sqlc.DBTX, use underlying transaction
+	return repo.NewFilesRepo(s.tx)
+}
+
+// Folders returns a folders repository using the transaction connection
+func (s *pgTxStore) Folders() *repo.FoldersRepo {
+	// Note: FoldersRepo constructor expects sqlc.DBTX, use underlying transaction
+	return repo.NewFoldersRepo(s.tx)
+}
+
+// FileMetadata returns a file metadata repository using the transaction connection
+func (s *pgTxStore) FileMetadata() *repo.FileMetadataRepo {
+	return repo.NewFileMetadataRepo(s.queries)
+}
+
+// Alerts returns an alerts repository using the transaction connection
+func (s *pgTxStore) Alerts() repo.AlertsRepo {
+	return repo.NewAlertsRepo(s.queries)
 }

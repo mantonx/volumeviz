@@ -28,39 +28,54 @@ func NewScanRepository(storeInstance store.Store) ScanRepository {
 
 // Volume stats operations
 func (r *StoreBasedRepository) InsertVolumeStats(ctx context.Context, stats *models.DirRollup) error {
-	// TODO: Implement when analytics repository is added
-	return nil
+	// Use the stats repository for inserting volume statistics
+	return r.store.Stats().InsertVolumeStats(ctx, stats)
 }
 
 func (r *StoreBasedRepository) GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*models.DirRollup, error) {
-	// TODO: Implement when analytics repository is added
-	return []*models.DirRollup{}, nil
+	// Use the stats repository for retrieving volume statistics
+	return r.store.Stats().GetVolumeStatsByName(ctx, volumeName, limit)
 }
 
 func (r *StoreBasedRepository) GetLatestVolumeStats(ctx context.Context, volumeName string) (*models.DirRollup, error) {
-	// TODO: Implement when analytics repository is added
-	return &models.DirRollup{}, nil
+	// Use the legacy stats repository method for retrieving latest volume statistics
+	return r.store.Stats().GetLatestVolumeStatsLegacy(ctx, volumeName)
 }
 
 // Scan runs operations
 func (r *StoreBasedRepository) InsertScanRun(ctx context.Context, run *models.ScanJob) error {
-	// TODO: Use store.Scans() when available
-	return nil
+	// Convert ScanJob to CreateScanJobParams
+	params := models.CreateScanJobParams{
+		ScanID:       run.ScanID,
+		VolumeID:     run.VolumeID,
+		TriggerType:  run.TriggerType,
+		TriggerBy:    run.TriggerBy,
+		Status:       run.Status,
+		ScanProgress: run.ScanProgress,
+		Progress:     run.Progress,
+		Method:       run.Method,
+		StartedAt:    run.StartedAt,
+		CompletedAt:  run.CompletedAt,
+	}
+	
+	_, err := r.store.Scans().CreateScanJob(ctx, params)
+	return err
 }
 
 func (r *StoreBasedRepository) UpdateScanRun(ctx context.Context, run *models.ScanJob) error {
-	// TODO: Use store.Scans() when available
-	return nil
+	// Update scan job status
+	return r.store.Scans().UpdateScanJobStatus(ctx, run.ID, run.Status)
 }
 
 func (r *StoreBasedRepository) GetScanRunByID(ctx context.Context, scanID string) (*models.ScanJob, error) {
-	// TODO: Use store.Scans() when available
-	return &models.ScanJob{}, nil
+	// Get scan job by scan ID
+	return r.store.Scans().GetScanJobByScanID(ctx, scanID)
 }
 
 func (r *StoreBasedRepository) GetActiveScanRuns(ctx context.Context) ([]*models.ScanJob, error) {
-	// TODO: Use store.Scans() when available
-	return []*models.ScanJob{}, nil
+	// Get recent scan jobs - use a reasonable limit
+	// In practice, "active" might need a specific status filter
+	return r.store.Scans().ListScanJobs(ctx, 100, 0)
 }
 
 // Volume operations
@@ -69,8 +84,21 @@ func (r *StoreBasedRepository) ListVolumes(ctx context.Context) ([]*models.Volum
 }
 
 func (r *StoreBasedRepository) UpsertVolume(ctx context.Context, volume *models.Volume) error {
-	// TODO: Implement when volume creation method is available in store
-	return nil
+	// Convert Volume to CreateVolumeParams for upsert
+	params := models.CreateVolumeParams{
+		VolumeID:   volume.VolumeID,
+		Name:       volume.Name,
+		Driver:     volume.Driver,
+		Mountpoint: volume.Mountpoint,
+		Labels:     volume.Labels,
+		Options:    volume.Options,
+		Scope:      volume.Scope,
+		Status:     volume.Status,
+		IsActive:   volume.IsActive,
+	}
+	
+	_, err := r.store.Volumes().UpsertVolume(ctx, params)
+	return err
 }
 
 // NoOpScanRepository implementation for fallback

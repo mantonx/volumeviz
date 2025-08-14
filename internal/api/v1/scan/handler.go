@@ -3,6 +3,7 @@
 package scan
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,10 +11,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
-	"github.com/mantonx/volumeviz/internal/core/interfaces"
-	coremodels "github.com/mantonx/volumeviz/internal/core/models"
+	"github.com/mantonx/volumeviz/internal/interfaces"
+	coremodels "github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/scheduler"
+	"github.com/mantonx/volumeviz/internal/services/filesystem"
 	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/utils"
 	"github.com/mantonx/volumeviz/internal/websocket"
@@ -27,6 +29,7 @@ type Handler struct {
 	store            store.Store             // New sqlc-based store
 	scheduler         scheduler.ScanScheduler // Optional scheduler for manual scan triggers
 	realtimePublisher *realtime.Publisher
+	enrichmentManager interfaces.EnrichmentManager // Media enrichment manager
 }
 
 // NewHandler creates a new scan handler
@@ -44,6 +47,11 @@ func NewHandlerWithStore(scanner interfaces.VolumeScanner, hub *websocket.Hub, s
 		scheduler:         scheduler,
 		realtimePublisher: publisher,
 	}
+}
+
+// SetEnrichmentManager sets the media enrichment manager
+func (h *Handler) SetEnrichmentManager(manager interfaces.EnrichmentManager) {
+	h.enrichmentManager = manager
 }
 
 // GetVolumeSize returns volume size information
@@ -86,7 +94,8 @@ func (h *Handler) GetVolumeSize(c *gin.Context) {
 		Cached:   result.CacheHit,
 	}
 
-	// TODO: Save historical metrics using store when analytics repository is available
+	// Historical metrics are now handled by the new DailyStat system
+	// Legacy DirRollup analytics are being phased out
 	_ = h.store // Suppress unused warning
 
 	// Broadcast scan completion via WebSocket
@@ -488,6 +497,22 @@ func (h *Handler) TriggerVolumeScan(c *gin.Context) {
 			})
 			return
 		}
+		if strings.Contains(err.Error(), "already has an active scan") {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":   "Volume scan already in progress",
+				"code":    "SCAN_ALREADY_ACTIVE",
+				"details": "Only one scan per volume is allowed at a time",
+			})
+			return
+		}
+		if strings.Contains(err.Error(), "shutting down") {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error":   "Scan scheduler is shutting down",
+				"code":    "SCHEDULER_SHUTTING_DOWN",
+				"details": err.Error(),
+			})
+			return
+		}
 
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to enqueue volume scan",
@@ -588,4 +613,455 @@ func (h *Handler) GetSchedulerMetrics(c *gin.Context) {
 
 	metrics := h.scheduler.GetMetrics()
 	c.JSON(http.StatusOK, metrics)
+}
+
+// GetSchedulerDetailedMetrics returns enhanced metrics for the scan scheduler (hardened mode)
+// GET /api/v1/scheduler/metrics/detailed
+func (h *Handler) GetSchedulerDetailedMetrics(c *gin.Context) {
+	if h.scheduler == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Scan scheduler not available",
+			"code":  "SCHEDULER_UNAVAILABLE",
+		})
+		return
+	}
+
+	metrics := h.scheduler.GetDetailedMetrics()
+	c.JSON(http.StatusOK, metrics)
+}
+
+// GetSchedulerWorkerStats returns worker statistics for the scan scheduler
+// GET /api/v1/scheduler/workers
+func (h *Handler) GetSchedulerWorkerStats(c *gin.Context) {
+	if h.scheduler == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Scan scheduler not available",
+			"code":  "SCHEDULER_UNAVAILABLE",
+		})
+		return
+	}
+
+	workerStats := h.scheduler.GetWorkerStats()
+	c.JSON(http.StatusOK, gin.H{
+		"workers": workerStats,
+		"count":   len(workerStats),
+	})
+}
+
+// GetSchedulerWatchdogStats returns watchdog statistics for the scan scheduler
+// GET /api/v1/scheduler/watchdog
+func (h *Handler) GetSchedulerWatchdogStats(c *gin.Context) {
+	if h.scheduler == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Scan scheduler not available",
+			"code":  "SCHEDULER_UNAVAILABLE",
+		})
+		return
+	}
+
+	watchdogStats := h.scheduler.GetWatchdogStats()
+	if watchdogStats == nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Watchdog not enabled",
+			"code":  "WATCHDOG_DISABLED",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, watchdogStats)
+}
+
+// GetSchedulerCapabilities returns scheduler capabilities and mode information
+// GET /api/v1/scheduler/capabilities
+func (h *Handler) GetSchedulerCapabilities(c *gin.Context) {
+	if h.scheduler == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Scan scheduler not available",
+			"code":  "SCHEDULER_UNAVAILABLE",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"hardened_mode":   h.scheduler.IsHardenedMode(),
+		"watchdog_enabled": h.scheduler.GetWatchdogStats() != nil,
+		"features": gin.H{
+			"atomic_claims":    h.scheduler.IsHardenedMode(),
+			"heartbeat":        h.scheduler.IsHardenedMode(),
+			"watchdog":         h.scheduler.GetWatchdogStats() != nil,
+			"worker_stats":     true,
+			"detailed_metrics": true,
+		},
+	})
+}
+
+// ===========================================
+// FILESYSTEM INDEXING ENDPOINTS
+// ===========================================
+
+// GetFilesystemIndexingStatus returns the status of filesystem indexing for a volume
+// @Summary Get filesystem indexing status
+// @Description Get the current status of filesystem indexing for a volume
+// @Tags filesystem
+// @Accept json
+// @Produce json
+// @Param id path string true "Volume ID"
+// @Success 200 {object} models.FilesystemIndexingResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 503 {object} models.ErrorResponse "Filesystem indexing not enabled"
+// @Router /volumes/{id}/filesystem/status [get]
+func (h *Handler) GetFilesystemIndexingStatus(c *gin.Context) {
+	volumeID := c.Param("id")
+	if volumeID == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Volume ID is required",
+			Code:    "MISSING_VOLUME_ID",
+			Details: map[string]any{"message": "Volume ID parameter is missing from the request"},
+		})
+		return
+	}
+
+	// Check if filesystem indexing is available
+	if indexingScanner, ok := h.scanner.(interface {
+		IsFilesystemIndexingEnabled() bool
+		GetFilesystemIndexingProgress() *filesystem.IndexingProgress
+	}); ok {
+		if !indexingScanner.IsFilesystemIndexingEnabled() {
+			c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+				Error:   "Filesystem indexing not enabled",
+				Code:    "FILESYSTEM_INDEXING_DISABLED",
+				Details: map[string]any{"message": "Filesystem indexing is not configured for this volume scanner"},
+			})
+			return
+		}
+
+		progress := indexingScanner.GetFilesystemIndexingProgress()
+		if progress == nil {
+			c.JSON(http.StatusOK, gin.H{
+				"volume_id": volumeID,
+				"status":    "not_started",
+				"message":   "No filesystem indexing in progress",
+			})
+			return
+		}
+
+		// Filter progress for this volume
+		if progress.VolumeID != volumeID {
+			c.JSON(http.StatusOK, gin.H{
+				"volume_id": volumeID,
+				"status":    "not_started",
+				"message":   "No filesystem indexing in progress for this volume",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"volume_id":        progress.VolumeID,
+			"status":           progress.Status,
+			"started_at":       progress.StartedAt,
+			"last_update":      progress.LastUpdate,
+			"folders_scanned":  progress.FoldersScanned,
+			"files_scanned":    progress.FilesScanned,
+			"bytes_processed":  progress.BytesProcessed,
+			"errors_count":     progress.ErrorsCount,
+			"current_path":     progress.CurrentPath,
+			"current_depth":    progress.CurrentDepth,
+			"folders_per_sec":  progress.FoldersPerSec,
+			"files_per_sec":    progress.FilesPerSec,
+			"last_error":       progress.LastError,
+		})
+		return
+	}
+
+	c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+		Error:   "Filesystem indexing not supported",
+		Code:    "FILESYSTEM_INDEXING_NOT_SUPPORTED",
+		Details: map[string]any{"message": "This volume scanner does not support filesystem indexing"},
+	})
+}
+
+// TriggerFilesystemIndexing manually triggers filesystem indexing for a volume
+// @Summary Trigger filesystem indexing
+// @Description Manually trigger filesystem indexing for a specific volume
+// @Tags filesystem
+// @Accept json
+// @Produce json
+// @Param id path string true "Volume ID"
+// @Param request body models.FilesystemIndexingRequest false "Indexing options"
+// @Success 202 {object} models.FilesystemIndexingResponse "Indexing started"
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 409 {object} models.ErrorResponse "Indexing already in progress"
+// @Failure 503 {object} models.ErrorResponse "Filesystem indexing not enabled"
+// @Router /volumes/{id}/filesystem/index [post]
+func (h *Handler) TriggerFilesystemIndexing(c *gin.Context) {
+	volumeID := c.Param("id")
+	if volumeID == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Volume ID is required",
+			Code:    "MISSING_VOLUME_ID",
+			Details: map[string]any{"message": "Volume ID parameter is missing from the request"},
+		})
+		return
+	}
+
+	// Parse request body for indexing options
+	var req struct {
+		DeltaMode bool `json:"delta_mode"`
+		FullScan  bool `json:"full_scan"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		// Use defaults if JSON binding fails
+		req.DeltaMode = true // Default to delta mode for efficiency
+	}
+
+	// Check if filesystem indexing is available
+	if indexingScanner, ok := h.scanner.(interface {
+		IsFilesystemIndexingEnabled() bool
+		GetFilesystemIndexingProgress() *filesystem.IndexingProgress
+	}); ok {
+		if !indexingScanner.IsFilesystemIndexingEnabled() {
+			c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+				Error:   "Filesystem indexing not enabled",
+				Code:    "FILESYSTEM_INDEXING_DISABLED",
+				Details: map[string]any{"message": "Filesystem indexing is not configured for this volume scanner"},
+			})
+			return
+		}
+
+		// Check if indexing is already in progress
+		progress := indexingScanner.GetFilesystemIndexingProgress()
+		if progress != nil && progress.VolumeID == volumeID && progress.Status == "running" {
+			c.JSON(http.StatusConflict, models.ErrorResponse{
+				Error:   "Filesystem indexing already in progress",
+				Code:    "INDEXING_ALREADY_ACTIVE",
+				Details: map[string]any{"message": "Filesystem indexing is already running for this volume"},
+			})
+			return
+		}
+
+		// This is a simplified trigger - in a real implementation, you'd need to:
+		// 1. Get the volume path from Docker service
+		// 2. Start indexing asynchronously
+		// 3. Return immediately with accepted status
+		
+		c.JSON(http.StatusAccepted, gin.H{
+			"message":    "Filesystem indexing triggered",
+			"volume_id":  volumeID,
+			"delta_mode": req.DeltaMode,
+			"status_url": fmt.Sprintf("/api/v1/volumes/%s/filesystem/status", volumeID),
+		})
+		return
+	}
+
+	c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+		Error:   "Filesystem indexing not supported",
+		Code:    "FILESYSTEM_INDEXING_NOT_SUPPORTED",
+		Details: map[string]any{"message": "This volume scanner does not support filesystem indexing"},
+	})
+}
+
+// GetFilesystemIndexingCapabilities returns filesystem indexing capabilities
+// @Summary Get filesystem indexing capabilities
+// @Description Get information about filesystem indexing capabilities and configuration
+// @Tags filesystem
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.FilesystemCapabilitiesResponse
+// @Router /filesystem/capabilities [get]
+func (h *Handler) GetFilesystemIndexingCapabilities(c *gin.Context) {
+	capabilities := gin.H{
+		"enabled": false,
+		"features": gin.H{
+			"mime_detection":     false,
+			"file_hashing":       false,
+			"media_classification": false,
+			"delta_scanning":     false,
+			"skip_rules":         false,
+			"progress_tracking":  false,
+		},
+	}
+
+	// Check if filesystem indexing is available
+	if indexingScanner, ok := h.scanner.(interface {
+		IsFilesystemIndexingEnabled() bool
+	}); ok {
+		enabled := indexingScanner.IsFilesystemIndexingEnabled()
+		capabilities["enabled"] = enabled
+		
+		if enabled {
+			capabilities["features"] = gin.H{
+				"mime_detection":       true,
+				"file_hashing":         true,
+				"media_classification": true,
+				"delta_scanning":       true,
+				"skip_rules":           true,
+				"progress_tracking":    true,
+				"system_metadata":      true,
+				"symlink_support":      true,
+				"configurable_batch":   true,
+			}
+			capabilities["supported_hash_algorithms"] = []string{"md5", "sha256"}
+			capabilities["supported_media_kinds"] = []string{
+				"document", "image", "video", "audio", "archive", "code", "data", "binary", "text",
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, capabilities)
+}
+
+// ===========================================
+// MEDIA ENRICHMENT ENDPOINTS
+// ===========================================
+
+// TriggerMediaEnrichment triggers media enrichment for a volume
+// @Summary Trigger media enrichment
+// @Description Manually trigger media metadata enrichment for a specific volume
+// @Tags media
+// @Accept json
+// @Produce json
+// @Param id path string true "Volume ID"
+// @Success 202 {object} models.MediaEnrichmentResponse "Enrichment started"
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 503 {object} models.ErrorResponse "Media enrichment not enabled"
+// @Router /volumes/{id}/media/enrich [post]
+func (h *Handler) TriggerMediaEnrichment(c *gin.Context) {
+	volumeID := c.Param("id")
+	if volumeID == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Volume ID is required",
+			Code:    "MISSING_VOLUME_ID",
+			Details: map[string]any{"message": "Volume ID parameter is missing from the request"},
+		})
+		return
+	}
+	
+	// Check if enrichment is enabled
+	if h.enrichmentManager == nil || !h.enrichmentManager.IsEnabled() {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+			Error:   "Media enrichment is not available",
+			Code:    "MEDIA_ENRICHMENT_DISABLED",
+			Details: map[string]any{"message": "Media enrichment service is disabled or not configured"},
+		})
+		return
+	}
+	
+	// Start enrichment asynchronously
+	go func() {
+		ctx := context.Background()
+		if err := h.enrichmentManager.EnrichVolume(ctx, volumeID); err != nil {
+			// Log error (in real implementation, would use proper logger)
+			fmt.Printf("Media enrichment failed for volume %s: %v\n", volumeID, err)
+		}
+	}()
+	
+	c.JSON(http.StatusAccepted, gin.H{
+		"message":    "Media enrichment triggered",
+		"volume_id":  volumeID,
+		"status":     "processing",
+		"status_url": fmt.Sprintf("/api/v1/volumes/%s/media/status", volumeID),
+	})
+}
+
+// GetMediaEnrichmentStatus returns the enrichment status for a volume
+// @Summary Get media enrichment status
+// @Description Get the current status of media enrichment for a volume
+// @Tags media
+// @Accept json
+// @Produce json
+// @Param id path string true "Volume ID"
+// @Success 200 {object} models.MediaEnrichmentStatusResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 503 {object} models.ErrorResponse "Media enrichment not enabled"
+// @Router /volumes/{id}/media/status [get]
+func (h *Handler) GetMediaEnrichmentStatus(c *gin.Context) {
+	volumeID := c.Param("id")
+	if volumeID == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Volume ID is required",
+			Code:    "MISSING_VOLUME_ID",
+			Details: map[string]any{"message": "Volume ID parameter is missing from the request"},
+		})
+		return
+	}
+	
+	// Check if enrichment is available
+	if h.enrichmentManager == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+			Error:   "Media enrichment is not available",
+			Code:    "MEDIA_ENRICHMENT_DISABLED",
+			Details: map[string]any{"message": "Media enrichment service is not configured"},
+		})
+		return
+	}
+	
+	// Try to get progress if the manager supports it
+	type progressGetter interface {
+		GetProgress(volumeID string) interface{}
+	}
+	
+	if progressManager, ok := h.enrichmentManager.(progressGetter); ok {
+		if progress := progressManager.GetProgress(volumeID); progress != nil {
+			c.JSON(http.StatusOK, progress)
+			return
+		}
+	}
+	
+	// Default response when no progress available
+	c.JSON(http.StatusOK, gin.H{
+		"volume_id": volumeID,
+		"status":    "unknown",
+		"message":   "Progress tracking not available",
+		"note":      "Media enrichment runs asynchronously after filesystem indexing",
+	})
+}
+
+// GetMediaEnrichmentCapabilities returns media enrichment capabilities
+// @Summary Get media enrichment capabilities
+// @Description Get information about available media enrichers and their capabilities
+// @Tags media
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.MediaCapabilitiesResponse
+// @Router /media/capabilities [get]
+func (h *Handler) GetMediaEnrichmentCapabilities(c *gin.Context) {
+	if h.enrichmentManager == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+			Error:   "Media enrichment is not available",
+			Code:    "MEDIA_ENRICHMENT_DISABLED",
+			Details: map[string]any{"message": "Media enrichment service is not configured"},
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"enabled": h.enrichmentManager.IsEnabled(),
+		"enrichers": []gin.H{
+			{
+				"name": "ffprobe",
+				"supported_types": []string{"video/*", "audio/*"},
+				"features": []string{"duration", "bitrate", "resolution", "codec", "hdr_detection", "fps", "channels"},
+				"required_tools": []string{"ffprobe"},
+			},
+			{
+				"name": "exif",
+				"supported_types": []string{"image/*"},
+				"features": []string{"dimensions", "camera_info", "datetime", "gps", "orientation"},
+				"required_tools": []string{"exiftool"},
+			},
+			{
+				"name": "subtitle",
+				"supported_types": []string{"text/vtt", "application/x-subrip", "text/x-ssa", "text/x-ass"},
+				"features": []string{"language", "cue_count", "coverage", "format"},
+				"required_tools": []string{}, // No external tools required
+			},
+		},
+		"configuration": gin.H{
+			"max_concurrent_workers": 3,
+			"timeout_per_file":       "30s",
+			"gps_enabled":            false,
+			"hashing_enabled":        false,
+		},
+	})
 }

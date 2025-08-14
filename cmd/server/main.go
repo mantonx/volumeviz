@@ -14,7 +14,7 @@ import (
 	v1 "github.com/mantonx/volumeviz/internal/api/v1"
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/db"
-	"github.com/mantonx/volumeviz/internal/services"
+	"github.com/mantonx/volumeviz/internal/services/docker"
 	"github.com/mantonx/volumeviz/internal/store"
 	storeconfig "github.com/mantonx/volumeviz/internal/store/config"
 	"github.com/mantonx/volumeviz/internal/version"
@@ -53,7 +53,15 @@ type healthCheckAdapter struct {
 }
 
 func (a *healthCheckAdapter) HealthCheck(ctx context.Context) interface{} {
-	// TODO: Implement proper health check when store interface supports it
+	// Perform actual health check using store interface
+	if err := a.store.Health(ctx); err != nil {
+		return map[string]interface{}{
+			"type":      "new-store-architecture",
+			"status":    "unhealthy",
+			"connected": false,
+			"error":     err.Error(),
+		}
+	}
 	return map[string]interface{}{
 		"type":      "new-store-architecture",
 		"status":    "healthy",
@@ -120,7 +128,7 @@ func main() {
 	log.Printf("Database migrations managed by store layer")
 
 	// Initialize Docker service
-	dockerService, err := services.NewDockerService(cfg.Docker.Host, cfg.Docker.Timeout)
+	dockerService, err := docker.NewDockerService(cfg.Docker.Host, cfg.Docker.Timeout)
 	if err != nil {
 		log.Fatalf("Failed to initialize Docker service: %v", err)
 	}

@@ -228,6 +228,158 @@ type CreateFileEntryParams struct {
 }
 
 // ==============================================================================
+// FILESYSTEM INDEXER DOMAIN MODELS
+// ==============================================================================
+
+// Folder represents a directory in the filesystem with rich metadata
+type Folder struct {
+	ID                       int64      `json:"id"`
+	ParentID                 *int64     `json:"parent_id,omitempty"`
+	VolumeID                 string     `json:"volume_id"`
+	Name                     string     `json:"name"`
+	Path                     string     `json:"path"`
+	PathHash                 []byte     `json:"path_hash"`
+	SizeBytesRecursive       int64      `json:"size_bytes_recursive"`
+	DiskUsageBytesRecursive  int64      `json:"disk_usage_bytes_recursive"`
+	FileCount                int64      `json:"file_count"`
+	DirCount                 int64      `json:"dir_count"`
+	Depth                    int32      `json:"depth"`
+	Mtime                    *time.Time `json:"mtime,omitempty"`
+	Ctime                    *time.Time `json:"ctime,omitempty"`
+	Uid                      *int32     `json:"uid,omitempty"`
+	Gid                      *int32     `json:"gid,omitempty"`
+	Mode                     *int32     `json:"mode,omitempty"`
+	IsSymlink                bool       `json:"is_symlink"`
+	SymlinkTarget            *string    `json:"symlink_target,omitempty"`
+	CreatedAt                time.Time  `json:"created_at"`
+	UpdatedAt                time.Time  `json:"updated_at"`
+}
+
+// File represents a file in the filesystem with rich metadata
+type File struct {
+	ID               int64      `json:"id"`
+	FolderID         int64      `json:"folder_id"`
+	VolumeID         string     `json:"volume_id"`
+	Name             string     `json:"name"`
+	Path             string     `json:"path"`
+	Extension        *string    `json:"extension,omitempty"`
+	SizeBytes        int64      `json:"size_bytes"`
+	DiskUsageBytes   int64      `json:"disk_usage_bytes"`
+	Mtime            *time.Time `json:"mtime,omitempty"`
+	Ctime            *time.Time `json:"ctime,omitempty"`
+	Birthtime        *time.Time `json:"birthtime,omitempty"`
+	Uid              *int32     `json:"uid,omitempty"`
+	Gid              *int32     `json:"gid,omitempty"`
+	Mode             *int32     `json:"mode,omitempty"`
+	Inode            *int64     `json:"inode,omitempty"`
+	Device           *string    `json:"device,omitempty"`
+	IsSymlink        bool       `json:"is_symlink"`
+	SymlinkTarget    *string    `json:"symlink_target,omitempty"`
+	Mime             *string    `json:"mime,omitempty"`
+	MediaKind        *string    `json:"media_kind,omitempty"`
+	Encoding         *string    `json:"encoding,omitempty"`
+	HashAlgo         *string    `json:"hash_algo,omitempty"`
+	Hash             []byte     `json:"hash,omitempty"`
+	PathHash         []byte     `json:"path_hash"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+}
+
+// CreateFolderParams represents parameters for creating a folder
+type CreateFolderParams struct {
+	ParentID      *int64     `json:"parent_id,omitempty"`
+	VolumeID      string     `json:"volume_id"`
+	Name          string     `json:"name"`
+	Path          string     `json:"path"`
+	PathHash      []byte     `json:"path_hash"`
+	Depth         int32      `json:"depth"`
+	Mtime         *time.Time `json:"mtime,omitempty"`
+	Ctime         *time.Time `json:"ctime,omitempty"`
+	Uid           *int32     `json:"uid,omitempty"`
+	Gid           *int32     `json:"gid,omitempty"`
+	Mode          *int32     `json:"mode,omitempty"`
+	IsSymlink     bool       `json:"is_symlink"`
+	SymlinkTarget *string    `json:"symlink_target,omitempty"`
+}
+
+// CreateFileParams represents parameters for creating a file
+type CreateFileParams struct {
+	FolderID       int64      `json:"folder_id"`
+	VolumeID       string     `json:"volume_id"`
+	Name           string     `json:"name"`
+	Path           string     `json:"path"`
+	Extension      *string    `json:"extension,omitempty"`
+	SizeBytes      int64      `json:"size_bytes"`
+	DiskUsageBytes int64      `json:"disk_usage_bytes"`
+	Mtime          *time.Time `json:"mtime,omitempty"`
+	Ctime          *time.Time `json:"ctime,omitempty"`
+	Birthtime      *time.Time `json:"birthtime,omitempty"`
+	Uid            *int32     `json:"uid,omitempty"`
+	Gid            *int32     `json:"gid,omitempty"`
+	Mode           *int32     `json:"mode,omitempty"`
+	Inode          *int64     `json:"inode,omitempty"`
+	Device         *string    `json:"device,omitempty"`
+	IsSymlink      bool       `json:"is_symlink"`
+	SymlinkTarget  *string    `json:"symlink_target,omitempty"`
+	Mime           *string    `json:"mime,omitempty"`
+	MediaKind      *string    `json:"media_kind,omitempty"`
+	Encoding       *string    `json:"encoding,omitempty"`
+	HashAlgo       *string    `json:"hash_algo,omitempty"`
+	Hash           []byte     `json:"hash,omitempty"`
+	PathHash       []byte     `json:"path_hash"`
+}
+
+// FolderStats represents folder statistics
+type FolderStats struct {
+	TotalFolders        int64   `json:"total_folders"`
+	RootFolders         int64   `json:"root_folders"`
+	MaxDepth            *int32  `json:"max_depth,omitempty"`
+	AvgFilesPerFolder   *float64 `json:"avg_files_per_folder,omitempty"`
+	TotalSize           *int64  `json:"total_size,omitempty"`
+	LargestFolderSize   *int64  `json:"largest_folder_size,omitempty"`
+}
+
+// FileStats represents file statistics
+type FileStats struct {
+	TotalFiles         int64   `json:"total_files"`
+	TotalSize          *int64  `json:"total_size,omitempty"`
+	AvgFileSize        *float64 `json:"avg_file_size,omitempty"`
+	LargestFile        *int64  `json:"largest_file,omitempty"`
+	UniqueExtensions   int64   `json:"unique_extensions"`
+	UniqueMediaKinds   int64   `json:"unique_media_kinds"`
+	HashedFiles        int64   `json:"hashed_files"`
+}
+
+// MediaKindStat represents statistics for a media kind
+type MediaKindStat struct {
+	MediaKind *string  `json:"media_kind"`
+	FileCount int64    `json:"file_count"`
+	TotalSize int64    `json:"total_size"`
+	AvgSize   *float64 `json:"avg_size,omitempty"`
+}
+
+// ExtensionStat represents statistics for a file extension
+type ExtensionStat struct {
+	Extension *string  `json:"extension"`
+	FileCount int64    `json:"file_count"`
+	TotalSize int64    `json:"total_size"`
+	AvgSize   *float64 `json:"avg_size,omitempty"`
+}
+
+// MediaKind constants for classification
+const (
+	MediaKindDocument = "document"
+	MediaKindImage    = "image"
+	MediaKindVideo    = "video"
+	MediaKindAudio    = "audio"
+	MediaKindArchive  = "archive"
+	MediaKindCode     = "code"
+	MediaKindData     = "data"
+	MediaKindBinary   = "binary"
+	MediaKindOther    = "other"
+)
+
+// ==============================================================================
 // ADDITIONAL DOMAIN MODELS
 // ==============================================================================
 

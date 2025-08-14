@@ -2,7 +2,7 @@ package scan
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/mantonx/volumeviz/internal/core/interfaces"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/store"
@@ -19,6 +19,11 @@ func NewRouter(scanner interfaces.VolumeScanner, hub *websocket.Hub, store store
 	return &Router{
 		handler: NewHandler(scanner, hub, scanScheduler, publisher),
 	}
+}
+
+// SetEnrichmentManager sets the media enrichment manager
+func (r *Router) SetEnrichmentManager(manager interfaces.EnrichmentManager) {
+	r.handler.SetEnrichmentManager(manager)
 }
 
 // RegisterRoutes registers all scan-related routes
@@ -46,4 +51,20 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	// Scheduler management endpoints
 	group.GET("/scheduler/status", r.handler.GetSchedulerStatus)   // Get scheduler status
 	group.GET("/scheduler/metrics", r.handler.GetSchedulerMetrics) // Get scheduler metrics
+	
+	// Enhanced scheduler endpoints (hardened mode)
+	group.GET("/scheduler/metrics/detailed", r.handler.GetSchedulerDetailedMetrics) // Enhanced metrics with worker/watchdog stats
+	group.GET("/scheduler/workers", r.handler.GetSchedulerWorkerStats)              // Worker statistics
+	group.GET("/scheduler/watchdog", r.handler.GetSchedulerWatchdogStats)           // Watchdog statistics
+	group.GET("/scheduler/capabilities", r.handler.GetSchedulerCapabilities)        // Scheduler capabilities and mode
+
+	// Filesystem indexing endpoints
+	group.GET("/volumes/:id/filesystem/status", r.handler.GetFilesystemIndexingStatus)   // Get filesystem indexing status
+	group.POST("/volumes/:id/filesystem/index", r.handler.TriggerFilesystemIndexing)     // Trigger filesystem indexing
+	group.GET("/filesystem/capabilities", r.handler.GetFilesystemIndexingCapabilities)  // Get filesystem indexing capabilities
+	
+	// Media enrichment endpoints
+	group.POST("/volumes/:id/media/enrich", r.handler.TriggerMediaEnrichment)     // Trigger media enrichment
+	group.GET("/volumes/:id/media/status", r.handler.GetMediaEnrichmentStatus)   // Get media enrichment status
+	group.GET("/media/capabilities", r.handler.GetMediaEnrichmentCapabilities)   // Get media enrichment capabilities
 }

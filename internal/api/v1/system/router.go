@@ -2,7 +2,7 @@ package system
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/mantonx/volumeviz/internal/services"
+	docker "github.com/mantonx/volumeviz/internal/services/docker"
 )
 
 // Router handles system-related routes
@@ -11,7 +11,7 @@ type Router struct {
 }
 
 // NewRouter creates a new system router
-func NewRouter(dockerService *services.DockerService) *Router {
+func NewRouter(dockerService *docker.DockerService) *Router {
 	return &Router{
 		handler: NewHandler(dockerService),
 	}

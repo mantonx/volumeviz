@@ -30,12 +30,11 @@ func (r *iteratorForBulkInsertDirNodes) Next() bool {
 func (r iteratorForBulkInsertDirNodes) Values() ([]interface{}, error) {
 	return []interface{}{
 		r.rows[0].VolumeID,
-		r.rows[0].ParentDirID,
+		r.rows[0].ParentID,
 		r.rows[0].Name,
-		r.rows[0].FullPath,
+		r.rows[0].Path,
+		r.rows[0].PathHash,
 		r.rows[0].Depth,
-		r.rows[0].LatestSizeBytes,
-		r.rows[0].LatestFileCount,
 	}, nil
 }
 
@@ -44,16 +43,16 @@ func (r iteratorForBulkInsertDirNodes) Err() error {
 }
 
 func (q *Queries) BulkInsertDirNodes(ctx context.Context, arg []BulkInsertDirNodesParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"dir_nodes"}, []string{"volume_id", "parent_dir_id", "name", "full_path", "depth", "latest_size_bytes", "latest_file_count"}, &iteratorForBulkInsertDirNodes{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"folders"}, []string{"volume_id", "parent_id", "name", "path", "path_hash", "depth"}, &iteratorForBulkInsertDirNodes{rows: arg})
 }
 
-// iteratorForBulkInsertDirRollups implements pgx.CopyFromSource.
-type iteratorForBulkInsertDirRollups struct {
-	rows                 []BulkInsertDirRollupsParams
+// iteratorForBulkInsertFiles implements pgx.CopyFromSource.
+type iteratorForBulkInsertFiles struct {
+	rows                 []BulkInsertFilesParams
 	skippedFirstNextCall bool
 }
 
-func (r *iteratorForBulkInsertDirRollups) Next() bool {
+func (r *iteratorForBulkInsertFiles) Next() bool {
 	if len(r.rows) == 0 {
 		return false
 	}
@@ -65,62 +64,82 @@ func (r *iteratorForBulkInsertDirRollups) Next() bool {
 	return len(r.rows) > 0
 }
 
-func (r iteratorForBulkInsertDirRollups) Values() ([]interface{}, error) {
+func (r iteratorForBulkInsertFiles) Values() ([]interface{}, error) {
 	return []interface{}{
-		r.rows[0].DirID,
-		r.rows[0].SizeBytes,
-		r.rows[0].FileCount,
-		r.rows[0].ComputedAt,
-	}, nil
-}
-
-func (r iteratorForBulkInsertDirRollups) Err() error {
-	return nil
-}
-
-func (q *Queries) BulkInsertDirRollups(ctx context.Context, arg []BulkInsertDirRollupsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"dir_rollups"}, []string{"dir_id", "size_bytes", "file_count", "computed_at"}, &iteratorForBulkInsertDirRollups{rows: arg})
-}
-
-// iteratorForBulkInsertFileEntries implements pgx.CopyFromSource.
-type iteratorForBulkInsertFileEntries struct {
-	rows                 []BulkInsertFileEntriesParams
-	skippedFirstNextCall bool
-}
-
-func (r *iteratorForBulkInsertFileEntries) Next() bool {
-	if len(r.rows) == 0 {
-		return false
-	}
-	if !r.skippedFirstNextCall {
-		r.skippedFirstNextCall = true
-		return true
-	}
-	r.rows = r.rows[1:]
-	return len(r.rows) > 0
-}
-
-func (r iteratorForBulkInsertFileEntries) Values() ([]interface{}, error) {
-	return []interface{}{
+		r.rows[0].FolderID,
 		r.rows[0].VolumeID,
-		r.rows[0].ParentDirID,
 		r.rows[0].Name,
+		r.rows[0].Path,
+		r.rows[0].Extension,
 		r.rows[0].SizeBytes,
+		r.rows[0].DiskUsageBytes,
 		r.rows[0].Mtime,
 		r.rows[0].Ctime,
-		r.rows[0].Inode,
+		r.rows[0].Birthtime,
 		r.rows[0].Uid,
 		r.rows[0].Gid,
-		r.rows[0].Type,
-		r.rows[0].Hidden,
+		r.rows[0].Mode,
+		r.rows[0].Inode,
+		r.rows[0].Device,
+		r.rows[0].IsSymlink,
+		r.rows[0].SymlinkTarget,
+		r.rows[0].Mime,
+		r.rows[0].MediaKind,
+		r.rows[0].Encoding,
+		r.rows[0].HashAlgo,
+		r.rows[0].Hash,
 		r.rows[0].PathHash,
 	}, nil
 }
 
-func (r iteratorForBulkInsertFileEntries) Err() error {
+func (r iteratorForBulkInsertFiles) Err() error {
 	return nil
 }
 
-func (q *Queries) BulkInsertFileEntries(ctx context.Context, arg []BulkInsertFileEntriesParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"file_entries"}, []string{"volume_id", "parent_dir_id", "name", "size_bytes", "mtime", "ctime", "inode", "uid", "gid", "type", "hidden", "path_hash"}, &iteratorForBulkInsertFileEntries{rows: arg})
+func (q *Queries) BulkInsertFiles(ctx context.Context, arg []BulkInsertFilesParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"files"}, []string{"folder_id", "volume_id", "name", "path", "extension", "size_bytes", "disk_usage_bytes", "mtime", "ctime", "birthtime", "uid", "gid", "mode", "inode", "device", "is_symlink", "symlink_target", "mime", "media_kind", "encoding", "hash_algo", "hash", "path_hash"}, &iteratorForBulkInsertFiles{rows: arg})
+}
+
+// iteratorForBulkInsertFolders implements pgx.CopyFromSource.
+type iteratorForBulkInsertFolders struct {
+	rows                 []BulkInsertFoldersParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForBulkInsertFolders) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForBulkInsertFolders) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ParentID,
+		r.rows[0].VolumeID,
+		r.rows[0].Name,
+		r.rows[0].Path,
+		r.rows[0].PathHash,
+		r.rows[0].Depth,
+		r.rows[0].Mtime,
+		r.rows[0].Ctime,
+		r.rows[0].Uid,
+		r.rows[0].Gid,
+		r.rows[0].Mode,
+		r.rows[0].IsSymlink,
+		r.rows[0].SymlinkTarget,
+	}, nil
+}
+
+func (r iteratorForBulkInsertFolders) Err() error {
+	return nil
+}
+
+func (q *Queries) BulkInsertFolders(ctx context.Context, arg []BulkInsertFoldersParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"folders"}, []string{"parent_id", "volume_id", "name", "path", "path_hash", "depth", "mtime", "ctime", "uid", "gid", "mode", "is_symlink", "symlink_target"}, &iteratorForBulkInsertFolders{rows: arg})
 }

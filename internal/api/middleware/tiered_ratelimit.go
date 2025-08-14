@@ -96,8 +96,6 @@ func getEndpointTier(c *gin.Context) EndpointTier {
 	c.Param("name") != "" && (path == "/api/v1/volumes/"+c.Param("name")+"/scan" ||
 		path == "/api/v1/volumes/"+c.Param("name")+"/size/refresh")):
 		return TierHeavy
-	case method == "POST" && path == "/api/v1/trends/volumes/snapshots": // Snapshot creation
-		return TierHeavy
 	}
 
 	// Default tier for everything else
