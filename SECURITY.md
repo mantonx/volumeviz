@@ -1,348 +1,260 @@
 # Security Policy
 
-## Reporting Security Vulnerabilities
+## 🔒 Security Overview
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+VolumeViz takes security seriously and implements multiple layers of protection to ensure the safety and integrity of your data. This document outlines our security practices, how to report vulnerabilities, and guidelines for secure deployment.
 
-### Preferred Method: GitHub Private Vulnerability Reporting
+## 🛡️ Security Features
 
-We use GitHub's Private Vulnerability Reporting feature for secure disclosure:
+### Authentication & Authorization
 
-1. Go to the [Security tab](https://github.com/mantonx/volumeviz/security) of this repository
-2. Click "Report a vulnerability" 
-3. Fill out the vulnerability report form with details
-4. Submit the report
+#### JWT-Based Authentication
+- Secure JSON Web Token implementation with configurable expiration
+- RSA/ECDSA signing algorithms for token integrity
+- Refresh token mechanism for extended sessions
+- Automatic token rotation and revocation support
 
-### Alternative: Email
+#### Role-Based Access Control (RBAC)
+- **Admin Role**: Full system access including user management
+- **User Role**: Standard volume viewing and analysis permissions  
+- **Viewer Role**: Read-only access to dashboards and reports
+- **API Role**: Programmatic access with limited scope
 
-If GitHub Private Vulnerability Reporting is not available:
+#### Session Management
+- Secure session handling with configurable timeouts
+- Session invalidation on security events
+- Concurrent session limiting per user
+- Secure logout with token blacklisting
 
-**Email**: security@volumeviz.io  
-**GPG Key**: Available on request
+### Data Protection
 
-### What to Include
+#### Encryption
+- **In Transit**: TLS 1.3 for all API communications
+- **At Rest**: Database encryption support (PostgreSQL TDE, SQLite encryption)
+- **JWT Tokens**: Encrypted payload with secure signing keys
+- **Sensitive Data**: Hashed passwords with bcrypt (cost factor 12+)
 
-Please include as much information as possible:
+#### Data Validation & Sanitization
+- Comprehensive input validation on all API endpoints
+- SQL injection prevention through parameterized queries (SQLC)
+- XSS protection with Content Security Policy (CSP)
+- File upload restrictions and content validation
 
-- **Vulnerability Type**: What type of vulnerability (authentication bypass, injection, etc.)
-- **Impact**: What can be achieved by exploiting this vulnerability
-- **Steps to Reproduce**: Clear steps to reproduce the issue
-- **Affected Versions**: Which versions of VolumeViz are affected
-- **Environment**: OS, Docker version, configuration details
-- **Proof of Concept**: Code, screenshots, or examples (if available)
+#### Privacy & Compliance
+- No collection of personally identifiable information (PII)
+- Volume metadata stored securely with access controls
+- Audit logging for compliance requirements
+- Data retention policies configurable by deployment
 
-### Response Timeline
+### Infrastructure Security
 
-We are committed to responding to security reports promptly:
+#### Database Security
+- Connection pooling with secure connection strings
+- Database user permissions following principle of least privilege  
+- Prepared statements preventing SQL injection
+- Regular security updates for database engines
 
-- **Initial Response**: Within 48 hours of receipt
-- **Triage & Assessment**: Within 1 week
-- **Progress Updates**: Weekly updates on complex issues
-- **Resolution Target**: 
-  - Critical vulnerabilities: 72 hours
-  - High severity: 1 week
-  - Medium severity: 2 weeks
-  - Low severity: 4 weeks
+#### Container Security
+- Non-root user execution in containers
+- Minimal base images with security updates
+- Secret management through environment variables or mounted volumes
+- Network segmentation with container isolation
 
-### Disclosure Process
+#### API Security
+- Rate limiting to prevent abuse and DDoS attacks
+- Request size limits to prevent resource exhaustion
+- CORS configuration for web browser security
+- Security headers (HSTS, X-Frame-Options, etc.)
 
-1. **Receipt**: We acknowledge receipt of your vulnerability report
-2. **Assessment**: We assess the vulnerability and assign a severity level
-3. **Development**: We develop and test a fix
-4. **Release**: We release a security update
-5. **Disclosure**: We coordinate public disclosure 
+## 🚨 Vulnerability Reporting
 
-### Security Update Process
+### Reporting Process
 
-- Security fixes are released as patch versions
-- Users are notified through GitHub Security Advisories
-- Release notes clearly mark security fixes
-- Critical vulnerabilities may trigger immediate notifications
+We appreciate responsible disclosure of security vulnerabilities. Please follow these steps:
 
-## Overview
+#### 1. **Do Not** Create Public Issues
+- Do not report security vulnerabilities through public GitHub issues
+- Do not discuss vulnerabilities in public forums or social media
 
-VolumeViz requires privileged access to Docker and filesystem resources to monitor volumes effectively. This document outlines important security considerations and best practices for deploying VolumeViz safely.
+#### 2. **Report Privately**
+Send detailed vulnerability reports to: **security@volumeviz.dev**
 
-## Security Requirements
+Include in your report:
+- Description of the vulnerability and its potential impact
+- Steps to reproduce the issue
+- Affected versions or components
+- Any proof-of-concept code or screenshots
+- Suggested mitigation strategies (if any)
 
-### Docker Socket Access
+#### 3. **Response Timeline**
+- **Initial Response**: Within 24 hours of report receipt
+- **Assessment**: Vulnerability triage within 72 hours
+- **Resolution**: Critical issues addressed within 7 days
+- **Disclosure**: Coordinated disclosure after fix deployment
 
-⚠️ **CRITICAL**: VolumeViz requires access to the Docker daemon socket (`/var/run/docker.sock`) to:
-- Discover Docker volumes
-- Read volume metadata 
-- Query container mount information
+### Vulnerability Classification
 
-**Security Implications**:
-- **Root-equivalent access**: Any process with Docker socket access has root privileges on the host
-- **Container escape potential**: Compromised VolumeViz could create privileged containers
-- **Full system access**: Can read/write any file on the host through volume mounts
+#### Critical (CVSS 9.0-10.0)
+- Remote code execution vulnerabilities
+- Authentication bypass leading to admin access
+- Complete system compromise
 
-### Filesystem Access
+#### High (CVSS 7.0-8.9)  
+- Privilege escalation vulnerabilities
+- Data exposure affecting multiple users
+- Significant security control bypasses
 
-VolumeViz needs read access to volume data directories:
-- `/var/lib/docker/volumes/` - Docker managed volumes
-- Custom bind mount paths (e.g., `/cifs/`, `/mnt/`)
-- User-specified volume device paths
+#### Medium (CVSS 4.0-6.9)
+- Limited data exposure
+- Cross-site scripting (XSS) vulnerabilities
+- Information disclosure with limited impact
 
-**Security Implications**:
-- **Data exposure**: Can read contents of all mounted volumes
-- **Permission escalation**: Runs as root to access protected directories
-- **Network shares**: May access remote filesystems (NFS, CIFS, etc.)
+#### Low (CVSS 0.1-3.9)
+- Minor information leaks
+- Low-impact denial of service
+- Configuration weaknesses
 
-## Deployment Security
+### Bounty Program
 
-### Production Deployment
+While we don't currently offer monetary rewards, we recognize security researchers by:
+- Public acknowledgment (with permission) in release notes
+- Priority support for future security questions
+- Consideration for beta testing new security features
 
-**DO NOT** deploy VolumeViz in production without these protections:
+## 🔧 Secure Deployment Guidelines
 
-1. **Network Isolation**
-   ```yaml
-   # Use dedicated network
-   networks:
-     volumeviz-internal:
-       driver: bridge
-       internal: true  # No external access
-   ```
+### Environment Configuration
 
-2. **Docker Socket Proxy** (Recommended)
-   ```yaml
-   # Use tecnativa/docker-socket-proxy
-   docker-socket-proxy:
-     image: tecnativa/docker-socket-proxy
-     environment:
-       CONTAINERS: 1
-       VOLUMES: 1
-       NETWORKS: 0
-       IMAGES: 0
-       SERVICES: 0
-       TASKS: 0
-       SECRETS: 0
-       POST: 0
-       BUILD: 0
-     volumes:
-       - /var/run/docker.sock:/var/run/docker.sock:ro
-   ```
+#### Production Settings
+```bash
+# Use strong, unique passwords
+DB_PASSWORD=$(openssl rand -base64 32)
 
-3. **Access Controls**
-   - Deploy behind authentication proxy (OAuth, LDAP, etc.)
-   - Use firewall rules to restrict network access
-   - Consider VPN-only access for remote monitoring
+# Enable secure connections
+DB_SSLMODE=require
+API_TLS_ENABLED=true
 
-4. **Resource Limits**
-   ```yaml
-   deploy:
-     resources:
-       limits:
-         memory: 512M
-         cpus: '0.5'
-   ```
+# Set secure session configuration
+JWT_SIGNING_KEY=$(openssl rand -base64 64)
+JWT_EXPIRATION=1h
+SESSION_TIMEOUT=30m
 
-### Development vs Production
-
-| Environment | Security Level | Considerations |
-|-------------|----------------|----------------|
-| **Development** | Lower | Local Docker socket access acceptable |
-| **Staging** | Medium | Use socket proxy, restrict network access |
-| **Production** | High | Full isolation, authentication, monitoring |
-
-## Volume Data Security
-
-### Read-Only Access
-
-VolumeViz accesses volume data in **read-only mode** by default:
-- Volume scanning uses read-only filesystem operations
-- No modification of user data
-- Size calculation only reads file metadata
-
-### Sensitive Data Handling
-
-**VolumeViz may encounter sensitive data** during volume scanning:
-- Database files
-- Application secrets
-- User personal data
-- Backup archives
-
-**Mitigation**:
-- Volume content is not stored or transmitted
-- Only file sizes and metadata are collected
-- Enable debug logging only in secure environments
-- Use volume exclusion patterns for sensitive paths
-
-## Authentication & Authorization
-
-### No Built-in Authentication
-
-⚠️ **VolumeViz does not include built-in authentication**
-
-For production use, deploy behind:
-- **Reverse proxy with authentication** (nginx + auth modules)
-- **Authentication gateway** (OAuth2 Proxy, Authelia)
-- **VPN or network-level restrictions**
-
-### API Security
-
-- **No API keys**: REST API is unauthenticated
-- **No rate limiting**: Built-in rate limiting not implemented
-- **CORS configuration**: Configure appropriately for your environment
-
-## Network Security
-
-### Port Exposure
-
-Default ports exposed by VolumeViz:
-- `3000`: Frontend web interface
-- `8080`: Backend API
-- `9090`: Prometheus metrics (if enabled)
-
-**Production recommendations**:
-- Bind to localhost only: `127.0.0.1:8080`
-- Use reverse proxy for external access
-- Disable metrics endpoint if not needed
-
-### TLS/SSL
-
-VolumeViz does not provide built-in TLS termination:
-- Use reverse proxy for HTTPS (nginx, Traefik, etc.)
-- Ensure all external communication is encrypted
-- Use secure WebSocket (wss://) for real-time features
-
-## Container Security
-
-### Running as Root
-
-VolumeViz backend container runs as **root** to access:
-- Docker socket
-- Volume directories in `/var/lib/docker/volumes/`
-- Custom mount paths
-
-**Mitigation strategies**:
-- Use minimal container base images
-- Apply security patches regularly
-- Monitor container behavior
-- Use security scanning tools (Trivy, Snyk, etc.)
-
-### Container Isolation
-
-```yaml
-# Enhanced security configuration
-security_opt:
-  - no-new-privileges:true
-read_only: true
-tmpfs:
-  - /tmp:noexec,nosuid,size=100m
-cap_drop:
-  - ALL
-cap_add:
-  - DAC_OVERRIDE  # Required for volume access
-  - DAC_READ_SEARCH
+# Enable security headers
+SECURITY_HEADERS_ENABLED=true
+CORS_ALLOWED_ORIGINS=https://yourdomain.com
 ```
 
-## Monitoring & Auditing
+#### Network Security
+- Deploy behind a reverse proxy (nginx, Apache, Cloudflare)
+- Use HTTPS/TLS for all communications
+- Implement network segmentation and firewall rules
+- Restrict database access to application servers only
 
-### Security Monitoring
+#### Container Security
+```bash
+# Run with non-root user
+docker run --user 1000:1000 volumeviz
 
-Monitor these security-relevant events:
-- Failed Docker API connections
-- Volume scan failures (potential permission issues)
-- Unusual volume access patterns
-- High resource usage (potential abuse)
+# Limit resources and capabilities
+docker run --memory=512m --cpus=1 --cap-drop=ALL volumeviz
 
-### Logging
-
-Security-relevant log events:
+# Use read-only filesystem where possible
+docker run --read-only --tmpfs /tmp volumeviz
 ```
-level=warn msg="Failed to access volume" volume=/var/lib/docker/volumes/sensitive-data
-level=error msg="Docker socket connection failed" 
-level=info msg="Volume scan completed" volume=user-data size=1.2GB duration=45s
+
+### Database Security
+
+#### PostgreSQL Configuration
+```sql
+-- Create dedicated database user
+CREATE USER volumeviz WITH PASSWORD 'strong_random_password';
+GRANT CONNECT ON DATABASE volumeviz TO volumeviz;
+GRANT USAGE ON SCHEMA public TO volumeviz;
+
+-- Grant minimal required permissions
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO volumeviz;
 ```
 
-### Prometheus Metrics
+#### Connection Security
+- Always use encrypted connections (`sslmode=require`)
+- Use certificate-based authentication when possible
+- Rotate database passwords regularly
+- Monitor for unusual database activity
 
-Monitor security metrics:
-- `volumeviz_docker_api_errors_total`
-- `volumeviz_volume_scan_failures_total` 
-- `volumeviz_unauthorized_access_attempts_total`
+### Monitoring & Alerting
 
-## Incident Response
+#### Security Monitoring
+- Failed authentication attempts
+- Unusual API access patterns
+- Database connection anomalies
+- Resource usage spikes
 
-### In Case of Security Incident
+#### Audit Logging
+```json
+{
+  "timestamp": "2025-08-14T20:00:00Z",
+  "user_id": "admin@example.com",
+  "action": "volume_scan_initiated", 
+  "resource": "volume_id:vol-123",
+  "ip_address": "192.168.1.100",
+  "user_agent": "VolumeViz-CLI/1.0.0",
+  "result": "success"
+}
+```
 
-1. **Immediate Response**
-   - Stop VolumeViz containers: `docker compose down`
-   - Isolate affected systems from network
-   - Preserve logs for analysis
+## 📋 Security Checklist
 
-2. **Assessment**
-   - Check Docker audit logs
-   - Review volume access patterns
-   - Verify integrity of monitored data
+### Pre-Deployment
+- [ ] Change all default passwords and secrets
+- [ ] Configure TLS/SSL certificates
+- [ ] Set up proper firewall rules
+- [ ] Enable audit logging
+- [ ] Configure backup encryption
+- [ ] Test disaster recovery procedures
 
-3. **Recovery**
-   - Update VolumeViz to latest version
-   - Review and strengthen security configuration
-   - Monitor for continued suspicious activity
+### Regular Maintenance  
+- [ ] Apply security updates monthly
+- [ ] Rotate JWT signing keys quarterly
+- [ ] Review user access permissions
+- [ ] Monitor security audit logs
+- [ ] Perform vulnerability scans
+- [ ] Update dependency libraries
 
-## Reporting Security Issues
+### Incident Response
+- [ ] Document security incident procedures
+- [ ] Establish communication channels
+- [ ] Prepare system isolation procedures
+- [ ] Configure automated alerting
+- [ ] Test incident response plan annually
 
-**Do not open public GitHub issues for security vulnerabilities.**
+## 🆕 Security Updates
 
-Report security issues privately:
-- **Email**: security@volumeviz.example.com
-- **GPG Key**: [Link to public key]
-- **Response Time**: 48 hours for initial response
+### Notification Methods
+- **Critical Security Alerts**: Direct email to registered administrators
+- **Security Advisories**: GitHub Security Advisories
+- **Release Notes**: Security fixes highlighted in CHANGELOG.md
+- **RSS Feed**: Subscribe to security-only updates
 
-### Responsible Disclosure
+### Update Procedures
+1. **Emergency Patches**: Applied immediately for critical vulnerabilities
+2. **Regular Updates**: Monthly security update cycle
+3. **Major Updates**: Quarterly comprehensive security reviews
 
-We follow responsible disclosure practices:
-1. Report received and acknowledged (48 hours)
-2. Issue verified and assessed (1 week)
-3. Fix developed and tested (2-4 weeks)
-4. Coordinated public disclosure (after fix deployment)
+## 📞 Contact Information
 
-## Security Updates
+### Security Team
+- **Primary Contact**: security@volumeviz.dev
+- **PGP Key**: [Link to public key for encrypted communications]
+- **Response Hours**: 24/7 for critical issues, business hours for others
 
-### Update Policy
-
-- **Critical security updates**: Released immediately
-- **High severity**: Released within 1 week  
-- **Medium/Low severity**: Included in regular releases
-
-### Notification
-
-Security updates are announced via:
-- GitHub Security Advisories
-- Release notes with `[SECURITY]` tag
-- Email notifications (if subscribed)
-
-## Best Practices Checklist
-
-- [ ] Deploy with Docker socket proxy in production
-- [ ] Use authentication proxy for web interface
-- [ ] Enable TLS/HTTPS for all external access
-- [ ] Restrict network access with firewall rules
-- [ ] Monitor security events and resource usage
-- [ ] Keep VolumeViz updated to latest version
-- [ ] Use read-only filesystem where possible
-- [ ] Apply principle of least privilege
-- [ ] Regular security audits and penetration testing
-- [ ] Backup and disaster recovery procedures
-
-## Compliance Considerations
-
-### Data Privacy
-
-- **Volume content access**: VolumeViz can read all volume data
-- **Metadata collection**: Stores file paths, sizes, timestamps
-- **GDPR/CCPA**: Consider data processing implications
-
-### Industry Standards
-
-VolumeViz security considerations for:
-- **SOC 2**: Access controls, monitoring, incident response
-- **ISO 27001**: Risk assessment, security policies
-- **PCI DSS**: Network segmentation, access controls (if processing card data)
-- **HIPAA**: Encryption, access controls (if processing health data)
+### Additional Resources
+- **Security Documentation**: `/docs/security/`
+- **Compliance Information**: `/docs/compliance/`
+- **Security Architecture**: `/docs/adr/` (Architecture Decision Records)
 
 ---
 
-**Remember**: VolumeViz is a powerful tool that requires careful security consideration. Always deploy with appropriate safeguards for your environment and risk tolerance.
+**Last Updated**: August 14, 2025  
+**Next Review**: November 14, 2025
+
+*This security policy is reviewed quarterly and updated as needed to reflect current security practices and threat landscape.*

@@ -1,283 +1,458 @@
 # Contributing to VolumeViz
 
-Thank you for your interest in contributing to VolumeViz! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to VolumeViz! We welcome contributions from developers of all skill levels and backgrounds. This guide will help you get started with contributing to our project.
 
-## Code of Conduct
+## 🎯 Ways to Contribute
 
-By participating in this project, you agree to abide by our Code of Conduct:
-- Be respectful and inclusive
-- Welcome newcomers and help them get started
-- Focus on constructive criticism
-- Respect differing viewpoints and experiences
+### 🐛 Bug Reports
+- Report bugs through [GitHub Issues](https://github.com/mantonx/volumeviz/issues)
+- Use the bug report template
+- Include detailed reproduction steps
+- Provide environment information
 
-## Getting Started
+### ✨ Feature Requests  
+- Propose new features via [GitHub Discussions](https://github.com/mantonx/volumeviz/discussions)
+- Describe the use case and expected behavior
+- Consider implementation complexity
+- Check for existing similar requests
 
-1. Fork the repository on GitHub
-2. Clone your fork locally:
-   ```bash
-   git clone https://github.com/your-username/volumeviz.git
-   cd volumeviz
-   ```
-3. Add the upstream repository:
-   ```bash
-   git remote add upstream https://github.com/mantonx/volumeviz.git
-   ```
-4. Create a new branch for your feature/fix:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+### 💻 Code Contributions
+- Bug fixes and improvements
+- New features and enhancements
+- Performance optimizations
+- Documentation improvements
 
-## Development Process
+### 📚 Documentation
+- API documentation improvements
+- Tutorial and guide creation
+- Code comments and inline documentation
+- Translation contributions
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Go 1.21+
-- Node.js 18+ and npm 9+
-- Docker 20.10+ and Docker Compose 2.0+
-- PostgreSQL 15+ (or use Docker)
+Before contributing, ensure you have:
 
-### Setting Up Development Environment
+- **Go 1.21+** for backend development
+- **Node.js 18+** and **npm/yarn** for frontend development  
+- **Docker & Docker Compose** for local development
+- **PostgreSQL 15+** (optional, can use Docker)
+- **Git** for version control
 
-1. **Backend Setup**:
-   ```bash
-   go mod download
-   make run-backend
-   ```
+### Development Environment Setup
 
-2. **Frontend Setup**:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-3. **Database Setup**:
-   ```bash
-   docker compose up -d postgres
-   make migrate
-   ```
-
-### Code Style
-
-#### Go Code Style
-- Follow standard Go formatting (use `gofmt`)
-- Use meaningful variable and function names
-- Add comments for exported functions and types
-- Keep functions small and focused
-- Run `make lint` before committing
-
-#### JavaScript/React Code Style
-- Use ESLint and Prettier configurations provided
-- Follow React best practices and hooks guidelines
-- Use functional components with hooks
-- Keep components small and reusable
-- Run `npm run lint` and `npm run format` before committing
-
-### Testing
-
-#### Writing Tests
-- Write unit tests for new functionality
-- Maintain or improve code coverage
-- Use table-driven tests in Go where appropriate
-- Use React Testing Library for frontend tests
-
-#### Running Tests
+#### 1. Fork and Clone
 ```bash
-# Backend tests
+# Fork the repository on GitHub, then clone your fork
+git clone https://github.com/YOUR_USERNAME/volumeviz.git
+cd volumeviz
+
+# Add upstream remote
+git remote add upstream https://github.com/mantonx/volumeviz.git
+```
+
+#### 2. Install Dependencies
+```bash
+# Install Go dependencies
+go mod download
+
+# Install frontend dependencies
+cd frontend && npm install
+cd ..
+
+# Install development tools
+make install-dev-tools
+```
+
+#### 3. Start Development Environment
+```bash
+# Option 1: Full development setup with PostgreSQL
+make dev-start
+
+# Option 2: Quick SQLite setup
+make dev-sqlite
+
+# Verify setup
+make test
+```
+
+#### 4. Verify Installation
+```bash
+# Backend health check
+curl http://localhost:8080/health
+
+# Frontend development server
+open http://localhost:3000
+```
+
+## 🏗️ Development Workflow
+
+### Branch Strategy
+
+We use a **Git Flow** inspired branching strategy:
+
+- `main`: Stable production code
+- `develop`: Integration branch for development
+- `feature/*`: Feature development branches
+- `bugfix/*`: Bug fix branches
+- `hotfix/*`: Critical production fixes
+
+### Creating a Feature Branch
+
+```bash
+# Update your local repository
+git checkout main
+git pull upstream main
+
+# Create and checkout feature branch
+git checkout -b feature/your-feature-name
+
+# Make your changes...
+
+# Push feature branch
+git push origin feature/your-feature-name
+```
+
+### Development Guidelines
+
+#### Backend Development (Go)
+
+**Code Organization**
+```
+internal/
+├── api/           # HTTP handlers and middleware
+├── core/          # Business logic and domain models  
+├── database/      # Database connections and transactions
+├── services/      # Service layer implementations
+├── store/         # Data access layer (SQLC generated)
+└── utils/         # Shared utilities
+```
+
+**Code Standards**
+- Follow standard Go conventions (`gofmt`, `go vet`)
+- Use meaningful variable and function names
+- Write comprehensive tests for new functionality
+- Add comments for public interfaces and complex logic
+- Handle errors explicitly and appropriately
+
+**Database Changes**
+```bash
+# Create new migration
+migrate create -ext sql -dir migrations -seq description_of_change
+
+# Edit migration files
+# migrations/NNNNNN_description_of_change.up.sql
+# migrations/NNNNNN_description_of_change.down.sql
+
+# Test migration
+make migrate-up
+make migrate-down
+make migrate-up
+```
+
+**SQLC Queries**
+```sql
+-- Add queries to internal/repo/queries/*.sql
+-- name: GetExampleData :many
+SELECT id, name, created_at 
+FROM examples 
+WHERE user_id = $1
+ORDER BY created_at DESC;
+```
+
+```bash
+# Generate Go code from SQL
+make generate-sqlc
+```
+
+#### Frontend Development (React/TypeScript)
+
+**Code Organization**
+```
+frontend/src/
+├── components/    # Reusable UI components
+├── pages/         # Page-level components
+├── hooks/         # Custom React hooks
+├── services/      # API clients and external services
+├── utils/         # Helper functions and utilities
+└── types/         # TypeScript type definitions
+```
+
+**Code Standards**
+- Use TypeScript for all new code
+- Follow React functional component patterns
+- Use custom hooks for stateful logic
+- Implement proper error boundaries
+- Write accessible components (ARIA attributes)
+- Use meaningful component and prop names
+
+**API Integration**
+```typescript
+// Use generated API client
+import { DefaultApi, Configuration } from '../services/api';
+
+const apiConfig = new Configuration({
+  basePath: process.env.REACT_APP_API_URL
+});
+
+const api = new DefaultApi(apiConfig);
+```
+
+### Code Quality Standards
+
+#### Testing Requirements
+
+**Backend Testing**
+```bash
+# Run all tests
 make test
 
-# Frontend tests
+# Run tests with coverage
+make test-coverage
+
+# Run specific test package
+go test ./internal/services/...
+```
+
+**Test Structure**
+```go
+func TestExampleFunction(t *testing.T) {
+    // Arrange
+    input := "test input"
+    expected := "expected output"
+    
+    // Act  
+    result := ExampleFunction(input)
+    
+    // Assert
+    if result != expected {
+        t.Errorf("Expected %s, got %s", expected, result)
+    }
+}
+```
+
+**Frontend Testing**
+```bash
+# Run frontend tests
 cd frontend && npm test
 
-# Integration tests
-make test-integration
+# Run with coverage
+npm run test:coverage
 
-# All tests
-make test-all
+# Run e2e tests
+npm run test:e2e
 ```
 
-#### Coverage Gate (CI)
-- Backend CI enforces a minimum total Go test coverage of 60%.
-- PRs that drop total coverage below 60% will fail with a clear message showing the measured percentage.
-- You can generate coverage locally with:
-  ```bash
-  go test -race -covermode=atomic -coverprofile=coverage.out -v ./...
-  go tool cover -func=coverage.out | tail -n1
-  ```
+#### Linting and Formatting
 
-### Database and SQL Guidelines
-
-#### sqlc Code Generation
-VolumeViz uses [sqlc](https://sqlc.dev) for type-safe SQL queries. After modifying any `.sql` files in `internal/store/queries/`, you must regenerate the Go code:
-
+**Backend**
 ```bash
-make sqlc
+# Format code
+make fmt
+
+# Run linter
+make lint
+
+# Fix linting issues
+make lint-fix
 ```
 
-Or manually:
+**Frontend**
 ```bash
-sqlc generate
+cd frontend
+
+# Format code
+npm run format
+
+# Run linter  
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
 ```
 
-#### SQL File Organization
-- Place PostgreSQL queries in `internal/store/queries/postgres/`
-- Place SQLite queries in `internal/store/queries/sqlite/`
-- Group related queries in the same file (e.g., `file_entries.sql`, `dir_nodes.sql`)
-- Use consistent query names across both dialects when possible
+### Performance Guidelines
 
-#### SQL Query Guidelines
-1. **Naming Convention**: Use descriptive names for queries
-   ```sql
-   -- name: GetFileEntriesByVolume :many
-   SELECT * FROM file_entries WHERE volume_id = $1;
+#### Database Performance
+- Use indexed columns in WHERE clauses
+- Implement pagination for large result sets
+- Use EXPLAIN ANALYZE to optimize queries
+- Consider connection pooling settings
+
+#### API Performance
+- Implement request/response compression
+- Use appropriate HTTP status codes
+- Cache frequently accessed data
+- Rate limit expensive operations
+
+#### Frontend Performance
+- Lazy load components and routes
+- Optimize bundle size with tree shaking
+- Use React.memo for expensive components
+- Implement virtual scrolling for large lists
+
+## 🔍 Pull Request Process
+
+### Before Submitting
+
+1. **Ensure code quality**
+   ```bash
+   # Run full test suite
+   make test
+   make test-frontend
+   
+   # Check code formatting
+   make lint
+   make lint-frontend
+   
+   # Build successfully
+   make build
    ```
 
-2. **Parameter Placeholders**: 
-   - PostgreSQL: Use `$1`, `$2`, etc.
-   - SQLite: Use `?` placeholders
+2. **Update documentation**
+   - Add/update API documentation for new endpoints
+   - Update README if adding major features
+   - Add inline code documentation
 
-3. **Comments**: Document complex queries
-   ```sql
-   -- name: GetDirectoryTree :many
-   -- Recursively fetch directory tree up to specified depth
-   WITH RECURSIVE dir_tree AS (...)
-   ```
+3. **Test thoroughly**
+   - Test happy path scenarios
+   - Test error conditions
+   - Test edge cases
+   - Verify backward compatibility
 
-4. **Performance**: Consider indexes and query plans
-   - Add appropriate indexes in migration files
-   - Test query performance with realistic data volumes
+### Pull Request Template
 
-5. **Bulk Operations**:
-   - PostgreSQL: Use `COPY` operations via `pgx.CopyFrom` for >1000 rows
-   - SQLite: Use multi-row INSERT with batches respecting the 999 parameter limit
+```markdown
+## Description
+Brief description of changes and motivation.
 
-#### Review Checklist for SQL Changes
-- [ ] Run `make sqlc` after modifying queries
-- [ ] Ensure generated code compiles without errors
-- [ ] Add/update tests for new queries
-- [ ] Consider performance implications
-- [ ] Document complex queries with comments
-- [ ] Maintain consistency between PostgreSQL and SQLite versions
+## Type of Change
+- [ ] Bug fix (non-breaking change)
+- [ ] New feature (non-breaking change)
+- [ ] Breaking change (fix or feature causing existing functionality to change)
+- [ ] Documentation update
 
-### Commit Guidelines
+## Testing
+- [ ] Unit tests pass
+- [ ] Integration tests pass
+- [ ] Manual testing completed
+- [ ] Performance impact assessed
 
-We follow the Conventional Commits specification:
-
-```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
+## Checklist
+- [ ] Code follows style guidelines
+- [ ] Self-review completed
+- [ ] Documentation updated
+- [ ] Tests added/updated
+- [ ] No new linting errors
 ```
 
-Types:
-- `feat`: New feature
-- `fix`: Bug fix
+### Review Process
+
+1. **Automated Checks**: CI pipeline runs tests and linting
+2. **Code Review**: Maintainer review for code quality and design
+3. **Testing**: Feature testing in development environment
+4. **Approval**: At least one maintainer approval required
+5. **Merge**: Squash and merge into target branch
+
+## 📋 Development Guidelines
+
+### Commit Message Convention
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types:**
+- `feat`: New features
+- `fix`: Bug fixes  
 - `docs`: Documentation changes
-- `style`: Code style changes (formatting, etc.)
+- `style`: Code formatting (no logic changes)
 - `refactor`: Code refactoring
-- `test`: Adding or updating tests
+- `test`: Adding or fixing tests
 - `chore`: Maintenance tasks
-- `perf`: Performance improvements
 
-Example:
+**Examples:**
 ```
-feat(api): add container filtering endpoint
+feat(api): add volume analytics endpoint
 
-Add new endpoint /api/v1/containers/filter that allows
-filtering containers by status, name, and labels.
+fix(frontend): resolve memory leak in chart component
 
-Closes #123
+docs: update API documentation for v1.2
+
+test: add integration tests for volume scanner
 ```
 
-## Submitting Changes
+### Code Review Guidelines
 
-### Pull Request Process
+#### As a Reviewer
+- **Be constructive**: Provide specific, actionable feedback
+- **Be timely**: Review within 2-3 business days
+- **Check thoroughly**: Verify functionality, performance, and security
+- **Suggest improvements**: Offer alternative approaches when beneficial
 
-1. Update your branch with the latest upstream changes:
-   ```bash
-   git fetch upstream
-   git rebase upstream/main
-   ```
+#### As a Contributor
+- **Respond promptly**: Address review comments within 1-2 business days
+- **Ask questions**: Clarify unclear feedback
+- **Be open**: Accept constructive criticism positively
+- **Test changes**: Verify fixes before requesting re-review
 
-2. Run all tests and ensure they pass:
-   ```bash
-   make test-all
-   ```
+### Security Considerations
 
-3. Update documentation if needed
+- Never commit secrets, API keys, or passwords
+- Validate all user inputs
+- Use parameterized queries for database operations
+- Follow OWASP security guidelines
+- Report security vulnerabilities privately (see SECURITY.md)
 
-4. Push your branch to your fork:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
+## 🎉 Recognition
 
-5. Create a Pull Request on GitHub
+### Contributors
 
-### Pull Request Guidelines
+We recognize contributors through:
+- **Contributor List**: README.md acknowledgment
+- **Release Notes**: Feature contributor attribution  
+- **Special Recognition**: Outstanding contribution highlights
 
-- Give your PR a descriptive title
-- Reference any related issues
-- Describe what changes you've made
-- Include screenshots for UI changes
-- Ensure all CI checks pass
-- Request review from maintainers
+### Maintainer Track
 
-### Code Review Process
+Interested in becoming a maintainer?
+- Consistent high-quality contributions
+- Help with code reviews and issue triage
+- Community engagement and support
+- Technical expertise in project areas
 
-- All submissions require review before merging
-- Reviewers will provide feedback on code quality, design, and implementation
-- Address review comments and push updates
-- Once approved, a maintainer will merge your PR
+## 📞 Getting Help
 
-## Architecture Decisions
+### Community Support
+- **GitHub Discussions**: General questions and community help
+- **Discord**: Real-time chat with contributors (coming soon)
+- **Stack Overflow**: Tag questions with `volumeviz`
 
-### Backend Architecture
-- Use clean architecture principles
-- Separate concerns: handlers, services, repositories
-- Use dependency injection
-- Follow SOLID principles
+### Direct Contact
+- **Maintainer Team**: maintainers@volumeviz.dev
+- **Technical Questions**: dev@volumeviz.dev
+- **Security Issues**: security@volumeviz.dev
 
-### Frontend Architecture
-- Component-based architecture
-- Separate presentational and container components
-- Use custom hooks for reusable logic
-- Centralize API calls in service modules
+### Documentation Resources
+- **API Documentation**: `/docs/api`
+- **Architecture Guide**: `/docs/adr`  
+- **Development Setup**: `/docs/development`
 
-## Documentation
+---
 
-### Code Documentation
-- Document all exported functions and types
-- Include examples in documentation where helpful
-- Keep documentation up-to-date with code changes
+## 📝 License
 
-### API Documentation
-- Update OpenAPI/Swagger documentation for API changes
-- Include request/response examples
-- Document error responses
+By contributing to VolumeViz, you agree that your contributions will be licensed under the MIT License.
 
-## Release Process
+---
 
-1. Version numbers follow Semantic Versioning (SemVer)
-2. Releases are created from the main branch
-3. Each release includes:
-   - Compiled binaries for major platforms
-   - Docker images
-   - Release notes with changes
+**Thank you for contributing to VolumeViz! 🚀**
 
-## Getting Help
-
-- Create an issue for bugs or feature requests
-- Join our Discord server for discussions
-- Check existing issues before creating new ones
-- Use issue templates when available
-
-## Recognition
-
-Contributors will be recognized in:
-- The project README
-- Release notes
-- Our website (when applicable)
-
-Thank you for contributing to VolumeViz!
+*This guide is updated regularly. For the latest information, always refer to the version in the main branch.*

@@ -1,76 +1,113 @@
 # VolumeViz Documentation
 
-Welcome to the VolumeViz documentation! This directory contains all technical documentation for the VolumeViz Docker volume visualization and management tool.
+Welcome to the comprehensive documentation for VolumeViz, the enterprise-grade Docker volume analytics and visualization platform.
 
-## Documentation Structure
+## 📚 Documentation Overview
 
-### 📁 [Architecture](./architecture/)
-System design and architectural decisions
-- [Docker Events Architecture](./architecture/DOCKER_EVENTS.md) - Event handling system design
+This documentation is organized into several key sections to help you understand, deploy, and contribute to VolumeViz.
 
-### 📁 [Development](./development/)
-Developer guides and setup instructions
-- [Development Environment](./DEVELOPMENT_ENVIRONMENT.md) - Setting up your dev environment
-- [Dev Environment Summary](./DEV_ENVIRONMENT_SUMMARY.md) - Quick setup reference
-- [Branch Protection](./BRANCH_PROTECTION.md) - Git branch policies
-- [Dependabot Auto-merge](./development/DEPENDABOT_AUTOMERGE.md) - Automated dependency management
+### 🚀 Getting Started
+- [Quick Start Guide](getting-started/quickstart.md) - Get up and running in 5 minutes
+- [Installation Guide](getting-started/installation.md) - Detailed installation instructions
+- [Configuration Guide](getting-started/configuration.md) - Environment and deployment configuration
+- [First Steps](getting-started/first-steps.md) - Your first volume analysis
 
-### 📁 [Implementation](./implementation/)
-Technical implementation details and decisions
-- [Store Package Refactor](./implementation/STORE_REFACTOR.md) - Domain-driven store architecture
-- [Docker Events Implementation](./implementation/DOCKER_EVENTS_IMPLEMENTATION.md) - Event system implementation
-- [SQLC Implementation](./implementation/SQLC_IMPLEMENTATION.md) - SQL code generation setup
-- [SQLC Phase 1 Summary](./implementation/SQLC_PHASE1_READS_SUMMARY.md) - Initial SQLC migration
-- [Snapshots Implementation](./implementation/SNAPSHOTS_IMPLEMENTATION_SUMMARY.md) - Usage snapshots system
-- [Rollup Compute](./implementation/ROLLUP_COMPUTE_IMPLEMENTATION.md) - Directory rollup computation
-- [Scan Scheduler](./implementation/SCAN_SCHEDULER.md) - Volume scanning scheduler
-- [Bulk Ingest Performance](./implementation/BULK_INGEST_PERFORMANCE.md) - Optimized bulk operations
+### 🏗️ Architecture
+- [System Architecture](architecture/overview.md) - High-level system design
+- [Database Design](architecture/database.md) - Schema and data model
+- [API Architecture](architecture/api.md) - RESTful API design principles
+- [Frontend Architecture](architecture/frontend.md) - React application structure
+- [Security Architecture](architecture/security.md) - Security model and implementation
 
-### 📁 [API](./api/)
-API documentation and specifications
-- OpenAPI specification available at `/docs/openapi.yaml`
+### 📖 User Guide
+- [Dashboard Overview](user-guide/dashboard.md) - Main dashboard features
+- [Volume Explorer](user-guide/explorer.md) - File system navigation and analysis
+- [Analytics & Reports](user-guide/analytics.md) - Volume analytics and insights
+- [Alert Management](user-guide/alerts.md) - Setting up monitoring and alerts
+- [Search & Filtering](user-guide/search.md) - Advanced search capabilities
 
-### 📁 [Database](./database/)
-Database design and operations
-- [Database Overview](./DATABASE.md) - Schema and design decisions
-- [Database Performance](./DATABASE_PERFORMANCE.md) - Performance optimization guide
-- [SQLite Setup](./SQLITE_SETUP.md) - SQLite configuration
-- [Transactions Policy](./TRANSACTIONS_POLICY.md) - Transaction handling guidelines
-- [Bulk Ingestion](./BULK_INGESTION.md) - Bulk data import strategies
+### 🔌 API Reference
+- [API Overview](api/overview.md) - REST API introduction
+- [Authentication](api/authentication.md) - API authentication and authorization
+- [Explorer Endpoints](api/explorer.md) - File system browsing API
+- [Analytics Endpoints](api/analytics.md) - Volume statistics and metrics
+- [Metadata Endpoints](api/metadata.md) - File metadata operations
+- [Alert Endpoints](api/alerts.md) - Alert management API
+- [WebSocket API](api/websocket.md) - Real-time data streaming
 
-### 📁 [Deployment](./deployment/)
-Deployment and operational guides
-- [Docker API Setup](./DOCKER_API_SETUP.md) - Configuring Docker API access
-- [Performance Monitoring](./PERFORMANCE_MONITORING.md) - Monitoring and metrics
+### 🛠️ Development
+- [Development Setup](development/setup.md) - Local development environment
+- [Contributing Guide](development/contributing.md) - How to contribute to the project
+- [Code Standards](development/standards.md) - Coding conventions and best practices
+- [Testing Guide](development/testing.md) - Testing strategies and tools
+- [Database Development](development/database.md) - Working with migrations and queries
 
-### 📁 [Features](./features/)
-Feature-specific documentation
-- [Volume Scanning](./VOLUME_SCANNING.md) - Volume scanning functionality
-- [Backend WebSocket Requirements](./BACKEND_WEBSOCKET_REQUIREMENTS.md) - Real-time updates
+### 🚢 Deployment
+- [Docker Deployment](deployment/docker.md) - Container-based deployment
+- [Kubernetes Deployment](deployment/kubernetes.md) - Cloud-native deployment
+- [Production Guide](deployment/production.md) - Production deployment best practices
+- [Monitoring & Observability](deployment/monitoring.md) - System monitoring setup
+- [Backup & Recovery](deployment/backup.md) - Data backup and disaster recovery
 
-### 📁 [ADR](./adr/)
-Architecture Decision Records
-- [ADR-0001: Persistence with sqlc and pgx](./adr/0001-persistence-sqlc-pgx.md)
+### 🔧 Operations
+- [Configuration Management](operations/configuration.md) - Runtime configuration
+- [Performance Tuning](operations/performance.md) - Optimization guidelines
+- [Troubleshooting](operations/troubleshooting.md) - Common issues and solutions
+- [Maintenance](operations/maintenance.md) - Regular maintenance tasks
+- [Scaling Guide](operations/scaling.md) - Horizontal and vertical scaling
 
-## Quick Links
+### 🎯 Use Cases
+- [Storage Optimization](use-cases/storage-optimization.md) - Identifying storage waste
+- [Compliance Monitoring](use-cases/compliance.md) - Regulatory compliance use cases
+- [Performance Analysis](use-cases/performance.md) - Volume performance insights
+- [Capacity Planning](use-cases/capacity-planning.md) - Future storage planning
 
-- [Main README](../README.md) - Project overview
-- [Contributing Guide](../CONTRIBUTING.md) - How to contribute
-- [Changelog](../CHANGELOG.md) - Release history
-- [Security Policy](../SECURITY.md) - Security guidelines
-- [Claude.md](../CLAUDE.md) - AI assistant context
+## 🔗 Quick Navigation
 
-## Recent Updates
+### For New Users
+1. Start with the [Quick Start Guide](getting-started/quickstart.md)
+2. Read the [Installation Guide](getting-started/installation.md)
+3. Explore the [Dashboard Overview](user-guide/dashboard.md)
 
-- **Store Package Refactoring** - Complete domain-driven design refactor with split stores
-- **Container/Volume Mount Support** - Added full CRUD operations for containers and mounts
-- **golang-migrate Integration** - Professional migration management system
-- **JSON Serialization** - Proper handling of Labels/Options fields
-- **Interface Standardization** - All constructors return interface types
+### For Developers
+1. Review the [System Architecture](architecture/overview.md)
+2. Set up your [Development Environment](development/setup.md)
+3. Read the [Contributing Guide](development/contributing.md)
 
-## Getting Started
+### For System Administrators
+1. Study the [Production Guide](deployment/production.md)
+2. Configure [Monitoring & Observability](deployment/monitoring.md)
+3. Review [Security Architecture](architecture/security.md)
 
-1. Start with the [Development Environment](./DEVELOPMENT_ENVIRONMENT.md) guide
-2. Review the [Architecture](./architecture/) documentation
-3. Check implementation details in [Implementation](./implementation/)
-4. Follow the [Contributing Guide](../CONTRIBUTING.md) for making changes
+### For API Users
+1. Start with [API Overview](api/overview.md)
+2. Review [Authentication](api/authentication.md)
+3. Explore specific endpoint documentation
+
+## 📋 Documentation Standards
+
+This documentation follows these principles:
+
+- **Clarity**: Clear, concise language accessible to all skill levels
+- **Completeness**: Comprehensive coverage of all features and functionality
+- **Currency**: Regular updates to reflect the latest changes
+- **Consistency**: Standardized format and structure across all documents
+- **Practicality**: Real-world examples and use cases
+
+## 🤝 Contributing to Documentation
+
+We welcome contributions to improve this documentation:
+
+1. **Report Issues**: Found an error or unclear section? [Create an issue](https://github.com/mantonx/volumeviz/issues)
+2. **Suggest Improvements**: Have ideas for better organization or content? Start a [discussion](https://github.com/mantonx/volumeviz/discussions)
+3. **Submit Changes**: Ready to contribute? See our [Contributing Guide](development/contributing.md)
+
+## 📞 Getting Help
+
+- **GitHub Issues**: Bug reports and feature requests
+- **GitHub Discussions**: Questions and community support
+- **Documentation Feedback**: Suggestions for documentation improvements
+
+---
+
+*This documentation is maintained by the VolumeViz community and updated regularly to reflect the latest features and best practices.*
