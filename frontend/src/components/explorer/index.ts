@@ -1,2 +1,1 @@
-export { ExplorerView } from './ExplorerView';
-export { default } from './ExplorerView';
+export { ExplorerView, default } from './ExplorerView';

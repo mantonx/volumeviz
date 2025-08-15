@@ -430,7 +430,7 @@ func (db *DB) BeginTx() (*Tx, error) {
 	// Use the proper BeginTx with context to avoid bare transaction assignment
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	
+
 	sqlDB, err := db.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)

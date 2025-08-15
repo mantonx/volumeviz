@@ -40,9 +40,3 @@ type TxStore interface {
 	FileMetadata() *repo.FileMetadataRepo
 	Alerts() repo.AlertsRepo
 }
-
-
-
-
-
-

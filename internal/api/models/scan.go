@@ -2,8 +2,8 @@ package models
 
 // ScanStartRequest represents a request to start scanning a volume
 type ScanStartRequest struct {
-	VolumeID string `json:"volume_id" example:"tv-shows-readonly" binding:"required"`
-	FullScan bool   `json:"full_scan" example:"false"`
+	VolumeID string      `json:"volume_id" example:"tv-shows-readonly" binding:"required"`
+	FullScan bool        `json:"full_scan" example:"false"`
 	Options  ScanOptions `json:"options,omitempty"`
 } // @name ScanStartRequest
 
@@ -19,20 +19,20 @@ type ScanOptions struct {
 
 // FilesystemIndexingResponse represents filesystem indexing status
 type FilesystemIndexingResponse struct {
-	VolumeID        string  `json:"volume_id" example:"tv-shows"`
-	Status          string  `json:"status" example:"running" enums:"pending,running,completed,failed"`
-	Message         string  `json:"message,omitempty" example:"Indexing in progress"`
-	StartedAt       *string `json:"started_at,omitempty" example:"2023-01-01T10:00:00Z"`
-	LastUpdate      *string `json:"last_update,omitempty" example:"2023-01-01T10:30:00Z"`
-	FoldersScanned  int64   `json:"folders_scanned,omitempty" example:"150"`
-	FilesScanned    int64   `json:"files_scanned,omitempty" example:"2500"`
-	BytesProcessed  int64   `json:"bytes_processed,omitempty" example:"1073741824"`
-	ErrorsCount     int     `json:"errors_count,omitempty" example:"2"`
-	CurrentPath     string  `json:"current_path,omitempty" example:"/data/movies/action"`
-	CurrentDepth    int     `json:"current_depth,omitempty" example:"3"`
-	FoldersPerSec   float64 `json:"folders_per_sec,omitempty" example:"10.5"`
-	FilesPerSec     float64 `json:"files_per_sec,omitempty" example:"150.2"`
-	LastError       string  `json:"last_error,omitempty" example:"Permission denied on /data/restricted"`
+	VolumeID       string  `json:"volume_id" example:"tv-shows"`
+	Status         string  `json:"status" example:"running" enums:"pending,running,completed,failed"`
+	Message        string  `json:"message,omitempty" example:"Indexing in progress"`
+	StartedAt      *string `json:"started_at,omitempty" example:"2023-01-01T10:00:00Z"`
+	LastUpdate     *string `json:"last_update,omitempty" example:"2023-01-01T10:30:00Z"`
+	FoldersScanned int64   `json:"folders_scanned,omitempty" example:"150"`
+	FilesScanned   int64   `json:"files_scanned,omitempty" example:"2500"`
+	BytesProcessed int64   `json:"bytes_processed,omitempty" example:"1073741824"`
+	ErrorsCount    int     `json:"errors_count,omitempty" example:"2"`
+	CurrentPath    string  `json:"current_path,omitempty" example:"/data/movies/action"`
+	CurrentDepth   int     `json:"current_depth,omitempty" example:"3"`
+	FoldersPerSec  float64 `json:"folders_per_sec,omitempty" example:"10.5"`
+	FilesPerSec    float64 `json:"files_per_sec,omitempty" example:"150.2"`
+	LastError      string  `json:"last_error,omitempty" example:"Permission denied on /data/restricted"`
 } // @name FilesystemIndexingResponse
 
 // FilesystemIndexingRequest represents filesystem indexing request options
@@ -43,25 +43,25 @@ type FilesystemIndexingRequest struct {
 
 // FilesystemCapabilitiesResponse represents filesystem indexing capabilities
 type FilesystemCapabilitiesResponse struct {
-	Enabled                   bool             `json:"enabled" example:"true"`
-	Features                  map[string]bool  `json:"features"`
-	SupportedHashAlgorithms   []string         `json:"supported_hash_algorithms,omitempty" example:"sha256,md5"`
-	SupportedMediaKinds       []string         `json:"supported_media_kinds,omitempty" example:"image,video,audio"`
+	Enabled                 bool            `json:"enabled" example:"true"`
+	Features                map[string]bool `json:"features"`
+	SupportedHashAlgorithms []string        `json:"supported_hash_algorithms,omitempty" example:"sha256,md5"`
+	SupportedMediaKinds     []string        `json:"supported_media_kinds,omitempty" example:"image,video,audio"`
 } // @name FilesystemCapabilitiesResponse
 
 // MediaEnrichmentResponse represents media enrichment status
 type MediaEnrichmentResponse struct {
-	VolumeID        string  `json:"volume_id" example:"tv-shows"`
-	Status          string  `json:"status" example:"running" enums:"pending,running,completed,failed"`
-	Message         string  `json:"message,omitempty" example:"Enriching media files"`
-	StartedAt       *string `json:"started_at,omitempty" example:"2023-01-01T10:00:00Z"`
-	LastUpdate      *string `json:"last_update,omitempty" example:"2023-01-01T10:30:00Z"`
-	FilesProcessed  int64   `json:"files_processed,omitempty" example:"450"`
-	TotalFiles      int64   `json:"total_files,omitempty" example:"1000"`
-	ErrorsCount     int     `json:"errors_count,omitempty" example:"5"`
-	CurrentFile     string  `json:"current_file,omitempty" example:"/data/movies/action/movie.mp4"`
-	FilesPerSec     float64 `json:"files_per_sec,omitempty" example:"25.5"`
-	LastError       string  `json:"last_error,omitempty" example:"Unsupported codec in file"`
+	VolumeID       string  `json:"volume_id" example:"tv-shows"`
+	Status         string  `json:"status" example:"running" enums:"pending,running,completed,failed"`
+	Message        string  `json:"message,omitempty" example:"Enriching media files"`
+	StartedAt      *string `json:"started_at,omitempty" example:"2023-01-01T10:00:00Z"`
+	LastUpdate     *string `json:"last_update,omitempty" example:"2023-01-01T10:30:00Z"`
+	FilesProcessed int64   `json:"files_processed,omitempty" example:"450"`
+	TotalFiles     int64   `json:"total_files,omitempty" example:"1000"`
+	ErrorsCount    int     `json:"errors_count,omitempty" example:"5"`
+	CurrentFile    string  `json:"current_file,omitempty" example:"/data/movies/action/movie.mp4"`
+	FilesPerSec    float64 `json:"files_per_sec,omitempty" example:"25.5"`
+	LastError      string  `json:"last_error,omitempty" example:"Unsupported codec in file"`
 } // @name MediaEnrichmentResponse
 
 // MediaEnrichmentStatusResponse represents the status of media enrichment

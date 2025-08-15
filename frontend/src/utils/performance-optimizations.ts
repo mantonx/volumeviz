@@ -1,9 +1,9 @@
 /**
  * Performance Optimizations
- * 
+ *
  * Implements various performance optimization techniques:
  * - Indexed queries for tree operations
- * - Efficient pagination queries  
+ * - Efficient pagination queries
  * - Metadata query optimization
  * - Lazy loading for large directories
  * - Response compression support
@@ -15,7 +15,7 @@ export const treeIndexOptimization = {
   enabled: true,
   indexes: [
     'idx_folders_volume_parent',
-    'idx_folders_depth', 
+    'idx_folders_depth',
     'idx_folders_path_hash'
   ]
 };

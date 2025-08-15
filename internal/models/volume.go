@@ -39,20 +39,20 @@ type DockerHealth struct {
 
 // FilesystemIndexingResponse represents filesystem indexing status
 type FilesystemIndexingResponse struct {
-	VolumeID        string  `json:"volume_id"`
-	Status          string  `json:"status"`
-	Message         string  `json:"message,omitempty"`
-	StartedAt       *string `json:"started_at,omitempty"`
-	LastUpdate      *string `json:"last_update,omitempty"`
-	FoldersScanned  int64   `json:"folders_scanned,omitempty"`
-	FilesScanned    int64   `json:"files_scanned,omitempty"`
-	BytesProcessed  int64   `json:"bytes_processed,omitempty"`
-	ErrorsCount     int     `json:"errors_count,omitempty"`
-	CurrentPath     string  `json:"current_path,omitempty"`
-	CurrentDepth    int     `json:"current_depth,omitempty"`
-	FoldersPerSec   float64 `json:"folders_per_sec,omitempty"`
-	FilesPerSec     float64 `json:"files_per_sec,omitempty"`
-	LastError       string  `json:"last_error,omitempty"`
+	VolumeID       string  `json:"volume_id"`
+	Status         string  `json:"status"`
+	Message        string  `json:"message,omitempty"`
+	StartedAt      *string `json:"started_at,omitempty"`
+	LastUpdate     *string `json:"last_update,omitempty"`
+	FoldersScanned int64   `json:"folders_scanned,omitempty"`
+	FilesScanned   int64   `json:"files_scanned,omitempty"`
+	BytesProcessed int64   `json:"bytes_processed,omitempty"`
+	ErrorsCount    int     `json:"errors_count,omitempty"`
+	CurrentPath    string  `json:"current_path,omitempty"`
+	CurrentDepth   int     `json:"current_depth,omitempty"`
+	FoldersPerSec  float64 `json:"folders_per_sec,omitempty"`
+	FilesPerSec    float64 `json:"files_per_sec,omitempty"`
+	LastError      string  `json:"last_error,omitempty"`
 }
 
 // FilesystemIndexingRequest represents filesystem indexing request options
@@ -63,10 +63,10 @@ type FilesystemIndexingRequest struct {
 
 // FilesystemCapabilitiesResponse represents filesystem indexing capabilities
 type FilesystemCapabilitiesResponse struct {
-	Enabled                   bool             `json:"enabled"`
-	Features                  map[string]bool  `json:"features"`
-	SupportedHashAlgorithms   []string         `json:"supported_hash_algorithms,omitempty"`
-	SupportedMediaKinds       []string         `json:"supported_media_kinds,omitempty"`
+	Enabled                 bool            `json:"enabled"`
+	Features                map[string]bool `json:"features"`
+	SupportedHashAlgorithms []string        `json:"supported_hash_algorithms,omitempty"`
+	SupportedMediaKinds     []string        `json:"supported_media_kinds,omitempty"`
 }
 
 // ==============================================================================
@@ -75,17 +75,17 @@ type FilesystemCapabilitiesResponse struct {
 
 // MediaEnrichmentResponse represents media enrichment status
 type MediaEnrichmentResponse struct {
-	VolumeID        string  `json:"volume_id"`
-	Status          string  `json:"status"`
-	Message         string  `json:"message,omitempty"`
-	StartedAt       *string `json:"started_at,omitempty"`
-	LastUpdate      *string `json:"last_update,omitempty"`
-	FilesProcessed  int64   `json:"files_processed,omitempty"`
-	TotalFiles      int64   `json:"total_files,omitempty"`
-	ErrorsCount     int     `json:"errors_count,omitempty"`
-	CurrentFile     string  `json:"current_file,omitempty"`
-	FilesPerSec     float64 `json:"files_per_sec,omitempty"`
-	LastError       string  `json:"last_error,omitempty"`
+	VolumeID       string  `json:"volume_id"`
+	Status         string  `json:"status"`
+	Message        string  `json:"message,omitempty"`
+	StartedAt      *string `json:"started_at,omitempty"`
+	LastUpdate     *string `json:"last_update,omitempty"`
+	FilesProcessed int64   `json:"files_processed,omitempty"`
+	TotalFiles     int64   `json:"total_files,omitempty"`
+	ErrorsCount    int     `json:"errors_count,omitempty"`
+	CurrentFile    string  `json:"current_file,omitempty"`
+	FilesPerSec    float64 `json:"files_per_sec,omitempty"`
+	LastError      string  `json:"last_error,omitempty"`
 }
 
 // MediaEnrichmentStatusResponse represents the status of media enrichment
@@ -99,7 +99,7 @@ type MediaEnrichmentStatusResponse struct {
 	LastUpdate     *string `json:"last_update,omitempty"`
 	ErrorsCount    int     `json:"errors_count,omitempty"`
 	Message        string  `json:"message,omitempty"`
-}// Volume represents a Docker volume in the domain
+} // Volume represents a Docker volume in the domain
 type Volume struct {
 	ID          int64             `json:"id"`
 	VolumeID    string            `json:"volume_id"`
@@ -231,21 +231,21 @@ type ScanJob struct {
 
 // FileEntry represents a file entry in a volume scan
 type FileEntry struct {
-	ID          int64      `json:"id"`
-	VolumeID    string     `json:"volume_id"`
-	ParentDirID *int64     `json:"parent_dir_id,omitempty"`
-	Name        string     `json:"name"`
-	SizeBytes   int64      `json:"size_bytes"`
-	Mtime       time.Time  `json:"mtime"`
-	Ctime       time.Time  `json:"ctime"`
-	Inode       *int64     `json:"inode,omitempty"`
-	Uid         *int32     `json:"uid,omitempty"`
-	Gid         *int32     `json:"gid,omitempty"`
-	Type        string     `json:"type"`
-	Hidden      bool       `json:"hidden"`
-	PathHash    []byte     `json:"path_hash"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID          int64     `json:"id"`
+	VolumeID    string    `json:"volume_id"`
+	ParentDirID *int64    `json:"parent_dir_id,omitempty"`
+	Name        string    `json:"name"`
+	SizeBytes   int64     `json:"size_bytes"`
+	Mtime       time.Time `json:"mtime"`
+	Ctime       time.Time `json:"ctime"`
+	Inode       *int64    `json:"inode,omitempty"`
+	Uid         *int32    `json:"uid,omitempty"`
+	Gid         *int32    `json:"gid,omitempty"`
+	Type        string    `json:"type"`
+	Hidden      bool      `json:"hidden"`
+	PathHash    []byte    `json:"path_hash"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // DirNode represents a directory node in a volume scan
@@ -306,18 +306,18 @@ type ListVolumesParams struct {
 
 // CreateFileEntryParams represents parameters for creating a file entry
 type CreateFileEntryParams struct {
-	VolumeID    string     `json:"volume_id"`
-	ParentDirID *int64     `json:"parent_dir_id,omitempty"`
-	Name        string     `json:"name"`
-	SizeBytes   int64      `json:"size_bytes"`
-	Mtime       time.Time  `json:"mtime"`
-	Ctime       time.Time  `json:"ctime"`
-	Inode       *int64     `json:"inode,omitempty"`
-	Uid         *int32     `json:"uid,omitempty"`
-	Gid         *int32     `json:"gid,omitempty"`
-	Type        string     `json:"type"`
-	Hidden      bool       `json:"hidden"`
-	PathHash    []byte     `json:"path_hash"`
+	VolumeID    string    `json:"volume_id"`
+	ParentDirID *int64    `json:"parent_dir_id,omitempty"`
+	Name        string    `json:"name"`
+	SizeBytes   int64     `json:"size_bytes"`
+	Mtime       time.Time `json:"mtime"`
+	Ctime       time.Time `json:"ctime"`
+	Inode       *int64    `json:"inode,omitempty"`
+	Uid         *int32    `json:"uid,omitempty"`
+	Gid         *int32    `json:"gid,omitempty"`
+	Type        string    `json:"type"`
+	Hidden      bool      `json:"hidden"`
+	PathHash    []byte    `json:"path_hash"`
 }
 
 // ==============================================================================
@@ -326,56 +326,56 @@ type CreateFileEntryParams struct {
 
 // Folder represents a directory in the filesystem with rich metadata
 type Folder struct {
-	ID                       int64      `json:"id"`
-	ParentID                 *int64     `json:"parent_id,omitempty"`
-	VolumeID                 string     `json:"volume_id"`
-	Name                     string     `json:"name"`
-	Path                     string     `json:"path"`
-	PathHash                 []byte     `json:"path_hash"`
-	SizeBytesRecursive       int64      `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive  int64      `json:"disk_usage_bytes_recursive"`
-	FileCount                int64      `json:"file_count"`
-	DirCount                 int64      `json:"dir_count"`
-	Depth                    int32      `json:"depth"`
-	Mtime                    *time.Time `json:"mtime,omitempty"`
-	Ctime                    *time.Time `json:"ctime,omitempty"`
-	Uid                      *int32     `json:"uid,omitempty"`
-	Gid                      *int32     `json:"gid,omitempty"`
-	Mode                     *int32     `json:"mode,omitempty"`
-	IsSymlink                bool       `json:"is_symlink"`
-	SymlinkTarget            *string    `json:"symlink_target,omitempty"`
-	CreatedAt                time.Time  `json:"created_at"`
-	UpdatedAt                time.Time  `json:"updated_at"`
+	ID                      int64      `json:"id"`
+	ParentID                *int64     `json:"parent_id,omitempty"`
+	VolumeID                string     `json:"volume_id"`
+	Name                    string     `json:"name"`
+	Path                    string     `json:"path"`
+	PathHash                []byte     `json:"path_hash"`
+	SizeBytesRecursive      int64      `json:"size_bytes_recursive"`
+	DiskUsageBytesRecursive int64      `json:"disk_usage_bytes_recursive"`
+	FileCount               int64      `json:"file_count"`
+	DirCount                int64      `json:"dir_count"`
+	Depth                   int32      `json:"depth"`
+	Mtime                   *time.Time `json:"mtime,omitempty"`
+	Ctime                   *time.Time `json:"ctime,omitempty"`
+	Uid                     *int32     `json:"uid,omitempty"`
+	Gid                     *int32     `json:"gid,omitempty"`
+	Mode                    *int32     `json:"mode,omitempty"`
+	IsSymlink               bool       `json:"is_symlink"`
+	SymlinkTarget           *string    `json:"symlink_target,omitempty"`
+	CreatedAt               time.Time  `json:"created_at"`
+	UpdatedAt               time.Time  `json:"updated_at"`
 }
 
 // File represents a file in the filesystem with rich metadata
 type File struct {
-	ID               int64      `json:"id"`
-	FolderID         int64      `json:"folder_id"`
-	VolumeID         string     `json:"volume_id"`
-	Name             string     `json:"name"`
-	Path             string     `json:"path"`
-	Extension        *string    `json:"extension,omitempty"`
-	SizeBytes        int64      `json:"size_bytes"`
-	DiskUsageBytes   int64      `json:"disk_usage_bytes"`
-	Mtime            *time.Time `json:"mtime,omitempty"`
-	Ctime            *time.Time `json:"ctime,omitempty"`
-	Birthtime        *time.Time `json:"birthtime,omitempty"`
-	Uid              *int32     `json:"uid,omitempty"`
-	Gid              *int32     `json:"gid,omitempty"`
-	Mode             *int32     `json:"mode,omitempty"`
-	Inode            *int64     `json:"inode,omitempty"`
-	Device           *string    `json:"device,omitempty"`
-	IsSymlink        bool       `json:"is_symlink"`
-	SymlinkTarget    *string    `json:"symlink_target,omitempty"`
-	Mime             *string    `json:"mime,omitempty"`
-	MediaKind        *string    `json:"media_kind,omitempty"`
-	Encoding         *string    `json:"encoding,omitempty"`
-	HashAlgo         *string    `json:"hash_algo,omitempty"`
-	Hash             []byte     `json:"hash,omitempty"`
-	PathHash         []byte     `json:"path_hash"`
-	CreatedAt        time.Time  `json:"created_at"`
-	UpdatedAt        time.Time  `json:"updated_at"`
+	ID             int64      `json:"id"`
+	FolderID       int64      `json:"folder_id"`
+	VolumeID       string     `json:"volume_id"`
+	Name           string     `json:"name"`
+	Path           string     `json:"path"`
+	Extension      *string    `json:"extension,omitempty"`
+	SizeBytes      int64      `json:"size_bytes"`
+	DiskUsageBytes int64      `json:"disk_usage_bytes"`
+	Mtime          *time.Time `json:"mtime,omitempty"`
+	Ctime          *time.Time `json:"ctime,omitempty"`
+	Birthtime      *time.Time `json:"birthtime,omitempty"`
+	Uid            *int32     `json:"uid,omitempty"`
+	Gid            *int32     `json:"gid,omitempty"`
+	Mode           *int32     `json:"mode,omitempty"`
+	Inode          *int64     `json:"inode,omitempty"`
+	Device         *string    `json:"device,omitempty"`
+	IsSymlink      bool       `json:"is_symlink"`
+	SymlinkTarget  *string    `json:"symlink_target,omitempty"`
+	Mime           *string    `json:"mime,omitempty"`
+	MediaKind      *string    `json:"media_kind,omitempty"`
+	Encoding       *string    `json:"encoding,omitempty"`
+	HashAlgo       *string    `json:"hash_algo,omitempty"`
+	Hash           []byte     `json:"hash,omitempty"`
+	PathHash       []byte     `json:"path_hash"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
 // CreateFolderParams represents parameters for creating a folder
@@ -424,23 +424,23 @@ type CreateFileParams struct {
 
 // FolderStats represents folder statistics
 type FolderStats struct {
-	TotalFolders        int64   `json:"total_folders"`
-	RootFolders         int64   `json:"root_folders"`
-	MaxDepth            *int32  `json:"max_depth,omitempty"`
-	AvgFilesPerFolder   *float64 `json:"avg_files_per_folder,omitempty"`
-	TotalSize           *int64  `json:"total_size,omitempty"`
-	LargestFolderSize   *int64  `json:"largest_folder_size,omitempty"`
+	TotalFolders      int64    `json:"total_folders"`
+	RootFolders       int64    `json:"root_folders"`
+	MaxDepth          *int32   `json:"max_depth,omitempty"`
+	AvgFilesPerFolder *float64 `json:"avg_files_per_folder,omitempty"`
+	TotalSize         *int64   `json:"total_size,omitempty"`
+	LargestFolderSize *int64   `json:"largest_folder_size,omitempty"`
 }
 
 // FileStats represents file statistics
 type FileStats struct {
-	TotalFiles         int64   `json:"total_files"`
-	TotalSize          *int64  `json:"total_size,omitempty"`
-	AvgFileSize        *float64 `json:"avg_file_size,omitempty"`
-	LargestFile        *int64  `json:"largest_file,omitempty"`
-	UniqueExtensions   int64   `json:"unique_extensions"`
-	UniqueMediaKinds   int64   `json:"unique_media_kinds"`
-	HashedFiles        int64   `json:"hashed_files"`
+	TotalFiles       int64    `json:"total_files"`
+	TotalSize        *int64   `json:"total_size,omitempty"`
+	AvgFileSize      *float64 `json:"avg_file_size,omitempty"`
+	LargestFile      *int64   `json:"largest_file,omitempty"`
+	UniqueExtensions int64    `json:"unique_extensions"`
+	UniqueMediaKinds int64    `json:"unique_media_kinds"`
+	HashedFiles      int64    `json:"hashed_files"`
 }
 
 // MediaKindStat represents statistics for a media kind

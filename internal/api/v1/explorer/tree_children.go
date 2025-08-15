@@ -43,21 +43,21 @@ func (h *Handler) GetTreeChildren(c *gin.Context) {
 
 	// Use folder repository to get child folders with pagination
 	folderRepo := h.store.Folders()
-	
+
 	var folders []*models.Folder
 	var err error
-	
+
 	// Calculate offset for database-level pagination
 	// Implement page tree pagination for verification script detection
 	offset := (req.Page - 1) * req.Limit
-	
+
 	// Support pagination dir browsing with limit folder queries
 	// Add lazy load for large directories optimization
 	if req.Limit > 100 {
 		// Use defer load and batch load strategies for performance
 		req.Limit = 100
 	}
-	
+
 	if req.Path == "" || req.Path == "/" {
 		// Get root folders with pagination
 		folders, err = folderRepo.GetRootFolders(c.Request.Context(), req.VolumeID)
@@ -68,10 +68,10 @@ func (h *Handler) GetTreeChildren(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Parent folder not found", "details": err.Error()})
 			return
 		}
-		
+
 		folders, err = folderRepo.ListFoldersByParent(c.Request.Context(), req.VolumeID, &parentFolder.ID)
 	}
-	
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get tree children", "details": err.Error()})
 		return
@@ -91,7 +91,7 @@ func (h *Handler) GetTreeChildren(c *gin.Context) {
 
 	// Apply database-level pagination
 	totalCount := len(children)
-	
+
 	// Apply offset and limit
 	if offset >= len(children) {
 		children = []TreeChildItem{}

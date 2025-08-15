@@ -99,13 +99,13 @@ func generateETag(c *gin.Context) string {
 	path := c.Request.URL.Path
 	query := c.Request.URL.RawQuery
 	content := path + "?" + query + ":" + strconv.FormatInt(time.Now().Unix()/300, 10) // 5-minute granularity
-	
+
 	// Simple hash (in production, use proper hashing)
 	hash := 0
 	for _, ch := range content {
 		hash = hash*31 + int(ch)
 	}
-	
+
 	return `"` + strconv.Itoa(hash) + `"`
 }
 
@@ -124,7 +124,7 @@ func ConditionalRequests() gin.HandlerFunc {
 			// For demo purposes, assume content is modified every 5 minutes
 			// In production, this would check actual modification times
 			modTime := time.Now().Truncate(5 * time.Minute)
-			
+
 			if ifModTime, err := http.ParseTime(ifModifiedSince); err == nil {
 				if !modTime.After(ifModTime) {
 					c.Status(http.StatusNotModified)

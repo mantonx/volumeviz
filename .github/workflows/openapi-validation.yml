@@ -3,17 +3,17 @@ name: OpenAPI Validation
 on:
   pull_request:
     paths:
-      - "docs/openapi.yaml"
-      - "docs/swagger.json"
-      - ".github/workflows/openapi-validation.yml"
-      - "frontend/src/api/**"
+      - 'docs/openapi.yaml'
+      - 'docs/swagger.json'
+      - '.github/workflows/openapi-validation.yml'
+      - 'frontend/src/api/**'
   push:
     branches: [main]
     paths:
-      - "docs/openapi.yaml"
-      - "docs/swagger.json" 
-      - ".github/workflows/openapi-validation.yml"
-      - "frontend/src/api/**"
+      - 'docs/openapi.yaml'
+      - 'docs/swagger.json'
+      - '.github/workflows/openapi-validation.yml'
+      - 'frontend/src/api/**'
 
 jobs:
   validate-openapi:
@@ -28,9 +28,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: "frontend/package-lock.json"
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
 
       - name: Install OpenAPI tools
         run: |
@@ -49,10 +49,10 @@ jobs:
       - name: Check swagger.json is in sync with openapi.yaml
         run: |
           echo "🔄 Checking if swagger.json is in sync with openapi.yaml..."
-          
+
           # Convert YAML to JSON for comparison
           npx js-yaml docs/openapi.yaml > temp_openapi.json
-          
+
           # Compare with existing swagger.json (ignoring whitespace differences)
           if ! diff -u --ignore-all-space docs/swagger.json temp_openapi.json; then
             echo "❌ swagger.json is out of sync with openapi.yaml"
@@ -62,7 +62,7 @@ jobs:
           else
             echo "✅ swagger.json is in sync with openapi.yaml"
           fi
-          
+
           rm temp_openapi.json
 
       - name: Install frontend dependencies
@@ -79,7 +79,7 @@ jobs:
         working-directory: frontend
         run: |
           echo "🔍 Checking if generated TypeScript client is up to date..."
-          
+
           if git diff --exit-code src/api/generated/; then
             echo "✅ Generated TypeScript client is up to date"
           else
@@ -101,25 +101,25 @@ jobs:
         working-directory: frontend
         run: |
           echo "🌲 Testing tree-shaking capability..."
-          
+
           # Create a test file that imports only specific parts
           cat > tree-shake-test.ts << 'EOF'
           import { Volume, VolumeApi } from './src/api/generated/volumeviz-api';
-          
+
           // Test that we can import specific types and APIs
           const volume: Volume = {
             name: 'test',
             driver: 'local',
             created_at: new Date().toISOString()
           };
-          
+
           const api = new VolumeApi();
           console.log('Tree-shaking test passed');
           EOF
-          
+
           # Try to compile the test file
           npx tsc tree-shake-test.ts --noEmit --skipLibCheck
-          
+
           echo "✅ Tree-shaking test passed"
           rm tree-shake-test.ts
 
@@ -157,9 +157,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: "frontend/package-lock.json"
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
 
       - name: Build backend
         run: |
@@ -196,7 +196,7 @@ jobs:
           ./volumeviz &
           SERVER_PID=$!
           echo $SERVER_PID > server.pid
-          
+
           # Wait for server to be ready
           echo "⏳ Waiting for server to be ready..."
           timeout 30s bash -c 'until curl -f http://localhost:8080/api/v1/health; do sleep 1; done'
@@ -205,15 +205,15 @@ jobs:
       - name: Verify OpenAPI spec endpoint
         run: |
           echo "🔍 Verifying OpenAPI spec is served correctly..."
-          
+
           # Test that the spec endpoint returns valid JSON/YAML
           curl -f http://localhost:8080/api/docs/openapi.yaml > served_spec.yaml
           curl -f http://localhost:8080/api/docs/swagger.json > served_swagger.json
-          
+
           # Validate the served spec
           npx js-yaml served_spec.yaml > /dev/null
           echo "✅ Served OpenAPI spec is valid YAML"
-          
+
           # Basic validation that served spec matches repo spec
           if diff -u docs/openapi.yaml served_spec.yaml; then
             echo "✅ Served spec matches repository spec"
@@ -228,11 +228,11 @@ jobs:
           # Test generated client integration with API
           node <<EOF
           const { Api, Configuration } = require('./frontend/src/api/generated/Api.js');
-          
+
           const config = new Configuration({
             basePath: 'http://localhost:8080/api/v1'
           });
-          
+
           const api = new Api(config);
           console.log('✅ Generated client integration test completed');
 
@@ -241,7 +241,7 @@ jobs:
           echo "🔍 Checking for stale check and drift in generated artifacts..."
           git status --porcelain frontend/src/api/generated/
 
-      - name: Contract tests for API endpoints  
+      - name: Contract tests for API endpoints
         run: |
           echo "🔍 Running API contract test and integration test..."
           curl -f http://localhost:8080/api/v1/health || exit 1

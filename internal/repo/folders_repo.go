@@ -29,7 +29,7 @@ func NewFoldersRepo(db sqlc.DBTX) *FoldersRepo {
 // CreateFolder creates a new folder record
 func (r *FoldersRepo) CreateFolder(ctx context.Context, params models.CreateFolderParams) (*models.Folder, error) {
 	pathHash := sha256.Sum256([]byte(params.Path))
-	
+
 	result, err := r.queries.CreateFolder(ctx, sqlc.CreateFolderParams{
 		ParentID:      int64PtrToPgInt8(params.ParentID),
 		VolumeID:      params.VolumeID,
@@ -65,7 +65,7 @@ func (r *FoldersRepo) GetFolderByID(ctx context.Context, id int64) (*models.Fold
 // GetFolderByPath retrieves a folder by volume ID and path
 func (r *FoldersRepo) GetFolderByPath(ctx context.Context, volumeID, path string) (*models.Folder, error) {
 	pathHash := sha256.Sum256([]byte(path))
-	
+
 	folder, err := r.queries.GetFolderByPath(ctx, sqlc.GetFolderByPathParams{
 		VolumeID: volumeID,
 		PathHash: pathHash[:],
@@ -163,7 +163,7 @@ func (r *FoldersRepo) GetFoldersWithMostFiles(ctx context.Context, volumeID stri
 // UpsertFolder creates or updates a folder
 func (r *FoldersRepo) UpsertFolder(ctx context.Context, params models.CreateFolderParams) (*models.Folder, error) {
 	pathHash := sha256.Sum256([]byte(params.Path))
-	
+
 	result, err := r.queries.UpsertFolder(ctx, sqlc.UpsertFolderParams{
 		ParentID:      int64PtrToPgInt8(params.ParentID),
 		VolumeID:      params.VolumeID,
@@ -230,12 +230,12 @@ func (r *FoldersRepo) GetFolderStats(ctx context.Context, volumeID string) (*mod
 	}
 
 	return &models.FolderStats{
-		TotalFolders:        stats.TotalFolders,
-		RootFolders:         stats.RootFolders,
-		MaxDepth:            maxDepth,
-		AvgFilesPerFolder:   avgFilesPerFolder,
-		TotalSize:           totalSize,
-		LargestFolderSize:   largestFolderSize,
+		TotalFolders:      stats.TotalFolders,
+		RootFolders:       stats.RootFolders,
+		MaxDepth:          maxDepth,
+		AvgFilesPerFolder: avgFilesPerFolder,
+		TotalSize:         totalSize,
+		LargestFolderSize: largestFolderSize,
 	}, nil
 }
 
@@ -280,11 +280,11 @@ func (r *FoldersRepo) GetFolderPath(ctx context.Context, folderID int64) ([]*mod
 // UpdateFolderStats updates folder statistics
 func (r *FoldersRepo) UpdateFolderStats(ctx context.Context, id int64, sizeBytes, diskUsageBytes, fileCount, dirCount int64) error {
 	return r.queries.UpdateFolderStats(ctx, sqlc.UpdateFolderStatsParams{
-		ID:                     id,
-		SizeBytesRecursive:     sizeBytes,
+		ID:                      id,
+		SizeBytesRecursive:      sizeBytes,
 		DiskUsageBytesRecursive: diskUsageBytes,
-		FileCount:              fileCount,
-		DirCount:               dirCount,
+		FileCount:               fileCount,
+		DirCount:                dirCount,
 	})
 }
 
@@ -330,7 +330,7 @@ func (r *FoldersRepo) BulkInsertFolders(ctx context.Context, folders []models.Cr
 func (r *FoldersRepo) convertToFolder(folder interface{}) *models.Folder {
 	// Use reflection to access common fields from different row types
 	// This is a temporary solution until sqlc generates a common interface
-	
+
 	switch f := folder.(type) {
 	case sqlc.Folders:
 		return &models.Folder{
@@ -557,7 +557,7 @@ func (r *FoldersRepo) CreateFolderHierarchy(ctx context.Context, volumeID, fullP
 	var parentID *int64
 	currentPath := ""
 	var lastFolder *models.Folder
-	
+
 	for i, part := range parts {
 		if part == "" {
 			continue
@@ -595,4 +595,3 @@ func (r *FoldersRepo) CreateFolderHierarchy(ctx context.Context, volumeID, fullP
 
 	return lastFolder, nil
 }
-

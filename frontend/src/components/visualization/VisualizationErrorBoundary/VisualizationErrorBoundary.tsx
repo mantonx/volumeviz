@@ -1,9 +1,9 @@
-import React from 'react';
-import { BarChart3, AlertTriangle, RefreshCw } from 'lucide-react';
-import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import type { ErrorFallbackProps } from '@/components/ui/ErrorBoundary';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { AlertTriangle, BarChart3, RefreshCw } from 'lucide-react';
+import React from 'react';
 
 // Error boundary for API errors and visualization failures
 

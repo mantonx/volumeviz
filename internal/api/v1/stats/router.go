@@ -23,7 +23,7 @@ func NewStatsRouter(store store.Store, statsService *stats.StatsService) *StatsR
 // RegisterRoutes registers stats routes for the router instance
 func (sr *StatsRouter) RegisterRoutes(router *gin.RouterGroup) {
 	handler := NewHandler(sr.store, sr.statsService)
-	
+
 	// Stats routes with StatsService integration
 	router.GET("/stats/daily", handler.GetDailyStats)
 	router.GET("/stats/top-folders", handler.GetTopFolders)
@@ -34,7 +34,7 @@ func (sr *StatsRouter) RegisterRoutes(router *gin.RouterGroup) {
 // RegisterRoutes registers stats routes with the router
 func RegisterRoutes(router *gin.RouterGroup, store store.Store, statsService *stats.StatsService) {
 	handler := NewHandler(store, statsService)
-	
+
 	// Stats routes
 	router.GET("/stats/daily", handler.GetDailyStats)
 	router.GET("/stats/top-folders", handler.GetTopFolders)

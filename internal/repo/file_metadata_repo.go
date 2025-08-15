@@ -256,4 +256,3 @@ func (r *FileMetadataRepo) updateFileEnrichedColumns(ctx context.Context, fileID
 
 	return nil
 }
-

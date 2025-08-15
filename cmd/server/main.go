@@ -25,7 +25,7 @@ import (
 // @title VolumeViz API
 // @version 1.0
 // @description Docker volume monitoring API with comprehensive volume discovery, size calculation, and container attachment tracking. Focus on user-mounted volumes only.
-// @description 
+// @description
 // @description ## Volume-First Approach
 // @description - Automatic discovery and filtering of user-mounted volumes
 // @description - Excludes Docker infrastructure volumes (container filesystems, tmp volumes)
@@ -122,7 +122,7 @@ func main() {
 
 	// Initialize database connection
 	log.Printf("Initializing %s database connection...", dbConfig.Type)
-	
+
 	// Create store instance
 	log.Printf("Creating store instance...")
 	var storeInstance store.Store

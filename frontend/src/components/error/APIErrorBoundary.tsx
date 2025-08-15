@@ -1,6 +1,6 @@
 /**
  * API Error Boundary Component
- * 
+ *
  * Error boundary for API errors that provides:
  * - Graceful error handling for API failures
  * - User-friendly error messages
@@ -8,8 +8,8 @@
  * - Automatic error reporting
  */
 
-import React from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import React from 'react';
 
 interface APIErrorBoundaryState {
   hasError: boolean;
@@ -64,7 +64,7 @@ export class APIErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       const { fallback: Fallback } = this.props;
-      
+
       if (Fallback && this.state.error) {
         return <Fallback error={this.state.error} retry={this.handleRetry} />;
       }

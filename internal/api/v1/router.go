@@ -91,13 +91,13 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		if scanRepository == nil {
 			log.Printf("Warning: Could not create scan repository, scan scheduler disabled")
 		} else {
-		
+
 			// Create scheduler config
 			schedulerConfig := scheduler.NewSchedulerConfig(&config.Scan)
-			
+
 			// Create volume provider
 			volumeProvider := scheduler.NewDockerVolumeProvider(dockerSvc)
-			
+
 			// Create scheduler
 			sch, err := scheduler.NewScheduler(
 				schedulerConfig,
@@ -121,14 +121,14 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 	if config.Events.Enabled {
 		// Get raw Docker client for events processing
 		dockerClient := dockerSvc.GetDockerClient()
-		
+
 		// Create events metrics collector
 		eventsMetrics := events.NewEventMetricsCollector(
 			"volumeviz",
 			"events",
 			prometheus.Labels{"instance": "main"},
 		)
-		
+
 		// Create event handler service (implements EventProcessor)
 		// Use store-based repository implementation
 		eventsRepo := events.NewStoreRepository(storeInstance)
@@ -138,7 +138,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 			eventsMetrics,
 			publisher,
 		)
-		
+
 		// Create reconciler service
 		// Use store-based repository implementation
 		reconciler := events.NewReconcilerService(
@@ -158,7 +158,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 			},
 			eventsMetrics,
 		)
-		
+
 		// Create events client (implements EventService)
 		eventsClient := events.NewEventsClient(
 			dockerClient,
@@ -167,7 +167,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 			reconciler,   // Reconciler
 			eventsMetrics,
 		)
-		
+
 		eventsService = eventsClient
 		log.Printf("[INFO] Events service initialized successfully")
 	}
@@ -179,7 +179,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		engineConfig := &alertsService.EngineConfig{
 			EvaluationInterval: time.Duration(config.Alerts.EvaluationIntervalMinutes) * time.Minute,
 			DeliveryWorkers:    config.Alerts.DeliveryWorkers,
-			Enabled:           true,
+			Enabled:            true,
 		}
 
 		// Create alerts engine
@@ -244,7 +244,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 	r.engine.Use(middleware.DockerErrorHandler())
 
 	// Performance middleware
-	r.engine.Use(middleware.GzipDefault()) // Add response compression
+	r.engine.Use(middleware.GzipDefault())  // Add response compression
 	r.engine.Use(middleware.CacheControl()) // Add smart caching headers
 
 	// Security middleware
@@ -367,7 +367,7 @@ func (r *Router) setupRoutes() {
 		logger := log.New(os.Stdout, "[STATS] ", log.LstdFlags)
 		metricsCollector := coreMetrics.NewPrometheusMetricsCollector(
 			"volumeviz",
-			"stats", 
+			"stats",
 			prometheus.Labels{"instance": "main"},
 		)
 		statsSvc := statsService.NewStatsService(statsRepo, metricsCollector, logger)

@@ -1,9 +1,9 @@
 /**
  * API Data State Management
- * 
+ *
  * State management for API data using Jotai atoms for:
  * - Explorer tree state
- * - File metadata cache  
+ * - File metadata cache
  * - Search results
  * - Loading states
  * - Error handling
@@ -36,13 +36,13 @@ export const breadcrumbsAtom = atom((get) => {
   const currentPath = get(currentPathAtom);
   const parts = currentPath.split('/').filter(Boolean);
   const crumbs = [{ path: '/', name: 'Home' }];
-  
+
   let buildPath = '';
   for (const part of parts) {
     buildPath += `/${part}`;
     crumbs.push({ path: buildPath, name: part });
   }
-  
+
   return crumbs;
 });
 

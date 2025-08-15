@@ -37,14 +37,14 @@ type PrometheusMetricsCollector struct {
 	schedulerRunningStatus     prometheus.Gauge
 	schedulerQueueDepthGauge   prometheus.Gauge
 	schedulerWorkerUtilization prometheus.Gauge
-	
+
 	// Stats job metrics
-	statsJobsStartedTotal  prometheus.CounterVec
-	statsJobsCompletedTotal prometheus.CounterVec
-	statsJobsFailedTotal   prometheus.CounterVec
+	statsJobsStartedTotal     prometheus.CounterVec
+	statsJobsCompletedTotal   prometheus.CounterVec
+	statsJobsFailedTotal      prometheus.CounterVec
 	statsJobDurationHistogram prometheus.HistogramVec
-	statsJobQueueDepthGauge prometheus.Gauge
-	statsServiceStatus     prometheus.Gauge
+	statsJobQueueDepthGauge   prometheus.Gauge
+	statsServiceStatus        prometheus.Gauge
 }
 
 // NewPrometheusMetricsCollector creates a new Prometheus metrics collector
@@ -211,7 +211,7 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Help:        "Scheduler worker utilization as percentage (0.0-1.0)",
 			ConstLabels: labels,
 		}),
-		
+
 		// Stats job metrics
 		statsJobsStartedTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace:   namespace,
@@ -220,7 +220,7 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Help:        "Total number of stats jobs started",
 			ConstLabels: labels,
 		}, []string{"job_type", "volume_id"}),
-		
+
 		statsJobsCompletedTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace:   namespace,
 			Subsystem:   "stats",
@@ -228,7 +228,7 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Help:        "Total number of stats jobs completed successfully",
 			ConstLabels: labels,
 		}, []string{"job_type", "volume_id"}),
-		
+
 		statsJobsFailedTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace:   namespace,
 			Subsystem:   "stats",
@@ -236,7 +236,7 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Help:        "Total number of stats jobs that failed",
 			ConstLabels: labels,
 		}, []string{"job_type", "volume_id", "error_type"}),
-		
+
 		statsJobDurationHistogram: *promauto.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace:   namespace,
 			Subsystem:   "stats",
@@ -245,7 +245,7 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Buckets:     []float64{0.1, 0.5, 1, 5, 10, 30, 60, 120, 300, 600}, // Up to 10 minutes
 			ConstLabels: labels,
 		}, []string{"job_type", "volume_id"}),
-		
+
 		statsJobQueueDepthGauge: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace:   namespace,
 			Subsystem:   "stats",
@@ -253,7 +253,7 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Help:        "Current depth of the stats job queue",
 			ConstLabels: labels,
 		}),
-		
+
 		statsServiceStatus: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace:   namespace,
 			Subsystem:   "stats",

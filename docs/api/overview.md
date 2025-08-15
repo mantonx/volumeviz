@@ -33,7 +33,7 @@ GET    /api/v1/explorer/files/{id}
 POST   /api/v1/explorer/search
 ```
 
-#### Analytics API (18 endpoints)  
+#### Analytics API (18 endpoints)
 Volume statistics, metrics, and performance data
 ```
 GET    /api/v1/analytics/volumes/{id}/stats
@@ -275,7 +275,7 @@ const volumeStats = await client.getVolumeStats({ id: 'vol-123' });
 API requests are rate-limited to ensure system stability:
 
 - **Authenticated Users**: 1000 requests/hour
-- **API Users**: 5000 requests/hour  
+- **API Users**: 5000 requests/hour
 - **Admin Users**: 10000 requests/hour
 
 ### Pagination

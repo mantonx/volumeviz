@@ -9,12 +9,12 @@ INSERT INTO file_metadata (
 ) RETURNING *;
 
 -- name: GetFileMetadata :many
-SELECT * FROM file_metadata 
+SELECT * FROM file_metadata
 WHERE file_id = $1
 ORDER BY enriched_at DESC;
 
 -- name: GetFileMetadataByKind :one
-SELECT * FROM file_metadata 
+SELECT * FROM file_metadata
 WHERE file_id = $1 AND kind = $2
 ORDER BY enriched_at DESC
 LIMIT 1;
@@ -22,7 +22,7 @@ LIMIT 1;
 -- name: BulkInsertFileMetadata :exec
 INSERT INTO file_metadata (
     file_id,
-    kind, 
+    kind,
     data_json,
     enriched_at
 ) VALUES (
@@ -36,15 +36,15 @@ INSERT INTO file_metadata (
 DELETE FROM file_metadata WHERE file_id = $1;
 
 -- name: DeleteFileMetadataByVolumeID :exec
-DELETE FROM file_metadata 
+DELETE FROM file_metadata
 WHERE file_id IN (
     SELECT id FROM files WHERE volume_id = $1
 );
 
 -- name: GetEnrichedFilesByVolume :many
-SELECT 
+SELECT
     f.*,
-    CASE 
+    CASE
         WHEN f.duration_ms IS NOT NULL THEN 'video/audio'
         WHEN f.capture_datetime IS NOT NULL THEN 'image'
         WHEN f.subtitle_language IS NOT NULL THEN 'subtitle'
@@ -53,8 +53,8 @@ SELECT
 FROM files f
 WHERE f.volume_id = $1
 AND (
-    f.duration_ms IS NOT NULL OR 
-    f.capture_datetime IS NOT NULL OR 
+    f.duration_ms IS NOT NULL OR
+    f.capture_datetime IS NOT NULL OR
     f.subtitle_language IS NOT NULL
 )
 ORDER BY f.path;
@@ -106,11 +106,11 @@ AND subtitle_language IS NOT NULL
 ORDER BY subtitle_language, path;
 
 -- name: GetMediaStatistics :one
-SELECT 
+SELECT
     COUNT(*) as total_files,
-    COUNT(*) FILTER (WHERE 
-        duration_ms IS NOT NULL OR 
-        capture_datetime IS NOT NULL OR 
+    COUNT(*) FILTER (WHERE
+        duration_ms IS NOT NULL OR
+        capture_datetime IS NOT NULL OR
         subtitle_language IS NOT NULL
     ) as enriched_files,
     COUNT(*) FILTER (WHERE mime LIKE 'video/%') as video_files,
@@ -130,7 +130,7 @@ WHERE volume_id = $1
 AND mime IN (
     -- Video types that should be enriched
     'video/mp4', 'video/avi', 'video/mkv', 'video/mov', 'video/wmv', 'video/flv', 'video/webm',
-    -- Audio types that should be enriched  
+    -- Audio types that should be enriched
     'audio/mp3', 'audio/flac', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/m4a',
     -- Image types that should be enriched
     'image/jpeg', 'image/jpg', 'image/png', 'image/tiff', 'image/bmp', 'image/webp', 'image/heic',
@@ -138,17 +138,17 @@ AND mime IN (
     'text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass'
 )
 AND duration_ms IS NULL
-AND capture_datetime IS NULL  
+AND capture_datetime IS NULL
 AND subtitle_language IS NULL
 ORDER BY size_bytes DESC
 LIMIT $2;
 
 -- name: GetEnrichmentProgress :one
-SELECT 
+SELECT
     COUNT(*) as total_enrichable,
-    COUNT(*) FILTER (WHERE 
-        duration_ms IS NOT NULL OR 
-        capture_datetime IS NOT NULL OR 
+    COUNT(*) FILTER (WHERE
+        duration_ms IS NOT NULL OR
+        capture_datetime IS NOT NULL OR
         subtitle_language IS NOT NULL
     ) as enriched_count,
     COUNT(DISTINCT fm.file_id) as files_with_metadata
@@ -198,8 +198,8 @@ SELECT f.id, f.folder_id, f.volume_id, f.name, f.path, f.extension, f.size_bytes
        f.created_at, f.updated_at
 FROM files f
 JOIN file_metadata fm ON f.id = fm.file_id
-WHERE f.volume_id = $1 
-  AND (fm.data_json->>'width')::int = $2 
+WHERE f.volume_id = $1
+  AND (fm.data_json->>'width')::int = $2
   AND (fm.data_json->>'height')::int = $3
 ORDER BY f.name
 LIMIT $4 OFFSET $5;
@@ -208,11 +208,11 @@ LIMIT $4 OFFSET $5;
 SELECT f.id, f.folder_id, f.volume_id, f.name, f.path, f.extension, f.size_bytes, f.disk_usage_bytes,
        f.mtime, f.ctime, f.birthtime, f.uid, f.gid, f.mode, f.inode, f.device,
        f.is_symlink, f.symlink_target, f.mime, f.media_kind, f.encoding, f.hash_algo, f.hash, f.path_hash,
-       f.created_at, f.updated_at  
+       f.created_at, f.updated_at
 FROM files f
 JOIN file_metadata fm ON f.id = fm.file_id
-WHERE f.volume_id = $1 
-  AND (fm.data_json->>'duration')::float >= $2 
+WHERE f.volume_id = $1
+  AND (fm.data_json->>'duration')::float >= $2
   AND (fm.data_json->>'duration')::float <= $3
 ORDER BY (fm.data_json->>'duration')::float DESC
 LIMIT $4 OFFSET $5;
@@ -224,7 +224,7 @@ SELECT f.id, f.folder_id, f.volume_id, f.name, f.path, f.extension, f.size_bytes
        f.created_at, f.updated_at
 FROM files f
 JOIN file_metadata fm ON f.id = fm.file_id
-WHERE f.volume_id = $1 
+WHERE f.volume_id = $1
   AND fm.data_json ? 'location'
   AND fm.data_json->>'location' IS NOT NULL
 ORDER BY f.name

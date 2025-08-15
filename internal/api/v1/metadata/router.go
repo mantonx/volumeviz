@@ -8,7 +8,7 @@ import (
 // RegisterRoutes registers all metadata routes
 func RegisterRoutes(router *gin.RouterGroup, store store.Store) {
 	handler := NewHandler(store)
-	
+
 	metadataGroup := router.Group("/metadata")
 	{
 		metadataGroup.GET("/files/:id", handler.GetFileMetadata)

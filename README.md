@@ -100,7 +100,7 @@ DB_USER=volumeviz
 DB_PASSWORD=volumeviz
 DB_NAME=volumeviz
 
-# API Configuration  
+# API Configuration
 API_PORT=8080
 API_HOST=0.0.0.0
 LOG_LEVEL=info

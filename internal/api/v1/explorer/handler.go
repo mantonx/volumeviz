@@ -353,7 +353,7 @@ func (h *Handler) GetFilesByFolder(c *gin.Context) {
 					continue
 				}
 			}
-			
+
 			// Size range filters
 			if req.MinSize > 0 && file.SizeBytes < req.MinSize {
 				continue
@@ -361,7 +361,7 @@ func (h *Handler) GetFilesByFolder(c *gin.Context) {
 			if req.MaxSize > 0 && file.SizeBytes > req.MaxSize {
 				continue
 			}
-			
+
 			filteredFiles = append(filteredFiles, file)
 		}
 		files = filteredFiles
@@ -839,7 +839,6 @@ func getMediaTypeFromExtension(ext string) string {
 		return mediaType
 	}
 
-	
 	return "application/octet-stream"
 }
 
@@ -919,7 +918,7 @@ func (h *Handler) GetFolderBrowsing(c *gin.Context) {
 	// Include children if requested
 	if req.IncludeChildren {
 		var childFolders []*models.Folder
-		
+
 		if currentFolder == nil {
 			// Get root folders
 			childFolders, err = folderRepo.GetRootFolders(ctx, req.VolumeID)
@@ -932,7 +931,7 @@ func (h *Handler) GetFolderBrowsing(c *gin.Context) {
 			// Apply pagination to children
 			offset := (req.Page - 1) * req.Limit
 			totalChildren := len(childFolders)
-			
+
 			if offset < totalChildren {
 				end := offset + req.Limit
 				if end > totalChildren {
@@ -1027,7 +1026,7 @@ func (h *Handler) GetFilesPaginated(c *gin.Context) {
 
 	// Use pagination optimizer for enhanced performance
 	optimizer := NewPaginationOptimizer(h.store)
-	
+
 	query := OptimizedFileQuery{
 		VolumeID:   req.VolumeID,
 		FolderPath: req.Path,
@@ -1139,7 +1138,7 @@ func (h *Handler) getFilteredFiles(ctx context.Context, fileRepo interface{}, vo
 		if folderErr != nil {
 			return nil, folderErr
 		}
-		
+
 		if fr, ok := fileRepo.(interface {
 			ListFilesByFolder(ctx context.Context, folderID int64, limit, offset int32) ([]*models.File, error)
 		}); ok {

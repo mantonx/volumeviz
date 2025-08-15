@@ -8,7 +8,7 @@ import (
 // RegisterRoutes registers all explorer routes
 func RegisterRoutes(router *gin.RouterGroup, store store.Store) {
 	handler := NewHandler(store)
-	
+
 	explorerGroup := router.Group("/explorer")
 	{
 		explorerGroup.GET("/files", handler.GetFilesByFolder)

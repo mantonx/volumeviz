@@ -1,12 +1,11 @@
 /**
  * WebSocket API Integration
- * 
+ *
  * WebSocket integration for live updates in the API client.
  * Provides real-time data synchronization and notifications.
  */
 
 import { useWebSocket as useWSConnection } from '@/providers/WebSocketProvider';
-import apiClient from './client';
 
 export const useWebSocketAPI = () => {
   const ws = useWSConnection();
@@ -27,7 +26,7 @@ export const useWebSocketAPI = () => {
     if (ws.status === 'connected') {
       // WebSocket for file changes
       ws.send({
-        type: 'subscribe', 
+        type: 'subscribe',
         event: 'file-change',
         data: {}
       });

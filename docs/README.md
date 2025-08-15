@@ -26,14 +26,15 @@ This documentation is organized into several key sections to help you understand
 - [Alert Management](user-guide/alerts.md) - Setting up monitoring and alerts
 - [Search & Filtering](user-guide/search.md) - Advanced search capabilities
 
-### 🔌 API Reference
-- [API Overview](api/overview.md) - REST API introduction
-- [Authentication](api/authentication.md) - API authentication and authorization
-- [Explorer Endpoints](api/explorer.md) - File system browsing API
-- [Analytics Endpoints](api/analytics.md) - Volume statistics and metrics
-- [Metadata Endpoints](api/metadata.md) - File metadata operations
-- [Alert Endpoints](api/alerts.md) - Alert management API
-- [WebSocket API](api/websocket.md) - Real-time data streaming
+### 🔌 API Reference (v1.2 - 78 Endpoints)
+- [Complete API Overview](api/README.md) - Full API v1.2 reference with all 78 endpoints
+- [Volume Management](api/volumes.md) - Volume discovery, statistics, and operations (4 endpoints)
+- [File Explorer](api/explorer.md) - Browse volume contents and file operations (9 endpoints)
+- [Metadata & Classification](api/metadata.md) - File metadata extraction and analysis (5 endpoints)
+- [Analytics & Trends](api/analytics.md) - Usage statistics and trend analysis (6 endpoints)
+- [Alerts & Monitoring](api/alerts.md) - Comprehensive alerting system (30+ endpoints)
+- [System & Health](api/system-health.md) - Health monitoring and system information (10 endpoints)
+- [Real-Time Updates](api/websocket.md) - WebSocket API for live updates
 
 ### 🛠️ Development
 - [Development Setup](development/setup.md) - Local development environment

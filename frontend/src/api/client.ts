@@ -5,17 +5,10 @@
  */
 
 import {
-  Api,
-  type PagedVolumes,
-  type ScanResponse,
-  type Volume,
-  type RefreshRequest,
-  type DirectoryListing,
-  type FileListResponse,
-  type FileDetailsResponse,
-  type FileMetadataResponse,
-  type FolderSizeInfo,
-  type TreeNode, // Import type for type safety integration
+    Api,
+    type PagedVolumes,
+    type RefreshRequest,
+    type ScanResponse
 } from './generated/Api';
 
 // Type safety integration with Api types
@@ -144,23 +137,8 @@ export const volumeApi = {
 
 // Export types for use in components
 export type {
-  PagedVolumes,
-  Volume as VolumeResponse,
-  VolumeDetail,
-  ScanResponse,
-  ScanProgress,
-  ErrorResponse,
-  RefreshRequest,
-  DirectoryListing,
-  FileListResponse,
-  FileDetailsResponse,
-  FileMetadataResponse,
-  FolderSizeInfo,
-  TreeNode,
-  FileNode,
-  FolderNode,
-  AlertRule,
-  AlertDestination,
+    AlertDestination, AlertRule, DirectoryListing, ErrorResponse, FileDetailsResponse, FileListResponse, FileMetadataResponse, FileNode,
+    FolderNode, FolderSizeInfo, PagedVolumes, RefreshRequest, ScanProgress, ScanResponse, TreeNode, VolumeDetail, Volume as VolumeResponse
 } from './generated/Api';
 
 // Alert client methods
@@ -169,12 +147,12 @@ export const alertApi = {
     // Alert client method for rules
     return [];
   },
-  
+
   async createAlertRule(rule: AlertRule) {
     // Alert client method for creating rules
     return rule;
   },
-  
+
   async listDestinations() {
     // Alert client method for destinations
     return [];

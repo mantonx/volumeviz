@@ -4,11 +4,11 @@ import "time"
 
 // FileExplorerResponse represents the file explorer tree view response
 type FileExplorerResponse struct {
-	VolumeID     string     `json:"volume_id" example:"tv-shows-readonly"`
-	CurrentPath  string     `json:"current_path" example:"/data/tv-shows"`
-	Breadcrumbs  []PathItem `json:"breadcrumbs"`
-	Contents     []FileItem `json:"contents"`
-	Pagination   Pagination `json:"pagination"`
+	VolumeID    string     `json:"volume_id" example:"tv-shows-readonly"`
+	CurrentPath string     `json:"current_path" example:"/data/tv-shows"`
+	Breadcrumbs []PathItem `json:"breadcrumbs"`
+	Contents    []FileItem `json:"contents"`
+	Pagination  Pagination `json:"pagination"`
 } // @name FileExplorerResponse
 
 // PathItem represents a breadcrumb path item
@@ -49,14 +49,14 @@ type FileSearchResponse struct {
 
 // FolderStatsResponse represents detailed folder statistics
 type FolderStatsResponse struct {
-	FolderID        int64              `json:"folder_id" example:"123"`
-	Path            string             `json:"path" example:"/data/tv-shows/Series"`
-	TotalSize       int64              `json:"total_size" example:"10737418240"`
-	FileCount       int64              `json:"file_count" example:"48"`
-	FolderCount     int64              `json:"folder_count" example:"2"`
-	MediaBreakdown  map[string]int64   `json:"media_breakdown"`
-	LargestFiles    []FileItem         `json:"largest_files"`
-	RecentActivity  []ActivityItem     `json:"recent_activity"`
+	FolderID       int64            `json:"folder_id" example:"123"`
+	Path           string           `json:"path" example:"/data/tv-shows/Series"`
+	TotalSize      int64            `json:"total_size" example:"10737418240"`
+	FileCount      int64            `json:"file_count" example:"48"`
+	FolderCount    int64            `json:"folder_count" example:"2"`
+	MediaBreakdown map[string]int64 `json:"media_breakdown"`
+	LargestFiles   []FileItem       `json:"largest_files"`
+	RecentActivity []ActivityItem   `json:"recent_activity"`
 } // @name FolderStatsResponse
 
 // ActivityItem represents recent file activity

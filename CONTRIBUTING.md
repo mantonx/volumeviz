@@ -10,7 +10,7 @@ Thank you for your interest in contributing to VolumeViz! We welcome contributio
 - Include detailed reproduction steps
 - Provide environment information
 
-### ✨ Feature Requests  
+### ✨ Feature Requests
 - Propose new features via [GitHub Discussions](https://github.com/mantonx/volumeviz/discussions)
 - Describe the use case and expected behavior
 - Consider implementation complexity
@@ -35,7 +35,7 @@ Thank you for your interest in contributing to VolumeViz! We welcome contributio
 Before contributing, ensure you have:
 
 - **Go 1.21+** for backend development
-- **Node.js 18+** and **npm/yarn** for frontend development  
+- **Node.js 18+** and **npm/yarn** for frontend development
 - **Docker & Docker Compose** for local development
 - **PostgreSQL 15+** (optional, can use Docker)
 - **Git** for version control
@@ -122,7 +122,7 @@ git push origin feature/your-feature-name
 ```
 internal/
 ├── api/           # HTTP handlers and middleware
-├── core/          # Business logic and domain models  
+├── core/          # Business logic and domain models
 ├── database/      # Database connections and transactions
 ├── services/      # Service layer implementations
 ├── store/         # Data access layer (SQLC generated)
@@ -155,8 +155,8 @@ make migrate-up
 ```sql
 -- Add queries to internal/repo/queries/*.sql
 -- name: GetExampleData :many
-SELECT id, name, created_at 
-FROM examples 
+SELECT id, name, created_at
+FROM examples
 WHERE user_id = $1
 ORDER BY created_at DESC;
 ```
@@ -221,10 +221,10 @@ func TestExampleFunction(t *testing.T) {
     // Arrange
     input := "test input"
     expected := "expected output"
-    
-    // Act  
+
+    // Act
     result := ExampleFunction(input)
-    
+
     // Assert
     if result != expected {
         t.Errorf("Expected %s, got %s", expected, result)
@@ -265,7 +265,7 @@ cd frontend
 # Format code
 npm run format
 
-# Run linter  
+# Run linter
 npm run lint
 
 # Fix linting issues
@@ -301,11 +301,11 @@ npm run lint:fix
    # Run full test suite
    make test
    make test-frontend
-   
+
    # Check code formatting
    make lint
    make lint-frontend
-   
+
    # Build successfully
    make build
    ```
@@ -371,7 +371,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 **Types:**
 - `feat`: New features
-- `fix`: Bug fixes  
+- `fix`: Bug fixes
 - `docs`: Documentation changes
 - `style`: Code formatting (no logic changes)
 - `refactor`: Code refactoring
@@ -417,7 +417,7 @@ test: add integration tests for volume scanner
 
 We recognize contributors through:
 - **Contributor List**: README.md acknowledgment
-- **Release Notes**: Feature contributor attribution  
+- **Release Notes**: Feature contributor attribution
 - **Special Recognition**: Outstanding contribution highlights
 
 ### Maintainer Track
@@ -442,7 +442,7 @@ Interested in becoming a maintainer?
 
 ### Documentation Resources
 - **API Documentation**: `/docs/api`
-- **Architecture Guide**: `/docs/adr`  
+- **Architecture Guide**: `/docs/adr`
 - **Development Setup**: `/docs/development`
 
 ---

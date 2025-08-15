@@ -19,7 +19,7 @@ check_requirement() {
     local requirement="$1"
     local check_command="$2"
     total_checks=$((total_checks + 1))
-    
+
     echo -n "[$total_checks] $requirement: "
     if eval "$check_command" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ PRESENT${NC}"
@@ -116,7 +116,7 @@ check_requirement "CreateAlertRule handler" \
 check_requirement "Alert rules API testing" \
     "grep -q 'TestAlertRule' internal/api/v1/alerts/handler.go"
 
-# 4.2 Alert destinations endpoints  
+# 4.2 Alert destinations endpoints
 check_requirement "Alert destinations CRUD endpoints" \
     "grep -r 'destinations' internal/api/v1/alerts/router.go"
 

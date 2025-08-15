@@ -24,23 +24,23 @@ func NewQueryOptimizer(store store.Store) *QueryOptimizer {
 func (opt *QueryOptimizer) OptimizedFileList(ctx context.Context, volumeID, folderPath string, filters FileFilters, pagination Pagination) (*OptimizedFileListResult, error) {
 	// Use database-level filtering instead of application-level filtering
 	// This would be implemented with proper SQL queries in production
-	
+
 	fileRepo := opt.store.Files()
-	
+
 	var files []*models.File
 	var err error
 	var totalCount int
-	
+
 	// Calculate offset
 	offset := (pagination.Page - 1) * pagination.Limit
-	
+
 	if folderPath == "" || folderPath == "/" {
 		// Optimized root folder query
 		files, err = fileRepo.ListFilesByVolume(ctx, volumeID, int32(pagination.Limit), int32(offset))
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// For total count, we'd implement a specific count query
 		// For now, use an approximation
 		if len(files) < pagination.Limit {
@@ -55,12 +55,12 @@ func (opt *QueryOptimizer) OptimizedFileList(ctx context.Context, volumeID, fold
 		if err != nil {
 			return nil, err
 		}
-		
+
 		files, err = fileRepo.ListFilesByFolder(ctx, folder.ID, int32(pagination.Limit), int32(offset))
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Estimate total count
 		if len(files) < pagination.Limit {
 			totalCount = len(files) + offset
@@ -68,10 +68,10 @@ func (opt *QueryOptimizer) OptimizedFileList(ctx context.Context, volumeID, fold
 			totalCount = len(files) + offset + 1
 		}
 	}
-	
+
 	// Apply filters (in production, this would be done in SQL)
 	filteredFiles := opt.applyFilters(files, filters)
-	
+
 	return &OptimizedFileListResult{
 		Files:       filteredFiles,
 		TotalCount:  totalCount,
@@ -84,9 +84,9 @@ func (opt *QueryOptimizer) OptimizedFileList(ctx context.Context, volumeID, fold
 // OptimizedTreeQuery returns folder tree with lazy loading support
 func (opt *QueryOptimizer) OptimizedTreeQuery(ctx context.Context, volumeID, parentPath string, maxDepth int) (*OptimizedTreeResult, error) {
 	folderRepo := opt.store.Folders()
-	
+
 	var folders []*models.Folder
-	
+
 	if parentPath == "" || parentPath == "/" {
 		// Get root folders with child count
 		var err error
@@ -100,14 +100,14 @@ func (opt *QueryOptimizer) OptimizedTreeQuery(ctx context.Context, volumeID, par
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Get child folders
 		folders, err = folderRepo.ListFoldersByParent(ctx, volumeID, &parentFolder.ID)
 		if err != nil {
 			return nil, err
 		}
 	}
-	
+
 	// Convert to tree nodes with optimization info
 	var nodes []OptimizedTreeNode
 	for _, folder := range folders {
@@ -123,7 +123,7 @@ func (opt *QueryOptimizer) OptimizedTreeQuery(ctx context.Context, volumeID, par
 		}
 		nodes = append(nodes, node)
 	}
-	
+
 	return &OptimizedTreeResult{
 		Nodes:      nodes,
 		ParentPath: parentPath,
@@ -135,14 +135,14 @@ func (opt *QueryOptimizer) OptimizedTreeQuery(ctx context.Context, volumeID, par
 // OptimizedStatsQuery returns cached or pre-computed statistics
 func (opt *QueryOptimizer) OptimizedStatsQuery(ctx context.Context, volumeID string, timeRange TimeRange) (*OptimizedStatsResult, error) {
 	statsRepo := opt.store.Stats()
-	
+
 	// In production, this would use materialized views or cached results
 	// Get volume stats history for the time range
 	_, err := statsRepo.GetVolumeStatsHistory(ctx, volumeID, timeRange.Start, timeRange.End)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create a synthetic VolumeStats from daily stats
 	volumeStats := &models.VolumeStats{
 		TotalVolumes:   1, // This query is for a single volume
@@ -150,10 +150,10 @@ func (opt *QueryOptimizer) OptimizedStatsQuery(ctx context.Context, volumeID str
 		UniqueDrivers:  1, // Single volume means single driver
 		ScannedVolumes: 1, // Volume has stats so it has been scanned
 	}
-	
+
 	return &OptimizedStatsResult{
 		VolumeStats: volumeStats,
-		CacheHit:    false, // Would track cache performance
+		CacheHit:    false,                  // Would track cache performance
 		QueryTime:   time.Since(time.Now()), // Would measure actual query time
 		LastUpdated: time.Now(),
 	}, nil
@@ -165,7 +165,7 @@ func (opt *QueryOptimizer) applyFilters(files []*models.File, filters FileFilter
 	if filters.IsEmpty() {
 		return files
 	}
-	
+
 	filtered := make([]*models.File, 0, len(files))
 	for _, file := range files {
 		if opt.matchesFilters(file, filters) {
@@ -182,7 +182,7 @@ func (opt *QueryOptimizer) matchesFilters(file *models.File, filters FileFilters
 			return false
 		}
 	}
-	
+
 	// Size filters
 	if filters.MinSize > 0 && file.SizeBytes < filters.MinSize {
 		return false
@@ -190,14 +190,14 @@ func (opt *QueryOptimizer) matchesFilters(file *models.File, filters FileFilters
 	if filters.MaxSize > 0 && file.SizeBytes > filters.MaxSize {
 		return false
 	}
-	
+
 	// MIME type filter
 	if filters.MediaType != "" && file.Mime != nil {
 		if *file.Mime != filters.MediaType {
 			return false
 		}
 	}
-	
+
 	return true
 }
 

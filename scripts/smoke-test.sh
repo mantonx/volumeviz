@@ -14,7 +14,7 @@ HEALTH_RETRIES=${HEALTH_RETRIES:-15}
 # Function to find a free port
 find_free_port() {
     local port=$1
-    
+
     # If port is 0, always find a dynamic port
     if [[ "$port" == "0" ]]; then
         port=$(python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()" 2>/dev/null || echo "8080")
@@ -25,7 +25,7 @@ find_free_port() {
             port=$(python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()" 2>/dev/null || echo "8081")
         fi
     fi
-    
+
     echo "$port"
 }
 
@@ -66,7 +66,7 @@ cleanup() {
     # Server cleanup with better error handling
     if [[ -n "$SVR_PID" ]] && kill -0 "$SVR_PID" 2>/dev/null; then
         log_info "Stopping server (PID: $SVR_PID)..."
-        
+
         # Try graceful shutdown first
         if kill -TERM "$SVR_PID" 2>/dev/null; then
             # Give it time to shut down gracefully
@@ -107,7 +107,7 @@ cleanup() {
     fi
 
     log_success "Cleanup complete (exit code: $exit_code)"
-    
+
     # Preserve the original exit code - but ensure cleanup issues don't override success
     exit $exit_code
 }
@@ -129,7 +129,7 @@ test_endpoint() {
                       --connect-timeout 5 --max-time 10 \
                       --retry 2 --retry-delay 1 \
                       "http://$HOST:$PORT$endpoint" 2>&1); then
-        
+
         # Validate JSON structure if expected fields are provided
         if [[ -n "$expected_fields" ]]; then
             local missing_fields=""
@@ -138,13 +138,13 @@ test_endpoint() {
                     missing_fields+="$field "
                 fi
             done
-            
+
             if [[ -n "$missing_fields" ]]; then
                 log_warning "$description - Missing fields: $missing_fields"
                 log_info "Response preview: $(echo "$response" | jq -c . 2>/dev/null || echo "$response" | head -c 100)..."
             fi
         fi
-        
+
         log_success "$description - OK"
         return 0
     else
@@ -158,7 +158,7 @@ test_endpoint() {
 # Main execution
 main() {
     log_info "🚀 Starting VolumeViz API smoke test..."
-    
+
     # Find a free port to avoid conflicts
     ORIGINAL_PORT=$PORT
     PORT=$(find_free_port $PORT)
@@ -225,7 +225,7 @@ main() {
     log_info "🩺 Waiting for server to be ready..."
     local retry_count=0
     local health_url="http://$HOST:$PORT/api/v1/health"
-    
+
     while [[ $retry_count -lt $HEALTH_RETRIES ]]; do
         # Use curl with retries and timeout
         if curl --fail --silent --show-error \
@@ -233,7 +233,7 @@ main() {
                --retry 0 \
                "$health_url" > /dev/null 2>&1; then
             log_success "Server is healthy"
-            
+
             # Additional verification: check if we can get a valid JSON response
             if health_response=$(curl --fail --silent --max-time 5 "$health_url" 2>/dev/null) && \
                echo "$health_response" | jq -e '.status' > /dev/null 2>&1; then
@@ -248,20 +248,20 @@ main() {
         retry_count=$((retry_count + 1))
         if [[ $retry_count -eq $HEALTH_RETRIES ]]; then
             log_error "Health check failed after $HEALTH_RETRIES retries"
-            
+
             # Show detailed error information
             log_error "Failed to connect to: $health_url"
             if [[ -f "$TEMP_LOG" ]]; then
                 log_error "Recent server logs:"
                 tail -20 "$TEMP_LOG"
             fi
-            
+
             # Try to get more info about what might be listening on the port
             if command -v lsof >/dev/null 2>&1; then
                 log_info "Processes listening on port $PORT:"
                 lsof -i :$PORT 2>/dev/null || log_warning "No processes found on port $PORT"
             fi
-            
+
             exit 1
         fi
 

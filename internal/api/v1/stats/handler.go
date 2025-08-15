@@ -68,10 +68,10 @@ func (h *Handler) GetDailyStats(c *gin.Context) {
 
 	// TODO: Transform dailyStats to response format
 	response := map[string]interface{}{
-		"volume_id": volumeID,
-		"stats": dailyStats,
+		"volume_id":  volumeID,
+		"stats":      dailyStats,
 		"start_date": startDate.Format("2006-01-02"),
-		"end_date": endDate.Format("2006-01-02"),
+		"end_date":   endDate.Format("2006-01-02"),
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -165,16 +165,16 @@ func (h *Handler) GetMediaStats(c *gin.Context) {
 
 	// Build response
 	response := map[string]interface{}{
-		"volume_id": volumeID,
-		"media_kinds": mediaStats,
+		"volume_id":      volumeID,
+		"media_kinds":    mediaStats,
 		"top_extensions": extensionStats,
-		"generated_at": time.Now().Format("2006-01-02T15:04:05Z"),
+		"generated_at":   time.Now().Format("2006-01-02T15:04:05Z"),
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-// GetStorageStats gets storage usage statistics for a volume  
+// GetStorageStats gets storage usage statistics for a volume
 // @Summary Get storage statistics
 // @Description Get detailed storage usage statistics including size distribution and growth trends
 // @Tags stats
@@ -225,12 +225,12 @@ func (h *Handler) GetStorageStats(c *gin.Context) {
 
 	// Build response
 	response := map[string]interface{}{
-		"volume_id": volumeID,
-		"file_stats": fileStats,
-		"folder_stats": folderStats,
-		"largest_files": largestFiles,
+		"volume_id":       volumeID,
+		"file_stats":      fileStats,
+		"folder_stats":    folderStats,
+		"largest_files":   largestFiles,
 		"largest_folders": largestFolders,
-		"generated_at": time.Now().Format("2006-01-02T15:04:05Z"),
+		"generated_at":    time.Now().Format("2006-01-02T15:04:05Z"),
 	}
 
 	c.JSON(http.StatusOK, response)

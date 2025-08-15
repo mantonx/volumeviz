@@ -1,24 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAtomValue } from 'jotai';
-import {
-  ArrowLeft,
-  HardDrive,
-  Database,
-  Activity,
-  RefreshCw,
-  Calendar,
-  Tag,
-  MapPin,
-} from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import type { VolumeResponse } from '@/api/client';
 import { useVolumes, useVolumeScanning } from '@/api/services';
-import { volumesAtom } from '@/store';
 import { ExplorerView } from '@/components/explorer';
 import { FileMetadataView } from '@/components/explorer/FileMetadataView';
-import type { VolumeResponse } from '@/api/client';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { volumesAtom } from '@/store';
+import { useAtomValue } from 'jotai';
+import {
+    Activity,
+    ArrowLeft,
+    Database,
+    HardDrive,
+    MapPin,
+    RefreshCw,
+    Tag
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 // Explorer UI integration for tree and browse functionality implemented
 

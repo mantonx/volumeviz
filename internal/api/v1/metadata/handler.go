@@ -139,7 +139,7 @@ func (h *Handler) GetFileMetadata(c *gin.Context) {
 	// Build metadata response
 	metadataMap := make(map[string]interface{})
 	var lastEnriched *time.Time
-	
+
 	// Add basic file properties
 	if file.Mime != nil {
 		metadataMap["mime_type"] = *file.Mime
@@ -148,7 +148,7 @@ func (h *Handler) GetFileMetadata(c *gin.Context) {
 		metadataMap["media_kind"] = *file.MediaKind
 	}
 	metadataMap["file_size"] = file.SizeBytes
-	
+
 	// Add enriched metadata
 	for _, meta := range metadata {
 		if len(meta.DataJson) > 0 {
@@ -179,7 +179,7 @@ func (h *Handler) GetFileMetadata(c *gin.Context) {
 }
 
 // GetFilesByMediaKind gets files filtered by media kind
-// @Summary Get files by media kind  
+// @Summary Get files by media kind
 // @Description Retrieve files filtered by media kind (video, image, audio, document, etc.) with pagination
 // @Tags Metadata
 // @Accept json
@@ -196,7 +196,7 @@ func (h *Handler) GetFileMetadata(c *gin.Context) {
 func (h *Handler) GetFilesByMediaKind(c *gin.Context) {
 	volumeID := c.Query("volume_id")
 	mediaKind := c.Query("media_kind")
-	
+
 	if volumeID == "" || mediaKind == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "volume_id and media_kind are required"})
 		return
@@ -233,19 +233,19 @@ func (h *Handler) GetFilesByMediaKind(c *gin.Context) {
 	var fileResponses []map[string]interface{}
 	for _, file := range files {
 		fileResponse := map[string]interface{}{
-			"id":       file.ID,
-			"name":     file.Name,
-			"path":     file.Path,
-			"size":     file.SizeBytes,
+			"id":         file.ID,
+			"name":       file.Name,
+			"path":       file.Path,
+			"size":       file.SizeBytes,
 			"media_kind": file.MediaKind,
 			"mime_type":  file.Mime,
 			"extension":  file.Extension,
 		}
-		
+
 		if file.Mtime != nil {
 			fileResponse["modified_time"] = file.Mtime.Format("2006-01-02T15:04:05Z")
 		}
-		
+
 		fileResponses = append(fileResponses, fileResponse)
 	}
 
@@ -403,15 +403,15 @@ func (h *Handler) GetFilesByResolution(c *gin.Context) {
 			Path: file.Path,
 			Size: file.SizeBytes,
 		}
-		
+
 		// In a real implementation, this would come from media metadata
 		item.Width = 1920  // Placeholder
 		item.Height = 1080 // Placeholder
-		
+
 		if file.Mime != nil {
 			item.MediaType = *file.Mime
 		}
-		
+
 		fileItems = append(fileItems, item)
 	}
 
@@ -475,11 +475,11 @@ func (h *Handler) GetFilesByDuration(c *gin.Context) {
 			Size:     file.SizeBytes,
 			Duration: 120, // Placeholder seconds
 		}
-		
+
 		if file.Mime != nil {
 			item.MediaType = *file.Mime
 		}
-		
+
 		fileItems = append(fileItems, item)
 	}
 
@@ -546,11 +546,11 @@ func (h *Handler) GetFilesByLocation(c *gin.Context) {
 			Latitude:  &req.Latitude,  // Placeholder
 			Longitude: &req.Longitude, // Placeholder
 		}
-		
+
 		if file.Mime != nil {
 			item.MediaType = *file.Mime
 		}
-		
+
 		fileItems = append(fileItems, item)
 	}
 

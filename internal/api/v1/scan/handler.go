@@ -26,7 +26,7 @@ import (
 type Handler struct {
 	scanner           interfaces.VolumeScanner
 	hub               *websocket.Hub
-	store            store.Store             // New sqlc-based store
+	store             store.Store             // New sqlc-based store
 	scheduler         scheduler.ScanScheduler // Optional scheduler for manual scan triggers
 	realtimePublisher *realtime.Publisher
 	enrichmentManager interfaces.EnrichmentManager // Media enrichment manager
@@ -43,7 +43,7 @@ func NewHandlerWithStore(scanner interfaces.VolumeScanner, hub *websocket.Hub, s
 	return &Handler{
 		scanner:           scanner,
 		hub:               hub,
-		store:            storeInstance,
+		store:             storeInstance,
 		scheduler:         scheduler,
 		realtimePublisher: publisher,
 	}
@@ -683,7 +683,7 @@ func (h *Handler) GetSchedulerCapabilities(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"hardened_mode":   h.scheduler.IsHardenedMode(),
+		"hardened_mode":    h.scheduler.IsHardenedMode(),
 		"watchdog_enabled": h.scheduler.GetWatchdogStats() != nil,
 		"features": gin.H{
 			"atomic_claims":    h.scheduler.IsHardenedMode(),
@@ -757,19 +757,19 @@ func (h *Handler) GetFilesystemIndexingStatus(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"volume_id":        progress.VolumeID,
-			"status":           progress.Status,
-			"started_at":       progress.StartedAt,
-			"last_update":      progress.LastUpdate,
-			"folders_scanned":  progress.FoldersScanned,
-			"files_scanned":    progress.FilesScanned,
-			"bytes_processed":  progress.BytesProcessed,
-			"errors_count":     progress.ErrorsCount,
-			"current_path":     progress.CurrentPath,
-			"current_depth":    progress.CurrentDepth,
-			"folders_per_sec":  progress.FoldersPerSec,
-			"files_per_sec":    progress.FilesPerSec,
-			"last_error":       progress.LastError,
+			"volume_id":       progress.VolumeID,
+			"status":          progress.Status,
+			"started_at":      progress.StartedAt,
+			"last_update":     progress.LastUpdate,
+			"folders_scanned": progress.FoldersScanned,
+			"files_scanned":   progress.FilesScanned,
+			"bytes_processed": progress.BytesProcessed,
+			"errors_count":    progress.ErrorsCount,
+			"current_path":    progress.CurrentPath,
+			"current_depth":   progress.CurrentDepth,
+			"folders_per_sec": progress.FoldersPerSec,
+			"files_per_sec":   progress.FilesPerSec,
+			"last_error":      progress.LastError,
 		})
 		return
 	}
@@ -844,7 +844,7 @@ func (h *Handler) TriggerFilesystemIndexing(c *gin.Context) {
 		// 1. Get the volume path from Docker service
 		// 2. Start indexing asynchronously
 		// 3. Return immediately with accepted status
-		
+
 		c.JSON(http.StatusAccepted, gin.H{
 			"message":    "Filesystem indexing triggered",
 			"volume_id":  volumeID,
@@ -873,12 +873,12 @@ func (h *Handler) GetFilesystemIndexingCapabilities(c *gin.Context) {
 	capabilities := gin.H{
 		"enabled": false,
 		"features": gin.H{
-			"mime_detection":     false,
-			"file_hashing":       false,
+			"mime_detection":       false,
+			"file_hashing":         false,
 			"media_classification": false,
-			"delta_scanning":     false,
-			"skip_rules":         false,
-			"progress_tracking":  false,
+			"delta_scanning":       false,
+			"skip_rules":           false,
+			"progress_tracking":    false,
 		},
 	}
 
@@ -888,7 +888,7 @@ func (h *Handler) GetFilesystemIndexingCapabilities(c *gin.Context) {
 	}); ok {
 		enabled := indexingScanner.IsFilesystemIndexingEnabled()
 		capabilities["enabled"] = enabled
-		
+
 		if enabled {
 			capabilities["features"] = gin.H{
 				"mime_detection":       true,
@@ -936,7 +936,7 @@ func (h *Handler) TriggerMediaEnrichment(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Check if enrichment is enabled
 	if h.enrichmentManager == nil || !h.enrichmentManager.IsEnabled() {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
@@ -946,7 +946,7 @@ func (h *Handler) TriggerMediaEnrichment(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Start enrichment asynchronously
 	go func() {
 		ctx := context.Background()
@@ -955,7 +955,7 @@ func (h *Handler) TriggerMediaEnrichment(c *gin.Context) {
 			fmt.Printf("Media enrichment failed for volume %s: %v\n", volumeID, err)
 		}
 	}()
-	
+
 	c.JSON(http.StatusAccepted, gin.H{
 		"message":    "Media enrichment triggered",
 		"volume_id":  volumeID,
@@ -985,7 +985,7 @@ func (h *Handler) GetMediaEnrichmentStatus(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Check if enrichment is available
 	if h.enrichmentManager == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
@@ -995,19 +995,19 @@ func (h *Handler) GetMediaEnrichmentStatus(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Try to get progress if the manager supports it
 	type progressGetter interface {
 		GetProgress(volumeID string) interface{}
 	}
-	
+
 	if progressManager, ok := h.enrichmentManager.(progressGetter); ok {
 		if progress := progressManager.GetProgress(volumeID); progress != nil {
 			c.JSON(http.StatusOK, progress)
 			return
 		}
 	}
-	
+
 	// Default response when no progress available
 	c.JSON(http.StatusOK, gin.H{
 		"volume_id": volumeID,
@@ -1034,27 +1034,27 @@ func (h *Handler) GetMediaEnrichmentCapabilities(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"enabled": h.enrichmentManager.IsEnabled(),
 		"enrichers": []gin.H{
 			{
-				"name": "ffprobe",
+				"name":            "ffprobe",
 				"supported_types": []string{"video/*", "audio/*"},
-				"features": []string{"duration", "bitrate", "resolution", "codec", "hdr_detection", "fps", "channels"},
-				"required_tools": []string{"ffprobe"},
+				"features":        []string{"duration", "bitrate", "resolution", "codec", "hdr_detection", "fps", "channels"},
+				"required_tools":  []string{"ffprobe"},
 			},
 			{
-				"name": "exif",
+				"name":            "exif",
 				"supported_types": []string{"image/*"},
-				"features": []string{"dimensions", "camera_info", "datetime", "gps", "orientation"},
-				"required_tools": []string{"exiftool"},
+				"features":        []string{"dimensions", "camera_info", "datetime", "gps", "orientation"},
+				"required_tools":  []string{"exiftool"},
 			},
 			{
-				"name": "subtitle",
+				"name":            "subtitle",
 				"supported_types": []string{"text/vtt", "application/x-subrip", "text/x-ssa", "text/x-ass"},
-				"features": []string{"language", "cue_count", "coverage", "format"},
-				"required_tools": []string{}, // No external tools required
+				"features":        []string{"language", "cue_count", "coverage", "format"},
+				"required_tools":  []string{}, // No external tools required
 			},
 		},
 		"configuration": gin.H{

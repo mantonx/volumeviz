@@ -1,12 +1,12 @@
 /**
  * FileMetadataView Component
- * 
+ *
  * File metadata display component that shows detailed file information
  * including technical metadata, media properties, and file attributes.
  */
 
+import { CalendarIcon, FileIcon, HardDriveIcon } from 'lucide-react';
 import React from 'react';
-import { FileIcon, CalendarIcon, HardDriveIcon } from 'lucide-react';
 
 interface FileMetadataViewProps {
   file: any;

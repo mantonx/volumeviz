@@ -98,10 +98,10 @@ SELECT f.id, f.folder_id, f.volume_id, f.name, f.path, f.extension, f.size_bytes
 FROM files f
 WHERE f.volume_id = $1 AND f.hash_algo = $2 AND f.hash IS NOT NULL
   AND f.hash IN (
-    SELECT f2.hash 
+    SELECT f2.hash
     FROM files f2
-    WHERE f2.volume_id = $1 AND f2.hash_algo = $2 AND f2.hash IS NOT NULL 
-    GROUP BY f2.hash 
+    WHERE f2.volume_id = $1 AND f2.hash_algo = $2 AND f2.hash IS NOT NULL
+    GROUP BY f2.hash
     HAVING COUNT(*) > 1
   )
 ORDER BY f.hash, f.size_bytes DESC;
@@ -118,7 +118,7 @@ LIMIT $3;
 
 -- name: UpdateFileMetadata :exec
 UPDATE files
-SET 
+SET
     size_bytes = $2,
     disk_usage_bytes = $3,
     mtime = $4,
@@ -132,7 +132,7 @@ WHERE id = $1;
 
 -- name: UpdateFileHash :exec
 UPDATE files
-SET 
+SET
     hash_algo = $2,
     hash = $3,
     updated_at = CURRENT_TIMESTAMP
@@ -140,7 +140,7 @@ WHERE id = $1;
 
 -- name: UpdateFileMime :exec
 UPDATE files
-SET 
+SET
     mime = $2,
     media_kind = $3,
     encoding = $4,
@@ -163,7 +163,7 @@ SELECT COUNT(*) FROM files WHERE volume_id = $1;
 SELECT COUNT(*) FROM files WHERE folder_id = $1;
 
 -- name: GetFileStats :one
-SELECT 
+SELECT
     COUNT(*) as total_files,
     SUM(size_bytes) as total_size,
     AVG(size_bytes) as avg_file_size,
@@ -175,7 +175,7 @@ FROM files
 WHERE volume_id = $1;
 
 -- name: GetMediaKindStats :many
-SELECT 
+SELECT
     media_kind,
     COUNT(*) as file_count,
     SUM(size_bytes) as total_size,
@@ -186,7 +186,7 @@ GROUP BY media_kind
 ORDER BY total_size DESC;
 
 -- name: GetExtensionStats :many
-SELECT 
+SELECT
     extension,
     COUNT(*) as file_count,
     SUM(size_bytes) as total_size,
@@ -268,4 +268,3 @@ FROM files
 WHERE volume_id = $1 AND size_bytes >= $2 AND size_bytes <= $3
 ORDER BY size_bytes DESC
 LIMIT $4;
-

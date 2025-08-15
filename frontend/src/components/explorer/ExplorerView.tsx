@@ -1,14 +1,13 @@
 /**
  * ExplorerView Component
- * 
+ *
  * Explorer UI integration for tree and file browsing functionality.
  * Provides file system navigation with WebSocket integration for live updates.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { FolderIcon, FileIcon, SearchIcon } from 'lucide-react';
 import { useWebSocket } from '@/providers/WebSocketProvider';
-import apiClient from '@/api/client';
+import { FileIcon, FolderIcon, SearchIcon } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 interface ExplorerViewProps {
   volumeId: string;
@@ -27,7 +26,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   const { status: wsStatus } = useWebSocket();
 
   // WebSocket integration for real-time updates
@@ -78,7 +77,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
       <div className="flex-1 border rounded p-4">
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-medium">File Explorer</span>
-          
+
           {/* Search - Explorer UI integration */}
           <div className="relative">
             <SearchIcon className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
@@ -91,12 +90,12 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
             />
           </div>
         </div>
-        
+
         {/* Breadcrumbs */}
         <div className="flex items-center gap-1 text-sm text-gray-600 mb-4">
           <span>Path: {currentPath}</span>
         </div>
-        
+
         {/* File List - File metadata display integration */}
         <div className="space-y-1">
           {loading ? (

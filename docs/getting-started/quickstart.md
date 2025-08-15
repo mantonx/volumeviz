@@ -87,7 +87,7 @@ DB_TYPE=sqlite
 # API Port
 API_PORT=8080
 
-# Frontend Port  
+# Frontend Port
 FRONTEND_PORT=3000
 
 # Log Level (debug, info, warn, error)

@@ -1,6 +1,6 @@
 package utils
 
-// FilePaginationParams provides pagination params for files  
+// FilePaginationParams provides pagination params for files
 type FilePaginationParams struct {
 	Limit  int    `json:"limit"`
 	Offset int    `json:"offset"`
@@ -26,7 +26,7 @@ func GetPaginationParamsFiles(limit, offset int) FilePaginationParams {
 	if offset < 0 {
 		offset = 0
 	}
-	
+
 	// Page files with pagination support
 	return FilePaginationParams{
 		Limit:  limit,

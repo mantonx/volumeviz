@@ -56,10 +56,10 @@ jobs:
         run: |
           set -euo pipefail
           echo "🔍 Validating sqlc generated code..."
-          
+
           # Generate fresh sqlc code
           make sqlc
-          
+
           # Check if any files changed (indicating generated code was out of sync)
           if ! git diff --quiet --exit-code internal/store/sqlc/; then
             echo "❌ Generated sqlc code is out of sync!"
@@ -168,7 +168,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "🔍 Verifying PostgreSQL connection..."
-          
+
           # Wait for PostgreSQL to be fully ready
           max_attempts=30
           attempt=1
@@ -181,7 +181,7 @@ jobs:
             sleep 2
             attempt=$((attempt + 1))
           done
-          
+
           if [ $attempt -gt $max_attempts ]; then
             echo "❌ Failed to connect to PostgreSQL after $max_attempts attempts"
             echo "🔍 Debugging information:"
@@ -193,7 +193,7 @@ jobs:
             psql -h localhost -p 5432 -U volumeviz -d volumeviz -c "SELECT version();" || echo "Connection failed"
             exit 1
           fi
-          
+
           echo "🔧 Running database migrations..."
           go run ./cmd/migrate up
 

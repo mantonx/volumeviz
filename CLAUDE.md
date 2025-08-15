@@ -124,7 +124,7 @@ func (h *Handler) CreateVolume(w http.ResponseWriter, r *http.Request) {
 ```sql
 -- AI-generated SQLC query with optimization
 -- name: GetVolumeAnalytics :many
-SELECT 
+SELECT
     v.id,
     v.name,
     vs.total_size,

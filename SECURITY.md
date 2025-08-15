@@ -16,7 +16,7 @@ VolumeViz takes security seriously and implements multiple layers of protection 
 
 #### Role-Based Access Control (RBAC)
 - **Admin Role**: Full system access including user management
-- **User Role**: Standard volume viewing and analysis permissions  
+- **User Role**: Standard volume viewing and analysis permissions
 - **Viewer Role**: Read-only access to dashboards and reports
 - **API Role**: Programmatic access with limited scope
 
@@ -50,7 +50,7 @@ VolumeViz takes security seriously and implements multiple layers of protection 
 
 #### Database Security
 - Connection pooling with secure connection strings
-- Database user permissions following principle of least privilege  
+- Database user permissions following principle of least privilege
 - Prepared statements preventing SQL injection
 - Regular security updates for database engines
 
@@ -99,7 +99,7 @@ Include in your report:
 - Authentication bypass leading to admin access
 - Complete system compromise
 
-#### High (CVSS 7.0-8.9)  
+#### High (CVSS 7.0-8.9)
 - Privilege escalation vulnerabilities
 - Data exposure affecting multiple users
 - Significant security control bypasses
@@ -194,7 +194,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO volumeviz
 {
   "timestamp": "2025-08-14T20:00:00Z",
   "user_id": "admin@example.com",
-  "action": "volume_scan_initiated", 
+  "action": "volume_scan_initiated",
   "resource": "volume_id:vol-123",
   "ip_address": "192.168.1.100",
   "user_agent": "VolumeViz-CLI/1.0.0",
@@ -212,7 +212,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO volumeviz
 - [ ] Configure backup encryption
 - [ ] Test disaster recovery procedures
 
-### Regular Maintenance  
+### Regular Maintenance
 - [ ] Apply security updates monthly
 - [ ] Rotate JWT signing keys quarterly
 - [ ] Review user access permissions
@@ -254,7 +254,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO volumeviz
 
 ---
 
-**Last Updated**: August 14, 2025  
+**Last Updated**: August 14, 2025
 **Next Review**: November 14, 2025
 
 *This security policy is reviewed quarterly and updated as needed to reflect current security practices and threat landscape.*

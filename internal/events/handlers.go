@@ -8,8 +8,8 @@ import (
 
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/mantonx/volumeviz/internal/interfaces"
-	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/realtime"
 )
 
 // EventHandlerService implements EventHandler and EventProcessor interfaces

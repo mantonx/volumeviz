@@ -140,7 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - N/A (Initial release)
 
-### Deprecated  
+### Deprecated
 - N/A (Initial release)
 
 ### Removed
@@ -167,7 +167,7 @@ Starting with v1.0.0, releases will follow this format:
 - Architecture improvements
 - Major API updates
 
-### ✨ Minor Release (X.Y.0)  
+### ✨ Minor Release (X.Y.0)
 - New features and enhancements
 - API additions (backwards compatible)
 - Performance improvements

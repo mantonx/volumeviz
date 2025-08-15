@@ -175,10 +175,10 @@ SELECT f.id, f.folder_id, f.volume_id, f.name, f.path, f.extension, f.size_bytes
 FROM files f
 WHERE f.volume_id = $1 AND f.hash_algo = $2 AND f.hash IS NOT NULL
   AND f.hash IN (
-    SELECT f2.hash 
+    SELECT f2.hash
     FROM files f2
-    WHERE f2.volume_id = $1 AND f2.hash_algo = $2 AND f2.hash IS NOT NULL 
-    GROUP BY f2.hash 
+    WHERE f2.volume_id = $1 AND f2.hash_algo = $2 AND f2.hash IS NOT NULL
+    GROUP BY f2.hash
     HAVING COUNT(*) > 1
   )
 ORDER BY f.hash, f.size_bytes DESC
@@ -266,7 +266,7 @@ func (q *Queries) GetDuplicateFiles(ctx context.Context, arg GetDuplicateFilesPa
 }
 
 const getExtensionStats = `-- name: GetExtensionStats :many
-SELECT 
+SELECT
     extension,
     COUNT(*) as file_count,
     SUM(size_bytes) as total_size,
@@ -465,7 +465,7 @@ func (q *Queries) GetFileByPath(ctx context.Context, arg GetFileByPathParams) (G
 }
 
 const getFileStats = `-- name: GetFileStats :one
-SELECT 
+SELECT
     COUNT(*) as total_files,
     SUM(size_bytes) as total_size,
     AVG(size_bytes) as avg_file_size,
@@ -1082,7 +1082,7 @@ func (q *Queries) GetLargestFiles(ctx context.Context, arg GetLargestFilesParams
 }
 
 const getMediaKindStats = `-- name: GetMediaKindStats :many
-SELECT 
+SELECT
     media_kind,
     COUNT(*) as file_count,
     SUM(size_bytes) as total_size,
@@ -1499,7 +1499,7 @@ func (q *Queries) SearchFilesByName(ctx context.Context, arg SearchFilesByNamePa
 
 const updateFileHash = `-- name: UpdateFileHash :exec
 UPDATE files
-SET 
+SET
     hash_algo = $2,
     hash = $3,
     updated_at = CURRENT_TIMESTAMP
@@ -1519,7 +1519,7 @@ func (q *Queries) UpdateFileHash(ctx context.Context, arg UpdateFileHashParams) 
 
 const updateFileMetadata = `-- name: UpdateFileMetadata :exec
 UPDATE files
-SET 
+SET
     size_bytes = $2,
     disk_usage_bytes = $3,
     mtime = $4,
@@ -1561,7 +1561,7 @@ func (q *Queries) UpdateFileMetadata(ctx context.Context, arg UpdateFileMetadata
 
 const updateFileMime = `-- name: UpdateFileMime :exec
 UPDATE files
-SET 
+SET
     mime = $2,
     media_kind = $3,
     encoding = $4,

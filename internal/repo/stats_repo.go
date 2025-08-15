@@ -25,19 +25,19 @@ func NewStatsRepo(queries *sqlc.Queries) *StatsRepo {
 // CreateDailyStat creates or updates a daily stat record
 func (r *StatsRepo) CreateDailyStat(ctx context.Context, params models.CreateDailyStatParams) (*models.DailyStat, error) {
 	row, err := r.queries.CreateDailyStat(ctx, sqlc.CreateDailyStatParams{
-		Date:           timeToPgDate(params.Date),
-		VolumeID:       params.VolumeID,
-		FolderID:       int64PtrToPgInt8(params.FolderID),
-		MediaKind:      stringPtrToPgText(params.MediaKind),
-		FilesCount:     params.FilesCount,
-		TotalBytes:     params.TotalBytes,
-		AddedBytes:     params.AddedBytes,
-		RemovedBytes:   params.RemovedBytes,
-		AddedFiles:     params.AddedFiles,
-		RemovedFiles:   params.RemovedFiles,
-		ComputedAt:     params.ComputedAt,
-		ScanID:         stringPtrToPgText(params.ScanID),
-		JobDurationMs:  int64PtrToPgInt8(params.JobDurationMs),
+		Date:          timeToPgDate(params.Date),
+		VolumeID:      params.VolumeID,
+		FolderID:      int64PtrToPgInt8(params.FolderID),
+		MediaKind:     stringPtrToPgText(params.MediaKind),
+		FilesCount:    params.FilesCount,
+		TotalBytes:    params.TotalBytes,
+		AddedBytes:    params.AddedBytes,
+		RemovedBytes:  params.RemovedBytes,
+		AddedFiles:    params.AddedFiles,
+		RemovedFiles:  params.RemovedFiles,
+		ComputedAt:    params.ComputedAt,
+		ScanID:        stringPtrToPgText(params.ScanID),
+		JobDurationMs: int64PtrToPgInt8(params.JobDurationMs),
 	})
 	if err != nil {
 		return nil, err
@@ -59,21 +59,21 @@ func (r *StatsRepo) InsertVolumeStats(ctx context.Context, stats *models.DirRoll
 	// This is a compatibility shim until scheduler is migrated
 	// The legacy DirRollup only has basic fields, so we create a minimal DailyStat
 	params := models.CreateDailyStatParams{
-		Date:           stats.ComputedAt.Truncate(24 * time.Hour), // Use computed date as the stat date
-		VolumeID:       "", // DirRollup doesn't have VolumeID, would need to be passed separately
-		FolderID:       &stats.DirID, // Map to the directory this rollup represents
-		MediaKind:      nil, // All media kinds combined
-		FilesCount:     stats.FileCount,
-		TotalBytes:     stats.SizeBytes,
-		AddedBytes:     0, // Legacy stats don't track deltas
-		RemovedBytes:   0,
-		AddedFiles:     0,
-		RemovedFiles:   0,
-		ComputedAt:     time.Now(),
-		ScanID:         nil, // Legacy stats don't track scan ID
-		JobDurationMs:  nil, // DirRollup doesn't have duration
+		Date:          stats.ComputedAt.Truncate(24 * time.Hour), // Use computed date as the stat date
+		VolumeID:      "",                                        // DirRollup doesn't have VolumeID, would need to be passed separately
+		FolderID:      &stats.DirID,                              // Map to the directory this rollup represents
+		MediaKind:     nil,                                       // All media kinds combined
+		FilesCount:    stats.FileCount,
+		TotalBytes:    stats.SizeBytes,
+		AddedBytes:    0, // Legacy stats don't track deltas
+		RemovedBytes:  0,
+		AddedFiles:    0,
+		RemovedFiles:  0,
+		ComputedAt:    time.Now(),
+		ScanID:        nil, // Legacy stats don't track scan ID
+		JobDurationMs: nil, // DirRollup doesn't have duration
 	}
-	
+
 	_, err := r.CreateDailyStat(ctx, params)
 	return err
 }
@@ -177,13 +177,13 @@ func (r *StatsRepo) GetTopGrowingFolders(ctx context.Context, volumeID string, s
 			avgDailyStr = fmt.Sprintf("%.2f", row.AvgDailyAddedBytes)
 		}
 		folders[i] = &models.TopGrowingFolder{
-			FolderID:            pgInt8ToInt64Ptr(row.FolderID),
-			FolderName:          row.FolderName,
-			FolderPath:          row.FolderPath,
-			TotalAddedBytes:     row.TotalAddedBytes,
-			TotalAddedFiles:     row.TotalAddedFiles,
-			AvgDailyAddedBytes:  &avgDailyStr,
-			DaysTracked:         row.DaysTracked,
+			FolderID:           pgInt8ToInt64Ptr(row.FolderID),
+			FolderName:         row.FolderName,
+			FolderPath:         row.FolderPath,
+			TotalAddedBytes:    row.TotalAddedBytes,
+			TotalAddedFiles:    row.TotalAddedFiles,
+			AvgDailyAddedBytes: &avgDailyStr,
+			DaysTracked:        row.DaysTracked,
 		}
 	}
 
@@ -240,13 +240,13 @@ func (r *StatsRepo) GetTrendAnalysis(ctx context.Context, volumeID string, start
 				growthRate30d = &rate
 			}
 		}
-		
+
 		// Convert int32 to int64 pointers
 		bytesChange7d := int64(row.BytesChange7d)
 		filesChange7d := int64(row.FilesChange7d)
 		bytesChange30d := int64(row.BytesChange30d)
 		filesChange30d := int64(row.FilesChange30d)
-		
+
 		trends[i] = &models.TrendAnalysis{
 			Date:               pgDateToTime(row.Date),
 			VolumeID:           row.VolumeID,
@@ -338,14 +338,14 @@ func (r *StatsRepo) CreateStatsJob(ctx context.Context, jobType, volumeID string
 // UpdateStatsJob updates a stats job with completion information
 func (r *StatsRepo) UpdateStatsJob(ctx context.Context, params models.UpdateStatsJobParams) error {
 	return r.queries.UpdateStatsJob(ctx, sqlc.UpdateStatsJobParams{
-		ID:              params.ID,
-		CompletedAt:     timePtrToPgTimestamptz(params.CompletedAt),
-		DurationMs:      int64PtrToPgInt8(params.DurationMs),
-		Status:          params.Status,
-		ErrorMessage:    stringPtrToPgText(params.ErrorMessage),
-		ProcessedDates:  int32PtrToPgInt4(params.ProcessedDates),
-		RecordsCreated:  int32PtrToPgInt4(params.RecordsCreated),
-		RecordsUpdated:  int32PtrToPgInt4(params.RecordsUpdated),
+		ID:             params.ID,
+		CompletedAt:    timePtrToPgTimestamptz(params.CompletedAt),
+		DurationMs:     int64PtrToPgInt8(params.DurationMs),
+		Status:         params.Status,
+		ErrorMessage:   stringPtrToPgText(params.ErrorMessage),
+		ProcessedDates: int32PtrToPgInt4(params.ProcessedDates),
+		RecordsCreated: int32PtrToPgInt4(params.RecordsCreated),
+		RecordsUpdated: int32PtrToPgInt4(params.RecordsUpdated),
 	})
 }
 
@@ -402,7 +402,7 @@ func (r *StatsRepo) GetJobMetrics(ctx context.Context, jobType string, since tim
 			lastJobStarted = &ts
 		}
 	}
-	
+
 	var lastSuccess *time.Time
 	if row.LastSuccess != nil {
 		if ts, ok := row.LastSuccess.(time.Time); ok {
@@ -417,12 +417,12 @@ func (r *StatsRepo) GetJobMetrics(ctx context.Context, jobType string, since tim
 	}
 
 	return &models.JobMetrics{
-		TotalJobs:       row.TotalJobs,
-		SuccessfulJobs:  row.SuccessfulJobs,
-		FailedJobs:      row.FailedJobs,
-		AvgDurationMs:   &avgDuration,
-		LastJobStarted:  lastJobStarted,
-		LastSuccess:     lastSuccess,
+		TotalJobs:      row.TotalJobs,
+		SuccessfulJobs: row.SuccessfulJobs,
+		FailedJobs:     row.FailedJobs,
+		AvgDurationMs:  &avgDuration,
+		LastJobStarted: lastJobStarted,
+		LastSuccess:    lastSuccess,
 	}, nil
 }
 
