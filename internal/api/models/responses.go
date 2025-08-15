@@ -6,22 +6,6 @@ import (
 	"github.com/mantonx/volumeviz/internal/interfaces"
 )
 
-// ErrorResponse represents an API error response
-type ErrorResponse struct {
-	Error   string         `json:"error" example:"Volume not found"`
-	Code    string         `json:"code,omitempty" example:"VOLUME_NOT_FOUND"`
-	Details map[string]any `json:"details,omitempty"`
-} // @name ErrorResponse
-
-// HealthResponse represents a health check response
-type HealthResponse struct {
-	Status     string                 `json:"status" example:"ok"`
-	Service    string                 `json:"service" example:"volumeviz"`
-	Version    string                 `json:"version" example:"v1"`
-	Timestamp  time.Time              `json:"timestamp"`
-	Components map[string]interface{} `json:"components,omitempty"`
-} // @name HealthResponse
-
 // VolumeResponse represents a Docker volume
 type VolumeResponse struct {
 	ID         string            `json:"id" example:"tv-shows-readonly"`

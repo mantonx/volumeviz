@@ -11,20 +11,20 @@ import (
 
 // Config holds application configuration
 type Config struct {
-	Server               ServerConfig
-	Docker               DockerConfig
-	Database             DatabaseConfig
-	CORS                 CORSConfig
-	Auth                 AuthConfig
-	Security             SecurityConfig
-	RateLimit            RateLimitConfig
-	TLS                  TLSConfig
-	Lifecycle            LifecycleConfig
-	Events               EventsConfig
-	Scan                 ScanConfig
-	FilesystemIndexing   FilesystemIndexingConfig
-	MediaEnrichment      MediaEnrichmentConfig
-	Alerts               AlertsConfig
+	Server             ServerConfig
+	Docker             DockerConfig
+	Database           DatabaseConfig
+	CORS               CORSConfig
+	Auth               AuthConfig
+	Security           SecurityConfig
+	RateLimit          RateLimitConfig
+	TLS                TLSConfig
+	Lifecycle          LifecycleConfig
+	Events             EventsConfig
+	Scan               ScanConfig
+	FilesystemIndexing FilesystemIndexingConfig
+	MediaEnrichment    MediaEnrichmentConfig
+	Alerts             AlertsConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -112,6 +112,7 @@ type ScanConfig struct {
 	Enabled           bool
 	Interval          time.Duration
 	Concurrency       int
+	MaxPerVolume      int // VV_SCAN_MAX_PER_VOLUME (always 1 for this ticket)
 	TimeoutPerVolume  time.Duration
 	MethodsOrder      []string
 	BindMountsEnabled bool
@@ -122,25 +123,25 @@ type ScanConfig struct {
 // FilesystemIndexingConfig holds filesystem indexing configuration
 type FilesystemIndexingConfig struct {
 	// Enable/disable filesystem indexing
-	Enabled         bool     `env:"VV_FILESYSTEM_INDEXING_ENABLED" envDefault:"false"`
-	
+	Enabled bool `env:"VV_FILESYSTEM_INDEXING_ENABLED" envDefault:"false"`
+
 	// Hashing configuration
-	EnableHashing      bool   `env:"VV_ENABLE_HASHING" envDefault:"false"`
-	MaxFileBytesForHash int64 `env:"VV_MAX_FILE_BYTES_FOR_HASH" envDefault:"10485760"` // 10MB
-	HashAlgorithm      string `env:"VV_HASH_ALGO" envDefault:"sha256"`
-	
+	EnableHashing       bool   `env:"VV_ENABLE_HASHING" envDefault:"false"`
+	MaxFileBytesForHash int64  `env:"VV_MAX_FILE_BYTES_FOR_HASH" envDefault:"10485760"` // 10MB
+	HashAlgorithm       string `env:"VV_HASH_ALGO" envDefault:"sha256"`
+
 	// Skip rules
 	SkipPatterns []string `env:"VV_SKIP_PATTERNS" envSeparator:","`
 	SkipHidden   bool     `env:"VV_SKIP_HIDDEN" envDefault:"true"`
-	
-	// Performance settings  
-	MaxDepth         int `env:"VV_MAX_DEPTH" envDefault:"20"`
-	ConcurrentReads  int `env:"VV_CONCURRENT_READS" envDefault:"5"`
-	BatchSize        int `env:"VV_BATCH_SIZE" envDefault:"1000"`
-	
+
+	// Performance settings
+	MaxDepth        int `env:"VV_MAX_DEPTH" envDefault:"20"`
+	ConcurrentReads int `env:"VV_CONCURRENT_READS" envDefault:"5"`
+	BatchSize       int `env:"VV_BATCH_SIZE" envDefault:"1000"`
+
 	// Metadata collection
 	CollectExtendedAttributes bool `env:"VV_COLLECT_EXTENDED_ATTRS" envDefault:"false"`
-	DetectMimeTypes          bool `env:"VV_DETECT_MIME_TYPES" envDefault:"true"`
+	DetectMimeTypes           bool `env:"VV_DETECT_MIME_TYPES" envDefault:"true"`
 }
 
 // MediaEnrichmentConfig holds media metadata enrichment configuration
@@ -149,27 +150,27 @@ type MediaEnrichmentConfig struct {
 	Enabled              bool          `env:"VV_ENABLE_ENRICHERS" envDefault:"true"`
 	MaxConcurrentWorkers int           `env:"VV_MAX_CONCURRENT_ENRICHERS" envDefault:"3"`
 	TimeoutPerFile       time.Duration `env:"VV_ENRICHER_TIMEOUT_PER_FILE" envDefault:"30s"`
-	
+
 	// FFprobe settings
-	FFprobeEnabled    bool          `env:"VV_ENABLE_FFPROBE" envDefault:"true"`
-	FFprobePath       string        `env:"VV_FFPROBE_PATH" envDefault:"ffprobe"`
-	FFprobeTimeout    time.Duration `env:"VV_FFPROBE_TIMEOUT" envDefault:"15s"`
-	
+	FFprobeEnabled bool          `env:"VV_ENABLE_FFPROBE" envDefault:"true"`
+	FFprobePath    string        `env:"VV_FFPROBE_PATH" envDefault:"ffprobe"`
+	FFprobeTimeout time.Duration `env:"VV_FFPROBE_TIMEOUT" envDefault:"15s"`
+
 	// EXIF settings
-	EXIFEnabled    bool `env:"VV_ENABLE_EXIF" envDefault:"true"`
-	EnableGPS      bool `env:"VV_ENABLE_EXIF_GPS" envDefault:"false"`
-	RedactGPS      bool `env:"VV_REDACT_GPS" envDefault:"true"`
-	GPSPrecision   int  `env:"VV_GPS_PRECISION" envDefault:"3"` // decimal places for GPS coordinates
-	
+	EXIFEnabled  bool `env:"VV_ENABLE_EXIF" envDefault:"true"`
+	EnableGPS    bool `env:"VV_ENABLE_EXIF_GPS" envDefault:"false"`
+	RedactGPS    bool `env:"VV_REDACT_GPS" envDefault:"true"`
+	GPSPrecision int  `env:"VV_GPS_PRECISION" envDefault:"3"` // decimal places for GPS coordinates
+
 	// Subtitle settings
 	SubtitleEnabled bool `env:"VV_ENABLE_SUBTITLE_ENRICHMENT" envDefault:"true"`
 }
 
 // AlertsConfig holds alerts engine configuration
 type AlertsConfig struct {
-	Enabled                    bool `env:"ALERTS_ENABLED" envDefault:"false"`
-	EvaluationIntervalMinutes  int  `env:"ALERTS_EVALUATION_INTERVAL_MINUTES" envDefault:"1"`
-	DeliveryWorkers            int  `env:"ALERTS_DELIVERY_WORKERS" envDefault:"3"`
+	Enabled                   bool `env:"ALERTS_ENABLED" envDefault:"false"`
+	EvaluationIntervalMinutes int  `env:"ALERTS_EVALUATION_INTERVAL_MINUTES" envDefault:"1"`
+	DeliveryWorkers           int  `env:"ALERTS_DELIVERY_WORKERS" envDefault:"3"`
 }
 
 // Load loads configuration from environment variables with defaults
@@ -243,7 +244,8 @@ func Load() *Config {
 		Scan: ScanConfig{
 			Enabled:           getScanEnabledDefault(),
 			Interval:          getDurationEnv("SCAN_INTERVAL", 6*time.Hour),
-			Concurrency:       getIntEnv("SCAN_CONCURRENCY", 2),
+			Concurrency:       getIntEnv("VV_SCAN_MAX_CONCURRENCY", 2),
+			MaxPerVolume:      getIntEnv("VV_SCAN_MAX_PER_VOLUME", 1),
 			TimeoutPerVolume:  getDurationEnv("SCAN_TIMEOUT_PER_VOLUME", 2*time.Minute),
 			MethodsOrder:      getStringSliceEnv("SCAN_METHODS_ORDER", []string{"diskus", "du", "native"}),
 			BindMountsEnabled: getBoolEnv("SCAN_BIND_MOUNTS_ENABLED", false),
@@ -398,16 +400,16 @@ func (fic *FilesystemIndexingConfig) ToIndexerConfig() interface{} {
 	// Note: This would need to import the services package, but that would create a circular dependency.
 	// Instead, this method is just for documentation. The actual conversion would be done in the main app.
 	return map[string]interface{}{
-		"enable_hashing":               fic.EnableHashing,
-		"max_file_bytes_for_hash":      fic.MaxFileBytesForHash,
-		"hash_algorithm":               fic.HashAlgorithm,
-		"skip_patterns":                fic.SkipPatterns,
-		"skip_hidden":                  fic.SkipHidden,
-		"max_depth":                    fic.MaxDepth,
-		"concurrent_reads":             fic.ConcurrentReads,
-		"batch_size":                   fic.BatchSize,
-		"collect_extended_attributes":  fic.CollectExtendedAttributes,
-		"detect_mime_types":            fic.DetectMimeTypes,
+		"enable_hashing":              fic.EnableHashing,
+		"max_file_bytes_for_hash":     fic.MaxFileBytesForHash,
+		"hash_algorithm":              fic.HashAlgorithm,
+		"skip_patterns":               fic.SkipPatterns,
+		"skip_hidden":                 fic.SkipHidden,
+		"max_depth":                   fic.MaxDepth,
+		"concurrent_reads":            fic.ConcurrentReads,
+		"batch_size":                  fic.BatchSize,
+		"collect_extended_attributes": fic.CollectExtendedAttributes,
+		"detect_mime_types":           fic.DetectMimeTypes,
 	}
 }
 

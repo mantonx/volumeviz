@@ -342,13 +342,10 @@ func RespondWithError(c *gin.Context, statusCode int, code ErrorCode, message st
 		requestID = c.GetHeader("X-Request-ID")
 	}
 
-	response := models.ErrorV1{
-		Error: models.ErrorDetailsV1{
-			Code:      string(code),
-			Message:   message,
-			Details:   details,
-			RequestID: requestID,
-		},
+	response := models.ErrorResponse{
+		Error:   message,
+		Code:    string(code),
+		Details: details,
 	}
 
 	c.JSON(statusCode, response)

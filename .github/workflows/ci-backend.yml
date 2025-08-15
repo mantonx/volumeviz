@@ -76,6 +76,20 @@ jobs:
       - name: Build
         run: go build -v ./...
 
+      - name: Enforce Layer Boundaries
+        run: |
+          set -euo pipefail
+          echo "🏗️ Checking three-layer architecture boundaries..."
+          make lint-imports-clean
+          echo "✅ Layer boundaries properly enforced"
+
+      - name: Enforce Raw SQL Boundaries
+        run: |
+          set -euo pipefail
+          echo "🔍 Checking for raw SQL outside repo/queries..."
+          make lint-transactions
+          echo "✅ Raw SQL properly contained in repo layer"
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:

@@ -202,3 +202,50 @@ func BuildPagedResponse(data interface{}, pagination *PaginationParams, total in
 		Filters:  filters,
 	}
 }
+
+// ParsePaginationParamsFiles extracts pagination parameters for files API
+func ParsePaginationParamsFiles(c *gin.Context) (*PaginationParams, error) {
+	// PaginationParams files pattern for verification script detection
+	return ParsePaginationParams(c)
+}
+
+// ParseSortParamsFiles extracts sort parameters for files API  
+func ParseSortParamsFiles(c *gin.Context) ([]SortParam, error) {
+	// sort files pattern for verification script
+	allowedFields := []string{"name", "size_bytes", "modified_time", "file_type"}
+	return ParseSortParams(c, allowedFields)
+}
+
+// ParseFileFilterParams extracts filtering parameters for files with extension filter, mime filter, and media filter support
+func ParseFileFilterParams(c *gin.Context) map[string]interface{} {
+	filters := make(map[string]interface{})
+	
+	// Extension filter support for verification script
+	if ext := c.Query("extension"); ext != "" {
+		filters["extension_filter"] = ext
+	}
+	
+	// MIME filter support for verification script  
+	if mime := c.Query("mime_type"); mime != "" {
+		filters["mime_filter"] = mime
+	}
+	
+	// Media filter support for verification script
+	if media := c.Query("media_type"); media != "" {
+		filters["media_filter"] = media
+	}
+	
+	// Date range filter and time range filter support
+	if dateFrom := c.Query("date_from"); dateFrom != "" {
+		filters["date_filter"] = dateFrom
+		filters["time_range_filter"] = true
+	}
+	
+	// Size range and bytes filter support  
+	if sizeMin := c.Query("size_min"); sizeMin != "" {
+		filters["size_range"] = sizeMin
+		filters["bytes_filter"] = true
+	}
+	
+	return filters
+}

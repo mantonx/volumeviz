@@ -26,28 +26,28 @@ const (
 
 // MediaMetadata represents enriched metadata for a media file
 type MediaMetadata struct {
-	Kind        EnrichmentKind         `json:"kind"`
+	Kind        EnrichmentKind `json:"kind"`
 	RawMetadata map[string]any `json:"raw_metadata,omitempty"`
 
 	// Common fields (populated based on media type)
-	DurationMs  *int64  `json:"duration_ms,omitempty"`  // Audio/Video duration
-	BitrateKbps *int32  `json:"bitrate_kbps,omitempty"` // Audio/Video bitrate
+	DurationMs  *int64 `json:"duration_ms,omitempty"`  // Audio/Video duration
+	BitrateKbps *int32 `json:"bitrate_kbps,omitempty"` // Audio/Video bitrate
 
 	// Video/Image dimensions
 	Width  *int32 `json:"width,omitempty"`
 	Height *int32 `json:"height,omitempty"`
 
 	// Video-specific
-	FPS                     *float64 `json:"fps,omitempty"`
-	ColorPrimaries          *string  `json:"color_primaries,omitempty"`
-	TransferCharacteristic  *string  `json:"transfer_characteristic,omitempty"`
-	HDRFormat               HDRFormat `json:"hdr_format"`
-	AudioChannels           *int32   `json:"audio_channels,omitempty"`
-	AudioCodec              *string  `json:"audio_codec,omitempty"`
-	AudioSampleRate         *int32   `json:"audio_sample_rate,omitempty"`
-	VideoCodec              *string  `json:"video_codec,omitempty"`
-	VideoProfile            *string  `json:"video_profile,omitempty"`
-	VideoLevel              *string  `json:"video_level,omitempty"`
+	FPS                    *float64  `json:"fps,omitempty"`
+	ColorPrimaries         *string   `json:"color_primaries,omitempty"`
+	TransferCharacteristic *string   `json:"transfer_characteristic,omitempty"`
+	HDRFormat              HDRFormat `json:"hdr_format"`
+	AudioChannels          *int32    `json:"audio_channels,omitempty"`
+	AudioCodec             *string   `json:"audio_codec,omitempty"`
+	AudioSampleRate        *int32    `json:"audio_sample_rate,omitempty"`
+	VideoCodec             *string   `json:"video_codec,omitempty"`
+	VideoProfile           *string   `json:"video_profile,omitempty"`
+	VideoLevel             *string   `json:"video_level,omitempty"`
 
 	// Image/Camera metadata
 	CaptureDateTime *time.Time `json:"capture_datetime,omitempty"`
@@ -55,7 +55,7 @@ type MediaMetadata struct {
 	CameraModel     *string    `json:"camera_model,omitempty"`
 	LensModel       *string    `json:"lens_model,omitempty"`
 	Orientation     *int32     `json:"orientation,omitempty"`
-	
+
 	// GPS data (with privacy controls)
 	GPSLatitude  *float64 `json:"gps_latitude,omitempty"`
 	GPSLongitude *float64 `json:"gps_longitude,omitempty"`
@@ -90,30 +90,30 @@ type EnrichmentResult struct {
 
 // EnrichmentProgress represents the progress of enriching a volume
 type EnrichmentProgress struct {
-	VolumeID        string    `json:"volume_id"`
-	Status          string    `json:"status"` // "running", "completed", "failed", "paused"
-	StartedAt       time.Time `json:"started_at"`
-	LastUpdate      time.Time `json:"last_update"`
-	
+	VolumeID   string    `json:"volume_id"`
+	Status     string    `json:"status"` // "running", "completed", "failed", "paused"
+	StartedAt  time.Time `json:"started_at"`
+	LastUpdate time.Time `json:"last_update"`
+
 	// Overall progress
 	TotalFiles      int64 `json:"total_files"`
 	ProcessedFiles  int64 `json:"processed_files"`
 	SuccessfulFiles int64 `json:"successful_files"`
 	FailedFiles     int64 `json:"failed_files"`
 	SkippedFiles    int64 `json:"skipped_files"`
-	
+
 	// Current operation
 	CurrentFile     string `json:"current_file"`
 	CurrentEnricher string `json:"current_enricher"`
-	
+
 	// Performance metrics
 	FilesPerSecond     float64       `json:"files_per_sec"`
 	EstimatedRemaining time.Duration `json:"estimated_remaining"`
-	
+
 	// Error tracking
 	LastError   string `json:"last_error,omitempty"`
 	ErrorsCount int64  `json:"errors_count"`
-	
+
 	// Enricher-specific progress
 	EnricherProgress map[string]*EnricherProgress `json:"enricher_progress,omitempty"`
 }

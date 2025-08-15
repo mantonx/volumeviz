@@ -4,7 +4,7 @@ info:
   version: '1.0.0'
   description: |
     Docker volume monitoring API with comprehensive volume discovery, size calculation,
-    and container attachment tracking. Focus on user-mounted volumes only.
+    container attachment tracking, alerts, rules, and destinations management.
 
     ## Volume-First Approach
     - Automatic discovery and filtering of user-mounted volumes
@@ -826,6 +826,278 @@ paths:
                     type: integer
                   status:
                     type: string
+
+  # Explorer API Endpoints
+  /volumes/{name}/tree/children:
+    get:
+      tags:
+        - Explorer
+      summary: Get directory children
+      description: Get files and folders in a directory path within a volume
+      operationId: getTreeChildren
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Volume name
+          example: 'media-library'
+        - name: path
+          in: query
+          schema:
+            type: string
+            default: '/'
+          description: Directory path
+          example: '/movies'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+          description: Items per page
+      responses:
+        '200':
+          description: Directory listing with children
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectoryListing'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /volumes/{name}/files:
+    get:
+      tags:
+        - Explorer
+      summary: Get files in directory
+      description: Get all files in a specific directory path within a volume with optional filters
+      operationId: getFilesForPath
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Volume name
+          example: 'media-library'
+        - name: path
+          in: query
+          schema:
+            type: string
+            default: '/'
+          description: Directory path
+          example: '/movies'
+        - name: extension
+          in: query
+          schema:
+            type: string
+          description: Filter by file extension
+          example: 'mp4'
+        - name: mime_type
+          in: query
+          schema:
+            type: string
+          description: Filter by MIME type
+          example: 'video/mp4'
+        - name: min_size
+          in: query
+          schema:
+            type: integer
+          description: Minimum file size in bytes
+        - name: max_size
+          in: query
+          schema:
+            type: integer
+          description: Maximum file size in bytes
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+          description: Items per page
+      responses:
+        '200':
+          description: File listing with filters applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # File Metadata API Endpoints
+  /files/{id}/details:
+    get:
+      tags:
+        - Files
+      summary: Get file details
+      description: Get comprehensive information about a specific file including metadata
+      operationId: getFileDetails
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: File ID
+          example: 123
+      responses:
+        '200':
+          description: Detailed file information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileDetailsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /files/{id}/metadata:
+    get:
+      tags:
+        - Files
+      summary: Get file metadata
+      description: Get enriched metadata for a specific file (media properties, EXIF, etc.)
+      operationId: getFileMetadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: File ID
+          example: 123
+        - name: kind
+          in: query
+          schema:
+            type: string
+            enum: [media, exif, ffmpeg]
+          description: Metadata kind filter
+          example: 'media'
+      responses:
+        '200':
+          description: File metadata information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileMetadataResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # Stats API Endpoints
+  /stats/daily:
+    get:
+      tags:
+        - Stats
+      summary: Get daily stats
+      description: Get daily aggregated statistics for a volume
+      operationId: getDailyStats
+      parameters:
+        - name: volume_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Volume ID
+          example: 'media-library'
+        - name: days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+          description: Number of days to retrieve
+      responses:
+        '200':
+          description: Daily statistics data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DailyStat'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /stats/top-folders:
+    get:
+      tags:
+        - Stats
+      summary: Get top folders by size
+      description: Get the largest folders in a volume by total size
+      operationId: getTopFolders
+      parameters:
+        - name: volume_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Volume ID
+          example: 'media-library'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of folders to return
+      responses:
+        '200':
+          description: Top folders by size
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FolderSizeInfo'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /scan-methods:
     get:
@@ -2376,6 +2648,359 @@ components:
         - mount_path
         - rw
 
+    # Explorer API Schemas
+    DirectoryListing:
+      type: object
+      description: Contents of a directory
+      properties:
+        volume:
+          type: string
+          description: Volume name
+          example: 'media-library'
+        path:
+          type: string
+          description: Directory path
+          example: '/movies'
+        parent:
+          $ref: '#/components/schemas/FolderNode'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/TreeNode'
+          description: Files and folders in this directory
+        pagination:
+          $ref: '#/components/schemas/PaginationResponse'
+
+    TreeNode:
+      type: object
+      description: File or folder in directory tree
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Node ID
+          example: 123
+        name:
+          type: string
+          description: File or folder name
+          example: 'movies'
+        path:
+          type: string
+          description: Full path
+          example: '/media/movies'
+        size:
+          type: integer
+          format: int64
+          description: Size in bytes
+          example: 4294967296
+        modified:
+          type: string
+          format: date-time
+          description: Last modified time
+        type:
+          type: string
+          enum: [file, folder]
+          description: Node type
+          example: 'folder'
+        has_children:
+          type: boolean
+          description: Whether node has children (folders only)
+          example: true
+        mime_type:
+          type: string
+          description: MIME type (files only)
+          example: 'video/mp4'
+        extension:
+          type: string
+          description: File extension (files only)
+          example: 'mp4'
+
+    FolderNode:
+      type: object
+      description: Folder in directory tree
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Folder ID
+          example: 123
+        name:
+          type: string
+          description: Folder name
+          example: 'movies'
+        path:
+          type: string
+          description: Full path
+          example: '/media/movies'
+        size:
+          type: integer
+          format: int64
+          description: Total size in bytes
+          example: 4294967296
+        modified:
+          type: string
+          format: date-time
+          description: Last modified time
+        type:
+          type: string
+          enum: [folder]
+          description: Always 'folder'
+          example: 'folder'
+
+    FileListResponse:
+      type: object
+      description: List of files in a directory
+      properties:
+        volume:
+          type: string
+          description: Volume name
+          example: 'media-library'
+        path:
+          type: string
+          description: Directory path
+          example: '/movies'
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileNode'
+          description: Files in directory
+        pagination:
+          $ref: '#/components/schemas/PaginationResponse'
+        filters:
+          $ref: '#/components/schemas/FileFilters'
+
+    FileNode:
+      type: object
+      description: File in directory listing
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: File ID
+          example: 456
+        name:
+          type: string
+          description: File name
+          example: 'movie.mp4'
+        path:
+          type: string
+          description: Full path
+          example: '/media/movies/movie.mp4'
+        size:
+          type: integer
+          format: int64
+          description: File size in bytes
+          example: 1073741824
+        modified:
+          type: string
+          format: date-time
+          description: Last modified time
+        mime_type:
+          type: string
+          description: MIME type
+          example: 'video/mp4'
+        extension:
+          type: string
+          description: File extension
+          example: 'mp4'
+        media_kind:
+          type: string
+          description: Media classification
+          example: 'video'
+
+    FileFilters:
+      type: object
+      description: File filtering options
+      properties:
+        extension:
+          type: string
+          description: File extension filter
+          example: 'mp4'
+        mime_type:
+          type: string
+          description: MIME type filter
+          example: 'video/mp4'
+        min_size:
+          type: integer
+          format: int64
+          description: Minimum file size in bytes
+          example: 1048576
+        max_size:
+          type: integer
+          format: int64
+          description: Maximum file size in bytes
+          example: 10737418240
+
+    PaginationResponse:
+      type: object
+      description: Pagination metadata
+      properties:
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        page_size:
+          type: integer
+          description: Items per page
+          example: 50
+        total:
+          type: integer
+          format: int64
+          description: Total items
+          example: 1234
+        pages:
+          type: integer
+          description: Total pages
+          example: 25
+
+    # File Metadata Schemas
+    FileDetailsResponse:
+      type: object
+      description: Detailed file information
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: File ID
+          example: 123
+        name:
+          type: string
+          description: File name
+          example: 'movie.mp4'
+        path:
+          type: string
+          description: Full path
+          example: '/media/movies/movie.mp4'
+        volume_id:
+          type: string
+          description: Volume ID
+          example: 'media-library'
+        size:
+          type: integer
+          format: int64
+          description: File size in bytes
+          example: 1073741824
+        disk_usage:
+          type: integer
+          format: int64
+          description: Disk usage in bytes
+          example: 1073741824
+        mime_type:
+          type: string
+          description: MIME type
+          example: 'video/mp4'
+        media_kind:
+          type: string
+          description: Media classification
+          example: 'video'
+        extension:
+          type: string
+          description: File extension
+          example: 'mp4'
+        modified:
+          type: string
+          format: date-time
+          description: Last modified time
+        created:
+          type: string
+          format: date-time
+          description: Creation time
+        permissions:
+          $ref: '#/components/schemas/FilePermissions'
+        checksums:
+          type: object
+          additionalProperties:
+            type: string
+          description: File checksums by algorithm
+        is_symlink:
+          type: boolean
+          description: Whether file is a symbolic link
+        symlink_target:
+          type: string
+          description: Target of symbolic link
+
+    FilePermissions:
+      type: object
+      description: File system permissions
+      properties:
+        mode:
+          type: integer
+          format: int32
+          description: File mode/permissions
+          example: 644
+        owner:
+          type: string
+          description: File owner
+          example: 'user'
+        group:
+          type: string
+          description: File group
+          example: 'users'
+        uid:
+          type: integer
+          format: int32
+          description: User ID
+          example: 1000
+        gid:
+          type: integer
+          format: int32
+          description: Group ID
+          example: 1000
+
+    FileMetadataResponse:
+      type: object
+      description: Rich media metadata for a file
+      properties:
+        file_id:
+          type: integer
+          format: int64
+          description: File ID
+          example: 123
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Metadata key-value pairs
+        enriched:
+          type: boolean
+          description: Whether metadata has been enriched
+          example: true
+        updated_at:
+          type: string
+          format: date-time
+          description: Last metadata update time
+
+    # Stats Schemas  
+    FolderSizeInfo:
+      type: object
+      description: Folder size statistics
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Folder ID
+        name:
+          type: string
+          description: Folder name
+        path:
+          type: string
+          description: Folder path
+        size_bytes_recursive:
+          type: integer
+          format: int64
+          description: Total size including subfolders
+        disk_usage_bytes_recursive:
+          type: integer
+          format: int64
+          description: Actual disk usage including subfolders
+        file_count:
+          type: integer
+          format: int64
+          description: Number of files in folder
+        dir_count:
+          type: integer
+          format: int64
+          description: Number of subdirectories
+
     AttachmentsList:
       type: object
       description: List of volume attachments
@@ -2631,6 +3256,17 @@ tags:
     description: System information and diagnostics
   - name: Database
     description: Database management and operations
+  - name: Alerts
+    description: Alert rules and destinations management
+
+components:
+  schemas:
+    AlertRule:
+      type: object
+      description: Alert rule configuration
+    AlertDestination:  
+      type: object
+      description: Alert destinations configuration
 
 externalDocs:
   description: VolumeViz Documentation

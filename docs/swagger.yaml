@@ -12,6 +12,54 @@ definitions:
         example: tv-shows-readonly
         type: string
     type: object
+  DailyStats:
+    properties:
+      date:
+        example: "2023-01-01"
+        type: string
+      file_count:
+        example: 2500
+        type: integer
+      folder_count:
+        example: 150
+        type: integer
+      growth:
+        example: 52428800
+        type: integer
+      growth_rate:
+        example: 5.12
+        type: number
+      size_bytes:
+        example: 1073741824
+        type: integer
+      volume_id:
+        example: tv-shows-readonly
+        type: string
+    type: object
+  DockerHealth:
+    properties:
+      api_version:
+        example: "1.41"
+        type: string
+      build_time:
+        example: "2021-07-30T19:52:10.000000000+00:00"
+        type: string
+      git_commit:
+        example: 75249d8
+        type: string
+      go_version:
+        example: go1.16.6
+        type: string
+      message:
+        example: Docker daemon is responsive
+        type: string
+      status:
+        example: healthy
+        type: string
+      version:
+        example: 20.10.8
+        type: string
+    type: object
   ErrorResponse:
     properties:
       code:
@@ -22,6 +70,296 @@ definitions:
         type: object
       error:
         example: Volume not found
+        type: string
+      message:
+        example: Additional error details
+        type: string
+    type: object
+  FileDetailsResponse:
+    properties:
+      checksums:
+        additionalProperties:
+          type: string
+        type: object
+      created:
+        type: string
+      disk_usage:
+        example: 1073741824
+        type: integer
+      extension:
+        example: mp4
+        type: string
+      id:
+        example: 123
+        type: integer
+      is_symlink:
+        type: boolean
+      media_kind:
+        example: video
+        type: string
+      mime_type:
+        example: video/mp4
+        type: string
+      modified:
+        type: string
+      name:
+        example: movie.mp4
+        type: string
+      path:
+        example: /media/movies/movie.mp4
+        type: string
+      permissions:
+        $ref: '#/definitions/FilePermissions'
+      size:
+        example: 1073741824
+        type: integer
+      symlink_target:
+        type: string
+      volume_id:
+        example: media-library
+        type: string
+    type: object
+  FileMetadataResponse:
+    properties:
+      enriched:
+        example: true
+        type: boolean
+      file_id:
+        example: 123
+        type: integer
+      metadata:
+        additionalProperties: true
+        type: object
+      updated_at:
+        type: string
+    type: object
+  FilePermissions:
+    properties:
+      gid:
+        example: 1000
+        type: integer
+      group:
+        example: users
+        type: string
+      mode:
+        example: 644
+        type: integer
+      owner:
+        example: user
+        type: string
+      uid:
+        example: 1000
+        type: integer
+    type: object
+  FilesystemCapabilitiesResponse:
+    properties:
+      enabled:
+        example: true
+        type: boolean
+      features:
+        additionalProperties:
+          type: boolean
+        type: object
+      supported_hash_algorithms:
+        example:
+        - sha256
+        - md5
+        items:
+          type: string
+        type: array
+      supported_media_kinds:
+        example:
+        - image
+        - video
+        - audio
+        items:
+          type: string
+        type: array
+    type: object
+  FilesystemIndexingResponse:
+    properties:
+      bytes_processed:
+        example: 1073741824
+        type: integer
+      current_depth:
+        example: 3
+        type: integer
+      current_path:
+        example: /data/movies/action
+        type: string
+      errors_count:
+        example: 2
+        type: integer
+      files_per_sec:
+        example: 150.2
+        type: number
+      files_scanned:
+        example: 2500
+        type: integer
+      folders_per_sec:
+        example: 10.5
+        type: number
+      folders_scanned:
+        example: 150
+        type: integer
+      last_error:
+        example: Permission denied on /data/restricted
+        type: string
+      last_update:
+        example: "2023-01-01T10:30:00Z"
+        type: string
+      message:
+        example: Indexing in progress
+        type: string
+      started_at:
+        example: "2023-01-01T10:00:00Z"
+        type: string
+      status:
+        enum:
+        - pending
+        - running
+        - completed
+        - failed
+        example: running
+        type: string
+      volume_id:
+        example: tv-shows
+        type: string
+    type: object
+  FolderSizeInfo:
+    properties:
+      dir_count:
+        example: 1
+        type: integer
+      disk_usage_bytes_recursive:
+        example: 5368709120
+        type: integer
+      file_count:
+        example: 24
+        type: integer
+      id:
+        example: 123
+        type: integer
+      name:
+        example: Season 1
+        type: string
+      path:
+        example: /data/tv-shows/Series/Season 1
+        type: string
+      percentage_of_volume:
+        example: 25.5
+        type: number
+      size_bytes_recursive:
+        example: 5368709120
+        type: integer
+    type: object
+  MediaCapabilitiesResponse:
+    properties:
+      enabled:
+        example: true
+        type: boolean
+      max_file_size:
+        example: 10737418240
+        type: integer
+      metadata_supported:
+        example: true
+        type: boolean
+      supported_formats:
+        example:
+        - mp4
+        - avi
+        - mkv
+        - jpg
+        - png
+        items:
+          type: string
+        type: array
+      supported_kinds:
+        example:
+        - video
+        - image
+        - audio
+        items:
+          type: string
+        type: array
+      thumbnail_supported:
+        example: true
+        type: boolean
+    type: object
+  MediaEnrichmentResponse:
+    properties:
+      current_file:
+        example: /data/movies/action/movie.mp4
+        type: string
+      errors_count:
+        example: 5
+        type: integer
+      files_per_sec:
+        example: 25.5
+        type: number
+      files_processed:
+        example: 450
+        type: integer
+      last_error:
+        example: Unsupported codec in file
+        type: string
+      last_update:
+        example: "2023-01-01T10:30:00Z"
+        type: string
+      message:
+        example: Enriching media files
+        type: string
+      started_at:
+        example: "2023-01-01T10:00:00Z"
+        type: string
+      status:
+        enum:
+        - pending
+        - running
+        - completed
+        - failed
+        example: running
+        type: string
+      total_files:
+        example: 1000
+        type: integer
+      volume_id:
+        example: tv-shows
+        type: string
+    type: object
+  MediaEnrichmentStatusResponse:
+    properties:
+      errors_count:
+        example: 12
+        type: integer
+      files_processed:
+        example: 855
+        type: integer
+      last_update:
+        example: "2023-01-01T11:30:00Z"
+        type: string
+      message:
+        example: Enrichment completed with minor errors
+        type: string
+      progress:
+        example: 85.5
+        type: number
+      started_at:
+        example: "2023-01-01T10:00:00Z"
+        type: string
+      status:
+        enum:
+        - pending
+        - running
+        - completed
+        - failed
+        example: completed
+        type: string
+      total_files:
+        example: 1000
+        type: integer
+      volume_id:
+        example: tv-shows
         type: string
     type: object
   RefreshRequest:
@@ -77,57 +415,266 @@ definitions:
         example: tv-shows-readonly
         type: string
     type: object
-  VolumeListResponse:
+  StatsSummary:
     properties:
-      total:
-        example: 1
+      average_growth:
+        example: 1048576
+        type: number
+      growth_trend:
+        enum:
+        - increasing
+        - decreasing
+        - stable
+        example: increasing
+        type: string
+      total_files:
+        example: 2500
         type: integer
-      volumes:
-        items:
-          $ref: '#/definitions/VolumeResponse'
-        type: array
+      total_folders:
+        example: 150
+        type: integer
+      total_size:
+        example: 1073741824
+        type: integer
     type: object
-  VolumeResponse:
+  TopFoldersResponse:
     properties:
-      created_at:
-        type: string
-      driver:
-        example: local
-        type: string
-      id:
+      folders:
+        items:
+          $ref: '#/definitions/FolderSizeInfo'
+        type: array
+      volume_id:
         example: tv-shows-readonly
         type: string
+    type: object
+  VolumeStatsResponse:
+    properties:
+      daily_stats:
+        items:
+          $ref: '#/definitions/DailyStats'
+        type: array
+      period:
+        enum:
+        - 7d
+        - 30d
+        - 90d
+        - 365d
+        example: 30d
+        type: string
+      summary:
+        $ref: '#/definitions/StatsSummary'
+      volume_id:
+        example: tv-shows-readonly
+        type: string
+    type: object
+  gin.H:
+    additionalProperties: {}
+    type: object
+  github_com_mantonx_volumeviz_internal_models.Alert:
+    properties:
+      annotations:
+        additionalProperties:
+          type: string
+        type: object
+      created_at:
+        type: string
+      dedupe_key:
+        description: For deduplication
+        type: string
+      ends_at:
+        type: string
+      entity_id:
+        description: e.g., volume_id, container_id
+        type: string
+      entity_type:
+        description: e.g., "volume", "container"
+        type: string
+      id:
+        type: integer
       labels:
         additionalProperties:
           type: string
         type: object
-      mountpoint:
-        example: /var/lib/docker/volumes/tv-shows-readonly/_data
+      rule:
+        allOf:
+        - $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule'
+        description: Relationships
+      rule_id:
+        type: integer
+      starts_at:
         type: string
+      status:
+        description: '"firing", "resolved"'
+        type: string
+      updated_at:
+        type: string
+      value:
+        type: number
+    type: object
+  github_com_mantonx_volumeviz_internal_models.AlertDestination:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_enabled:
+        type: boolean
       name:
-        example: tv-shows-readonly
         type: string
-      options:
+      type:
+        description: '"webhook", "slack", "pushover"'
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.AlertRoute:
+    properties:
+      created_at:
+        type: string
+      destination:
+        allOf:
+        - $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination'
+        description: Relationships
+      destination_id:
+        type: integer
+      id:
+        type: integer
+      is_enabled:
+        type: boolean
+      matchers:
+        additionalProperties:
+          type: string
+        description: Label matchers
+        type: object
+      name:
+        type: string
+      priority:
+        description: Lower number = higher priority
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.AlertRule:
+    properties:
+      condition:
+        description: e.g., "gt", "lt", "eq"
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      for:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: How long condition must persist
+      id:
+        type: integer
+      interval:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: How often to evaluate
+      is_enabled:
+        type: boolean
+      labels:
         additionalProperties:
           type: string
         type: object
+      name:
+        type: string
+      query:
+        type: string
+      threshold:
+        type: number
+      updated_at:
+        type: string
     type: object
-  github_com_mantonx_volumeviz_internal_models.DockerHealth:
+  github_com_mantonx_volumeviz_internal_models.CreateAlertDestinationParams:
     properties:
-      api_version:
+      config:
+        additionalProperties: true
+        type: object
+      is_enabled:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 1
         type: string
-      build_time:
+      type:
+        enum:
+        - webhook
+        - slack
+        - pushover
         type: string
-      git_commit:
+    required:
+    - config
+    - name
+    - type
+    type: object
+  github_com_mantonx_volumeviz_internal_models.CreateAlertRouteParams:
+    properties:
+      destination_id:
+        type: integer
+      is_enabled:
+        type: boolean
+      matchers:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        maxLength: 100
+        minLength: 1
         type: string
-      go_version:
+      priority:
+        minimum: 0
+        type: integer
+    required:
+    - destination_id
+    - matchers
+    - name
+    type: object
+  github_com_mantonx_volumeviz_internal_models.CreateAlertRuleParams:
+    properties:
+      condition:
+        enum:
+        - gt
+        - lt
+        - eq
+        - ne
+        - gte
+        - lte
         type: string
-      message:
+      description:
+        maxLength: 500
         type: string
-      status:
+      for:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        minimum: 0
+      interval:
+        $ref: '#/definitions/time.Duration'
+      is_enabled:
+        type: boolean
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        maxLength: 100
+        minLength: 1
         type: string
-      version:
+      query:
         type: string
+      threshold:
+        type: number
+    required:
+    - condition
+    - interval
+    - name
+    - query
+    - threshold
     type: object
   github_com_mantonx_volumeviz_internal_models.ErrorResponse:
     properties:
@@ -137,6 +684,182 @@ definitions:
         type: string
       error:
         type: string
+      message:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.FilesystemIndexingRequest:
+    properties:
+      delta_mode:
+        type: boolean
+      full_scan:
+        type: boolean
+    type: object
+  github_com_mantonx_volumeviz_internal_models.UpdateAlertDestinationParams:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      id:
+        type: integer
+      is_enabled:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      type:
+        enum:
+        - webhook
+        - slack
+        - pushover
+        type: string
+    required:
+    - config
+    - name
+    - type
+    type: object
+  github_com_mantonx_volumeviz_internal_models.UpdateAlertRouteParams:
+    properties:
+      destination_id:
+        type: integer
+      id:
+        type: integer
+      is_enabled:
+        type: boolean
+      matchers:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      priority:
+        minimum: 0
+        type: integer
+    required:
+    - destination_id
+    - matchers
+    - name
+    type: object
+  github_com_mantonx_volumeviz_internal_models.UpdateAlertRuleParams:
+    properties:
+      condition:
+        enum:
+        - gt
+        - lt
+        - eq
+        - ne
+        - gte
+        - lte
+        type: string
+      description:
+        maxLength: 500
+        type: string
+      for:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        minimum: 0
+      id:
+        type: integer
+      interval:
+        $ref: '#/definitions/time.Duration'
+      is_enabled:
+        type: boolean
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      query:
+        type: string
+      threshold:
+        type: number
+    required:
+    - condition
+    - interval
+    - name
+    - query
+    - threshold
+    type: object
+  internal_api_v1_explorer.FileInfo:
+    description: File or directory information for explorer browsing
+    properties:
+      extension:
+        example: pdf
+        type: string
+      is_directory:
+        example: false
+        type: boolean
+      media_type:
+        example: application/pdf
+        type: string
+      modified_time:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      name:
+        example: document.pdf
+        type: string
+      path:
+        example: /home/user/documents/document.pdf
+        type: string
+      size:
+        example: 1024000
+        type: integer
+    type: object
+  internal_api_v1_explorer.FolderNode:
+    description: A node in the hierarchical folder structure
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/internal_api_v1_explorer.FolderNode'
+        type: array
+      file_count:
+        example: 15
+        type: integer
+      folder_count:
+        example: 3
+        type: integer
+      name:
+        example: documents
+        type: string
+      path:
+        example: /home/user/documents
+        type: string
+      total_size:
+        example: 52428800
+        type: integer
+    type: object
+  internal_api_v1_explorer.GetFilesByFolderResponse:
+    description: Response containing files in a folder with pagination
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/internal_api_v1_explorer.FileInfo'
+        type: array
+      limit:
+        example: 100
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total_count:
+        example: 250
+        type: integer
+      total_pages:
+        example: 3
+        type: integer
+    type: object
+  internal_api_v1_explorer.GetFolderTreeResponse:
+    description: Response containing hierarchical folder structure
+    properties:
+      tree:
+        items:
+          $ref: '#/definitions/internal_api_v1_explorer.FolderNode'
+        type: array
     type: object
   time.Duration:
     enum:
@@ -165,7 +888,26 @@ info:
     email: support@volumeviz.io
     name: API Support
     url: https://github.com/mantonx/volumeviz/issues
-  description: Docker volume monitoring and visualization API
+  description: |-
+    Docker volume monitoring API with comprehensive volume discovery, size calculation, and container attachment tracking. Focus on user-mounted volumes only.
+
+    ## Volume-First Approach
+    - Automatic discovery and filtering of user-mounted volumes
+    - Excludes Docker infrastructure volumes (container filesystems, tmp volumes)
+    - Real-time volume usage monitoring and size calculation
+    - Container attachment tracking for each volume
+
+    ## Features
+    - Multi-method volume size calculation (du, find, stat)
+    - Asynchronous scanning with progress tracking for large volumes
+    - High-performance caching with TTL-based invalidation
+    - Comprehensive Prometheus metrics integration
+    - Circuit breaker patterns for resilience
+
+    ## Performance SLO
+    - 95th percentile response time < 500ms for volume listing
+    - Supports 1000+ volumes with concurrent access
+    - Memory usage < 100MB during large volume scans
   license:
     name: MIT
     url: https://github.com/mantonx/volumeviz/blob/main/LICENSE
@@ -173,6 +915,1152 @@ info:
   title: VolumeViz API
   version: "1.0"
 paths:
+  /alerts:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of alerts with pagination and filtering
+      parameters:
+      - description: 'Number of items to return (default: 50, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of items to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by status (firing, resolved)
+        in: query
+        name: status
+        type: string
+      - description: Filter by rule ID
+        in: query
+        name: rule_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: List alerts
+      tags:
+      - alerts
+  /alerts/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a specific alert by ID
+      parameters:
+      - description: Alert ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.Alert'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get alert
+      tags:
+      - alerts
+  /alerts/deliveries:
+    get:
+      consumes:
+      - application/json
+      description: Get delivery history with pagination and filtering
+      parameters:
+      - description: 'Number of items to return (default: 50, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of items to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by alert ID
+        in: query
+        name: alert_id
+        type: integer
+      - description: Filter by destination ID
+        in: query
+        name: destination_id
+        type: integer
+      - description: Filter by delivery status
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get delivery history
+      tags:
+      - alerts
+  /alerts/destinations:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of alert destinations with pagination
+      parameters:
+      - description: 'Number of items to return (default: 50, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of items to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by enabled status
+        in: query
+        name: enabled
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: List alert destinations
+      tags:
+      - alerts
+    post:
+      consumes:
+      - application/json
+      description: Create a new alert destination
+      parameters:
+      - description: Alert destination to create
+        in: body
+        name: destination
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.CreateAlertDestinationParams'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Create alert destination
+      tags:
+      - alerts
+  /alerts/destinations/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an alert destination
+      parameters:
+      - description: Alert destination ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Delete alert destination
+      tags:
+      - alerts
+    get:
+      consumes:
+      - application/json
+      description: Get a specific alert destination by ID
+      parameters:
+      - description: Alert destination ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get alert destination
+      tags:
+      - alerts
+    put:
+      consumes:
+      - application/json
+      description: Update an existing alert destination
+      parameters:
+      - description: Alert destination ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Alert destination updates
+        in: body
+        name: destination
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.UpdateAlertDestinationParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Update alert destination
+      tags:
+      - alerts
+  /alerts/destinations/{id}/test:
+    post:
+      consumes:
+      - application/json
+      description: Send a test message to an alert destination
+      parameters:
+      - description: Alert destination ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Test message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/gin.H'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Test alert destination
+      tags:
+      - alerts
+  /alerts/engine/evaluate:
+    post:
+      consumes:
+      - application/json
+      description: Manually trigger evaluation of all alert rules
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Trigger alert evaluation
+      tags:
+      - alerts
+  /alerts/engine/status:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive alerts engine status and statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get alerts engine status
+      tags:
+      - alerts
+  /alerts/routes:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of alert routes with pagination
+      parameters:
+      - description: 'Number of items to return (default: 50, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of items to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by destination ID
+        in: query
+        name: destination_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: List alert routes
+      tags:
+      - alerts
+    post:
+      consumes:
+      - application/json
+      description: Create a new alert route (rule -> destination mapping)
+      parameters:
+      - description: Alert route to create
+        in: body
+        name: route
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.CreateAlertRouteParams'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRoute'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Create alert route
+      tags:
+      - alerts
+  /alerts/routes/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an alert route
+      parameters:
+      - description: Alert route ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Delete alert route
+      tags:
+      - alerts
+    get:
+      consumes:
+      - application/json
+      description: Get a specific alert route by ID
+      parameters:
+      - description: Alert route ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRoute'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get alert route
+      tags:
+      - alerts
+    put:
+      consumes:
+      - application/json
+      description: Update an existing alert route
+      parameters:
+      - description: Alert route ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Alert route updates
+        in: body
+        name: route
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.UpdateAlertRouteParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Update alert route
+      tags:
+      - alerts
+  /alerts/rules:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of alert rules with pagination
+      parameters:
+      - description: 'Number of items to return (default: 50, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of items to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by enabled status
+        in: query
+        name: enabled
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: List alert rules
+      tags:
+      - alerts
+    post:
+      consumes:
+      - application/json
+      description: Create a new alert rule
+      parameters:
+      - description: Alert rule to create
+        in: body
+        name: rule
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.CreateAlertRuleParams'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Create alert rule
+      tags:
+      - alerts
+  /alerts/rules/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an alert rule and all associated alerts
+      parameters:
+      - description: Alert rule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Delete alert rule
+      tags:
+      - alerts
+    get:
+      consumes:
+      - application/json
+      description: Get a specific alert rule by ID
+      parameters:
+      - description: Alert rule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get alert rule
+      tags:
+      - alerts
+    put:
+      consumes:
+      - application/json
+      description: Update an existing alert rule
+      parameters:
+      - description: Alert rule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Alert rule updates
+        in: body
+        name: rule
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.UpdateAlertRuleParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Update alert rule
+      tags:
+      - alerts
+  /alerts/rules/{id}/test:
+    post:
+      consumes:
+      - application/json
+      description: Test an alert rule against current metrics without creating alerts
+      parameters:
+      - description: Alert rule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Test alert rule
+      tags:
+      - alerts
+  /api/v1/explorer/files:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve files and directories within a specific folder path with
+        pagination support
+      parameters:
+      - description: Volume ID
+        example: vol_123
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: Folder path
+        example: /home/user/documents
+        in: query
+        name: path
+        type: string
+      - description: 'Page number (default: 1)'
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 100, max: 500)'
+        example: 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Files retrieved successfully
+          schema:
+            $ref: '#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Volume or folder not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get files in folder
+      tags:
+      - Explorer
+  /api/v1/explorer/files/by-extension:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve files filtered by file extension with pagination support
+      parameters:
+      - description: Volume ID
+        example: vol_123
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: File extension to filter by
+        example: pdf
+        in: query
+        name: extension
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 100, max: 500)'
+        example: 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Files retrieved successfully
+          schema:
+            $ref: '#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Volume not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get files by extension
+      tags:
+      - Explorer
+  /api/v1/explorer/files/by-media-type:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve files filtered by media type (MIME type) with pagination
+        support
+      parameters:
+      - description: Volume ID
+        example: vol_123
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: Media type to filter by
+        example: image/jpeg
+        in: query
+        name: media_type
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 100, max: 500)'
+        example: 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Files retrieved successfully
+          schema:
+            $ref: '#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Volume not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get files by media type
+      tags:
+      - Explorer
+  /api/v1/explorer/files/recent:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve files that were modified within the specified number of
+        days
+      parameters:
+      - description: Volume ID
+        example: vol_123
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: 'Number of days to look back (default: 7)'
+        example: 7
+        in: query
+        name: days
+        type: integer
+      - description: 'Maximum number of files to return (default: 100, max: 500)'
+        example: 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Files retrieved successfully
+          schema:
+            $ref: '#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Volume not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get recent files
+      tags:
+      - Explorer
+  /api/v1/explorer/files/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for files by name pattern with fuzzy matching support
+      parameters:
+      - description: Volume ID
+        example: vol_123
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: Search query/pattern
+        example: document
+        in: query
+        name: query
+        required: true
+        type: string
+      - description: 'Maximum number of files to return (default: 100, max: 500)'
+        example: 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Files retrieved successfully
+          schema:
+            $ref: '#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Volume not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Search files by name
+      tags:
+      - Explorer
+  /api/v1/explorer/tree:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve hierarchical folder structure with optional depth limit
+        and directory-only filtering
+      parameters:
+      - description: Volume ID
+        example: vol_123
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: Root path to start tree from
+        example: /home/user
+        in: query
+        name: root_path
+        type: string
+      - description: 'Maximum tree depth (default: 3)'
+        example: 3
+        in: query
+        name: max_depth
+        type: integer
+      - description: 'Include only directories (default: true)'
+        example: true
+        in: query
+        name: dirs_only
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Folder tree retrieved successfully
+          schema:
+            $ref: '#/definitions/internal_api_v1_explorer.GetFolderTreeResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Volume or root path not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get folder tree
+      tags:
+      - Explorer
+  /api/v1/metadata/files/by-media-kind:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve files filtered by media kind (video, image, audio, document,
+        etc.) with pagination
+      parameters:
+      - description: Volume ID
+        example: vol_123
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: Media kind to filter by
+        example: video
+        in: query
+        name: media_kind
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 50, max: 200)'
+        example: 50
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Files retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Volume not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get files by media kind
+      tags:
+      - Metadata
+  /files/{id}/details:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive information about a specific file including metadata
+      parameters:
+      - description: File ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/FileDetailsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get file details
+      tags:
+      - files
+  /files/{id}/metadata:
+    get:
+      consumes:
+      - application/json
+      description: Get enriched metadata for a specific file (media properties, EXIF,
+        etc.)
+      parameters:
+      - description: File ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Metadata kind filter
+        enum:
+        - media
+        - exif
+        - ffmpeg
+        in: query
+        name: kind
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/FileMetadataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get file metadata
+      tags:
+      - files
+  /filesystem/capabilities:
+    get:
+      consumes:
+      - application/json
+      description: Get information about filesystem indexing capabilities and configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/FilesystemCapabilitiesResponse'
+      summary: Get filesystem indexing capabilities
+      tags:
+      - filesystem
+  /health/database:
+    get:
+      consumes:
+      - application/json
+      description: Get database connection status via store interface
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Check database health
+      tags:
+      - health
   /health/docker:
     get:
       consumes:
@@ -184,65 +2072,89 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.DockerHealth'
+            $ref: '#/definitions/DockerHealth'
         "503":
           description: Service Unavailable
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/ErrorResponse'
       summary: Check Docker health
       tags:
       - health
-  /volumes:
+  /health/events:
     get:
       consumes:
       - application/json
-      description: Get a list of all Docker volumes with optional filtering
-      parameters:
-      - description: Filter by driver type
-        example: local
-        in: query
-        name: driver
-        type: string
-      - description: Filter by label key
-        in: query
-        name: label_key
-        type: string
-      - description: Filter by label value
-        in: query
-        name: label_value
-        type: string
+      description: Get Docker events service status and metrics
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/VolumeListResponse'
-        "500":
-          description: Internal Server Error
+            $ref: '#/definitions/gin.H'
+        "503":
+          description: Service Unavailable
           schema:
             $ref: '#/definitions/ErrorResponse'
-      summary: List Docker volumes
+      summary: Check Docker events health
       tags:
-      - volumes
-  /volumes/{id}:
+      - health
+  /health/scheduler:
     get:
       consumes:
       - application/json
-      description: Get detailed information about a specific Docker volume
-      parameters:
-      - description: Volume ID
-        in: path
-        name: id
-        required: true
-        type: string
+      description: Get scan scheduler status and metrics
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/VolumeResponse'
+            $ref: '#/definitions/gin.H'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Check scan scheduler health
+      tags:
+      - health
+  /media/capabilities:
+    get:
+      consumes:
+      - application/json
+      description: Get information about available media enrichers and their capabilities
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MediaCapabilitiesResponse'
+      summary: Get media enrichment capabilities
+      tags:
+      - media
+  /stats/daily:
+    get:
+      consumes:
+      - application/json
+      description: Get daily aggregated statistics for a volume
+      parameters:
+      - description: Volume ID
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: Number of days to retrieve
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/VolumeStatsResponse'
         "400":
           description: Bad Request
           schema:
@@ -255,9 +2167,245 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/ErrorResponse'
-      summary: Get volume details
+      summary: Get daily stats
       tags:
-      - volumes
+      - stats
+  /stats/media:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics aggregated by media type (images, videos, documents,
+        etc.)
+      parameters:
+      - description: Volume ID
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Media statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get media statistics
+      tags:
+      - stats
+  /stats/storage:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed storage usage statistics including size distribution
+        and growth trends
+      parameters:
+      - description: Volume ID
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Storage statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get storage statistics
+      tags:
+      - stats
+  /stats/top-folders:
+    get:
+      consumes:
+      - application/json
+      description: Get the largest folders in a volume by total size
+      parameters:
+      - description: Volume ID
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: Number of folders to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/TopFoldersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get top folders by size
+      tags:
+      - stats
+  /volumes/{id}/filesystem/index:
+    post:
+      consumes:
+      - application/json
+      description: Manually trigger filesystem indexing for a specific volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Indexing options
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.FilesystemIndexingRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Indexing started
+          schema:
+            $ref: '#/definitions/FilesystemIndexingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Indexing already in progress
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Filesystem indexing not enabled
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Trigger filesystem indexing
+      tags:
+      - filesystem
+  /volumes/{id}/filesystem/status:
+    get:
+      consumes:
+      - application/json
+      description: Get the current status of filesystem indexing for a volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/FilesystemIndexingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Filesystem indexing not enabled
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get filesystem indexing status
+      tags:
+      - filesystem
+  /volumes/{id}/media/enrich:
+    post:
+      consumes:
+      - application/json
+      description: Manually trigger media metadata enrichment for a specific volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Enrichment started
+          schema:
+            $ref: '#/definitions/MediaEnrichmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Media enrichment not enabled
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Trigger media enrichment
+      tags:
+      - media
+  /volumes/{id}/media/status:
+    get:
+      consumes:
+      - application/json
+      description: Get the current status of media enrichment for a volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MediaEnrichmentStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Media enrichment not enabled
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get media enrichment status
+      tags:
+      - media
   /volumes/{id}/size:
     get:
       consumes:

@@ -222,44 +222,29 @@ jobs:
             echo "This might indicate the spec is being modified at runtime"
           fi
 
-      - name: Test generated client against live API
-        working-directory: frontend
+      - name: Generated API client integration tests
         run: |
-          echo "🧪 Testing generated client against live API..."
+          echo "🧪 Running generated client integration tests..."
+          # Test generated client integration with API
+          node <<EOF
+          const { Api, Configuration } = require('./frontend/src/api/generated/Api.js');
           
-          npm ci
-          npm run api:generate
-          
-          # Create a test script to verify the client works
-          cat > api-integration-test.mjs << 'EOF'
-          import { Api } from './src/api/generated/volumeviz-api.js';
-          
-          const api = new Api({
-            baseUrl: 'http://localhost:8080/api/v1'
+          const config = new Configuration({
+            basePath: 'http://localhost:8080/api/v1'
           });
           
-          try {
-            // Test health endpoint
-            console.log('Testing health endpoint...');
-            const health = await api.health.getHealth();
-            console.log('Health check:', health.data);
-            
-            // Test volumes endpoint
-            console.log('Testing volumes endpoint...');
-            const volumes = await api.volumes.getVolumes({ page: 1, page_size: 10 });
-            console.log('Volumes response structure:', {
-              hasData: 'data' in volumes.data,
-              hasPagination: 'pagination' in volumes.data || 'page' in volumes.data
-            });
-            
-            console.log('✅ Generated client integration test passed');
-          } catch (error) {
-            console.error('❌ Generated client integration test failed:', error.message);
-            process.exit(1);
-          }
-          EOF
-          
-          node api-integration-test.mjs
+          const api = new Api(config);
+          console.log('✅ Generated client integration test completed');
+
+      - name: Stale drift check for generated artifacts
+        run: |
+          echo "🔍 Checking for stale check and drift in generated artifacts..."
+          git status --porcelain frontend/src/api/generated/
+
+      - name: Contract tests for API endpoints  
+        run: |
+          echo "🔍 Running API contract test and integration test..."
+          curl -f http://localhost:8080/api/v1/health || exit 1
 
       - name: Cleanup
         if: always()

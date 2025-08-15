@@ -167,3 +167,14 @@ type StatsSummary struct {
 	ActiveFolders         int64     `json:"active_folders"`
 	LastComputedAt        time.Time `json:"last_computed_at"`
 }
+
+// FolderSizeInfo represents folder size statistics
+type FolderSizeInfo struct {
+	ID                      int64  `json:"id"`
+	Name                    string `json:"name"`
+	Path                    string `json:"path"`
+	SizeBytesRecursive      int64  `json:"size_bytes_recursive"`
+	DiskUsageBytesRecursive int64  `json:"disk_usage_bytes_recursive"`
+	FileCount               int64  `json:"file_count"`
+	DirCount                int64  `json:"dir_count"`
+}

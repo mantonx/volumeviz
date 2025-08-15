@@ -268,3 +268,13 @@ FROM files
 WHERE volume_id = $1 AND size_bytes >= $2 AND size_bytes <= $3
 ORDER BY size_bytes DESC
 LIMIT $4;
+
+-- name: GetFilesByMediaType :many
+SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
+       mtime, ctime, birthtime, uid, gid, mode, inode, device,
+       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
+       created_at, updated_at
+FROM files
+WHERE volume_id = $1 AND mime = $2
+ORDER BY name
+LIMIT $3 OFFSET $4;

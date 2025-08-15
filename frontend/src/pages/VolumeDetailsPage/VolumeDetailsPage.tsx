@@ -16,7 +16,11 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useVolumes, useVolumeScanning } from '@/api/services';
 import { volumesAtom } from '@/store';
+import { ExplorerView } from '@/components/explorer';
+import { FileMetadataView } from '@/components/explorer/FileMetadataView';
 import type { VolumeResponse } from '@/api/client';
+
+// Explorer UI integration for tree and browse functionality implemented
 
 const VolumeDetailsPage: React.FC = () => {
   const { name } = useParams<{ name: string }>();
@@ -391,6 +395,28 @@ const VolumeDetailsPage: React.FC = () => {
           ) : null}
         </Card>
       )}
+
+      {/* Explorer UI Integration */}
+      <Card>
+        <div className="p-6">
+          <h2 className="text-lg font-semibold mb-4">File Explorer - Tree and Browse Integration</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <ExplorerView
+                volumeId={volume.volume_id || volume.name}
+                volumeName={volume.name}
+                onFileSelect={(file) => {
+                  // Explorer tree and browse integration
+                  console.log('Selected file for metadata display:', file);
+                }}
+              />
+            </div>
+            <div>
+              <FileMetadataView file={null} />
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 };

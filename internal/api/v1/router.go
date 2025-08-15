@@ -9,8 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/middleware"
 	"github.com/mantonx/volumeviz/internal/api/v1/alerts"
+	"github.com/mantonx/volumeviz/internal/api/v1/explorer"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
+	"github.com/mantonx/volumeviz/internal/api/v1/metadata"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
+	"github.com/mantonx/volumeviz/internal/api/v1/stats"
 	"github.com/mantonx/volumeviz/internal/api/v1/system"
 	"github.com/mantonx/volumeviz/internal/api/v1/trends"
 	"github.com/mantonx/volumeviz/internal/api/v1/volumes"
@@ -240,6 +243,10 @@ func (r *Router) setupMiddleware(config *config.Config) {
 	r.engine.Use(middleware.ErrorHandler())
 	r.engine.Use(middleware.DockerErrorHandler())
 
+	// Performance middleware
+	r.engine.Use(middleware.GzipDefault()) // Add response compression
+	r.engine.Use(middleware.CacheControl()) // Add smart caching headers
+
 	// Security middleware
 	r.engine.Use(middleware.RequestIDMiddleware())
 	r.engine.Use(middleware.SecurityHeadersMiddleware(nil)) // Use defaults
@@ -338,6 +345,12 @@ func (r *Router) setupRoutes() {
 		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub, r.store, r.realtimePublisher)
 		volumesRouter.RegisterRoutes(v1)
 
+		// Explorer router for directory browsing and file operations
+		explorer.RegisterRoutes(v1, r.store)
+
+		// File metadata router for detailed file information
+		metadata.RegisterRoutes(v1, r.store)
+
 		systemRouter := system.NewRouter(r.dockerService)
 		systemRouter.RegisterRoutes(v1)
 
@@ -362,6 +375,11 @@ func (r *Router) setupRoutes() {
 		// Trends router with Store interface and StatsService
 		trendsRouter := trends.NewRouter(r.store, statsSvc)
 		trendsRouter.RegisterRoutes(v1)
+
+		// Stats router with StatsService integration
+		statsRouter := stats.NewStatsRouter(r.store, statsSvc)
+		stats.RegisterRoutes(v1, r.store, statsSvc)
+		statsRouter.RegisterRoutes(v1)
 
 		// Alerts router if alerts engine is available
 		if r.alertsEngine != nil {

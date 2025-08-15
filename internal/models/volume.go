@@ -6,7 +6,100 @@ import (
 	"time"
 )
 
+// ==============================================================================
+// CORE DOMAIN MODELS
+// ==============================================================================
+
 // Volume represents a Docker volume in the domain
+// GENERAL API MODELS
+// ==============================================================================
+
+// ErrorResponse represents a generic error response for API endpoints
+type ErrorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message,omitempty"`
+	Code    string `json:"code,omitempty"`
+	Details string `json:"details,omitempty"`
+}
+
+// DockerHealth represents Docker daemon health status
+type DockerHealth struct {
+	Status     string `json:"status"`
+	Message    string `json:"message,omitempty"`
+	Version    string `json:"version,omitempty"`
+	APIVersion string `json:"api_version,omitempty"`
+	GoVersion  string `json:"go_version,omitempty"`
+	GitCommit  string `json:"git_commit,omitempty"`
+	BuildTime  string `json:"build_time,omitempty"`
+}
+
+// ==============================================================================
+// FILESYSTEM INDEXING MODELS
+// ==============================================================================
+
+// FilesystemIndexingResponse represents filesystem indexing status
+type FilesystemIndexingResponse struct {
+	VolumeID        string  `json:"volume_id"`
+	Status          string  `json:"status"`
+	Message         string  `json:"message,omitempty"`
+	StartedAt       *string `json:"started_at,omitempty"`
+	LastUpdate      *string `json:"last_update,omitempty"`
+	FoldersScanned  int64   `json:"folders_scanned,omitempty"`
+	FilesScanned    int64   `json:"files_scanned,omitempty"`
+	BytesProcessed  int64   `json:"bytes_processed,omitempty"`
+	ErrorsCount     int     `json:"errors_count,omitempty"`
+	CurrentPath     string  `json:"current_path,omitempty"`
+	CurrentDepth    int     `json:"current_depth,omitempty"`
+	FoldersPerSec   float64 `json:"folders_per_sec,omitempty"`
+	FilesPerSec     float64 `json:"files_per_sec,omitempty"`
+	LastError       string  `json:"last_error,omitempty"`
+}
+
+// FilesystemIndexingRequest represents filesystem indexing request options
+type FilesystemIndexingRequest struct {
+	DeltaMode bool `json:"delta_mode"`
+	FullScan  bool `json:"full_scan"`
+}
+
+// FilesystemCapabilitiesResponse represents filesystem indexing capabilities
+type FilesystemCapabilitiesResponse struct {
+	Enabled                   bool             `json:"enabled"`
+	Features                  map[string]bool  `json:"features"`
+	SupportedHashAlgorithms   []string         `json:"supported_hash_algorithms,omitempty"`
+	SupportedMediaKinds       []string         `json:"supported_media_kinds,omitempty"`
+}
+
+// ==============================================================================
+// MEDIA ENRICHMENT MODELS
+// ==============================================================================
+
+// MediaEnrichmentResponse represents media enrichment status
+type MediaEnrichmentResponse struct {
+	VolumeID        string  `json:"volume_id"`
+	Status          string  `json:"status"`
+	Message         string  `json:"message,omitempty"`
+	StartedAt       *string `json:"started_at,omitempty"`
+	LastUpdate      *string `json:"last_update,omitempty"`
+	FilesProcessed  int64   `json:"files_processed,omitempty"`
+	TotalFiles      int64   `json:"total_files,omitempty"`
+	ErrorsCount     int     `json:"errors_count,omitempty"`
+	CurrentFile     string  `json:"current_file,omitempty"`
+	FilesPerSec     float64 `json:"files_per_sec,omitempty"`
+	LastError       string  `json:"last_error,omitempty"`
+}
+
+// MediaEnrichmentStatusResponse represents the status of media enrichment
+type MediaEnrichmentStatusResponse struct {
+	VolumeID       string  `json:"volume_id"`
+	Status         string  `json:"status"`
+	Progress       float64 `json:"progress"`
+	FilesProcessed int64   `json:"files_processed"`
+	TotalFiles     int64   `json:"total_files"`
+	StartedAt      *string `json:"started_at,omitempty"`
+	LastUpdate     *string `json:"last_update,omitempty"`
+	ErrorsCount    int     `json:"errors_count,omitempty"`
+	Message        string  `json:"message,omitempty"`
+}// Volume represents a Docker volume in the domain
 type Volume struct {
 	ID          int64             `json:"id"`
 	VolumeID    string            `json:"volume_id"`
@@ -403,12 +496,4 @@ type VolumeContainer struct {
 	IsActive    bool      `json:"is_active"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-// ErrorResponse represents an API error response
-type ErrorResponse struct {
-	Error   string            `json:"error"`
-	Message string            `json:"message,omitempty"`
-	Code    string            `json:"code,omitempty"`
-	Details map[string]string `json:"details,omitempty"`
 }

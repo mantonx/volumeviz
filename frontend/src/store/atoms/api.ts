@@ -1,7 +1,7 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
-// API Configuration
+// API Configuration and state management atoms for API data
 export interface ApiConfig {
   baseUrl: string;
   timeout: number;

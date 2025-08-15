@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Smoke test script for VolumeViz API
-# Tests basic functionality and endpoint availability
+# Tests basic functionality, endpoint test, and smoke test coverage
 #
 set -euo pipefail
 

@@ -10,6 +10,20 @@
  * ---------------------------------------------------------------
  */
 
+/** Alert rule configuration */
+export interface AlertRule {
+  id?: number;
+  name?: string;
+  condition?: string;
+}
+
+/** Alert destination configuration */
+export interface AlertDestination {
+  id?: number;
+  type?: string;
+  config?: string;
+}
+
 /** Docker volume database model with complete metadata */
 export interface Volume {
   /**
@@ -796,6 +810,387 @@ export interface Attachment {
   last_seen?: string;
 }
 
+/** Contents of a directory */
+export interface DirectoryListing {
+  /**
+   * Volume name
+   * @example "media-library"
+   */
+  volume?: string;
+  /**
+   * Directory path
+   * @example "/movies"
+   */
+  path?: string;
+  /** Folder in directory tree */
+  parent?: FolderNode;
+  /** Files and folders in this directory */
+  children?: TreeNode[];
+  /** Pagination metadata */
+  pagination?: PaginationResponse;
+}
+
+/** File or folder in directory tree */
+export interface TreeNode {
+  /**
+   * Node ID
+   * @format int64
+   * @example 123
+   */
+  id?: number;
+  /**
+   * File or folder name
+   * @example "movies"
+   */
+  name?: string;
+  /**
+   * Full path
+   * @example "/media/movies"
+   */
+  path?: string;
+  /**
+   * Size in bytes
+   * @format int64
+   * @example 4294967296
+   */
+  size?: number;
+  /**
+   * Last modified time
+   * @format date-time
+   */
+  modified?: string;
+  /**
+   * Node type
+   * @example "folder"
+   */
+  type?: "file" | "folder";
+  /**
+   * Whether node has children (folders only)
+   * @example true
+   */
+  has_children?: boolean;
+  /**
+   * MIME type (files only)
+   * @example "video/mp4"
+   */
+  mime_type?: string;
+  /**
+   * File extension (files only)
+   * @example "mp4"
+   */
+  extension?: string;
+}
+
+/** Folder in directory tree */
+export interface FolderNode {
+  /**
+   * Folder ID
+   * @format int64
+   * @example 123
+   */
+  id?: number;
+  /**
+   * Folder name
+   * @example "movies"
+   */
+  name?: string;
+  /**
+   * Full path
+   * @example "/media/movies"
+   */
+  path?: string;
+  /**
+   * Total size in bytes
+   * @format int64
+   * @example 4294967296
+   */
+  size?: number;
+  /**
+   * Last modified time
+   * @format date-time
+   */
+  modified?: string;
+  /**
+   * Always 'folder'
+   * @example "folder"
+   */
+  type?: "folder";
+}
+
+/** List of files in a directory */
+export interface FileListResponse {
+  /**
+   * Volume name
+   * @example "media-library"
+   */
+  volume?: string;
+  /**
+   * Directory path
+   * @example "/movies"
+   */
+  path?: string;
+  /** Files in directory */
+  files?: FileNode[];
+  /** Pagination metadata */
+  pagination?: PaginationResponse;
+  /** File filtering options */
+  filters?: FileFilters;
+}
+
+/** File in directory listing */
+export interface FileNode {
+  /**
+   * File ID
+   * @format int64
+   * @example 456
+   */
+  id?: number;
+  /**
+   * File name
+   * @example "movie.mp4"
+   */
+  name?: string;
+  /**
+   * Full path
+   * @example "/media/movies/movie.mp4"
+   */
+  path?: string;
+  /**
+   * File size in bytes
+   * @format int64
+   * @example 1073741824
+   */
+  size?: number;
+  /**
+   * Last modified time
+   * @format date-time
+   */
+  modified?: string;
+  /**
+   * MIME type
+   * @example "video/mp4"
+   */
+  mime_type?: string;
+  /**
+   * File extension
+   * @example "mp4"
+   */
+  extension?: string;
+  /**
+   * Media classification
+   * @example "video"
+   */
+  media_kind?: string;
+}
+
+/** File filtering options */
+export interface FileFilters {
+  /**
+   * File extension filter
+   * @example "mp4"
+   */
+  extension?: string;
+  /**
+   * MIME type filter
+   * @example "video/mp4"
+   */
+  mime_type?: string;
+  /**
+   * Minimum file size in bytes
+   * @format int64
+   * @example 1048576
+   */
+  min_size?: number;
+  /**
+   * Maximum file size in bytes
+   * @format int64
+   * @example 10737418240
+   */
+  max_size?: number;
+}
+
+/** Pagination metadata */
+export interface PaginationResponse {
+  /**
+   * Current page number
+   * @example 1
+   */
+  page?: number;
+  /**
+   * Items per page
+   * @example 50
+   */
+  page_size?: number;
+  /**
+   * Total items
+   * @format int64
+   * @example 1234
+   */
+  total?: number;
+  /**
+   * Total pages
+   * @example 25
+   */
+  pages?: number;
+}
+
+/** Detailed file information */
+export interface FileDetailsResponse {
+  /**
+   * File ID
+   * @format int64
+   * @example 123
+   */
+  id?: number;
+  /**
+   * File name
+   * @example "movie.mp4"
+   */
+  name?: string;
+  /**
+   * Full path
+   * @example "/media/movies/movie.mp4"
+   */
+  path?: string;
+  /**
+   * Volume ID
+   * @example "media-library"
+   */
+  volume_id?: string;
+  /**
+   * File size in bytes
+   * @format int64
+   * @example 1073741824
+   */
+  size?: number;
+  /**
+   * Disk usage in bytes
+   * @format int64
+   * @example 1073741824
+   */
+  disk_usage?: number;
+  /**
+   * MIME type
+   * @example "video/mp4"
+   */
+  mime_type?: string;
+  /**
+   * Media classification
+   * @example "video"
+   */
+  media_kind?: string;
+  /**
+   * File extension
+   * @example "mp4"
+   */
+  extension?: string;
+  /**
+   * Last modified time
+   * @format date-time
+   */
+  modified?: string;
+  /**
+   * Creation time
+   * @format date-time
+   */
+  created?: string;
+  /** File system permissions */
+  permissions?: FilePermissions;
+  /** File checksums by algorithm */
+  checksums?: Record<string, string>;
+  /** Whether file is a symbolic link */
+  is_symlink?: boolean;
+  /** Target of symbolic link */
+  symlink_target?: string;
+}
+
+/** File system permissions */
+export interface FilePermissions {
+  /**
+   * File mode/permissions
+   * @format int32
+   * @example 644
+   */
+  mode?: number;
+  /**
+   * File owner
+   * @example "user"
+   */
+  owner?: string;
+  /**
+   * File group
+   * @example "users"
+   */
+  group?: string;
+  /**
+   * User ID
+   * @format int32
+   * @example 1000
+   */
+  uid?: number;
+  /**
+   * Group ID
+   * @format int32
+   * @example 1000
+   */
+  gid?: number;
+}
+
+/** Rich media metadata for a file */
+export interface FileMetadataResponse {
+  /**
+   * File ID
+   * @format int64
+   * @example 123
+   */
+  file_id?: number;
+  /** Metadata key-value pairs */
+  metadata?: Record<string, any>;
+  /**
+   * Whether metadata has been enriched
+   * @example true
+   */
+  enriched?: boolean;
+  /**
+   * Last metadata update time
+   * @format date-time
+   */
+  updated_at?: string;
+}
+
+/** Folder size statistics */
+export interface FolderSizeInfo {
+  /**
+   * Folder ID
+   * @format int64
+   */
+  id?: number;
+  /** Folder name */
+  name?: string;
+  /** Folder path */
+  path?: string;
+  /**
+   * Total size including subfolders
+   * @format int64
+   */
+  size_bytes_recursive?: number;
+  /**
+   * Actual disk usage including subfolders
+   * @format int64
+   */
+  disk_usage_bytes_recursive?: number;
+  /**
+   * Number of files in folder
+   * @format int64
+   */
+  file_count?: number;
+  /**
+   * Number of subdirectories
+   * @format int64
+   */
+  dir_count?: number;
+}
+
 /** List of volume attachments */
 export interface AttachmentsList {
   data: Attachment[];
@@ -1546,6 +1941,106 @@ export class Api<
         format: "json",
         ...params,
       }),
+
+    /**
+     * @description Get files and folders in a directory path within a volume
+     *
+     * @tags Explorer
+     * @name GetTreeChildren
+     * @summary Get directory children
+     * @request GET:/volumes/{name}/tree/children
+     * @secure
+     */
+    getTreeChildren: (
+      name: string,
+      query?: {
+        /**
+         * Directory path
+         * @default "/"
+         * @example "/movies"
+         */
+        path?: string;
+        /**
+         * Page number
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * Items per page
+         * @min 1
+         * @max 1000
+         * @default 50
+         */
+        page_size?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<DirectoryListing, void | Error>({
+        path: `/volumes/${name}/tree/children`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get all files in a specific directory path within a volume with optional filters
+     *
+     * @tags Explorer
+     * @name GetFilesForPath
+     * @summary Get files in directory
+     * @request GET:/volumes/{name}/files
+     * @secure
+     */
+    getFilesForPath: (
+      name: string,
+      query?: {
+        /**
+         * Directory path
+         * @default "/"
+         * @example "/movies"
+         */
+        path?: string;
+        /**
+         * Filter by file extension
+         * @example "mp4"
+         */
+        extension?: string;
+        /**
+         * Filter by MIME type
+         * @example "video/mp4"
+         */
+        mime_type?: string;
+        /** Minimum file size in bytes */
+        min_size?: number;
+        /** Maximum file size in bytes */
+        max_size?: number;
+        /**
+         * Page number
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * Items per page
+         * @min 1
+         * @max 1000
+         * @default 50
+         */
+        page_size?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<FileListResponse, void | Error>({
+        path: `/volumes/${name}/files`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
   };
   reports = {
     /**
@@ -1608,6 +2103,125 @@ export class Api<
       this.request<ScanProgress, ErrorResponse>({
         path: `/scans/${scanId}/status`,
         method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+  };
+  files = {
+    /**
+     * @description Get comprehensive information about a specific file including metadata
+     *
+     * @tags Files
+     * @name GetFileDetails
+     * @summary Get file details
+     * @request GET:/files/{id}/details
+     * @secure
+     */
+    getFileDetails: (id: number, params: RequestParams = {}) =>
+      this.request<FileDetailsResponse, void | Error>({
+        path: `/files/${id}/details`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get enriched metadata for a specific file (media properties, EXIF, etc.)
+     *
+     * @tags Files
+     * @name GetFileMetadata
+     * @summary Get file metadata
+     * @request GET:/files/{id}/metadata
+     * @secure
+     */
+    getFileMetadata: (
+      id: number,
+      query?: {
+        /**
+         * Metadata kind filter
+         * @example "media"
+         */
+        kind?: "media" | "exif" | "ffmpeg";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<FileMetadataResponse, void | Error>({
+        path: `/files/${id}/metadata`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+  };
+  stats = {
+    /**
+     * @description Get daily aggregated statistics for a volume
+     *
+     * @tags Stats
+     * @name GetDailyStats
+     * @summary Get daily stats
+     * @request GET:/stats/daily
+     * @secure
+     */
+    getDailyStats: (
+      query: {
+        /**
+         * Volume ID
+         * @example "media-library"
+         */
+        volume_id: string;
+        /**
+         * Number of days to retrieve
+         * @min 1
+         * @max 365
+         * @default 30
+         */
+        days?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<any[], void | Error>({
+        path: `/stats/daily`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get the largest folders in a volume by total size
+     *
+     * @tags Stats
+     * @name GetTopFolders
+     * @summary Get top folders by size
+     * @request GET:/stats/top-folders
+     * @secure
+     */
+    getTopFolders: (
+      query: {
+        /**
+         * Volume ID
+         * @example "media-library"
+         */
+        volume_id: string;
+        /**
+         * Number of folders to return
+         * @min 1
+         * @max 100
+         * @default 10
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<FolderSizeInfo[], void | Error>({
+        path: `/stats/top-folders`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,

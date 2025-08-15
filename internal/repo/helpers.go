@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -101,21 +100,6 @@ func timeToTimePtr(t time.Time) *time.Time {
 		return nil
 	}
 	return &t
-}
-
-// SQL helper functions for backwards compatibility
-func toSQLNullTime(t *time.Time) sql.NullTime {
-	if t == nil {
-		return sql.NullTime{Valid: false}
-	}
-	return sql.NullTime{Time: *t, Valid: true}
-}
-
-func sqlNullTimeToPtr(nt sql.NullTime) *time.Time {
-	if !nt.Valid {
-		return nil
-	}
-	return &nt.Time
 }
 
 // Float64 pointer to pgtype.Numeric

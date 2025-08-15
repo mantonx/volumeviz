@@ -788,7 +788,7 @@ func (h *Handler) GetFilesystemIndexingStatus(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Volume ID"
-// @Param request body models.FilesystemIndexingRequest false "Indexing options"
+// @Param request body coremodels.FilesystemIndexingRequest false "Indexing options"
 // @Success 202 {object} models.FilesystemIndexingResponse "Indexing started"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 409 {object} models.ErrorResponse "Indexing already in progress"

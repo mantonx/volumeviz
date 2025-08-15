@@ -17,24 +17,16 @@ import React from 'react';
 import type { VolumeCardProps } from './VolumeCard.types';
 
 /**
- * VolumeCard component displaying comprehensive Docker volume information.
- *
- * Core volume dashboard component showing:
- * - Volume identification (name, ID, driver type)
- * - Current size information from scans or cached data
- * - Status indicators (active/inactive, health, scan status)
- * - Container usage count and relationships
- * - Quick action buttons (scan, manage, details)
+ * VolumeCard Component
+ * 
+ * Displays a Docker volume with key information and actions.
+ * Features:
+ * - Volume name and size information
+ * - Driver type and mount point display
+ * - Last scan status and timing
+ * - Action buttons for volume management
  * - Metadata labels and mount point information
- * - Visual size representation with color coding
- * - Last scan timestamp with relative time display
- *
- * Integrates with Jotai atoms for real-time scan results and volume
- * state management. Supports hover states, loading indicators, and
- * error states for comprehensive user feedback.
- *
- * Used throughout the volume dashboard for consistent volume representation
- * in grid layouts, search results, and detailed views.
+ * - File details and metadata display support for explorer integration
  */
 export const VolumeCard: React.FC<VolumeCardProps> = ({
   volume,

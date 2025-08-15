@@ -3,11 +3,11 @@ package repo
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/models"
 )
@@ -573,7 +573,7 @@ func (r *FoldersRepo) CreateFolderHierarchy(ctx context.Context, volumeID, fullP
 			lastFolder = existing
 			continue
 		}
-		if err != sql.ErrNoRows {
+		if err != pgx.ErrNoRows {
 			return nil, err
 		}
 

@@ -190,3 +190,42 @@ UPDATE files SET
     video_profile = $25,
     video_level = $26
 WHERE id = $1;
+
+-- name: GetFilesByResolution :many
+SELECT f.id, f.folder_id, f.volume_id, f.name, f.path, f.extension, f.size_bytes, f.disk_usage_bytes,
+       f.mtime, f.ctime, f.birthtime, f.uid, f.gid, f.mode, f.inode, f.device,
+       f.is_symlink, f.symlink_target, f.mime, f.media_kind, f.encoding, f.hash_algo, f.hash, f.path_hash,
+       f.created_at, f.updated_at
+FROM files f
+JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1 
+  AND (fm.data_json->>'width')::int = $2 
+  AND (fm.data_json->>'height')::int = $3
+ORDER BY f.name
+LIMIT $4 OFFSET $5;
+
+-- name: GetFilesByDuration :many
+SELECT f.id, f.folder_id, f.volume_id, f.name, f.path, f.extension, f.size_bytes, f.disk_usage_bytes,
+       f.mtime, f.ctime, f.birthtime, f.uid, f.gid, f.mode, f.inode, f.device,
+       f.is_symlink, f.symlink_target, f.mime, f.media_kind, f.encoding, f.hash_algo, f.hash, f.path_hash,
+       f.created_at, f.updated_at  
+FROM files f
+JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1 
+  AND (fm.data_json->>'duration')::float >= $2 
+  AND (fm.data_json->>'duration')::float <= $3
+ORDER BY (fm.data_json->>'duration')::float DESC
+LIMIT $4 OFFSET $5;
+
+-- name: GetFilesByGPS :many
+SELECT f.id, f.folder_id, f.volume_id, f.name, f.path, f.extension, f.size_bytes, f.disk_usage_bytes,
+       f.mtime, f.ctime, f.birthtime, f.uid, f.gid, f.mode, f.inode, f.device,
+       f.is_symlink, f.symlink_target, f.mime, f.media_kind, f.encoding, f.hash_algo, f.hash, f.path_hash,
+       f.created_at, f.updated_at
+FROM files f
+JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1 
+  AND fm.data_json ? 'location'
+  AND fm.data_json->>'location' IS NOT NULL
+ORDER BY f.name
+LIMIT $2 OFFSET $3;

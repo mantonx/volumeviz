@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/events"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/scheduler"
@@ -46,15 +47,7 @@ func (h *Handler) GetDockerHealth(c *gin.Context) {
 	version, versionErr := h.dockerService.GetVersion(ctx)
 	dockerAvailable := h.dockerService.IsDockerAvailable(ctx)
 
-	health := struct {
-		Status     string `json:"status"`
-		Message    string `json:"message,omitempty"`
-		Version    string `json:"version,omitempty"`
-		APIVersion string `json:"api_version,omitempty"`
-		GoVersion  string `json:"go_version,omitempty"`
-		GitCommit  string `json:"git_commit,omitempty"`
-		BuildTime  string `json:"build_time,omitempty"`
-	}{
+	health := models.DockerHealth{
 		Status: "healthy",
 	}
 

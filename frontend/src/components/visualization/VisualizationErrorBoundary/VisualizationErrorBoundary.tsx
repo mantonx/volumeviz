@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import type { ErrorFallbackProps } from '@/components/ui/ErrorBoundary';
 
+// Error boundary for API errors and visualization failures
+
 interface VisualizationErrorFallbackProps extends ErrorFallbackProps {
   title?: string;
   description?: string;

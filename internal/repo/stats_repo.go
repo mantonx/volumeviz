@@ -2,10 +2,10 @@ package repo
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/models"
 )
@@ -273,7 +273,7 @@ func (r *StatsRepo) GetTrendAnalysis(ctx context.Context, volumeID string, start
 func (r *StatsRepo) GetLatestVolumeStats(ctx context.Context, volumeID string) (*models.DailyStat, error) {
 	row, err := r.queries.GetLatestVolumeStats(ctx, volumeID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
@@ -353,7 +353,7 @@ func (r *StatsRepo) UpdateStatsJob(ctx context.Context, params models.UpdateStat
 func (r *StatsRepo) GetJobStatus(ctx context.Context, jobID int64) (*models.StatsJob, error) {
 	row, err := r.queries.GetJobStatus(ctx, jobID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err

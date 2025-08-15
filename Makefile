@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-build docker-run lint format migrate up down restart logs logs-api logs-web ps rebuild dev-token dev-token-admin security-check db-seed db-prune smoke-test sqlc
+.PHONY: help build run test clean docker-build docker-run lint format migrate up down restart logs logs-api logs-web ps rebuild dev-token dev-token-admin security-check db-seed db-prune smoke-test sqlc docs
 
 # Variables
 BINARY_NAME=volumeviz
@@ -41,6 +41,7 @@ help:
 	@echo "  migrate-test  - Test migrations on both PostgreSQL and SQLite"
 	@echo "  migrate-status - Show current migration files"
 	@echo "  sqlc          - Generate Go code from SQL queries"
+	@echo "  docs          - Generate OpenAPI documentation with swag"
 	@echo "  deps          - Download Go dependencies"
 	@echo "  dev           - Run in development mode with hot reload"
 	@echo "  up            - Start services with docker compose up -d"
@@ -237,6 +238,20 @@ db-generate-check:
 	else \
 		echo "✅ sqlc generation is idempotent"; \
 	fi
+
+# Generate OpenAPI documentation
+docs:
+	@echo "Generating OpenAPI documentation..."
+	@if ! command -v swag > /dev/null 2>&1; then \
+		if ! command -v $(HOME)/go/bin/swag > /dev/null 2>&1; then \
+			echo "Installing swag..."; \
+			go install github.com/swaggo/swag/cmd/swag@latest; \
+		fi; \
+		$(HOME)/go/bin/swag init -g cmd/server/main.go -o docs/ --parseDependency --parseInternal; \
+	else \
+		swag init -g cmd/server/main.go -o docs/ --parseDependency --parseInternal; \
+	fi
+	@echo "OpenAPI docs generated in docs/"
 
 # Download dependencies
 deps:

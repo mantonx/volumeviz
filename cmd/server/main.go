@@ -24,7 +24,25 @@ import (
 
 // @title VolumeViz API
 // @version 1.0
-// @description Docker volume monitoring and visualization API
+// @description Docker volume monitoring API with comprehensive volume discovery, size calculation, and container attachment tracking. Focus on user-mounted volumes only.
+// @description 
+// @description ## Volume-First Approach
+// @description - Automatic discovery and filtering of user-mounted volumes
+// @description - Excludes Docker infrastructure volumes (container filesystems, tmp volumes)
+// @description - Real-time volume usage monitoring and size calculation
+// @description - Container attachment tracking for each volume
+// @description
+// @description ## Features
+// @description - Multi-method volume size calculation (du, find, stat)
+// @description - Asynchronous scanning with progress tracking for large volumes
+// @description - High-performance caching with TTL-based invalidation
+// @description - Comprehensive Prometheus metrics integration
+// @description - Circuit breaker patterns for resilience
+// @description
+// @description ## Performance SLO
+// @description - 95th percentile response time < 500ms for volume listing
+// @description - Supports 1000+ volumes with concurrent access
+// @description - Memory usage < 100MB during large volume scans
 // @termsOfService https://github.com/mantonx/volumeviz
 
 // @contact.name API Support

@@ -104,8 +104,8 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 		scanFailuresTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace:   namespace,
 			Subsystem:   subsystem,
-			Name:        "scan_failures_total",
-			Help:        "Total number of failed scans",
+			Name:        "scan_errors_total",
+			Help:        "Total number of scan errors",
 			ConstLabels: labels,
 		}, []string{"method", "error_code"}),
 
@@ -140,8 +140,8 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 		scansInProgressGauge: *promauto.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
 			Subsystem:   subsystem,
-			Name:        "scans_in_progress",
-			Help:        "Number of scans currently in progress",
+			Name:        "scan_active",
+			Help:        "Number of scans currently active",
 			ConstLabels: labels,
 		}, []string{"method"}),
 

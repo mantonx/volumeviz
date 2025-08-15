@@ -52,25 +52,39 @@ func (r *FileMetadataRepo) SaveMetadata(ctx context.Context, fileID int64, kind 
 	return nil
 }
 
-// GetMetadata retrieves metadata for a file
+// GetMetadata retrieves enriched metadata for a specific file and kind
 func (r *FileMetadataRepo) GetMetadata(ctx context.Context, fileID int64, kind models.EnrichmentKind) (*models.MediaMetadata, error) {
-	record, err := r.queries.GetFileMetadataByKind(ctx, sqlc.GetFileMetadataByKindParams{
+	metadata, err := r.queries.GetFileMetadataByKind(ctx, sqlc.GetFileMetadataByKindParams{
 		FileID: fileID,
 		Kind:   string(kind),
 	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, nil
+			return nil, nil // No metadata found
 		}
 		return nil, fmt.Errorf("failed to get file metadata: %w", err)
 	}
 
-	var metadata models.MediaMetadata
-	if err := json.Unmarshal(record.DataJson, &metadata); err != nil {
+	// Unmarshal JSON metadata
+	var mediaMetadata models.MediaMetadata
+	if err := json.Unmarshal(metadata.DataJson, &mediaMetadata); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
 	}
 
-	return &metadata, nil
+	return &mediaMetadata, nil
+}
+
+// GetAllFileMetadata retrieves all enriched metadata for a specific file
+func (r *FileMetadataRepo) GetAllFileMetadata(ctx context.Context, fileID int64) ([]sqlc.FileMetadata, error) {
+	return r.queries.GetFileMetadata(ctx, fileID)
+}
+
+// GetFileMetadataByKind retrieves specific kind of metadata for a file
+func (r *FileMetadataRepo) GetFileMetadataByKind(ctx context.Context, fileID int64, kind string) (sqlc.FileMetadata, error) {
+	return r.queries.GetFileMetadataByKind(ctx, sqlc.GetFileMetadataByKindParams{
+		FileID: fileID,
+		Kind:   kind,
+	})
 }
 
 // BulkSaveMetadata saves metadata for multiple files efficiently

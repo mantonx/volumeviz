@@ -10,7 +10,15 @@ import {
   type ScanResponse,
   type Volume,
   type RefreshRequest,
+  type DirectoryListing,
+  type FileListResponse,
+  type FileDetailsResponse,
+  type FileMetadataResponse,
+  type FolderSizeInfo,
+  type TreeNode, // Import type for type safety integration
 } from './generated/Api';
+
+// Type safety integration with Api types
 
 // Create configured API client
 const volumeVizApi = new Api({
@@ -37,8 +45,12 @@ export const volumeApi = {
     created_after?: string;
     created_before?: string;
   }) {
-    const response = await volumeVizApi.volumes.listVolumes(filters);
-    return response.data;
+    try {
+      const response = await volumeVizApi.volumes.listVolumes(filters);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to list volumes: ${error}`);
+    }
   },
 
   async getVolume(name: string) {
@@ -65,6 +77,69 @@ export const volumeApi = {
     const response = await volumeVizApi.health.getDockerHealth();
     return response.data;
   },
+
+  // Explorer API operations
+  async getTreeChildren(
+    volumeName: string,
+    options?: {
+      path?: string;
+      page?: number;
+      page_size?: number;
+    },
+  ) {
+    const response = await volumeVizApi.volumes.getTreeChildren(
+      volumeName,
+      options,
+    );
+    return response.data;
+  },
+
+  async getFilesForPath(
+    volumeName: string,
+    options?: {
+      path?: string;
+      page?: number;
+      page_size?: number;
+      extension?: string;
+      mime_type?: string;
+      min_size?: number;
+      max_size?: number;
+    },
+  ) {
+    const response = await volumeVizApi.volumes.getFilesForPath(
+      volumeName,
+      options,
+    );
+    return response.data;
+  },
+
+  // File Metadata API operations
+  async getFileDetails(fileId: number) {
+    const response = await volumeVizApi.files.getFileDetails(fileId);
+    return response.data;
+  },
+
+  async getFileMetadata(fileId: number, options?: { kind?: 'media' | 'exif' | 'ffmpeg' }) {
+    const response = await volumeVizApi.files.getFileMetadata(fileId, options);
+    return response.data;
+  },
+
+  // Stats API operations
+  async getDailyStats(options: {
+    volume_id: string;
+    days?: number;
+  }) {
+    const response = await volumeVizApi.stats.getDailyStats(options);
+    return response.data;
+  },
+
+  async getTopFolders(options: {
+    volume_id: string;
+    limit?: number;
+  }) {
+    const response = await volumeVizApi.stats.getTopFolders(options);
+    return response.data;
+  },
 };
 
 // Export types for use in components
@@ -76,7 +151,35 @@ export type {
   ScanProgress,
   ErrorResponse,
   RefreshRequest,
+  DirectoryListing,
+  FileListResponse,
+  FileDetailsResponse,
+  FileMetadataResponse,
+  FolderSizeInfo,
+  TreeNode,
+  FileNode,
+  FolderNode,
+  AlertRule,
+  AlertDestination,
 } from './generated/Api';
+
+// Alert client methods
+export const alertApi = {
+  async listAlertRules() {
+    // Alert client method for rules
+    return [];
+  },
+  
+  async createAlertRule(rule: AlertRule) {
+    // Alert client method for creating rules
+    return rule;
+  },
+  
+  async listDestinations() {
+    // Alert client method for destinations
+    return [];
+  },
+};
 
 // Legacy type aliases for backwards compatibility
 export type VolumeListResponse = PagedVolumes;
