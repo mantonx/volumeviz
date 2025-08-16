@@ -397,10 +397,8 @@ func (r *FilesRepo) GetFileStats(ctx context.Context, volumeID string) (*models.
 		avgFileSize = &stats.AvgFileSize
 	}
 	var largestFile *int64
-	if stats.LargestFile != nil {
-		if lf, ok := stats.LargestFile.(int64); ok {
-			largestFile = &lf
-		}
+	if stats.LargestFile != 0 {
+		largestFile = &stats.LargestFile
 	}
 
 	return &models.FileStats{

@@ -253,7 +253,7 @@ func Load() *Config {
 			SkipPattern:       getEnv("SCAN_SKIP_PATTERN", "^docker_|^builder_|^containerd"),
 		},
 		FilesystemIndexing: FilesystemIndexingConfig{
-			Enabled:                   getBoolEnv("VV_FILESYSTEM_INDEXING_ENABLED", false),
+			Enabled:                   true, // Always enabled - users expect files to be indexed
 			EnableHashing:             getBoolEnv("VV_ENABLE_HASHING", false),
 			MaxFileBytesForHash:       getInt64Env("VV_MAX_FILE_BYTES_FOR_HASH", 10485760), // 10MB
 			HashAlgorithm:             getEnv("VV_HASH_ALGO", "sha256"),
@@ -355,10 +355,8 @@ func getScanEnabledDefault() bool {
 		}
 	}
 
-	// Default based on environment: true in dev/debug, false in production
-	ginMode := getEnv("GIN_MODE", "release")
-	isDev := ginMode == "debug" || ginMode == "test" || os.Getenv("NODE_ENV") == "development"
-	return isDev
+	// Default: always enabled - volumes should be automatically scanned
+	return true
 }
 
 // ToStoreConfig converts the config.DatabaseConfig to store config.Config

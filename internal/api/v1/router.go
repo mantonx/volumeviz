@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -112,6 +113,14 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 			} else {
 				scanScheduler = sch
 				log.Printf("[INFO] Scan scheduler initialized successfully")
+				
+				// Auto-start the scheduler
+				ctx := context.Background()
+				if err := sch.Start(ctx); err != nil {
+					log.Printf("[ERROR] Failed to start scan scheduler: %v", err)
+				} else {
+					log.Printf("[INFO] Scan scheduler started successfully")
+				}
 			}
 		}
 	}
@@ -378,7 +387,6 @@ func (r *Router) setupRoutes() {
 
 		// Stats router with StatsService integration
 		statsRouter := stats.NewStatsRouter(r.store, statsSvc)
-		stats.RegisterRoutes(v1, r.store, statsSvc)
 		statsRouter.RegisterRoutes(v1)
 
 		// Alerts router if alerts engine is available

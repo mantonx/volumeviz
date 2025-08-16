@@ -165,9 +165,9 @@ SELECT COUNT(*) FROM files WHERE folder_id = $1;
 -- name: GetFileStats :one
 SELECT
     COUNT(*) as total_files,
-    SUM(size_bytes) as total_size,
-    AVG(size_bytes) as avg_file_size,
-    MAX(size_bytes) as largest_file,
+    COALESCE(SUM(size_bytes), 0)::bigint as total_size,
+    COALESCE(AVG(size_bytes), 0.0)::double precision as avg_file_size,
+    COALESCE(MAX(size_bytes), 0)::bigint as largest_file,
     COUNT(DISTINCT extension) as unique_extensions,
     COUNT(DISTINCT media_kind) as unique_media_kinds,
     COUNT(*) FILTER (WHERE hash IS NOT NULL) as hashed_files

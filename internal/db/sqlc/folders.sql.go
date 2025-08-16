@@ -286,21 +286,21 @@ const getFolderStats = `-- name: GetFolderStats :one
 SELECT 
     COUNT(*) as total_folders,
     COUNT(*) FILTER (WHERE parent_id IS NULL) as root_folders,
-    MAX(depth) as max_depth,
-    AVG(file_count) as avg_files_per_folder,
-    SUM(size_bytes_recursive) as total_size,
-    MAX(size_bytes_recursive) as largest_folder_size
+    COALESCE(MAX(depth), 0)::integer as max_depth,
+    COALESCE(AVG(file_count), 0.0)::double precision as avg_files_per_folder,
+    COALESCE(SUM(size_bytes_recursive), 0)::bigint as total_size,
+    COALESCE(MAX(size_bytes_recursive), 0)::bigint as largest_folder_size
 FROM folders
 WHERE volume_id = $1
 `
 
 type GetFolderStatsRow struct {
-	TotalFolders      int64       `json:"total_folders"`
-	RootFolders       int64       `json:"root_folders"`
-	MaxDepth          interface{} `json:"max_depth"`
-	AvgFilesPerFolder float64     `json:"avg_files_per_folder"`
-	TotalSize         int64       `json:"total_size"`
-	LargestFolderSize interface{} `json:"largest_folder_size"`
+	TotalFolders      int64   `json:"total_folders"`
+	RootFolders       int64   `json:"root_folders"`
+	MaxDepth          int32   `json:"max_depth"`
+	AvgFilesPerFolder float64 `json:"avg_files_per_folder"`
+	TotalSize         int64   `json:"total_size"`
+	LargestFolderSize int64   `json:"largest_folder_size"`
 }
 
 func (q *Queries) GetFolderStats(ctx context.Context, volumeID string) (GetFolderStatsRow, error) {

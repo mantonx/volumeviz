@@ -111,10 +111,10 @@ SELECT COUNT(*) FROM folders WHERE volume_id = $1;
 SELECT 
     COUNT(*) as total_folders,
     COUNT(*) FILTER (WHERE parent_id IS NULL) as root_folders,
-    MAX(depth) as max_depth,
-    AVG(file_count) as avg_files_per_folder,
-    SUM(size_bytes_recursive) as total_size,
-    MAX(size_bytes_recursive) as largest_folder_size
+    COALESCE(MAX(depth), 0)::integer as max_depth,
+    COALESCE(AVG(file_count), 0.0)::double precision as avg_files_per_folder,
+    COALESCE(SUM(size_bytes_recursive), 0)::bigint as total_size,
+    COALESCE(MAX(size_bytes_recursive), 0)::bigint as largest_folder_size
 FROM folders
 WHERE volume_id = $1;
 

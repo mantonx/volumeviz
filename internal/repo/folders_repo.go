@@ -209,10 +209,8 @@ func (r *FoldersRepo) GetFolderStats(ctx context.Context, volumeID string) (*mod
 	}
 
 	var maxDepth *int32
-	if stats.MaxDepth != nil {
-		if md, ok := stats.MaxDepth.(int32); ok {
-			maxDepth = &md
-		}
+	if stats.MaxDepth != 0 {
+		maxDepth = &stats.MaxDepth
 	}
 	var avgFilesPerFolder *float64
 	if stats.AvgFilesPerFolder != 0 {
@@ -223,10 +221,8 @@ func (r *FoldersRepo) GetFolderStats(ctx context.Context, volumeID string) (*mod
 		totalSize = &stats.TotalSize
 	}
 	var largestFolderSize *int64
-	if stats.LargestFolderSize != nil {
-		if lfs, ok := stats.LargestFolderSize.(int64); ok {
-			largestFolderSize = &lfs
-		}
+	if stats.LargestFolderSize != 0 {
+		largestFolderSize = &stats.LargestFolderSize
 	}
 
 	return &models.FolderStats{
