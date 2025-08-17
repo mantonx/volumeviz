@@ -1,14 +1,14 @@
 /**
  * SearchResults Component
  * 
- * Displays search results with virtualization for performance
+ * Displays search results with infinite scroll and URL-based pagination
  */
 
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { useAtomValue } from 'jotai';
 import { FixedSizeList as List } from 'react-window';
+import InfiniteLoader from 'react-window-infinite-loader';
 import { searchResultsAtom, searchTotalCountAtom, searchLoadingAtom } from '@/store/atoms/search';
-import { useSearch } from '@/hooks/useSearch';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { FileSearchResult } from '@/api/search';
@@ -17,6 +17,9 @@ import { getFileIcon, getFileSizeBadgeColor, getMediaKindBadgeColor } from '@/ut
 interface SearchResultsProps {
   onFileSelect?: (fileId: number) => void;
   className?: string;
+  onLoadMore?: () => void;
+  hasNextPage?: boolean;
+  allResults?: FileSearchResult[];
 }
 
 interface SearchResultItemProps {
@@ -25,24 +28,48 @@ interface SearchResultItemProps {
   data: {
     results: FileSearchResult[];
     onFileSelect?: (fileId: number) => void;
+    hasNextPage: boolean;
+    isItemLoaded: (index: number) => boolean;
   };
 }
 
 const ITEM_HEIGHT = 120;
 const MOBILE_ITEM_HEIGHT = 140;
+const LOADING_ITEM_HEIGHT = 80;
 const getContainerHeight = () => {
   if (typeof window !== 'undefined') {
     const isMobile = window.innerWidth < 768;
-    const availableHeight = window.innerHeight - 300; // Account for header, search bar, pagination
-    return Math.max(isMobile ? 400 : 500, Math.min(800, availableHeight));
+    const availableHeight = window.innerHeight - 200; // Account for header, search bar (no pagination)
+    return Math.max(isMobile ? 500 : 600, Math.min(window.innerHeight - 150, availableHeight));
   }
-  return 600;
+  return 700;
 };
 
 // Individual search result item component
 const SearchResultItem: React.FC<SearchResultItemProps> = ({ index, style, data }) => {
-  const { results, onFileSelect } = data;
+  const { results, onFileSelect, hasNextPage, isItemLoaded } = data;
   const file = results[index];
+
+  // Show loading placeholder if item is not loaded yet
+  if (!isItemLoaded(index)) {
+    return (
+      <div style={style} className="px-2 sm:px-4">
+        <Card className="p-3 sm:p-4 animate-pulse">
+          <div className="flex items-start space-x-3 sm:space-x-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-lg"></div>
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              <div className="flex space-x-2">
+                <div className="h-3 bg-gray-200 rounded w-16"></div>
+                <div className="h-3 bg-gray-200 rounded w-20"></div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   if (!file) return null;
 
@@ -159,15 +186,21 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({ index, style, data 
 export const SearchResults: React.FC<SearchResultsProps> = ({
   onFileSelect,
   className = '',
+  onLoadMore,
+  hasNextPage = false,
+  allResults,
 }) => {
-  const results = useAtomValue(searchResultsAtom);
+  const atomResults = useAtomValue(searchResultsAtom);
   const totalCount = useAtomValue(searchTotalCountAtom);
   const loading = useAtomValue(searchLoadingAtom);
-  const { currentPage, totalPages, perPage, goToPage, changePageSize } = useSearch();
+  
+  // Use provided allResults or fall back to atom results
+  const results = allResults || atomResults;
   
   // Responsive state
   const [containerHeight, setContainerHeight] = useState(getContainerHeight);
   const [isMobile, setIsMobile] = useState(false);
+  const infiniteLoaderRef = useRef<InfiniteLoader>(null);
   
   // Update responsive state on resize
   useEffect(() => {
@@ -181,31 +214,60 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  
+  // Check if an item is loaded
+  const isItemLoaded = useCallback((index: number) => {
+    const loaded = !!results[index];
+    if (index >= results.length - 5) { // Log for items near the end
+      console.log(`🔍 isItemLoaded(${index}): ${loaded}, results.length: ${results.length}`);
+    }
+    return loaded;
+  }, [results]);
+  
+  // Load more items when scrolling
+  const loadMoreItems = useCallback(async (startIndex: number, stopIndex: number) => {
+    console.log(`📜 loadMoreItems called: startIndex=${startIndex}, stopIndex=${stopIndex}, hasNextPage=${hasNextPage}, loading=${loading}`);
+    if (onLoadMore && hasNextPage) {
+      console.log('🚀 Calling onLoadMore');
+      onLoadMore();
+    } else {
+      console.log('❌ Not calling onLoadMore:', { onLoadMore: !!onLoadMore, hasNextPage, loading });
+    }
+  }, [onLoadMore, hasNextPage]);
+  
+  // Use the results array length as item count (it includes placeholders)
+  const itemCount = results.length;
 
   // Memoize item data for react-window
   const itemData = useMemo(() => ({
     results,
     onFileSelect,
-  }), [results, onFileSelect]);
+    hasNextPage,
+    isItemLoaded,
+  }), [results, onFileSelect, hasNextPage, isItemLoaded]);
+  
 
-  // Handle page navigation
-  const handlePrevPage = useCallback(() => {
-    if (currentPage > 1) {
-      goToPage(currentPage - 1);
+  // Reset infinite loader when results change (new search)
+  useEffect(() => {
+    if (infiniteLoaderRef.current) {
+      infiniteLoaderRef.current.resetloadMoreItemsCache();
     }
-  }, [currentPage, goToPage]);
+  }, [results.length === 0]); // Reset when starting new search
 
-  const handleNextPage = useCallback(() => {
-    if (currentPage < totalPages) {
-      goToPage(currentPage + 1);
-    }
-  }, [currentPage, totalPages, goToPage]);
+  // Show loading state if we're loading the first page of a new search
+  if (loading && results.length === 0) {
+    return (
+      <Card className="p-8 text-center">
+        <div className="inline-flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+          <span>Searching files...</span>
+        </div>
+      </Card>
+    );
+  }
 
-  const handlePageSizeChange = useCallback((newSize: number) => {
-    changePageSize(newSize);
-  }, [changePageSize]);
-
-  if (loading || results.length === 0) {
+  // Don't render if we have no results and aren't loading
+  if (results.length === 0) {
     return null;
   }
 
@@ -218,159 +280,57 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
             Search Results
           </h2>
           <span className="text-sm text-gray-500">
-            {totalCount.toLocaleString()} files found
+            {results.length.toLocaleString()} of {totalCount.toLocaleString()} files
           </span>
         </div>
         
-        {/* Page Size Selector */}
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-700 dark:text-gray-300">Show:</span>
-          <select
-            value={perPage}
-            onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-            className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
-          <span className="text-sm text-gray-700 dark:text-gray-300">per page</span>
-        </div>
+        {hasNextPage && (
+          <div className="text-xs text-gray-500">
+            Scroll for more results
+          </div>
+        )}
       </div>
 
-      {/* Virtualized Results List */}
+      {/* Infinite Scroll Results List */}
       <Card className="overflow-hidden">
-        <List
-          height={containerHeight}
-          itemCount={results.length}
-          itemSize={isMobile ? MOBILE_ITEM_HEIGHT : ITEM_HEIGHT}
-          itemData={itemData}
-          className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+        <InfiniteLoader
+          ref={infiniteLoaderRef}
+          isItemLoaded={isItemLoaded}
+          itemCount={itemCount}
+          loadMoreItems={loadMoreItems}
         >
-          {SearchResultItem}
-        </List>
+          {({ onItemsRendered, ref }) => (
+            <List
+              ref={ref}
+              height={containerHeight}
+              itemCount={itemCount}
+              itemSize={isMobile ? MOBILE_ITEM_HEIGHT : ITEM_HEIGHT}
+              itemData={itemData}
+              onItemsRendered={onItemsRendered}
+              className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+            >
+              {SearchResultItem}
+            </List>
+          )}
+        </InfiniteLoader>
       </Card>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-6">
-          {/* Mobile pagination */}
-          {isMobile ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Button
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 1}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 mr-2"
-                >
-                  ← Previous
-                </Button>
-                <span className="text-sm text-gray-700 dark:text-gray-300 px-4">
-                  {currentPage} / {totalPages}
-                </span>
-                <Button
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 ml-2"
-                >
-                  Next →
-                </Button>
-              </div>
-              {totalPages > 10 && (
-                <div className="flex items-center justify-center space-x-2">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Go to:</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={totalPages}
-                    value={currentPage}
-                    onChange={(e) => {
-                      const page = Number(e.target.value);
-                      if (page >= 1 && page <= totalPages) {
-                        goToPage(page);
-                      }
-                    }}
-                    className="w-16 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Desktop pagination */
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 1}
-                  variant="outline"
-                  size="sm"
-                >
-                  ← Previous
-                </Button>
-                <Button
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                  variant="outline"
-                  size="sm"
-                >
-                  Next →
-                </Button>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Page {currentPage} of {totalPages}
-                </span>
-                
-                {/* Quick page jumper */}
-                {totalPages <= 10 ? (
-                  <div className="flex space-x-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <Button
-                        key={page}
-                        onClick={() => goToPage(page)}
-                        variant={page === currentPage ? 'default' : 'outline'}
-                        size="sm"
-                        className="w-8 h-8 p-0"
-                      >
-                        {page}
-                      </Button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Go to page:</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={totalPages}
-                      value={currentPage}
-                      onChange={(e) => {
-                        const page = Number(e.target.value);
-                        if (page >= 1 && page <= totalPages) {
-                          goToPage(page);
-                        }
-                      }}
-                      className="w-16 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+      {/* Loading indicator for infinite scroll */}
+      {loading && hasNextPage && (
+        <div className="mt-4 p-4 text-center">
+          <div className="inline-flex items-center space-x-2 text-gray-500">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+            <span className="text-sm">Loading more results...</span>
+          </div>
         </div>
       )}
-
-      {/* Results Summary */}
-      <div className="mt-4 text-sm text-gray-500 text-center">
-        Showing {Math.min(perPage, results.length)} of {totalCount.toLocaleString()} files
-        {currentPage > 1 && ` (page ${currentPage})`}
-      </div>
+      
+      {/* End of results indicator */}
+      {!hasNextPage && results.length > 0 && (
+        <div className="mt-4 text-sm text-gray-500 text-center py-4">
+          All {totalCount.toLocaleString()} results shown
+        </div>
+      )}
     </div>
   );
 };

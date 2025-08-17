@@ -47,12 +47,14 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Search state - managed locally for UI responsiveness
-  const [results, setResults] = React.useState<any[]>([]);
+  const [allResults, setAllResults] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [totalCount, setTotalCount] = React.useState(0);
   const [totalPages, setTotalPages] = React.useState(0);
   const [queryTime, setQueryTime] = React.useState(0);
+  const [currentSearchId, setCurrentSearchId] = React.useState<string>('');
+  const [loadedPages, setLoadedPages] = React.useState<Set<number>>(new Set());
   
   // Derive all state from URL parameters
   const searchQuery = searchParams.get('q') || '';
@@ -62,6 +64,30 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
   const sortOrder = searchParams.get('order') || 'desc';
   const page = parseInt(searchParams.get('page') || '1', 10);
   const perPage = parseInt(searchParams.get('perPage') || '20', 10);
+  
+  // Generate search ID for tracking search changes
+  const searchId = useMemo(() => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (mediaKind) params.set('mediaKind', mediaKind);
+    mimeTypes.forEach(mime => params.append('mime', mime));
+    params.set('sort', sortField);
+    params.set('order', sortOrder);
+    // Add other filter params...
+    const minSize = searchParams.get('minSize');
+    const maxSize = searchParams.get('maxSize');
+    const mtimeFrom = searchParams.get('mtimeFrom');
+    const mtimeTo = searchParams.get('mtimeTo');
+    const hasGps = searchParams.get('hasGps');
+    const hasSubs = searchParams.get('hasSubs');
+    if (minSize) params.set('minSize', minSize);
+    if (maxSize) params.set('maxSize', maxSize);
+    if (mtimeFrom) params.set('mtimeFrom', mtimeFrom);
+    if (mtimeTo) params.set('mtimeTo', mtimeTo);
+    if (hasGps) params.set('hasGps', hasGps);
+    if (hasSubs) params.set('hasSubs', hasSubs);
+    return params.toString();
+  }, [searchQuery, mediaKind, mimeTypes, sortField, sortOrder, searchParams]);
   
   // Debug URL parsing
   console.log('📍 URL State:', {
@@ -96,14 +122,26 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
     });
   }, [setSearchParams]);
   
-  // Execute search based on current URL parameters
-  const executeSearch = useCallback(async () => {
+  // Execute search for a specific page (for infinite scroll)
+  const executeSearchPage = useCallback(async (targetPage: number, isNewSearch = false) => {
     if (!searchQuery.trim()) {
-      setResults([]);
+      setAllResults([]);
       setTotalCount(0);
       setTotalPages(0);
       setError(null);
+      setLoadedPages(new Set());
       return;
+    }
+    
+    // Don't load page if already loaded (unless new search)
+    if (!isNewSearch && loadedPages.has(targetPage)) {
+      console.log(`⏸️ Page ${targetPage} already loaded`);
+      return;
+    }
+    
+    // Mark page as being loaded immediately to prevent duplicates
+    if (!isNewSearch) {
+      setLoadedPages(prev => new Set([...prev, targetPage]));
     }
     
     setLoading(true);
@@ -113,7 +151,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
       // Build search request from URL parameters
       const searchRequest: SearchFilesRequest = {
         q: searchQuery,
-        page,
+        page: targetPage,
         perPage,
         sort: sortField as any,
         order: sortOrder as any,
@@ -138,93 +176,86 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
       if (hasGps) searchRequest.hasGps = hasGps === 'true';
       if (hasSubs) searchRequest.hasSubs = hasSubs === 'true';
       
-      console.log('🔍 Executing search:', searchRequest);
+      console.log(`🔍 Executing search page ${targetPage}:`, searchRequest);
       const response = await searchApi.searchFiles(searchRequest);
       
-      setResults(response.files || []);
       setTotalCount(response.total_count || 0);
       setTotalPages(response.total_pages || 0);
       setQueryTime(response.query_time_ms || 0);
       
+      if (isNewSearch) {
+        // For new search, create array with placeholders for all items
+        const totalItems = response.total_count || 0;
+        const newResults = new Array(totalItems);
+        
+        // Fill in the first page
+        response.files?.forEach((file, index) => {
+          newResults[index] = file;
+        });
+        
+        setAllResults(newResults);
+        setLoadedPages(new Set([targetPage]));
+      } else {
+        // Append results for infinite scroll
+        setAllResults(prev => {
+          const newResults = [...prev];
+          const startIndex = (targetPage - 1) * perPage;
+          
+          // Insert new page results at correct position
+          response.files?.forEach((file, index) => {
+            newResults[startIndex + index] = file;
+          });
+          
+          return newResults;
+        });
+        // Page already added to loadedPages above
+      }
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Search failed');
-      setResults([]);
-      setTotalCount(0);
-      setTotalPages(0);
+      if (isNewSearch) {
+        setAllResults([]);
+        setTotalCount(0);
+        setTotalPages(0);
+        setLoadedPages(new Set());
+      }
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, page, perPage, sortField, sortOrder, mediaKind, mimeTypes, searchParams]);
+  }, [searchQuery, perPage, sortField, sortOrder, mediaKind, mimeTypes, searchParams, loadedPages]);
   
-  // Execute search when URL changes
+  // Execute search when URL changes (detect new search vs pagination)
   useEffect(() => {
-    const urlString = searchParams.toString();
-    console.log('🚀 useEffect triggered with URL:', urlString);
+    console.log('🚀 useEffect triggered with searchId:', searchId);
     console.log('🚀 searchQuery from URL:', searchQuery);
     
     if (searchQuery.trim()) {
-      console.log('🔍 Starting search for:', searchQuery);
-      // Call executeSearch directly to avoid dependency issues
-      (async () => {
-        setLoading(true);
+      const isNewSearch = currentSearchId !== searchId;
+      
+      if (isNewSearch) {
+        console.log('🔍 Starting NEW search for:', searchQuery);
+        setCurrentSearchId(searchId);
         setSearchLoading(true);
-        setError(null);
-        
-        try {
-          const searchRequest: SearchFilesRequest = {
-            q: searchQuery,
-            page,
-            perPage,
-            sort: sortField as any,
-            order: sortOrder as any,
-          };
-          
-          if (mediaKind) searchRequest.mediaKind = mediaKind;
-          if (mimeTypes.length > 0) searchRequest.mime = mimeTypes;
-          
-          const minSize = searchParams.get('minSize');
-          const maxSize = searchParams.get('maxSize');
-          const mtimeFrom = searchParams.get('mtimeFrom');
-          const mtimeTo = searchParams.get('mtimeTo');
-          const hasGps = searchParams.get('hasGps');
-          const hasSubs = searchParams.get('hasSubs');
-          
-          if (minSize) searchRequest.minSize = parseInt(minSize, 10);
-          if (maxSize) searchRequest.maxSize = parseInt(maxSize, 10);
-          if (mtimeFrom) searchRequest.mtimeFrom = mtimeFrom;
-          if (mtimeTo) searchRequest.mtimeTo = mtimeTo;
-          if (hasGps) searchRequest.hasGps = hasGps === 'true';
-          if (hasSubs) searchRequest.hasSubs = hasSubs === 'true';
-          
-          console.log('🔍 Executing search:', JSON.stringify(searchRequest, null, 2));
-          const response = await searchApi.searchFiles(searchRequest);
-          console.log('✅ Search response:', response);
-          
-          setResults(response.files || []);
-          setTotalCount(response.total_count || 0);
-          setTotalPages(response.total_pages || 0);
-          setQueryTime(response.query_time_ms || 0);
-          
-          // Update Jotai atoms for SearchResults component
-          setSearchResults(response.files || []);
-          setSearchTotalCount(response.total_count || 0);
-          
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Search failed');
-          setResults([]);
-          setTotalCount(0);
-          setTotalPages(0);
-        } finally {
-          setLoading(false);
-          setSearchLoading(false);
-        }
-      })();
+        executeSearchPage(1, true); // Load first page for new search
+      } else {
+        console.log(`🔍 Loading page ${page} for existing search`);
+        executeSearchPage(page, false); // Load specific page for existing search
+      }
       
       setIsPanelOpen(true);
     } else {
       console.log('❌ No search query, skipping search');
+      setCurrentSearchId('');
+      setAllResults([]);
+      setLoadedPages(new Set());
     }
-  }, [searchParams.toString()]); // Use the raw URL string as dependency
+  }, [searchId, page, executeSearchPage, currentSearchId, searchQuery]);
+  
+  // Update Jotai atoms when allResults change
+  useEffect(() => {
+    setSearchResults(allResults);
+    setSearchTotalCount(totalCount);
+  }, [allResults, totalCount, setSearchResults, setSearchTotalCount]);
   
   // Initialize with default query if provided and no URL query
   useEffect(() => {
@@ -232,6 +263,20 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
       updateUrl({ q: defaultQuery });
     }
   }, [defaultQuery, searchQuery, updateUrl]);
+  
+  // Handle infinite scroll load more
+  const handleLoadMore = useCallback(() => {
+    const nextPage = Math.max(...Array.from(loadedPages), 0) + 1;
+    if (nextPage <= totalPages && !loadedPages.has(nextPage)) {
+      console.log(`🔄 Loading more: page ${nextPage}, loadedPages:`, Array.from(loadedPages));
+      // Update URL to reflect the highest loaded page
+      updateUrl({ page: nextPage });
+      // Directly execute search for next page
+      executeSearchPage(nextPage, false);
+    } else {
+      console.log(`⏸️ Skipping load: nextPage=${nextPage}, totalPages=${totalPages}, already loaded=${loadedPages.has(nextPage)}`);
+    }
+  }, [loadedPages, totalPages, updateUrl, executeSearchPage]);
   
   // Handlers that update URL (which triggers search via useEffect)
   const handleSearchSubmit = useCallback((query: string) => {
@@ -249,10 +294,12 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
   const handleClearSearch = useCallback(() => {
     setSearchParams(new URLSearchParams());
     setIsPanelOpen(false);
-    setResults([]);
+    setAllResults([]);
     setTotalCount(0);
     setTotalPages(0);
     setError(null);
+    setCurrentSearchId('');
+    setLoadedPages(new Set());
   }, [setSearchParams, setIsPanelOpen]);
   
   const handlePageChange = useCallback((newPage: number) => {
@@ -260,7 +307,8 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
   }, [updateUrl]);
   
   // Computed properties
-  const hasResults = results.length > 0;
+  const hasResults = allResults.length > 0;
+  const hasNextPage = Math.max(...Array.from(loadedPages), 0) < totalPages;
   const hasActiveFilters = useMemo(() => {
     return mediaKind || mimeTypes.length > 0 || searchParams.get('minSize') || searchParams.get('maxSize') ||
            searchParams.get('mtimeFrom') || searchParams.get('mtimeTo') || searchParams.get('hasGps') || searchParams.get('hasSubs');
@@ -482,13 +530,16 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
           </Card>
         )}
 
-        {!loading && !error && hasResults && (
+        {!error && searchQuery && (
           <SearchResults 
             onFileSelect={onFileSelect}
+            onLoadMore={handleLoadMore}
+            hasNextPage={hasNextPage}
+            allResults={allResults}
           />
         )}
 
-        {!loading && !error && !hasResults && searchQuery && (
+        {!loading && !error && !hasResults && searchQuery && totalCount === 0 && (
           <Card className="p-8 text-center text-gray-500">
             <div className="mb-4">
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
