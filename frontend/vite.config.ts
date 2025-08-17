@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import path from 'path'
+import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   resolve: {
     alias: {
@@ -35,6 +35,7 @@ export default defineConfig({
     minify: 'esbuild',
     chunkSizeWarningLimit: 800, // Increase limit for visualization components
     rollupOptions: {
+      external: mode === 'production' ? ['msw', 'msw/browser', 'msw/node'] : [],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
@@ -50,4 +51,4 @@ export default defineConfig({
   define: {
     __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
   },
-})
+}))

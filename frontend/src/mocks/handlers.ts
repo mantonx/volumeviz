@@ -353,6 +353,87 @@ export const handlers = [
     });
   }),
 
+  // Search endpoints
+  http.get('/api/v1/search/files', ({ request }) => {
+    const url = new URL(request.url);
+    const q = url.searchParams.get('q') || '';
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const perPage = parseInt(url.searchParams.get('perPage') || '20');
+
+    // Mock search results
+    const mockFiles = [
+      {
+        id: 1,
+        volume_id: 'test-volume',
+        path: '/test/signs.txt',
+        name: 'signs.txt',
+        size: 1024,
+        disk_usage: 1024,
+        extension: 'txt',
+        mime_type: 'text/plain',
+        media_kind: 'text',
+        modified_time: '2024-01-15T10:00:00Z',
+        created_time: '2024-01-15T10:00:00Z',
+      },
+      {
+        id: 2,
+        volume_id: 'test-volume',
+        path: '/test/signs.pdf',
+        name: 'signs.pdf',
+        size: 2048,
+        disk_usage: 2048,
+        extension: 'pdf',
+        mime_type: 'application/pdf',
+        media_kind: 'document',
+        modified_time: '2024-01-14T10:00:00Z',
+        created_time: '2024-01-14T10:00:00Z',
+      },
+    ];
+
+    // Filter by query if provided
+    const filteredFiles = q 
+      ? mockFiles.filter(file => 
+          file.name.toLowerCase().includes(q.toLowerCase()) ||
+          file.path.toLowerCase().includes(q.toLowerCase())
+        )
+      : mockFiles;
+
+    return HttpResponse.json({
+      files: filteredFiles,
+      total_count: filteredFiles.length,
+      page,
+      per_page: perPage,
+      total_pages: Math.ceil(filteredFiles.length / perPage),
+      query_time_ms: 5,
+      filters: { q },
+    });
+  }),
+
+  // Saved searches endpoints
+  http.get('/api/v1/search/saved', () => {
+    return HttpResponse.json({
+      searches: [],
+      total_count: 0,
+      page: 1,
+      per_page: 20,
+    });
+  }),
+
+  http.post('/api/v1/search/saved', () => {
+    return HttpResponse.json({
+      id: 1,
+      name: 'Test Search',
+      description: 'A test saved search',
+      query: {},
+      tags: [],
+      is_public: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      run_count: 0,
+      last_run_at: null,
+    });
+  }),
+
   // Catch-all for unhandled requests
   http.all('*', ({ request }) => {
     console.warn(`Unhandled ${request.method} request to ${request.url}`);

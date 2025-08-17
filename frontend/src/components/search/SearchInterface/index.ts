@@ -1,0 +1,1 @@
+export { SearchInterface } from './SearchInterface';

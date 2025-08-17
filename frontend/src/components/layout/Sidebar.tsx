@@ -1,20 +1,22 @@
-import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { useAtomValue } from 'jotai';
-import {
-  Home,
-  HardDrive,
-  Settings,
-  Activity,
-  Layers,
-  X,
-  TrendingUp,
-  Zap,
-  Bell,
-} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { volumeStatsAtom } from '@/store';
 import { cn } from '@/utils';
+import { useAtomValue } from 'jotai';
+import {
+    Activity,
+    Bell,
+    FolderOpen,
+    HardDrive,
+    Home,
+    Layers,
+    Search,
+    Settings,
+    TrendingUp,
+    X,
+    Zap,
+} from 'lucide-react';
+import React from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
   open: boolean;
@@ -41,6 +43,18 @@ const navigation: NavigationItem[] = [
     href: '/volumes',
     icon: HardDrive,
     description: 'Docker volume management',
+  },
+  {
+    name: 'Explorer',
+    href: '/explorer',
+    icon: FolderOpen,
+    description: 'File system exploration & insights',
+  },
+  {
+    name: 'Search',
+    href: '/search',
+    icon: Search,
+    description: 'Global file search & advanced filtering',
   },
   // Temporarily hidden - container management coming in future release
   // {

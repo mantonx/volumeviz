@@ -1,0 +1,28 @@
+{
+  "scan-123": {
+    "scan_id": "scan-123",
+    "volume_id": "vol-123",
+    "status": "running",
+    "progress": 45,
+    "started_at": "2025-01-15T10:00:00Z"
+  },
+  "scan-456": {
+    "scan_id": "scan-456",
+    "volume_id": "vol-456",
+    "status": "completed",
+    "progress": 100,
+    "started_at": "2025-01-15T09:30:00Z",
+    "completed_at": "2025-01-15T09:35:00Z",
+    "result": {
+      "total_size": 2048000,
+      "file_count": 150
+    }
+  },
+  "default": {
+    "scan_id": "scan-default",
+    "volume_id": "vol-default",
+    "status": "pending",
+    "progress": 0,
+    "started_at": "2025-01-15T10:05:00Z"
+  }
+}

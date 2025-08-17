@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { VolumeTable } from './VolumeTable';
-import { Volume } from '../../../types/api';
 import { useState } from 'react';
+import { Volume } from '../../../api/generated/Api';
+import { VolumeTable } from './VolumeTable';
 
 const meta = {
   title: 'Volume/VolumeTable',

@@ -1,27 +1,31 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ApiHealthChecker } from '@/components/ApiHealthChecker';
 import { Layout } from '@/components/layout/Layout';
 import { ToastProvider } from '@/components/ui';
-import { WebSocketProvider } from '@/providers/WebSocketProvider';
 import {
-  AlertsPage,
-  Dashboard,
-  VolumesPage,
-  VolumeDetailsPage,
-  HealthPage,
-  SettingsPage,
-  NotFoundPage,
-} from '@/pages';
-import {
-  RealTimeDashboard,
-  HistoricalDataDashboard,
+    HistoricalDataDashboard,
+    RealTimeDashboard,
 } from '@/components/visualization';
+import {
+    AlertsPage,
+    Dashboard,
+    ExplorerPage,
+    HealthPage,
+    NotFoundPage,
+    SearchPage,
+    SettingsPage,
+    VolumeDetailsPage,
+    VolumesPage,
+} from '@/pages';
+import { WebSocketProvider } from '@/providers/WebSocketProvider';
+import React from 'react';
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 
 const App: React.FC = () => {
   return (
     <div data-testid="app-root">
       <ToastProvider>
         <WebSocketProvider>
+          <ApiHealthChecker />
           <Router>
             <Layout>
               <Routes>
@@ -29,6 +33,13 @@ const App: React.FC = () => {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/volumes" element={<VolumesPage />} />
                 <Route path="/volumes/:name" element={<VolumeDetailsPage />} />
+
+                {/* Explorer Routes */}
+                <Route path="/explorer" element={<ExplorerPage />} />
+                <Route path="/explorer/:volumeId" element={<ExplorerPage />} />
+
+                {/* Search Routes */}
+                <Route path="/search" element={<SearchPage />} />
 
                 {/* Visualization Routes */}
                 <Route path="/realtime" element={<RealTimeDashboard />} />

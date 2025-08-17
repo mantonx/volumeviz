@@ -4,7 +4,8 @@
  */
 
 export { handlers } from './handlers';
-export { server, setupMSWServer } from './server';
+// Only export server in test environment to avoid browser import issues
+// export { server, setupMSWServer } from './server';
 export { configureMSW, resetMSW, startMSW, stopMSW, worker } from './setup';
 
 // Convenience exports for different environments

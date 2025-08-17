@@ -1,28 +1,29 @@
-import React, { useState } from 'react';
-import { Volume, VolumeDriver } from '../../../types/api';
-import { Badge } from '../../ui/Badge';
-import { formatBytes, formatDate } from '../../../utils/formatters';
-import {
-  ChevronUp,
-  ChevronDown,
-  HardDrive,
-  Calendar,
-  Package,
-} from 'lucide-react';
 import { clsx } from 'clsx';
+import {
+    Calendar,
+    ChevronDown,
+    ChevronUp,
+    HardDrive,
+    Package,
+} from 'lucide-react';
+import React, { useState } from 'react';
+import { Volume } from '../../../api/generated/Api';
+import { formatBytes, formatDate } from '../../../utils/formatters';
+import { Badge } from '../../ui/Badge';
 
-export interface VolumeTableProps {
+export type SortColumn = 'name' | 'driver' | 'size' | 'created' | 'mountCount';
+type SortOrder = 'asc' | 'desc';
+
+interface VolumeTableProps {
   volumes: Volume[];
   loading?: boolean;
-  sortBy?: 'name' | 'size' | 'created' | 'driver' | 'mountCount';
-  sortOrder?: 'asc' | 'desc';
-  onSort?: (
-    column: 'name' | 'size' | 'created' | 'driver' | 'mountCount',
-  ) => void;
-  onRowClick?: (volume: Volume) => void;
-  selectedVolumes?: string[];
-  onSelectionChange?: (volumeIds: string[]) => void;
+  sortBy?: SortColumn;
+  sortOrder?: SortOrder;
+  onSort?: (column: SortColumn) => void;
   showSelection?: boolean;
+  selectedVolumes?: number[];
+  onSelectionChange?: (volumeIds: number[]) => void;
+  onRowClick?: (volume: Volume) => void;
   className?: string;
 }
 
@@ -71,22 +72,25 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
   showSelection = false,
   className,
 }) => {
-  const [localSelectedVolumes, setLocalSelectedVolumes] = useState<Set<string>>(
+  const [localSelectedVolumes, setLocalSelectedVolumes] = useState<Set<number>>(
     new Set(selectedVolumes),
   );
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      const allIds = volumes.map((v) => v.id);
-      setLocalSelectedVolumes(new Set(allIds));
-      onSelectionChange?.(allIds);
-    } else {
+  const handleSelectAll = () => {
+    const allSelected = localSelectedVolumes.size === volumes.length;
+    if (allSelected) {
       setLocalSelectedVolumes(new Set());
       onSelectionChange?.([]);
+    } else {
+      const allIds = volumes
+        .map((v) => v.id)
+        .filter((id): id is number => id !== undefined);
+      setLocalSelectedVolumes(new Set(allIds));
+      onSelectionChange?.(allIds);
     }
   };
 
-  const handleSelectVolume = (volumeId: string, checked: boolean) => {
+  const handleSelectVolume = (volumeId: number, checked: boolean) => {
     const newSelection = new Set(localSelectedVolumes);
     if (checked) {
       newSelection.add(volumeId);
@@ -105,7 +109,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
         comparison = a.name.localeCompare(b.name);
         break;
       case 'size':
-        comparison = (a.size || 0) - (b.size || 0);
+        comparison = (a.size_bytes || 0) - (b.size_bytes || 0);
         break;
       case 'created':
         comparison =
@@ -115,7 +119,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
         comparison = a.driver.localeCompare(b.driver);
         break;
       case 'mountCount':
-        comparison = a.mount_count - b.mount_count;
+        comparison = (a.attachments_count || 0) - (b.attachments_count || 0);
         break;
     }
 
@@ -131,18 +135,16 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
     );
   };
 
-  const getDriverVariant = (
-    driver: VolumeDriver,
-  ): 'primary' | 'secondary' | 'success' | 'warning' => {
+  const getDriverBadgeVariant = (
+    driver: Volume['driver'],
+  ): 'primary' | 'secondary' | 'outline' => {
     switch (driver) {
       case 'local':
         return 'primary';
       case 'nfs':
-        return 'success';
-      case 'cifs':
-        return 'warning';
-      default:
         return 'secondary';
+      default:
+        return 'outline';
     }
   };
 
@@ -210,11 +212,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
                     localSelectedVolumes.size === volumes.length &&
                     volumes.length > 0
                   }
-                  indeterminate={
-                    localSelectedVolumes.size > 0 &&
-                    localSelectedVolumes.size < volumes.length
-                  }
-                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  onChange={() => handleSelectAll()}
                   className="rounded border-gray-300 dark:border-gray-600"
                 />
               </th>
@@ -281,10 +279,10 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
                 <td className="px-4 py-3">
                   <input
                     type="checkbox"
-                    checked={localSelectedVolumes.has(volume.id)}
+                    checked={localSelectedVolumes.has(volume.id!)}
                     onChange={(e) => {
                       e.stopPropagation();
-                      handleSelectVolume(volume.id, e.target.checked);
+                      handleSelectVolume(volume.id!, e.target.checked);
                     }}
                     onClick={(e) => e.stopPropagation()}
                     className="rounded border-gray-300 dark:border-gray-600"
@@ -300,10 +298,10 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
                 </div>
               </td>
               <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                {volume.size ? formatBytes(volume.size) : '-'}
+                {volume.size_bytes ? formatBytes(volume.size_bytes) : '-'}
               </td>
               <td className="px-4 py-3">
-                <Badge variant={getDriverVariant(volume.driver)}>
+                <Badge variant={getDriverBadgeVariant(volume.driver)}>
                   {volume.driver}
                 </Badge>
               </td>
@@ -316,7 +314,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
               <td className="px-4 py-3">
                 <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                   <Package className="w-3 h-3" />
-                  {volume.mount_count}
+                  {volume.attachments_count || 0}
                 </div>
               </td>
             </tr>

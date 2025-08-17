@@ -3,15 +3,18 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Start MSW in development/testing
+// Start MSW only when explicitly enabled
 const enableMSW = async () => {
-  const shouldUseMSW =
-    import.meta.env.VITE_USE_MSW === 'true' ||
-    import.meta.env.MODE === 'development';
+  const shouldUseMSW = import.meta.env.VITE_USE_MSW === 'true';
 
   if (shouldUseMSW && typeof window !== 'undefined') {
-    const { startMSW } = await import('./mocks');
-    return startMSW();
+    try {
+      const { startMSW } = await import('./mocks');
+      return startMSW();
+    } catch {
+      console.warn('MSW not available in production build');
+      return Promise.resolve();
+    }
   }
 };
 

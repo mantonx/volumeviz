@@ -1,28 +1,27 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { Volume } from '../../../api/generated/Api';
 import { VolumeTable } from './VolumeTable';
-import { Volume } from '../../../types/api';
 
 const mockVolumes: Volume[] = [
   {
-    id: '1',
+    id: 1,
     name: 'test-volume-1',
     driver: 'local',
-    mount_point: '/var/lib/docker/volumes/test-volume-1/_data',
+    mountpoint: '/var/lib/docker/volumes/test-volume-1/_data',
     created_at: '2024-01-15T10:00:00Z',
-    size: 1073741824, // 1GB
-    mount_count: 2,
+    size_bytes: 1073741824, // 1GB
+    attachments_count: 2,
     labels: {},
     options: {},
   },
   {
-    id: '2',
+    id: 2,
     name: 'test-volume-2',
     driver: 'nfs',
-    mount_point: '/var/lib/docker/volumes/test-volume-2/_data',
+    mountpoint: '/var/lib/docker/volumes/test-volume-2/_data',
     created_at: '2024-01-14T10:00:00Z',
-    size: 2147483648, // 2GB
-    mount_count: 0,
+    size_bytes: 2147483648, // 2GB
+    attachments_count: 0,
     labels: {},
     options: {},
   },

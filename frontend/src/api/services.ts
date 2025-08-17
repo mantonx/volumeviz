@@ -342,7 +342,7 @@ export function useApiHealth() {
   const [health, setHealth] = useAtom(apiHealthAtom);
   const [loading, setLoading] = useAtom(apiHealthLoadingAtom);
   const [error, setError] = useAtom(apiHealthErrorAtom);
-  const connected = useAtomValue(apiConnectedAtom);
+  const [connected, setConnected] = useAtom(apiConnectedAtom);
 
   const checkHealth = useCallback(async () => {
     try {
@@ -365,6 +365,9 @@ export function useApiHealth() {
         timestamp: Date.now(),
         checks: healthData.checks || {},
       });
+      
+      // Set connection status to true when health check succeeds
+      setConnected(true);
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
@@ -373,10 +376,13 @@ export function useApiHealth() {
         timestamp: Date.now(),
         checks: {},
       });
+      
+      // Set connection status to false when health check fails
+      setConnected(false);
     } finally {
       setLoading(false);
     }
-  }, [setHealth, setLoading, setError]);
+  }, [setHealth, setLoading, setError, setConnected]);
 
   const checkDatabaseHealth = useCallback(async () => {
     // Use generated API client
