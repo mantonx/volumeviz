@@ -12,11 +12,12 @@ import (
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/interfaces"
-	coreModels "github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/models"
-	"github.com/mantonx/volumeviz/internal/repo"
+	coreModels "github.com/mantonx/volumeviz/internal/models"
 	dockerService "github.com/mantonx/volumeviz/internal/services/docker"
 	"github.com/mantonx/volumeviz/internal/services/filesystem"
+	"github.com/mantonx/volumeviz/internal/services/previews"
+	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/utils"
 )
 
@@ -34,25 +35,28 @@ type FilesRepository interface {
 // VolumeScanner implements the main volume scanning service
 // Uses multiple scanning methods with intelligent fallback
 type VolumeScanner struct {
-	methods           []interfaces.ScanMethod
-	cache             interfaces.Cache
-	metrics           interfaces.MetricsCollector
-	logger            *log.Logger
-	dockerService     *dockerService.DockerService
-	semaphore         chan struct{} // Limit concurrent scans
-	config            coreModels.Config
-	activeScans       map[string]*interfaces.ScanProgress // Track active scans by scan ID
-	volumeToScan      map[string]string                   // Map volume ID to active scan ID
-	scanMutex         sync.RWMutex                        // Protect scan maps
-	
+	methods       []interfaces.ScanMethod
+	cache         interfaces.Cache
+	metrics       interfaces.MetricsCollector
+	logger        *log.Logger
+	dockerService *dockerService.DockerService
+	semaphore     chan struct{} // Limit concurrent scans
+	config        coreModels.Config
+	activeScans   map[string]*interfaces.ScanProgress // Track active scans by scan ID
+	volumeToScan  map[string]string                   // Map volume ID to active scan ID
+	scanMutex     sync.RWMutex                        // Protect scan maps
+
 	// Filesystem indexing integration
 	filesystemIndexer *filesystem.FilesystemIndexer
 	foldersRepo       FoldersRepository
 	filesRepo         FilesRepository
-	
+
+	// Preview generation integration
+	previewService *previews.Service
+
 	// Media enrichment integration
 	enrichmentManager interfaces.EnrichmentManager
-	
+
 	// Daily stats integration
 	statsService interfaces.StatsService
 }
@@ -97,12 +101,14 @@ func NewVolumeScannerWithIndexing(
 	foldersRepo FoldersRepository,
 	filesRepo FilesRepository,
 	indexerConfig filesystem.IndexerConfig,
+	store store.Store,
+	previewService *previews.Service,
 ) interfaces.VolumeScanner {
 	// Create filesystem indexer
 	filesystemIndexer := filesystem.NewFilesystemIndexer(
-		&repo.FoldersRepo{},  // This will be properly wired in real usage
-		&repo.FilesRepo{},    // This will be properly wired in real usage
+		store,
 		indexerConfig,
+		previewService,
 	)
 
 	// Initialize scan methods in order of preference
@@ -125,6 +131,7 @@ func NewVolumeScannerWithIndexing(
 		filesystemIndexer: filesystemIndexer,
 		foldersRepo:       foldersRepo,
 		filesRepo:         filesRepo,
+		previewService:    previewService,
 	}
 }
 
@@ -133,13 +140,16 @@ func (vs *VolumeScanner) SetFilesystemIndexing(
 	foldersRepo FoldersRepository,
 	filesRepo FilesRepository,
 	indexerConfig filesystem.IndexerConfig,
+	store store.Store,
+	previewService *previews.Service,
 ) {
 	vs.foldersRepo = foldersRepo
 	vs.filesRepo = filesRepo
+	vs.previewService = previewService
 	vs.filesystemIndexer = filesystem.NewFilesystemIndexer(
-		&repo.FoldersRepo{},  // This will be properly wired
-		&repo.FilesRepo{},    // This will be properly wired
+		store,
 		indexerConfig,
+		previewService,
 	)
 }
 
@@ -219,7 +229,7 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 		}
 
 		vs.metrics.ScanCompleted(volumeID, method.Name(), result.Duration, result.TotalSize)
-		
+
 		// Trigger daily stats computation if stats service is available
 		if vs.statsService != nil {
 			go func() {
@@ -313,7 +323,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 			progress.Status = coreModels.ScanStatusCompleted
 			progress.Progress = 1.0
 			progress.Method = result.Method
-			
+
 			// Trigger daily stats computation if stats service is available (async)
 			if vs.statsService != nil {
 				go func() {
@@ -340,16 +350,150 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 // GetScanProgress returns the progress of an async scan
 func (vs *VolumeScanner) GetScanProgress(scanID string) (*interfaces.ScanProgress, error) {
 	vs.scanMutex.RLock()
-	defer vs.scanMutex.RUnlock()
-
-	progress, exists := vs.activeScans[scanID]
+	baseProgress, exists := vs.activeScans[scanID]
 	if !exists {
+		vs.scanMutex.RUnlock()
 		return nil, fmt.Errorf("scan not found: %s", scanID)
 	}
+	
+	// Create enhanced progress with base data
+	progress := *baseProgress
+	vs.scanMutex.RUnlock()
+	
+	// Enhance with timing information
+	now := time.Now()
+	progress.LastUpdate = now
+	progress.ElapsedSeconds = int64(now.Sub(progress.StartedAt).Seconds())
+	
+	// Initialize phase tracking if not present
+	if progress.Phases == nil {
+		progress.Phases = make(map[string]*interfaces.PhaseInfo)
+		
+		// Set up initial phases
+		progress.Phases["volume_scan"] = &interfaces.PhaseInfo{
+			Status: "completed",
+			StartedAt: &progress.StartedAt,
+			Progress: 1.0,
+		}
+		
+		progress.Phases["filesystem_indexing"] = &interfaces.PhaseInfo{
+			Status: "pending",
+			Progress: 0.0,
+		}
+		
+		progress.Phases["media_enrichment"] = &interfaces.PhaseInfo{
+			Status: "pending", 
+			Progress: 0.0,
+		}
+	}
+	
+	// Get filesystem indexing progress if available
+	if vs.filesystemIndexer != nil {
+		if indexingProgress := vs.filesystemIndexer.GetIndexingProgress(progress.VolumeID); indexingProgress != nil {
+			// Determine current phase
+			if indexingProgress.Status == "running" {
+				progress.Phase = "filesystem_indexing"
+				progress.PhaseProgress = calculatePhaseProgress(indexingProgress)
+				
+				// Update filesystem indexing phase
+				progress.Phases["filesystem_indexing"].Status = "running"
+				progress.Phases["filesystem_indexing"].Progress = progress.PhaseProgress
+				progress.Phases["filesystem_indexing"].StartedAt = &indexingProgress.StartedAt
+				progress.Phases["filesystem_indexing"].ItemsProcessed = indexingProgress.FilesScanned
+				
+				if indexingProgress.LastError != "" {
+					progress.Phases["filesystem_indexing"].Error = indexingProgress.LastError
+				}
+				
+				// Update file/folder counts
+				progress.FilesScanned = indexingProgress.FilesScanned
+				progress.FoldersScanned = indexingProgress.FoldersScanned
+				progress.CurrentPath = indexingProgress.CurrentPath
+				progress.CurrentDepth = indexingProgress.CurrentDepth
+				progress.BytesProcessed = indexingProgress.BytesProcessed
+				
+				// Performance metrics
+				progress.FilesPerSecond = indexingProgress.FilesPerSec
+				progress.FoldersPerSecond = indexingProgress.FoldersPerSec
+				if progress.ElapsedSeconds > 0 {
+					progress.BytesPerSecond = progress.BytesProcessed / progress.ElapsedSeconds
+				}
+				
+				// Error tracking
+				progress.ErrorsCount = indexingProgress.ErrorsCount
+				progress.LastError = indexingProgress.LastError
+				
+				// Estimate remaining time based on current rate
+				if progress.FilesPerSecond > 0 && progress.TotalEstimated > 0 {
+					remaining := float64(progress.TotalEstimated - progress.FilesScanned) / progress.FilesPerSecond
+					progress.EstimatedRemaining = time.Duration(remaining) * time.Second
+				}
+			} else if indexingProgress.Status == "completed" {
+				progress.Phases["filesystem_indexing"].Status = "completed"
+				progress.Phases["filesystem_indexing"].Progress = 1.0
+				completedAt := indexingProgress.LastUpdate
+				progress.Phases["filesystem_indexing"].CompletedAt = &completedAt
+				if progress.Phases["filesystem_indexing"].StartedAt != nil {
+					progress.Phases["filesystem_indexing"].Duration = completedAt.Sub(*progress.Phases["filesystem_indexing"].StartedAt)
+				}
+			}
+		}
+	}
+	
+	// Calculate overall progress (weighted average of phases)
+	progress.Progress = calculateOverallProgress(progress.Phases)
+	
+	return &progress, nil
+}
 
-	// Return a copy to avoid race conditions
-	progressCopy := *progress
-	return &progressCopy, nil
+// Helper function to calculate phase progress based on indexing data
+func calculatePhaseProgress(indexing *filesystem.IndexingProgress) float64 {
+	// For now, use a simple heuristic based on elapsed time and activity
+	// This could be enhanced with better estimation algorithms
+	elapsed := time.Since(indexing.StartedAt).Seconds()
+	
+	// Estimate progress based on processing rate
+	if elapsed > 0 && indexing.FilesScanned > 0 {
+		rate := float64(indexing.FilesScanned) / elapsed
+		if rate > 0 {
+			// Rough estimate: assume 10 files per second as baseline
+			progress := elapsed / (elapsed + 60)
+			if progress > 0.95 {
+				return 0.95 // Cap at 95% until completion
+			}
+			return progress
+		}
+	}
+	
+	// Fallback to time-based estimation
+	progress := elapsed / 300.0 // Assume 5 minutes max
+	if progress > 0.95 {
+		return 0.95 // Cap at 95%
+	}
+	return progress
+}
+
+// Helper function to calculate overall progress from phases
+func calculateOverallProgress(phases map[string]*interfaces.PhaseInfo) float64 {
+	if phases == nil {
+		return 0.0
+	}
+	
+	// Weight each phase (volume_scan: 10%, filesystem_indexing: 80%, media_enrichment: 10%)
+	weights := map[string]float64{
+		"volume_scan": 0.1,
+		"filesystem_indexing": 0.8,
+		"media_enrichment": 0.1,
+	}
+	
+	var totalProgress float64
+	for phaseName, weight := range weights {
+		if phase, exists := phases[phaseName]; exists {
+			totalProgress += phase.Progress * weight
+		}
+	}
+	
+	return totalProgress
 }
 
 // GetScanProgressByVolume returns the progress of the active scan for a volume
@@ -659,14 +803,14 @@ func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID
 	defer cancel()
 
 	start := time.Now()
-	
+
 	// Perform filesystem indexing (delta mode for efficiency)
 	err := vs.filesystemIndexer.IndexVolume(indexCtx, volumeID, volumePath, true)
 	duration := time.Since(start)
 
 	if err != nil {
 		if vs.logger != nil {
-			vs.logger.Printf("Filesystem indexing failed for volume %s: %v (duration: %v)", 
+			vs.logger.Printf("Filesystem indexing failed for volume %s: %v (duration: %v)",
 				volumeID, err, duration)
 		}
 		// Update metrics for failed indexing
@@ -679,7 +823,7 @@ func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID
 	// Get indexing progress/stats
 	progress := vs.filesystemIndexer.GetProgress()
 	if progress != nil && vs.logger != nil {
-		vs.logger.Printf("Filesystem indexing completed for volume %s: %d folders, %d files, %d bytes processed (duration: %v)", 
+		vs.logger.Printf("Filesystem indexing completed for volume %s: %d folders, %d files, %d bytes processed (duration: %v)",
 			volumeID, progress.FoldersScanned, progress.FilesScanned, progress.BytesProcessed, duration)
 	}
 
@@ -687,7 +831,7 @@ func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID
 	if vs.metrics != nil && progress != nil {
 		vs.metrics.ScanCompleted(volumeID, "filesystem_indexer", duration, progress.BytesProcessed)
 	}
-	
+
 	// Trigger media enrichment if enabled
 	if vs.enrichmentManager != nil && vs.enrichmentManager.IsEnabled() {
 		go vs.performMediaEnrichment(ctx, volumeID)
@@ -699,21 +843,21 @@ func (vs *VolumeScanner) performMediaEnrichment(ctx context.Context, volumeID st
 	if vs.enrichmentManager == nil || !vs.enrichmentManager.IsEnabled() {
 		return
 	}
-	
+
 	if vs.logger != nil {
 		vs.logger.Printf("Starting media enrichment for volume %s", volumeID)
 	}
-	
+
 	// Create context with cancellation
 	enrichCtx, cancel := context.WithTimeout(ctx, 30*time.Minute) // 30 min max for enrichment
 	defer cancel()
-	
+
 	start := time.Now()
-	
+
 	// Perform media enrichment
 	err := vs.enrichmentManager.EnrichVolume(enrichCtx, volumeID)
 	duration := time.Since(start)
-	
+
 	if err != nil {
 		if vs.logger != nil {
 			vs.logger.Printf("Media enrichment failed for volume %s: %v (duration: %v)", volumeID, err, duration)
@@ -724,11 +868,11 @@ func (vs *VolumeScanner) performMediaEnrichment(ctx context.Context, volumeID st
 		}
 		return
 	}
-	
+
 	if vs.logger != nil {
 		vs.logger.Printf("Media enrichment completed for volume %s (duration: %v)", volumeID, duration)
 	}
-	
+
 	// Update metrics for successful enrichment
 	if vs.metrics != nil {
 		vs.metrics.ScanCompleted(volumeID, "media_enricher", duration, 0) // No bytes metric for enrichment
@@ -746,6 +890,63 @@ func (vs *VolumeScanner) GetFilesystemIndexingProgress() *filesystem.IndexingPro
 // IsFilesystemIndexingEnabled returns true if filesystem indexing is enabled
 func (vs *VolumeScanner) IsFilesystemIndexingEnabled() bool {
 	return vs.filesystemIndexer != nil
+}
+
+// TriggerFilesystemIndexing manually triggers filesystem indexing for a volume
+func (vs *VolumeScanner) TriggerFilesystemIndexing(ctx context.Context, volumeID string, deltaMode bool) error {
+	if vs.filesystemIndexer == nil {
+		return fmt.Errorf("filesystem indexing not enabled")
+	}
+
+	// Get volume information from Docker
+	volume, err := vs.dockerService.GetVolume(ctx, volumeID)
+	if err != nil {
+		return fmt.Errorf("failed to get volume information: %w", err)
+	}
+
+	// Extract mount path
+	volumePath := volume.Mountpoint
+	if volumePath == "" {
+		return fmt.Errorf("volume mountpoint not available")
+	}
+
+	// Start indexing in a goroutine to avoid blocking
+	go vs.performFilesystemIndexingAsync(ctx, volumeID, volumePath, deltaMode)
+
+	return nil
+}
+
+// performFilesystemIndexingAsync performs filesystem indexing asynchronously
+func (vs *VolumeScanner) performFilesystemIndexingAsync(ctx context.Context, volumeID, volumePath string, deltaMode bool) {
+	if vs.filesystemIndexer == nil {
+		return
+	}
+
+	if vs.logger != nil {
+		vs.logger.Printf("Starting filesystem indexing for volume: %s at path: %s (delta_mode: %v)", volumeID, volumePath, deltaMode)
+	}
+
+	// Use a derived context with timeout for indexing
+	indexCtx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
+
+	start := time.Now()
+
+	// Perform filesystem indexing
+	err := vs.filesystemIndexer.IndexVolume(indexCtx, volumeID, volumePath, deltaMode)
+	duration := time.Since(start)
+
+	if err != nil {
+		if vs.logger != nil {
+			vs.logger.Printf("Filesystem indexing failed for volume %s: %v (duration: %v)",
+				volumeID, err, duration)
+		}
+	} else {
+		if vs.logger != nil {
+			vs.logger.Printf("Filesystem indexing completed for volume %s (duration: %v)",
+				volumeID, duration)
+		}
+	}
 }
 
 // SetEnrichmentManager sets the media enrichment manager

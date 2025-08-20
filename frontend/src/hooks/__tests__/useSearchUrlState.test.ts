@@ -2,7 +2,8 @@
  * Tests for useSearchUrlState hook
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import React from 'react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { useSearchUrlState } from '../useUrlState';
@@ -25,9 +26,9 @@ describe('useSearchUrlState', () => {
     vi.clearAllMocks();
   });
 
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <BrowserRouter>{children}</BrowserRouter>
-  );
+  const wrapper = ({ children }: { children: React.ReactNode }) => {
+    return React.createElement(BrowserRouter, null, children);
+  };
 
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useSearchUrlState(), { wrapper });

@@ -18,6 +18,9 @@ sql:
           - column: "*.path_hash"
             go_type:
               type: "[]byte"
+          - column: "*.hdr_format"
+            go_type:
+              type: "string"
           - column: "*.created_at"
             go_type:
               type: "time.Time"

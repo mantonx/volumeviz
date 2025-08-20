@@ -27,7 +27,17 @@ func NewHandler(store store.Store, statsService interfaces.StatsService) *Handle
 }
 
 // GetVolumeTrends returns trend analysis for a volume
-// GET /trends/volumes/:volumeId?days=30
+// @Summary Get volume trends
+// @Description Get trend analysis for a specific volume over a specified time period
+// @Tags trends
+// @Accept json
+// @Produce json
+// @Param volumeId path string true "Volume ID"
+// @Param days query int false "Number of days to analyze (default: 30, max: 365)"
+// @Success 200 {object} map[string]interface{} "Volume trends data"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /trends/volumes/{volumeId} [get]
 func (h *Handler) GetVolumeTrends(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -77,7 +87,18 @@ func (h *Handler) GetVolumeTrends(c *gin.Context) {
 }
 
 // GetVolumeGrowthDeltas returns growth deltas for a volume
-// GET /trends/volumes/:volumeId/deltas?type=daily&limit=30
+// @Summary Get volume growth deltas
+// @Description Get growth deltas (changes) for a volume over time
+// @Tags trends
+// @Accept json
+// @Produce json
+// @Param volumeId path string true "Volume ID"
+// @Param type query string false "Delta type (daily, weekly)" default(daily)
+// @Param limit query int false "Number of deltas to return (default: 30)"
+// @Success 200 {object} map[string]interface{} "Volume growth deltas"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /trends/volumes/{volumeId}/deltas [get]
 func (h *Handler) GetVolumeGrowthDeltas(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -158,7 +179,18 @@ func (h *Handler) GetVolumeGrowthDeltas(c *gin.Context) {
 }
 
 // GetVolumeStepSeries returns step series data for charting
-// GET /trends/volumes/:volumeId/series?type=daily&days=30
+// @Summary Get volume step series
+// @Description Get step series data for a volume suitable for time-series charting
+// @Tags trends
+// @Accept json
+// @Produce json
+// @Param volumeId path string true "Volume ID"
+// @Param type query string false "Series type (daily, weekly)" default(daily)
+// @Param days query int false "Number of days to include (default: 30)"
+// @Success 200 {object} map[string]interface{} "Volume step series data"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /trends/volumes/{volumeId}/series [get]
 func (h *Handler) GetVolumeStepSeries(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -228,7 +260,18 @@ func (h *Handler) GetVolumeStepSeries(c *gin.Context) {
 }
 
 // GetVolumeTrendSlope returns trend slope calculation
-// GET /trends/volumes/:volumeId/slope?type=daily&days=30
+// @Summary Get volume trend slope
+// @Description Calculate the trend slope for a volume to determine growth rate
+// @Tags trends
+// @Accept json
+// @Produce json
+// @Param volumeId path string true "Volume ID"
+// @Param type query string false "Trend type (daily, weekly)" default(daily)
+// @Param days query int false "Number of days to analyze (default: 30)"
+// @Success 200 {object} map[string]interface{} "Volume trend slope data"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /trends/volumes/{volumeId}/slope [get]
 func (h *Handler) GetVolumeTrendSlope(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -331,7 +374,16 @@ func (h *Handler) GetVolumeTrendSlope(c *gin.Context) {
 }
 
 // Get7DayTrend returns 7-day trend summary
-// GET /trends/volumes/:volumeId/7day
+// @Summary Get 7-day trend
+// @Description Get 7-day trend summary for a volume
+// @Tags trends
+// @Accept json
+// @Produce json
+// @Param volumeId path string true "Volume ID"
+// @Success 200 {object} map[string]interface{} "7-day trend summary"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /trends/volumes/{volumeId}/7day [get]
 func (h *Handler) Get7DayTrend(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -397,7 +449,16 @@ func (h *Handler) Get7DayTrend(c *gin.Context) {
 }
 
 // Get30DayTrend returns 30-day trend summary
-// GET /trends/volumes/:volumeId/30day
+// @Summary Get 30-day trend
+// @Description Get 30-day trend summary for a volume
+// @Tags trends
+// @Accept json
+// @Produce json
+// @Param volumeId path string true "Volume ID"
+// @Success 200 {object} map[string]interface{} "30-day trend summary"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /trends/volumes/{volumeId}/30day [get]
 func (h *Handler) Get30DayTrend(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -463,7 +524,14 @@ func (h *Handler) Get30DayTrend(c *gin.Context) {
 }
 
 // GetAllVolumesTrendsSummary returns a summary of trends for all volumes
-// GET /trends/summary
+// @Summary Get all volumes trends summary
+// @Description Get aggregated trends summary for all volumes in the system
+// @Tags trends
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "All volumes trends summary"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /trends/summary [get]
 func (h *Handler) GetAllVolumesTrendsSummary(c *gin.Context) {
 	// For now, return basic summary structure
 	// In a full implementation, this would aggregate trends across all volumes

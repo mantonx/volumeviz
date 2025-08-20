@@ -10,1320 +10,977 @@
  * ---------------------------------------------------------------
  */
 
-/** Alert rule configuration */
-export interface AlertRule {
-  id?: number;
-  name?: string;
-  condition?: string;
+/** @format int64 */
+export enum TimeDuration {
+  MinDuration = -9223372036854776000,
+  MaxDuration = 9223372036854776000,
+  Nanosecond = 1,
+  Microsecond = 1000,
+  Millisecond = 1000000,
+  Second = 1000000000,
+  Minute = 60000000000,
+  Hour = 3600000000000,
 }
 
-/** Alert destination configuration */
-export interface AlertDestination {
-  id?: number;
-  type?: string;
-  config?: string;
-}
-
-/** Docker volume database model with complete metadata */
-export interface Volume {
-  /**
-   * Internal database ID
-   * @example 1
-   */
-  id?: number;
-  /**
-   * Docker volume identifier (unique)
-   * @example "web-data"
-   */
-  volume_id?: string;
-  /**
-   * Volume name
-   * @example "web-data"
-   */
-  name: string;
-  /**
-   * Volume driver type
-   * @example "local"
-   */
-  driver: "local" | "nfs" | "cifs" | "overlay2";
-  /**
-   * Host filesystem mount point
-   * @example "/var/lib/docker/volumes/web-data/_data"
-   */
-  mountpoint?: string;
-  /**
-   * Volume labels as key-value pairs
-   * @example {"environment":"production","backup":"daily"}
-   */
-  labels?: Record<string, string>;
-  /**
-   * Volume driver options
-   * @example {"type":"none"}
-   */
-  options?: Record<string, string>;
-  /**
-   * Volume scope
-   * @default "local"
-   */
-  scope?: "local" | "global";
-  /**
-   * Volume status
-   * @default "active"
-   */
-  status?: "active" | "inactive" | "error";
-  /**
-   * Timestamp of last successful scan
-   * @format date-time
-   */
-  last_scanned?: string | null;
-  /**
-   * Timestamp of last successful scan (alias for last_scanned)
-   * @format date-time
-   */
-  last_scan_at?: string | null;
-  /**
-   * Whether the volume is currently active
-   * @default true
-   */
-  is_active?: boolean;
-  /**
-   * Volume creation timestamp
-   * @format date-time
-   */
-  created_at: string;
-  /**
-   * Last update timestamp
-   * @format date-time
-   */
-  updated_at?: string;
-  /**
-   * Volume size in bytes
-   * @format int64
-   */
-  size_bytes?: number | null;
-  /**
-   * Number of containers using this volume
-   * @default 0
-   */
-  attachments_count?: number;
-  /**
-   * Whether this is a system/internal volume
-   * @default false
-   */
-  is_system?: boolean;
-  /**
-   * Whether this volume has no container attachments
-   * @default false
-   */
-  is_orphaned?: boolean;
-}
-
-/** Volume size calculation result */
-export interface VolumeSize {
-  /** Internal database ID */
-  id?: number;
-  /** Associated volume identifier */
-  volume_id: string;
-  /**
-   * Total volume size in bytes
-   * @format int64
-   * @min 0
-   */
-  total_size: number;
-  /**
-   * Number of files in volume
-   * @format int64
-   * @min 0
-   */
-  file_count?: number;
-  /**
-   * Number of directories in volume
-   * @format int64
-   * @min 0
-   */
-  directory_count?: number;
-  /**
-   * Size of largest file in bytes
-   * @format int64
-   * @min 0
-   */
-  largest_file?: number;
-  /** Scan method used */
-  scan_method: "diskus" | "du" | "native";
-  /**
-   * Scan duration in nanoseconds
-   * @format int64
-   */
-  scan_duration?: number;
-  /**
-   * Detected filesystem type
-   * @example "ext4"
-   */
-  filesystem_type?: string;
-  /** MD5 checksum of scan result */
-  checksum_md5?: string | null;
-  /**
-   * Whether the scan result is valid
-   * @default true
-   */
-  is_valid?: boolean;
-  /** Error message if scan failed */
-  error_message?: string | null;
-  /** @format date-time */
-  created_at?: string;
-  /** @format date-time */
-  updated_at?: string;
-}
-
-/** Asynchronous scan job tracking */
-export interface ScanJob {
-  /** Internal database ID */
-  id?: number;
-  /**
-   * Unique scan identifier
-   * @example "scan_web-data_1640995200"
-   */
-  scan_id: string;
-  /** Associated volume identifier */
-  volume_id: string;
-  /** Current job status */
-  status: "queued" | "running" | "completed" | "failed" | "cancelled";
-  /**
-   * Scan progress percentage
-   * @min 0
-   * @max 100
-   */
-  progress?: number;
-  /** Scan method being used */
-  method: "diskus" | "du" | "native";
-  /**
-   * Job start timestamp
-   * @format date-time
-   */
-  started_at?: string | null;
-  /**
-   * Job completion timestamp
-   * @format date-time
-   */
-  completed_at?: string | null;
-  /** Error message if job failed */
-  error_message?: string | null;
-  /** Associated VolumeSize result ID */
-  result_id?: number | null;
-  /**
-   * Estimated completion time in nanoseconds
-   * @format int64
-   */
-  estimated_duration?: number | null;
-  /** @format date-time */
-  created_at?: string;
-  /** @format date-time */
-  updated_at?: string;
-}
-
-/** Docker container database model */
-export interface Container {
-  /** Internal database ID */
-  id?: number;
-  /** Docker container identifier (unique) */
-  container_id: string;
-  /** Container name */
-  name: string;
-  /** Container image */
-  image: string;
-  /** Container state */
-  state:
-    | "created"
-    | "running"
-    | "paused"
-    | "restarting"
-    | "removing"
-    | "exited"
-    | "dead";
-  /** Container status description */
-  status?: string;
-  /** Container labels */
-  labels?: Record<string, string>;
-  /** @format date-time */
-  started_at?: string | null;
-  /** @format date-time */
-  finished_at?: string | null;
-  /** @default true */
-  is_active?: boolean;
-  /** @format date-time */
-  created_at?: string;
-  /** @format date-time */
-  updated_at?: string;
-}
-
-/** Container-volume mount relationship */
-export interface VolumeMount {
-  id?: number;
-  /** Associated volume identifier */
-  volume_id: string;
-  /** Associated container identifier */
-  container_id: string;
-  /** Mount path inside container */
-  mount_path: string;
-  /**
-   * Access mode
-   * @default "rw"
-   */
-  access_mode?: "rw" | "ro";
-  /** @default true */
-  is_active?: boolean;
-  /** @format date-time */
-  created_at?: string;
-  /** @format date-time */
-  updated_at?: string;
-}
-
-/** Historical volume metrics for analytics */
-export interface VolumeMetrics {
-  id?: number;
-  volume_id: string;
-  /**
-   * Metrics collection timestamp
-   * @format date-time
-   */
-  metric_timestamp: string;
-  /** @format int64 */
-  total_size: number;
-  /** @format int64 */
-  file_count?: number;
-  /** @format int64 */
-  directory_count?: number;
-  /**
-   * Growth rate in bytes per day
-   * @format double
-   */
-  growth_rate?: number | null;
-  /**
-   * Number of scans per day
-   * @default 0
-   */
-  access_frequency?: number;
-  /**
-   * Number of containers using this volume
-   * @default 0
-   */
-  container_count?: number;
-  /** @format date-time */
-  created_at?: string;
-  /** @format date-time */
-  updated_at?: string;
-}
-
-/** System component health monitoring */
-export interface SystemHealth {
-  id?: number;
-  /** System component name */
-  component: "docker" | "database" | "filesystem" | "scanner";
-  /** Health status */
-  status: "healthy" | "warning" | "critical" | "unknown";
-  /** @format date-time */
-  last_check_at: string;
-  /**
-   * Response time in milliseconds
-   * @format int64
-   */
-  response_time?: number | null;
-  error_message?: string | null;
-  /** Additional component-specific metadata */
-  metadata?: Record<string, string>;
-  /** @format date-time */
-  created_at?: string;
-  /** @format date-time */
-  updated_at?: string;
-}
-
-/** Database migration history */
-export interface MigrationHistory {
-  id?: number;
-  /**
-   * Migration version identifier
-   * @example "001"
-   */
-  version: string;
-  /**
-   * Migration description
-   * @example "Initial schema creation"
-   */
-  description: string;
-  /** @format date-time */
-  applied_at?: string;
-  /** SQL for rolling back this migration */
-  rollback_sql?: string | null;
-  /** MD5 checksum of migration SQL */
-  checksum: string;
-  /**
-   * Migration execution time in milliseconds
-   * @format int64
-   */
-  execution_time?: number;
-}
-
-/** Overall database migration status */
-export interface MigrationStatus {
-  /** Total number of available migrations */
-  total_migrations: number;
-  /** Number of applied migrations */
-  applied_count: number;
-  /** Number of pending migrations */
-  pending_count: number;
-  applied_migrations?: MigrationHistory[];
-  /** List of pending migration versions */
-  pending_migrations?: string[];
-  /** Database migration history */
-  last_applied?: MigrationHistory | null;
-}
-
-/** Database connection health status */
-export interface DatabaseHealth {
-  status: "healthy" | "degraded" | "unhealthy";
-  /**
-   * Database response time in nanoseconds
-   * @format int64
-   */
-  response_time: number;
-  /** Current open connections */
-  open_connections?: number;
-  /** Current idle connections */
-  idle_connections?: number;
-  /** Maximum allowed open connections */
-  max_open_connections?: number;
-  /** Error message if unhealthy */
-  error?: string | null;
-}
-
-/** Comprehensive database statistics */
-export interface DatabaseStats {
-  /** Volume-related statistics */
-  volume_stats: VolumeStats;
-  /** Scan job statistics */
-  scan_job_stats: ScanJobStats;
-  /** Database connection health status */
-  database_health: DatabaseHealth;
-  /** Overall database migration status */
-  migration_status: MigrationStatus;
-}
-
-/** Volume-related statistics */
-export interface VolumeStats {
-  /** Total number of volumes */
-  total_volumes: number;
-  /** Number of active volumes */
-  active_volumes: number;
-  /** Number of unique volume drivers */
-  unique_drivers: number;
-  /** Number of volumes that have been scanned */
-  scanned_volumes: number;
-  /** @format date-time */
-  newest_volume?: string | null;
-  /** @format date-time */
-  oldest_volume?: string | null;
-}
-
-/** Scan job statistics */
-export interface ScanJobStats {
-  /** Total number of scan jobs (last 30 days) */
-  total_jobs: number;
-  /** Number of queued jobs */
-  queued_jobs: number;
-  /** Number of currently running jobs */
-  running_jobs: number;
-  /** Number of completed jobs */
-  completed_jobs: number;
-  /** Number of failed jobs */
-  failed_jobs: number;
-  /** Number of cancelled jobs */
-  cancelled_jobs: number;
-  /**
-   * Average job duration in nanoseconds
-   * @format int64
-   */
-  avg_duration?: number | null;
-}
-
-/** Database connection test result */
-export interface ConnectionTestResult {
-  /** Whether the connection test succeeded */
-  success: boolean;
-  /** Human-readable test result message */
-  message: string;
-  /** Error message if test failed */
-  error?: string | null;
-  /** Current open connections */
-  open_connections?: number | null;
-  /** Current idle connections */
-  idle_connections?: number | null;
-  /** Maximum allowed open connections */
-  max_open_connections?: number | null;
-}
-
-/** Database table size and statistics information */
-export interface TableSizeInfo {
-  /** Database schema name */
-  schema_name: string;
-  /** Table name */
-  table_name: string;
-  /** Column name */
-  column_name: string;
-  /**
-   * Number of distinct values in column
-   * @format int64
-   */
-  distinct_values?: number | null;
-  /**
-   * Statistical correlation of column values
-   * @format double
-   */
-  correlation?: number | null;
-}
-
-/** Slow query performance information */
-export interface SlowQueryInfo {
-  /** SQL query text */
-  query: string;
-  /**
-   * Number of times query was executed
-   * @format int64
-   */
-  calls: number;
-  /**
-   * Total execution time in milliseconds
-   * @format double
-   */
-  total_time: number;
-  /**
-   * Average execution time in milliseconds
-   * @format double
-   */
-  mean_time: number;
-  /**
-   * Minimum execution time in milliseconds
-   * @format double
-   */
-  min_time: number;
-  /**
-   * Maximum execution time in milliseconds
-   * @format double
-   */
-  max_time: number;
-  /**
-   * Standard deviation of execution time
-   * @format double
-   */
-  stddev_time: number;
-  /**
-   * Total number of rows returned
-   * @format int64
-   */
-  rows: number;
-  /**
-   * Cache hit percentage
-   * @format double
-   */
-  hit_percent?: number | null;
-}
-
-export interface DockerHealth {
-  /** Overall Docker daemon health status */
-  status: "healthy" | "unhealthy" | "unknown";
-  /** Human-readable status message */
-  message: string;
-  /** Docker engine version */
-  version?: string;
-  /** Docker API version */
-  api_version?: string;
-  /** Go version used to build Docker */
-  go_version?: string;
-  /** Git commit hash */
-  git_commit?: string;
-  /**
-   * Docker build timestamp
-   * @format date-time
-   */
-  build_time?: string;
-}
-
-export interface HealthStatus {
-  status?: "healthy" | "unhealthy" | "degraded";
-  /** @format date-time */
-  timestamp?: string;
-  checks?: Record<
-    string,
-    {
-      status?: string;
-      message?: string;
-      duration?: string;
-    }
-  >;
-}
-
-export interface VolumeListResponse {
-  /**
-   * Total number of volumes
-   * @min 0
-   */
-  total: number;
-  volumes: VolumeResponse[];
-}
-
-export interface VolumeResponse {
-  /** Unique volume identifier */
-  id: string;
-  /** Volume name */
-  name: string;
-  /** Volume driver (local, nfs, etc.) */
-  driver: string;
-  /** Host filesystem mount point */
-  mountpoint: string;
-  /**
-   * Volume creation timestamp
-   * @format date-time
-   */
-  created_at?: string;
-  /** Volume labels */
-  labels?: Record<string, string>;
-  /** Volume driver options */
-  options?: Record<string, string>;
-  /** Volume scope (local, global) */
-  scope?: string;
-}
-
-export interface VolumeContainer {
-  /** Container ID */
-  id: string;
-  /** Container name */
-  name: string;
-  /** Container image */
-  image?: string;
-  /** Container state */
-  state?: string;
-  /** Volume mount path inside container */
-  mount_path: string;
-  /** Access mode (read-write or read-only) */
-  access_mode: "rw" | "ro";
-}
-
-export interface VolumeStatistics {
-  volume_id?: string;
-  /** @format int64 */
-  size_bytes?: number;
-  file_count?: number;
-  /** @format date-time */
-  last_modified?: string;
-  /** Number of containers using this volume */
-  ref_count?: number;
-}
-
-export interface ScanResponse {
-  /** Volume identifier */
-  volume_id: string;
-  /** Whether result was served from cache */
-  cached: boolean;
-  result: ScanResult;
-}
-
-export interface ScanResult {
-  /** Volume identifier */
-  volume_id: string;
-  /**
-   * Total volume size in bytes
-   * @format int64
-   * @min 0
-   */
-  total_size: number;
-  /**
-   * Number of files in volume
-   * @min 0
-   */
-  file_count: number;
-  /**
-   * Number of directories in volume
-   * @min 0
-   */
-  directory_count: number;
-  /**
-   * Size of largest file in bytes
-   * @format int64
-   * @min 0
-   */
-  largest_file?: number;
-  /** Scan method used */
-  method: "diskus" | "du" | "native";
-  /**
-   * Scan duration in nanoseconds
-   * @format int64
-   */
-  duration: number;
-  /** Whether scan was served from cache */
-  cache_hit: boolean;
-  /**
-   * Scan completion timestamp
-   * @format date-time
-   */
-  scanned_at: string;
-  /** Detected filesystem type */
-  filesystem_type?: string;
-}
-
-export interface RefreshRequest {
-  /**
-   * Preferred scan method
-   * @default "diskus"
-   */
-  method?: "diskus" | "du" | "native";
-  /**
-   * Whether to perform async scan
-   * @default false
-   */
-  async?: boolean;
+export enum InternalApiV1DiagRealtimeMode {
+  ModeWebSocket = "ws",
+  ModePolling = "polling",
+  ModeSSE = "sse",
 }
 
 export interface AsyncScanResponse {
-  /** Unique scan identifier for status tracking */
-  scan_id: string;
-  /** Volume identifier */
-  volume_id: string;
-  /** Initial scan status */
-  status: "started" | "queued";
-}
-
-export interface ScanProgress {
-  /** Unique scan identifier */
-  scan_id: string;
-  /** Volume identifier */
-  volume_id: string;
-  /** Current scan status */
-  status: "queued" | "running" | "completed" | "failed" | "cancelled";
-  /**
-   * Scan progress percentage
-   * @min 0
-   * @max 100
-   */
-  progress?: number;
-  /** Scan method being used */
-  method?: string;
-  /**
-   * Scan start timestamp
-   * @format date-time
-   */
-  started_at?: string;
-  /**
-   * Scan completion timestamp (if completed)
-   * @format date-time
-   */
-  completed_at?: string;
-  /**
-   * Estimated completion time (if running)
-   * @format date-time
-   */
-  estimated_completion?: string;
-  /** Error message (if failed) */
-  error?: string;
-  /** Scan result (if completed successfully) */
-  result?: ScanResult;
-}
-
-export interface ScanMethod {
-  /** Method name */
-  name: string;
-  /** Method description */
-  description: string;
-  /** Whether method is available on this system */
-  available: boolean;
-  /** Relative performance rating */
-  performance: "high" | "medium" | "low";
-  /** List of supported filesystems (* means all) */
-  supports_filesystem?: string[];
-}
-
-export interface SystemInfo {
-  application?: {
-    name?: string;
-    version?: string;
-    /** @format date-time */
-    build_time?: string;
-    git_commit?: string;
-  };
-  docker?: DockerHealth;
-  host?: {
-    os?: string;
-    architecture?: string;
-    cpu_count?: number;
-    /** @format int64 */
-    memory_total?: number;
-  };
-}
-
-export interface VersionInfo {
-  version: string;
-  /** @format date-time */
-  build_time?: string;
-  git_commit?: string;
-  go_version?: string;
-}
-
-/** Paginated volumes response */
-export interface PagedVolumes {
-  data: Volume[];
-  /** Current page number */
-  page: number;
-  /** Items per page */
-  page_size: number;
-  /** Total number of items */
-  total: number;
-  /** Applied sort order */
-  sort?: string;
-  /** Applied filters */
-  filters?: object;
-}
-
-/** Detailed volume information with attachments */
-export type VolumeDetail = Volume & {
-  attachments?: Attachment[];
-  /** Additional metadata */
-  meta?: Record<string, any>;
-};
-
-/** Container attachment to a volume */
-export interface Attachment {
-  /** Container ID */
-  container_id: string;
-  /** Container name */
-  container_name?: string;
-  /** Mount path inside container */
-  mount_path: string;
-  /** Read-write access */
-  rw: boolean;
-  /**
-   * When this attachment was first observed
-   * @format date-time
-   */
-  first_seen?: string;
-  /**
-   * When this attachment was last observed
-   * @format date-time
-   */
-  last_seen?: string;
-}
-
-/** Contents of a directory */
-export interface DirectoryListing {
-  /**
-   * Volume name
-   * @example "media-library"
-   */
-  volume?: string;
-  /**
-   * Directory path
-   * @example "/movies"
-   */
-  path?: string;
-  /** Folder in directory tree */
-  parent?: FolderNode;
-  /** Files and folders in this directory */
-  children?: TreeNode[];
-  /** Pagination metadata */
-  pagination?: PaginationResponse;
-}
-
-/** File or folder in directory tree */
-export interface TreeNode {
-  /**
-   * Node ID
-   * @format int64
-   * @example 123
-   */
-  id?: number;
-  /**
-   * File or folder name
-   * @example "movies"
-   */
-  name?: string;
-  /**
-   * Full path
-   * @example "/media/movies"
-   */
-  path?: string;
-  /**
-   * Size in bytes
-   * @format int64
-   * @example 4294967296
-   */
-  size?: number;
-  /**
-   * Last modified time
-   * @format date-time
-   */
-  modified?: string;
-  /**
-   * Node type
-   * @example "folder"
-   */
-  type?: "file" | "folder";
-  /**
-   * Whether node has children (folders only)
-   * @example true
-   */
-  has_children?: boolean;
-  /**
-   * MIME type (files only)
-   * @example "video/mp4"
-   */
-  mime_type?: string;
-  /**
-   * File extension (files only)
-   * @example "mp4"
-   */
-  extension?: string;
-}
-
-/** Folder in directory tree */
-export interface FolderNode {
-  /**
-   * Folder ID
-   * @format int64
-   * @example 123
-   */
-  id?: number;
-  /**
-   * Folder name
-   * @example "movies"
-   */
-  name?: string;
-  /**
-   * Full path
-   * @example "/media/movies"
-   */
-  path?: string;
-  /**
-   * Total size in bytes
-   * @format int64
-   * @example 4294967296
-   */
-  size?: number;
-  /**
-   * Last modified time
-   * @format date-time
-   */
-  modified?: string;
-  /**
-   * Always 'folder'
-   * @example "folder"
-   */
-  type?: "folder";
-}
-
-/** List of files in a directory */
-export interface FileListResponse {
-  /**
-   * Volume name
-   * @example "media-library"
-   */
-  volume?: string;
-  /**
-   * Directory path
-   * @example "/movies"
-   */
-  path?: string;
-  /** Files in directory */
-  files?: FileNode[];
-  /** Pagination metadata */
-  pagination?: PaginationResponse;
-  /** File filtering options */
-  filters?: FileFilters;
-}
-
-/** File in directory listing */
-export interface FileNode {
-  /**
-   * File ID
-   * @format int64
-   * @example 456
-   */
-  id?: number;
-  /**
-   * File name
-   * @example "movie.mp4"
-   */
-  name?: string;
-  /**
-   * Full path
-   * @example "/media/movies/movie.mp4"
-   */
-  path?: string;
-  /**
-   * File size in bytes
-   * @format int64
-   * @example 1073741824
-   */
-  size?: number;
-  /**
-   * Last modified time
-   * @format date-time
-   */
-  modified?: string;
-  /**
-   * MIME type
-   * @example "video/mp4"
-   */
-  mime_type?: string;
-  /**
-   * File extension
-   * @example "mp4"
-   */
-  extension?: string;
-  /**
-   * Media classification
-   * @example "video"
-   */
-  media_kind?: string;
-}
-
-/** File filtering options */
-export interface FileFilters {
-  /**
-   * File extension filter
-   * @example "mp4"
-   */
-  extension?: string;
-  /**
-   * MIME type filter
-   * @example "video/mp4"
-   */
-  mime_type?: string;
-  /**
-   * Minimum file size in bytes
-   * @format int64
-   * @example 1048576
-   */
-  min_size?: number;
-  /**
-   * Maximum file size in bytes
-   * @format int64
-   * @example 10737418240
-   */
-  max_size?: number;
-}
-
-/** Pagination metadata */
-export interface PaginationResponse {
-  /**
-   * Current page number
-   * @example 1
-   */
-  page?: number;
-  /**
-   * Items per page
-   * @example 50
-   */
-  page_size?: number;
-  /**
-   * Total items
-   * @format int64
-   * @example 1234
-   */
-  total?: number;
-  /**
-   * Total pages
-   * @example 25
-   */
-  pages?: number;
-}
-
-/** Detailed file information */
-export interface FileDetailsResponse {
-  /**
-   * File ID
-   * @format int64
-   * @example 123
-   */
-  id?: number;
-  /**
-   * File name
-   * @example "movie.mp4"
-   */
-  name?: string;
-  /**
-   * Full path
-   * @example "/media/movies/movie.mp4"
-   */
-  path?: string;
-  /**
-   * Volume ID
-   * @example "media-library"
-   */
+  /** @example "scan_tv-shows-readonly_1640995200" */
+  scan_id?: string;
+  /** @example "started" */
+  status?: string;
+  /** @example "tv-shows-readonly" */
   volume_id?: string;
-  /**
-   * File size in bytes
-   * @format int64
-   * @example 1073741824
-   */
-  size?: number;
-  /**
-   * Disk usage in bytes
-   * @format int64
-   * @example 1073741824
-   */
-  disk_usage?: number;
-  /**
-   * MIME type
-   * @example "video/mp4"
-   */
-  mime_type?: string;
-  /**
-   * Media classification
-   * @example "video"
-   */
-  media_kind?: string;
-  /**
-   * File extension
-   * @example "mp4"
-   */
-  extension?: string;
-  /**
-   * Last modified time
-   * @format date-time
-   */
-  modified?: string;
-  /**
-   * Creation time
-   * @format date-time
-   */
-  created?: string;
-  /** File system permissions */
-  permissions?: FilePermissions;
-  /** File checksums by algorithm */
+}
+
+export interface BulkScanRequest {
+  /** @example false */
+  async?: boolean;
+  /** @example "du" */
+  method?: string;
+  /** @example ["tv-shows-readonly","movies-readonly"] */
+  volume_ids: string[];
+}
+
+export interface DailyStats {
+  /** @example "2023-01-01" */
+  date?: string;
+  /** @example 2500 */
+  file_count?: number;
+  /** @example 150 */
+  folder_count?: number;
+  /** @example 52428800 */
+  growth?: number;
+  /** @example 5.12 */
+  growth_rate?: number;
+  /** @example 1073741824 */
+  size_bytes?: number;
+  /** @example "tv-shows-readonly" */
+  volume_id?: string;
+}
+
+export interface DockerHealth {
+  /** @example "1.41" */
+  api_version?: string;
+  /** @example "2021-07-30T19:52:10.000000000+00:00" */
+  build_time?: string;
+  /** @example "75249d8" */
+  git_commit?: string;
+  /** @example "go1.16.6" */
+  go_version?: string;
+  /** @example "Docker daemon is responsive" */
+  message?: string;
+  /** @example "healthy" */
+  status?: string;
+  /** @example "20.10.8" */
+  version?: string;
+}
+
+export interface ErrorResponse {
+  /** @example "VOLUME_NOT_FOUND" */
+  code?: string;
+  details?: Record<string, any>;
+  /** @example "Volume not found" */
+  error?: string;
+  /** @example "Additional error details" */
+  message?: string;
+}
+
+export interface ExtensionOption {
+  /** @example 1250 */
+  file_count?: number;
+  /** @example "MP4 Files" */
+  label?: string;
+  /** @example "mp4" */
+  value?: string;
+}
+
+export interface FileDetailsResponse {
   checksums?: Record<string, string>;
-  /** Whether file is a symbolic link */
+  created?: string;
+  /** @example 1073741824 */
+  disk_usage?: number;
+  /** @example "mp4" */
+  extension?: string;
+  /** @example 123 */
+  id?: number;
   is_symlink?: boolean;
-  /** Target of symbolic link */
+  /** @example "video" */
+  media_kind?: string;
+  /** @example "video/mp4" */
+  mime_type?: string;
+  modified?: string;
+  /** @example "movie.mp4" */
+  name?: string;
+  /** @example "/media/movies/movie.mp4" */
+  path?: string;
+  permissions?: FilePermissions;
+  /** @example 1073741824 */
+  size?: number;
   symlink_target?: string;
+  /** @example "media-library" */
+  volume_id?: string;
 }
 
-/** File system permissions */
-export interface FilePermissions {
-  /**
-   * File mode/permissions
-   * @format int32
-   * @example 644
-   */
-  mode?: number;
-  /**
-   * File owner
-   * @example "user"
-   */
-  owner?: string;
-  /**
-   * File group
-   * @example "users"
-   */
-  group?: string;
-  /**
-   * User ID
-   * @format int32
-   * @example 1000
-   */
-  uid?: number;
-  /**
-   * Group ID
-   * @format int32
-   * @example 1000
-   */
-  gid?: number;
-}
-
-/** Rich media metadata for a file */
 export interface FileMetadataResponse {
-  /**
-   * File ID
-   * @format int64
-   * @example 123
-   */
-  file_id?: number;
-  /** Metadata key-value pairs */
-  metadata?: Record<string, any>;
-  /**
-   * Whether metadata has been enriched
-   * @example true
-   */
+  /** @example true */
   enriched?: boolean;
-  /**
-   * Last metadata update time
-   * @format date-time
-   */
+  /** @example 123 */
+  file_id?: number;
+  metadata?: Record<string, any>;
   updated_at?: string;
 }
 
-/** Folder size statistics */
-export interface FolderSizeInfo {
-  /**
-   * Folder ID
-   * @format int64
-   */
-  id?: number;
-  /** Folder name */
-  name?: string;
-  /** Folder path */
-  path?: string;
-  /**
-   * Total size including subfolders
-   * @format int64
-   */
-  size_bytes_recursive?: number;
-  /**
-   * Actual disk usage including subfolders
-   * @format int64
-   */
-  disk_usage_bytes_recursive?: number;
-  /**
-   * Number of files in folder
-   * @format int64
-   */
-  file_count?: number;
-  /**
-   * Number of subdirectories
-   * @format int64
-   */
-  dir_count?: number;
+export interface FilePermissions {
+  /** @example 1000 */
+  gid?: number;
+  /** @example "users" */
+  group?: string;
+  /** @example 644 */
+  mode?: number;
+  /** @example "user" */
+  owner?: string;
+  /** @example 1000 */
+  uid?: number;
 }
 
-/** List of volume attachments */
-export interface AttachmentsList {
-  data: Attachment[];
-  /** Total number of attachments */
-  total: number;
+export interface FilesystemCapabilitiesResponse {
+  /** @example true */
+  enabled?: boolean;
+  features?: Record<string, boolean>;
+  /** @example ["sha256","md5"] */
+  supported_hash_algorithms?: string[];
+  /** @example ["image","video","audio"] */
+  supported_media_kinds?: string[];
 }
 
-/** Paginated orphaned volumes response */
-export interface PagedOrphanedVolumes {
-  data: {
-    name?: string;
-    driver?: string;
-    /** @format int64 */
-    size_bytes?: number;
-    /** @format date-time */
-    created_at?: string;
-    is_system?: boolean;
-  }[];
-  page: number;
-  page_size: number;
-  total: number;
-}
-
-/** Uniform error response format */
-export interface Error {
-  error: {
-    /** Machine-readable error code */
-    code:
-      | "bad_request"
-      | "unauthorized"
-      | "forbidden"
-      | "not_found"
-      | "rate_limited"
-      | "internal";
-    /** Human-readable error message */
-    message: string;
-    /** Additional error details */
-    details?: Record<string, any>;
-    /**
-     * Request correlation ID for debugging
-     * @format uuid
-     */
-    request_id: string;
-  };
-}
-
-/** @example {"error":"Volume not found","code":"VOLUME_NOT_FOUND","details":"Volume 'web-data' does not exist or is not accessible","correlation_id":"req-123e4567-e89b-12d3-a456-426614174000"} */
-export interface ErrorResponse {
-  /** Human-readable error message */
-  error: string;
-  /** Machine-readable error code */
-  code:
-    | "VOLUME_NOT_FOUND"
-    | "DOCKER_UNAVAILABLE"
-    | "DOCKER_CONNECTION_ERROR"
-    | "SCAN_IN_PROGRESS"
-    | "SCAN_FAILED"
-    | "INVALID_REQUEST"
-    | "INTERNAL_ERROR"
-    | "PERMISSION_DENIED"
-    | "TIMEOUT"
-    | "RATE_LIMITED";
-  /** Additional error details or troubleshooting information */
-  details?: string;
-  /** Request correlation ID for debugging */
-  correlation_id?: string;
-}
-
-export interface WebSocketMessage {
-  /** Message type */
-  type:
-    | "volume_update"
-    | "scan_progress"
-    | "scan_complete"
-    | "scan_error"
-    | "ping"
-    | "pong";
-  /**
-   * Message timestamp
-   * @format date-time
-   */
-  timestamp: string;
-  /** Message payload (varies by type) */
-  data?: object;
-  /** Related volume ID (if applicable) */
+export interface FilesystemIndexingResponse {
+  /** @example 1073741824 */
+  bytes_processed?: number;
+  /** @example 3 */
+  current_depth?: number;
+  /** @example "/data/movies/action" */
+  current_path?: string;
+  /** @example 2 */
+  errors_count?: number;
+  /** @example 150.2 */
+  files_per_sec?: number;
+  /** @example 2500 */
+  files_scanned?: number;
+  /** @example 10.5 */
+  folders_per_sec?: number;
+  /** @example 150 */
+  folders_scanned?: number;
+  /** @example "Permission denied on /data/restricted" */
+  last_error?: string;
+  /** @example "2023-01-01T10:30:00Z" */
+  last_update?: string;
+  /** @example "Indexing in progress" */
+  message?: string;
+  /** @example "2023-01-01T10:00:00Z" */
+  started_at?: string;
+  /** @example "running" */
+  status?: "pending" | "running" | "completed" | "failed";
+  /** @example "tv-shows" */
   volume_id?: string;
 }
 
-export type VolumeUpdateMessage = WebSocketMessage & {
-  /** Updated volume list */
-  data: VolumeResponse[];
-};
+export interface FilterMetadataResponse {
+  extensions?: ExtensionOption[];
+  media_kinds?: MediaKindOption[];
+  mime_types?: MimeTypeOption[];
+}
 
-export type ScanProgressMessage = WebSocketMessage & {
-  /** Volume being scanned */
-  volume_id: string;
-  data: {
-    /**
-     * Progress percentage
-     * @min 0
-     * @max 100
-     */
-    progress: number;
-    /**
-     * Current calculated size in bytes
-     * @format int64
-     */
-    current_size: number;
-    /** Number of files processed */
-    files_processed: number;
-  };
-};
+export interface FolderSizeInfo {
+  /** @example 1 */
+  dir_count?: number;
+  /** @example 5368709120 */
+  disk_usage_bytes_recursive?: number;
+  /** @example 24 */
+  file_count?: number;
+  /** @example 123 */
+  id?: number;
+  /** @example "Season 1" */
+  name?: string;
+  /** @example "/data/tv-shows/Series/Season 1" */
+  path?: string;
+  /** @example 25.5 */
+  percentage_of_volume?: number;
+  /** @example 5368709120 */
+  size_bytes_recursive?: number;
+}
 
-export type ScanCompleteMessage = WebSocketMessage & {
-  /** Volume that was scanned */
-  volume_id: string;
-  data: {
-    /** Volume ID */
-    volume_id: string;
-    result: ScanResult;
-  };
-};
+export interface MediaCapabilitiesResponse {
+  /** @example true */
+  enabled?: boolean;
+  /** @example 10737418240 */
+  max_file_size?: number;
+  /** @example true */
+  metadata_supported?: boolean;
+  /** @example ["mp4","avi","mkv","jpg","png"] */
+  supported_formats?: string[];
+  /** @example ["video","image","audio"] */
+  supported_kinds?: string[];
+  /** @example true */
+  thumbnail_supported?: boolean;
+}
 
-export type ScanErrorMessage = WebSocketMessage & {
-  /** Volume that failed to scan */
-  volume_id: string;
-  data: {
-    /** Error message */
-    error: string;
-    /** Error code */
-    code: string;
-  };
-};
+export interface MediaEnrichmentResponse {
+  /** @example "/data/movies/action/movie.mp4" */
+  current_file?: string;
+  /** @example 5 */
+  errors_count?: number;
+  /** @example 25.5 */
+  files_per_sec?: number;
+  /** @example 450 */
+  files_processed?: number;
+  /** @example "Unsupported codec in file" */
+  last_error?: string;
+  /** @example "2023-01-01T10:30:00Z" */
+  last_update?: string;
+  /** @example "Enriching media files" */
+  message?: string;
+  /** @example "2023-01-01T10:00:00Z" */
+  started_at?: string;
+  /** @example "running" */
+  status?: "pending" | "running" | "completed" | "failed";
+  /** @example 1000 */
+  total_files?: number;
+  /** @example "tv-shows" */
+  volume_id?: string;
+}
+
+export interface MediaEnrichmentStatusResponse {
+  /** @example 12 */
+  errors_count?: number;
+  /** @example 855 */
+  files_processed?: number;
+  /** @example "2023-01-01T11:30:00Z" */
+  last_update?: string;
+  /** @example "Enrichment completed with minor errors" */
+  message?: string;
+  /** @example 85.5 */
+  progress?: number;
+  /** @example "2023-01-01T10:00:00Z" */
+  started_at?: string;
+  /** @example "completed" */
+  status?: "pending" | "running" | "completed" | "failed";
+  /** @example 1000 */
+  total_files?: number;
+  /** @example "tv-shows" */
+  volume_id?: string;
+}
+
+export interface MediaKindOption {
+  /** @example 5000 */
+  file_count?: number;
+  /** @example "Video" */
+  label?: string;
+  /** @example "video" */
+  value?: string;
+}
+
+export interface MimeTypeOption {
+  /** @example 1250 */
+  file_count?: number;
+  /** @example "MP4 Video" */
+  label?: string;
+  /** @example "video/mp4" */
+  value?: string;
+}
+
+export interface RefreshRequest {
+  /** @example false */
+  async?: boolean;
+  /** @example "du" */
+  method?: string;
+}
+
+export interface ScanResponse {
+  /** @example false */
+  cached?: boolean;
+  result?: ScanResult;
+  /** @example "tv-shows-readonly" */
+  volume_id?: string;
+}
+
+export interface ScanResult {
+  /** @example false */
+  cache_hit?: boolean;
+  /** @example 1204 */
+  directory_count?: number;
+  /** @example 13248000000 */
+  duration?: TimeDuration;
+  /** @example 12543 */
+  file_count?: number;
+  /** @example "cifs" */
+  filesystem_type?: string;
+  /** @example 8589934592 */
+  largest_file?: number;
+  /** @example "du" */
+  method?: string;
+  scanned_at?: string;
+  /** @example 70640394854400 */
+  total_size?: number;
+  /** @example "tv-shows-readonly" */
+  volume_id?: string;
+}
+
+export interface StatsSummary {
+  /** @example 1048576 */
+  average_growth?: number;
+  /** @example "increasing" */
+  growth_trend?: "increasing" | "decreasing" | "stable";
+  /** @example 2500 */
+  total_files?: number;
+  /** @example 150 */
+  total_folders?: number;
+  /** @example 1073741824 */
+  total_size?: number;
+}
+
+export interface TopFoldersResponse {
+  folders?: FolderSizeInfo[];
+  /** @example "tv-shows-readonly" */
+  volume_id?: string;
+}
+
+export interface VolumeStatsResponse {
+  daily_stats?: DailyStats[];
+  /** @example "30d" */
+  period?: "7d" | "30d" | "90d" | "365d";
+  summary?: StatsSummary;
+  /** @example "tv-shows-readonly" */
+  volume_id?: string;
+}
+
+export interface VolumeV1 {
+  /** @example 2 */
+  attachments_count?: number;
+  /** @example "2023-01-01T10:00:00Z" */
+  created_at?: string;
+  /** @example "local" */
+  driver?: string;
+  /** @example false */
+  is_orphaned?: boolean;
+  /** @example false */
+  is_system?: boolean;
+  /** @example {"com.docker.compose.project":"media"} */
+  labels?: Record<string, string>;
+  /** @example "2023-01-01T12:00:00Z" */
+  last_scan_at?: string;
+  /** @example "/var/lib/docker/volumes/tv-shows-readonly/_data" */
+  mountpoint?: string;
+  /** @example "tv-shows-readonly" */
+  name?: string;
+  /** @example "local" */
+  scope?: string;
+  /** @example 1073741824 */
+  size_bytes?: number;
+}
+
+export type GinH = Record<string, any>;
+
+export interface GithubComMantonxVolumevizInternalApiUtilsPagedResponse {
+  data?: any;
+  filters?: Record<string, any>;
+  page?: number;
+  page_size?: number;
+  sort?: string;
+  total?: number;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsAlert {
+  annotations?: Record<string, string>;
+  created_at?: string;
+  /** For deduplication */
+  dedupe_key?: string;
+  ends_at?: string;
+  /** e.g., volume_id, container_id */
+  entity_id?: string;
+  /** e.g., "volume", "container" */
+  entity_type?: string;
+  id?: number;
+  labels?: Record<string, string>;
+  /** Relationships */
+  rule?: GithubComMantonxVolumevizInternalModelsAlertRule;
+  rule_id?: number;
+  starts_at?: string;
+  /** "firing", "resolved" */
+  status?: string;
+  updated_at?: string;
+  value?: number;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsAlertDestination {
+  config?: Record<string, any>;
+  created_at?: string;
+  id?: number;
+  is_enabled?: boolean;
+  name?: string;
+  /** "webhook", "slack", "pushover" */
+  type?: string;
+  updated_at?: string;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsAlertRoute {
+  created_at?: string;
+  /** Relationships */
+  destination?: GithubComMantonxVolumevizInternalModelsAlertDestination;
+  destination_id?: number;
+  id?: number;
+  is_enabled?: boolean;
+  /** Label matchers */
+  matchers?: Record<string, string>;
+  name?: string;
+  /** Lower number = higher priority */
+  priority?: number;
+  updated_at?: string;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsAlertRule {
+  /** e.g., "gt", "lt", "eq" */
+  condition?: string;
+  created_at?: string;
+  description?: string;
+  /** How long condition must persist */
+  for?: TimeDuration;
+  id?: number;
+  /** How often to evaluate */
+  interval?: TimeDuration;
+  is_enabled?: boolean;
+  labels?: Record<string, string>;
+  name?: string;
+  query?: string;
+  threshold?: number;
+  updated_at?: string;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParams {
+  config: Record<string, any>;
+  is_enabled?: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  type: "webhook" | "slack" | "pushover";
+}
+
+export interface GithubComMantonxVolumevizInternalModelsCreateAlertRouteParams {
+  destination_id: number;
+  is_enabled?: boolean;
+  matchers: Record<string, string>;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /** @min 0 */
+  priority?: number;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsCreateAlertRuleParams {
+  condition: "gt" | "lt" | "eq" | "ne" | "gte" | "lte";
+  /** @maxLength 500 */
+  description?: string;
+  /** @min 0 */
+  for?: TimeDuration;
+  interval: TimeDuration;
+  is_enabled?: boolean;
+  labels?: Record<string, string>;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  query: string;
+  threshold: number;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsErrorResponse {
+  code?: string;
+  details?: string;
+  error?: string;
+  message?: string;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsFilesystemIndexingRequest {
+  delta_mode?: boolean;
+  full_scan?: boolean;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParams {
+  config: Record<string, any>;
+  id?: number;
+  is_enabled?: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  type: "webhook" | "slack" | "pushover";
+}
+
+export interface GithubComMantonxVolumevizInternalModelsUpdateAlertRouteParams {
+  destination_id: number;
+  id?: number;
+  is_enabled?: boolean;
+  matchers: Record<string, string>;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /** @min 0 */
+  priority?: number;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParams {
+  condition: "gt" | "lt" | "eq" | "ne" | "gte" | "lte";
+  /** @maxLength 500 */
+  description?: string;
+  /** @min 0 */
+  for?: TimeDuration;
+  id?: number;
+  interval: TimeDuration;
+  is_enabled?: boolean;
+  labels?: Record<string, string>;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  query: string;
+  threshold: number;
+}
+
+export interface InternalApiV1DiagRealtimeDiagnostics {
+  active_connections?: number;
+  features?: string[];
+  mode?: InternalApiV1DiagRealtimeMode;
+  polling_enabled?: boolean;
+  polling_interval_ms?: number;
+  sse_enabled?: boolean;
+  websocket_enabled?: boolean;
+  websocket_url?: string;
+}
+
+/** Applied filters for the file query */
+export interface InternalApiV1ExplorerAppliedFilters {
+  /** @example "pdf" */
+  file_type?: string;
+  /** @example 10485760 */
+  max_size?: number;
+  /** @example "application/pdf" */
+  mime_type?: string;
+  /** @example 1024 */
+  min_size?: number;
+}
+
+/** Enhanced file item with performance and metadata information */
+export interface InternalApiV1ExplorerEnhancedFileItem {
+  /** @example 1024000 */
+  disk_usage?: number;
+  /** @example "pdf" */
+  extension?: string;
+  /** @example 123 */
+  id?: number;
+  /** @example false */
+  is_directory?: boolean;
+  /** @example "document" */
+  media_kind?: string;
+  /** @example "application/pdf" */
+  media_type?: string;
+  /** @example "2024-01-15T10:30:00Z" */
+  modified_time?: string;
+  /** @example "document.pdf" */
+  name?: string;
+  /** @example "/home/user/documents/document.pdf" */
+  path?: string;
+  /** @example 1024000 */
+  size?: number;
+}
+
+/** File or directory information for explorer browsing */
+export interface InternalApiV1ExplorerFileInfo {
+  /** @example "pdf" */
+  extension?: string;
+  /** @example false */
+  is_directory?: boolean;
+  /** @example "application/pdf" */
+  media_type?: string;
+  /** @example "2024-01-15T10:30:00Z" */
+  modified_time?: string;
+  /** @example "document.pdf" */
+  name?: string;
+  /** @example "/home/user/documents/document.pdf" */
+  path?: string;
+  /** @example 1024000 */
+  size?: number;
+}
+
+/** A folder item with parent/child relationship information */
+export interface InternalApiV1ExplorerFolderBrowsingItem {
+  /** @example 42 */
+  file_count?: number;
+  /** @example 5 */
+  folder_count?: number;
+  /** @example true */
+  has_children?: boolean;
+  /** @example 123 */
+  id?: number;
+  /** @example true */
+  is_directory?: boolean;
+  /** @example "documents" */
+  name?: string;
+  /** @example "/home/user/documents" */
+  path?: string;
+  /** @example 1073741824 */
+  total_size?: number;
+}
+
+/** Response containing folder hierarchy with parent/child relationships */
+export interface InternalApiV1ExplorerFolderBrowsingResponse {
+  children?: InternalApiV1ExplorerFolderBrowsingItem[];
+  /** A folder item with parent/child relationship information */
+  current?: InternalApiV1ExplorerFolderBrowsingItem;
+  /** @example "/home/user/documents" */
+  current_path?: string;
+  /** @example 100 */
+  limit?: number;
+  /** @example 1 */
+  page?: number;
+  /** A folder item with parent/child relationship information */
+  parent?: InternalApiV1ExplorerFolderBrowsingItem;
+  /** @example 15 */
+  total_children?: number;
+  /** @example 2 */
+  total_pages?: number;
+  /** @example "vol_123" */
+  volume_id?: string;
+}
+
+/** A node in the hierarchical folder structure */
+export interface InternalApiV1ExplorerFolderNode {
+  children?: InternalApiV1ExplorerFolderNode[];
+  /** @example 15 */
+  file_count?: number;
+  /** @example 3 */
+  folder_count?: number;
+  /** @example "documents" */
+  name?: string;
+  /** @example "/home/user/documents" */
+  path?: string;
+  /** @example 52428800 */
+  total_size?: number;
+}
+
+/** Response containing files in a folder with pagination */
+export interface InternalApiV1ExplorerGetFilesByFolderResponse {
+  files?: InternalApiV1ExplorerFileInfo[];
+  /** @example 100 */
+  limit?: number;
+  /** @example 1 */
+  page?: number;
+  /** @example 250 */
+  total_count?: number;
+  /** @example 3 */
+  total_pages?: number;
+}
+
+/** Response containing hierarchical folder structure */
+export interface InternalApiV1ExplorerGetFolderTreeResponse {
+  tree?: InternalApiV1ExplorerFolderNode[];
+}
+
+/** Response containing immediate children of a path */
+export interface InternalApiV1ExplorerGetTreeChildrenResponse {
+  children?: InternalApiV1ExplorerTreeChildItem[];
+  /** @example 100 */
+  limit?: number;
+  /** @example 1 */
+  page?: number;
+  /** @example "/home/user" */
+  parent_path?: string;
+  /** @example 25 */
+  total_count?: number;
+  /** @example 1 */
+  total_pages?: number;
+}
+
+/** Enhanced response for paginated file listing with performance metadata */
+export interface InternalApiV1ExplorerPaginatedFileResponse {
+  /** @example false */
+  cache_hit?: boolean;
+  files?: InternalApiV1ExplorerEnhancedFileItem[];
+  /** Applied filters for the file query */
+  filters?: InternalApiV1ExplorerAppliedFilters;
+  /** @example true */
+  has_more?: boolean;
+  /** @example 50 */
+  limit?: number;
+  /** @example 1 */
+  page?: number;
+  /** @example 45 */
+  query_time_ms?: number;
+  /** @example "name" */
+  sort_by?: string;
+  /** @example "asc" */
+  sort_order?: string;
+  /** @example 1250 */
+  total_count?: number;
+  /** @example 25 */
+  total_pages?: number;
+}
+
+/** A child file or folder in tree navigation */
+export interface InternalApiV1ExplorerTreeChildItem {
+  /** @example "pdf" */
+  extension?: string;
+  /** @example true */
+  has_children?: boolean;
+  /** @example true */
+  is_directory?: boolean;
+  /** @example "application/pdf" */
+  media_type?: string;
+  /** @example "documents" */
+  name?: string;
+  /** @example "/home/user/documents" */
+  path?: string;
+  /** @example 1024000 */
+  size?: number;
+}
+
+export interface InternalApiV1MetadataFileDurationItem {
+  duration_seconds?: number;
+  id?: number;
+  media_type?: string;
+  name?: string;
+  path?: string;
+  size?: number;
+}
+
+export interface InternalApiV1MetadataFileLocationItem {
+  id?: number;
+  latitude?: number;
+  longitude?: number;
+  media_type?: string;
+  name?: string;
+  path?: string;
+  size?: number;
+}
+
+export interface InternalApiV1MetadataFileResolutionItem {
+  height?: number;
+  id?: number;
+  media_type?: string;
+  name?: string;
+  path?: string;
+  size?: number;
+  width?: number;
+}
+
+export interface InternalApiV1MetadataGetFilesByDurationResponse {
+  files?: InternalApiV1MetadataFileDurationItem[];
+  limit?: number;
+  page?: number;
+  total_count?: number;
+  total_pages?: number;
+}
+
+export interface InternalApiV1MetadataGetFilesByLocationResponse {
+  files?: InternalApiV1MetadataFileLocationItem[];
+  limit?: number;
+  page?: number;
+  total_count?: number;
+  total_pages?: number;
+}
+
+export interface InternalApiV1MetadataGetFilesByResolutionResponse {
+  files?: InternalApiV1MetadataFileResolutionItem[];
+  limit?: number;
+  page?: number;
+  total_count?: number;
+  total_pages?: number;
+}
+
+export interface InternalApiV1PreviewsPreviewRequest {
+  file_hash?: string;
+  file_id: number;
+  file_path: string;
+  mime_type: string;
+  size: "small" | "medium" | "large";
+  time_offset?: string;
+  type: "thumbnail" | "poster" | "cover";
+}
+
+export interface InternalApiV1PreviewsPreviewResponse {
+  cache_hit?: boolean;
+  created_at?: string;
+  etag?: string;
+  file_id?: number;
+  file_size?: number;
+  format?: string;
+  height?: number;
+  id?: number;
+  processing_ms?: number;
+  size?: string;
+  type?: string;
+  url?: string;
+  width?: number;
+}
+
+export interface InternalApiV1SearchCreateSavedSearchRequest {
+  description?: string;
+  is_public?: boolean;
+  metadata?: Record<string, any>;
+  name: string;
+  query: InternalApiV1SearchSearchFilesRequest;
+  tags?: string[];
+}
+
+export interface InternalApiV1SearchFileResult {
+  audio_codec?: string;
+  camera_model?: string;
+  capture_date?: string;
+  created_time?: string;
+  disk_usage?: number;
+  /** Media metadata */
+  duration_ms?: number;
+  extension?: string;
+  gps_lat?: number;
+  gps_lon?: number;
+  has_gps?: boolean;
+  height?: number;
+  id?: number;
+  media_kind?: string;
+  metadata?: Record<string, any>;
+  mime_type?: string;
+  modified_time?: string;
+  name?: string;
+  path?: string;
+  preview_url?: string;
+  size?: number;
+  video_codec?: string;
+  volume_id?: string;
+  width?: number;
+}
+
+export interface InternalApiV1SearchListSavedSearchesResponse {
+  page?: number;
+  per_page?: number;
+  searches?: InternalApiV1SearchSavedSearch[];
+  total_count?: number;
+}
+
+export interface InternalApiV1SearchSavedSearch {
+  created_at?: string;
+  description?: string;
+  id?: number;
+  is_public?: boolean;
+  last_run_at?: string;
+  metadata?: Record<string, any>;
+  name: string;
+  query?: InternalApiV1SearchSearchFilesRequest;
+  run_count?: number;
+  tags?: string[];
+  updated_at?: string;
+}
+
+export interface InternalApiV1SearchSearchFilesRequest {
+  /** Media metadata filters */
+  durationFrom?: number;
+  /** Max duration in ms */
+  durationTo?: number;
+  /** Glob pattern for path matching */
+  glob?: string;
+  /** Has GPS coordinates */
+  hasGps?: boolean;
+  /** Has subtitles */
+  hasSubs?: boolean;
+  /** Has computed hash */
+  hashPresent?: boolean;
+  /** Max height in pixels */
+  maxHeight?: number;
+  /** Maximum file size in bytes */
+  maxSize?: number;
+  /** Max width in pixels */
+  maxWidth?: number;
+  /** Media filters */
+  mediaKind?: string;
+  /** MIME type filters */
+  mime?: string[];
+  /** Min height in pixels */
+  minHeight?: number;
+  /** Size filters */
+  minSize?: number;
+  /** Min width in pixels (video/image) */
+  minWidth?: number;
+  /** Time filters */
+  mtimeFrom?: string;
+  /** Modified time to */
+  mtimeTo?: string;
+  /** Sort order: asc, desc */
+  order?: string;
+  /**
+   * Pagination and sorting
+   * @min 1
+   */
+  page?: number;
+  /** Path prefix filter */
+  path?: string;
+  /**
+   * @min 1
+   * @max 100
+   */
+  perPage?: number;
+  /** Text search */
+  q?: string;
+  /** Regex pattern for path matching */
+  regex?: string;
+  /** Sort field: relevance, name, size, mtime, ctime, duration, type, media_kind */
+  sort?: string;
+}
+
+export interface InternalApiV1SearchSearchFilesResponse {
+  files?: InternalApiV1SearchFileResult[];
+  filters?: any;
+  page?: number;
+  per_page?: number;
+  query_time_ms?: number;
+  total_count?: number;
+  total_pages?: number;
+}
+
+export interface InternalApiV1SearchSearchSuggestion {
+  /** Number of matching files */
+  count?: number;
+  /** Optional description */
+  description?: string;
+  /** Suggested text */
+  text?: string;
+  /** Type: "filename", "extension", "path", "recent" */
+  type?: string;
+}
+
+export interface InternalApiV1SearchSearchSuggestionsResponse {
+  query_time_ms?: number;
+  suggestions?: InternalApiV1SearchSearchSuggestion[];
+}
+
+export interface InternalApiV1SearchUpdateSavedSearchRequest {
+  description?: string;
+  is_public?: boolean;
+  metadata?: Record<string, any>;
+  name?: string;
+  query?: InternalApiV1SearchSearchFilesRequest;
+  tags?: string[];
+}
 
 export type QueryParamsType = Record<string | number, any>;
 export type ResponseFormat = keyof Omit<Body, "body" | "bodyUsed">;
@@ -1581,15 +1238,13 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title VolumeViz API
- * @version 1.0.0
+ * @version 1.0
  * @license MIT (https://github.com/mantonx/volumeviz/blob/main/LICENSE)
  * @termsOfService https://github.com/mantonx/volumeviz
  * @baseUrl http://localhost:8080/api/v1
- * @externalDocs https://github.com/mantonx/volumeviz/blob/main/docs/
  * @contact API Support <support@volumeviz.io> (https://github.com/mantonx/volumeviz/issues)
  *
- * Docker volume monitoring API with comprehensive volume discovery, size calculation,
- * and container attachment tracking. Focus on user-mounted volumes only.
+ * Docker volume monitoring API with comprehensive volume discovery, size calculation, and container attachment tracking. Focus on user-mounted volumes only.
  *
  * ## Volume-First Approach
  * - Automatic discovery and filtering of user-mounted volumes
@@ -1612,517 +1267,1455 @@ export class HttpClient<SecurityDataType = unknown> {
 export class Api<
   SecurityDataType extends unknown,
 > extends HttpClient<SecurityDataType> {
-  health = {
+  alerts = {
     /**
-     * @description Get Docker daemon connection status and version information. Used for monitoring Docker API connectivity and version compatibility.
+     * @description Get a list of alerts with pagination and filtering
      *
-     * @tags Health
-     * @name GetDockerHealth
-     * @summary Check Docker daemon health
-     * @request GET:/health/docker
-     * @secure
+     * @tags alerts
+     * @name AlertsList
+     * @summary List alerts
+     * @request GET:/alerts
      */
-    getDockerHealth: (params: RequestParams = {}) =>
-      this.request<DockerHealth, ErrorResponse>({
-        path: `/health/docker`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Overall application health including all dependencies
-     *
-     * @tags Health
-     * @name GetAppHealth
-     * @summary Check application health
-     * @request GET:/health/app
-     * @secure
-     */
-    getAppHealth: (params: RequestParams = {}) =>
-      this.request<HealthStatus, any>({
-        path: `/health/app`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Kubernetes readiness probe endpoint
-     *
-     * @tags Health
-     * @name GetReadiness
-     * @summary Readiness probe
-     * @request GET:/health/readiness
-     * @secure
-     */
-    getReadiness: (params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/health/readiness`,
-        method: "GET",
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * @description Kubernetes liveness probe endpoint
-     *
-     * @tags Health
-     * @name GetLiveness
-     * @summary Liveness probe
-     * @request GET:/health/liveness
-     * @secure
-     */
-    getLiveness: (params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/health/liveness`,
-        method: "GET",
-        secure: true,
-        ...params,
-      }),
-  };
-  ws = {
-    /**
-     * @description Establishes a WebSocket connection for real-time volume updates and scan progress. ## Message Types ### Client to Server: - `ping`: Heartbeat message ### Server to Client: - `volume_update`: Volume data has changed - `scan_progress`: Scan progress update - `scan_complete`: Scan completed - `scan_error`: Scan failed - `pong`: Heartbeat response ## Usage Example: ```javascript const ws = new WebSocket('ws://localhost:8080/api/v1/ws'); ws.onmessage = (event) => { const message = JSON.parse(event.data); switch(message.type) { case 'volume_update': // Handle volume update break; case 'scan_complete': // Handle scan completion break; } }; ```
-     *
-     * @tags Real-time
-     * @name ConnectWebSocket
-     * @summary WebSocket endpoint for real-time updates
-     * @request GET:/ws
-     * @secure
-     */
-    connectWebSocket: (params: RequestParams = {}) =>
-      this.request<any, void | ErrorResponse>({
-        path: `/ws`,
-        method: "GET",
-        secure: true,
-        ...params,
-      }),
-  };
-  volumes = {
-    /**
-     * @description List volumes with pagination, sorting, and filters. **Performance**: Optimized for large volume sets (1000+ volumes). **SLO**: 95th percentile response time < 250ms.
-     *
-     * @tags Volumes
-     * @name ListVolumes
-     * @summary List Docker volumes
-     * @request GET:/volumes
-     * @secure
-     */
-    listVolumes: (
+    alertsList: (
       query?: {
-        /**
-         * Page number
-         * @min 1
-         * @default 1
-         */
-        page?: number;
-        /**
-         * Items per page
-         * @min 1
-         * @max 200
-         * @default 25
-         */
-        page_size?: number;
-        /**
-         * Sort field and direction (e.g., name:asc, size_bytes:desc)
-         * @default "name:asc"
-         * @example "size_bytes:desc,name:asc"
-         */
-        sort?: string;
-        /** Search query (case-insensitive substring match on name and labels) */
-        q?: string;
-        /** Filter by exact driver match */
-        driver?: "local" | "nfs" | "cifs" | "overlay2";
-        /** Filter by orphaned status */
-        orphaned?: boolean;
-        /**
-         * Include system/internal volumes
-         * @default false
-         */
-        system?: boolean;
-        /**
-         * Filter volumes created after this timestamp
-         * @format date-time
-         */
-        created_after?: string;
-        /**
-         * Filter volumes created before this timestamp
-         * @format date-time
-         */
-        created_before?: string;
+        /** Number of items to return (default: 50, max: 100) */
+        limit?: number;
+        /** Number of items to skip (default: 0) */
+        offset?: number;
+        /** Filter by status (firing, resolved) */
+        status?: string;
+        /** Filter by rule ID */
+        rule_id?: number;
       },
       params: RequestParams = {},
     ) =>
-      this.request<PagedVolumes, Error>({
-        path: `/volumes`,
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts`,
         method: "GET",
         query: query,
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Get detailed information about a specific Docker volume including metadata, labels, attachments, and usage statistics.
-     *
-     * @tags Volumes
-     * @name GetVolume
-     * @summary Get volume details
-     * @request GET:/volumes/{name}
-     * @secure
-     */
-    getVolume: (name: string, params: RequestParams = {}) =>
-      this.request<VolumeDetail, Error>({
-        path: `/volumes/${name}`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description List containers mounting the volume, including mount paths and access modes.
-     *
-     * @tags Volumes
-     * @name GetVolumeAttachments
-     * @summary Get volume attachments
-     * @request GET:/volumes/{name}/attachments
-     * @secure
-     */
-    getVolumeAttachments: (name: string, params: RequestParams = {}) =>
-      this.request<AttachmentsList, Error>({
-        path: `/volumes/${name}/attachments`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Get usage statistics and metadata for a volume
-     *
-     * @tags Volumes
-     * @name GetVolumeStats
-     * @summary Get volume statistics
-     * @request GET:/volumes/{volumeId}/stats
-     * @secure
-     */
-    getVolumeStats: (volumeId: string, params: RequestParams = {}) =>
-      this.request<VolumeStats, any>({
-        path: `/volumes/${volumeId}/stats`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Get the current size and file statistics of a Docker volume. Results are cached with TTL-based invalidation for performance. **Performance**: - Cache hit: < 5ms response time - Cache miss: varies by volume size and scan method - Large volumes (100GB+): typically < 30 seconds
-     *
-     * @tags Scanning
-     * @name GetVolumeSize
-     * @summary Get volume size
-     * @request GET:/volumes/{volumeId}/size
-     * @secure
-     */
-    getVolumeSize: (
-      volumeId: string,
-      query?: {
-        /**
-         * Preferred scan method (fallback chain will be used if unavailable)
-         * @default "diskus"
-         * @example "diskus"
-         */
-        method?: "diskus" | "du" | "native";
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<ScanResponse, ErrorResponse>({
-        path: `/volumes/${volumeId}/size`,
-        method: "GET",
-        query: query,
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Force a fresh scan of the volume, bypassing cache. Supports both synchronous and asynchronous scanning modes. **Synchronous mode**: Returns results immediately (default) **Asynchronous mode**: Returns scan ID for status tracking
-     *
-     * @tags Scanning
-     * @name RefreshVolumeSize
-     * @summary Refresh volume size
-     * @request POST:/volumes/{volumeId}/size/refresh
-     * @secure
-     */
-    refreshVolumeSize: (
-      volumeId: string,
-      data?: RefreshRequest,
-      params: RequestParams = {},
-    ) =>
-      this.request<ScanResponse, ErrorResponse>({
-        path: `/volumes/${volumeId}/size/refresh`,
-        method: "POST",
-        body: data,
-        secure: true,
         type: ContentType.Json,
         format: "json",
         ...params,
       }),
 
     /**
-     * @description Get the status of an ongoing or completed volume scan. Used with asynchronous scanning to track progress.
+     * @description Get delivery history with pagination and filtering
      *
-     * @tags Scanning
-     * @name GetScanStatus
-     * @summary Get scan status
-     * @request GET:/volumes/{volumeId}/scan/status
-     * @secure
+     * @tags alerts
+     * @name DeliveriesList
+     * @summary Get delivery history
+     * @request GET:/alerts/deliveries
      */
-    getScanStatus: (
-      volumeId: string,
+    deliveriesList: (
       query?: {
-        /**
-         * Scan ID (optional, returns latest scan if omitted)
-         * @example "scan_web-data_1640995200"
-         */
-        scan_id?: string;
+        /** Number of items to return (default: 50, max: 100) */
+        limit?: number;
+        /** Number of items to skip (default: 0) */
+        offset?: number;
+        /** Filter by alert ID */
+        alert_id?: number;
+        /** Filter by destination ID */
+        destination_id?: number;
+        /** Filter by delivery status */
+        status?: string;
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScanProgress, ErrorResponse>({
-        path: `/volumes/${volumeId}/scan/status`,
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/deliveries`,
         method: "GET",
         query: query,
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
 
     /**
-     * @description Initiate scanning for multiple volumes simultaneously. Useful for refreshing cache for many volumes efficiently.
+     * @description Get a list of alert destinations with pagination
      *
-     * @tags Scanning
-     * @name BulkScanVolumes
-     * @summary Bulk scan volumes
-     * @request POST:/volumes/bulk-scan
-     * @secure
+     * @tags alerts
+     * @name DestinationsList
+     * @summary List alert destinations
+     * @request GET:/alerts/destinations
      */
-    bulkScanVolumes: (
-      data: {
-        /**
-         * @maxItems 100
-         * @minItems 1
-         */
-        volume_ids: string[];
-        /** @default "diskus" */
-        method?: "diskus" | "du" | "native";
-        /** @default true */
-        async?: boolean;
+    destinationsList: (
+      query?: {
+        /** Number of items to return (default: 50, max: 100) */
+        limit?: number;
+        /** Number of items to skip (default: 0) */
+        offset?: number;
+        /** Filter by enabled status */
+        enabled?: boolean;
       },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/destinations`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Create a new alert destination
+     *
+     * @tags alerts
+     * @name DestinationsCreate
+     * @summary Create alert destination
+     * @request POST:/alerts/destinations
+     */
+    destinationsCreate: (
+      destination: GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParams,
       params: RequestParams = {},
     ) =>
       this.request<
-        {
-          scan_ids?: string[];
-          total_volumes?: number;
-          status?: string;
-        },
-        any
+        GithubComMantonxVolumevizInternalModelsAlertDestination,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
       >({
-        path: `/volumes/bulk-scan`,
+        path: `/alerts/destinations`,
         method: "POST",
-        body: data,
-        secure: true,
+        body: destination,
         type: ContentType.Json,
         format: "json",
         ...params,
       }),
 
     /**
-     * @description Get files and folders in a directory path within a volume
+     * @description Get a specific alert destination by ID
      *
-     * @tags Explorer
-     * @name GetTreeChildren
-     * @summary Get directory children
-     * @request GET:/volumes/{name}/tree/children
-     * @secure
+     * @tags alerts
+     * @name DestinationsDetail
+     * @summary Get alert destination
+     * @request GET:/alerts/destinations/{id}
      */
-    getTreeChildren: (
-      name: string,
-      query?: {
-        /**
-         * Directory path
-         * @default "/"
-         * @example "/movies"
-         */
-        path?: string;
-        /**
-         * Page number
-         * @min 1
-         * @default 1
-         */
-        page?: number;
-        /**
-         * Items per page
-         * @min 1
-         * @max 1000
-         * @default 50
-         */
-        page_size?: number;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<DirectoryListing, void | Error>({
-        path: `/volumes/${name}/tree/children`,
+    destinationsDetail: (id: number, params: RequestParams = {}) =>
+      this.request<
+        GithubComMantonxVolumevizInternalModelsAlertDestination,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
+        path: `/alerts/destinations/${id}`,
         method: "GET",
-        query: query,
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
 
     /**
-     * @description Get all files in a specific directory path within a volume with optional filters
+     * @description Update an existing alert destination
+     *
+     * @tags alerts
+     * @name DestinationsUpdate
+     * @summary Update alert destination
+     * @request PUT:/alerts/destinations/{id}
+     */
+    destinationsUpdate: (
+      id: number,
+      destination: GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/destinations/${id}`,
+        method: "PUT",
+        body: destination,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Delete an alert destination
+     *
+     * @tags alerts
+     * @name DestinationsDelete
+     * @summary Delete alert destination
+     * @request DELETE:/alerts/destinations/{id}
+     */
+    destinationsDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/destinations/${id}`,
+        method: "DELETE",
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description Send a test message to an alert destination
+     *
+     * @tags alerts
+     * @name DestinationsTestCreate
+     * @summary Test alert destination
+     * @request POST:/alerts/destinations/{id}/test
+     */
+    destinationsTestCreate: (
+      id: number,
+      request: GinH,
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/destinations/${id}/test`,
+        method: "POST",
+        body: request,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Manually trigger evaluation of all alert rules
+     *
+     * @tags alerts
+     * @name EngineEvaluateCreate
+     * @summary Trigger alert evaluation
+     * @request POST:/alerts/engine/evaluate
+     */
+    engineEvaluateCreate: (params: RequestParams = {}) =>
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/engine/evaluate`,
+        method: "POST",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get comprehensive alerts engine status and statistics
+     *
+     * @tags alerts
+     * @name EngineStatusList
+     * @summary Get alerts engine status
+     * @request GET:/alerts/engine/status
+     */
+    engineStatusList: (params: RequestParams = {}) =>
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/engine/status`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get a list of alert routes with pagination
+     *
+     * @tags alerts
+     * @name RoutesList
+     * @summary List alert routes
+     * @request GET:/alerts/routes
+     */
+    routesList: (
+      query?: {
+        /** Number of items to return (default: 50, max: 100) */
+        limit?: number;
+        /** Number of items to skip (default: 0) */
+        offset?: number;
+        /** Filter by destination ID */
+        destination_id?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/routes`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Create a new alert route (rule -> destination mapping)
+     *
+     * @tags alerts
+     * @name RoutesCreate
+     * @summary Create alert route
+     * @request POST:/alerts/routes
+     */
+    routesCreate: (
+      route: GithubComMantonxVolumevizInternalModelsCreateAlertRouteParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        GithubComMantonxVolumevizInternalModelsAlertRoute,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
+        path: `/alerts/routes`,
+        method: "POST",
+        body: route,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get a specific alert route by ID
+     *
+     * @tags alerts
+     * @name RoutesDetail
+     * @summary Get alert route
+     * @request GET:/alerts/routes/{id}
+     */
+    routesDetail: (id: number, params: RequestParams = {}) =>
+      this.request<
+        GithubComMantonxVolumevizInternalModelsAlertRoute,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
+        path: `/alerts/routes/${id}`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Update an existing alert route
+     *
+     * @tags alerts
+     * @name RoutesUpdate
+     * @summary Update alert route
+     * @request PUT:/alerts/routes/{id}
+     */
+    routesUpdate: (
+      id: number,
+      route: GithubComMantonxVolumevizInternalModelsUpdateAlertRouteParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/routes/${id}`,
+        method: "PUT",
+        body: route,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Delete an alert route
+     *
+     * @tags alerts
+     * @name RoutesDelete
+     * @summary Delete alert route
+     * @request DELETE:/alerts/routes/{id}
+     */
+    routesDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/routes/${id}`,
+        method: "DELETE",
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description Get a list of alert rules with pagination
+     *
+     * @tags alerts
+     * @name RulesList
+     * @summary List alert rules
+     * @request GET:/alerts/rules
+     */
+    rulesList: (
+      query?: {
+        /** Number of items to return (default: 50, max: 100) */
+        limit?: number;
+        /** Number of items to skip (default: 0) */
+        offset?: number;
+        /** Filter by enabled status */
+        enabled?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/rules`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Create a new alert rule
+     *
+     * @tags alerts
+     * @name RulesCreate
+     * @summary Create alert rule
+     * @request POST:/alerts/rules
+     */
+    rulesCreate: (
+      rule: GithubComMantonxVolumevizInternalModelsCreateAlertRuleParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        GithubComMantonxVolumevizInternalModelsAlertRule,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
+        path: `/alerts/rules`,
+        method: "POST",
+        body: rule,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get a specific alert rule by ID
+     *
+     * @tags alerts
+     * @name RulesDetail
+     * @summary Get alert rule
+     * @request GET:/alerts/rules/{id}
+     */
+    rulesDetail: (id: number, params: RequestParams = {}) =>
+      this.request<
+        GithubComMantonxVolumevizInternalModelsAlertRule,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
+        path: `/alerts/rules/${id}`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Update an existing alert rule
+     *
+     * @tags alerts
+     * @name RulesUpdate
+     * @summary Update alert rule
+     * @request PUT:/alerts/rules/{id}
+     */
+    rulesUpdate: (
+      id: number,
+      rule: GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/rules/${id}`,
+        method: "PUT",
+        body: rule,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Delete an alert rule and all associated alerts
+     *
+     * @tags alerts
+     * @name RulesDelete
+     * @summary Delete alert rule
+     * @request DELETE:/alerts/rules/{id}
+     */
+    rulesDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/rules/${id}`,
+        method: "DELETE",
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description Test an alert rule against current metrics without creating alerts
+     *
+     * @tags alerts
+     * @name RulesTestCreate
+     * @summary Test alert rule
+     * @request POST:/alerts/rules/{id}/test
+     */
+    rulesTestCreate: (id: number, params: RequestParams = {}) =>
+      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+        path: `/alerts/rules/${id}/test`,
+        method: "POST",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get a specific alert by ID
+     *
+     * @tags alerts
+     * @name AlertsDetail
+     * @summary Get alert
+     * @request GET:/alerts/{id}
+     */
+    alertsDetail: (id: number, params: RequestParams = {}) =>
+      this.request<
+        GithubComMantonxVolumevizInternalModelsAlert,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
+        path: `/alerts/${id}`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  api = {
+    /**
+     * @description Get information about available real-time communication methods
+     *
+     * @tags Diagnostics
+     * @name V1DiagRealtimeList
+     * @summary Get real-time diagnostics
+     * @request GET:/api/v1/diag/realtime
+     */
+    v1DiagRealtimeList: (params: RequestParams = {}) =>
+      this.request<InternalApiV1DiagRealtimeDiagnostics, any>({
+        path: `/api/v1/diag/realtime`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Browse folders with parent/child relationships for navigation breadcrumbs and tree structure
      *
      * @tags Explorer
-     * @name GetFilesForPath
-     * @summary Get files in directory
-     * @request GET:/volumes/{name}/files
-     * @secure
+     * @name V1ExplorerBrowseList
+     * @summary Browse folder hierarchy
+     * @request GET:/api/v1/explorer/browse
      */
-    getFilesForPath: (
-      name: string,
-      query?: {
+    v1ExplorerBrowseList: (
+      query: {
         /**
-         * Directory path
-         * @default "/"
-         * @example "/movies"
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Folder path to browse
+         * @example "/home/user/documents"
          */
         path?: string;
         /**
-         * Filter by file extension
-         * @example "mp4"
+         * Include parent folder info
+         * @example true
          */
-        extension?: string;
+        include_parent?: boolean;
+        /**
+         * Include child folders
+         * @example true
+         */
+        include_children?: boolean;
+        /**
+         * Page number (default: 1)
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page (default: 100, max: 500)
+         * @example 100
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1ExplorerFolderBrowsingResponse, GinH>({
+        path: `/api/v1/explorer/browse`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve files and directories within a specific folder path with pagination, sorting, and filtering support
+     *
+     * @tags Explorer
+     * @name V1ExplorerFilesList
+     * @summary Get files in folder
+     * @request GET:/api/v1/explorer/files
+     */
+    v1ExplorerFilesList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Folder path
+         * @example "/home/user/documents"
+         */
+        path?: string;
+        /**
+         * Page number (default: 1)
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page (default: 100, max: 500)
+         * @example 100
+         */
+        limit?: number;
+        /**
+         * Sort field: name, size, modified (default: name)
+         * @example "name"
+         */
+        sort_by?: string;
+        /**
+         * Sort order: asc, desc (default: asc)
+         * @example "asc"
+         */
+        sort_order?: string;
+        /**
+         * Filter by file type/extension
+         * @example "pdf"
+         */
+        file_type?: string;
+        /**
+         * Minimum file size in bytes
+         * @example 1024
+         */
+        min_size?: number;
+        /**
+         * Maximum file size in bytes
+         * @example 10485760
+         */
+        max_size?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1ExplorerGetFilesByFolderResponse, GinH>({
+        path: `/api/v1/explorer/files`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve files filtered by file extension with pagination support
+     *
+     * @tags Explorer
+     * @name V1ExplorerFilesByExtensionList
+     * @summary Get files by extension
+     * @request GET:/api/v1/explorer/files/by-extension
+     */
+    v1ExplorerFilesByExtensionList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * File extension to filter by
+         * @example "pdf"
+         */
+        extension: string;
+        /**
+         * Page number (default: 1)
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page (default: 100, max: 500)
+         * @example 100
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1ExplorerGetFilesByFolderResponse, GinH>({
+        path: `/api/v1/explorer/files/by-extension`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve files filtered by media type (MIME type) with pagination support
+     *
+     * @tags Explorer
+     * @name V1ExplorerFilesByMediaTypeList
+     * @summary Get files by media type
+     * @request GET:/api/v1/explorer/files/by-media-type
+     */
+    v1ExplorerFilesByMediaTypeList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Media type to filter by
+         * @example "image/jpeg"
+         */
+        media_type: string;
+        /**
+         * Page number (default: 1)
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page (default: 100, max: 500)
+         * @example 100
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1ExplorerGetFilesByFolderResponse, GinH>({
+        path: `/api/v1/explorer/files/by-media-type`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Enhanced file listing endpoint with database-level pagination, advanced filtering, and performance optimizations
+     *
+     * @tags Explorer
+     * @name V1ExplorerFilesPaginatedList
+     * @summary Get files with optimized pagination
+     * @request GET:/api/v1/explorer/files/paginated
+     */
+    v1ExplorerFilesPaginatedList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Folder path
+         * @example "/home/user/documents"
+         */
+        path?: string;
+        /**
+         * Page number (default: 1)
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page (default: 50, max: 200)
+         * @example 50
+         */
+        limit?: number;
+        /**
+         * Sort field: name, size, modified (default: name)
+         * @example "name"
+         */
+        sort_by?: string;
+        /**
+         * Sort order: asc, desc (default: asc)
+         * @example "asc"
+         */
+        sort_order?: string;
+        /**
+         * Filter by file type/extension
+         * @example "pdf"
+         */
+        file_type?: string;
         /**
          * Filter by MIME type
-         * @example "video/mp4"
+         * @example "application/pdf"
          */
         mime_type?: string;
-        /** Minimum file size in bytes */
+        /**
+         * Minimum file size in bytes
+         * @example 1024
+         */
         min_size?: number;
-        /** Maximum file size in bytes */
+        /**
+         * Maximum file size in bytes
+         * @example 10485760
+         */
         max_size?: number;
-        /**
-         * Page number
-         * @min 1
-         * @default 1
-         */
-        page?: number;
-        /**
-         * Items per page
-         * @min 1
-         * @max 1000
-         * @default 50
-         */
-        page_size?: number;
       },
       params: RequestParams = {},
     ) =>
-      this.request<FileListResponse, void | Error>({
-        path: `/volumes/${name}/files`,
+      this.request<InternalApiV1ExplorerPaginatedFileResponse, GinH>({
+        path: `/api/v1/explorer/files/paginated`,
         method: "GET",
         query: query,
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
-  };
-  reports = {
+
     /**
-     * @description Get all volumes with zero attachments (no containers mounting them). Useful for identifying volumes that can be cleaned up.
+     * @description Retrieve files that were modified within the specified number of days
      *
-     * @tags Reports
-     * @name GetOrphanedVolumesReport
-     * @summary Get orphaned volumes report
-     * @request GET:/reports/orphaned
-     * @secure
+     * @tags Explorer
+     * @name V1ExplorerFilesRecentList
+     * @summary Get recent files
+     * @request GET:/api/v1/explorer/files/recent
      */
-    getOrphanedVolumesReport: (
+    v1ExplorerFilesRecentList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Number of days to look back (default: 7)
+         * @example 7
+         */
+        days?: number;
+        /**
+         * Maximum number of files to return (default: 100, max: 500)
+         * @example 100
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1ExplorerGetFilesByFolderResponse, GinH>({
+        path: `/api/v1/explorer/files/recent`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Search for files by name pattern with fuzzy matching support
+     *
+     * @tags Explorer
+     * @name V1ExplorerFilesSearchList
+     * @summary Search files by name
+     * @request GET:/api/v1/explorer/files/search
+     */
+    v1ExplorerFilesSearchList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Search query/pattern
+         * @example "document"
+         */
+        query: string;
+        /**
+         * Maximum number of files to return (default: 100, max: 500)
+         * @example 100
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1ExplorerGetFilesByFolderResponse, GinH>({
+        path: `/api/v1/explorer/files/search`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve hierarchical folder structure with optional depth limit and directory-only filtering
+     *
+     * @tags Explorer
+     * @name V1ExplorerTreeList
+     * @summary Get folder tree
+     * @request GET:/api/v1/explorer/tree
+     */
+    v1ExplorerTreeList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Root path to start tree from
+         * @example "/home/user"
+         */
+        root_path?: string;
+        /**
+         * Maximum tree depth (default: 3)
+         * @example 3
+         */
+        max_depth?: number;
+        /**
+         * Include only directories (default: true)
+         * @example true
+         */
+        dirs_only?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1ExplorerGetFolderTreeResponse, GinH>({
+        path: `/api/v1/explorer/tree`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get immediate children of a folder path for lazy tree loading with pagination support
+     *
+     * @tags Explorer
+     * @name V1ExplorerTreeChildrenList
+     * @summary Get tree children
+     * @request GET:/api/v1/explorer/tree/children
+     */
+    v1ExplorerTreeChildrenList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Parent path (empty for root)
+         * @example "/home/user"
+         */
+        path?: string;
+        /**
+         * Include files in results
+         * @example false
+         */
+        include_files?: boolean;
+        /**
+         * Page number (default: 1)
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page (default: 100, max: 500)
+         * @example 100
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1ExplorerGetTreeChildrenResponse, GinH>({
+        path: `/api/v1/explorer/tree/children`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve files filtered by video/audio duration with pagination support
+     *
+     * @tags metadata
+     * @name V1MetadataFilesByDurationList
+     * @summary Get files by duration
+     * @request GET:/api/v1/metadata/files/by-duration
+     */
+    v1MetadataFilesByDurationList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Minimum duration in seconds
+         * @example 60
+         */
+        min_duration?: number;
+        /**
+         * Maximum duration in seconds
+         * @example 3600
+         */
+        max_duration?: number;
+        /**
+         * Page number (default: 1)
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page (default: 100, max: 500)
+         * @example 100
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1MetadataGetFilesByDurationResponse, GinH>({
+        path: `/api/v1/metadata/files/by-duration`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve files filtered by GPS coordinates with pagination support
+     *
+     * @tags metadata
+     * @name V1MetadataFilesByLocationList
+     * @summary Get files by location
+     * @request GET:/api/v1/metadata/files/by-location
+     */
+    v1MetadataFilesByLocationList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * GPS latitude
+         * @format float64
+         * @example 37.7749
+         */
+        latitude?: number;
+        /**
+         * GPS longitude
+         * @format float64
+         * @example -122.4194
+         */
+        longitude?: number;
+        /**
+         * Search radius in kilometers
+         * @format float64
+         * @example 10
+         */
+        radius?: number;
+        /**
+         * Filter files that have GPS data
+         * @example true
+         */
+        has_location?: boolean;
+        /**
+         * Page number (default: 1)
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page (default: 100, max: 500)
+         * @example 100
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1MetadataGetFilesByLocationResponse, GinH>({
+        path: `/api/v1/metadata/files/by-location`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve files filtered by media kind (video, image, audio, document, etc.) with pagination
+     *
+     * @tags Metadata
+     * @name V1MetadataFilesByMediaKindList
+     * @summary Get files by media kind
+     * @request GET:/api/v1/metadata/files/by-media-kind
+     */
+    v1MetadataFilesByMediaKindList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Media kind to filter by
+         * @example "video"
+         */
+        media_kind: string;
+        /**
+         * Page number (default: 1)
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page (default: 50, max: 200)
+         * @example 50
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GinH>({
+        path: `/api/v1/metadata/files/by-media-kind`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve files filtered by image/video resolution with pagination support
+     *
+     * @tags metadata
+     * @name V1MetadataFilesByResolutionList
+     * @summary Get files by resolution
+     * @request GET:/api/v1/metadata/files/by-resolution
+     */
+    v1MetadataFilesByResolutionList: (
+      query: {
+        /**
+         * Volume ID
+         * @example "vol_123"
+         */
+        volume_id: string;
+        /**
+         * Image/video width
+         * @example 1920
+         */
+        width?: number;
+        /**
+         * Image/video height
+         * @example 1080
+         */
+        height?: number;
+        /**
+         * Minimum width
+         * @example 1024
+         */
+        min_width?: number;
+        /**
+         * Maximum width
+         * @example 4096
+         */
+        max_width?: number;
+        /**
+         * Minimum height
+         * @example 768
+         */
+        min_height?: number;
+        /**
+         * Maximum height
+         * @example 2160
+         */
+        max_height?: number;
+        /**
+         * Page number (default: 1)
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page (default: 100, max: 500)
+         * @example 100
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1MetadataGetFilesByResolutionResponse, GinH>({
+        path: `/api/v1/metadata/files/by-resolution`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get available MIME types, media kinds, and extensions for filter dropdowns
+     *
+     * @tags metadata
+     * @name V1MetadataFiltersList
+     * @summary Get filter metadata
+     * @request GET:/api/v1/metadata/filters
+     */
+    v1MetadataFiltersList: (params: RequestParams = {}) =>
+      this.request<
+        FilterMetadataResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
+        path: `/api/v1/metadata/filters`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Search files across volumes with text search and metadata filters
+     *
+     * @tags Search
+     * @name V1SearchFilesList
+     * @summary Search files with advanced filters
+     * @request GET:/api/v1/search/files
+     */
+    v1SearchFilesList: (
       query?: {
-        /**
-         * Page number
-         * @min 1
-         * @default 1
-         */
+        /** Text search query */
+        q?: string;
+        /** Path prefix filter */
+        path?: string;
+        /** Glob pattern */
+        glob?: string;
+        /** Regex pattern */
+        regex?: string;
+        /** Media kind filter */
+        mediaKind?: string;
+        /** MIME type filters */
+        mime?: string[];
+        /** Minimum file size */
+        minSize?: number;
+        /** Maximum file size */
+        maxSize?: number;
+        /** Modified time from */
+        mtimeFrom?: string;
+        /** Modified time to */
+        mtimeTo?: string;
+        /** Min duration in ms */
+        durationFrom?: number;
+        /** Max duration in ms */
+        durationTo?: number;
+        /** Min width in pixels */
+        minWidth?: number;
+        /** Max width in pixels */
+        maxWidth?: number;
+        /** Min height in pixels */
+        minHeight?: number;
+        /** Max height in pixels */
+        maxHeight?: number;
+        /** Has GPS coordinates */
+        hasGps?: boolean;
+        /** Has subtitles */
+        hasSubs?: boolean;
+        /** Has computed hash */
+        hashPresent?: boolean;
+        /** Page number */
         page?: number;
-        /**
-         * Items per page
-         * @min 1
-         * @max 200
-         * @default 25
-         */
-        page_size?: number;
-        /**
-         * Sort field and direction
-         * @default "size_bytes:desc"
-         */
+        /** Items per page */
+        perPage?: number;
+        /** Sort field */
         sort?: string;
-        /**
-         * Include system/internal volumes
-         * @default false
-         */
-        system?: boolean;
+        /** Sort order */
+        order?: string;
       },
       params: RequestParams = {},
     ) =>
-      this.request<PagedOrphanedVolumes, Error>({
-        path: `/reports/orphaned`,
+      this.request<InternalApiV1SearchSearchFilesResponse, any>({
+        path: `/api/v1/search/files`,
         method: "GET",
         query: query,
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
-  };
-  scans = {
+
     /**
-     * @description Retrieve the status of an asynchronous scan using its scan ID. This complements the volume-based endpoint.
+     * @description Get a list of all saved searches
      *
-     * @tags Scanning
-     * @name GetScanStatusById
-     * @summary Get scan status by scan ID
-     * @request GET:/scans/{scanId}/status
-     * @secure
+     * @tags Search
+     * @name V1SearchSavedList
+     * @summary List saved searches
+     * @request GET:/api/v1/search/saved
      */
-    getScanStatusById: (scanId: string, params: RequestParams = {}) =>
-      this.request<ScanProgress, ErrorResponse>({
-        path: `/scans/${scanId}/status`,
+    v1SearchSavedList: (
+      query?: {
+        /** Page number */
+        page?: number;
+        /** Items per page */
+        perPage?: number;
+        /** Filter by tags */
+        tags?: string[];
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1SearchListSavedSearchesResponse, any>({
+        path: `/api/v1/search/saved`,
         method: "GET",
-        secure: true,
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Save a search query for later use
+     *
+     * @tags Search
+     * @name V1SearchSavedCreate
+     * @summary Create a saved search
+     * @request POST:/api/v1/search/saved
+     */
+    v1SearchSavedCreate: (
+      search: InternalApiV1SearchCreateSavedSearchRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1SearchSavedSearch, any>({
+        path: `/api/v1/search/saved`,
+        method: "POST",
+        body: search,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get details of a specific saved search
+     *
+     * @tags Search
+     * @name V1SearchSavedDetail
+     * @summary Get a saved search
+     * @request GET:/api/v1/search/saved/{id}
+     */
+    v1SearchSavedDetail: (id: number, params: RequestParams = {}) =>
+      this.request<InternalApiV1SearchSavedSearch, any>({
+        path: `/api/v1/search/saved/${id}`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Update an existing saved search
+     *
+     * @tags Search
+     * @name V1SearchSavedUpdate
+     * @summary Update a saved search
+     * @request PUT:/api/v1/search/saved/{id}
+     */
+    v1SearchSavedUpdate: (
+      id: number,
+      search: InternalApiV1SearchUpdateSavedSearchRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1SearchSavedSearch, any>({
+        path: `/api/v1/search/saved/${id}`,
+        method: "PUT",
+        body: search,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Delete a saved search by ID
+     *
+     * @tags Search
+     * @name V1SearchSavedDelete
+     * @summary Delete a saved search
+     * @request DELETE:/api/v1/search/saved/{id}
+     */
+    v1SearchSavedDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/search/saved/${id}`,
+        method: "DELETE",
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description Execute a saved search and return results
+     *
+     * @tags Search
+     * @name V1SearchSavedRunCreate
+     * @summary Run a saved search
+     * @request POST:/api/v1/search/saved/{id}/run
+     */
+    v1SearchSavedRunCreate: (id: number, params: RequestParams = {}) =>
+      this.request<InternalApiV1SearchSearchFilesResponse, any>({
+        path: `/api/v1/search/saved/${id}/run`,
+        method: "POST",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get intelligent search suggestions based on partial query
+     *
+     * @tags Search
+     * @name V1SearchSuggestionsList
+     * @summary Get search suggestions
+     * @request GET:/api/v1/search/suggestions
+     */
+    v1SearchSuggestionsList: (
+      query: {
+        /** Partial query string */
+        q: string;
+        /**
+         * Maximum suggestions to return (1-20)
+         * @default 10
+         */
+        limit?: number;
+        /** Suggestion type filter */
+        type?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1SearchSearchSuggestionsResponse, any>({
+        path: `/api/v1/search/suggestions`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
   };
   files = {
     /**
+     * @description Get existing preview or generate new preview for a specific file
+     *
+     * @tags previews
+     * @name PreviewList
+     * @summary Get or generate preview by file ID
+     * @request GET:/files/{file_id}/preview
+     */
+    previewList: (
+      fileId: number,
+      query?: {
+        /**
+         * Preview type
+         * @default "thumbnail"
+         */
+        type?: "thumbnail" | "poster" | "cover";
+        /**
+         * Preview size
+         * @default "medium"
+         */
+        size?: "small" | "medium" | "large";
+        /** Time offset for video thumbnails (e.g., '5.0' for 5 seconds) */
+        offset?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<File, GinH>({
+        path: `/files/${fileId}/preview`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
      * @description Get comprehensive information about a specific file including metadata
      *
-     * @tags Files
-     * @name GetFileDetails
+     * @tags files
+     * @name DetailsList
      * @summary Get file details
      * @request GET:/files/{id}/details
-     * @secure
      */
-    getFileDetails: (id: number, params: RequestParams = {}) =>
-      this.request<FileDetailsResponse, void | Error>({
+    detailsList: (id: number, params: RequestParams = {}) =>
+      this.request<
+        FileDetailsResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/files/${id}/details`,
         method: "GET",
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
@@ -2130,28 +2723,297 @@ export class Api<
     /**
      * @description Get enriched metadata for a specific file (media properties, EXIF, etc.)
      *
-     * @tags Files
-     * @name GetFileMetadata
+     * @tags files
+     * @name MetadataList
      * @summary Get file metadata
      * @request GET:/files/{id}/metadata
-     * @secure
      */
-    getFileMetadata: (
+    metadataList: (
       id: number,
       query?: {
-        /**
-         * Metadata kind filter
-         * @example "media"
-         */
+        /** Metadata kind filter */
         kind?: "media" | "exif" | "ffmpeg";
       },
       params: RequestParams = {},
     ) =>
-      this.request<FileMetadataResponse, void | Error>({
+      this.request<
+        FileMetadataResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/files/${id}/metadata`,
         method: "GET",
         query: query,
-        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  filesystem = {
+    /**
+     * @description Get information about filesystem indexing capabilities and configuration
+     *
+     * @tags filesystem
+     * @name CapabilitiesList
+     * @summary Get filesystem indexing capabilities
+     * @request GET:/filesystem/capabilities
+     */
+    capabilitiesList: (params: RequestParams = {}) =>
+      this.request<FilesystemCapabilitiesResponse, any>({
+        path: `/filesystem/capabilities`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  health = {
+    /**
+     * @description Get database connection status via store interface
+     *
+     * @tags health
+     * @name DatabaseList
+     * @summary Check database health
+     * @request GET:/health/database
+     */
+    databaseList: (params: RequestParams = {}) =>
+      this.request<GinH, ErrorResponse>({
+        path: `/health/database`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get Docker daemon connection status and version information
+     *
+     * @tags health
+     * @name DockerList
+     * @summary Check Docker health
+     * @request GET:/health/docker
+     */
+    dockerList: (params: RequestParams = {}) =>
+      this.request<DockerHealth, ErrorResponse>({
+        path: `/health/docker`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get Docker events service status and metrics
+     *
+     * @tags health
+     * @name EventsList
+     * @summary Check Docker events health
+     * @request GET:/health/events
+     */
+    eventsList: (params: RequestParams = {}) =>
+      this.request<GinH, ErrorResponse>({
+        path: `/health/events`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get scan scheduler status and metrics
+     *
+     * @tags health
+     * @name SchedulerList
+     * @summary Check scan scheduler health
+     * @request GET:/health/scheduler
+     */
+    schedulerList: (params: RequestParams = {}) =>
+      this.request<GinH, ErrorResponse>({
+        path: `/health/scheduler`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  media = {
+    /**
+     * @description Get information about available media enrichers and their capabilities
+     *
+     * @tags media
+     * @name CapabilitiesList
+     * @summary Get media enrichment capabilities
+     * @request GET:/media/capabilities
+     */
+    capabilitiesList: (params: RequestParams = {}) =>
+      this.request<MediaCapabilitiesResponse, any>({
+        path: `/media/capabilities`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  previews = {
+    /**
+     * @description Generate a new preview (thumbnail, poster, or cover) for a file
+     *
+     * @tags previews
+     * @name PreviewsCreate
+     * @summary Generate preview
+     * @request POST:/previews
+     */
+    previewsCreate: (
+      request: InternalApiV1PreviewsPreviewRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1PreviewsPreviewResponse, GinH>({
+        path: `/previews`,
+        method: "POST",
+        body: request,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Check the health status of the preview service and its dependencies
+     *
+     * @tags previews
+     * @name HealthList
+     * @summary Preview service health check
+     * @request GET:/previews/health
+     */
+    healthList: (params: RequestParams = {}) =>
+      this.request<GinH, any>({
+        path: `/previews/health`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get statistics about preview generation and usage
+     *
+     * @tags previews
+     * @name StatsList
+     * @summary Get preview statistics
+     * @request GET:/previews/stats
+     */
+    statsList: (params: RequestParams = {}) =>
+      this.request<GinH, GinH>({
+        path: `/previews/stats`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get list of supported media types for preview generation
+     *
+     * @tags previews
+     * @name SupportedList
+     * @summary Get supported media types
+     * @request GET:/previews/supported
+     */
+    supportedList: (params: RequestParams = {}) =>
+      this.request<GinH, any>({
+        path: `/previews/supported`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Serve a preview file by file ID
+     *
+     * @tags previews
+     * @name PreviewsDetail
+     * @summary Get preview file
+     * @request GET:/previews/{file_id}
+     */
+    previewsDetail: (
+      fileId: number,
+      query?: {
+        /** Preview type */
+        type?: "thumbnail" | "poster" | "cover";
+        /** Preview size */
+        size?: "small" | "medium" | "large";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<File, GinH>({
+        path: `/previews/${fileId}`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description Delete all previews for a specific file
+     *
+     * @tags previews
+     * @name PreviewsDelete
+     * @summary Delete preview
+     * @request DELETE:/previews/{file_id}
+     */
+    previewsDelete: (fileId: number, params: RequestParams = {}) =>
+      this.request<void, GinH>({
+        path: `/previews/${fileId}`,
+        method: "DELETE",
+        type: ContentType.Json,
+        ...params,
+      }),
+  };
+  reports = {
+    /**
+     * @description Get paginated list of volumes that are not attached to any containers
+     *
+     * @tags volumes
+     * @name OrphanedList
+     * @summary Get orphaned volumes
+     * @request GET:/reports/orphaned
+     */
+    orphanedList: (
+      query?: {
+        /** Page number for pagination (default: 1) */
+        page?: number;
+        /** Number of items per page (default: 25, max: 100) */
+        page_size?: number;
+        /** Sort field and direction (e.g., 'name:asc', 'size_bytes:desc'). Available fields: name, size_bytes, created_at */
+        sort?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        GithubComMantonxVolumevizInternalApiUtilsPagedResponse,
+        ErrorResponse
+      >({
+        path: `/reports/orphaned`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  scans = {
+    /**
+     * @description Get the status of a volume scan by volume ID or scan ID
+     *
+     * @tags scan
+     * @name StatusList
+     * @summary Get scan status
+     * @request GET:/scans/{id}/status
+     */
+    statusList: (id: string, params: RequestParams = {}) =>
+      this.request<GinH, GinH>({
+        path: `/scans/${id}/status`,
+        method: "GET",
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
@@ -2160,34 +3022,73 @@ export class Api<
     /**
      * @description Get daily aggregated statistics for a volume
      *
-     * @tags Stats
-     * @name GetDailyStats
+     * @tags stats
+     * @name DailyList
      * @summary Get daily stats
      * @request GET:/stats/daily
-     * @secure
      */
-    getDailyStats: (
+    dailyList: (
       query: {
-        /**
-         * Volume ID
-         * @example "media-library"
-         */
+        /** Volume ID */
         volume_id: string;
-        /**
-         * Number of days to retrieve
-         * @min 1
-         * @max 365
-         * @default 30
-         */
+        /** Number of days to retrieve */
         days?: number;
       },
       params: RequestParams = {},
     ) =>
-      this.request<any[], void | Error>({
+      this.request<VolumeStatsResponse, ErrorResponse>({
         path: `/stats/daily`,
         method: "GET",
         query: query,
-        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get statistics aggregated by media type (images, videos, documents, etc.)
+     *
+     * @tags stats
+     * @name MediaList
+     * @summary Get media statistics
+     * @request GET:/stats/media
+     */
+    mediaList: (
+      query: {
+        /** Volume ID */
+        volume_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, ErrorResponse>({
+        path: `/stats/media`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get detailed storage usage statistics including size distribution and growth trends
+     *
+     * @tags stats
+     * @name StorageList
+     * @summary Get storage statistics
+     * @request GET:/stats/storage
+     */
+    storageList: (
+      query: {
+        /** Volume ID */
+        volume_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, ErrorResponse>({
+        path: `/stats/storage`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
@@ -2195,270 +3096,476 @@ export class Api<
     /**
      * @description Get the largest folders in a volume by total size
      *
-     * @tags Stats
-     * @name GetTopFolders
+     * @tags stats
+     * @name TopFoldersList
      * @summary Get top folders by size
      * @request GET:/stats/top-folders
-     * @secure
      */
-    getTopFolders: (
+    topFoldersList: (
       query: {
-        /**
-         * Volume ID
-         * @example "media-library"
-         */
+        /** Volume ID */
         volume_id: string;
-        /**
-         * Number of folders to return
-         * @min 1
-         * @max 100
-         * @default 10
-         */
+        /** Number of folders to return */
         limit?: number;
       },
       params: RequestParams = {},
     ) =>
-      this.request<FolderSizeInfo[], void | Error>({
+      this.request<TopFoldersResponse, ErrorResponse>({
         path: `/stats/top-folders`,
         method: "GET",
         query: query,
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-  };
-  scanMethods = {
-    /**
-     * @description Get list of available volume scanning methods and their capabilities. Used to determine optimal scan method for different volume types.
-     *
-     * @tags Scanning
-     * @name GetScanMethods
-     * @summary Get available scan methods
-     * @request GET:/scan-methods
-     * @secure
-     */
-    getScanMethods: (params: RequestParams = {}) =>
-      this.request<
-        {
-          methods?: ScanMethod[];
-        },
-        any
-      >({
-        path: `/scan-methods`,
-        method: "GET",
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
   };
   system = {
     /**
-     * @description Get comprehensive system information including Docker and host details
+     * @description Get detailed system information including service version and Docker status
      *
-     * @tags System
-     * @name GetSystemInfo
+     * @tags system
+     * @name InfoList
      * @summary Get system information
      * @request GET:/system/info
-     * @secure
      */
-    getSystemInfo: (params: RequestParams = {}) =>
-      this.request<SystemInfo, any>({
+    infoList: (params: RequestParams = {}) =>
+      this.request<GinH, GinH>({
         path: `/system/info`,
         method: "GET",
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
 
     /**
-     * @description Get VolumeViz application version and build information
+     * @description Get API version information and available endpoints
      *
-     * @tags System
-     * @name GetSystemVersion
-     * @summary Get application version
+     * @tags system
+     * @name VersionList
+     * @summary Get API version
      * @request GET:/system/version
-     * @secure
      */
-    getSystemVersion: (params: RequestParams = {}) =>
-      this.request<VersionInfo, any>({
+    versionList: (params: RequestParams = {}) =>
+      this.request<GinH, any>({
         path: `/system/version`,
         method: "GET",
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
   };
-  database = {
+  trends = {
     /**
-     * @description Get comprehensive database health information including connection status, performance metrics, and resource usage for monitoring and alerting.
+     * @description Get aggregated trends summary for all volumes in the system
      *
-     * @tags Database
-     * @name GetDatabaseHealth
-     * @summary Get database health
-     * @request GET:/database/health
-     * @secure
+     * @tags trends
+     * @name SummaryList
+     * @summary Get all volumes trends summary
+     * @request GET:/trends/summary
      */
-    getDatabaseHealth: (params: RequestParams = {}) =>
-      this.request<DatabaseHealth, DatabaseHealth>({
-        path: `/database/health`,
+    summaryList: (params: RequestParams = {}) =>
+      this.request<GinH, GinH>({
+        path: `/trends/summary`,
         method: "GET",
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
 
     /**
-     * @description Test database connectivity and return detailed connection information
+     * @description Get trend analysis for a specific volume over a specified time period
      *
-     * @tags Database
-     * @name TestDatabaseConnection
-     * @summary Test database connection
-     * @request GET:/database/test-connection
-     * @secure
+     * @tags trends
+     * @name VolumesDetail
+     * @summary Get volume trends
+     * @request GET:/trends/volumes/{volumeId}
      */
-    testDatabaseConnection: (params: RequestParams = {}) =>
-      this.request<ConnectionTestResult, ConnectionTestResult>({
-        path: `/database/test-connection`,
+    volumesDetail: (
+      volumeId: string,
+      query?: {
+        /** Number of days to analyze (default: 30, max: 365) */
+        days?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GinH>({
+        path: `/trends/volumes/${volumeId}`,
         method: "GET",
-        secure: true,
+        query: query,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
 
     /**
-     * @description Get comprehensive database statistics including volume counts, scan job metrics, and performance data for operational monitoring.
+     * @description Get 30-day trend summary for a volume
      *
-     * @tags Database
-     * @name GetDatabaseStats
-     * @summary Get database statistics
-     * @request GET:/database/stats
-     * @secure
+     * @tags trends
+     * @name Volumes30DayList
+     * @summary Get 30-day trend
+     * @request GET:/trends/volumes/{volumeId}/30day
      */
-    getDatabaseStats: (params: RequestParams = {}) =>
-      this.request<DatabaseStats, ErrorResponse>({
-        path: `/database/stats`,
+    volumes30DayList: (volumeId: string, params: RequestParams = {}) =>
+      this.request<GinH, GinH>({
+        path: `/trends/volumes/${volumeId}/30day`,
         method: "GET",
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
 
     /**
-     * @description Get detailed information about database migrations including applied, pending, and completion status for deployment monitoring.
+     * @description Get 7-day trend summary for a volume
      *
-     * @tags Database
-     * @name GetMigrationStatus
-     * @summary Get migration status
-     * @request GET:/database/migrations/status
-     * @secure
+     * @tags trends
+     * @name Volumes7DayList
+     * @summary Get 7-day trend
+     * @request GET:/trends/volumes/{volumeId}/7day
      */
-    getMigrationStatus: (params: RequestParams = {}) =>
-      this.request<MigrationStatus, ErrorResponse>({
-        path: `/database/migrations/status`,
+    volumes7DayList: (volumeId: string, params: RequestParams = {}) =>
+      this.request<GinH, GinH>({
+        path: `/trends/volumes/${volumeId}/7day`,
         method: "GET",
-        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
 
     /**
-     * @description Get complete history of applied database migrations with execution details
+     * @description Get growth deltas (changes) for a volume over time
      *
-     * @tags Database
-     * @name GetMigrationHistory
-     * @summary Get migration history
-     * @request GET:/database/migrations/history
-     * @secure
+     * @tags trends
+     * @name VolumesDeltasList
+     * @summary Get volume growth deltas
+     * @request GET:/trends/volumes/{volumeId}/deltas
      */
-    getMigrationHistory: (params: RequestParams = {}) =>
-      this.request<MigrationHistory[], ErrorResponse>({
-        path: `/database/migrations/history`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Apply all pending database migrations. Use with caution in production environments. This endpoint should typically be called during deployment processes.
-     *
-     * @tags Database
-     * @name ApplyPendingMigrations
-     * @summary Apply pending migrations
-     * @request POST:/database/migrations/apply
-     * @secure
-     */
-    applyPendingMigrations: (params: RequestParams = {}) =>
-      this.request<MigrationStatus, ErrorResponse>({
-        path: `/database/migrations/apply`,
-        method: "POST",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Rollback a specific database migration by version. Use with extreme caution in production environments as this can result in data loss.
-     *
-     * @tags Database
-     * @name RollbackMigration
-     * @summary Rollback migration
-     * @request POST:/database/migrations/{version}/rollback
-     * @secure
-     */
-    rollbackMigration: (version: string, params: RequestParams = {}) =>
-      this.request<MigrationStatus, ErrorResponse>({
-        path: `/database/migrations/${version}/rollback`,
-        method: "POST",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Get storage usage information for all database tables
-     *
-     * @tags Database
-     * @name GetTableSizes
-     * @summary Get table sizes
-     * @request GET:/database/performance/table-sizes
-     * @secure
-     */
-    getTableSizes: (params: RequestParams = {}) =>
-      this.request<TableSizeInfo[], ErrorResponse>({
-        path: `/database/performance/table-sizes`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Get information about slow-running database queries for performance analysis. Requires pg_stat_statements extension to be enabled.
-     *
-     * @tags Database
-     * @name GetSlowQueries
-     * @summary Get slow queries
-     * @request GET:/database/performance/slow-queries
-     * @secure
-     */
-    getSlowQueries: (
+    volumesDeltasList: (
+      volumeId: string,
       query?: {
         /**
-         * Maximum number of queries to return
-         * @min 1
-         * @max 100
-         * @default 10
+         * Delta type (daily, weekly)
+         * @default "daily"
          */
+        type?: string;
+        /** Number of deltas to return (default: 30) */
         limit?: number;
       },
       params: RequestParams = {},
     ) =>
-      this.request<SlowQueryInfo[], ErrorResponse>({
-        path: `/database/performance/slow-queries`,
+      this.request<GinH, GinH>({
+        path: `/trends/volumes/${volumeId}/deltas`,
         method: "GET",
         query: query,
-        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get step series data for a volume suitable for time-series charting
+     *
+     * @tags trends
+     * @name VolumesSeriesList
+     * @summary Get volume step series
+     * @request GET:/trends/volumes/{volumeId}/series
+     */
+    volumesSeriesList: (
+      volumeId: string,
+      query?: {
+        /**
+         * Series type (daily, weekly)
+         * @default "daily"
+         */
+        type?: string;
+        /** Number of days to include (default: 30) */
+        days?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GinH>({
+        path: `/trends/volumes/${volumeId}/series`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Calculate the trend slope for a volume to determine growth rate
+     *
+     * @tags trends
+     * @name VolumesSlopeList
+     * @summary Get volume trend slope
+     * @request GET:/trends/volumes/{volumeId}/slope
+     */
+    volumesSlopeList: (
+      volumeId: string,
+      query?: {
+        /**
+         * Trend type (daily, weekly)
+         * @default "daily"
+         */
+        type?: string;
+        /** Number of days to analyze (default: 30) */
+        days?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, GinH>({
+        path: `/trends/volumes/${volumeId}/slope`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  volumes = {
+    /**
+     * @description Get paginated list of Docker volumes with filtering, sorting, and search capabilities
+     *
+     * @tags volumes
+     * @name VolumesList
+     * @summary List Docker volumes
+     * @request GET:/volumes
+     */
+    volumesList: (
+      query?: {
+        /** Page number for pagination (default: 1) */
+        page?: number;
+        /** Number of items per page (default: 25, max: 100) */
+        page_size?: number;
+        /** Sort field and direction (e.g., 'name:asc', 'created_at:desc'). Available fields: name, driver, created_at, size_bytes */
+        sort?: string;
+        /** Search query to filter volumes by name */
+        q?: string;
+        /** Filter by volume driver */
+        driver?: "local" | "nfs" | "cifs" | "overlay2";
+        /** Filter orphaned volumes (not attached to any container) */
+        orphaned?: boolean;
+        /** Include system volumes (default: false) */
+        system?: boolean;
+        /** Filter volumes created after date (RFC3339 format) */
+        created_after?: string;
+        /** Filter volumes created before date (RFC3339 format) */
+        created_before?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        GithubComMantonxVolumevizInternalApiUtilsPagedResponse,
+        ErrorResponse
+      >({
+        path: `/volumes`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Scan multiple volumes at once, with support for async processing
+     *
+     * @tags scan
+     * @name BulkScanCreate
+     * @summary Bulk scan volumes
+     * @request POST:/volumes/bulk-scan
+     */
+    bulkScanCreate: (request: BulkScanRequest, params: RequestParams = {}) =>
+      this.request<GinH, GinH>({
+        path: `/volumes/bulk-scan`,
+        method: "POST",
+        body: request,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Manually trigger filesystem indexing for a specific volume
+     *
+     * @tags filesystem
+     * @name FilesystemIndexCreate
+     * @summary Trigger filesystem indexing
+     * @request POST:/volumes/{id}/filesystem/index
+     */
+    filesystemIndexCreate: (
+      id: string,
+      request: GithubComMantonxVolumevizInternalModelsFilesystemIndexingRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<FilesystemIndexingResponse, ErrorResponse>({
+        path: `/volumes/${id}/filesystem/index`,
+        method: "POST",
+        body: request,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Manually trigger media metadata enrichment for a specific volume
+     *
+     * @tags media
+     * @name MediaEnrichCreate
+     * @summary Trigger media enrichment
+     * @request POST:/volumes/{id}/media/enrich
+     */
+    mediaEnrichCreate: (id: string, params: RequestParams = {}) =>
+      this.request<MediaEnrichmentResponse, ErrorResponse>({
+        path: `/volumes/${id}/media/enrich`,
+        method: "POST",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get the current status of media enrichment for a volume
+     *
+     * @tags media
+     * @name MediaStatusList
+     * @summary Get media enrichment status
+     * @request GET:/volumes/{id}/media/status
+     */
+    mediaStatusList: (id: string, params: RequestParams = {}) =>
+      this.request<MediaEnrichmentStatusResponse, ErrorResponse>({
+        path: `/volumes/${id}/media/status`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get the status of a volume scan by volume ID or scan ID
+     *
+     * @tags scan
+     * @name ScanStatusList
+     * @summary Get scan status
+     * @request GET:/volumes/{id}/scan/status
+     */
+    scanStatusList: (id: string, params: RequestParams = {}) =>
+      this.request<GinH, GinH>({
+        path: `/volumes/${id}/scan/status`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get the current size and statistics of a Docker volume
+     *
+     * @tags scan
+     * @name SizeList
+     * @summary Get volume size
+     * @request GET:/volumes/{id}/size
+     */
+    sizeList: (id: string, params: RequestParams = {}) =>
+      this.request<ScanResponse, ErrorResponse>({
+        path: `/volumes/${id}/size`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Clear cache and recalculate volume size, optionally async
+     *
+     * @tags scan
+     * @name SizeRefreshCreate
+     * @summary Refresh volume size
+     * @request POST:/volumes/{id}/size/refresh
+     */
+    sizeRefreshCreate: (
+      id: string,
+      request: RefreshRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<ScanResponse, ErrorResponse>({
+        path: `/volumes/${id}/size/refresh`,
+        method: "POST",
+        body: request,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get detailed information about a specific Docker volume by name
+     *
+     * @tags volumes
+     * @name VolumesDetail
+     * @summary Get volume details
+     * @request GET:/volumes/{name}
+     */
+    volumesDetail: (name: string, params: RequestParams = {}) =>
+      this.request<VolumeV1, ErrorResponse>({
+        path: `/volumes/${name}`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get list of containers that have the specified volume mounted
+     *
+     * @tags volumes
+     * @name AttachmentsList
+     * @summary Get volume attachments
+     * @request GET:/volumes/{name}/attachments
+     */
+    attachmentsList: (name: string, params: RequestParams = {}) =>
+      this.request<
+        GithubComMantonxVolumevizInternalApiUtilsPagedResponse,
+        ErrorResponse
+      >({
+        path: `/volumes/${name}/attachments`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get detailed statistics and usage information for a specific volume
+     *
+     * @tags volumes
+     * @name StatsList
+     * @summary Get volume statistics
+     * @request GET:/volumes/{name}/stats
+     */
+    statsList: (name: string, params: RequestParams = {}) =>
+      this.request<VolumeStatsResponse, ErrorResponse>({
+        path: `/volumes/${name}/stats`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get the current status of filesystem indexing for a volume
+     *
+     * @tags filesystem
+     * @name FilesystemStatusList
+     * @summary Get filesystem indexing status
+     * @request GET:/volumes/{volumeId}/filesystem/status
+     */
+    filesystemStatusList: (
+      id: string,
+      volumeId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<FilesystemIndexingResponse, ErrorResponse>({
+        path: `/volumes/${volumeId}/filesystem/status`,
+        method: "GET",
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

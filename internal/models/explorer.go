@@ -108,3 +108,31 @@ type FileMetadataResponse struct {
 	Enriched bool                   `json:"enriched" example:"true"`
 	UpdatedAt time.Time             `json:"updated_at"`
 } // @name FileMetadataResponse
+
+// FilterMetadataResponse represents available filter options
+type FilterMetadataResponse struct {
+	MimeTypes  []MimeTypeOption  `json:"mime_types"`
+	MediaKinds []MediaKindOption `json:"media_kinds"`
+	Extensions []ExtensionOption `json:"extensions"`
+} // @name FilterMetadataResponse
+
+// MimeTypeOption represents a MIME type option with metadata
+type MimeTypeOption struct {
+	Value     string `json:"value" example:"video/mp4"`
+	Label     string `json:"label" example:"MP4 Video"`
+	FileCount int    `json:"file_count" example:"1250"`
+} // @name MimeTypeOption
+
+// MediaKindOption represents a media kind option with metadata
+type MediaKindOption struct {
+	Value     string `json:"value" example:"video"`
+	Label     string `json:"label" example:"Video"`
+	FileCount int    `json:"file_count" example:"5000"`
+} // @name MediaKindOption
+
+// ExtensionOption represents a file extension option with metadata
+type ExtensionOption struct {
+	Value     string `json:"value" example:"mp4"`
+	Label     string `json:"label" example:"MP4 Files"`
+	FileCount int    `json:"file_count" example:"1250"`
+} // @name ExtensionOption

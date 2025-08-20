@@ -9,14 +9,14 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import {
-    AlertTriangleIcon,
-    BellIcon,
-    CheckCircleIcon,
-    ClockIcon,
-    FilterIcon,
-    InfoIcon,
-    SearchIcon,
-    XCircleIcon,
+  AlertTriangleIcon,
+  BellIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  FilterIcon,
+  InfoIcon,
+  SearchIcon,
+  XCircleIcon,
 } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
@@ -141,22 +141,27 @@ const formatTimestamp = (timestamp: string): string => {
   }
 };
 
-export const AlertCenter: React.FC<AlertCenterProps> = ({
-  className = '',
-}) => {
+export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSeverity, setSelectedSeverity] = useState<Alert['severity'] | 'all'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<Alert['status'] | 'all'>('all');
+  const [selectedSeverity, setSelectedSeverity] = useState<
+    Alert['severity'] | 'all'
+  >('all');
+  const [selectedStatus, setSelectedStatus] = useState<Alert['status'] | 'all'>(
+    'all',
+  );
 
   const filteredAlerts = useMemo(() => {
-    return mockAlerts.filter(alert => {
-      const matchesSearch = searchQuery === '' ||
+    return mockAlerts.filter((alert) => {
+      const matchesSearch =
+        searchQuery === '' ||
         alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         alert.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         alert.source.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesSeverity = selectedSeverity === 'all' || alert.severity === selectedSeverity;
-      const matchesStatus = selectedStatus === 'all' || alert.status === selectedStatus;
+      const matchesSeverity =
+        selectedSeverity === 'all' || alert.severity === selectedSeverity;
+      const matchesStatus =
+        selectedStatus === 'all' || alert.status === selectedStatus;
 
       return matchesSearch && matchesSeverity && matchesStatus;
     });
@@ -165,9 +170,9 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({
   const alertCounts = useMemo(() => {
     return {
       total: mockAlerts.length,
-      active: mockAlerts.filter(a => a.status === 'active').length,
-      critical: mockAlerts.filter(a => a.severity === 'critical').length,
-      warning: mockAlerts.filter(a => a.severity === 'warning').length,
+      active: mockAlerts.filter((a) => a.status === 'active').length,
+      critical: mockAlerts.filter((a) => a.severity === 'critical').length,
+      warning: mockAlerts.filter((a) => a.severity === 'warning').length,
     };
   }, []);
 
@@ -264,7 +269,9 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({
             <FilterIcon className="w-4 h-4 text-gray-400" />
             <select
               value={selectedSeverity}
-              onChange={(e) => setSelectedSeverity(e.target.value as Alert['severity'] | 'all')}
+              onChange={(e) =>
+                setSelectedSeverity(e.target.value as Alert['severity'] | 'all')
+              }
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="all">All Severities</option>
@@ -278,7 +285,9 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({
           <div>
             <select
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value as Alert['status'] | 'all')}
+              onChange={(e) =>
+                setSelectedStatus(e.target.value as Alert['status'] | 'all')
+              }
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="all">All Statuses</option>
@@ -300,7 +309,10 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({
             </div>
           ) : (
             filteredAlerts.map((alert) => (
-              <div key={alert.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800">
+              <div
+                key={alert.id}
+                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
                 <div className="flex items-start space-x-3">
                   {/* Severity Icon */}
                   <div className="flex-shrink-0 pt-1">
@@ -329,7 +341,9 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({
                       <div className="flex items-center space-x-4 text-xs text-gray-500">
                         <span>{formatTimestamp(alert.timestamp)}</span>
                         <span>Source: {alert.source}</span>
-                        {alert.volumeId && <span>Volume: {alert.volumeId}</span>}
+                        {alert.volumeId && (
+                          <span>Volume: {alert.volumeId}</span>
+                        )}
                       </div>
 
                       {/* Action Buttons */}

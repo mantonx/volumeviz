@@ -20,7 +20,14 @@ func NewHandler(dockerService interfaces.DockerService) *Handler {
 }
 
 // GetSystemInfo returns system information
-// GET /api/v1/system/info
+// @Summary Get system information
+// @Description Get detailed system information including service version and Docker status
+// @Tags system
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "System information"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /system/info [get]
 func (h *Handler) GetSystemInfo(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -47,7 +54,13 @@ func (h *Handler) GetSystemInfo(c *gin.Context) {
 }
 
 // GetVersion returns API version information
-// GET /api/v1/system/version
+// @Summary Get API version
+// @Description Get API version information and available endpoints
+// @Tags system
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "API version information"
+// @Router /system/version [get]
 func (h *Handler) GetVersion(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"api_version": "v1",

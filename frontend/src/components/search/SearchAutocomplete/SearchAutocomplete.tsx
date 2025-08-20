@@ -1,6 +1,6 @@
 /**
  * SearchAutocomplete Component
- * 
+ *
  * Intelligent search suggestions with autocomplete functionality
  */
 
@@ -21,7 +21,7 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
   value,
   onChange,
   onSuggestionSelect,
-  placeholder = "Search files, folders, and metadata...",
+  placeholder = 'Search files, folders, and metadata...',
   className = '',
   disabled = false,
 }) => {
@@ -29,11 +29,11 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   // Debounce search input to avoid excessive API calls
   const debouncedValue = useDebounce(value, 300);
 
@@ -50,7 +50,10 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
   // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -66,7 +69,7 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
         q: query,
         limit: 8,
       });
-      
+
       // Add null checks for response and suggestions
       const suggestions = response?.suggestions || [];
       setSuggestions(suggestions);
@@ -81,83 +84,106 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
     }
   }, []);
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    setSelectedIndex(-1);
-  }, [onChange]);
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange(e.target.value);
+      setSelectedIndex(-1);
+    },
+    [onChange],
+  );
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!isOpen || suggestions.length === 0) return;
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!isOpen || suggestions.length === 0) return;
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex(prev => 
-          prev < suggestions.length - 1 ? prev + 1 : 0
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex(prev => 
-          prev > 0 ? prev - 1 : suggestions.length - 1
-        );
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
-          selectSuggestion(suggestions[selectedIndex]);
-        }
-        break;
-      case 'Escape':
-        setIsOpen(false);
-        setSelectedIndex(-1);
-        break;
-    }
-  }, [isOpen, suggestions, selectedIndex]);
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev < suggestions.length - 1 ? prev + 1 : 0,
+          );
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev > 0 ? prev - 1 : suggestions.length - 1,
+          );
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+            selectSuggestion(suggestions[selectedIndex]);
+          }
+          break;
+        case 'Escape':
+          setIsOpen(false);
+          setSelectedIndex(-1);
+          break;
+      }
+    },
+    [isOpen, suggestions, selectedIndex],
+  );
 
-  const selectSuggestion = useCallback((suggestion: SearchSuggestion) => {
-    let newValue = suggestion.text;
-    
-    // Smart insertion based on suggestion type
-    if (suggestion.type === 'filter') {
-      // For filters, append to existing query
-      newValue = value.trim() ? `${value.trim()} ${suggestion.text}` : suggestion.text;
-    } else if (suggestion.type === 'extension') {
-      // For extensions, replace or append
-      newValue = suggestion.text;
-    }
-    
-    onChange(newValue);
-    setIsOpen(false);
-    setSelectedIndex(-1);
-    
-    if (onSuggestionSelect) {
-      onSuggestionSelect(suggestion);
-    }
-    
-    // Focus back to input
-    inputRef.current?.focus();
-  }, [value, onChange, onSuggestionSelect]);
+  const selectSuggestion = useCallback(
+    (suggestion: SearchSuggestion) => {
+      let newValue = suggestion.text;
+
+      // Smart insertion based on suggestion type
+      if (suggestion.type === 'filter') {
+        // For filters, append to existing query
+        newValue = value.trim()
+          ? `${value.trim()} ${suggestion.text}`
+          : suggestion.text;
+      } else if (suggestion.type === 'extension') {
+        // For extensions, replace or append
+        newValue = suggestion.text;
+      }
+
+      onChange(newValue);
+      setIsOpen(false);
+      setSelectedIndex(-1);
+
+      if (onSuggestionSelect) {
+        onSuggestionSelect(suggestion);
+      }
+
+      // Focus back to input
+      inputRef.current?.focus();
+    },
+    [value, onChange, onSuggestionSelect],
+  );
 
   const getSuggestionIcon = (type: string) => {
     switch (type) {
-      case 'filename': return '📄';
-      case 'extension': return '🏷️';
-      case 'path': return '📁';
-      case 'filter': return '🔍';
-      case 'recent': return '🕒';
-      default: return '💡';
+      case 'filename':
+        return '📄';
+      case 'extension':
+        return '🏷️';
+      case 'path':
+        return '📁';
+      case 'filter':
+        return '🔍';
+      case 'recent':
+        return '🕒';
+      default:
+        return '💡';
     }
   };
 
   const getSuggestionTypeLabel = (type: string) => {
     switch (type) {
-      case 'filename': return 'File';
-      case 'extension': return 'Extension';
-      case 'path': return 'Path';
-      case 'filter': return 'Filter';
-      case 'recent': return 'Recent';
-      default: return 'Suggestion';
+      case 'filename':
+        return 'File';
+      case 'extension':
+        return 'Extension';
+      case 'path':
+        return 'Path';
+      case 'filter':
+        return 'Filter';
+      case 'recent':
+        return 'Recent';
+      default:
+        return 'Suggestion';
     }
   };
 
@@ -180,7 +206,7 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
           disabled={disabled}
           className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white pr-10"
         />
-        
+
         {/* Loading indicator */}
         {loading && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -219,7 +245,7 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     {suggestion.count && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -234,12 +260,15 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
               </li>
             ))}
           </ul>
-          
+
           {/* Keyboard hints */}
           <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
               <span>Use ↑↓ to navigate, Enter to select, Esc to close</span>
-              <span>{suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}</span>
+              <span>
+                {suggestions.length} suggestion
+                {suggestions.length !== 1 ? 's' : ''}
+              </span>
             </div>
           </div>
         </div>

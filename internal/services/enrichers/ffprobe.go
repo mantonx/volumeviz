@@ -12,14 +12,14 @@ import (
 
 // FFprobeEnricher extracts metadata from audio and video files using ffprobe
 type FFprobeEnricher struct {
-	config     EnricherConfig
+	config      EnricherConfig
 	ffprobePath string
 }
 
 // NewFFprobeEnricher creates a new FFprobe enricher
 func NewFFprobeEnricher(config EnricherConfig) *FFprobeEnricher {
 	return &FFprobeEnricher{
-		config:     config,
+		config:      config,
 		ffprobePath: config.FFprobePath,
 	}
 }
@@ -34,10 +34,10 @@ func (f *FFprobeEnricher) CanEnrich(fileInfo FileInfo) bool {
 	if !f.config.FFprobeEnabled {
 		return false
 	}
-	
+
 	// Check if it's a video or audio file
-	return strings.HasPrefix(fileInfo.MimeType, "video/") || 
-	       strings.HasPrefix(fileInfo.MimeType, "audio/")
+	return strings.HasPrefix(fileInfo.MimeType, "video/") ||
+		strings.HasPrefix(fileInfo.MimeType, "audio/")
 }
 
 // IsAvailable checks if ffprobe is available on the system
@@ -45,7 +45,7 @@ func (f *FFprobeEnricher) IsAvailable() bool {
 	if !f.config.FFprobeEnabled {
 		return false
 	}
-	
+
 	_, err := exec.LookPath(f.ffprobePath)
 	return err == nil
 }
@@ -55,9 +55,9 @@ func (f *FFprobeEnricher) GetCapabilities() EnricherCapabilities {
 	return EnricherCapabilities{
 		Name: "ffprobe",
 		SupportedMimes: []string{
-			"video/mp4", "video/avi", "video/mkv", "video/mov", "video/wmv", 
+			"video/mp4", "video/avi", "video/mkv", "video/mov", "video/wmv",
 			"video/flv", "video/webm", "video/m4v", "video/3gp", "video/ts",
-			"audio/mp3", "audio/flac", "audio/wav", "audio/aac", "audio/ogg", 
+			"audio/mp3", "audio/flac", "audio/wav", "audio/aac", "audio/ogg",
 			"audio/m4a", "audio/wma", "audio/opus", "audio/mp2",
 		},
 		ExtractedFields: []string{
@@ -67,9 +67,9 @@ func (f *FFprobeEnricher) GetCapabilities() EnricherCapabilities {
 			"video_codec", "video_profile", "video_level",
 		},
 		RequiredTools: []string{"ffprobe"},
-		Performance: "medium",
-		Accuracy: "high",
-		Features: []string{"detailed_metadata", "comprehensive_formats", "hdr_detection"},
+		Performance:   "medium",
+		Accuracy:      "high",
+		Features:      []string{"detailed_metadata", "comprehensive_formats", "hdr_detection"},
 	}
 }
 
@@ -78,25 +78,25 @@ func (f *FFprobeEnricher) Enrich(ctx context.Context, fileInfo FileInfo) (*Media
 	// Create context with timeout
 	timeoutCtx, cancel := context.WithTimeout(ctx, f.config.FFprobeTimeout)
 	defer cancel()
-	
+
 	// Run ffprobe to get JSON metadata
 	probeData, err := f.runFFprobe(timeoutCtx, fileInfo.Path)
 	if err != nil {
 		return nil, fmt.Errorf("ffprobe failed: %w", err)
 	}
-	
+
 	// Parse and convert to our metadata format
 	metadata, err := f.parseFFprobeOutput(probeData, fileInfo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse ffprobe output: %w", err)
 	}
-	
+
 	return metadata, nil
 }
 
 // FFprobeOutput represents the structure of ffprobe JSON output
 type FFprobeOutput struct {
-	Format  FFprobeFormat  `json:"format"`
+	Format  FFprobeFormat   `json:"format"`
 	Streams []FFprobeStream `json:"streams"`
 }
 
@@ -123,7 +123,7 @@ type FFprobeStream struct {
 	Duration       string            `json:"duration,omitempty"`
 	BitRate        string            `json:"bit_rate,omitempty"`
 	Profile        string            `json:"profile,omitempty"`
-	Level          string            `json:"level,omitempty"`
+	Level          interface{}       `json:"level,omitempty"`
 	ColorPrimaries string            `json:"color_primaries,omitempty"`
 	ColorTransfer  string            `json:"color_transfer,omitempty"`
 	ColorSpace     string            `json:"color_space,omitempty"`
@@ -148,22 +148,27 @@ func (f *FFprobeEnricher) runFFprobe(ctx context.Context, filePath string) (*FFp
 		"-hide_banner",
 		filePath,
 	}
-	
+
 	cmd := exec.CommandContext(ctx, f.ffprobePath, args...)
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			return nil, fmt.Errorf("ffprobe timeout for file %s", filepath.Base(filePath))
 		}
-		return nil, fmt.Errorf("ffprobe execution failed: %w", err)
+		// Get stderr for more detailed error information
+		if exitError, ok := err.(*exec.ExitError); ok {
+			return nil, fmt.Errorf("ffprobe execution failed for file %s: %s (stderr: %s)",
+				filepath.Base(filePath), err.Error(), string(exitError.Stderr))
+		}
+		return nil, fmt.Errorf("ffprobe execution failed for file %s: %w", filepath.Base(filePath), err)
 	}
-	
+
 	var probeData FFprobeOutput
 	if err := json.Unmarshal(output, &probeData); err != nil {
 		return nil, fmt.Errorf("failed to parse ffprobe JSON: %w", err)
 	}
-	
+
 	return &probeData, nil
 }
 
@@ -172,11 +177,11 @@ func (f *FFprobeEnricher) parseFFprobeOutput(probeData *FFprobeOutput, fileInfo 
 	metadata := &MediaMetadata{
 		RawMetadata: make(map[string]interface{}),
 	}
-	
+
 	// Determine kind based on streams
 	hasVideo := false
 	hasAudio := false
-	
+
 	for _, stream := range probeData.Streams {
 		if stream.CodecType == "video" {
 			hasVideo = true
@@ -184,7 +189,7 @@ func (f *FFprobeEnricher) parseFFprobeOutput(probeData *FFprobeOutput, fileInfo 
 			hasAudio = true
 		}
 	}
-	
+
 	// Set kind based on what we found
 	if hasVideo {
 		metadata.Kind = EnrichmentKindVideo
@@ -193,18 +198,18 @@ func (f *FFprobeEnricher) parseFFprobeOutput(probeData *FFprobeOutput, fileInfo 
 	} else {
 		return nil, fmt.Errorf("no recognizable audio or video streams found")
 	}
-	
+
 	// Parse format-level metadata
 	if duration, err := strconv.ParseFloat(probeData.Format.Duration, 64); err == nil {
 		durationMs := int64(duration * 1000)
 		metadata.DurationMs = &durationMs
 	}
-	
+
 	if bitrate, err := strconv.ParseInt(probeData.Format.BitRate, 10, 32); err == nil {
 		bitrateKbps := int32(bitrate / 1000)
 		metadata.BitrateKbps = &bitrateKbps
 	}
-	
+
 	// Process streams
 	for _, stream := range probeData.Streams {
 		switch stream.CodecType {
@@ -214,11 +219,11 @@ func (f *FFprobeEnricher) parseFFprobeOutput(probeData *FFprobeOutput, fileInfo 
 			f.parseAudioStream(stream, metadata)
 		}
 	}
-	
+
 	// Store raw metadata for advanced queries
 	metadata.RawMetadata["ffprobe_format"] = probeData.Format
 	metadata.RawMetadata["ffprobe_streams"] = probeData.Streams
-	
+
 	return metadata, nil
 }
 
@@ -233,7 +238,7 @@ func (f *FFprobeEnricher) parseVideoStream(stream FFprobeStream, metadata *Media
 		height := int32(stream.Height)
 		metadata.Height = &height
 	}
-	
+
 	// Frame rate - try avg_frame_rate first, then r_frame_rate
 	fps := f.parseFrameRate(stream.AvgFrameRate)
 	if fps == 0 {
@@ -242,7 +247,7 @@ func (f *FFprobeEnricher) parseVideoStream(stream FFprobeStream, metadata *Media
 	if fps > 0 {
 		metadata.FPS = &fps
 	}
-	
+
 	// Codec information
 	if stream.CodecName != "" {
 		metadata.VideoCodec = &stream.CodecName
@@ -250,11 +255,11 @@ func (f *FFprobeEnricher) parseVideoStream(stream FFprobeStream, metadata *Media
 	if stream.Profile != "" {
 		metadata.VideoProfile = &stream.Profile
 	}
-	if stream.Level != "" {
-		levelStr := fmt.Sprintf("%s", stream.Level)
+	if stream.Level != nil && stream.Level != "" {
+		levelStr := fmt.Sprintf("%v", stream.Level)
 		metadata.VideoLevel = &levelStr
 	}
-	
+
 	// Color information
 	if stream.ColorPrimaries != "" {
 		metadata.ColorPrimaries = &stream.ColorPrimaries
@@ -262,7 +267,7 @@ func (f *FFprobeEnricher) parseVideoStream(stream FFprobeStream, metadata *Media
 	if stream.ColorTransfer != "" {
 		metadata.TransferCharacteristic = &stream.ColorTransfer
 	}
-	
+
 	// HDR Detection
 	hdrFormat := f.detectHDRFormat(stream)
 	if hdrFormat != HDRFormatNone {
@@ -277,13 +282,13 @@ func (f *FFprobeEnricher) parseAudioStream(stream FFprobeStream, metadata *Media
 		channels := int32(stream.Channels)
 		metadata.AudioChannels = &channels
 	}
-	
+
 	// Sample rate
 	if sampleRate, err := strconv.ParseInt(stream.SampleRate, 10, 32); err == nil {
 		rate := int32(sampleRate)
 		metadata.AudioSampleRate = &rate
 	}
-	
+
 	// Codec
 	if stream.CodecName != "" {
 		metadata.AudioCodec = &stream.CodecName
@@ -295,7 +300,7 @@ func (f *FFprobeEnricher) parseFrameRate(frameRateStr string) float64 {
 	if frameRateStr == "" || frameRateStr == "0/0" {
 		return 0
 	}
-	
+
 	// Handle fraction format like "30000/1001"
 	if strings.Contains(frameRateStr, "/") {
 		parts := strings.Split(frameRateStr, "/")
@@ -308,7 +313,7 @@ func (f *FFprobeEnricher) parseFrameRate(frameRateStr string) float64 {
 		}
 		return 0
 	}
-	
+
 	// Handle decimal format
 	fps, err := strconv.ParseFloat(frameRateStr, 64)
 	if err != nil {
@@ -322,7 +327,7 @@ func (f *FFprobeEnricher) detectHDRFormat(stream FFprobeStream) HDRFormat {
 	// Check color transfer characteristics for HDR indicators
 	transfer := strings.ToLower(stream.ColorTransfer)
 	primaries := strings.ToLower(stream.ColorPrimaries)
-	
+
 	// HDR10 detection
 	if transfer == "smpte2084" || transfer == "arib-std-b67" {
 		// Check for Dolby Vision first (more specific)
@@ -331,20 +336,20 @@ func (f *FFprobeEnricher) detectHDRFormat(stream FFprobeStream) HDRFormat {
 				return HDRFormatDolbyVision
 			}
 		}
-		
+
 		// Check for HDR10+ indicators
 		if transfer == "smpte2084" && (primaries == "bt2020" || primaries == "bt.2020") {
 			// More advanced HDR10+ detection would examine side data
 			return HDRFormatHDR10
 		}
-		
+
 		return HDRFormatHDR10
 	}
-	
+
 	// HLG (Hybrid Log-Gamma) is also HDR
 	if transfer == "arib-std-b67" {
 		return HDRFormatHDR10
 	}
-	
+
 	return HDRFormatNone
 }

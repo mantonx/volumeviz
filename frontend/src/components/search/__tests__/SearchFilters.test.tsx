@@ -1,6 +1,6 @@
 /**
  * SearchFilters Test Suite
- * 
+ *
  * Tests for filter functionality and state management
  */
 
@@ -11,7 +11,9 @@ import { SearchFilters } from '../SearchFilters';
 import { advancedFiltersAtom } from '@/store/atoms/search';
 
 // Mock Jotai provider
-const TestProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const TestProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   return <div>{children}</div>;
 };
 
@@ -36,7 +38,7 @@ jest.mock('jotai', () => ({
           } else {
             mockFilterState = newState;
           }
-        }
+        },
       ];
     }
     return [null, jest.fn()];
@@ -64,12 +66,12 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       const mediaTypeSelect = screen.getByLabelText(/media type/i);
       expect(mediaTypeSelect).toBeInTheDocument();
-      
+
       // Check all media type options are present
       expect(screen.getByText('All Media Types')).toBeInTheDocument();
       expect(screen.getByText('Video')).toBeInTheDocument();
@@ -82,7 +84,7 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       const mediaTypeSelect = screen.getByLabelText(/media type/i);
@@ -93,11 +95,11 @@ describe('SearchFilters', () => {
 
     it('should clear media kind when "All Media Types" is selected', () => {
       mockFilterState.mediaKind = 'video';
-      
+
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       const mediaTypeSelect = screen.getByLabelText(/media type/i);
@@ -112,7 +114,7 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       expect(screen.getByLabelText(/file size/i)).toBeInTheDocument();
@@ -124,7 +126,7 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       const sizeSelect = screen.getByLabelText(/file size/i);
@@ -138,7 +140,7 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       const minSizeInput = screen.getByPlaceholderText(/min \(mb\)/i);
@@ -149,11 +151,11 @@ describe('SearchFilters', () => {
 
     it('should clear custom size when input is empty', () => {
       mockFilterState.sizeRange = { min: 5 * 1024 * 1024 };
-      
+
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       const minSizeInput = screen.getByPlaceholderText(/min \(mb\)/i);
@@ -168,7 +170,7 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       const dateInputs = screen.getAllByDisplayValue('');
@@ -179,12 +181,12 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       const dateInputs = document.querySelectorAll('input[type="date"]');
       const fromDateInput = dateInputs[0] as HTMLInputElement;
-      
+
       fireEvent.change(fromDateInput, { target: { value: '2023-12-01' } });
 
       expect(mockFilterState.timeRange.from).toBe('2023-12-01T00:00:00Z');
@@ -196,7 +198,7 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       expect(screen.getByText(/has gps coordinates/i)).toBeInTheDocument();
@@ -208,10 +210,12 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
-      const gpsCheckbox = screen.getByRole('checkbox', { name: /has gps coordinates/i });
+      const gpsCheckbox = screen.getByRole('checkbox', {
+        name: /has gps coordinates/i,
+      });
       fireEvent.click(gpsCheckbox);
 
       expect(mockFilterState.booleanFilters.hasGps).toBe(true);
@@ -236,7 +240,7 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       expect(screen.getByText(/Media: video/i)).toBeInTheDocument();
@@ -258,7 +262,7 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       const clearButton = screen.getByText(/clear all/i);
@@ -280,7 +284,7 @@ describe('SearchFilters', () => {
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       const minSizeInput = screen.getByPlaceholderText(/min \(mb\)/i);
@@ -292,15 +296,17 @@ describe('SearchFilters', () => {
 
     it('should handle empty MIME type array correctly', () => {
       mockFilterState.mimeTypes = [];
-      
+
       render(
         <TestProvider>
           <SearchFilters />
-        </TestProvider>
+        </TestProvider>,
       );
 
       // Should not crash with empty MIME types
-      expect(screen.getByText(/MIME Types \(0 selected\)/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/MIME Types \(0 selected\)/i),
+      ).toBeInTheDocument();
     });
   });
 });

@@ -1,9 +1,9 @@
 import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    pollingEnabledAtom,
-    pollingIntervalAtom,
-    shouldUsePollingAtom,
+  pollingEnabledAtom,
+  pollingIntervalAtom,
+  shouldUsePollingAtom,
 } from '../store/atoms/shell';
 
 export interface PollingOptions {

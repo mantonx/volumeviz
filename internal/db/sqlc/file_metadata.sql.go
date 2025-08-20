@@ -152,7 +152,7 @@ type GetEnrichedFilesByVolumeRow struct {
 	Fps                    pgtype.Numeric     `json:"fps"`
 	ColorPrimaries         pgtype.Text        `json:"color_primaries"`
 	TransferCharacteristic pgtype.Text        `json:"transfer_characteristic"`
-	HdrFormat              interface{}        `json:"hdr_format"`
+	HdrFormat              string             `json:"hdr_format"`
 	CaptureDatetime        pgtype.Timestamptz `json:"capture_datetime"`
 	CameraMake             pgtype.Text        `json:"camera_make"`
 	CameraModel            pgtype.Text        `json:"camera_model"`
@@ -261,8 +261,8 @@ FROM files f
 LEFT JOIN file_metadata fm ON f.id = fm.file_id
 WHERE f.volume_id = $1
 AND f.mime IN (
-    'video/mp4', 'video/avi', 'video/mkv', 'video/mov', 'video/wmv', 'video/flv', 'video/webm',
-    'audio/mp3', 'audio/flac', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/m4a',
+    'video/mp4', 'video/x-msvideo', 'video/x-matroska', 'video/quicktime', 'video/x-ms-wmv', 'video/x-flv', 'video/webm',
+    'audio/mpeg', 'audio/flac', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/mp4',
     'image/jpeg', 'image/jpg', 'image/png', 'image/tiff', 'image/bmp', 'image/webp', 'image/heic',
     'text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass'
 )
@@ -1193,11 +1193,11 @@ SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_b
 WHERE volume_id = $1
 AND mime IN (
     -- Video types that should be enriched
-    'video/mp4', 'video/avi', 'video/mkv', 'video/mov', 'video/wmv', 'video/flv', 'video/webm',
+    'video/mp4', 'video/x-msvideo', 'video/x-matroska', 'video/quicktime', 'video/x-ms-wmv', 'video/x-flv', 'video/webm',
     -- Audio types that should be enriched
-    'audio/mp3', 'audio/flac', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/m4a',
+    'audio/mpeg', 'audio/flac', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/mp4',
     -- Image types that should be enriched
-    'image/jpeg', 'image/jpg', 'image/png', 'image/tiff', 'image/bmp', 'image/webp', 'image/heic',
+    'image/jpeg', 'image/png', 'image/tiff', 'image/bmp', 'image/webp', 'image/heic',
     -- Subtitle types that should be enriched
     'text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass'
 )
@@ -1411,7 +1411,7 @@ type UpdateFileEnrichedColumnsParams struct {
 	Fps                    pgtype.Numeric     `json:"fps"`
 	ColorPrimaries         pgtype.Text        `json:"color_primaries"`
 	TransferCharacteristic pgtype.Text        `json:"transfer_characteristic"`
-	HdrFormat              interface{}        `json:"hdr_format"`
+	HdrFormat              string             `json:"hdr_format"`
 	CaptureDatetime        pgtype.Timestamptz `json:"capture_datetime"`
 	CameraMake             pgtype.Text        `json:"camera_make"`
 	CameraModel            pgtype.Text        `json:"camera_model"`

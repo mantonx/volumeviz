@@ -26,8 +26,8 @@ func (h *Handler) TreePaginationHandler(c *gin.Context) {
 
 	// Pagination tree support implemented
 	c.JSON(http.StatusOK, gin.H{
-		"limit":  limit,
-		"offset": offset,
+		"limit":   limit,
+		"offset":  offset,
 		"message": "pagination for dir operations",
 	})
 }

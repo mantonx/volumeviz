@@ -1,11 +1,17 @@
 package metrics
 
 import (
+	"sync"
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+var (
+	metricsOnce sync.Once
+	globalMetricsCollector interfaces.MetricsCollector
 )
 
 // PrometheusMetricsCollector implements metrics collection using Prometheus
@@ -47,9 +53,15 @@ type PrometheusMetricsCollector struct {
 	statsServiceStatus        prometheus.Gauge
 }
 
-// NewPrometheusMetricsCollector creates a new Prometheus metrics collector
+// NewPrometheusMetricsCollector creates a new Prometheus metrics collector (singleton)
 func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheus.Labels) interfaces.MetricsCollector {
-	return &PrometheusMetricsCollector{
+	// Return existing collector if already initialized (for hot reload compatibility)
+	if globalMetricsCollector != nil {
+		return globalMetricsCollector
+	}
+	
+	metricsOnce.Do(func() {
+		globalMetricsCollector = &PrometheusMetricsCollector{
 		// Cache metrics
 		cacheHitsTotal: promauto.NewCounter(prometheus.CounterOpts{
 			Namespace:   namespace,
@@ -261,7 +273,10 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 			Help:        "Status of the stats service (1=enabled, 0=disabled)",
 			ConstLabels: labels,
 		}),
-	}
+		}
+	})
+	
+	return globalMetricsCollector
 }
 
 // CacheHit records a cache hit

@@ -66,8 +66,8 @@ func (h *Handler) SetEnrichmentManager(manager interfaces.EnrichmentManager) {
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /volumes/{id}/size [get]
-func (h *Handler) GetVolumeSize(c *gin.Context) {
-	volumeID := c.Param("id")
+func (h *Handler) GetSizeAnalysisStatus(c *gin.Context) {
+	volumeID := c.Param("name")
 
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
@@ -128,7 +128,7 @@ func (h *Handler) GetVolumeSize(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /volumes/{id}/size/refresh [post]
 func (h *Handler) RefreshVolumeSize(c *gin.Context) {
-	volumeID := c.Param("id")
+	volumeID := c.Param("name")
 
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -235,8 +235,20 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 // Supports both routes:
 // - GET /api/v1/volumes/:id/scan/status (id = volumeID)
 // - GET /api/v1/scans/:id/status (id = scanID)
+// @Summary Get scan status
+// @Description Get the status of a volume scan by volume ID or scan ID
+// @Tags scan
+// @Accept json
+// @Produce json
+// @Param id path string true "Volume ID or Scan ID"
+// @Success 200 {object} map[string]interface{} "Scan status information"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 404 {object} map[string]interface{} "Scan not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /scans/{id}/status [get]
+// @Router /volumes/{id}/scan/status [get]
 func (h *Handler) GetScanStatus(c *gin.Context) {
-	id := c.Param("id")
+	id := c.Param("name")
 	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "ID is required",
@@ -289,6 +301,16 @@ func (h *Handler) GetScanStatus(c *gin.Context) {
 
 // BulkScan performs bulk scanning of multiple volumes
 // POST /api/v1/volumes/bulk-scan
+// @Summary Bulk scan volumes
+// @Description Scan multiple volumes at once, with support for async processing
+// @Tags scan
+// @Accept json
+// @Produce json
+// @Param request body models.BulkScanRequest true "Bulk scan request"
+// @Success 200 {object} map[string]interface{} "Bulk scan results"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /volumes/bulk-scan [post]
 func (h *Handler) BulkScan(c *gin.Context) {
 	var req models.BulkScanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -710,9 +732,9 @@ func (h *Handler) GetSchedulerCapabilities(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 503 {object} models.ErrorResponse "Filesystem indexing not enabled"
-// @Router /volumes/{id}/filesystem/status [get]
+// @Router /volumes/{volumeId}/filesystem/status [get]
 func (h *Handler) GetFilesystemIndexingStatus(c *gin.Context) {
-	volumeID := c.Param("id")
+	volumeID := c.Param("name")
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error:   "Volume ID is required",
@@ -795,7 +817,7 @@ func (h *Handler) GetFilesystemIndexingStatus(c *gin.Context) {
 // @Failure 503 {object} models.ErrorResponse "Filesystem indexing not enabled"
 // @Router /volumes/{id}/filesystem/index [post]
 func (h *Handler) TriggerFilesystemIndexing(c *gin.Context) {
-	volumeID := c.Param("id")
+	volumeID := c.Param("name")
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error:   "Volume ID is required",
@@ -819,6 +841,7 @@ func (h *Handler) TriggerFilesystemIndexing(c *gin.Context) {
 	if indexingScanner, ok := h.scanner.(interface {
 		IsFilesystemIndexingEnabled() bool
 		GetFilesystemIndexingProgress() *filesystem.IndexingProgress
+		TriggerFilesystemIndexing(ctx context.Context, volumeID string, deltaMode bool) error
 	}); ok {
 		if !indexingScanner.IsFilesystemIndexingEnabled() {
 			c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
@@ -840,10 +863,15 @@ func (h *Handler) TriggerFilesystemIndexing(c *gin.Context) {
 			return
 		}
 
-		// This is a simplified trigger - in a real implementation, you'd need to:
-		// 1. Get the volume path from Docker service
-		// 2. Start indexing asynchronously
-		// 3. Return immediately with accepted status
+		// Trigger filesystem indexing
+		if err := indexingScanner.TriggerFilesystemIndexing(c.Request.Context(), volumeID, req.DeltaMode); err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   "Failed to trigger filesystem indexing",
+				Code:    "INDEXING_TRIGGER_FAILED",
+				Details: map[string]any{"message": err.Error()},
+			})
+			return
+		}
 
 		c.JSON(http.StatusAccepted, gin.H{
 			"message":    "Filesystem indexing triggered",
@@ -927,7 +955,7 @@ func (h *Handler) GetFilesystemIndexingCapabilities(c *gin.Context) {
 // @Failure 503 {object} models.ErrorResponse "Media enrichment not enabled"
 // @Router /volumes/{id}/media/enrich [post]
 func (h *Handler) TriggerMediaEnrichment(c *gin.Context) {
-	volumeID := c.Param("id")
+	volumeID := c.Param("name")
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error:   "Volume ID is required",
@@ -976,7 +1004,7 @@ func (h *Handler) TriggerMediaEnrichment(c *gin.Context) {
 // @Failure 503 {object} models.ErrorResponse "Media enrichment not enabled"
 // @Router /volumes/{id}/media/status [get]
 func (h *Handler) GetMediaEnrichmentStatus(c *gin.Context) {
-	volumeID := c.Param("id")
+	volumeID := c.Param("name")
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error:   "Volume ID is required",

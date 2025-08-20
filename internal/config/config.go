@@ -7,6 +7,7 @@ import (
 	"time"
 
 	storeconfig "github.com/mantonx/volumeviz/internal/store/config"
+	"github.com/mantonx/volumeviz/internal/services/previews"
 )
 
 // Config holds application configuration
@@ -24,6 +25,7 @@ type Config struct {
 	Scan               ScanConfig
 	FilesystemIndexing FilesystemIndexingConfig
 	MediaEnrichment    MediaEnrichmentConfig
+	Previews          previews.PreviewConfig
 	Alerts             AlertsConfig
 }
 
@@ -123,7 +125,7 @@ type ScanConfig struct {
 // FilesystemIndexingConfig holds filesystem indexing configuration
 type FilesystemIndexingConfig struct {
 	// Enable/disable filesystem indexing
-	Enabled bool `env:"VV_FILESYSTEM_INDEXING_ENABLED" envDefault:"false"`
+	Enabled bool `env:"VV_FILESYSTEM_INDEXING_ENABLED" envDefault:"true"`
 
 	// Hashing configuration
 	EnableHashing       bool   `env:"VV_ENABLE_HASHING" envDefault:"false"`
@@ -278,6 +280,26 @@ func Load() *Config {
 			GPSPrecision:         getIntEnv("VV_GPS_PRECISION", 3),
 			SubtitleEnabled:      getBoolEnv("VV_ENABLE_SUBTITLE_ENRICHMENT", true),
 		},
+		Previews: previews.PreviewConfig{
+			RootDir:           getEnv("VV_PREVIEW_DIR", "/var/lib/volumeviz/previews"),
+			MaxStorageGB:      getIntEnv("VV_PREVIEW_MAX_STORAGE_GB", 10),
+			CleanupEnabled:    getBoolEnv("VV_PREVIEW_CLEANUP_ENABLED", true),
+			CleanupInterval:   getDurationEnv("VV_PREVIEW_CLEANUP_INTERVAL", 1*time.Hour),
+			MaxAge:            getDurationEnv("VV_PREVIEW_MAX_AGE", 720*time.Hour), // 30 days
+			MaxConcurrent:     getIntEnv("VV_PREVIEW_MAX_CONCURRENT", 3),
+			ProcessTimeout:    getDurationEnv("VV_PREVIEW_PROCESS_TIMEOUT", 30*time.Second),
+			MaxSourceSizeMB:   getIntEnv("VV_PREVIEW_MAX_SOURCE_SIZE_MB", 500),
+			VipsPath:          getEnv("VV_VIPS_PATH", "vips"),
+			SmartCrop:         getBoolEnv("VV_PREVIEW_SMART_CROP", true),
+			FFmpegPath:        getEnv("VV_FFMPEG_PATH", "ffmpeg"),
+			VideoTimeOffset:   getFloatEnv("VV_PREVIEW_VIDEO_TIME_OFFSET", 5.0),
+			ExtractCoverArt:   getBoolEnv("VV_PREVIEW_EXTRACT_COVER_ART", true),
+			FallbackCover:     getEnv("VV_PREVIEW_FALLBACK_COVER", ""),
+			EnableETag:        getBoolEnv("VV_PREVIEW_ENABLE_ETAG", true),
+			MaxAgeSeconds:     getIntEnv("VV_PREVIEW_MAX_AGE_SECONDS", 2592000), // 30 days
+			MaxWidth:          getIntEnv("VV_PREVIEW_MAX_WIDTH", 2048),
+			MaxHeight:         getIntEnv("VV_PREVIEW_MAX_HEIGHT", 2048),
+		},
 		Alerts: AlertsConfig{
 			Enabled:                   getBoolEnv("ALERTS_ENABLED", false),
 			EvaluationIntervalMinutes: getIntEnv("ALERTS_EVALUATION_INTERVAL_MINUTES", 1),
@@ -330,6 +352,16 @@ func getBoolEnv(key string, defaultValue bool) bool {
 func getIntEnv(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if parsed, err := strconv.Atoi(value); err == nil {
+			return parsed
+		}
+	}
+	return defaultValue
+}
+
+// getFloatEnv gets float64 environment variable with default value
+func getFloatEnv(key string, defaultValue float64) float64 {
+	if value := os.Getenv(key); value != "" {
+		if parsed, err := strconv.ParseFloat(value, 64); err == nil {
 			return parsed
 		}
 	}

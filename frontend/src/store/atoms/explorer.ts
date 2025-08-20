@@ -109,44 +109,42 @@ export const fileCompositionErrorAtom = atom<string | null>(null);
 export const currentVolumeAtom = atom<string>('');
 
 // Derived atoms
-export const currentFilesAtom = atom(
-  (get) => {
-    const files = get(filesAtom);
-    const query = get(searchQueryAtom);
-    const filters = get(searchFiltersAtom);
+export const currentFilesAtom = atom((get) => {
+  const files = get(filesAtom);
+  const query = get(searchQueryAtom);
+  const filters = get(searchFiltersAtom);
 
-    if (!query && Object.keys(filters).length === 0) {
-      return files;
+  if (!query && Object.keys(filters).length === 0) {
+    return files;
+  }
+
+  return files.filter((file) => {
+    // Text search
+    if (query && !file.name.toLowerCase().includes(query.toLowerCase())) {
+      return false;
     }
 
-    return files.filter((file) => {
-      // Text search
-      if (query && !file.name.toLowerCase().includes(query.toLowerCase())) {
-        return false;
-      }
+    // Extension filter
+    if (filters.extension && file.extension !== filters.extension) {
+      return false;
+    }
 
-      // Extension filter
-      if (filters.extension && file.extension !== filters.extension) {
-        return false;
-      }
+    // MIME type filter
+    if (filters.mimeType && file.mediaType !== filters.mimeType) {
+      return false;
+    }
 
-      // MIME type filter
-      if (filters.mimeType && file.mediaType !== filters.mimeType) {
-        return false;
-      }
+    // Size filters
+    if (filters.minSize && file.size < filters.minSize) {
+      return false;
+    }
 
-      // Size filters
-      if (filters.minSize && file.size < filters.minSize) {
-        return false;
-      }
+    if (filters.maxSize && file.size > filters.maxSize) {
+      return false;
+    }
 
-      if (filters.maxSize && file.size > filters.maxSize) {
-        return false;
-      }
-
-      return true;
-    });
-  },
-);
+    return true;
+  });
+});
 
 export const isDrawerOpenAtom = atom<boolean>(false);

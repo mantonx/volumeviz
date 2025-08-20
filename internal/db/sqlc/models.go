@@ -137,7 +137,7 @@ type Files struct {
 	Fps                    pgtype.Numeric     `json:"fps"`
 	ColorPrimaries         pgtype.Text        `json:"color_primaries"`
 	TransferCharacteristic pgtype.Text        `json:"transfer_characteristic"`
-	HdrFormat              interface{}        `json:"hdr_format"`
+	HdrFormat              string             `json:"hdr_format"`
 	CaptureDatetime        pgtype.Timestamptz `json:"capture_datetime"`
 	CameraMake             pgtype.Text        `json:"camera_make"`
 	CameraModel            pgtype.Text        `json:"camera_model"`
@@ -181,6 +181,47 @@ type Folders struct {
 	SymlinkTarget           pgtype.Text `json:"symlink_target"`
 	CreatedAt               time.Time   `json:"created_at"`
 	UpdatedAt               time.Time   `json:"updated_at"`
+}
+
+type PreviewStats struct {
+	ID             int64              `json:"id"`
+	TotalGenerated pgtype.Int8        `json:"total_generated"`
+	TotalSizeBytes pgtype.Int8        `json:"total_size_bytes"`
+	CacheHits      pgtype.Int8        `json:"cache_hits"`
+	CacheMisses    pgtype.Int8        `json:"cache_misses"`
+	LastCleanup    pgtype.Timestamptz `json:"last_cleanup"`
+	RecordedAt     pgtype.Timestamptz `json:"recorded_at"`
+}
+
+type Previews struct {
+	ID           int64              `json:"id"`
+	FileID       int64              `json:"file_id"`
+	Type         string             `json:"type"`
+	Size         string             `json:"size"`
+	Format       string             `json:"format"`
+	Width        pgtype.Int4        `json:"width"`
+	Height       pgtype.Int4        `json:"height"`
+	FileSize     int64              `json:"file_size"`
+	ContentHash  string             `json:"content_hash"`
+	StoragePath  string             `json:"storage_path"`
+	TimeOffset   pgtype.Float8      `json:"time_offset"`
+	ProcessingMs pgtype.Int8        `json:"processing_ms"`
+	CreatedAt    time.Time          `json:"created_at"`
+	AccessedAt   pgtype.Timestamptz `json:"accessed_at"`
+}
+
+type SavedSearches struct {
+	ID          int64              `json:"id"`
+	Name        string             `json:"name"`
+	Description pgtype.Text        `json:"description"`
+	Query       []byte             `json:"query"`
+	Tags        []string           `json:"tags"`
+	IsPublic    pgtype.Bool        `json:"is_public"`
+	Metadata    []byte             `json:"metadata"`
+	CreatedAt   time.Time          `json:"created_at"`
+	UpdatedAt   time.Time          `json:"updated_at"`
+	LastRunAt   pgtype.Timestamptz `json:"last_run_at"`
+	RunCount    pgtype.Int4        `json:"run_count"`
 }
 
 type ScanJobs struct {

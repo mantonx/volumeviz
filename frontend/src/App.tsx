@@ -2,19 +2,19 @@ import { ApiHealthChecker } from '@/components/ApiHealthChecker';
 import { Layout } from '@/components/layout/Layout';
 import { ToastProvider } from '@/components/ui';
 import {
-    HistoricalDataDashboard,
-    RealTimeDashboard,
+  HistoricalDataDashboard,
+  RealTimeDashboard,
 } from '@/components/visualization';
 import {
-    AlertsPage,
-    Dashboard,
-    ExplorerPage,
-    HealthPage,
-    NotFoundPage,
-    SearchPage,
-    SettingsPage,
-    VolumeDetailsPage,
-    VolumesPage,
+  AlertsPage,
+  Dashboard,
+  ExplorerPage,
+  HealthPage,
+  NotFoundPage,
+  SearchPage,
+  SettingsPage,
+  VolumeDetailsPage,
+  VolumesPage,
 } from '@/pages';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
 import React from 'react';

@@ -2,48 +2,59 @@
  * Explorer API service hooks
  */
 
-import { volumeApi } from '@/api/client';
+import { Api } from '@/api/generated/Api';
 import {
-    // File atoms
-    currentPathAtom,
-    // Current volume
-    currentVolumeAtom,
-    expandedNodesAtom,
-    fileCompositionAtom,
-    fileCompositionErrorAtom,
-    fileCompositionLoadingAtom,
-    fileDetailsAtom,
-    fileDetailsErrorAtom,
-    fileDetailsLoadingAtom,
-    filesAtom,
-    filesErrorAtom,
-    filesLoadingAtom,
-    filesPageAtom,
-    filesPageSizeAtom,
-    filesTotalAtom,
-    isDrawerOpenAtom,
-    searchFiltersAtom,
-    // Search atoms
-    searchQueryAtom,
-    // File details atoms
-    selectedFileAtom,
-    topFoldersAtom,
-    topFoldersErrorAtom,
-    topFoldersLoadingAtom,
-    treeErrorAtom,
-    treeLoadingAtom,
-    // Tree atoms
-    treeNodesAtom,
-    // Insights atoms
-    volumeStatsAtom,
-    volumeStatsErrorAtom,
-    volumeStatsLoadingAtom,
-    type FileDetails,
-    type FileItem,
-    type TreeNode,
+  // File atoms
+  currentPathAtom,
+  // Current volume
+  currentVolumeAtom,
+  expandedNodesAtom,
+  fileCompositionAtom,
+  fileCompositionErrorAtom,
+  fileCompositionLoadingAtom,
+  fileDetailsAtom,
+  fileDetailsErrorAtom,
+  fileDetailsLoadingAtom,
+  filesAtom,
+  filesErrorAtom,
+  filesLoadingAtom,
+  filesPageAtom,
+  filesPageSizeAtom,
+  filesTotalAtom,
+  isDrawerOpenAtom,
+  searchFiltersAtom,
+  // Search atoms
+  searchQueryAtom,
+  // File details atoms
+  selectedFileAtom,
+  topFoldersAtom,
+  topFoldersErrorAtom,
+  topFoldersLoadingAtom,
+  treeErrorAtom,
+  treeLoadingAtom,
+  // Tree atoms
+  treeNodesAtom,
+  // Insights atoms
+  volumeStatsAtom,
+  volumeStatsErrorAtom,
+  volumeStatsLoadingAtom,
+  type FileDetails,
+  type FileItem,
+  type TreeNode,
 } from '@/store/atoms/explorer';
 import { useAtom, useAtomValue } from 'jotai';
 import { useCallback } from 'react';
+
+// Create configured API client instance
+const explorerApi = new Api({
+  baseUrl:
+    (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080/api/v1',
+  baseApiParams: {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  },
+});
 
 /**
  * Hook for managing tree navigation
@@ -68,16 +79,24 @@ export const useTreeNavigation = () => {
       setError(null);
 
       try {
-        const response = await volumeApi.getTreeChildren(currentVolume, { path });
+        const response = await explorerApi.api.v1ExplorerTreeChildrenList({
+          volume_id: currentVolume,
+          path,
+          include_files: false,
+        });
+
+        const responseData = response.data;
 
         // Transform API response to TreeNode format
-        const nodes: TreeNode[] = (response.children || []).map((item: any) => ({
-          id: item.id?.toString() || `${path}/${item.name}`,
-          name: item.name || '',
-          path: item.path || `${path}/${item.name}`,
-          type: item.type || (item.is_dir ? 'folder' : 'file'),
-          hasChildren: item.is_dir || item.has_children,
-        }));
+        const nodes: TreeNode[] = (responseData.children || []).map(
+          (item) => ({
+            id: `${path}/${item.name}`,
+            name: item.name || '',
+            path: `${path}/${item.name}`,
+            type: item.is_directory ? 'folder' : 'file',
+            hasChildren: item.is_directory && (item.has_children || false),
+          }),
+        );
 
         setTreeNodes((prev) => ({
           ...prev,
@@ -86,7 +105,8 @@ export const useTreeNavigation = () => {
 
         return nodes;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load tree';
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to load tree';
         setError(errorMessage);
         throw err;
       } finally {
@@ -163,37 +183,42 @@ export const useFileList = () => {
       setError(null);
 
       try {
-        const response = await volumeApi.getFilesForPath(currentVolume, {
+        const response = await explorerApi.api.v1ExplorerFilesList({
+          volume_id: currentVolume,
           path: targetPath,
           page: targetPage,
-          page_size: pageSize,
-          extension: searchFilters.extension,
-          mime_type: searchFilters.mimeType,
+          limit: pageSize,
+          file_type: searchFilters.extension,
           min_size: searchFilters.minSize,
           max_size: searchFilters.maxSize,
+          sort_by: 'name',
+          sort_order: 'asc',
         });
 
+        const responseData = response.data;
+
         // Transform API response to FileItem format
-        const items: FileItem[] = (response.files || []).map((item: any) => ({
-          id: item.id?.toString() || `${targetPath}/${item.name}`,
+        const items: FileItem[] = (responseData.files || []).map((item) => ({
+          id: `${targetPath}/${item.name}`,
           name: item.name || '',
           path: item.path || `${targetPath}/${item.name}`,
-          type: item.type || (item.is_dir ? 'folder' : 'file'),
+          type: item.is_directory ? 'folder' : 'file',
           size: item.size || 0,
-          modified: item.modified || item.last_modified || new Date().toISOString(),
+          modified: item.modified_time || new Date().toISOString(),
           extension: item.extension,
-          mediaType: item.mime_type || item.media_type,
-          permissions: item.permissions,
-          owner: item.owner,
-          group: item.group,
+          mediaType: item.media_type,
+          permissions: undefined, // Not provided by new API
+          owner: undefined, // Not provided by new API
+          group: undefined, // Not provided by new API
         }));
 
         setFiles(items);
-        setTotal(response.pagination?.total || items.length);
+        setTotal(responseData.total_count || items.length);
 
         return items;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load files';
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to load files';
         setError(errorMessage);
         throw err;
       } finally {
@@ -248,22 +273,20 @@ export const useFileDetails = () => {
       setError(null);
 
       try {
-        const [details, metadata] = await Promise.all([
-          volumeApi.getFileDetails(parseInt(file.id)),
-          volumeApi.getFileMetadata(parseInt(file.id)).catch(() => null), // Metadata might not exist
-        ]);
-
+        // For now, we'll use basic file info since the file details API requires numeric ID
+        // which we don't have from the new API response structure
         const fileDetailsData: FileDetails = {
           ...file,
-          created: details.created || file.modified,
+          created: file.modified,
           accessed: file.modified, // API doesn't provide accessed time
-          rawMetadata: metadata || {},
+          rawMetadata: {}, // Will be loaded separately when metadata API is updated
         };
 
         setFileDetails(fileDetailsData);
         return fileDetailsData;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load file details';
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to load file details';
         setError(errorMessage);
         throw err;
       } finally {
@@ -315,8 +338,12 @@ export const useVolumeInsights = () => {
   const [foldersError, setFoldersError] = useAtom(topFoldersErrorAtom);
 
   const [fileComposition, setFileComposition] = useAtom(fileCompositionAtom);
-  const [compositionLoading, setCompositionLoading] = useAtom(fileCompositionLoadingAtom);
-  const [compositionError, setCompositionError] = useAtom(fileCompositionErrorAtom);
+  const [compositionLoading, setCompositionLoading] = useAtom(
+    fileCompositionLoadingAtom,
+  );
+  const [compositionError, setCompositionError] = useAtom(
+    fileCompositionErrorAtom,
+  );
 
   const currentVolume = useAtomValue(currentVolumeAtom);
 
@@ -328,15 +355,26 @@ export const useVolumeInsights = () => {
       setStatsError(null);
 
       try {
-        const response = await volumeApi.getDailyStats({
+        const response = await explorerApi.stats.dailyList({
           volume_id: currentVolume,
           days,
         });
 
-        setVolumeStats(response || []);
+        const responseData = response.data;
+        const transformedStats = (responseData.daily_stats || []).map((stat) => ({
+          volume_id: stat.volume_id || currentVolume,
+          date: stat.date || '',
+          total_size: stat.size_bytes || 0,
+          file_count: stat.file_count || 0,
+          folder_count: stat.folder_count || 0,
+          growth_bytes: stat.growth || 0,
+          growth_files: 0, // Not provided by API
+        }));
+        setVolumeStats(transformedStats);
         return response;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load volume stats';
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to load volume stats';
         setStatsError(errorMessage);
         throw err;
       } finally {
@@ -354,15 +392,16 @@ export const useVolumeInsights = () => {
       setFoldersError(null);
 
       try {
-        const response = await volumeApi.getTopFolders({
+        const response = await explorerApi.stats.topFoldersList({
           volume_id: currentVolume,
           limit,
         });
 
-        const transformedResponse = (response || []).map((folder: any) => ({
+        const responseData = response.data;
+        const transformedResponse = (responseData.folders || []).map((folder) => ({
           path: folder.path || '',
           name: folder.name || '',
-          size: folder.size_bytes_recursive || 0,
+          size: folder.disk_usage_bytes_recursive || 0,
           file_count: folder.file_count || 0,
           growth_bytes: 0, // API doesn't provide this yet
           growth_percentage: 0, // API doesn't provide this yet
@@ -371,7 +410,8 @@ export const useVolumeInsights = () => {
         setTopFolders(transformedResponse);
         return response;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load top folders';
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to load top folders';
         setFoldersError(errorMessage);
         throw err;
       } finally {
@@ -391,23 +431,54 @@ export const useVolumeInsights = () => {
       // TODO: Implement file type stats API
       // For now, return mock data
       const mockComposition = [
-        { extension: 'mp4', count: 150, total_size: 50000000000, percentage: 45.2 },
-        { extension: 'jpg', count: 1200, total_size: 25000000000, percentage: 22.6 },
-        { extension: 'pdf', count: 300, total_size: 15000000000, percentage: 13.6 },
-        { extension: 'txt', count: 800, total_size: 8000000000, percentage: 7.2 },
-        { extension: 'other', count: 500, total_size: 12000000000, percentage: 11.4 },
+        {
+          extension: 'mp4',
+          count: 150,
+          total_size: 50000000000,
+          percentage: 45.2,
+        },
+        {
+          extension: 'jpg',
+          count: 1200,
+          total_size: 25000000000,
+          percentage: 22.6,
+        },
+        {
+          extension: 'pdf',
+          count: 300,
+          total_size: 15000000000,
+          percentage: 13.6,
+        },
+        {
+          extension: 'txt',
+          count: 800,
+          total_size: 8000000000,
+          percentage: 7.2,
+        },
+        {
+          extension: 'other',
+          count: 500,
+          total_size: 12000000000,
+          percentage: 11.4,
+        },
       ];
 
       setFileComposition(mockComposition);
       return mockComposition;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load file composition';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to load file composition';
       setCompositionError(errorMessage);
       throw err;
     } finally {
       setCompositionLoading(false);
     }
-  }, [currentVolume, setFileComposition, setCompositionLoading, setCompositionError]);
+  }, [
+    currentVolume,
+    setFileComposition,
+    setCompositionLoading,
+    setCompositionError,
+  ]);
 
   const loadAllInsights = useCallback(
     async (days: number = 30) => {

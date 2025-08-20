@@ -78,16 +78,59 @@ type ScanResult struct {
 
 // ScanProgress represents the progress of an ongoing scan
 type ScanProgress struct {
-	ScanID             string        `json:"scan_id"`
-	VolumeID           string        `json:"volume_id"`
-	Status             string        `json:"status"`   // "running", "completed", "failed", "canceled"
-	Progress           float64       `json:"progress"` // 0.0 to 1.0
-	FilesScanned       int           `json:"files_scanned"`
-	CurrentPath        string        `json:"current_path"`
-	EstimatedRemaining time.Duration `json:"estimated_remaining"`
-	Method             string        `json:"method"`
+	ScanID   string `json:"scan_id"`
+	VolumeID string `json:"volume_id"`
+	Status   string `json:"status"` // "running", "completed", "failed", "canceled"
+	
+	// Current phase information
+	Phase        string `json:"phase"`         // "volume_scan", "filesystem_indexing", "media_enrichment", "preview_generation"
+	Progress     float64 `json:"progress"`     // Overall 0.0 to 1.0
+	PhaseProgress float64 `json:"phase_progress"` // Current phase 0.0 to 1.0
+	
+	// File/directory tracking
+	FilesScanned    int64  `json:"files_scanned"`
+	FoldersScanned  int64  `json:"folders_scanned"`
+	TotalEstimated  int64  `json:"total_estimated,omitempty"`
+	CurrentPath     string `json:"current_path"`
+	CurrentDepth    int    `json:"current_depth,omitempty"`
+	
+	// Byte tracking
+	BytesProcessed int64 `json:"bytes_processed"`
+	TotalBytes     int64 `json:"total_bytes,omitempty"`
+	
+	// Timing information
 	StartedAt          time.Time     `json:"started_at"`
-	Error              string        `json:"error,omitempty"`
+	LastUpdate         time.Time     `json:"last_update"`
+	EstimatedRemaining time.Duration `json:"estimated_remaining"`
+	ElapsedSeconds     int64         `json:"elapsed_seconds"`
+	
+	// Performance metrics
+	FilesPerSecond   float64 `json:"files_per_second,omitempty"`
+	FoldersPerSecond float64 `json:"folders_per_second,omitempty"`
+	BytesPerSecond   int64   `json:"bytes_per_second,omitempty"`
+	
+	// Phase breakdown
+	Phases map[string]*PhaseInfo `json:"phases,omitempty"`
+	
+	// Error tracking
+	ErrorsCount int64    `json:"errors_count,omitempty"`
+	Errors      []string `json:"errors,omitempty"`
+	LastError   string   `json:"last_error,omitempty"`
+	
+	// Legacy fields (for backward compatibility)
+	Method string `json:"method"`
+	Error  string `json:"error,omitempty"`
+}
+
+// PhaseInfo represents information about a specific scan phase
+type PhaseInfo struct {
+	Status       string        `json:"status"`        // "pending", "running", "completed", "failed", "skipped"
+	StartedAt    *time.Time    `json:"started_at,omitempty"`
+	CompletedAt  *time.Time    `json:"completed_at,omitempty"`
+	Duration     time.Duration `json:"duration,omitempty"`
+	Progress     float64       `json:"progress"`      // 0.0 to 1.0
+	ItemsProcessed int64       `json:"items_processed,omitempty"`
+	Error        string        `json:"error,omitempty"`
 }
 
 // MethodInfo provides information about available scan methods

@@ -4,12 +4,38 @@
  * Pre-configured API client with type safety for VolumeViz backend
  */
 
-import {
-    Api,
-    type PagedVolumes,
-    type RefreshRequest,
-    type ScanResponse
-} from './generated/Api';
+import { Api } from './generated/Api';
+
+// Type definitions for backwards compatibility
+interface PagedVolumes {
+  volumes: Volume[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+interface RefreshRequest {
+  force?: boolean;
+}
+
+interface ScanResponse {
+  scan_id?: string;
+  status?: string;
+  size_bytes?: number;
+}
+
+interface Volume {
+  id?: string;
+  name: string;
+  path?: string;
+  mount_point?: string;
+  total_size?: number;
+  file_count?: number;
+  folder_count?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
 
 // Type safety integration with Api types
 
@@ -24,51 +50,16 @@ const volumeVizApi = new Api({
   },
 });
 
-// Export typed API methods
+// Export typed API methods using generated client
 export const volumeApi = {
-  // Volume operations
-  async listVolumes(filters?: {
-    page?: number;
-    page_size?: number;
-    sort?: string;
-    q?: string;
-    driver?: 'local' | 'nfs' | 'cifs' | 'overlay2';
-    orphaned?: boolean;
-    system?: boolean;
-    created_after?: string;
-    created_before?: string;
-  }) {
-    try {
-      const response = await volumeVizApi.volumes.listVolumes(filters);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to list volumes: ${error}`);
-    }
-  },
-
-  async getVolume(name: string) {
-    const response = await volumeVizApi.volumes.getVolume(name);
-    return response.data;
-  },
-
-  // Scan operations
-  async getVolumeSize(volumeId: string) {
-    const response = await volumeVizApi.volumes.getVolumeSize(volumeId);
-    return response.data;
-  },
-
-  async refreshVolumeSize(volumeId: string, options?: RefreshRequest) {
-    const response = await volumeVizApi.volumes.refreshVolumeSize(
-      volumeId,
-      options || {},
-    );
-    return response.data;
-  },
-
   // Health checks
   async checkDockerHealth() {
-    const response = await volumeVizApi.health.getDockerHealth();
-    return response.data;
+    try {
+      const response = await volumeVizApi.health.dockerList();
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to check Docker health: ${error}`);
+    }
   },
 
   // Explorer API operations
@@ -80,10 +71,13 @@ export const volumeApi = {
       page_size?: number;
     },
   ) {
-    const response = await volumeVizApi.volumes.getTreeChildren(
-      volumeName,
-      options,
-    );
+    const response = await volumeVizApi.api.v1ExplorerTreeChildrenList({
+      volume_id: volumeName,
+      path: options?.path,
+      page: options?.page,
+      limit: options?.page_size,
+      include_files: false,
+    });
     return response.data;
   },
 
@@ -99,62 +93,72 @@ export const volumeApi = {
       max_size?: number;
     },
   ) {
-    const response = await volumeVizApi.volumes.getFilesForPath(
-      volumeName,
-      options,
-    );
+    const response = await volumeVizApi.api.v1ExplorerFilesList({
+      volume_id: volumeName,
+      path: options?.path,
+      page: options?.page,
+      limit: options?.page_size,
+      file_type: options?.extension,
+      min_size: options?.min_size,
+      max_size: options?.max_size,
+      sort_by: 'name',
+      sort_order: 'asc',
+    });
     return response.data;
   },
 
   // File Metadata API operations
   async getFileDetails(fileId: number) {
-    const response = await volumeVizApi.files.getFileDetails(fileId);
+    const response = await volumeVizApi.files.detailsList(fileId);
     return response.data;
   },
 
-  async getFileMetadata(fileId: number, options?: { kind?: 'media' | 'exif' | 'ffmpeg' }) {
-    const response = await volumeVizApi.files.getFileMetadata(fileId, options);
+  async getFileMetadata(
+    fileId: number,
+    options?: { kind?: 'media' | 'exif' | 'ffmpeg' },
+  ) {
+    const response = await volumeVizApi.files.metadataList(fileId, options);
     return response.data;
   },
 
   // Stats API operations
-  async getDailyStats(options: {
-    volume_id: string;
-    days?: number;
-  }) {
-    const response = await volumeVizApi.stats.getDailyStats(options);
+  async getDailyStats(options: { volume_id: string; days?: number }) {
+    const response = await volumeVizApi.stats.dailyList(options);
     return response.data;
   },
 
-  async getTopFolders(options: {
-    volume_id: string;
-    limit?: number;
-  }) {
-    const response = await volumeVizApi.stats.getTopFolders(options);
+  async getTopFolders(options: { volume_id: string; limit?: number }) {
+    const response = await volumeVizApi.stats.topFoldersList(options);
     return response.data;
   },
 };
 
 // Export types for use in components
 export type {
-    AlertDestination, AlertRule, DirectoryListing, ErrorResponse, FileDetailsResponse, FileListResponse, FileMetadataResponse, FileNode,
-    FolderNode, FolderSizeInfo, PagedVolumes, RefreshRequest, ScanProgress, ScanResponse, TreeNode, VolumeDetail, Volume as VolumeResponse
+  ErrorResponse,
+  FileDetailsResponse,
+  FileMetadataResponse,
 } from './generated/Api';
 
-// Alert client methods
+// Export our temporary types
+export type {
+  PagedVolumes,
+  RefreshRequest,
+  ScanResponse,
+  Volume,
+};
+
+// Alert client methods (temporary stubs)
 export const alertApi = {
   async listAlertRules() {
-    // Alert client method for rules
     return [];
   },
 
-  async createAlertRule(rule: AlertRule) {
-    // Alert client method for creating rules
+  async createAlertRule(rule: any) {
     return rule;
   },
 
   async listDestinations() {
-    // Alert client method for destinations
     return [];
   },
 };

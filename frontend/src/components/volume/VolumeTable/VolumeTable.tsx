@@ -1,10 +1,10 @@
 import { clsx } from 'clsx';
 import {
-    Calendar,
-    ChevronDown,
-    ChevronUp,
-    HardDrive,
-    Package,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  HardDrive,
+  Package,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Volume } from '../../../api/generated/Api';

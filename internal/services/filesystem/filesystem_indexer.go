@@ -17,16 +17,17 @@ import (
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/models"
-	"github.com/mantonx/volumeviz/internal/repo"
+	"github.com/mantonx/volumeviz/internal/services/previews"
+	"github.com/mantonx/volumeviz/internal/store"
 )
 
 // FilesystemIndexer provides streaming filesystem indexing with rich metadata
 type FilesystemIndexer struct {
-	foldersRepo *repo.FoldersRepo
-	filesRepo   *repo.FilesRepo
-	config      IndexerConfig
-	mimeDetector *MimeDetector
-	
+	store          store.Store
+	config         IndexerConfig
+	mimeDetector   *MimeDetector
+	previewService *previews.Service
+
 	// Progress tracking
 	progressMutex sync.RWMutex
 	currentScan   *IndexingProgress
@@ -35,56 +36,56 @@ type FilesystemIndexer struct {
 // IndexerConfig holds configuration for filesystem indexing
 type IndexerConfig struct {
 	// Hashing configuration
-	EnableHashing      bool   `yaml:"enable_hashing" env:"VV_ENABLE_HASHING" envDefault:"false"`
-	MaxFileBytesForHash int64 `yaml:"max_file_bytes_for_hash" env:"VV_MAX_FILE_BYTES_FOR_HASH" envDefault:"10485760"` // 10MB
-	HashAlgorithm      string `yaml:"hash_algorithm" env:"VV_HASH_ALGO" envDefault:"sha256"`
-	
+	EnableHashing       bool   `yaml:"enable_hashing" env:"VV_ENABLE_HASHING" envDefault:"false"`
+	MaxFileBytesForHash int64  `yaml:"max_file_bytes_for_hash" env:"VV_MAX_FILE_BYTES_FOR_HASH" envDefault:"10485760"` // 10MB
+	HashAlgorithm       string `yaml:"hash_algorithm" env:"VV_HASH_ALGO" envDefault:"sha256"`
+
 	// Skip rules
 	SkipPatterns []string `yaml:"skip_patterns" env:"VV_SKIP_PATTERNS" envSeparator:","`
 	SkipHidden   bool     `yaml:"skip_hidden" env:"VV_SKIP_HIDDEN" envDefault:"true"`
-	
-	// Performance settings  
-	MaxDepth         int `yaml:"max_depth" env:"VV_MAX_DEPTH" envDefault:"20"`
-	ConcurrentReads  int `yaml:"concurrent_reads" env:"VV_CONCURRENT_READS" envDefault:"5"`
-	BatchSize        int `yaml:"batch_size" env:"VV_BATCH_SIZE" envDefault:"1000"`
-	
+
+	// Performance settings
+	MaxDepth        int `yaml:"max_depth" env:"VV_MAX_DEPTH" envDefault:"20"`
+	ConcurrentReads int `yaml:"concurrent_reads" env:"VV_CONCURRENT_READS" envDefault:"5"`
+	BatchSize       int `yaml:"batch_size" env:"VV_BATCH_SIZE" envDefault:"1000"`
+
 	// Metadata collection
 	CollectExtendedAttributes bool `yaml:"collect_extended_attributes" env:"VV_COLLECT_EXTENDED_ATTRS" envDefault:"false"`
-	DetectMimeTypes          bool `yaml:"detect_mime_types" env:"VV_DETECT_MIME_TYPES" envDefault:"true"`
+	DetectMimeTypes           bool `yaml:"detect_mime_types" env:"VV_DETECT_MIME_TYPES" envDefault:"true"`
 }
 
 // IndexingProgress tracks the progress of filesystem indexing
 type IndexingProgress struct {
-	VolumeID        string    `json:"volume_id"`
-	Status          string    `json:"status"` // "running", "completed", "failed", "canceled"
-	StartedAt       time.Time `json:"started_at"`
-	LastUpdate      time.Time `json:"last_update"`
-	
+	VolumeID   string    `json:"volume_id"`
+	Status     string    `json:"status"` // "running", "completed", "failed", "canceled"
+	StartedAt  time.Time `json:"started_at"`
+	LastUpdate time.Time `json:"last_update"`
+
 	// Counters
-	FoldersScanned  int64     `json:"folders_scanned"`
-	FilesScanned    int64     `json:"files_scanned"`
-	BytesProcessed  int64     `json:"bytes_processed"`
-	ErrorsCount     int64     `json:"errors_count"`
-	
+	FoldersScanned int64 `json:"folders_scanned"`
+	FilesScanned   int64 `json:"files_scanned"`
+	BytesProcessed int64 `json:"bytes_processed"`
+	ErrorsCount    int64 `json:"errors_count"`
+
 	// Current state
-	CurrentPath     string    `json:"current_path"`
-	CurrentDepth    int       `json:"current_depth"`
-	
+	CurrentPath  string `json:"current_path"`
+	CurrentDepth int    `json:"current_depth"`
+
 	// Rates
-	FoldersPerSec   float64   `json:"folders_per_sec"`
-	FilesPerSec     float64   `json:"files_per_sec"`
-	
+	FoldersPerSec float64 `json:"folders_per_sec"`
+	FilesPerSec   float64 `json:"files_per_sec"`
+
 	// Errors
-	LastError       string    `json:"last_error,omitempty"`
+	LastError string `json:"last_error,omitempty"`
 }
 
 // NewFilesystemIndexer creates a new filesystem indexer
-func NewFilesystemIndexer(foldersRepo *repo.FoldersRepo, filesRepo *repo.FilesRepo, config IndexerConfig) *FilesystemIndexer {
+func NewFilesystemIndexer(store store.Store, config IndexerConfig, previewService *previews.Service) *FilesystemIndexer {
 	return &FilesystemIndexer{
-		foldersRepo:  foldersRepo,
-		filesRepo:    filesRepo, 
-		config:       config,
-		mimeDetector: NewMimeDetector(),
+		store:          store,
+		config:         config,
+		mimeDetector:   NewMimeDetector(),
+		previewService: previewService,
 	}
 }
 
@@ -93,13 +94,13 @@ func (fi *FilesystemIndexer) IndexVolume(ctx context.Context, volumeID, mountpoi
 	// Initialize progress tracking
 	fi.progressMutex.Lock()
 	fi.currentScan = &IndexingProgress{
-		VolumeID:    volumeID,
-		Status:      "running",
-		StartedAt:   time.Now(),
-		LastUpdate:  time.Now(),
+		VolumeID:   volumeID,
+		Status:     "running",
+		StartedAt:  time.Now(),
+		LastUpdate: time.Now(),
 	}
 	fi.progressMutex.Unlock()
-	
+
 	defer func() {
 		fi.progressMutex.Lock()
 		if fi.currentScan.Status == "running" {
@@ -111,10 +112,10 @@ func (fi *FilesystemIndexer) IndexVolume(ctx context.Context, volumeID, mountpoi
 
 	// Clear existing data if not in delta mode
 	if !deltaMode {
-		if err := fi.foldersRepo.DeleteFoldersByVolume(ctx, volumeID); err != nil {
+		if err := fi.store.Folders().DeleteFoldersByVolume(ctx, volumeID); err != nil {
 			return fmt.Errorf("failed to clear existing folders: %w", err)
 		}
-		if err := fi.filesRepo.DeleteFilesByVolume(ctx, volumeID); err != nil {
+		if err := fi.store.Files().DeleteFilesByVolume(ctx, volumeID); err != nil {
 			return fmt.Errorf("failed to clear existing files: %w", err)
 		}
 	}
@@ -142,11 +143,11 @@ func (fi *FilesystemIndexer) IndexVolume(ctx context.Context, volumeID, mountpoi
 func (fi *FilesystemIndexer) GetProgress() *IndexingProgress {
 	fi.progressMutex.RLock()
 	defer fi.progressMutex.RUnlock()
-	
+
 	if fi.currentScan == nil {
 		return nil
 	}
-	
+
 	// Create a copy to avoid race conditions
 	progress := *fi.currentScan
 	return &progress
@@ -155,7 +156,7 @@ func (fi *FilesystemIndexer) GetProgress() *IndexingProgress {
 // compileSkipPatterns compiles skip patterns into regex
 func (fi *FilesystemIndexer) compileSkipPatterns() ([]*regexp.Regexp, error) {
 	var regexes []*regexp.Regexp
-	
+
 	for _, pattern := range fi.config.SkipPatterns {
 		regex, err := regexp.Compile(pattern)
 		if err != nil {
@@ -163,26 +164,26 @@ func (fi *FilesystemIndexer) compileSkipPatterns() ([]*regexp.Regexp, error) {
 		}
 		regexes = append(regexes, regex)
 	}
-	
+
 	return regexes, nil
 }
 
 // shouldSkip determines if a path should be skipped based on rules
 func (fi *FilesystemIndexer) shouldSkip(path string, info os.FileInfo, skipRegexes []*regexp.Regexp) bool {
 	name := info.Name()
-	
+
 	// Skip hidden files/directories if configured
 	if fi.config.SkipHidden && strings.HasPrefix(name, ".") {
 		return true
 	}
-	
+
 	// Check skip patterns
 	for _, regex := range skipRegexes {
 		if regex.MatchString(path) || regex.MatchString(name) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -194,7 +195,7 @@ type indexingWalker struct {
 	skipRegexes []*regexp.Regexp
 	folderCache map[string]*models.Folder
 	deltaMode   bool
-	
+
 	// Batching
 	folderBatch []models.CreateFolderParams
 	fileBatch   []models.CreateFileParams
@@ -258,15 +259,15 @@ func (w *indexingWalker) processFolder(path string, info os.FileInfo, depth int)
 
 	// Extract metadata
 	folderParams := w.extractFolderMetadata(path, info, parentID, int32(depth))
-	
+
 	// Check if folder exists in delta mode
 	if w.deltaMode {
-		existing, err := w.indexer.foldersRepo.GetFolderByPath(w.ctx, w.volumeID, path)
+		existing, err := w.indexer.store.Folders().GetFolderByPath(w.ctx, w.volumeID, path)
 		if err == nil {
 			// Folder exists, check if it needs updating
 			if w.shouldUpdateFolder(existing, &folderParams) {
 				// Update existing folder metadata
-				err = w.indexer.foldersRepo.UpdateFolderMetadata(w.ctx, existing.ID, 
+				err = w.indexer.store.Folders().UpdateFolderMetadata(w.ctx, existing.ID,
 					folderParams.Mtime, folderParams.Ctime, folderParams.Uid, folderParams.Gid, folderParams.Mode)
 				if err != nil {
 					w.indexer.recordError(fmt.Sprintf("failed to update folder %s: %v", path, err))
@@ -279,7 +280,7 @@ func (w *indexingWalker) processFolder(path string, info os.FileInfo, depth int)
 	}
 
 	// Create new folder
-	folder, err := w.indexer.foldersRepo.CreateFolder(w.ctx, folderParams)
+	folder, err := w.indexer.store.Folders().CreateFolder(w.ctx, folderParams)
 	if err != nil {
 		w.indexer.recordError(fmt.Sprintf("failed to create folder %s: %v", path, err))
 		return nil
@@ -287,7 +288,7 @@ func (w *indexingWalker) processFolder(path string, info os.FileInfo, depth int)
 
 	// Cache the folder for child references
 	w.folderCache[path] = folder
-	
+
 	w.indexer.incrementFolderCount()
 	return nil
 }
@@ -304,15 +305,15 @@ func (w *indexingWalker) processFile(path string, info os.FileInfo, depth int) e
 
 	// Extract metadata
 	fileParams := w.extractFileMetadata(path, info, folder.ID)
-	
+
 	// Check if file exists in delta mode
 	if w.deltaMode {
-		existing, err := w.indexer.filesRepo.GetFileByPath(w.ctx, w.volumeID, path)
+		existing, err := w.indexer.store.Files().GetFileByPath(w.ctx, w.volumeID, path)
 		if err == nil {
 			// File exists, check if it needs updating
 			if w.shouldUpdateFile(existing, &fileParams) {
 				// Update existing file metadata
-				err = w.indexer.filesRepo.UpdateFileMetadata(w.ctx, existing.ID,
+				err = w.indexer.store.Files().UpdateFileMetadata(w.ctx, existing.ID,
 					fileParams.SizeBytes, fileParams.DiskUsageBytes,
 					fileParams.Mtime, fileParams.Ctime, fileParams.Birthtime,
 					fileParams.Uid, fileParams.Gid, fileParams.Mode)
@@ -325,10 +326,15 @@ func (w *indexingWalker) processFile(path string, info os.FileInfo, depth int) e
 	}
 
 	// Create new file
-	_, err := w.indexer.filesRepo.CreateFile(w.ctx, fileParams)
+	file, err := w.indexer.store.Files().CreateFile(w.ctx, fileParams)
 	if err != nil {
 		w.indexer.recordError(fmt.Sprintf("failed to create file %s: %v", path, err))
 		return nil
+	}
+
+	// Generate preview asynchronously if preview service is available
+	if w.indexer.previewService != nil && file != nil {
+		go w.generatePreviewAsync(file, path, info)
 	}
 
 	w.indexer.incrementFileCount()
@@ -381,7 +387,7 @@ func (w *indexingWalker) extractFolderMetadata(path string, info os.FileInfo, pa
 func (w *indexingWalker) extractFileMetadata(path string, info os.FileInfo, folderID int64) models.CreateFileParams {
 	pathHash := generatePathHash(path)
 	name := info.Name()
-	extension := repo.ExtractFileExtension(name)
+	extension := extractFileExtension(name)
 
 	params := models.CreateFileParams{
 		FolderID:       folderID,
@@ -422,7 +428,7 @@ func (w *indexingWalker) extractFileMetadata(path string, info os.FileInfo, fold
 	if w.indexer.config.DetectMimeTypes {
 		if mimeType, mediaKind, encoding := w.indexer.mimeDetector.DetectFile(path); mimeType != "" {
 			params.Mime = &mimeType
-			params.MediaKind = &mediaKind  
+			params.MediaKind = &mediaKind
 			params.Encoding = &encoding
 		}
 	}
@@ -442,12 +448,12 @@ func (w *indexingWalker) extractFileMetadata(path string, info os.FileInfo, fold
 func (fi *FilesystemIndexer) updateProgress(currentPath string, depth int) {
 	fi.progressMutex.Lock()
 	defer fi.progressMutex.Unlock()
-	
+
 	if fi.currentScan != nil {
 		fi.currentScan.CurrentPath = currentPath
 		fi.currentScan.CurrentDepth = depth
 		fi.currentScan.LastUpdate = time.Now()
-		
+
 		// Calculate rates
 		elapsed := time.Since(fi.currentScan.StartedAt).Seconds()
 		if elapsed > 0 {
@@ -494,6 +500,30 @@ func (fi *FilesystemIndexer) recordError(msg string) {
 func generatePathHash(path string) []byte {
 	hash := sha256.Sum256([]byte(path))
 	return hash[:]
+}
+
+// GetIndexingProgress returns the current indexing progress for a volume
+func (fi *FilesystemIndexer) GetIndexingProgress(volumeID string) *IndexingProgress {
+	fi.progressMutex.RLock()
+	defer fi.progressMutex.RUnlock()
+	
+	if fi.currentScan != nil && fi.currentScan.VolumeID == volumeID {
+		// Create a copy to avoid race conditions
+		progress := *fi.currentScan
+		
+		// Calculate rates if we have data
+		if progress.LastUpdate.After(progress.StartedAt) {
+			elapsed := progress.LastUpdate.Sub(progress.StartedAt).Seconds()
+			if elapsed > 0 {
+				progress.FilesPerSec = float64(progress.FilesScanned) / elapsed
+				progress.FoldersPerSec = float64(progress.FoldersScanned) / elapsed
+			}
+		}
+		
+		return &progress
+	}
+	
+	return nil
 }
 
 func (w *indexingWalker) shouldUpdateFolder(existing *models.Folder, new *models.CreateFolderParams) bool {
@@ -543,7 +573,7 @@ func (w *indexingWalker) computeFileHash(path, algorithm string) []byte {
 type MimeDetector struct {
 	// Cache for file extensions to improve performance
 	extensionCache map[string]string
-	mutex         sync.RWMutex
+	mutex          sync.RWMutex
 }
 
 // NewMimeDetector creates a new MIME detector
@@ -561,11 +591,11 @@ func (md *MimeDetector) DetectFile(path string) (mimeType, mediaKind, encoding s
 		md.mutex.RLock()
 		cachedMime, exists := md.extensionCache[ext]
 		md.mutex.RUnlock()
-		
+
 		if exists {
 			return cachedMime, md.classifyMediaKind(cachedMime), ""
 		}
-		
+
 		// Get MIME type by extension
 		if extMime := mime.TypeByExtension(ext); extMime != "" {
 			md.mutex.Lock()
@@ -780,4 +810,93 @@ func getSystemStat(info os.FileInfo) *SystemStat {
 	sysStat.Device = &device
 
 	return sysStat
+}
+
+// extractFileExtension extracts extension from filename
+func extractFileExtension(filename string) *string {
+	ext := strings.ToLower(filepath.Ext(filename))
+	if ext == "" {
+		return nil
+	}
+
+	// Remove the leading dot
+	if len(ext) > 1 {
+		ext = ext[1:]
+	}
+
+	return &ext
+}
+
+// generatePreviewAsync generates a preview for a file asynchronously
+func (w *indexingWalker) generatePreviewAsync(file *models.File, path string, info os.FileInfo) {
+	// Create context with timeout for preview generation
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Detect MIME type if not already detected
+	mimeType := ""
+	if file.Mime != nil {
+		mimeType = *file.Mime
+	} else {
+		// Try to detect MIME type
+		detected, _, _ := w.indexer.mimeDetector.DetectFile(path)
+		if detected != "" {
+			mimeType = detected
+		}
+	}
+
+	// Skip if no MIME type or unsupported file type
+	if mimeType == "" || !w.indexer.previewService.CanGeneratePreview(mimeType) {
+		return
+	}
+
+	// Use file ID and modification time as cache key for performance
+	// This avoids reading the entire file for hash calculation
+	fileHash := fmt.Sprintf("file_%d_mtime_%d", file.ID, info.ModTime().Unix())
+
+	// Determine preview type based on MIME type
+	var previewType previews.PreviewType
+	switch {
+	case strings.HasPrefix(mimeType, "image/"):
+		previewType = previews.PreviewTypeThumbnail
+	case strings.HasPrefix(mimeType, "video/"):
+		previewType = previews.PreviewTypePoster
+	case strings.HasPrefix(mimeType, "audio/"):
+		previewType = previews.PreviewTypeCover
+	default:
+		return // Unsupported type
+	}
+
+	// Create preview request
+	req := &previews.PreviewRequest{
+		FileID:     file.ID,
+		FilePath:   path,
+		FileHash:   fileHash,
+		Type:       previewType,
+		Size:       previews.PreviewSizeMedium, // Default to medium size during indexing
+		TimeOffset: 5.0,                       // Default time offset for videos
+	}
+
+	// Generate preview (this will handle deduplication automatically)
+	_, err := w.indexer.previewService.GeneratePreview(ctx, req, mimeType)
+	if err != nil {
+		// Log error but don't block indexing
+		w.indexer.recordError(fmt.Sprintf("failed to generate preview for %s: %v", path, err))
+	}
+}
+
+// calculateFileHash calculates SHA256 hash of a file for preview deduplication
+func (w *indexingWalker) calculateFileHash(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }

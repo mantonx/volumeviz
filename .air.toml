@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "./tmp/main"
-  cmd = "go build -buildvcs=false -o ./tmp/main ./cmd/server"
+  cmd = "go build -buildvcs=false -a -o ./tmp/main ./cmd/server"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "frontend", "docs", "scripts", "deployments"]
   exclude_file = []
@@ -21,7 +21,7 @@ tmp_dir = "tmp"
   poll = false
   poll_interval = 0
   post_cmd = []
-  pre_cmd = []
+  pre_cmd = ["rm -rf /tmp/gocache/* /tmp/gomodcache/* tmp/*"]
   rerun = false
   rerun_delay = 500
   send_interrupt = false

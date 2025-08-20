@@ -1,6 +1,6 @@
 /**
  * File Type Icons Utility
- * 
+ *
  * Professional file type icon mappings for better visual hierarchy
  */
 
@@ -11,7 +11,11 @@ export interface FileIconInfo {
 }
 
 // Get file type icon based on media kind and mime type
-export const getFileIcon = (mediaKind?: string, mimeType?: string, extension?: string): FileIconInfo => {
+export const getFileIcon = (
+  mediaKind?: string,
+  mimeType?: string,
+  extension?: string,
+): FileIconInfo => {
   // Video files
   if (mediaKind === 'video' || mimeType?.startsWith('video/')) {
     return {
@@ -70,7 +74,7 @@ export const getFileIcon = (mediaKind?: string, mimeType?: string, extension?: s
         bgColor: 'bg-orange-50 dark:bg-orange-900/20',
       };
     }
-    
+
     return {
       icon: '📄',
       color: 'text-gray-600',
@@ -102,8 +106,15 @@ export const getFileIcon = (mediaKind?: string, mimeType?: string, extension?: s
   }
 
   // Archive files
-  if (mimeType?.includes('zip') || mimeType?.includes('rar') || mimeType?.includes('tar') || 
-      extension === 'zip' || extension === 'rar' || extension === '7z' || extension === 'tar') {
+  if (
+    mimeType?.includes('zip') ||
+    mimeType?.includes('rar') ||
+    mimeType?.includes('tar') ||
+    extension === 'zip' ||
+    extension === 'rar' ||
+    extension === '7z' ||
+    extension === 'tar'
+  ) {
     return {
       icon: '📦',
       color: 'text-amber-600',
@@ -112,7 +123,21 @@ export const getFileIcon = (mediaKind?: string, mimeType?: string, extension?: s
   }
 
   // Code files based on extension
-  const codeExtensions = ['js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'php', 'rb', 'go', 'rs'];
+  const codeExtensions = [
+    'js',
+    'ts',
+    'jsx',
+    'tsx',
+    'py',
+    'java',
+    'cpp',
+    'c',
+    'cs',
+    'php',
+    'rb',
+    'go',
+    'rs',
+  ];
   if (extension && codeExtensions.includes(extension)) {
     return {
       icon: '⚡',
@@ -151,7 +176,7 @@ export const getFileIcon = (mediaKind?: string, mimeType?: string, extension?: s
 // Get file size badge color based on size
 export const getFileSizeBadgeColor = (sizeBytes: number): string => {
   const mb = sizeBytes / (1024 * 1024);
-  
+
   if (mb < 1) return 'bg-green-100 text-green-800';
   if (mb < 10) return 'bg-blue-100 text-blue-800';
   if (mb < 100) return 'bg-yellow-100 text-yellow-800';
@@ -162,10 +187,15 @@ export const getFileSizeBadgeColor = (sizeBytes: number): string => {
 // Get media kind badge color
 export const getMediaKindBadgeColor = (mediaKind: string): string => {
   switch (mediaKind) {
-    case 'video': return 'bg-red-100 text-red-800';
-    case 'audio': return 'bg-purple-100 text-purple-800';
-    case 'image': return 'bg-green-100 text-green-800';
-    case 'document': return 'bg-blue-100 text-blue-800';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'video':
+      return 'bg-red-100 text-red-800';
+    case 'audio':
+      return 'bg-purple-100 text-purple-800';
+    case 'image':
+      return 'bg-green-100 text-green-800';
+    case 'document':
+      return 'bg-blue-100 text-blue-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
   }
 };

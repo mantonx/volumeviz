@@ -3,17 +3,17 @@ import { volumeStatsAtom } from '@/store';
 import { cn } from '@/utils';
 import { useAtomValue } from 'jotai';
 import {
-    Activity,
-    Bell,
-    FolderOpen,
-    HardDrive,
-    Home,
-    Layers,
-    Search,
-    Settings,
-    TrendingUp,
-    X,
-    Zap,
+  Activity,
+  Bell,
+  FolderOpen,
+  HardDrive,
+  Home,
+  Layers,
+  Search,
+  Settings,
+  TrendingUp,
+  X,
+  Zap,
 } from 'lucide-react';
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useVolumeListUrlState } from '@/hooks';
 import { useDebounce } from '@/hooks/useDebounce/useDebounce';
+import { useScanMonitoring } from '@/hooks/useScanMonitoring';
 import { volumesAtom, volumesErrorAtom, volumesLoadingAtom } from '@/store';
 import { cn } from '@/utils';
 import { useAtomValue } from 'jotai';
@@ -25,13 +26,26 @@ import React, {
   useState,
 } from 'react';
 import type { VolumesPageProps } from './VolumesPage.types';
-import VolumeCard from './components/VolumeCard';
+import { VolumeCardWithProgress } from '@/components/volume/VolumeCardWithProgress';
 
 export const VolumesPage: React.FC<VolumesPageProps> = () => {
   const { fetchVolumes, paginationMeta } = useVolumes();
   const volumes = useAtomValue(volumesAtom) as unknown as Volume[];
   const loading = useAtomValue(volumesLoadingAtom);
   const error = useAtomValue(volumesErrorAtom);
+  
+  // Scan monitoring integration
+  const { 
+    scanOperations,
+    startScan, 
+    pauseScan, 
+    resumeScan, 
+    cancelScan,
+    isConnected: wsConnected 
+  } = useScanMonitoring({
+    autoSubscribe: true,
+    enableNotifications: false, // Don't show notifications on volumes page
+  });
 
   const [urlState, setUrlState] = useVolumeListUrlState();
   const [qInput, setQInput] = useState(urlState.q || '');
@@ -307,9 +321,24 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
 
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Docker Volumes
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Docker Volumes
+            </h1>
+            {/* WebSocket connection status */}
+            <div className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+              wsConnected && "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
+              !wsConnected && "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400"
+            )}>
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                wsConnected && "bg-green-500",
+                !wsConnected && "bg-gray-400"
+              )} />
+              {wsConnected ? 'Live' : 'Offline'}
+            </div>
+          </div>
           <p className="mt-1 text-gray-600 dark:text-gray-400">
             Manage and monitor your Docker volume storage
           </p>
@@ -478,9 +507,67 @@ export const VolumesPage: React.FC<VolumesPageProps> = () => {
             aria-label={`Volume list showing ${volumes.length} volume${volumes.length !== 1 ? 's' : ''}`}
             tabIndex={-1}
           >
-            {volumes.map((v) => (
-              <VolumeCard key={(v as any).volume_id || v.name} volume={v} />
-            ))}
+            {volumes.map((v) => {
+              const volumeId = (v as any).volume_id || v.name || v.id;
+              // Find scan progress for this volume
+              const scanProgress = scanOperations.find(op => op.volumeId === volumeId);
+              
+              return (
+                <VolumeCardWithProgress 
+                  key={volumeId} 
+                  volume={v}
+                  scanProgress={scanProgress}
+                  onClick={() => {
+                    // Navigate to volume details or explorer
+                    if (volumeId) {
+                      window.location.href = `/explorer/${volumeId}`;
+                    }
+                  }}
+                  onScanStart={async () => {
+                    if (volumeId) {
+                      try {
+                        await startScan(volumeId);
+                      } catch (error) {
+                        console.error('Failed to start scan:', error);
+                      }
+                    }
+                  }}
+                  onScanPause={async () => {
+                    if (scanProgress?.scanId) {
+                      try {
+                        await pauseScan(scanProgress.scanId);
+                      } catch (error) {
+                        console.error('Failed to pause scan:', error);
+                      }
+                    }
+                  }}
+                  onScanResume={async () => {
+                    if (scanProgress?.scanId) {
+                      try {
+                        await resumeScan(scanProgress.scanId);
+                      } catch (error) {
+                        console.error('Failed to resume scan:', error);
+                      }
+                    }
+                  }}
+                  onScanStop={async () => {
+                    if (scanProgress?.scanId) {
+                      try {
+                        await cancelScan(scanProgress.scanId);
+                      } catch (error) {
+                        console.error('Failed to stop scan:', error);
+                      }
+                    }
+                  }}
+                  onViewDetails={() => {
+                    // Navigate to volume details
+                    if (volumeId) {
+                      window.location.href = `/volumes/${volumeId}`;
+                    }
+                  }}
+                />
+              );
+            })}
           </div>
           {paginationMeta.total > page_size && (
             <Card className="p-4">

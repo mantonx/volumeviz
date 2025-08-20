@@ -1,7 +1,5 @@
 import { useScanStatus } from '@/hooks/useScanStatus';
-import {
-    activeScansAtom
-} from '@/store/atoms/scanStatus';
+import { activeScansAtom } from '@/store/atoms/scanStatus';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { createStore } from 'jotai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

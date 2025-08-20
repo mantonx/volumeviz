@@ -53,17 +53,60 @@ type AsyncScanResponse struct {
 
 // ScanProgress represents the progress of an ongoing scan
 type ScanProgress struct {
-	ScanID             string        `json:"scan_id" example:"scan_tv-shows-readonly_1640995200"`
-	VolumeID           string        `json:"volume_id" example:"tv-shows-readonly"`
-	Status             string        `json:"status" example:"running" enums:"pending,running,completed,failed,canceled"`
-	Progress           float64       `json:"progress" example:"0.75"`
-	FilesScanned       int           `json:"files_scanned" example:"9407"`
-	CurrentPath        string        `json:"current_path" example:"/mnt/tv-shows/Season 3"`
-	EstimatedRemaining time.Duration `json:"estimated_remaining" example:"3300000000"`
-	Method             string        `json:"method" example:"native"`
+	ScanID   string `json:"scan_id" example:"scan_tv-shows-readonly_1640995200"`
+	VolumeID string `json:"volume_id" example:"tv-shows-readonly"`
+	Status   string `json:"status" example:"running" enums:"pending,running,completed,failed,canceled"`
+	
+	// Current phase information
+	Phase        string  `json:"phase" example:"filesystem_indexing" enums:"volume_scan,filesystem_indexing,media_enrichment,preview_generation"`
+	Progress     float64 `json:"progress" example:"0.75"`
+	PhaseProgress float64 `json:"phase_progress" example:"0.65"`
+	
+	// File/directory tracking
+	FilesScanned    int64  `json:"files_scanned" example:"9407"`
+	FoldersScanned  int64  `json:"folders_scanned" example:"2341"`
+	TotalEstimated  int64  `json:"total_estimated,omitempty" example:"15000"`
+	CurrentPath     string `json:"current_path" example:"/mnt/tv-shows/The Wire/Season 3"`
+	CurrentDepth    int    `json:"current_depth,omitempty" example:"4"`
+	
+	// Byte tracking
+	BytesProcessed int64 `json:"bytes_processed" example:"45023847392"`
+	TotalBytes     int64 `json:"total_bytes,omitempty" example:"66299342737408"`
+	
+	// Timing information
 	StartedAt          time.Time     `json:"started_at"`
-	Error              string        `json:"error,omitempty"`
+	LastUpdate         time.Time     `json:"last_update"`
+	EstimatedRemaining time.Duration `json:"estimated_remaining" example:"3300000000"`
+	ElapsedSeconds     int64         `json:"elapsed_seconds" example:"412"`
+	
+	// Performance metrics
+	FilesPerSecond   float64 `json:"files_per_second,omitempty" example:"32.5"`
+	FoldersPerSecond float64 `json:"folders_per_second,omitempty" example:"8.2"`
+	BytesPerSecond   int64   `json:"bytes_per_second,omitempty" example:"109283471"`
+	
+	// Phase breakdown
+	Phases map[string]*PhaseInfo `json:"phases,omitempty"`
+	
+	// Error tracking
+	ErrorsCount int64    `json:"errors_count,omitempty" example:"3"`
+	Errors      []string `json:"errors,omitempty" example:"Permission denied: /root/.ssh,File not found: /tmp/missing.txt"`
+	LastError   string   `json:"last_error,omitempty" example:"Permission denied: /protected/dir"`
+	
+	// Legacy fields (for backward compatibility)
+	Method string `json:"method" example:"native"`
+	Error  string `json:"error,omitempty"`
 } // @name ScanProgress
+
+// PhaseInfo represents information about a specific scan phase
+type PhaseInfo struct {
+	Status       string        `json:"status" example:"running" enums:"pending,running,completed,failed,skipped"`
+	StartedAt    *time.Time    `json:"started_at,omitempty"`
+	CompletedAt  *time.Time    `json:"completed_at,omitempty"`
+	Duration     time.Duration `json:"duration,omitempty" example:"45000000000"`
+	Progress     float64       `json:"progress" example:"0.65"`
+	ItemsProcessed int64       `json:"items_processed,omitempty" example:"9407"`
+	Error        string        `json:"error,omitempty"`
+} // @name PhaseInfo
 
 // BulkScanRequest represents a request to scan multiple volumes
 type BulkScanRequest struct {

@@ -72,6 +72,11 @@ func (s *pgStore) Alerts() repo.AlertsRepo {
 	return repo.NewAlertsRepo(s.conn.Queries)
 }
 
+// Search returns a search repository using the pool connection
+func (s *pgStore) Search() *repo.SearchRepo {
+	return repo.NewSearchRepo(s.conn.Queries)
+}
+
 // Health performs a health check on the database connection
 func (s *pgStore) Health(ctx context.Context) error {
 	return s.conn.Pool.Ping(ctx)

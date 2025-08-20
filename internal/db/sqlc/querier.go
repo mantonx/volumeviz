@@ -12,6 +12,7 @@ import (
 )
 
 type Querier interface {
+	BulkDeletePreviews(ctx context.Context, dollar_1 []string) error
 	BulkInsertDirNodes(ctx context.Context, arg []BulkInsertDirNodesParams) (int64, error)
 	BulkInsertFileMetadata(ctx context.Context, arg BulkInsertFileMetadataParams) error
 	BulkInsertFiles(ctx context.Context, arg []BulkInsertFilesParams) (int64, error)
@@ -26,6 +27,7 @@ type Querier interface {
 	// =============================================================================
 	CleanupOldAlerts(ctx context.Context) error
 	CleanupOldDeliveries(ctx context.Context) error
+	CleanupOrphanedPreviews(ctx context.Context) error
 	CompactDailyToWeekly(ctx context.Context) error
 	CompleteScanJob(ctx context.Context, arg CompleteScanJobParams) (CompleteScanJobRow, error)
 	// Compute daily aggregates for a volume on a specific date
@@ -48,6 +50,8 @@ type Querier interface {
 	CountOldDailyStats(ctx context.Context, dollar_1 interface{}) (int64, error)
 	CountOldFileMetadata(ctx context.Context, dollar_1 interface{}) (int64, error)
 	CountOldScanJobs(ctx context.Context, dollar_1 interface{}) (int64, error)
+	CountSavedSearches(ctx context.Context, filterTags []string) (int64, error)
+	CountSearchFiles(ctx context.Context, arg CountSearchFilesParams) (int64, error)
 	CountVolumeMetrics(ctx context.Context, dollar_1 interface{}) (int64, error)
 	CountVolumeMounts(ctx context.Context) (int64, error)
 	CountVolumes(ctx context.Context) (int64, error)
@@ -95,6 +99,9 @@ type Querier interface {
 	// FOLDER OPERATIONS
 	// =======================
 	CreateFolder(ctx context.Context, arg CreateFolderParams) (CreateFolderRow, error)
+	CreatePreview(ctx context.Context, arg CreatePreviewParams) (Previews, error)
+	// Saved Searches CRUD Operations
+	CreateSavedSearch(ctx context.Context, arg CreateSavedSearchParams) (SavedSearches, error)
 	// Consolidated queries for scan jobs and health/diagnostic operations
 	// This file consolidates queries from scan_jobs.sql and health.sql
 	// =============================================================================
@@ -145,6 +152,10 @@ type Querier interface {
 	DeleteOldVolumeMetrics(ctx context.Context, metricTimestamp pgtype.Timestamp) error
 	DeleteOldVolumeSizes(ctx context.Context, createdAt time.Time) error
 	DeleteOldWeeklySnapshots(ctx context.Context) error
+	DeletePreview(ctx context.Context, id int64) error
+	DeletePreviewByStoragePath(ctx context.Context, storagePath string) error
+	DeletePreviewsForFile(ctx context.Context, fileID int64) error
+	DeleteSavedSearch(ctx context.Context, id int64) error
 	DeleteStatsForDate(ctx context.Context, arg DeleteStatsForDateParams) error
 	FailScanJob(ctx context.Context, arg FailScanJobParams) (FailScanJobRow, error)
 	FindFilesByPathHashLegacy(ctx context.Context, arg FindFilesByPathHashLegacyParams) ([]FindFilesByPathHashLegacyRow, error)
@@ -196,6 +207,11 @@ type Querier interface {
 	// Note: Directory rollups are now handled by triggers in the new schema
 	// These queries are kept for compatibility but may return empty results
 	GetDirRollup(ctx context.Context, id int64) (GetDirRollupRow, error)
+	GetDistinctExtensions(ctx context.Context) ([]GetDistinctExtensionsRow, error)
+	GetDistinctMediaKinds(ctx context.Context) ([]GetDistinctMediaKindsRow, error)
+	// Metadata Queries
+	// Get distinct values for filter dropdowns
+	GetDistinctMimeTypes(ctx context.Context) ([]GetDistinctMimeTypesRow, error)
 	GetDuplicateFiles(ctx context.Context, arg GetDuplicateFilesParams) ([]GetDuplicateFilesRow, error)
 	GetEnrichedFilesByVolume(ctx context.Context, volumeID string) ([]GetEnrichedFilesByVolumeRow, error)
 	GetEnrichmentProgress(ctx context.Context, volumeID string) (GetEnrichmentProgressRow, error)
@@ -251,11 +267,25 @@ type Querier interface {
 	GetLatestVolumeMetric(ctx context.Context, volumeID string) (GetLatestVolumeMetricRow, error)
 	GetLatestVolumeSize(ctx context.Context, volumeID string) (VolumeSizes, error)
 	GetLatestVolumeStats(ctx context.Context, volumeID string) (StatsDaily, error)
+	GetLeastAccessedPreviews(ctx context.Context, limit int32) ([]Previews, error)
 	GetMediaKindComposition(ctx context.Context, arg GetMediaKindCompositionParams) ([]GetMediaKindCompositionRow, error)
 	GetMediaKindStats(ctx context.Context, volumeID string) ([]GetMediaKindStatsRow, error)
 	GetMediaStatistics(ctx context.Context, volumeID string) (GetMediaStatisticsRow, error)
 	// Find dates that are missing stats for a volume within a date range
 	GetMissingStatsDates(ctx context.Context, arg GetMissingStatsDatesParams) ([]pgtype.Date, error)
+	GetMostAccessedPreviews(ctx context.Context, limit int32) ([]Previews, error)
+	GetOldPreviews(ctx context.Context, arg GetOldPreviewsParams) ([]Previews, error)
+	GetPreviewByContentHash(ctx context.Context, contentHash string) (Previews, error)
+	GetPreviewByID(ctx context.Context, id int64) (Previews, error)
+	GetPreviewByStoragePath(ctx context.Context, storagePath string) (Previews, error)
+	GetPreviewCountByFileIDs(ctx context.Context, dollar_1 []int64) ([]GetPreviewCountByFileIDsRow, error)
+	GetPreviewForFileByTypeSize(ctx context.Context, arg GetPreviewForFileByTypeSizeParams) (Previews, error)
+	GetPreviewStats(ctx context.Context) (GetPreviewStatsRow, error)
+	GetPreviewStatsByType(ctx context.Context) ([]GetPreviewStatsByTypeRow, error)
+	GetPreviewStatsRecord(ctx context.Context) (PreviewStats, error)
+	GetPreviewsByType(ctx context.Context, arg GetPreviewsByTypeParams) ([]Previews, error)
+	GetPreviewsForFile(ctx context.Context, fileID int64) ([]Previews, error)
+	GetPreviewsNeedingCleanup(ctx context.Context, accessedAt pgtype.Timestamptz) ([]GetPreviewsNeedingCleanupRow, error)
 	// Get current queue depth for metrics
 	GetQueueDepth(ctx context.Context) (int64, error)
 	GetRecentFiles(ctx context.Context, arg GetRecentFilesParams) ([]GetRecentFilesRow, error)
@@ -264,6 +294,8 @@ type Querier interface {
 	GetRootDirNodes(ctx context.Context, volumeID string) ([]GetRootDirNodesRow, error)
 	GetRootFolders(ctx context.Context, volumeID string) ([]GetRootFoldersRow, error)
 	GetRuleActivityStats(ctx context.Context) ([]GetRuleActivityStatsRow, error)
+	GetSavedSearch(ctx context.Context, id int64) (SavedSearches, error)
+	GetSavedSearchQuery(ctx context.Context, id int64) ([]byte, error)
 	GetScanJobByID(ctx context.Context, id int64) (ScanJobs, error)
 	GetScanJobByScanID(ctx context.Context, scanID string) (ScanJobs, error)
 	GetScanJobStats(ctx context.Context) (GetScanJobStatsRow, error)
@@ -333,6 +365,7 @@ type Querier interface {
 	ListPendingDeliveries(ctx context.Context, limit int32) ([]AlertDeliveries, error)
 	ListRoutesByDestination(ctx context.Context, destinationID int64) ([]AlertRoutes, error)
 	ListRoutesByPriority(ctx context.Context) ([]ListRoutesByPriorityRow, error)
+	ListSavedSearches(ctx context.Context, arg ListSavedSearchesParams) ([]SavedSearches, error)
 	ListScanJobs(ctx context.Context, arg ListScanJobsParams) ([]ScanJobs, error)
 	ListVolumeMounts(ctx context.Context, arg ListVolumeMountsParams) ([]VolumeMounts, error)
 	ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Volumes, error)
@@ -357,6 +390,9 @@ type Querier interface {
 	// =============================================================================
 	// Handles real-time volume metrics collection and analysis
 	SaveVolumeMetrics(ctx context.Context, arg SaveVolumeMetricsParams) error
+	// Search Queries
+	// Advanced file search with filters and sorting
+	SearchFiles(ctx context.Context, arg SearchFilesParams) ([]SearchFilesRow, error)
 	SearchFilesByName(ctx context.Context, arg SearchFilesByNameParams) ([]SearchFilesByNameRow, error)
 	SoftDeleteContainer(ctx context.Context, id int64) error
 	SoftDeleteVolume(ctx context.Context, id int64) error
@@ -377,6 +413,12 @@ type Querier interface {
 	UpdateFolderMetadata(ctx context.Context, arg UpdateFolderMetadataParams) error
 	UpdateFolderStats(ctx context.Context, arg UpdateFolderStatsParams) error
 	UpdateLastScanned(ctx context.Context, arg UpdateLastScannedParams) error
+	UpdatePreviewAccessTime(ctx context.Context, id int64) error
+	UpdatePreviewAccessTimeByPath(ctx context.Context, storagePath string) error
+	UpdatePreviewStatsCleanup(ctx context.Context) error
+	UpdatePreviewStatsIncrement(ctx context.Context, arg UpdatePreviewStatsIncrementParams) error
+	UpdateSavedSearch(ctx context.Context, arg UpdateSavedSearchParams) (SavedSearches, error)
+	UpdateSavedSearchStats(ctx context.Context, id int64) error
 	// Update heartbeat timestamp for an active scan job
 	UpdateScanJobHeartbeat(ctx context.Context, arg UpdateScanJobHeartbeatParams) error
 	UpdateScanJobProgress(ctx context.Context, arg UpdateScanJobProgressParams) error

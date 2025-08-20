@@ -1,5 +1,6 @@
-// Generated client integration tests for API validation
 package v1_test
+
+// Generated client integration tests for API validation
 
 import (
 	"testing"

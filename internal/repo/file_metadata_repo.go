@@ -256,3 +256,18 @@ func (r *FileMetadataRepo) updateFileEnrichedColumns(ctx context.Context, fileID
 
 	return nil
 }
+
+// GetDistinctMimeTypes returns distinct MIME types with file counts
+func (r *FileMetadataRepo) GetDistinctMimeTypes(ctx context.Context) ([]sqlc.GetDistinctMimeTypesRow, error) {
+	return r.queries.GetDistinctMimeTypes(ctx)
+}
+
+// GetDistinctMediaKinds returns distinct media kinds with file counts
+func (r *FileMetadataRepo) GetDistinctMediaKinds(ctx context.Context) ([]sqlc.GetDistinctMediaKindsRow, error) {
+	return r.queries.GetDistinctMediaKinds(ctx)
+}
+
+// GetDistinctExtensions returns distinct extensions with file counts
+func (r *FileMetadataRepo) GetDistinctExtensions(ctx context.Context) ([]sqlc.GetDistinctExtensionsRow, error) {
+	return r.queries.GetDistinctExtensions(ctx)
+}

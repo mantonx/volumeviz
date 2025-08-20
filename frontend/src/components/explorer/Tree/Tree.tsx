@@ -10,11 +10,11 @@ import { currentVolumeAtom } from '@/store/atoms/explorer';
 import { cn } from '@/utils';
 import { useSetAtom } from 'jotai';
 import {
-    ChevronDownIcon,
-    ChevronRightIcon,
-    FolderIcon,
-    FolderOpenIcon,
-    LoaderIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  LoaderIcon,
 } from 'lucide-react';
 import React, { useCallback, useEffect } from 'react';
 

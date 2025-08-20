@@ -9,13 +9,15 @@ export function ApiHealthChecker() {
 
   useEffect(() => {
     console.log('[ApiHealthChecker] Starting health checks');
-    
+
     // Initial health check
-    checkHealth().then(() => {
-      console.log('[ApiHealthChecker] Initial health check completed');
-    }).catch((err) => {
-      console.error('[ApiHealthChecker] Initial health check failed:', err);
-    });
+    checkHealth()
+      .then(() => {
+        console.log('[ApiHealthChecker] Initial health check completed');
+      })
+      .catch((err) => {
+        console.error('[ApiHealthChecker] Initial health check failed:', err);
+      });
 
     // Check health every 10 seconds for faster feedback
     const interval = setInterval(() => {

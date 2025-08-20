@@ -25,7 +25,7 @@
     "api:gen": "npm run api:generate:file",
     "api:generate": "npm run api:generate:file",
     "api:generate:local": "npx swagger-typescript-api generate -p http://localhost:8080/api/docs/openapi.yaml -o src/api/generated",
-    "api:generate:file": "npx swagger-typescript-api generate -p ../docs/openapi.yaml -o src/api/generated",
+    "api:generate:file": "npx swagger-typescript-api generate -p ../docs/swagger.json -o src/api/generated",
     "api:generate:remote": "npx swagger-typescript-api generate -p https://raw.githubusercontent.com/mantonx/volumeviz/main/docs/openapi.yaml -o src/api/generated",
     "api:bundle": "cd .. && npx js-yaml docs/openapi.yaml > docs/swagger.json",
     "generate-types": "npm run api:generate:file"

@@ -1,12 +1,12 @@
 import {
-    scanStatusAtomFamily,
-    scanStatusErrorAtomFamily,
-    scanStatusLoadingAtomFamily,
-    setScanErrorAtom,
-    startScanTrackingAtom,
-    stopScanTrackingAtom,
-    updateScanStatusAtom,
-    type ScanStatus,
+  scanStatusAtomFamily,
+  scanStatusErrorAtomFamily,
+  scanStatusLoadingAtomFamily,
+  setScanErrorAtom,
+  startScanTrackingAtom,
+  stopScanTrackingAtom,
+  updateScanStatusAtom,
+  type ScanStatus,
 } from '@/store/atoms/scanStatus';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useState } from 'react';

@@ -8,13 +8,13 @@ import { Card } from '@/components/ui/Card';
 import { volumesAtom } from '@/store';
 import { useAtomValue } from 'jotai';
 import {
-    Activity,
-    ArrowLeft,
-    Database,
-    HardDrive,
-    MapPin,
-    RefreshCw,
-    Tag
+  Activity,
+  ArrowLeft,
+  Database,
+  HardDrive,
+  MapPin,
+  RefreshCw,
+  Tag,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -398,7 +398,9 @@ const VolumeDetailsPage: React.FC = () => {
       {/* Explorer UI Integration */}
       <Card>
         <div className="p-6">
-          <h2 className="text-lg font-semibold mb-4">File Explorer - Tree and Browse Integration</h2>
+          <h2 className="text-lg font-semibold mb-4">
+            File Explorer - Tree and Browse Integration
+          </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <ExplorerView

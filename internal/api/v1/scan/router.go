@@ -29,7 +29,7 @@ func (r *Router) SetEnrichmentManager(manager interfaces.EnrichmentManager) {
 // RegisterRoutes registers all scan-related routes
 func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	// Volume size endpoints
-	group.GET("/volumes/:name/size", r.handler.GetVolumeSize)
+	group.GET("/volumes/:name/size", r.handler.GetSizeAnalysisStatus)
 	group.POST("/volumes/:name/size/refresh", r.handler.RefreshVolumeSize)
 
 	// Volume scan status endpoint (per spec)
@@ -51,7 +51,7 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	// Scheduler management endpoints
 	group.GET("/scheduler/status", r.handler.GetSchedulerStatus)   // Get scheduler status
 	group.GET("/scheduler/metrics", r.handler.GetSchedulerMetrics) // Get scheduler metrics
-	
+
 	// Enhanced scheduler endpoints (hardened mode)
 	group.GET("/scheduler/metrics/detailed", r.handler.GetSchedulerDetailedMetrics) // Enhanced metrics with worker/watchdog stats
 	group.GET("/scheduler/workers", r.handler.GetSchedulerWorkerStats)              // Worker statistics
@@ -59,12 +59,13 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	group.GET("/scheduler/capabilities", r.handler.GetSchedulerCapabilities)        // Scheduler capabilities and mode
 
 	// Filesystem indexing endpoints
-	group.GET("/volumes/:id/filesystem/status", r.handler.GetFilesystemIndexingStatus)   // Get filesystem indexing status
-	group.POST("/volumes/:id/filesystem/index", r.handler.TriggerFilesystemIndexing)     // Trigger filesystem indexing
-	group.GET("/filesystem/capabilities", r.handler.GetFilesystemIndexingCapabilities)  // Get filesystem indexing capabilities
-	
+	// Using :name to match existing route parameter naming convention
+	group.GET("/volumes/:name/filesystem/status", r.handler.GetFilesystemIndexingStatus) // Get filesystem indexing status
+	group.POST("/volumes/:name/filesystem/index", r.handler.TriggerFilesystemIndexing)   // Trigger filesystem indexing
+	group.GET("/filesystem/capabilities", r.handler.GetFilesystemIndexingCapabilities)   // Get filesystem indexing capabilities
+
 	// Media enrichment endpoints
-	group.POST("/volumes/:id/media/enrich", r.handler.TriggerMediaEnrichment)     // Trigger media enrichment
-	group.GET("/volumes/:id/media/status", r.handler.GetMediaEnrichmentStatus)   // Get media enrichment status
+	group.POST("/volumes/:name/media/enrich", r.handler.TriggerMediaEnrichment)  // Trigger media enrichment
+	group.GET("/volumes/:name/media/status", r.handler.GetMediaEnrichmentStatus) // Get media enrichment status
 	group.GET("/media/capabilities", r.handler.GetMediaEnrichmentCapabilities)   // Get media enrichment capabilities
 }

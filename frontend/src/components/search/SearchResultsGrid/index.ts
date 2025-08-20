@@ -1,0 +1,1 @@
+export { SearchResultsGrid } from './SearchResultsGrid';

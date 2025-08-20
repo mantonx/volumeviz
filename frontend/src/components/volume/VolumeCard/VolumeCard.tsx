@@ -6,12 +6,12 @@ import { cn } from '@/utils';
 import { formatBytes } from '@/utils/formatters';
 import { useAtomValue } from 'jotai';
 import {
-    Activity,
-    Clock,
-    Container,
-    Database,
-    HardDrive,
-    MoreVertical,
+  Activity,
+  Clock,
+  Container,
+  Database,
+  HardDrive,
+  MoreVertical,
 } from 'lucide-react';
 import React from 'react';
 import type { VolumeCardProps } from './VolumeCard.types';

@@ -248,94 +248,118 @@ export function useSearchUrlState() {
     perPage: number;
     sort: string;
     order: string;
-  }>([
-    'q', 'mediaKind', 'mime', 'minSize', 'maxSize', 'mtimeFrom', 'mtimeTo',
-    'durationFrom', 'durationTo', 'minWidth', 'maxWidth', 'minHeight', 'maxHeight',
-    'hasGps', 'hasSubs', 'hashPresent', 'page', 'perPage', 'sort', 'order'
-  ], {
-    q: {
-      defaultValue: '',
-      serialize: (value) => value ? String(value) : '',
-      deserialize: (value) => value || '',
+  }>(
+    [
+      'q',
+      'mediaKind',
+      'mime',
+      'minSize',
+      'maxSize',
+      'mtimeFrom',
+      'mtimeTo',
+      'durationFrom',
+      'durationTo',
+      'minWidth',
+      'maxWidth',
+      'minHeight',
+      'maxHeight',
+      'hasGps',
+      'hasSubs',
+      'hashPresent',
+      'page',
+      'perPage',
+      'sort',
+      'order',
+    ],
+    {
+      q: {
+        defaultValue: '',
+        serialize: (value) => (value ? String(value) : ''),
+        deserialize: (value) => value || '',
+      },
+      mediaKind: {
+        defaultValue: '',
+        serialize: (value) => (value ? String(value) : ''),
+      },
+      mime: {
+        defaultValue: [],
+        serialize: (value) =>
+          Array.isArray(value) && value.length > 0 ? value.join(',') : '',
+        deserialize: (value) => (value ? value.split(',').filter(Boolean) : []),
+      },
+      minSize: {
+        serialize: (value) => (value ? String(value) : ''),
+        deserialize: (value) => (value ? parseInt(value, 10) : undefined),
+      },
+      maxSize: {
+        serialize: (value) => (value ? String(value) : ''),
+        deserialize: (value) => (value ? parseInt(value, 10) : undefined),
+      },
+      mtimeFrom: {
+        defaultValue: '',
+        serialize: (value) => (value ? String(value) : ''),
+      },
+      mtimeTo: {
+        defaultValue: '',
+        serialize: (value) => (value ? String(value) : ''),
+      },
+      durationFrom: {
+        serialize: (value) => (value ? String(value) : ''),
+        deserialize: (value) => (value ? parseInt(value, 10) : undefined),
+      },
+      durationTo: {
+        serialize: (value) => (value ? String(value) : ''),
+        deserialize: (value) => (value ? parseInt(value, 10) : undefined),
+      },
+      minWidth: {
+        serialize: (value) => (value ? String(value) : ''),
+        deserialize: (value) => (value ? parseInt(value, 10) : undefined),
+      },
+      maxWidth: {
+        serialize: (value) => (value ? String(value) : ''),
+        deserialize: (value) => (value ? parseInt(value, 10) : undefined),
+      },
+      minHeight: {
+        serialize: (value) => (value ? String(value) : ''),
+        deserialize: (value) => (value ? parseInt(value, 10) : undefined),
+      },
+      maxHeight: {
+        serialize: (value) => (value ? String(value) : ''),
+        deserialize: (value) => (value ? parseInt(value, 10) : undefined),
+      },
+      hasGps: {
+        serialize: (value) => (typeof value === 'boolean' ? String(value) : ''),
+        deserialize: (value) =>
+          value === 'true' ? true : value === 'false' ? false : undefined,
+      },
+      hasSubs: {
+        serialize: (value) => (typeof value === 'boolean' ? String(value) : ''),
+        deserialize: (value) =>
+          value === 'true' ? true : value === 'false' ? false : undefined,
+      },
+      hashPresent: {
+        serialize: (value) => (typeof value === 'boolean' ? String(value) : ''),
+        deserialize: (value) =>
+          value === 'true' ? true : value === 'false' ? false : undefined,
+      },
+      page: {
+        defaultValue: 1,
+        serialize: (value) => (value && value > 1 ? String(value) : ''),
+        deserialize: (value) => (value ? parseInt(value, 10) || 1 : 1),
+      },
+      perPage: {
+        defaultValue: 20,
+        serialize: (value) => (value && value !== 20 ? String(value) : ''),
+        deserialize: (value) => (value ? parseInt(value, 10) || 20 : 20),
+      },
+      sort: {
+        defaultValue: 'name',
+        serialize: (value) => (value && value !== 'name' ? String(value) : ''),
+      },
+      order: {
+        defaultValue: 'asc',
+        serialize: (value) => (value && value !== 'asc' ? String(value) : ''),
+      },
     },
-    mediaKind: {
-      defaultValue: '',
-      serialize: (value) => value ? String(value) : '',
-    },
-    mime: {
-      defaultValue: [],
-      serialize: (value) => Array.isArray(value) && value.length > 0 ? value.join(',') : '',
-      deserialize: (value) => value ? value.split(',').filter(Boolean) : [],
-    },
-    minSize: {
-      serialize: (value) => value ? String(value) : '',
-      deserialize: (value) => value ? parseInt(value, 10) : undefined,
-    },
-    maxSize: {
-      serialize: (value) => value ? String(value) : '',
-      deserialize: (value) => value ? parseInt(value, 10) : undefined,
-    },
-    mtimeFrom: {
-      defaultValue: '',
-      serialize: (value) => value ? String(value) : '',
-    },
-    mtimeTo: {
-      defaultValue: '',
-      serialize: (value) => value ? String(value) : '',
-    },
-    durationFrom: {
-      serialize: (value) => value ? String(value) : '',
-      deserialize: (value) => value ? parseInt(value, 10) : undefined,
-    },
-    durationTo: {
-      serialize: (value) => value ? String(value) : '',
-      deserialize: (value) => value ? parseInt(value, 10) : undefined,
-    },
-    minWidth: {
-      serialize: (value) => value ? String(value) : '',
-      deserialize: (value) => value ? parseInt(value, 10) : undefined,
-    },
-    maxWidth: {
-      serialize: (value) => value ? String(value) : '',
-      deserialize: (value) => value ? parseInt(value, 10) : undefined,
-    },
-    minHeight: {
-      serialize: (value) => value ? String(value) : '',
-      deserialize: (value) => value ? parseInt(value, 10) : undefined,
-    },
-    maxHeight: {
-      serialize: (value) => value ? String(value) : '',
-      deserialize: (value) => value ? parseInt(value, 10) : undefined,
-    },
-    hasGps: {
-      serialize: (value) => typeof value === 'boolean' ? String(value) : '',
-      deserialize: (value) => value === 'true' ? true : value === 'false' ? false : undefined,
-    },
-    hasSubs: {
-      serialize: (value) => typeof value === 'boolean' ? String(value) : '',
-      deserialize: (value) => value === 'true' ? true : value === 'false' ? false : undefined,
-    },
-    hashPresent: {
-      serialize: (value) => typeof value === 'boolean' ? String(value) : '',
-      deserialize: (value) => value === 'true' ? true : value === 'false' ? false : undefined,
-    },
-    page: {
-      defaultValue: 1,
-      serialize: (value) => value && value > 1 ? String(value) : '',
-      deserialize: (value) => value ? parseInt(value, 10) || 1 : 1,
-    },
-    perPage: {
-      defaultValue: 20,
-      serialize: (value) => value && value !== 20 ? String(value) : '',
-      deserialize: (value) => value ? parseInt(value, 10) || 20 : 20,
-    },
-    sort: {
-      defaultValue: 'name',
-      serialize: (value) => value && value !== 'name' ? String(value) : '',
-    },
-    order: {
-      defaultValue: 'asc',
-      serialize: (value) => value && value !== 'asc' ? String(value) : '',
-    },
-  });
+  );
 }

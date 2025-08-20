@@ -1,0 +1,2 @@
+This is a test file to verify volume mounting works.
+Created at 2025-08-16 to test if Docker container sees file changes.

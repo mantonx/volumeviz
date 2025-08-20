@@ -13,6 +13,15 @@ export * from './visualization';
 // Validation utilities
 export * from './validation';
 
+// Search utilities
+export * from './search';
+
+// Explorer utilities
+export * from './explorer';
+
+// Scan utilities
+export * from './scan';
+
 // Re-export commonly used lodash functions
 export {
   debounce,

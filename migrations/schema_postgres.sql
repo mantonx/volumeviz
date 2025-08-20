@@ -285,6 +285,38 @@ CREATE INDEX IF NOT EXISTS idx_stats_daily_job_monitoring
     ON stats_daily (computed_at DESC, job_duration_ms) 
     WHERE scan_id IS NOT NULL;
 
+-- Preview tables for thumbnails, posters, and cover art
+CREATE TABLE IF NOT EXISTS previews (
+    id BIGSERIAL PRIMARY KEY,
+    file_id BIGINT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL CHECK (type IN ('thumbnail', 'poster', 'cover')),
+    size VARCHAR(50) NOT NULL CHECK (size IN ('small', 'medium', 'large')),
+    format VARCHAR(20) NOT NULL DEFAULT 'webp',
+    width INTEGER,
+    height INTEGER,
+    file_size BIGINT NOT NULL,
+    content_hash VARCHAR(64) NOT NULL, -- SHA256 of the preview file
+    storage_path TEXT NOT NULL, -- Content-addressed storage path
+    time_offset FLOAT DEFAULT 0, -- For video thumbnails
+    processing_ms BIGINT DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    accessed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Unique constraint to prevent duplicate previews
+    UNIQUE(file_id, type, size, time_offset)
+);
+
+-- Preview stats table for monitoring
+CREATE TABLE IF NOT EXISTS preview_stats (
+    id BIGSERIAL PRIMARY KEY,
+    total_generated BIGINT DEFAULT 0,
+    total_size_bytes BIGINT DEFAULT 0,
+    cache_hits BIGINT DEFAULT 0,
+    cache_misses BIGINT DEFAULT 0,
+    last_cleanup TIMESTAMP WITH TIME ZONE,
+    recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create a view for easy trend calculations
 CREATE OR REPLACE VIEW stats_daily_trends AS
 SELECT 
@@ -512,3 +544,28 @@ CREATE INDEX IF NOT EXISTS idx_alerts_labels_gin ON alerts USING GIN (labels);
 CREATE INDEX IF NOT EXISTS idx_alerts_annotations_gin ON alerts USING GIN (annotations);
 CREATE INDEX IF NOT EXISTS idx_alert_destinations_config_gin ON alert_destinations USING GIN (config);
 CREATE INDEX IF NOT EXISTS idx_alert_routes_matchers_gin ON alert_routes USING GIN (matchers);
+-- Saved Searches Table for search functionality
+CREATE TABLE IF NOT EXISTS saved_searches (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    query JSONB NOT NULL,
+    tags TEXT[],
+    is_public BOOLEAN DEFAULT false,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_run_at TIMESTAMPTZ,
+    run_count INTEGER DEFAULT 0,
+    
+    -- Constraints
+    CONSTRAINT saved_searches_name_unique UNIQUE(name),
+    CONSTRAINT saved_searches_name_not_empty CHECK(length(trim(name)) > 0)
+);
+
+-- Indexes for saved searches
+CREATE INDEX IF NOT EXISTS idx_saved_searches_name ON saved_searches(name);
+CREATE INDEX IF NOT EXISTS idx_saved_searches_tags ON saved_searches USING gin(tags);
+CREATE INDEX IF NOT EXISTS idx_saved_searches_is_public ON saved_searches(is_public);
+CREATE INDEX IF NOT EXISTS idx_saved_searches_updated_at ON saved_searches(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_saved_searches_last_run_at ON saved_searches(last_run_at DESC) WHERE last_run_at IS NOT NULL;

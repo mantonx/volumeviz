@@ -1,6 +1,6 @@
 /**
  * Search API Client
- * 
+ *
  * Provides typed API functions for file search and saved search operations
  */
 
@@ -8,7 +8,8 @@ import { Api } from './generated/Api';
 
 // Create configured API client
 const api = new Api({
-  baseUrl: (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080/api/v1',
+  baseUrl:
+    (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080/api/v1',
   baseApiParams: {
     headers: {
       'Content-Type': 'application/json',
@@ -36,19 +37,19 @@ export interface SearchFilesRequest {
   path?: string;
   glob?: string;
   regex?: string;
-  
+
   // Media filters
   mediaKind?: string;
   mime?: string[];
-  
+
   // Size filters
   minSize?: number;
   maxSize?: number;
-  
+
   // Time filters
   mtimeFrom?: string; // ISO 8601 date string
   mtimeTo?: string;
-  
+
   // Media metadata filters
   durationFrom?: number; // Duration in ms
   durationTo?: number;
@@ -59,11 +60,19 @@ export interface SearchFilesRequest {
   hasGps?: boolean;
   hasSubs?: boolean;
   hashPresent?: boolean;
-  
+
   // Pagination and sorting
   page?: number;
   perPage?: number;
-  sort?: 'relevance' | 'name' | 'size' | 'mtime' | 'ctime' | 'duration' | 'type' | 'media_kind';
+  sort?:
+    | 'relevance'
+    | 'name'
+    | 'size'
+    | 'mtime'
+    | 'ctime'
+    | 'duration'
+    | 'type'
+    | 'media_kind';
   order?: 'asc' | 'desc';
 }
 
@@ -81,7 +90,7 @@ export interface FileSearchResult {
   modified_time?: string;
   created_time?: string;
   metadata?: Record<string, any>;
-  
+
   // Media metadata
   duration_ms?: number;
   width?: number;
@@ -95,7 +104,7 @@ export interface FileSearchResult {
   capture_date?: string;
   hash?: string;
   has_subs?: boolean;
-  
+
   // Computed fields for display
   mtime?: string; // alias for modified_time
 }
@@ -113,7 +122,7 @@ export interface FileResult {
   modified_time?: string;
   created_time?: string;
   metadata?: Record<string, any>;
-  
+
   // Media metadata
   duration_ms?: number;
   width?: number;
@@ -197,7 +206,7 @@ export const searchApi = {
       Object.entries(searchParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
           if (Array.isArray(value)) {
-            value.forEach(v => urlParams.append(key, String(v)));
+            value.forEach((v) => urlParams.append(key, String(v)));
           } else {
             urlParams.append(key, String(value));
           }
@@ -210,8 +219,15 @@ export const searchApi = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Search API error:', response.status, response.statusText, errorText); // Debug logging
-        throw new Error(`Search failed: ${response.status} ${response.statusText}: ${errorText}`);
+        console.error(
+          'Search API error:',
+          response.status,
+          response.statusText,
+          errorText,
+        ); // Debug logging
+        throw new Error(
+          `Search failed: ${response.status} ${response.statusText}: ${errorText}`,
+        );
       }
 
       return await response.json();
@@ -223,7 +239,9 @@ export const searchApi = {
   /**
    * Create a new saved search
    */
-  async createSavedSearch(request: CreateSavedSearchRequest): Promise<SavedSearch> {
+  async createSavedSearch(
+    request: CreateSavedSearchRequest,
+  ): Promise<SavedSearch> {
     try {
       const response = await fetch(`${api.baseUrl}/search/saved`, {
         method: 'POST',
@@ -234,7 +252,9 @@ export const searchApi = {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create saved search: ${response.statusText}`);
+        throw new Error(
+          `Failed to create saved search: ${response.statusText}`,
+        );
       }
 
       return await response.json();
@@ -254,15 +274,20 @@ export const searchApi = {
     try {
       const searchParams = new URLSearchParams();
       if (params?.page) searchParams.append('page', String(params.page));
-      if (params?.perPage) searchParams.append('perPage', String(params.perPage));
+      if (params?.perPage)
+        searchParams.append('perPage', String(params.perPage));
       if (params?.tags) {
-        params.tags.forEach(tag => searchParams.append('tags', tag));
+        params.tags.forEach((tag) => searchParams.append('tags', tag));
       }
 
-      const response = await fetch(`${api.baseUrl}/search/saved?${searchParams}`);
+      const response = await fetch(
+        `${api.baseUrl}/search/saved?${searchParams}`,
+      );
 
       if (!response.ok) {
-        throw new Error(`Failed to list saved searches: ${response.statusText}`);
+        throw new Error(
+          `Failed to list saved searches: ${response.statusText}`,
+        );
       }
 
       return await response.json();
@@ -291,7 +316,10 @@ export const searchApi = {
   /**
    * Update a saved search
    */
-  async updateSavedSearch(id: number, request: UpdateSavedSearchRequest): Promise<SavedSearch> {
+  async updateSavedSearch(
+    id: number,
+    request: UpdateSavedSearchRequest,
+  ): Promise<SavedSearch> {
     try {
       const response = await fetch(`${api.baseUrl}/search/saved/${id}`, {
         method: 'PUT',
@@ -302,7 +330,9 @@ export const searchApi = {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to update saved search: ${response.statusText}`);
+        throw new Error(
+          `Failed to update saved search: ${response.statusText}`,
+        );
       }
 
       return await response.json();
@@ -321,7 +351,9 @@ export const searchApi = {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to delete saved search: ${response.statusText}`);
+        throw new Error(
+          `Failed to delete saved search: ${response.statusText}`,
+        );
       }
     } catch (error) {
       throw new Error(`Failed to delete saved search: ${error}`);
@@ -361,10 +393,14 @@ export const searchApi = {
       if (params.limit) searchParams.append('limit', params.limit.toString());
       if (params.type) searchParams.append('type', params.type);
 
-      const response = await fetch(`${api.baseUrl}/search/suggestions?${searchParams}`);
+      const response = await fetch(
+        `${api.baseUrl}/search/suggestions?${searchParams}`,
+      );
 
       if (!response.ok) {
-        throw new Error(`Failed to get search suggestions: ${response.statusText}`);
+        throw new Error(
+          `Failed to get search suggestions: ${response.statusText}`,
+        );
       }
 
       return await response.json();

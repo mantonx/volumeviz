@@ -11,13 +11,16 @@ export const useWebSocketAPI = () => {
   const ws = useWSConnection();
 
   // WebSocket integration for live updates
-  const subscribeToVolumeUpdates = (volumeId: string, callback: (data: any) => void) => {
+  const subscribeToVolumeUpdates = (
+    volumeId: string,
+    callback: (data: any) => void,
+  ) => {
     if (ws.status === 'connected') {
       // WebSocket live updates integration
       ws.send({
         type: 'subscribe',
         event: 'volume-update',
-        data: { volumeId }
+        data: { volumeId },
       });
     }
   };
@@ -28,7 +31,7 @@ export const useWebSocketAPI = () => {
       ws.send({
         type: 'subscribe',
         event: 'file-change',
-        data: {}
+        data: {},
       });
     }
   };
@@ -36,7 +39,7 @@ export const useWebSocketAPI = () => {
   return {
     ws,
     subscribeToVolumeUpdates,
-    subscribeToFileChanges
+    subscribeToFileChanges,
   };
 };
 

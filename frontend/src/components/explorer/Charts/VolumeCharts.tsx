@@ -10,26 +10,26 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import {
-    BarChart3Icon,
-    LoaderIcon,
-    PieChartIcon,
-    TrendingUpIcon,
+  BarChart3Icon,
+  LoaderIcon,
+  PieChartIcon,
+  TrendingUpIcon,
 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import {
-    Area,
-    AreaChart,
-    Bar,
-    BarChart,
-    CartesianGrid,
-    Cell,
-    Legend,
-    Pie,
-    PieChart,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 
 interface VolumeChartsProps {
@@ -65,13 +65,8 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
 }) => {
   const [trendPeriod, setTrendPeriod] = useState<30 | 90>(30);
 
-  const {
-    volumeStats,
-    topFolders,
-    isLoading,
-    statsError,
-    foldersError,
-  } = useVolumeInsights();
+  const { volumeStats, topFolders, isLoading, statsError, foldersError } =
+    useVolumeInsights();
 
   const error = statsError || foldersError;
 
@@ -119,13 +114,12 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
           </p>
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name}: {
-                entry.dataKey === 'size'
-                  ? formatFileSize(entry.value)
-                  : entry.dataKey === 'growth'
+              {entry.name}:{' '}
+              {entry.dataKey === 'size'
+                ? formatFileSize(entry.value)
+                : entry.dataKey === 'growth'
                   ? `${entry.value.toFixed(1)}%`
-                  : entry.value.toLocaleString()
-              }
+                  : entry.value.toLocaleString()}
             </p>
           ))}
         </div>
@@ -200,11 +194,7 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
                   tickFormatter={(value) => formatFileSize(value)}
                   stroke="#6b7280"
                 />
-                <YAxis
-                  yAxisId="files"
-                  orientation="right"
-                  stroke="#6b7280"
-                />
+                <YAxis yAxisId="files" orientation="right" stroke="#6b7280" />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Area
@@ -251,12 +241,17 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={growthData} layout="horizontal">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis type="number" tickFormatter={(value) => formatFileSize(value)} />
+                <XAxis
+                  type="number"
+                  tickFormatter={(value) => formatFileSize(value)}
+                />
                 <YAxis type="category" dataKey="folder" width={120} />
                 <Tooltip
                   formatter={(value: any, name: string) => [
-                    name === 'size' ? formatFileSize(value) : value.toLocaleString(),
-                    name === 'size' ? 'Size' : 'Files'
+                    name === 'size'
+                      ? formatFileSize(value)
+                      : value.toLocaleString(),
+                    name === 'size' ? 'Size' : 'Files',
                   ]}
                 />
                 <Legend />
@@ -310,7 +305,10 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
 
           <div className="space-y-3">
             {mockCompositionData.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
                 <div className="flex items-center space-x-3">
                   <div
                     className="w-4 h-4 rounded-full"

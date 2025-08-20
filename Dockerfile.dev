@@ -1,0 +1,21 @@
+# Development Dockerfile with media enrichment tools
+FROM cosmtrek/air:latest
+
+# Install media processing tools:
+# - ffmpeg for video/audio metadata extraction and preview generation
+# - exiftool for image metadata extraction
+# - libvips-tools for efficient image thumbnail generation (WebP conversion)
+RUN apt-get update && apt-get install -y \
+  ffmpeg \
+  exiftool \
+  libvips-tools \
+  && rm -rf /var/lib/apt/lists/*
+
+# Verify tools are installed
+RUN ffprobe -version && exiftool -ver && vips --version
+
+# Set working directory
+WORKDIR /app
+
+# Use the same entrypoint as the base image
+CMD ["air"]

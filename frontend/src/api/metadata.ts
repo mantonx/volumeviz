@@ -1,6 +1,6 @@
 /**
  * Metadata API Client
- * 
+ *
  * Provides typed API functions for metadata operations
  */
 
@@ -8,7 +8,8 @@ import { Api } from './generated/Api';
 
 // Create configured API client
 const api = new Api({
-  baseUrl: (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080/api/v1',
+  baseUrl:
+    (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080/api/v1',
   baseApiParams: {
     headers: {
       'Content-Type': 'application/json',
@@ -52,8 +53,15 @@ export const metadataApi = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Filter metadata API error:', response.status, response.statusText, errorText);
-        throw new Error(`Failed to get filter metadata: ${response.status} ${response.statusText}: ${errorText}`);
+        console.error(
+          'Filter metadata API error:',
+          response.status,
+          response.statusText,
+          errorText,
+        );
+        throw new Error(
+          `Failed to get filter metadata: ${response.status} ${response.statusText}: ${errorText}`,
+        );
       }
 
       return await response.json();

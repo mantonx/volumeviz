@@ -1,18 +1,33 @@
 /**
  * SearchResults Component
- * 
+ *
  * Displays search results with infinite scroll and URL-based pagination
  */
 
-import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
+import React, {
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+} from 'react';
 import { useAtomValue } from 'jotai';
 import { FixedSizeList as List } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
-import { searchResultsAtom, searchTotalCountAtom, searchLoadingAtom } from '@/store/atoms/search';
+import {
+  searchResultsAtom,
+  searchTotalCountAtom,
+  searchLoadingAtom,
+} from '@/store/atoms/search';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { PreviewThumbnail } from '@/components/preview/PreviewThumbnail';
 import type { FileSearchResult } from '@/api/search';
-import { getFileIcon, getFileSizeBadgeColor, getMediaKindBadgeColor } from '@/utils/fileIcons';
+import {
+  getFileIcon,
+  getFileSizeBadgeColor,
+  getMediaKindBadgeColor,
+} from '@/utils/fileIcons';
 
 interface SearchResultsProps {
   onFileSelect?: (fileId: number) => void;
@@ -40,13 +55,20 @@ const getContainerHeight = () => {
   if (typeof window !== 'undefined') {
     const isMobile = window.innerWidth < 768;
     const availableHeight = window.innerHeight - 200; // Account for header, search bar (no pagination)
-    return Math.max(isMobile ? 500 : 600, Math.min(window.innerHeight - 150, availableHeight));
+    return Math.max(
+      isMobile ? 500 : 600,
+      Math.min(window.innerHeight - 150, availableHeight),
+    );
   }
   return 700;
 };
 
 // Individual search result item component
-const SearchResultItem: React.FC<SearchResultItemProps> = ({ index, style, data }) => {
+const SearchResultItem: React.FC<SearchResultItemProps> = ({
+  index,
+  style,
+  data,
+}) => {
   const { results, onFileSelect, hasNextPage, isItemLoaded } = data;
   const file = results[index];
 
@@ -89,7 +111,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({ index, style, data 
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -99,17 +121,30 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({ index, style, data 
     return parts.length > 1 ? parts.pop()?.toLowerCase() : undefined;
   };
 
-  const fileIconInfo = getFileIcon(file.media_kind, file.mime_type, getFileExtension(file.name));
+  const fileIconInfo = getFileIcon(
+    file.media_kind,
+    file.mime_type,
+    getFileExtension(file.name),
+  );
 
   return (
     <div style={style} className="px-2 sm:px-4">
       <Card className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer">
         <div className="flex items-start space-x-3 sm:space-x-4">
-          {/* File Icon */}
+          {/* File Icon or Thumbnail */}
           <div className="flex-shrink-0">
-            <div className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center ${fileIconInfo.bgColor} rounded-lg text-xl sm:text-2xl ${fileIconInfo.color}`}>
-              {fileIconInfo.icon}
-            </div>
+            <PreviewThumbnail
+              fileId={file.id}
+              fileName={file.name}
+              mimeType={file.mime_type}
+              mediaKind={file.media_kind}
+              size="small"
+              context="list"
+              lazy={true}
+              showBlurUp={true}
+              className="w-10 h-10 sm:w-12 sm:h-12"
+              onClick={onFileSelect ? () => onFileSelect(file.id) : undefined}
+            />
           </div>
 
           {/* File Details */}
@@ -123,7 +158,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({ index, style, data 
                   {file.path}
                 </p>
               </div>
-              
+
               {onFileSelect && (
                 <Button
                   onClick={() => onFileSelect(file.id)}
@@ -139,18 +174,22 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({ index, style, data 
             {/* Metadata Row */}
             <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
               {file.size && (
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getFileSizeBadgeColor(file.size)}`}>
+                <span
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getFileSizeBadgeColor(file.size)}`}
+                >
                   {formatFileSize(file.size)}
                 </span>
               )}
-              {file.mime_type && (
-                <span>{file.mime_type}</span>
-              )}
+              {file.mime_type && <span>{file.mime_type}</span>}
               {(file.modified_time || file.mtime) && (
-                <span>Modified {formatDate(file.modified_time || file.mtime!)}</span>
+                <span>
+                  Modified {formatDate(file.modified_time || file.mtime!)}
+                </span>
               )}
               {file.media_kind && (
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getMediaKindBadgeColor(file.media_kind)}`}>
+                <span
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getMediaKindBadgeColor(file.media_kind)}`}
+                >
                   {file.media_kind}
                 </span>
               )}
@@ -159,21 +198,19 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({ index, style, data 
             {/* Additional Metadata */}
             {(file.width || file.height || file.duration_ms) && (
               <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
-                {(file.width && file.height) && (
-                  <span>{file.width} × {file.height}px</span>
+                {file.width && file.height && (
+                  <span>
+                    {file.width} × {file.height}px
+                  </span>
                 )}
                 {file.duration_ms && (
                   <span>{Math.round(file.duration_ms / 1000)}s</span>
                 )}
-                {file.has_gps && (
-                  <span className="text-green-600">📍 GPS</span>
-                )}
+                {file.has_gps && <span className="text-green-600">📍 GPS</span>}
                 {file.has_subs && (
                   <span className="text-blue-600">📝 Subtitles</span>
                 )}
-                {file.hash && (
-                  <span className="text-purple-600">🔒 Hash</span>
-                )}
+                {file.hash && <span className="text-purple-600">🔒 Hash</span>}
               </div>
             )}
           </div>
@@ -193,15 +230,15 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   const atomResults = useAtomValue(searchResultsAtom);
   const totalCount = useAtomValue(searchTotalCountAtom);
   const loading = useAtomValue(searchLoadingAtom);
-  
+
   // Use provided allResults or fall back to atom results
   const results = allResults || atomResults;
-  
+
   // Responsive state
   const [containerHeight, setContainerHeight] = useState(getContainerHeight);
   const [isMobile, setIsMobile] = useState(false);
   const infiniteLoaderRef = useRef<InfiniteLoader>(null);
-  
+
   // Update responsive state on resize
   useEffect(() => {
     const handleResize = () => {
@@ -209,43 +246,43 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       setIsMobile(mobile);
       setContainerHeight(getContainerHeight());
     };
-    
+
     handleResize(); // Initial check
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  
+
   // Check if an item is loaded
-  const isItemLoaded = useCallback((index: number) => {
-    const loaded = !!results[index];
-    if (index >= results.length - 5) { // Log for items near the end
-      console.log(`🔍 isItemLoaded(${index}): ${loaded}, results.length: ${results.length}`);
-    }
-    return loaded;
-  }, [results]);
-  
+  const isItemLoaded = useCallback(
+    (index: number) => {
+      return !!results[index];
+    },
+    [results],
+  );
+
   // Load more items when scrolling
-  const loadMoreItems = useCallback(async (startIndex: number, stopIndex: number) => {
-    console.log(`📜 loadMoreItems called: startIndex=${startIndex}, stopIndex=${stopIndex}, hasNextPage=${hasNextPage}, loading=${loading}`);
-    if (onLoadMore && hasNextPage) {
-      console.log('🚀 Calling onLoadMore');
-      onLoadMore();
-    } else {
-      console.log('❌ Not calling onLoadMore:', { onLoadMore: !!onLoadMore, hasNextPage, loading });
-    }
-  }, [onLoadMore, hasNextPage]);
-  
+  const loadMoreItems = useCallback(
+    async (startIndex: number, stopIndex: number) => {
+      if (onLoadMore && hasNextPage) {
+        onLoadMore();
+      }
+    },
+    [onLoadMore, hasNextPage],
+  );
+
   // Use the results array length as item count (it includes placeholders)
   const itemCount = results.length;
 
   // Memoize item data for react-window
-  const itemData = useMemo(() => ({
-    results,
-    onFileSelect,
-    hasNextPage,
-    isItemLoaded,
-  }), [results, onFileSelect, hasNextPage, isItemLoaded]);
-  
+  const itemData = useMemo(
+    () => ({
+      results,
+      onFileSelect,
+      hasNextPage,
+      isItemLoaded,
+    }),
+    [results, onFileSelect, hasNextPage, isItemLoaded],
+  );
 
   // Reset infinite loader when results change (new search)
   useEffect(() => {
@@ -280,14 +317,13 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
             Search Results
           </h2>
           <span className="text-sm text-gray-500">
-            {results.length.toLocaleString()} of {totalCount.toLocaleString()} files
+            {results.length.toLocaleString()} of {totalCount.toLocaleString()}{' '}
+            files
           </span>
         </div>
-        
+
         {hasNextPage && (
-          <div className="text-xs text-gray-500">
-            Scroll for more results
-          </div>
+          <div className="text-xs text-gray-500">Scroll for more results</div>
         )}
       </div>
 
@@ -324,7 +360,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           </div>
         </div>
       )}
-      
+
       {/* End of results indicator */}
       {!hasNextPage && results.length > 0 && (
         <div className="mt-4 text-sm text-gray-500 text-center py-4">

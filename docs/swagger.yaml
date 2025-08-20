@@ -12,6 +12,24 @@ definitions:
         example: tv-shows-readonly
         type: string
     type: object
+  BulkScanRequest:
+    properties:
+      async:
+        example: false
+        type: boolean
+      method:
+        example: du
+        type: string
+      volume_ids:
+        example:
+        - tv-shows-readonly
+        - movies-readonly
+        items:
+          type: string
+        type: array
+    required:
+    - volume_ids
+    type: object
   DailyStats:
     properties:
       date:
@@ -73,6 +91,18 @@ definitions:
         type: string
       message:
         example: Additional error details
+        type: string
+    type: object
+  ExtensionOption:
+    properties:
+      file_count:
+        example: 1250
+        type: integer
+      label:
+        example: MP4 Files
+        type: string
+      value:
+        example: mp4
         type: string
     type: object
   FileDetailsResponse:
@@ -226,6 +256,21 @@ definitions:
         example: tv-shows
         type: string
     type: object
+  FilterMetadataResponse:
+    properties:
+      extensions:
+        items:
+          $ref: '#/definitions/ExtensionOption'
+        type: array
+      media_kinds:
+        items:
+          $ref: '#/definitions/MediaKindOption'
+        type: array
+      mime_types:
+        items:
+          $ref: '#/definitions/MimeTypeOption'
+        type: array
+    type: object
   FolderSizeInfo:
     properties:
       dir_count:
@@ -362,6 +407,30 @@ definitions:
         example: tv-shows
         type: string
     type: object
+  MediaKindOption:
+    properties:
+      file_count:
+        example: 5000
+        type: integer
+      label:
+        example: Video
+        type: string
+      value:
+        example: video
+        type: string
+    type: object
+  MimeTypeOption:
+    properties:
+      file_count:
+        example: 1250
+        type: integer
+      label:
+        example: MP4 Video
+        type: string
+      value:
+        example: video/mp4
+        type: string
+    type: object
   RefreshRequest:
     properties:
       async:
@@ -467,8 +536,62 @@ definitions:
         example: tv-shows-readonly
         type: string
     type: object
+  VolumeV1:
+    properties:
+      attachments_count:
+        example: 2
+        type: integer
+      created_at:
+        example: "2023-01-01T10:00:00Z"
+        type: string
+      driver:
+        example: local
+        type: string
+      is_orphaned:
+        example: false
+        type: boolean
+      is_system:
+        example: false
+        type: boolean
+      labels:
+        additionalProperties:
+          type: string
+        example:
+          com.docker.compose.project: media
+        type: object
+      last_scan_at:
+        example: "2023-01-01T12:00:00Z"
+        type: string
+      mountpoint:
+        example: /var/lib/docker/volumes/tv-shows-readonly/_data
+        type: string
+      name:
+        example: tv-shows-readonly
+        type: string
+      scope:
+        example: local
+        type: string
+      size_bytes:
+        example: 1073741824
+        type: integer
+    type: object
   gin.H:
     additionalProperties: {}
+    type: object
+  github_com_mantonx_volumeviz_internal_api_utils.PagedResponse:
+    properties:
+      data: {}
+      filters:
+        additionalProperties: true
+        type: object
+      page:
+        type: integer
+      page_size:
+        type: integer
+      sort:
+        type: string
+      total:
+        type: integer
     type: object
   github_com_mantonx_volumeviz_internal_models.Alert:
     properties:
@@ -785,6 +908,37 @@ definitions:
     - query
     - threshold
     type: object
+  internal_api_v1_diag.RealtimeDiagnostics:
+    properties:
+      active_connections:
+        type: integer
+      features:
+        items:
+          type: string
+        type: array
+      mode:
+        $ref: '#/definitions/internal_api_v1_diag.RealtimeMode'
+      polling_enabled:
+        type: boolean
+      polling_interval_ms:
+        type: integer
+      sse_enabled:
+        type: boolean
+      websocket_enabled:
+        type: boolean
+      websocket_url:
+        type: string
+    type: object
+  internal_api_v1_diag.RealtimeMode:
+    enum:
+    - ws
+    - polling
+    - sse
+    type: string
+    x-enum-varnames:
+    - ModeWebSocket
+    - ModePolling
+    - ModeSSE
   internal_api_v1_explorer.AppliedFilters:
     description: Applied filters for the file query
     properties:
@@ -1147,6 +1301,318 @@ definitions:
         type: integer
       total_pages:
         type: integer
+    type: object
+  internal_api_v1_previews.PreviewRequest:
+    properties:
+      file_hash:
+        type: string
+      file_id:
+        type: integer
+      file_path:
+        type: string
+      mime_type:
+        type: string
+      size:
+        enum:
+        - small
+        - medium
+        - large
+        type: string
+      time_offset:
+        type: string
+      type:
+        enum:
+        - thumbnail
+        - poster
+        - cover
+        type: string
+    required:
+    - file_id
+    - file_path
+    - mime_type
+    - size
+    - type
+    type: object
+  internal_api_v1_previews.PreviewResponse:
+    properties:
+      cache_hit:
+        type: boolean
+      created_at:
+        type: string
+      etag:
+        type: string
+      file_id:
+        type: integer
+      file_size:
+        type: integer
+      format:
+        type: string
+      height:
+        type: integer
+      id:
+        type: integer
+      processing_ms:
+        type: integer
+      size:
+        type: string
+      type:
+        type: string
+      url:
+        type: string
+      width:
+        type: integer
+    type: object
+  internal_api_v1_search.CreateSavedSearchRequest:
+    properties:
+      description:
+        type: string
+      is_public:
+        type: boolean
+      metadata:
+        additionalProperties: true
+        type: object
+      name:
+        type: string
+      query:
+        $ref: '#/definitions/internal_api_v1_search.SearchFilesRequest'
+      tags:
+        items:
+          type: string
+        type: array
+    required:
+    - name
+    - query
+    type: object
+  internal_api_v1_search.FileResult:
+    properties:
+      audio_codec:
+        type: string
+      camera_model:
+        type: string
+      capture_date:
+        type: string
+      created_time:
+        type: string
+      disk_usage:
+        type: integer
+      duration_ms:
+        description: Media metadata
+        type: integer
+      extension:
+        type: string
+      gps_lat:
+        type: number
+      gps_lon:
+        type: number
+      has_gps:
+        type: boolean
+      height:
+        type: integer
+      id:
+        type: integer
+      media_kind:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      mime_type:
+        type: string
+      modified_time:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+      preview_url:
+        type: string
+      size:
+        type: integer
+      video_codec:
+        type: string
+      volume_id:
+        type: string
+      width:
+        type: integer
+    type: object
+  internal_api_v1_search.ListSavedSearchesResponse:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      searches:
+        items:
+          $ref: '#/definitions/internal_api_v1_search.SavedSearch'
+        type: array
+      total_count:
+        type: integer
+    type: object
+  internal_api_v1_search.SavedSearch:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      is_public:
+        type: boolean
+      last_run_at:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      name:
+        type: string
+      query:
+        $ref: '#/definitions/internal_api_v1_search.SearchFilesRequest'
+      run_count:
+        type: integer
+      tags:
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: string
+    required:
+    - name
+    type: object
+  internal_api_v1_search.SearchFilesRequest:
+    properties:
+      durationFrom:
+        description: Media metadata filters
+        type: integer
+      durationTo:
+        description: Max duration in ms
+        type: integer
+      glob:
+        description: Glob pattern for path matching
+        type: string
+      hasGps:
+        description: Has GPS coordinates
+        type: boolean
+      hasSubs:
+        description: Has subtitles
+        type: boolean
+      hashPresent:
+        description: Has computed hash
+        type: boolean
+      maxHeight:
+        description: Max height in pixels
+        type: integer
+      maxSize:
+        description: Maximum file size in bytes
+        type: integer
+      maxWidth:
+        description: Max width in pixels
+        type: integer
+      mediaKind:
+        description: Media filters
+        type: string
+      mime:
+        description: MIME type filters
+        items:
+          type: string
+        type: array
+      minHeight:
+        description: Min height in pixels
+        type: integer
+      minSize:
+        description: Size filters
+        type: integer
+      minWidth:
+        description: Min width in pixels (video/image)
+        type: integer
+      mtimeFrom:
+        description: Time filters
+        type: string
+      mtimeTo:
+        description: Modified time to
+        type: string
+      order:
+        description: 'Sort order: asc, desc'
+        type: string
+      page:
+        description: Pagination and sorting
+        minimum: 1
+        type: integer
+      path:
+        description: Path prefix filter
+        type: string
+      perPage:
+        maximum: 100
+        minimum: 1
+        type: integer
+      q:
+        description: Text search
+        type: string
+      regex:
+        description: Regex pattern for path matching
+        type: string
+      sort:
+        description: 'Sort field: relevance, name, size, mtime, ctime, duration, type,
+          media_kind'
+        type: string
+    type: object
+  internal_api_v1_search.SearchFilesResponse:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/internal_api_v1_search.FileResult'
+        type: array
+      filters: {}
+      page:
+        type: integer
+      per_page:
+        type: integer
+      query_time_ms:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  internal_api_v1_search.SearchSuggestion:
+    properties:
+      count:
+        description: Number of matching files
+        type: integer
+      description:
+        description: Optional description
+        type: string
+      text:
+        description: Suggested text
+        type: string
+      type:
+        description: 'Type: "filename", "extension", "path", "recent"'
+        type: string
+    type: object
+  internal_api_v1_search.SearchSuggestionsResponse:
+    properties:
+      query_time_ms:
+        type: integer
+      suggestions:
+        items:
+          $ref: '#/definitions/internal_api_v1_search.SearchSuggestion'
+        type: array
+    type: object
+  internal_api_v1_search.UpdateSavedSearchRequest:
+    properties:
+      description:
+        type: string
+      is_public:
+        type: boolean
+      metadata:
+        additionalProperties: true
+        type: object
+      name:
+        type: string
+      query:
+        $ref: '#/definitions/internal_api_v1_search.SearchFilesRequest'
+      tags:
+        items:
+          type: string
+        type: array
     type: object
   time.Duration:
     enum:
@@ -1875,6 +2341,21 @@ paths:
       summary: Test alert rule
       tags:
       - alerts
+  /api/v1/diag/realtime:
+    get:
+      consumes:
+      - application/json
+      description: Get information about available real-time communication methods
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_diag.RealtimeDiagnostics'
+      summary: Get real-time diagnostics
+      tags:
+      - Diagnostics
   /api/v1/explorer/browse:
     get:
       consumes:
@@ -2659,6 +3140,363 @@ paths:
       summary: Get files by resolution
       tags:
       - metadata
+  /api/v1/metadata/filters:
+    get:
+      consumes:
+      - application/json
+      description: Get available MIME types, media kinds, and extensions for filter
+        dropdowns
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/FilterMetadataResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get filter metadata
+      tags:
+      - metadata
+  /api/v1/search/files:
+    get:
+      consumes:
+      - application/json
+      description: Search files across volumes with text search and metadata filters
+      parameters:
+      - description: Text search query
+        in: query
+        name: q
+        type: string
+      - description: Path prefix filter
+        in: query
+        name: path
+        type: string
+      - description: Glob pattern
+        in: query
+        name: glob
+        type: string
+      - description: Regex pattern
+        in: query
+        name: regex
+        type: string
+      - description: Media kind filter
+        in: query
+        name: mediaKind
+        type: string
+      - collectionFormat: csv
+        description: MIME type filters
+        in: query
+        items:
+          type: string
+        name: mime
+        type: array
+      - description: Minimum file size
+        in: query
+        name: minSize
+        type: integer
+      - description: Maximum file size
+        in: query
+        name: maxSize
+        type: integer
+      - description: Modified time from
+        in: query
+        name: mtimeFrom
+        type: string
+      - description: Modified time to
+        in: query
+        name: mtimeTo
+        type: string
+      - description: Min duration in ms
+        in: query
+        name: durationFrom
+        type: integer
+      - description: Max duration in ms
+        in: query
+        name: durationTo
+        type: integer
+      - description: Min width in pixels
+        in: query
+        name: minWidth
+        type: integer
+      - description: Max width in pixels
+        in: query
+        name: maxWidth
+        type: integer
+      - description: Min height in pixels
+        in: query
+        name: minHeight
+        type: integer
+      - description: Max height in pixels
+        in: query
+        name: maxHeight
+        type: integer
+      - description: Has GPS coordinates
+        in: query
+        name: hasGps
+        type: boolean
+      - description: Has subtitles
+        in: query
+        name: hasSubs
+        type: boolean
+      - description: Has computed hash
+        in: query
+        name: hashPresent
+        type: boolean
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: perPage
+        type: integer
+      - description: Sort field
+        in: query
+        name: sort
+        type: string
+      - description: Sort order
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_search.SearchFilesResponse'
+      summary: Search files with advanced filters
+      tags:
+      - Search
+  /api/v1/search/saved:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all saved searches
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: perPage
+        type: integer
+      - collectionFormat: csv
+        description: Filter by tags
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_search.ListSavedSearchesResponse'
+      summary: List saved searches
+      tags:
+      - Search
+    post:
+      consumes:
+      - application/json
+      description: Save a search query for later use
+      parameters:
+      - description: Saved search details
+        in: body
+        name: search
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_search.CreateSavedSearchRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_api_v1_search.SavedSearch'
+      summary: Create a saved search
+      tags:
+      - Search
+  /api/v1/search/saved/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a saved search by ID
+      parameters:
+      - description: Saved search ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content
+      summary: Delete a saved search
+      tags:
+      - Search
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific saved search
+      parameters:
+      - description: Saved search ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_search.SavedSearch'
+      summary: Get a saved search
+      tags:
+      - Search
+    put:
+      consumes:
+      - application/json
+      description: Update an existing saved search
+      parameters:
+      - description: Saved search ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated search details
+        in: body
+        name: search
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_search.UpdateSavedSearchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_search.SavedSearch'
+      summary: Update a saved search
+      tags:
+      - Search
+  /api/v1/search/saved/{id}/run:
+    post:
+      consumes:
+      - application/json
+      description: Execute a saved search and return results
+      parameters:
+      - description: Saved search ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_search.SearchFilesResponse'
+      summary: Run a saved search
+      tags:
+      - Search
+  /api/v1/search/suggestions:
+    get:
+      consumes:
+      - application/json
+      description: Get intelligent search suggestions based on partial query
+      parameters:
+      - description: Partial query string
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 10
+        description: Maximum suggestions to return (1-20)
+        in: query
+        name: limit
+        type: integer
+      - description: Suggestion type filter
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_search.SearchSuggestionsResponse'
+      summary: Get search suggestions
+      tags:
+      - Search
+  /files/{file_id}/preview:
+    get:
+      consumes:
+      - application/json
+      description: Get existing preview or generate new preview for a specific file
+      parameters:
+      - description: File ID
+        in: path
+        name: file_id
+        required: true
+        type: integer
+      - default: thumbnail
+        description: Preview type
+        enum:
+        - thumbnail
+        - poster
+        - cover
+        in: query
+        name: type
+        type: string
+      - default: medium
+        description: Preview size
+        enum:
+        - small
+        - medium
+        - large
+        in: query
+        name: size
+        type: string
+      - description: Time offset for video thumbnails (e.g., '5.0' for 5 seconds)
+        in: query
+        name: offset
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Preview file data
+          schema:
+            type: file
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: File not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get or generate preview by file ID
+      tags:
+      - previews
   /files/{id}/details:
     get:
       consumes:
@@ -2840,6 +3678,245 @@ paths:
       summary: Get media enrichment capabilities
       tags:
       - media
+  /previews:
+    post:
+      consumes:
+      - application/json
+      description: Generate a new preview (thumbnail, poster, or cover) for a file
+      parameters:
+      - description: Preview generation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_previews.PreviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Preview generated successfully
+          schema:
+            $ref: '#/definitions/internal_api_v1_previews.PreviewResponse'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Generate preview
+      tags:
+      - previews
+  /previews/{file_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all previews for a specific file
+      parameters:
+      - description: File ID
+        in: path
+        name: file_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Previews deleted successfully
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete preview
+      tags:
+      - previews
+    get:
+      consumes:
+      - application/json
+      description: Serve a preview file by file ID
+      parameters:
+      - description: File ID
+        in: path
+        name: file_id
+        required: true
+        type: integer
+      - description: Preview type
+        enum:
+        - thumbnail
+        - poster
+        - cover
+        in: query
+        name: type
+        type: string
+      - description: Preview size
+        enum:
+        - small
+        - medium
+        - large
+        in: query
+        name: size
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Preview file data
+          schema:
+            type: file
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Preview not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get preview file
+      tags:
+      - previews
+  /previews/health:
+    get:
+      consumes:
+      - application/json
+      description: Check the health status of the preview service and its dependencies
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service health status
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Preview service health check
+      tags:
+      - previews
+  /previews/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics about preview generation and usage
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Preview statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get preview statistics
+      tags:
+      - previews
+  /previews/supported:
+    get:
+      consumes:
+      - application/json
+      description: Get list of supported media types for preview generation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Supported media types
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get supported media types
+      tags:
+      - previews
+  /reports/orphaned:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of volumes that are not attached to any containers
+      parameters:
+      - description: 'Page number for pagination (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 25, max: 100)'
+        in: query
+        name: page_size
+        type: integer
+      - description: 'Sort field and direction (e.g., ''name:asc'', ''size_bytes:desc'').
+          Available fields: name, size_bytes, created_at'
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of orphaned volumes
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get orphaned volumes
+      tags:
+      - volumes
+  /scans/{id}/status:
+    get:
+      consumes:
+      - application/json
+      description: Get the status of a volume scan by volume ID or scan ID
+      parameters:
+      - description: Volume ID or Scan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Scan status information
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Scan not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get scan status
+      tags:
+      - scan
   /stats/daily:
     get:
       consumes:
@@ -2984,6 +4061,356 @@ paths:
       summary: Get top folders by size
       tags:
       - stats
+  /system/info:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed system information including service version and Docker
+        status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: System information
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get system information
+      tags:
+      - system
+  /system/version:
+    get:
+      consumes:
+      - application/json
+      description: Get API version information and available endpoints
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: API version information
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get API version
+      tags:
+      - system
+  /trends/summary:
+    get:
+      consumes:
+      - application/json
+      description: Get aggregated trends summary for all volumes in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: All volumes trends summary
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get all volumes trends summary
+      tags:
+      - trends
+  /trends/volumes/{volumeId}:
+    get:
+      consumes:
+      - application/json
+      description: Get trend analysis for a specific volume over a specified time
+        period
+      parameters:
+      - description: Volume ID
+        in: path
+        name: volumeId
+        required: true
+        type: string
+      - description: 'Number of days to analyze (default: 30, max: 365)'
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume trends data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get volume trends
+      tags:
+      - trends
+  /trends/volumes/{volumeId}/7day:
+    get:
+      consumes:
+      - application/json
+      description: Get 7-day trend summary for a volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: volumeId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 7-day trend summary
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get 7-day trend
+      tags:
+      - trends
+  /trends/volumes/{volumeId}/30day:
+    get:
+      consumes:
+      - application/json
+      description: Get 30-day trend summary for a volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: volumeId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 30-day trend summary
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get 30-day trend
+      tags:
+      - trends
+  /trends/volumes/{volumeId}/deltas:
+    get:
+      consumes:
+      - application/json
+      description: Get growth deltas (changes) for a volume over time
+      parameters:
+      - description: Volume ID
+        in: path
+        name: volumeId
+        required: true
+        type: string
+      - default: daily
+        description: Delta type (daily, weekly)
+        in: query
+        name: type
+        type: string
+      - description: 'Number of deltas to return (default: 30)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume growth deltas
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get volume growth deltas
+      tags:
+      - trends
+  /trends/volumes/{volumeId}/series:
+    get:
+      consumes:
+      - application/json
+      description: Get step series data for a volume suitable for time-series charting
+      parameters:
+      - description: Volume ID
+        in: path
+        name: volumeId
+        required: true
+        type: string
+      - default: daily
+        description: Series type (daily, weekly)
+        in: query
+        name: type
+        type: string
+      - description: 'Number of days to include (default: 30)'
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume step series data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get volume step series
+      tags:
+      - trends
+  /trends/volumes/{volumeId}/slope:
+    get:
+      consumes:
+      - application/json
+      description: Calculate the trend slope for a volume to determine growth rate
+      parameters:
+      - description: Volume ID
+        in: path
+        name: volumeId
+        required: true
+        type: string
+      - default: daily
+        description: Trend type (daily, weekly)
+        in: query
+        name: type
+        type: string
+      - description: 'Number of days to analyze (default: 30)'
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume trend slope data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get volume trend slope
+      tags:
+      - trends
+  /volumes:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of Docker volumes with filtering, sorting, and
+        search capabilities
+      parameters:
+      - description: 'Page number for pagination (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 25, max: 100)'
+        in: query
+        name: page_size
+        type: integer
+      - description: 'Sort field and direction (e.g., ''name:asc'', ''created_at:desc'').
+          Available fields: name, driver, created_at, size_bytes'
+        in: query
+        name: sort
+        type: string
+      - description: Search query to filter volumes by name
+        in: query
+        name: q
+        type: string
+      - description: Filter by volume driver
+        enum:
+        - local
+        - nfs
+        - cifs
+        - overlay2
+        in: query
+        name: driver
+        type: string
+      - description: Filter orphaned volumes (not attached to any container)
+        in: query
+        name: orphaned
+        type: boolean
+      - description: 'Include system volumes (default: false)'
+        in: query
+        name: system
+        type: boolean
+      - description: Filter volumes created after date (RFC3339 format)
+        in: query
+        name: created_after
+        type: string
+      - description: Filter volumes created before date (RFC3339 format)
+        in: query
+        name: created_before
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of volumes
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List Docker volumes
+      tags:
+      - volumes
   /volumes/{id}/filesystem/index:
     post:
       consumes:
@@ -3020,39 +4447,6 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Trigger filesystem indexing
-      tags:
-      - filesystem
-  /volumes/{id}/filesystem/status:
-    get:
-      consumes:
-      - application/json
-      description: Get the current status of filesystem indexing for a volume
-      parameters:
-      - description: Volume ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/FilesystemIndexingResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "503":
-          description: Filesystem indexing not enabled
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get filesystem indexing status
       tags:
       - filesystem
   /volumes/{id}/media/enrich:
@@ -3113,6 +4507,43 @@ paths:
       summary: Get media enrichment status
       tags:
       - media
+  /volumes/{id}/scan/status:
+    get:
+      consumes:
+      - application/json
+      description: Get the status of a volume scan by volume ID or scan ID
+      parameters:
+      - description: Volume ID or Scan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Scan status information
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Scan not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get scan status
+      tags:
+      - scan
   /volumes/{id}/size:
     get:
       consumes:
@@ -3182,6 +4613,171 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Refresh volume size
+      tags:
+      - scan
+  /volumes/{name}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific Docker volume by name
+      parameters:
+      - description: Volume name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume details
+          schema:
+            $ref: '#/definitions/VolumeV1'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Volume not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get volume details
+      tags:
+      - volumes
+  /volumes/{name}/attachments:
+    get:
+      consumes:
+      - application/json
+      description: Get list of containers that have the specified volume mounted
+      parameters:
+      - description: Volume name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of container attachments
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Volume not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get volume attachments
+      tags:
+      - volumes
+  /volumes/{name}/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed statistics and usage information for a specific volume
+      parameters:
+      - description: Volume name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume statistics
+          schema:
+            $ref: '#/definitions/VolumeStatsResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Volume not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get volume statistics
+      tags:
+      - volumes
+  /volumes/{volumeId}/filesystem/status:
+    get:
+      consumes:
+      - application/json
+      description: Get the current status of filesystem indexing for a volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/FilesystemIndexingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Filesystem indexing not enabled
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get filesystem indexing status
+      tags:
+      - filesystem
+  /volumes/bulk-scan:
+    post:
+      consumes:
+      - application/json
+      description: Scan multiple volumes at once, with support for async processing
+      parameters:
+      - description: Bulk scan request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/BulkScanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bulk scan results
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Bulk scan volumes
       tags:
       - scan
 schemes:

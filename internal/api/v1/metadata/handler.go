@@ -2,8 +2,10 @@ package metadata
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -565,4 +567,167 @@ func (h *Handler) GetFilesByLocation(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// GetFilterMetadata returns metadata for filter dropdowns
+// @Summary Get filter metadata
+// @Description Get available MIME types, media kinds, and extensions for filter dropdowns
+// @Tags metadata
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.FilterMetadataResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/v1/metadata/filters [get]
+func (h *Handler) GetFilterMetadata(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	// Get distinct MIME types
+	mimeTypes, err := h.store.FileMetadata().GetDistinctMimeTypes(ctx)
+	if err != nil {
+		utils.RespondWithInternalError(c, "Failed to retrieve MIME types", err)
+		return
+	}
+
+	// Get distinct media kinds
+	mediaKinds, err := h.store.FileMetadata().GetDistinctMediaKinds(ctx)
+	if err != nil {
+		utils.RespondWithInternalError(c, "Failed to retrieve media kinds", err)
+		return
+	}
+
+	// Get distinct extensions
+	extensions, err := h.store.FileMetadata().GetDistinctExtensions(ctx)
+	if err != nil {
+		utils.RespondWithInternalError(c, "Failed to retrieve extensions", err)
+		return
+	}
+
+	// Create response with user-friendly labels
+	response := models.FilterMetadataResponse{
+		MimeTypes:  make([]models.MimeTypeOption, 0, len(mimeTypes)),
+		MediaKinds: make([]models.MediaKindOption, 0, len(mediaKinds)),
+		Extensions: make([]models.ExtensionOption, 0, len(extensions)),
+	}
+
+	// Convert MIME types with user-friendly labels
+	for _, mt := range mimeTypes {
+		mimeTypeStr := ""
+		if mt.MimeType.Valid {
+			mimeTypeStr = mt.MimeType.String
+		}
+		label := generateMimeTypeLabel(mimeTypeStr)
+		response.MimeTypes = append(response.MimeTypes, models.MimeTypeOption{
+			Value:     mimeTypeStr,
+			Label:     label,
+			FileCount: int(mt.FileCount),
+		})
+	}
+
+	// Convert media kinds
+	for _, mk := range mediaKinds {
+		mediaKindStr := ""
+		if mk.MediaKind.Valid {
+			mediaKindStr = mk.MediaKind.String
+		}
+		response.MediaKinds = append(response.MediaKinds, models.MediaKindOption{
+			Value:     mediaKindStr,
+			Label:     capitalizeFirst(mediaKindStr),
+			FileCount: int(mk.FileCount),
+		})
+	}
+
+	// Convert extensions
+	for _, ext := range extensions {
+		extensionStr := ""
+		if ext.Extension.Valid {
+			extensionStr = ext.Extension.String
+		}
+		response.Extensions = append(response.Extensions, models.ExtensionOption{
+			Value:     extensionStr,
+			Label:     strings.ToUpper(extensionStr) + " Files",
+			FileCount: int(ext.FileCount),
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// generateMimeTypeLabel creates user-friendly labels for MIME types
+func generateMimeTypeLabel(mimeType string) string {
+	// Map of common MIME types to user-friendly labels
+	labelMap := map[string]string{
+		// Video
+		"video/x-matroska":    "MKV Video",
+		"video/mp4":           "MP4 Video",
+		"video/x-msvideo":     "AVI Video",
+		"video/x-flv":         "FLV Video",
+		"video/mp2t":          "TS Video",
+		"video/quicktime":     "MOV Video",
+		"video/webm":          "WebM Video",
+		"video/x-ms-wmv":      "WMV Video",
+		"video/3gpp":          "3GP Video",
+		
+		// Audio
+		"audio/mpeg":          "MP3 Audio",
+		"audio/flac":          "FLAC Audio",
+		"audio/wav":           "WAV Audio",
+		"audio/x-wav":         "WAV Audio",
+		"audio/mp4":           "M4A Audio",
+		"audio/ogg":           "OGG Audio",
+		"audio/x-mod":         "MOD Audio",
+		"audio/aac":           "AAC Audio",
+		"audio/x-ms-wma":      "WMA Audio",
+		
+		// Image
+		"image/jpeg":          "JPEG Image",
+		"image/png":           "PNG Image",
+		"image/gif":           "GIF Image",
+		"image/webp":          "WebP Image",
+		"image/svg+xml":       "SVG Image",
+		"image/tiff":          "TIFF Image",
+		"image/bmp":           "BMP Image",
+		"image/x-icon":        "ICO Image",
+		"image/heic":          "HEIC Image",
+		
+		// Document
+		"application/pdf":     "PDF Document",
+		"text/plain":          "Text File",
+		"application/json":    "JSON File",
+		"text/x-nfo":          "NFO File",
+		"application/xml":     "XML File",
+		"text/html":           "HTML File",
+		"text/css":            "CSS File",
+		"application/javascript": "JavaScript File",
+		
+		// Archive
+		"application/zip":     "ZIP Archive",
+		"application/x-rar-compressed": "RAR Archive",
+		"application/x-7z-compressed":  "7Z Archive",
+		"application/x-tar":   "TAR Archive",
+		"application/gzip":    "GZIP Archive",
+	}
+
+	if label, exists := labelMap[mimeType]; exists {
+		return label
+	}
+
+	// Fallback: create label from MIME type
+	parts := strings.Split(mimeType, "/")
+	if len(parts) == 2 {
+		category := capitalizeFirst(parts[0])
+		subtype := strings.ReplaceAll(parts[1], "-", " ")
+		subtype = strings.ReplaceAll(subtype, "_", " ")
+		subtype = capitalizeFirst(subtype)
+		return fmt.Sprintf("%s (%s)", subtype, category)
+	}
+
+	return mimeType
+}
+
+// capitalizeFirst capitalizes the first letter of a string
+func capitalizeFirst(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }

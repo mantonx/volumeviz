@@ -30,14 +30,3 @@ func (sr *StatsRouter) RegisterRoutes(router *gin.RouterGroup) {
 	router.GET("/stats/media", handler.GetMediaStats)
 	router.GET("/stats/storage", handler.GetStorageStats)
 }
-
-// RegisterRoutes registers stats routes with the router
-func RegisterRoutes(router *gin.RouterGroup, store store.Store, statsService *stats.StatsService) {
-	handler := NewHandler(store, statsService)
-
-	// Stats routes
-	router.GET("/stats/daily", handler.GetDailyStats)
-	router.GET("/stats/top-folders", handler.GetTopFolders)
-	router.GET("/stats/media", handler.GetMediaStats)
-	router.GET("/stats/storage", handler.GetStorageStats)
-}

@@ -37,14 +37,13 @@ import {
   containersLoadingAtom,
 } from '@/store/atoms/containers';
 
-// Import generated API client and types
+// Import API client and types  
 import { Api } from './generated/Api';
+// volumeApi is available for future use but not currently needed
 import type {
-  Volume,
-  AsyncScanResponse,
-  RefreshRequest,
   ScanResponse,
-} from './generated/Api';
+} from './client';
+import type { VolumeV1 as Volume, RefreshRequest } from './generated/Api';
 
 // Create configured API client instance
 const volumeVizApi = new Api({
@@ -169,7 +168,7 @@ export function useVolumes() {
           created_before: params?.created_before,
         };
         // Use generated API client for volumes list
-        const response = await volumeVizApi.volumes.listVolumes(queryParams);
+        const response = await volumeVizApi.volumes.volumesList(queryParams);
 
         // Ignore stale responses
         if (seq !== requestSeqRef.current) return;
@@ -178,9 +177,9 @@ export function useVolumes() {
         const volumeData = pagedData.data || [];
         setVolumes(volumeData as Volume[]);
         setPaginationMeta({
-          page: pagedData.page,
-          pageSize: pagedData.page_size,
-          total: pagedData.total,
+          page: pagedData.page || 1,
+          pageSize: pagedData.page_size || 25,
+          total: pagedData.total || 0,
           sort: pagedData.sort,
           filters: pagedData.filters,
         });
@@ -256,16 +255,16 @@ export function useVolumeScanning() {
         setScanError((prev) => ({ ...prev, [volumeId]: null }));
 
         // Use generated API client
-        const response = await volumeVizApi.volumes.refreshVolumeSize(
+        const response = await volumeVizApi.volumes.sizeRefreshCreate(
           volumeId,
-          options,
+          options || {},
         );
 
         // Check if it's an async scan
         if ((response.data as any).scan_id) {
           setAsyncScans((prev) => ({
             ...prev,
-            [volumeId]: response.data as unknown as AsyncScanResponse,
+            [volumeId]: response.data as unknown as ScanResponse,
           }));
         } else {
           // Synchronous scan
@@ -294,7 +293,7 @@ export function useVolumeScanning() {
         setScanError((prev) => ({ ...prev, [volumeId]: null }));
 
         // Use generated API client
-        const response = await volumeVizApi.volumes.getVolumeSize(volumeId);
+        const response = await volumeVizApi.volumes.sizeList(volumeId);
 
         setScanResults((prev) => ({
           ...prev,
@@ -314,12 +313,20 @@ export function useVolumeScanning() {
   );
 
   const getScanStatus = useCallback(
-    async (volumeId: string, scanId?: string) => {
-      // Use generated API client
-      const response = await volumeVizApi.volumes.getScanStatus(volumeId, {
-        scan_id: scanId,
-      });
-      return response.data;
+    async (scanId?: string) => {
+      try {
+        if (!scanId) {
+          return { status: 'unknown', scan_id: scanId };
+        }
+        
+        // Use generated API client for scan status by scan ID
+        const response = await volumeVizApi.scans.statusList(scanId);
+        return response.data;
+      } catch (err) {
+        const errorMessage = getErrorMessage(err);
+        console.warn('Failed to get scan status:', errorMessage);
+        return { status: 'unknown', scan_id: scanId, error: errorMessage };
+      }
     },
     [],
   );
@@ -365,7 +372,7 @@ export function useApiHealth() {
         timestamp: Date.now(),
         checks: healthData.checks || {},
       });
-      
+
       // Set connection status to true when health check succeeds
       setConnected(true);
     } catch (err) {
@@ -376,7 +383,7 @@ export function useApiHealth() {
         timestamp: Date.now(),
         checks: {},
       });
-      
+
       // Set connection status to false when health check fails
       setConnected(false);
     } finally {
@@ -386,7 +393,7 @@ export function useApiHealth() {
 
   const checkDatabaseHealth = useCallback(async () => {
     // Use generated API client
-    const response = await volumeVizApi.database.getDatabaseHealth();
+    const response = await volumeVizApi.health.databaseList();
     return response.data;
   }, []);
 
@@ -456,16 +463,34 @@ export function useBulkOperations() {
 
   const bulkScan = useCallback(
     async (volumeIds: string[], options?: RefreshRequest) => {
-      // Use generated API client for bulk scan
-      const response = await volumeVizApi.volumes.bulkScanVolumes({
-        volume_ids: volumeIds,
-        ...options,
-      });
+      try {
+        // Use generated API client for bulk scan
+        const bulkRequest = {
+          volume_ids: volumeIds,
+          async: options?.async || false,
+          method: options?.method || 'du',
+        };
+        
+        const response = await volumeVizApi.volumes.bulkScanCreate(bulkRequest);
 
-      // Refresh volumes list after bulk operation
-      await refreshVolumes();
+        // Refresh volumes list after bulk operation
+        await refreshVolumes();
 
-      return response.data;
+        return response.data;
+      } catch (err) {
+        const errorMessage = getErrorMessage(err);
+        console.warn('Bulk scan failed, falling back to individual scans:', errorMessage);
+        
+        // Fallback to individual scans
+        const results = await Promise.all(
+          volumeIds.map(id => volumeVizApi.volumes.sizeRefreshCreate(id, options || {}))
+        );
+
+        // Refresh volumes list after bulk operation
+        await refreshVolumes();
+
+        return { results: results.map(r => r.data) };
+      }
     },
     [refreshVolumes],
   );
@@ -503,7 +528,7 @@ export function useContainers() {
 
         try {
           // Use generated API client for volume attachments
-          const response = await volumeVizApi.volumes.getVolumeAttachments(
+          const response = await volumeVizApi.volumes.attachmentsList(
             volume.name,
           );
           const attachmentsList = response.data;
@@ -523,7 +548,7 @@ export function useContainers() {
 
       // Aggregate and deduplicate containers from attachments
       containerArrays.forEach((attachmentsList) => {
-        attachmentsList.forEach((attachment) => {
+        attachmentsList.forEach((attachment: any) => {
           if (!allContainers.has(attachment.container_id)) {
             allContainers.set(attachment.container_id, {
               id: attachment.container_id,

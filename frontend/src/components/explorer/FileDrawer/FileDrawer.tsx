@@ -9,12 +9,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils';
 import {
-    CalendarIcon,
-    FileIcon,
-    HardDriveIcon,
-    InfoIcon,
-    TagIcon,
-    X,
+  CalendarIcon,
+  FileIcon,
+  HardDriveIcon,
+  InfoIcon,
+  TagIcon,
+  X,
 } from 'lucide-react';
 import React from 'react';
 
@@ -100,7 +100,7 @@ export const FileDrawer: React.FC<FileDrawerProps> = ({
         className={cn(
           'fixed top-0 right-0 h-full w-96 bg-white dark:bg-gray-900 shadow-xl z-50 transform transition-transform duration-300 ease-in-out',
           isOpen ? 'translate-x-0' : 'translate-x-full',
-          className
+          className,
         )}
       >
         {/* Header */}
@@ -164,7 +164,9 @@ export const FileDrawer: React.FC<FileDrawerProps> = ({
                         Type
                       </label>
                       <div className="mt-1">
-                        <Badge variant="outline">{file.extension || 'Unknown'}</Badge>
+                        <Badge variant="outline">
+                          {file.extension || 'Unknown'}
+                        </Badge>
                       </div>
                     </div>
                   </div>
@@ -225,7 +227,7 @@ export const FileDrawer: React.FC<FileDrawerProps> = ({
                         </p>
                       </div>
                     )}
-                    {(file.width && file.height) && (
+                    {file.width && file.height && (
                       <div>
                         <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Dimensions

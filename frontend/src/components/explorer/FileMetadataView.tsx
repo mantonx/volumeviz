@@ -15,7 +15,7 @@ interface FileMetadataViewProps {
 
 export const FileMetadataView: React.FC<FileMetadataViewProps> = ({
   file,
-  className = ''
+  className = '',
 }) => {
   if (!file) {
     return (
@@ -105,8 +105,12 @@ export const FileMetadataView: React.FC<FileMetadataViewProps> = ({
             </div>
             {file.hash && (
               <div className="flex justify-between">
-                <span className="text-gray-600">Hash ({file.hashAlgo || file.hash_algo}):</span>
-                <span className="font-mono text-xs">{file.hash.substring(0, 16)}...</span>
+                <span className="text-gray-600">
+                  Hash ({file.hashAlgo || file.hash_algo}):
+                </span>
+                <span className="font-mono text-xs">
+                  {file.hash.substring(0, 16)}...
+                </span>
               </div>
             )}
           </div>

@@ -8,17 +8,18 @@
 import { useFileList } from '@/api/explorer';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { PreviewImage } from '@/components/preview';
 import type { FileItem } from '@/store/atoms/explorer';
 import { cn } from '@/utils';
 import {
-    DownloadIcon,
-    FileIcon,
-    FileTextIcon,
-    FolderIcon,
-    ImageIcon,
-    MoreHorizontalIcon,
-    MusicIcon,
-    VideoIcon,
+  DownloadIcon,
+  FileIcon,
+  FileTextIcon,
+  FolderIcon,
+  ImageIcon,
+  MoreHorizontalIcon,
+  MusicIcon,
+  VideoIcon,
 } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
@@ -33,18 +34,27 @@ const getFileIcon = (file: FileItem) => {
     return <FolderIcon className="w-4 h-4 text-blue-500" />;
   }
 
-  if (file.mediaType?.startsWith('image/')) {
-    return <ImageIcon className="w-4 h-4 text-green-500" />;
+  // Use preview image for media files
+  if (
+    file.mediaType &&
+    (file.mediaType.startsWith('image/') ||
+      file.mediaType.startsWith('video/') ||
+      file.mediaType.startsWith('audio/'))
+  ) {
+    return (
+      <PreviewImage
+        fileId={file.id}
+        fileName={file.name}
+        mediaType={file.mediaType}
+        size="small"
+        className="w-4 h-4 rounded"
+        lazy={true}
+        showBlurUp={false}
+      />
+    );
   }
 
-  if (file.mediaType?.startsWith('video/')) {
-    return <VideoIcon className="w-4 h-4 text-red-500" />;
-  }
-
-  if (file.mediaType?.startsWith('audio/')) {
-    return <MusicIcon className="w-4 h-4 text-purple-500" />;
-  }
-
+  // Fallback icons for non-media files
   if (file.mediaType?.startsWith('text/') || file.extension === 'txt') {
     return <FileTextIcon className="w-4 h-4 text-gray-500" />;
   }

@@ -1,6 +1,6 @@
 /**
  * FilterDebugger Component
- * 
+ *
  * Manual debugging tool to test filter functionality
  */
 
@@ -18,7 +18,7 @@ export const FilterDebugger: React.FC = () => {
   useEffect(() => {
     console.group('🔍 Filter State Debug');
     console.log('Current filters:', JSON.stringify(filters, null, 2));
-    
+
     // Test buildSearchRequest if available
     try {
       if (buildSearchRequest) {
@@ -30,7 +30,10 @@ export const FilterDebugger: React.FC = () => {
           order: 'asc' as const,
         };
         const builtRequest = buildSearchRequest(testRequest);
-        console.log('Built search request:', JSON.stringify(builtRequest, null, 2));
+        console.log(
+          'Built search request:',
+          JSON.stringify(builtRequest, null, 2),
+        );
       }
     } catch (error) {
       console.error('Error building search request:', error);
@@ -39,10 +42,12 @@ export const FilterDebugger: React.FC = () => {
   }, [filters, buildSearchRequest]);
 
   const filterSummary = {
-    hasActiveFilters: Object.values(filters).some(value => {
+    hasActiveFilters: Object.values(filters).some((value) => {
       if (Array.isArray(value)) return value.length > 0;
       if (typeof value === 'object' && value !== null) {
-        return Object.values(value).some(v => v !== undefined && v !== null && v !== '');
+        return Object.values(value).some(
+          (v) => v !== undefined && v !== null && v !== '',
+        );
       }
       return value !== undefined && value !== null && value !== '';
     }),
@@ -60,7 +65,7 @@ export const FilterDebugger: React.FC = () => {
       <h3 className="text-lg font-bold mb-4 text-yellow-800 dark:text-yellow-200">
         🛠️ Filter Debugger
       </h3>
-      
+
       <div className="space-y-4">
         <div>
           <h4 className="font-semibold">Filter Summary:</h4>
@@ -89,19 +94,28 @@ export const FilterDebugger: React.FC = () => {
             {filters?.timeRange && typeof filters.timeRange !== 'object' && (
               <li className="text-red-600">❌ timeRange is not an object</li>
             )}
-            {filters?.booleanFilters && typeof filters.booleanFilters !== 'object' && (
-              <li className="text-red-600">❌ booleanFilters is not an object</li>
-            )}
+            {filters?.booleanFilters &&
+              typeof filters.booleanFilters !== 'object' && (
+                <li className="text-red-600">
+                  ❌ booleanFilters is not an object
+                </li>
+              )}
             {/* Check for undefined nested objects */}
             {!filters?.dimensionsRange?.width && (
-              <li className="text-yellow-600">⚠️ dimensionsRange.width is undefined</li>
+              <li className="text-yellow-600">
+                ⚠️ dimensionsRange.width is undefined
+              </li>
             )}
             {!filters?.dimensionsRange?.height && (
-              <li className="text-yellow-600">⚠️ dimensionsRange.height is undefined</li>
+              <li className="text-yellow-600">
+                ⚠️ dimensionsRange.height is undefined
+              </li>
             )}
             {/* Check for null/undefined filters object */}
             {!filters && (
-              <li className="text-red-600">❌ Filters object is null/undefined</li>
+              <li className="text-red-600">
+                ❌ Filters object is null/undefined
+              </li>
             )}
             {filterSummary.hasActiveFilters && (
               <li className="text-green-600">✅ Has active filters</li>

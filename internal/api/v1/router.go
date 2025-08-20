@@ -10,10 +10,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/middleware"
 	"github.com/mantonx/volumeviz/internal/api/v1/alerts"
+	"github.com/mantonx/volumeviz/internal/api/v1/diag"
 	"github.com/mantonx/volumeviz/internal/api/v1/explorer"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
 	"github.com/mantonx/volumeviz/internal/api/v1/metadata"
+	previewsAPI "github.com/mantonx/volumeviz/internal/api/v1/previews"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
+	"github.com/mantonx/volumeviz/internal/api/v1/search"
 	"github.com/mantonx/volumeviz/internal/api/v1/stats"
 	"github.com/mantonx/volumeviz/internal/api/v1/system"
 	"github.com/mantonx/volumeviz/internal/api/v1/trends"
@@ -28,7 +31,10 @@ import (
 	alertsService "github.com/mantonx/volumeviz/internal/services/alerts"
 	"github.com/mantonx/volumeviz/internal/services/cache"
 	dockerService "github.com/mantonx/volumeviz/internal/services/docker"
+	"github.com/mantonx/volumeviz/internal/services/enrichers"
+	"github.com/mantonx/volumeviz/internal/services/filesystem"
 	coreMetrics "github.com/mantonx/volumeviz/internal/services/metrics"
+	previewsService "github.com/mantonx/volumeviz/internal/services/previews"
 	"github.com/mantonx/volumeviz/internal/services/scanner"
 	statsService "github.com/mantonx/volumeviz/internal/services/stats"
 	"github.com/mantonx/volumeviz/internal/store"
@@ -47,10 +53,12 @@ type Router struct {
 	store             store.Store // Modern store interface using sqlc
 	websocketHub      *websocket.Hub
 	realtimePublisher *realtime.Publisher
-	scheduler         scheduler.ScanScheduler // Optional scan scheduler - using store façade
-	eventsService     events.EventService     // Optional events service - using store façade
-	alertsEngine      interfaces.AlertEngine  // Alerts engine for alert management
-	healthRouter      *health.Router          // Health router for external access
+	scheduler         scheduler.ScanScheduler         // Optional scan scheduler - using store façade
+	eventsService     events.EventService             // Optional events service - using store façade
+	alertsEngine      interfaces.AlertEngine          // Alerts engine for alert management
+	enrichmentManager oldInterfaces.EnrichmentManager // Media enrichment manager
+	previewService    *previewsService.Service        // Preview service for file thumbnails
+	healthRouter      *health.Router                  // Health router for external access
 }
 
 // NewRouter creates a new v1 API router
@@ -76,13 +84,100 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 	// Use default scanner config for now
 	scannerConfig := models.DefaultConfig()
 
-	volumeScanner := scanner.NewVolumeScanner(
+	// Set up filesystem indexing repositories and config
+	foldersRepo := storeInstance.Folders()
+	filesRepo := storeInstance.Files()
+
+	// Create filesystem indexing config from main config
+	indexerConfig := filesystem.IndexerConfig{
+		EnableHashing:       config.FilesystemIndexing.EnableHashing,
+		MaxFileBytesForHash: config.FilesystemIndexing.MaxFileBytesForHash,
+		HashAlgorithm:       config.FilesystemIndexing.HashAlgorithm,
+		SkipPatterns:        config.FilesystemIndexing.SkipPatterns,
+		SkipHidden:          config.FilesystemIndexing.SkipHidden,
+		MaxDepth:            config.FilesystemIndexing.MaxDepth,
+		DetectMimeTypes:     config.FilesystemIndexing.DetectMimeTypes,
+	}
+
+	// Create preview service for generating file previews during scanning
+	previewsDir := config.Previews.RootDir
+	if previewsDir == "" {
+		previewsDir = "./data/previews" // Default for development
+	}
+	
+	previewConfig := &previewsService.PreviewConfig{
+		RootDir:         previewsDir,
+		MaxConcurrent:   3,
+		ProcessTimeout:  30 * time.Second,
+		MaxSourceSizeMB: 500,
+		VipsPath:        "vips",
+		FFmpegPath:      "ffmpeg",
+		SmartCrop:       true,
+		CleanupEnabled:  true,
+		CleanupInterval: time.Hour,
+		MaxAge:          30 * 24 * time.Hour, // 30 days
+	}
+	
+	previewService, err := previewsService.NewService(previewConfig)
+	if err != nil {
+		// Log error but don't fail - previews are optional
+		log.Printf("Failed to initialize preview service: %v", err)
+		previewService = nil
+	}
+
+	volumeScannerConcrete := scanner.NewVolumeScannerWithIndexing(
 		dockerSvc,
 		cache,
 		metricsCollector,
 		logger,
 		scannerConfig,
+		foldersRepo,
+		filesRepo,
+		indexerConfig,
+		storeInstance,
+		previewService,
 	)
+
+	// Initialize media enrichment manager if enabled
+	var enrichmentManager oldInterfaces.EnrichmentManager
+	if config.MediaEnrichment.Enabled {
+		// Convert config to enricher config
+		enricherConfig := enrichers.EnricherConfig{
+			Enabled:              config.MediaEnrichment.Enabled,
+			MaxConcurrentWorkers: config.MediaEnrichment.MaxConcurrentWorkers,
+			TimeoutPerFile:       config.MediaEnrichment.TimeoutPerFile,
+			FFprobeEnabled:       config.MediaEnrichment.FFprobeEnabled,
+			FFprobePath:          config.MediaEnrichment.FFprobePath,
+			FFprobeTimeout:       config.MediaEnrichment.FFprobeTimeout,
+			EXIFEnabled:          config.MediaEnrichment.EXIFEnabled,
+			EnableGPS:            config.MediaEnrichment.EnableGPS,
+			RedactGPS:            config.MediaEnrichment.RedactGPS,
+			GPSPrecision:         config.MediaEnrichment.GPSPrecision,
+			SubtitleEnabled:      config.MediaEnrichment.SubtitleEnabled,
+		}
+
+		// Create enrichment repository
+		enrichmentRepo := storeInstance.FileMetadata()
+
+		// Create enrichment manager with logger
+		enrichmentLogger := log.New(os.Stdout, "[ENRICHMENT] ", log.LstdFlags)
+		enrichmentManager = enrichers.NewManager(enricherConfig, enrichmentRepo, enrichmentLogger)
+
+		// Set enrichment manager on volume scanner for automatic enrichment after filesystem indexing
+		if volumeScannerImpl, ok := volumeScannerConcrete.(*scanner.VolumeScanner); ok {
+			volumeScannerImpl.SetEnrichmentManager(enrichmentManager)
+			log.Printf("[INFO] Media enrichment manager integrated with volume scanner")
+		} else {
+			log.Printf("[WARNING] Could not cast volume scanner to concrete type for enrichment integration")
+		}
+
+		log.Printf("[INFO] Media enrichment manager initialized successfully")
+	} else {
+		log.Printf("[INFO] Media enrichment disabled")
+	}
+
+	// Use the concrete scanner as the interface
+	volumeScanner := volumeScannerConcrete
 
 	// Initialize scan scheduler if enabled - using store façade
 	var scanScheduler scheduler.ScanScheduler
@@ -113,7 +208,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 			} else {
 				scanScheduler = sch
 				log.Printf("[INFO] Scan scheduler initialized successfully")
-				
+
 				// Auto-start the scheduler
 				ctx := context.Background()
 				if err := sch.Start(ctx); err != nil {
@@ -206,10 +301,12 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		scheduler:         scanScheduler,
 		eventsService:     eventsService,
 		alertsEngine:      alertsEngine,
+		enrichmentManager: enrichmentManager,
+		previewService:    previewService,
 	}
 
 	router.setupMiddleware(config)
-	router.setupRoutes()
+	router.setupRoutes(config)
 
 	return router
 }
@@ -268,7 +365,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 		ExposedHeaders:   []string{"X-Request-ID"},
 		AllowCredentials: false,
 		MaxAge:           300,
-		SkipPaths:        []string{"/api/v1/health", "/health", "/metrics"},
+		SkipPaths:        []string{"/metrics"}, // Only skip metrics, not health endpoints
 	}
 	r.engine.Use(middleware.CORSMiddleware(corsConfig))
 
@@ -323,7 +420,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 }
 
 // setupRoutes configures all API routes
-func (r *Router) setupRoutes() {
+func (r *Router) setupRoutes(config *config.Config) {
 	// Root health endpoint for load balancers
 	r.engine.GET("/", r.getRootHealth)
 
@@ -346,6 +443,10 @@ func (r *Router) setupRoutes() {
 		// WebSocket endpoint
 		websocketHandler := websocket.NewHandler(r.websocketHub)
 		websocketHandler.RegisterRoutes(v1)
+		
+		// Diagnostics endpoint
+		diagHandler := diag.NewHandler(r.websocketHub, config)
+		diagHandler.RegisterRoutes(v1)
 
 		// Register sub-routers with store interface
 		r.healthRouter = health.NewRouter(r.dockerService, r.store, r.eventsService, r.scheduler)
@@ -364,6 +465,13 @@ func (r *Router) setupRoutes() {
 		systemRouter.RegisterRoutes(v1)
 
 		scanRouter := scan.NewRouter(r.scanner, r.websocketHub, r.store, r.scheduler, r.realtimePublisher)
+
+		// Set enrichment manager on scan router if available
+		if r.enrichmentManager != nil {
+			scanRouter.SetEnrichmentManager(r.enrichmentManager)
+			log.Printf("[INFO] Enrichment manager set on scan router")
+		}
+
 		scanRouter.RegisterRoutes(v1)
 
 		// Note: Database admin API removed as part of database cleanup
@@ -388,6 +496,19 @@ func (r *Router) setupRoutes() {
 		// Stats router with StatsService integration
 		statsRouter := stats.NewStatsRouter(r.store, statsSvc)
 		statsRouter.RegisterRoutes(v1)
+
+		// Search router for advanced file search and saved searches
+		searchRouter := search.NewRouter(r.store)
+		searchRouter.RegisterRoutes(v1)
+
+		// Preview router if preview service is available
+		if r.previewService != nil {
+			previewHandler := previewsAPI.NewHandler(r.previewService, r.store)
+			previewsAPI.RegisterRoutes(v1, previewHandler)
+			log.Printf("[INFO] Preview API routes registered successfully")
+		} else {
+			log.Printf("[WARNING] Preview service unavailable - preview routes not registered")
+		}
 
 		// Alerts router if alerts engine is available
 		if r.alertsEngine != nil {

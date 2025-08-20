@@ -1,6 +1,6 @@
 /**
  * SavedSearchPanel Component
- * 
+ *
  * Manages saved searches with create, edit, delete, and run functionality
  */
 
@@ -38,40 +38,49 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
     is_public: initialData?.is_public || false,
     metadata: initialData?.metadata || {},
   });
-  
+
   const [tagInput, setTagInput] = useState('');
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim()) return;
-    
-    await onSave(formData);
-  }, [formData, onSave]);
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!formData.name.trim()) return;
 
-  const addTag = useCallback((tag: string) => {
-    const trimmedTag = tag.trim().toLowerCase();
-    if (trimmedTag && !formData.tags.includes(trimmedTag)) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, trimmedTag],
-      }));
-    }
-    setTagInput('');
-  }, [formData.tags]);
+      await onSave(formData);
+    },
+    [formData, onSave],
+  );
+
+  const addTag = useCallback(
+    (tag: string) => {
+      const trimmedTag = tag.trim().toLowerCase();
+      if (trimmedTag && !formData.tags.includes(trimmedTag)) {
+        setFormData((prev) => ({
+          ...prev,
+          tags: [...prev.tags, trimmedTag],
+        }));
+      }
+      setTagInput('');
+    },
+    [formData.tags],
+  );
 
   const removeTag = useCallback((tagToRemove: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove),
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
   }, []);
 
-  const handleTagKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addTag(tagInput);
-    }
-  }, [tagInput, addTag]);
+  const handleTagKeyPress = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addTag(tagInput);
+      }
+    },
+    [tagInput, addTag],
+  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -82,7 +91,9 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
         <input
           type="text"
           value={formData.name}
-          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, name: e.target.value }))
+          }
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           placeholder="My saved search"
           required
@@ -96,7 +107,9 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
         </label>
         <textarea
           value={formData.description || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           placeholder="Describe what this search finds..."
           rows={3}
@@ -131,7 +144,7 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
           </div>
           {formData.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {formData.tags.map(tag => (
+              {formData.tags.map((tag) => (
                 <span
                   key={tag}
                   className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -157,11 +170,15 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
           <input
             type="checkbox"
             checked={formData.is_public}
-            onChange={(e) => setFormData(prev => ({ ...prev, is_public: e.target.checked }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, is_public: e.target.checked }))
+            }
             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             disabled={loading}
           />
-          <span className="ml-2 text-sm text-gray-700">Make this search public</span>
+          <span className="ml-2 text-sm text-gray-700">
+            Make this search public
+          </span>
         </label>
       </div>
 
@@ -193,10 +210,10 @@ export const SavedSearchPanel: React.FC<SavedSearchPanelProps> = ({
   const [showForm, setShowForm] = useState(false);
   const [editingSearch, setEditingSearch] = useState<SavedSearch | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  
+
   const [currentQuery] = useAtom(searchQueryAtom);
   const currentFilters = useAtomValue(advancedFiltersAtom);
-  
+
   const {
     savedSearches,
     loading,
@@ -221,71 +238,85 @@ export const SavedSearchPanel: React.FC<SavedSearchPanelProps> = ({
   }, [isOpen, hasSavedSearches, fetchSavedSearches]);
 
   // Handle creating new saved search
-  const handleCreateSearch = useCallback(async (data: CreateSavedSearchRequest) => {
-    try {
-      // Include current query and filters
-      const searchData = {
-        ...data,
-        query: {
-          ...currentQuery,
-          filters: currentFilters,
-        },
-      };
-      
-      await createSavedSearch(searchData);
-      setShowForm(false);
-    } catch (err) {
-      console.error('Failed to create saved search:', err);
-    }
-  }, [createSavedSearch, currentQuery, currentFilters]);
+  const handleCreateSearch = useCallback(
+    async (data: CreateSavedSearchRequest) => {
+      try {
+        // Include current query and filters
+        const searchData = {
+          ...data,
+          query: {
+            ...currentQuery,
+            filters: currentFilters,
+          },
+        };
+
+        await createSavedSearch(searchData);
+        setShowForm(false);
+      } catch (err) {
+        console.error('Failed to create saved search:', err);
+      }
+    },
+    [createSavedSearch, currentQuery, currentFilters],
+  );
 
   // Handle updating saved search
-  const handleUpdateSearch = useCallback(async (data: CreateSavedSearchRequest) => {
-    if (!editingSearch) return;
-    
-    try {
-      await updateSavedSearch(editingSearch.id, data);
-      setEditingSearch(null);
-      setShowForm(false);
-    } catch (err) {
-      console.error('Failed to update saved search:', err);
-    }
-  }, [editingSearch, updateSavedSearch]);
+  const handleUpdateSearch = useCallback(
+    async (data: CreateSavedSearchRequest) => {
+      if (!editingSearch) return;
+
+      try {
+        await updateSavedSearch(editingSearch.id, data);
+        setEditingSearch(null);
+        setShowForm(false);
+      } catch (err) {
+        console.error('Failed to update saved search:', err);
+      }
+    },
+    [editingSearch, updateSavedSearch],
+  );
 
   // Handle running saved search
-  const handleRunSearch = useCallback(async (search: SavedSearch) => {
-    try {
-      await runSavedSearch(search.id);
-      setIsOpen(false); // Close panel after running search
-    } catch (err) {
-      console.error('Failed to run saved search:', err);
-    }
-  }, [runSavedSearch]);
+  const handleRunSearch = useCallback(
+    async (search: SavedSearch) => {
+      try {
+        await runSavedSearch(search.id);
+        setIsOpen(false); // Close panel after running search
+      } catch (err) {
+        console.error('Failed to run saved search:', err);
+      }
+    },
+    [runSavedSearch],
+  );
 
   // Handle deleting saved search
-  const handleDeleteSearch = useCallback(async (search: SavedSearch) => {
-    if (!confirm(`Are you sure you want to delete "${search.name}"?`)) return;
-    
-    try {
-      await deleteSavedSearch(search.id);
-    } catch (err) {
-      console.error('Failed to delete saved search:', err);
-    }
-  }, [deleteSavedSearch]);
+  const handleDeleteSearch = useCallback(
+    async (search: SavedSearch) => {
+      if (!confirm(`Are you sure you want to delete "${search.name}"?`)) return;
+
+      try {
+        await deleteSavedSearch(search.id);
+      } catch (err) {
+        console.error('Failed to delete saved search:', err);
+      }
+    },
+    [deleteSavedSearch],
+  );
 
   // Handle duplicating saved search
-  const handleDuplicateSearch = useCallback(async (search: SavedSearch) => {
-    try {
-      await duplicateSavedSearch(search.id);
-    } catch (err) {
-      console.error('Failed to duplicate saved search:', err);
-    }
-  }, [duplicateSavedSearch]);
+  const handleDuplicateSearch = useCallback(
+    async (search: SavedSearch) => {
+      try {
+        await duplicateSavedSearch(search.id);
+      } catch (err) {
+        console.error('Failed to duplicate saved search:', err);
+      }
+    },
+    [duplicateSavedSearch],
+  );
 
   // Get filtered searches
-  const filteredSearches = selectedTags.length > 0 
-    ? filterByTags(selectedTags)
-    : savedSearches;
+  const filteredSearches =
+    selectedTags.length > 0 ? filterByTags(selectedTags) : savedSearches;
 
   // Get available tags
   const availableTags = getAllTags();
@@ -317,7 +348,9 @@ export const SavedSearchPanel: React.FC<SavedSearchPanelProps> = ({
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Saved Searches</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Saved Searches
+            </h3>
             <div className="flex items-center space-x-2">
               <Button
                 onClick={() => setShowForm(true)}
@@ -341,14 +374,14 @@ export const SavedSearchPanel: React.FC<SavedSearchPanelProps> = ({
           {availableTags.length > 0 && (
             <div className="mt-3">
               <div className="flex flex-wrap gap-1">
-                {availableTags.map(tag => (
+                {availableTags.map((tag) => (
                   <button
                     key={tag}
                     onClick={() => {
-                      setSelectedTags(prev => 
-                        prev.includes(tag) 
-                          ? prev.filter(t => t !== tag)
-                          : [...prev, tag]
+                      setSelectedTags((prev) =>
+                        prev.includes(tag)
+                          ? prev.filter((t) => t !== tag)
+                          : [...prev, tag],
                       );
                     }}
                     className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${
@@ -382,9 +415,7 @@ export const SavedSearchPanel: React.FC<SavedSearchPanelProps> = ({
           )}
 
           {error && (
-            <div className="p-4 text-red-600 text-sm">
-              Error: {error}
-            </div>
+            <div className="p-4 text-red-600 text-sm">Error: {error}</div>
           )}
 
           {loading && (
@@ -395,13 +426,15 @@ export const SavedSearchPanel: React.FC<SavedSearchPanelProps> = ({
 
           {!loading && !error && filteredSearches.length === 0 && (
             <div className="p-4 text-center text-gray-500">
-              {selectedTags.length > 0 ? 'No searches match the selected tags.' : 'No saved searches yet.'}
+              {selectedTags.length > 0
+                ? 'No searches match the selected tags.'
+                : 'No saved searches yet.'}
             </div>
           )}
 
           {!loading && !error && filteredSearches.length > 0 && (
             <div className="divide-y divide-gray-200">
-              {filteredSearches.map(search => (
+              {filteredSearches.map((search) => (
                 <div key={search.id} className="p-4 hover:bg-gray-50">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -413,11 +446,11 @@ export const SavedSearchPanel: React.FC<SavedSearchPanelProps> = ({
                           {search.description}
                         </p>
                       )}
-                      
+
                       {/* Tags */}
                       {search.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
-                          {search.tags.map(tag => (
+                          {search.tags.map((tag) => (
                             <span
                               key={tag}
                               className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
@@ -427,11 +460,13 @@ export const SavedSearchPanel: React.FC<SavedSearchPanelProps> = ({
                           ))}
                         </div>
                       )}
-                      
+
                       {/* Meta info */}
                       <div className="text-xs text-gray-400 mt-2">
                         {formatLastRun(search.last_run_at, search.run_count)}
-                        {search.is_public && <span className="ml-2">• Public</span>}
+                        {search.is_public && (
+                          <span className="ml-2">• Public</span>
+                        )}
                       </div>
                     </div>
 

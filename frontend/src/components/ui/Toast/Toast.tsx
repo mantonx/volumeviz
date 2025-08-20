@@ -1,92 +1,317 @@
-import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
-import { cn } from '@/utils';
-import type { ToastProps } from './Toast.types';
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
+import { createPortal } from 'react-dom';
+import {
+  X,
+  CheckCircle,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  Loader2,
+} from 'lucide-react';
+import { clsx } from 'clsx';
 
-const variantStyles = {
-  success:
-    'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300',
-  error:
-    'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
-  warning:
-    'bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-300',
-  info: 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300',
+import type {
+  ToastProps,
+  ToastRef,
+  ToastVariant,
+  ToastSize,
+  ToastPosition,
+} from './Toast.types';
+import {
+  defaultToastDurations,
+  defaultToastSizes,
+  defaultToastPositions,
+  defaultToastAnimations,
+  toastVariantStyles,
+  defaultToastIcons,
+} from './Toast.types';
+
+/**
+ * Get animation classes based on position
+ */
+const getAnimationForPosition = (position: ToastPosition): string => {
+  if (position.includes('right')) return 'slide-right';
+  if (position.includes('left')) return 'slide-left';
+  if (position.includes('top')) return 'slide-down';
+  if (position.includes('bottom')) return 'slide-up';
+  return 'fade';
 };
 
-const variantIcons = {
-  success: CheckCircle,
-  error: AlertCircle,
-  warning: AlertTriangle,
-  info: Info,
-};
-
-export const Toast: React.FC<ToastProps> = ({
-  id,
-  message,
-  variant = 'info',
-  duration = 5000,
-  onClose,
-}) => {
-  const [isVisible, setIsVisible] = useState(true);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const Icon = variantIcons[variant];
-
-  useEffect(() => {
-    if (duration > 0) {
-      const timer = setTimeout(() => {
-        handleClose();
-      }, duration);
-
-      return () => clearTimeout(timer);
-    }
-  }, [duration]);
-
-  const handleClose = () => {
-    setIsAnimating(true);
-    setTimeout(() => {
-      setIsVisible(false);
-      onClose?.(id);
-    }, 300);
+/**
+ * Get default icon for variant
+ */
+const getDefaultIcon = (variant: ToastVariant) => {
+  const iconMap = {
+    info: Info,
+    success: CheckCircle,
+    warning: AlertTriangle,
+    error: AlertCircle,
   };
-
-  if (!isVisible) {
-    return null;
-  }
-
-  return (
-    <div
-      className={cn(
-        'flex items-start p-4 border rounded-lg shadow-lg max-w-md w-full transition-all duration-300 ease-in-out',
-        variantStyles[variant],
-        isAnimating
-          ? 'opacity-0 translate-x-full'
-          : 'opacity-100 translate-x-0',
-      )}
-      role="alert"
-      aria-live="polite"
-    >
-      <div className="flex-shrink-0 mr-3">
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="flex-1 text-sm font-medium">{message}</div>
-      <button
-        onClick={handleClose}
-        className={cn(
-          'flex-shrink-0 ml-3 inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors',
-          variant === 'success' &&
-            'text-green-500 hover:bg-green-100 focus:ring-green-600 dark:hover:bg-green-800',
-          variant === 'error' &&
-            'text-red-500 hover:bg-red-100 focus:ring-red-600 dark:hover:bg-red-800',
-          variant === 'warning' &&
-            'text-yellow-500 hover:bg-yellow-100 focus:ring-yellow-600 dark:hover:bg-yellow-800',
-          variant === 'info' &&
-            'text-blue-500 hover:bg-blue-100 focus:ring-blue-600 dark:hover:bg-blue-800',
-        )}
-        aria-label="Close toast"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  );
+  return iconMap[variant];
 };
+
+/**
+ * Enhanced Toast component
+ * 
+ * A comprehensive toast notification component with:
+ * - Multiple variants (info, success, warning, error)
+ * - Customizable positioning and animations
+ * - Action buttons and dismissal options
+ * - Size variants and responsive design
+ * - Accessibility support
+ * - Auto-dismiss with custom durations
+ */
+export const Toast = forwardRef<ToastRef, ToastProps>(
+  (
+    {
+      id = `toast-${Math.random().toString(36).substr(2, 9)}`,
+      variant = 'info',
+      title,
+      message,
+      duration,
+      persistent = false,
+      dismissible = true,
+      icon,
+      action,
+      position = 'top-right',
+      size = 'md',
+      animate = true,
+      isVisible = true,
+      onDismiss,
+      onAction,
+      onAnimationEnd,
+      className,
+      testId = 'toast',
+    },
+    ref,
+  ) => {
+    const toastRef = useRef<HTMLDivElement>(null);
+    const [mounted, setMounted] = useState(false);
+    const [visible, setVisible] = useState(isVisible);
+    const [isEntering, setIsEntering] = useState(false);
+    const [isExiting, setIsExiting] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout>();
+
+    // Mount handling
+    useEffect(() => {
+      setMounted(true);
+      return () => setMounted(false);
+    }, []);
+
+    // Visibility handling
+    useEffect(() => {
+      if (isVisible && !visible) {
+        setVisible(true);
+        setIsEntering(true);
+        
+        if (animate) {
+          const timer = setTimeout(() => {
+            setIsEntering(false);
+          }, defaultToastAnimations.fade.duration);
+          return () => clearTimeout(timer);
+        }
+      } else if (!isVisible && visible) {
+        handleDismiss();
+      }
+    }, [isVisible, visible, animate]);
+
+    // Auto-dismiss handling
+    useEffect(() => {
+      if (!persistent && visible && !isExiting) {
+        const dismissDuration = duration || defaultToastDurations[variant];
+        
+        if (dismissDuration > 0) {
+          timeoutRef.current = setTimeout(() => {
+            handleDismiss();
+          }, dismissDuration);
+        }
+      }
+
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
+    }, [persistent, visible, isExiting, duration, variant]);
+
+    // Imperative API
+    useImperativeHandle(ref, () => ({
+      dismiss: handleDismiss,
+      show: () => setVisible(true),
+      getElement: () => toastRef.current,
+      isPersistent: () => persistent,
+    }), [persistent]);
+
+    // Event handlers
+    const handleDismiss = useCallback(() => {
+      if (!dismissible) return;
+
+      setIsExiting(true);
+      
+      if (animate) {
+        setTimeout(() => {
+          setVisible(false);
+          onDismiss?.();
+          onAnimationEnd?.();
+        }, defaultToastAnimations.fade.duration);
+      } else {
+        setVisible(false);
+        onDismiss?.();
+        onAnimationEnd?.();
+      }
+    }, [dismissible, animate, onDismiss, onAnimationEnd]);
+
+    const handleActionClick = useCallback(() => {
+      action?.onClick();
+      onAction?.();
+      
+      // Auto-dismiss after action unless persistent
+      if (!persistent) {
+        handleDismiss();
+      }
+    }, [action, onAction, persistent, handleDismiss]);
+
+    // Computed values
+    const sizeConfig = useMemo(() => defaultToastSizes[size], [size]);
+    const variantConfig = useMemo(() => toastVariantStyles[variant], [variant]);
+    
+    const animationClass = useMemo(() => {
+      if (!animate) return '';
+      
+      const animationType = getAnimationForPosition(position);
+      const config = defaultToastAnimations[animationType];
+      
+      if (isExiting) {
+        return clsx(config.exit, config.exitActive);
+      }
+      
+      if (isEntering) {
+        return clsx(config.enter, config.enterActive);
+      }
+      
+      return config.enterActive.replace(/transition-\S+/g, '').trim();
+    }, [animate, position, isExiting, isEntering]);
+
+    // Icon rendering
+    const renderIcon = () => {
+      if (icon === null) return null;
+      
+      if (icon) {
+        return (
+          <div className={clsx(sizeConfig.icon, variantConfig.icon)}>
+            {icon}
+          </div>
+        );
+      }
+      
+      const DefaultIcon = getDefaultIcon(variant);
+      return (
+        <DefaultIcon 
+          className={clsx(sizeConfig.icon, variantConfig.icon)}
+          aria-hidden="true"
+        />
+      );
+    };
+
+    // Don't render if not mounted or not visible
+    if (!mounted || !visible) {
+      return null;
+    }
+
+    // Toast classes
+    const toastClasses = clsx(
+      'relative flex items-start rounded-lg shadow-lg border backdrop-blur-sm',
+      'transform transition-all duration-300 ease-out',
+      sizeConfig.toast,
+      variantConfig.container,
+      animationClass,
+      className,
+    );
+
+    // Content
+    const toastContent = (
+      <div
+        ref={toastRef}
+        className={toastClasses}
+        role="alert"
+        aria-live={variant === 'error' ? 'assertive' : 'polite'}
+        aria-labelledby={title ? `${id}-title` : undefined}
+        aria-describedby={`${id}-message`}
+        data-testid={testId}
+        data-variant={variant}
+        data-size={size}
+      >
+        {/* Icon */}
+        {renderIcon()}
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {title && (
+            <div
+              id={`${id}-title`}
+              className={clsx(sizeConfig.title, variantConfig.title, 'mb-1')}
+            >
+              {title}
+            </div>
+          )}
+          <div
+            id={`${id}-message`}
+            className={clsx(sizeConfig.message, variantConfig.message)}
+          >
+            {message}
+          </div>
+        </div>
+
+        {/* Action button */}
+        {action && (
+          <button
+            onClick={handleActionClick}
+            className={clsx(
+              'ml-3 rounded border transition-colors',
+              sizeConfig.action,
+              variantConfig.action,
+            )}
+            data-testid={`${testId}-action`}
+          >
+            {action.label}
+          </button>
+        )}
+
+        {/* Close button */}
+        {dismissible && (
+          <button
+            onClick={handleDismiss}
+            className={clsx(
+              'ml-2 p-1 rounded transition-colors',
+              'hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-offset-1',
+              variantConfig.closeButton,
+            )}
+            aria-label="Dismiss notification"
+            data-testid={`${testId}-close`}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Loading indicator for persistent toasts */}
+        {persistent && !dismissible && (
+          <div className="ml-2 flex items-center">
+            <Loader2 className="w-4 h-4 animate-spin opacity-50" />
+          </div>
+        )}
+      </div>
+    );
+
+    return toastContent;
+  },
+);
+
+Toast.displayName = 'Toast';

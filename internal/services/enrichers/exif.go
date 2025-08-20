@@ -113,7 +113,7 @@ type EXIFOutput struct {
 	LensInfo  string `json:"LensInfo,omitempty"`
 	
 	// Orientation
-	Orientation int `json:"Orientation,omitempty"`
+	Orientation interface{} `json:"Orientation,omitempty"`
 	
 	// GPS data
 	GPSLatitude      string `json:"GPSLatitude,omitempty"`
@@ -226,9 +226,22 @@ func (e *EXIFEnricher) parseEXIFOutput(exifData *EXIFOutput, fileInfo FileInfo) 
 	}
 	
 	// Orientation
-	if exifData.Orientation > 0 {
-		orientation := int32(exifData.Orientation)
-		metadata.Orientation = &orientation
+	if exifData.Orientation != nil {
+		var orientationValue int
+		switch v := exifData.Orientation.(type) {
+		case int:
+			orientationValue = v
+		case float64:
+			orientationValue = int(v)
+		case string:
+			if parsed, err := strconv.Atoi(v); err == nil {
+				orientationValue = parsed
+			}
+		}
+		if orientationValue > 0 {
+			orientation := int32(orientationValue)
+			metadata.Orientation = &orientation
+		}
 	}
 	
 	// GPS data (with privacy options)

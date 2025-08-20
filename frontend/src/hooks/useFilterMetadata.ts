@@ -1,6 +1,6 @@
 /**
  * useFilterMetadata Hook
- * 
+ *
  * Provides filter metadata (MIME types, media kinds, extensions) from the backend
  */
 
@@ -29,21 +29,24 @@ export function useFilterMetadata(): UseFilterMetadataResult {
   const fetchData = useCallback(async () => {
     // Check if we have valid cached data
     const now = Date.now();
-    if (cachedData && (now - cacheTimestamp < CACHE_DURATION)) {
+    if (cachedData && now - cacheTimestamp < CACHE_DURATION) {
       setData(cachedData);
       return;
     }
 
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await metadataApi.getFilterMetadata();
       cachedData = response;
       cacheTimestamp = now;
       setData(response);
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to fetch filter metadata');
+      const error =
+        err instanceof Error
+          ? err
+          : new Error('Failed to fetch filter metadata');
       setError(error);
       console.error('Failed to fetch filter metadata:', error);
     } finally {
@@ -64,23 +67,26 @@ export function useFilterMetadata(): UseFilterMetadataResult {
   }, [fetchData]);
 
   // Transform the data to match frontend expectations
-  const mimeTypes = data?.mime_types?.map(mt => ({
-    value: mt.value,
-    label: mt.label,
-    fileCount: mt.file_count,
-  })) || [];
+  const mimeTypes =
+    data?.mime_types?.map((mt) => ({
+      value: mt.value,
+      label: mt.label,
+      fileCount: mt.file_count,
+    })) || [];
 
-  const mediaKinds = data?.media_kinds?.map(mk => ({
-    value: mk.value,
-    label: mk.label,
-    fileCount: mk.file_count,
-  })) || [];
+  const mediaKinds =
+    data?.media_kinds?.map((mk) => ({
+      value: mk.value,
+      label: mk.label,
+      fileCount: mk.file_count,
+    })) || [];
 
-  const extensions = data?.extensions?.map(ext => ({
-    value: ext.value,
-    label: ext.label,
-    fileCount: ext.file_count,
-  })) || [];
+  const extensions =
+    data?.extensions?.map((ext) => ({
+      value: ext.value,
+      label: ext.label,
+      fileCount: ext.file_count,
+    })) || [];
 
   return {
     mimeTypes,

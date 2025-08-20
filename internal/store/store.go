@@ -23,6 +23,7 @@ type Store interface {
 	Folders() *repo.FoldersRepo
 	FileMetadata() *repo.FileMetadataRepo
 	Alerts() repo.AlertsRepo
+	Search() *repo.SearchRepo
 
 	// Health check
 	Health(ctx context.Context) error

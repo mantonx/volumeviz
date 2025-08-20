@@ -56,3 +56,6 @@ export interface SortConfig {
   field: keyof VolumeAttachedContainer;
   direction: 'asc' | 'desc';
 }
+
+// Scan monitoring types
+export * from './scanHistory';

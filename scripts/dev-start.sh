@@ -13,16 +13,16 @@ start_services() {
     
     case $profile in
         "postgres")
-            docker compose -f docker compose.dev.yml up -d postgres pgadmin backend-postgres frontend-postgres prometheus grafana
+            docker compose -f docker-compose.dev.yml up -d postgres pgadmin backend-postgres frontend-postgres prometheus grafana
             ;;
         "sqlite")
-            docker compose -f docker compose.dev.yml up -d backend-sqlite frontend-sqlite sqlite-web prometheus grafana
+            docker compose -f docker-compose.dev.yml up -d backend-sqlite frontend-sqlite sqlite-web prometheus grafana
             ;;
         "both")
-            docker compose -f docker compose.dev.yml up -d
+            docker compose -f docker-compose.dev.yml up -d
             ;;
         "minimal")
-            docker compose -f docker compose.dev.yml up -d postgres backend-postgres frontend-postgres
+            docker compose -f docker-compose.dev.yml up -d postgres backend-postgres frontend-postgres
             ;;
         *)
             echo "❌ Unknown profile: $profile"

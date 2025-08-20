@@ -18,12 +18,15 @@ export default defineConfig(({ mode }) => ({
       '@/styles': path.resolve(__dirname, './src/styles'),
     },
   },
+  optimizeDeps: {
+    exclude: ['msw/node'],
+  },
   server: {
     port: 5173,
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://backend-postgres:8080',
         changeOrigin: true,
         secure: false,
       },
@@ -35,7 +38,7 @@ export default defineConfig(({ mode }) => ({
     minify: 'esbuild',
     chunkSizeWarningLimit: 800, // Increase limit for visualization components
     rollupOptions: {
-      external: mode === 'production' ? ['msw', 'msw/browser', 'msw/node'] : [],
+      external: mode === 'production' ? ['msw', 'msw/browser', 'msw/node'] : ['msw/node'],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],

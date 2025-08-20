@@ -391,10 +391,11 @@ export const handlers = [
     ];
 
     // Filter by query if provided
-    const filteredFiles = q 
-      ? mockFiles.filter(file => 
-          file.name.toLowerCase().includes(q.toLowerCase()) ||
-          file.path.toLowerCase().includes(q.toLowerCase())
+    const filteredFiles = q
+      ? mockFiles.filter(
+          (file) =>
+            file.name.toLowerCase().includes(q.toLowerCase()) ||
+            file.path.toLowerCase().includes(q.toLowerCase()),
         )
       : mockFiles;
 

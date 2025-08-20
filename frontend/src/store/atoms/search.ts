@@ -1,6 +1,6 @@
 /**
  * Search State Management with Jotai
- * 
+ *
  * Atoms for managing file search and saved search state
  */
 
@@ -69,7 +69,7 @@ export const advancedFiltersAtom = atom<{
   sizeRange: { min?: number; max?: number };
   timeRange: { from?: string; to?: string };
   durationRange: { min?: number; max?: number };
-  dimensionsRange: { 
+  dimensionsRange: {
     width: { min?: number; max?: number };
     height: { min?: number; max?: number };
   };
@@ -120,9 +120,11 @@ export const virtualScrollStateAtom = atom<{
 });
 
 // Export commonly used derived atoms
-export const hasSearchResultsAtom = atom((get) => get(searchResultsAtom).length > 0);
-export const hasActiveFiltersAtom = atom((get) => 
-  Object.keys(get(searchActiveFiltersAtom)).length > 0
+export const hasSearchResultsAtom = atom(
+  (get) => get(searchResultsAtom).length > 0,
+);
+export const hasActiveFiltersAtom = atom(
+  (get) => Object.keys(get(searchActiveFiltersAtom)).length > 0,
 );
 export const isSearchingAtom = atom((get) => get(searchLoadingAtom));
 export const hasSearchErrorAtom = atom((get) => get(searchErrorAtom) !== null);
@@ -154,10 +156,14 @@ export const clearSearchFiltersAtom = atom(null, (get, set) => {
   });
 });
 
-export const addToSearchHistoryAtom = atom(null, (get, set, query: SearchFilesRequest) => {
-  const history = get(searchHistoryAtom);
-  const newHistory = [query, ...history.filter(q => 
-    JSON.stringify(q) !== JSON.stringify(query)
-  )].slice(0, 10); // Keep only last 10 searches
-  set(searchHistoryAtom, newHistory);
-});
+export const addToSearchHistoryAtom = atom(
+  null,
+  (get, set, query: SearchFilesRequest) => {
+    const history = get(searchHistoryAtom);
+    const newHistory = [
+      query,
+      ...history.filter((q) => JSON.stringify(q) !== JSON.stringify(query)),
+    ].slice(0, 10); // Keep only last 10 searches
+    set(searchHistoryAtom, newHistory);
+  },
+);

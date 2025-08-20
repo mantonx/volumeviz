@@ -16,5 +16,6 @@ func RegisterRoutes(router *gin.RouterGroup, store store.Store) {
 		metadataGroup.GET("/files/by-resolution", handler.GetFilesByResolution)
 		metadataGroup.GET("/files/by-duration", handler.GetFilesByDuration)
 		metadataGroup.GET("/files/by-location", handler.GetFilesByLocation)
+		metadataGroup.GET("/filters", handler.GetFilterMetadata)
 	}
 }

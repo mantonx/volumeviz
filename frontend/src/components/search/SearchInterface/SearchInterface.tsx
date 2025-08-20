@@ -1,572 +1,1018 @@
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+} from 'react';
+import {
+  Search,
+  Filter,
+  Settings,
+  Clock,
+  Star,
+  BookmarkPlus,
+  Download,
+  ChevronDown,
+  ChevronUp,
+  X,
+  ArrowUpDown,
+  Grid3x3,
+  List,
+  Table,
+  Zap,
+  FileText,
+  Folder,
+  Image,
+  Video,
+  Music,
+  Archive,
+  Code,
+  Calendar,
+  HardDrive,
+  Tag,
+  AlertCircle,
+  CheckCircle,
+} from 'lucide-react';
+import { clsx } from 'clsx';
+
+import { ProgressBar } from '../../ui/ProgressBar';
+import { StatusBadge } from '../../ui/StatusBadge';
+
+import type {
+  SearchInterfaceProps,
+  SearchInterfaceState,
+  SearchInterfaceRef,
+  SearchQuery,
+  SimpleSearchQuery,
+  SearchFilters,
+  SearchResultItem,
+  SavedSearch,
+  SearchSuggestion,
+  SearchQueryType,
+  SearchScope,
+  FileTypeCategory,
+} from './SearchInterface.types';
+import { searchUtils } from '../../../utils';
+
 /**
- * SearchInterface Component
- * 
- * Main search interface with URL as single source of truth
+ * SearchInterface - Advanced search with filters and saved searches
+ *
+ * A sophisticated domain composition that provides comprehensive search
+ * functionality with advanced filtering, saved searches, and real-time results.
  */
+export const SearchInterface = forwardRef<
+  SearchInterfaceRef,
+  SearchInterfaceProps
+>(
+  (
+    {
+      query,
+      results,
+      isSearching = false,
+      searchError,
+      savedSearches = [],
+      suggestions = [],
+      config = {},
+      showAdvanced = false,
+      showFilters = false,
+      showSavedSearches = false,
+      showHistory = false,
+      enableRealTimeSearch = true,
+      layout = 'standard',
+      resultsView = 'list',
+      onSearch,
+      onSearchChange,
+      onResultClick,
+      onSaveSearch,
+      onLoadSavedSearch,
+      onDeleteSavedSearch,
+      onSuggestionClick,
+      onFilterChange,
+      onScopeChange,
+      onQueryTypeChange,
+      onExportResults,
+      onPageChange,
+      renderResult,
+      emptyState,
+      loadingState,
+      errorState,
+      className,
+      testId = 'search-interface',
+    },
+    ref,
+  ) => {
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { useAtom, useSetAtom } from 'jotai';
-import { 
-  searchPanelOpenAtom, 
-  searchFiltersExpandedAtom,
-  searchResultsAtom,
-  searchTotalCountAtom,
-  searchLoadingAtom,
-} from '@/store/atoms/search';
-import { useSearchParams } from 'react-router-dom';
-import { searchApi, type SearchFilesRequest } from '@/api/search';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { SearchFilters } from '../SearchFilters';
-import { SearchResults } from '../SearchResults';
-import { SavedSearchPanel } from '../SavedSearchPanel';
-import { SearchAutocomplete } from '../SearchAutocomplete';
-
-interface SearchInterfaceProps {
-  className?: string;
-  defaultQuery?: string;
-  onFileSelect?: (fileId: number) => void;
-  compact?: boolean;
-}
-
-export const SearchInterface: React.FC<SearchInterfaceProps> = ({
-  className = '',
-  defaultQuery = '',
-  onFileSelect,
-  compact = false,
-}) => {
-  const [isPanelOpen, setIsPanelOpen] = useAtom(searchPanelOpenAtom);
-  const [filtersExpanded, setFiltersExpanded] = useAtom(searchFiltersExpandedAtom);
-  
-  // Update Jotai atoms for SearchResults component
-  const setSearchResults = useSetAtom(searchResultsAtom);
-  const setSearchTotalCount = useSetAtom(searchTotalCountAtom);
-  const setSearchLoading = useSetAtom(searchLoadingAtom);
-  
-  // URL is the single source of truth
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-  // Search state - managed locally for UI responsiveness
-  const [allResults, setAllResults] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [totalCount, setTotalCount] = React.useState(0);
-  const [totalPages, setTotalPages] = React.useState(0);
-  const [queryTime, setQueryTime] = React.useState(0);
-  const [currentSearchId, setCurrentSearchId] = React.useState<string>('');
-  const [loadedPages, setLoadedPages] = React.useState<Set<number>>(new Set());
-  
-  // Derive all state from URL parameters
-  const searchQuery = searchParams.get('q') || '';
-  const mediaKind = searchParams.get('mediaKind') || '';
-  const mimeTypes = searchParams.getAll('mime');
-  const sortField = searchParams.get('sort') || 'relevance';
-  const sortOrder = searchParams.get('order') || 'desc';
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const perPage = parseInt(searchParams.get('perPage') || '20', 10);
-  
-  // Generate search ID for tracking search changes
-  const searchId = useMemo(() => {
-    const params = new URLSearchParams();
-    if (searchQuery) params.set('q', searchQuery);
-    if (mediaKind) params.set('mediaKind', mediaKind);
-    mimeTypes.forEach(mime => params.append('mime', mime));
-    params.set('sort', sortField);
-    params.set('order', sortOrder);
-    // Add other filter params...
-    const minSize = searchParams.get('minSize');
-    const maxSize = searchParams.get('maxSize');
-    const mtimeFrom = searchParams.get('mtimeFrom');
-    const mtimeTo = searchParams.get('mtimeTo');
-    const hasGps = searchParams.get('hasGps');
-    const hasSubs = searchParams.get('hasSubs');
-    if (minSize) params.set('minSize', minSize);
-    if (maxSize) params.set('maxSize', maxSize);
-    if (mtimeFrom) params.set('mtimeFrom', mtimeFrom);
-    if (mtimeTo) params.set('mtimeTo', mtimeTo);
-    if (hasGps) params.set('hasGps', hasGps);
-    if (hasSubs) params.set('hasSubs', hasSubs);
-    return params.toString();
-  }, [searchQuery, mediaKind, mimeTypes, sortField, sortOrder, searchParams]);
-  
-  // Debug URL parsing
-  console.log('📍 URL State:', {
-    searchQuery,
-    mediaKind,
-    mimeTypes,
-    sortField,
-    sortOrder,
-    page,
-    perPage,
-    allParams: Array.from(searchParams.entries())
-  });
-  
-  // Helper to update URL (single source of truth)
-  const updateUrl = useCallback((updates: Record<string, any>) => {
-    setSearchParams(current => {
-      const newParams = new URLSearchParams(current);
-      
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === undefined || value === null || value === '' || 
-            (Array.isArray(value) && value.length === 0)) {
-          newParams.delete(key);
-        } else if (Array.isArray(value)) {
-          newParams.delete(key); // Clear existing
-          value.forEach(v => newParams.append(key, String(v)));
-        } else {
-          newParams.set(key, String(value));
-        }
-      });
-      
-      return newParams;
+    // Component state
+    const [state, setState] = useState<SearchInterfaceState>({
+      currentQuery: query || {
+        query: '',
+        type: 'simple',
+        scope: 'all',
+        filters: {},
+      },
+      isAdvancedMode: showAdvanced,
+      showFilters,
+      showSavedSearches,
+      showHistory,
+      selectedSuggestion: -1,
+      focusedResult: -1,
+      localFilters: {},
+      validationErrors: [],
     });
-  }, [setSearchParams]);
-  
-  // Execute search for a specific page (for infinite scroll)
-  const executeSearchPage = useCallback(async (targetPage: number, isNewSearch = false) => {
-    if (!searchQuery.trim()) {
-      setAllResults([]);
-      setTotalCount(0);
-      setTotalPages(0);
-      setError(null);
-      setLoadedPages(new Set());
-      return;
-    }
-    
-    // Don't load page if already loaded (unless new search)
-    if (!isNewSearch && loadedPages.has(targetPage)) {
-      console.log(`⏸️ Page ${targetPage} already loaded`);
-      return;
-    }
-    
-    // Mark page as being loaded immediately to prevent duplicates
-    if (!isNewSearch) {
-      setLoadedPages(prev => new Set([...prev, targetPage]));
-    }
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Build search request from URL parameters
-      const searchRequest: SearchFilesRequest = {
-        q: searchQuery,
-        page: targetPage,
-        perPage,
-        sort: sortField as any,
-        order: sortOrder as any,
-      };
-      
-      // Add filters from URL
-      if (mediaKind) searchRequest.mediaKind = mediaKind;
-      if (mimeTypes.length > 0) searchRequest.mime = mimeTypes;
-      
-      // Add other URL parameters
-      const minSize = searchParams.get('minSize');
-      const maxSize = searchParams.get('maxSize');
-      const mtimeFrom = searchParams.get('mtimeFrom');
-      const mtimeTo = searchParams.get('mtimeTo');
-      const hasGps = searchParams.get('hasGps');
-      const hasSubs = searchParams.get('hasSubs');
-      
-      if (minSize) searchRequest.minSize = parseInt(minSize, 10);
-      if (maxSize) searchRequest.maxSize = parseInt(maxSize, 10);
-      if (mtimeFrom) searchRequest.mtimeFrom = mtimeFrom;
-      if (mtimeTo) searchRequest.mtimeTo = mtimeTo;
-      if (hasGps) searchRequest.hasGps = hasGps === 'true';
-      if (hasSubs) searchRequest.hasSubs = hasSubs === 'true';
-      
-      console.log(`🔍 Executing search page ${targetPage}:`, searchRequest);
-      const response = await searchApi.searchFiles(searchRequest);
-      
-      setTotalCount(response.total_count || 0);
-      setTotalPages(response.total_pages || 0);
-      setQueryTime(response.query_time_ms || 0);
-      
-      if (isNewSearch) {
-        // For new search, create array with placeholders for all items
-        const totalItems = response.total_count || 0;
-        const newResults = new Array(totalItems);
-        
-        // Fill in the first page
-        response.files?.forEach((file, index) => {
-          newResults[index] = file;
-        });
-        
-        setAllResults(newResults);
-        setLoadedPages(new Set([targetPage]));
-      } else {
-        // Append results for infinite scroll
-        setAllResults(prev => {
-          const newResults = [...prev];
-          const startIndex = (targetPage - 1) * perPage;
-          
-          // Insert new page results at correct position
-          response.files?.forEach((file, index) => {
-            newResults[startIndex + index] = file;
-          });
-          
-          return newResults;
-        });
-        // Page already added to loadedPages above
-      }
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed');
-      if (isNewSearch) {
-        setAllResults([]);
-        setTotalCount(0);
-        setTotalPages(0);
-        setLoadedPages(new Set());
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery, perPage, sortField, sortOrder, mediaKind, mimeTypes, searchParams, loadedPages]);
-  
-  // Execute search when URL changes (detect new search vs pagination)
-  useEffect(() => {
-    console.log('🚀 useEffect triggered with searchId:', searchId);
-    console.log('🚀 searchQuery from URL:', searchQuery);
-    
-    if (searchQuery.trim()) {
-      const isNewSearch = currentSearchId !== searchId;
-      
-      if (isNewSearch) {
-        console.log('🔍 Starting NEW search for:', searchQuery);
-        setCurrentSearchId(searchId);
-        setSearchLoading(true);
-        executeSearchPage(1, true); // Load first page for new search
-      } else {
-        console.log(`🔍 Loading page ${page} for existing search`);
-        executeSearchPage(page, false); // Load specific page for existing search
-      }
-      
-      setIsPanelOpen(true);
-    } else {
-      console.log('❌ No search query, skipping search');
-      setCurrentSearchId('');
-      setAllResults([]);
-      setLoadedPages(new Set());
-    }
-  }, [searchId, page, executeSearchPage, currentSearchId, searchQuery]);
-  
-  // Update Jotai atoms when allResults change
-  useEffect(() => {
-    setSearchResults(allResults);
-    setSearchTotalCount(totalCount);
-  }, [allResults, totalCount, setSearchResults, setSearchTotalCount]);
-  
-  // Initialize with default query if provided and no URL query
-  useEffect(() => {
-    if (defaultQuery && !searchQuery) {
-      updateUrl({ q: defaultQuery });
-    }
-  }, [defaultQuery, searchQuery, updateUrl]);
-  
-  // Handle infinite scroll load more
-  const handleLoadMore = useCallback(() => {
-    const nextPage = Math.max(...Array.from(loadedPages), 0) + 1;
-    if (nextPage <= totalPages && !loadedPages.has(nextPage)) {
-      console.log(`🔄 Loading more: page ${nextPage}, loadedPages:`, Array.from(loadedPages));
-      // Update URL to reflect the highest loaded page
-      updateUrl({ page: nextPage });
-      // Directly execute search for next page
-      executeSearchPage(nextPage, false);
-    } else {
-      console.log(`⏸️ Skipping load: nextPage=${nextPage}, totalPages=${totalPages}, already loaded=${loadedPages.has(nextPage)}`);
-    }
-  }, [loadedPages, totalPages, updateUrl, executeSearchPage]);
-  
-  // Handlers that update URL (which triggers search via useEffect)
-  const handleSearchSubmit = useCallback((query: string) => {
-    updateUrl({ q: query.trim(), page: 1 });
-  }, [updateUrl]);
-  
-  const handleSortChange = useCallback((field: string, order: string) => {
-    updateUrl({ sort: field, order });
-  }, [updateUrl]);
-  
-  const handleFilterChange = useCallback((filterUpdates: Record<string, any>) => {
-    updateUrl({ ...filterUpdates, page: 1 }); // Reset to page 1 when filters change
-  }, [updateUrl]);
-  
-  const handleClearSearch = useCallback(() => {
-    setSearchParams(new URLSearchParams());
-    setIsPanelOpen(false);
-    setAllResults([]);
-    setTotalCount(0);
-    setTotalPages(0);
-    setError(null);
-    setCurrentSearchId('');
-    setLoadedPages(new Set());
-  }, [setSearchParams, setIsPanelOpen]);
-  
-  const handlePageChange = useCallback((newPage: number) => {
-    updateUrl({ page: newPage });
-  }, [updateUrl]);
-  
-  // Computed properties
-  const hasResults = allResults.length > 0;
-  const hasNextPage = Math.max(...Array.from(loadedPages), 0) < totalPages;
-  const hasActiveFilters = useMemo(() => {
-    return mediaKind || mimeTypes.length > 0 || searchParams.get('minSize') || searchParams.get('maxSize') ||
-           searchParams.get('mtimeFrom') || searchParams.get('mtimeTo') || searchParams.get('hasGps') || searchParams.get('hasSubs');
-  }, [mediaKind, mimeTypes.length, searchParams]);
 
-  if (compact) {
-    return (
-      <div className={`search-interface-compact ${className}`}>
-        <div className="flex items-center space-x-2">
-          <div className="flex-1">
-            <SearchAutocomplete
-              value={searchQuery}
-              onChange={(value) => {
-                // Just update input, don't search yet
-              }}
-              onSuggestionSelect={(suggestion) => {
-                if (suggestion.type === 'filter') {
-                  setTimeout(() => handleSearchSubmit(searchQuery), 100);
-                }
-              }}
-              placeholder="Search files, folders, and metadata..."
-              disabled={loading}
-              className="compact"
-            />
-          </div>
-          <Button
-            onClick={() => handleSearchSubmit(searchQuery)}
-            disabled={!searchQuery.trim() || loading}
-            className="px-4 py-2"
-          >
-            {loading ? 'Searching...' : 'Search'}
-          </Button>
-          {(hasResults || hasActiveFilters) && (
-            <Button
-              onClick={handleClearSearch}
-              variant="outline"
-              className="px-3 py-2"
+    // Derived state
+    const currentSimpleQuery = state.currentQuery as SimpleSearchQuery;
+    const hasResults = results && results.items.length > 0;
+    const hasError = !!searchError;
+    const isEmpty = !isSearching && !hasResults && !hasError;
+
+    // File type icons mapping
+    const fileTypeIcons: Record<FileTypeCategory, React.ReactNode> = {
+      document: <FileText className="w-4 h-4" />,
+      image: <Image className="w-4 h-4" />,
+      video: <Video className="w-4 h-4" />,
+      audio: <Music className="w-4 h-4" />,
+      archive: <Archive className="w-4 h-4" />,
+      code: <Code className="w-4 h-4" />,
+      text: <FileText className="w-4 h-4" />,
+      other: <FileText className="w-4 h-4" />,
+    };
+
+    // Update state when props change
+    useEffect(() => {
+      if (query) {
+        setState((prev) => ({ ...prev, currentQuery: query }));
+      }
+    }, [query]);
+
+    // Debounced search effect
+    useEffect(() => {
+      if (!enableRealTimeSearch) return;
+
+      const timer = setTimeout(() => {
+        if (currentSimpleQuery.query.trim() && onSearchChange) {
+          onSearchChange(state.currentQuery);
+        }
+      }, config.searchDelay || 300);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }, [
+      state.currentQuery,
+      enableRealTimeSearch,
+      config.searchDelay,
+      onSearchChange,
+      currentSimpleQuery.query,
+    ]);
+
+    // Event handlers
+    const handleSearchInputChange = useCallback((value: string) => {
+      setState((prev) => ({
+        ...prev,
+        currentQuery: {
+          ...prev.currentQuery,
+          query: value,
+        } as SimpleSearchQuery,
+        selectedSuggestion: -1,
+      }));
+    }, []);
+
+    const handleSearchSubmit = useCallback(() => {
+      if (currentSimpleQuery.query.trim()) {
+        const errors = searchUtils.validateQuery(state.currentQuery);
+        setState((prev) => ({ ...prev, validationErrors: errors }));
+
+        if (errors.length === 0) {
+          onSearch?.(state.currentQuery);
+        }
+      }
+    }, [state.currentQuery, onSearch, currentSimpleQuery.query]);
+
+    const handleFilterChange = useCallback(
+      (filters: SearchFilters) => {
+        setState((prev) => ({
+          ...prev,
+          currentQuery: {
+            ...prev.currentQuery,
+            filters,
+          } as SimpleSearchQuery,
+          localFilters: filters,
+        }));
+        onFilterChange?.(filters);
+      },
+      [onFilterChange],
+    );
+
+    const handleScopeChange = useCallback(
+      (scope: SearchScope) => {
+        setState((prev) => ({
+          ...prev,
+          currentQuery: {
+            ...prev.currentQuery,
+            scope,
+          } as SimpleSearchQuery,
+        }));
+        onScopeChange?.(scope);
+      },
+      [onScopeChange],
+    );
+
+    const handleQueryTypeChange = useCallback(
+      (type: SearchQueryType) => {
+        setState((prev) => ({
+          ...prev,
+          currentQuery: {
+            ...prev.currentQuery,
+            type,
+          } as SimpleSearchQuery,
+        }));
+        onQueryTypeChange?.(type);
+      },
+      [onQueryTypeChange],
+    );
+
+    const handleKeyDown = useCallback(
+      (event: React.KeyboardEvent) => {
+        switch (event.key) {
+          case 'Enter':
+            if (
+              state.selectedSuggestion >= 0 &&
+              suggestions[state.selectedSuggestion]
+            ) {
+              onSuggestionClick?.(suggestions[state.selectedSuggestion]);
+            } else {
+              handleSearchSubmit();
+            }
+            break;
+          case 'ArrowDown':
+            event.preventDefault();
+            setState((prev) => ({
+              ...prev,
+              selectedSuggestion: Math.min(
+                prev.selectedSuggestion + 1,
+                suggestions.length - 1,
+              ),
+            }));
+            break;
+          case 'ArrowUp':
+            event.preventDefault();
+            setState((prev) => ({
+              ...prev,
+              selectedSuggestion: Math.max(prev.selectedSuggestion - 1, -1),
+            }));
+            break;
+          case 'Escape':
+            setState((prev) => ({ ...prev, selectedSuggestion: -1 }));
+            break;
+        }
+      },
+      [
+        state.selectedSuggestion,
+        suggestions,
+        onSuggestionClick,
+        handleSearchSubmit,
+      ],
+    );
+
+    // Imperative API
+    useImperativeHandle(
+      ref,
+      () => ({
+        focus: () => searchInputRef.current?.focus(),
+        clear: () => {
+          setState((prev) => ({
+            ...prev,
+            currentQuery: {
+              query: '',
+              type: 'simple',
+              scope: 'all',
+              filters: {},
+            },
+            validationErrors: [],
+          }));
+        },
+        search: handleSearchSubmit,
+        getQuery: () => state.currentQuery,
+        setQuery: (newQuery: SearchQuery) => {
+          setState((prev) => ({ ...prev, currentQuery: newQuery }));
+        },
+        toggleAdvanced: () => {
+          setState((prev) => ({
+            ...prev,
+            isAdvancedMode: !prev.isAdvancedMode,
+          }));
+        },
+        toggleFilters: () => {
+          setState((prev) => ({ ...prev, showFilters: !prev.showFilters }));
+        },
+        exportResults: (format) => {
+          onExportResults?.(format);
+        },
+      }),
+      [handleSearchSubmit, state.currentQuery, onExportResults],
+    );
+
+    // Render search input
+    const renderSearchInput = () => (
+      <div className="relative">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={currentSimpleQuery.query}
+            onChange={(e) => handleSearchInputChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Search files and folders..."
+            className={clsx(
+              'w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+              layout === 'compact' && 'py-2 text-sm',
+              state.validationErrors.length > 0 && 'border-red-500',
+            )}
+            disabled={isSearching}
+          />
+          {currentSimpleQuery.query && (
+            <button
+              onClick={() => handleSearchInputChange('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              aria-label="Clear search"
             >
-              Clear
-            </Button>
+              <X className="w-5 h-5" />
+            </button>
           )}
         </div>
-        
-        {hasResults && (
-          <div className="mt-2 text-sm text-gray-600">
-            {totalCount.toLocaleString()} files found
+
+        {/* Suggestions dropdown */}
+        {suggestions.length > 0 && currentSimpleQuery.query && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-50">
+            {suggestions
+              .slice(0, config.maxSuggestions || 10)
+              .map((suggestion, index) => (
+                <button
+                  key={suggestion.id}
+                  onClick={() => onSuggestionClick?.(suggestion)}
+                  className={clsx(
+                    'w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2',
+                    index === state.selectedSuggestion &&
+                      'bg-blue-50 text-blue-700',
+                  )}
+                >
+                  <Search className="w-4 h-4 text-gray-400" />
+                  <span>{suggestion.text}</span>
+                  {suggestion.type === 'recent' && (
+                    <Clock className="w-3 h-3 text-gray-400 ml-auto" />
+                  )}
+                </button>
+              ))}
+          </div>
+        )}
+
+        {/* Validation errors */}
+        {state.validationErrors.length > 0 && (
+          <div className="mt-2 text-sm text-red-600">
+            {state.validationErrors.map((error, index) => (
+              <div key={index} className="flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {error}
+              </div>
+            ))}
           </div>
         )}
       </div>
     );
-  }
 
-  return (
-    <div className={`search-interface ${className}`}>
-      {/* Search Header */}
-      <div className="search-header mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">File Search</h1>
-          <div className="flex items-center space-x-2">
-            <SavedSearchPanel />
-            {(hasResults || hasActiveFilters) && (
-              <Button
-                onClick={handleClearSearch}
-                variant="outline"
-                size="sm"
-              >
-                Clear All
-              </Button>
+    // Render search controls
+    const renderSearchControls = () => (
+      <div className="flex items-center gap-2 mt-4">
+        {/* Query type selector */}
+        <select
+          value={currentSimpleQuery.type}
+          onChange={(e) =>
+            handleQueryTypeChange(e.target.value as SearchQueryType)
+          }
+          className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+        >
+          <option value="simple">Simple</option>
+          <option value="advanced">Advanced</option>
+          <option value="regex">Regex</option>
+          <option value="fuzzy">Fuzzy</option>
+        </select>
+
+        {/* Scope selector */}
+        <select
+          value={currentSimpleQuery.scope}
+          onChange={(e) => handleScopeChange(e.target.value as SearchScope)}
+          className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+        >
+          <option value="all">All</option>
+          <option value="volume">Current Volume</option>
+          <option value="path">Current Path</option>
+          <option value="metadata">Metadata Only</option>
+        </select>
+
+        {/* Filter toggle */}
+        <button
+          onClick={() =>
+            setState((prev) => ({ ...prev, showFilters: !prev.showFilters }))
+          }
+          className={clsx(
+            'flex items-center gap-1 px-3 py-1 rounded-md text-sm',
+            state.showFilters
+              ? 'bg-blue-100 text-blue-700'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+          )}
+        >
+          <Filter className="w-4 h-4" />
+          Filters
+          {state.showFilters ? (
+            <ChevronUp className="w-3 h-3" />
+          ) : (
+            <ChevronDown className="w-3 h-3" />
+          )}
+        </button>
+
+        {/* Saved searches toggle */}
+        <button
+          onClick={() =>
+            setState((prev) => ({
+              ...prev,
+              showSavedSearches: !prev.showSavedSearches,
+            }))
+          }
+          className={clsx(
+            'flex items-center gap-1 px-3 py-1 rounded-md text-sm',
+            state.showSavedSearches
+              ? 'bg-blue-100 text-blue-700'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+          )}
+        >
+          <Star className="w-4 h-4" />
+          Saved
+        </button>
+
+        {/* History toggle */}
+        <button
+          onClick={() =>
+            setState((prev) => ({ ...prev, showHistory: !prev.showHistory }))
+          }
+          className={clsx(
+            'flex items-center gap-1 px-3 py-1 rounded-md text-sm',
+            state.showHistory
+              ? 'bg-blue-100 text-blue-700'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+          )}
+        >
+          <Clock className="w-4 h-4" />
+          History
+        </button>
+
+        {/* Search button */}
+        <button
+          onClick={handleSearchSubmit}
+          disabled={isSearching || !currentSimpleQuery.query.trim()}
+          className="flex items-center gap-1 px-4 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSearching ? (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Search className="w-4 h-4" />
+          )}
+          Search
+        </button>
+      </div>
+    );
+
+    // Render filters panel
+    const renderFiltersPanel = () => {
+      if (!state.showFilters) return null;
+
+      const filters = currentSimpleQuery.filters;
+
+      return (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* File types */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                File Types
+              </label>
+              <div className="space-y-2">
+                {(
+                  [
+                    'document',
+                    'image',
+                    'video',
+                    'audio',
+                    'archive',
+                    'code',
+                  ] as FileTypeCategory[]
+                ).map((type) => (
+                  <label key={type} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={filters.fileTypes?.includes(type) || false}
+                      onChange={(e) => {
+                        const newTypes = filters.fileTypes || [];
+                        if (e.target.checked) {
+                          newTypes.push(type);
+                        } else {
+                          const index = newTypes.indexOf(type);
+                          if (index > -1) newTypes.splice(index, 1);
+                        }
+                        handleFilterChange({ ...filters, fileTypes: newTypes });
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="flex items-center gap-1 text-sm">
+                      {fileTypeIcons[type]}
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Size filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                File Size
+              </label>
+              <div className="space-y-2">
+                <select
+                  value={filters.sizeFilter?.operator || ''}
+                  onChange={(e) => {
+                    const operator = e.target.value;
+                    if (operator) {
+                      handleFilterChange({
+                        ...filters,
+                        sizeFilter: {
+                          operator: operator as any,
+                          value: 1,
+                          unit: 'MB',
+                        },
+                      });
+                    } else {
+                      const { sizeFilter: _sizeFilter, ...rest } = filters;
+                      handleFilterChange(rest);
+                    }
+                  }}
+                  className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Any size</option>
+                  <option value="gt">Greater than</option>
+                  <option value="lt">Less than</option>
+                  <option value="between">Between</option>
+                </select>
+                {filters.sizeFilter && (
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={filters.sizeFilter.value}
+                      onChange={(e) => {
+                        handleFilterChange({
+                          ...filters,
+                          sizeFilter: {
+                            ...filters.sizeFilter!,
+                            value: parseInt(e.target.value) || 0,
+                          },
+                        });
+                      }}
+                      className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                      min="0"
+                    />
+                    <select
+                      value={filters.sizeFilter.unit}
+                      onChange={(e) => {
+                        handleFilterChange({
+                          ...filters,
+                          sizeFilter: {
+                            ...filters.sizeFilter!,
+                            unit: e.target.value as any,
+                          },
+                        });
+                      }}
+                      className="px-2 py-1 border border-gray-300 rounded text-sm"
+                    >
+                      <option value="B">B</option>
+                      <option value="KB">KB</option>
+                      <option value="MB">MB</option>
+                      <option value="GB">GB</option>
+                      <option value="TB">TB</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Date filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date Modified
+              </label>
+              <div className="space-y-2">
+                <select
+                  value={filters.dateFilter?.operator || ''}
+                  onChange={(e) => {
+                    const operator = e.target.value;
+                    if (operator) {
+                      handleFilterChange({
+                        ...filters,
+                        dateFilter: {
+                          operator: operator as any,
+                          value: new Date(),
+                          field: 'modified',
+                        },
+                      });
+                    } else {
+                      const { dateFilter: _dateFilter, ...rest } = filters;
+                      handleFilterChange(rest);
+                    }
+                  }}
+                  className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Any date</option>
+                  <option value="relative">Last...</option>
+                  <option value="gt">After</option>
+                  <option value="lt">Before</option>
+                </select>
+                {filters.dateFilter?.operator === 'relative' && (
+                  <select
+                    value={
+                      typeof filters.dateFilter.value === 'string'
+                        ? filters.dateFilter.value
+                        : ''
+                    }
+                    onChange={(e) => {
+                      handleFilterChange({
+                        ...filters,
+                        dateFilter: {
+                          ...filters.dateFilter!,
+                          value: e.target.value,
+                        },
+                      });
+                    }}
+                    className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="1 day ago">1 day</option>
+                    <option value="1 week ago">1 week</option>
+                    <option value="1 month ago">1 month</option>
+                    <option value="3 months ago">3 months</option>
+                    <option value="1 year ago">1 year</option>
+                  </select>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Additional options */}
+          <div className="mt-4 flex flex-wrap gap-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={filters.includeHidden || false}
+                onChange={(e) => {
+                  handleFilterChange({
+                    ...filters,
+                    includeHidden: e.target.checked,
+                  });
+                }}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm">Include hidden files</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={filters.includeSystem || false}
+                onChange={(e) => {
+                  handleFilterChange({
+                    ...filters,
+                    includeSystem: e.target.checked,
+                  });
+                }}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm">Include system files</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={filters.caseSensitive || false}
+                onChange={(e) => {
+                  handleFilterChange({
+                    ...filters,
+                    caseSensitive: e.target.checked,
+                  });
+                }}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm">Case sensitive</span>
+            </label>
+          </div>
+        </div>
+      );
+    };
+
+    // Render saved searches panel
+    const renderSavedSearches = () => {
+      if (!state.showSavedSearches) return null;
+
+      return (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium text-gray-900">Saved Searches</h3>
+            <button
+              onClick={() => {
+                if (onSaveSearch) {
+                  const name = prompt('Enter a name for this search:');
+                  if (name) {
+                    onSaveSearch({
+                      name,
+                      description: `Search for "${currentSimpleQuery.query}"`,
+                      query: state.currentQuery,
+                      tags: [],
+                      useCount: 0,
+                      favorite: false,
+                    });
+                  }
+                }
+              }}
+              className="flex items-center gap-1 px-2 py-1 text-sm text-blue-600 hover:text-blue-800"
+            >
+              <BookmarkPlus className="w-4 h-4" />
+              Save Current
+            </button>
+          </div>
+          <div className="space-y-2 max-h-40 overflow-y-auto">
+            {savedSearches.length === 0 ? (
+              <p className="text-sm text-gray-500">No saved searches</p>
+            ) : (
+              savedSearches.map((search) => (
+                <div
+                  key={search.id}
+                  className="flex items-center justify-between p-2 bg-white rounded border hover:bg-gray-50"
+                >
+                  <button
+                    onClick={() => onLoadSavedSearch?.(search)}
+                    className="flex-1 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      {search.favorite && (
+                        <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                      )}
+                      <span className="text-sm font-medium">{search.name}</span>
+                    </div>
+                    {search.description && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {search.description}
+                      </p>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => onDeleteSavedSearch?.(search.id)}
+                    className="p-1 text-gray-400 hover:text-red-600"
+                    aria-label={`Delete saved search: ${search.name}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))
             )}
           </div>
         </div>
+      );
+    };
 
-        {/* Main Search Bar */}
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="flex-1">
-              <SearchAutocomplete
-                value={searchQuery}
-                onChange={() => {}} // Controlled by URL
-                onSuggestionSelect={(suggestion) => {
-                  if (suggestion.type === 'filter') {
-                    setTimeout(() => handleSearchSubmit(searchQuery), 100);
-                  }
-                }}
-                placeholder="Search files, folders, and metadata..."
-                disabled={loading}
-              />
-            </div>
-            <Button
-              onClick={() => handleSearchSubmit(searchQuery)}
-              disabled={!searchQuery.trim() || loading}
-              size="lg"
-              className="px-6 py-3"
-            >
-              {loading ? 'Searching...' : 'Search'}
-            </Button>
-          </div>
+    // Render results header
+    const renderResultsHeader = () => {
+      if (!results) return null;
 
-          {/* Advanced Filters Toggle */}
-          <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => setFiltersExpanded(!filtersExpanded)}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <span>Advanced Filters</span>
-                <span className={`transform transition-transform ${filtersExpanded ? 'rotate-180' : ''}`}>
-                  ▼
+      return (
+        <div className="flex items-center justify-between py-4 border-b">
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-600">
+              {results.totalCount.toLocaleString()} results
+              {results.searchTime && (
+                <span className="ml-2">
+                  ({searchUtils.formatSearchTime(results.searchTime)})
                 </span>
-                {hasActiveFilters && (
-                  <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                    Active
-                  </span>
-                )}
-              </Button>
-              
-              {hasResults && (
-                <div className="flex items-center gap-4">
-                  <div className="text-sm text-gray-600">
-                    {totalCount.toLocaleString()} files found
-                  </div>
-                  
-                  {/* Sorting Controls */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Sort by:</span>
-                    
-                    {/* Sort Field Selector */}
-                    <select
-                      value={sortField}
-                      onChange={(e) => handleSortChange(e.target.value, sortOrder)}
-                      className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <optgroup label="Relevance">
-                        <option value="relevance">Best Match</option>
-                      </optgroup>
-                      <optgroup label="Date & Time">
-                        <option value="mtime">Modified Date</option>
-                        <option value="ctime">Created Date</option>
-                      </optgroup>
-                      <optgroup label="File Properties">
-                        <option value="name">Name</option>
-                        <option value="size">File Size</option>
-                        <option value="type">File Type</option>
-                        <option value="media_kind">Media Type</option>
-                      </optgroup>
-                      <optgroup label="Media Properties">
-                        <option value="duration">Duration</option>
-                      </optgroup>
-                    </select>
-
-                    {/* Sort Direction Toggle */}
-                    <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 border border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={() => handleSortChange(sortField, 'asc')}
-                        className={`inline-flex items-center justify-center px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
-                          sortOrder === 'asc'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-600'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
-                        }`}
-                        title={`Sort ${sortField === 'size' ? 'smallest to largest' : sortField === 'mtime' || sortField === 'ctime' ? 'oldest to newest' : 'A to Z'}`}
-                      >
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                        </svg>
-                        <span className="text-xs">
-                          {sortField === 'size' ? 'Small' : sortField === 'mtime' || sortField === 'ctime' ? 'Old' : 'A-Z'}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => handleSortChange(sortField, 'desc')}
-                        className={`inline-flex items-center justify-center px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
-                          sortOrder === 'desc'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-600'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
-                        }`}
-                        title={`Sort ${sortField === 'size' ? 'largest to smallest' : sortField === 'mtime' || sortField === 'ctime' ? 'newest to oldest' : 'Z to A'}`}
-                      >
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="17 20V8m0 12l4-4m-4 4l-4-4" />
-                        </svg>
-                        <span className="text-xs">
-                          {sortField === 'size' ? 'Large' : sortField === 'mtime' || sortField === 'ctime' ? 'New' : 'Z-A'}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
               )}
             </div>
+            {results.correctedQuery && (
+              <div className="text-sm">
+                <span className="text-gray-500">Did you mean:</span>
+                <button
+                  onClick={() =>
+                    handleSearchInputChange(results.correctedQuery!)
+                  }
+                  className="ml-1 text-blue-600 hover:underline"
+                >
+                  {results.correctedQuery}
+                </button>
+              </div>
+            )}
           </div>
-        </Card>
 
-        {/* Advanced Filters Panel */}
-        {filtersExpanded && (
-          <div className="mt-4">
-            <SearchFilters onFilterChange={handleFilterChange} />
+          <div className="flex items-center gap-2">
+            {/* View mode selector */}
+            <div className="flex items-center border rounded-md">
+              <button
+                onClick={() => {}} // Would handle view change
+                className={clsx(
+                  'p-1',
+                  resultsView === 'list'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-500',
+                )}
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {}} // Would handle view change
+                className={clsx(
+                  'p-1',
+                  resultsView === 'grid'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-500',
+                )}
+              >
+                <Grid3x3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {}} // Would handle view change
+                className={clsx(
+                  'p-1',
+                  resultsView === 'table'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-500',
+                )}
+              >
+                <Table className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Export button */}
+            <button
+              onClick={() => onExportResults?.('csv')}
+              className="flex items-center gap-1 px-2 py-1 text-sm border rounded-md hover:bg-gray-50"
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </button>
           </div>
+        </div>
+      );
+    };
+
+    // Render search results
+    const renderResults = () => {
+      if (isSearching) {
+        return (
+          loadingState || (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-gray-600">Searching...</span>
+              </div>
+            </div>
+          )
+        );
+      }
+
+      if (hasError) {
+        return (
+          errorState || (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                <div className="text-lg font-medium text-gray-900">
+                  Search Error
+                </div>
+                <div className="text-sm text-gray-500 mt-1">{searchError}</div>
+              </div>
+            </div>
+          )
+        );
+      }
+
+      if (isEmpty || !hasResults) {
+        return (
+          emptyState || (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <div className="text-lg font-medium text-gray-900">
+                  {currentSimpleQuery.query
+                    ? 'No results found'
+                    : 'Start searching'}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {currentSimpleQuery.query
+                    ? 'Try adjusting your search terms or filters'
+                    : 'Enter a search term to find files and folders'}
+                </div>
+              </div>
+            </div>
+          )
+        );
+      }
+
+      return (
+        <div className="space-y-4">
+          {renderResultsHeader()}
+
+          <div className="space-y-2">
+            {results!.items.map((item, index) =>
+              renderResult ? (
+                renderResult(item, index)
+              ) : (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                  onClick={() => onResultClick?.(item)}
+                >
+                  <div className="flex-shrink-0">
+                    {item.type === 'folder' ? (
+                      <Folder className="w-5 h-5 text-blue-500" />
+                    ) : (
+                      <FileText className="w-5 h-5 text-gray-500" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 truncate">
+                      {item.name}
+                    </div>
+                    <div className="text-sm text-gray-500 truncate">
+                      {item.path}
+                    </div>
+                    {item.highlights && (
+                      <div className="text-xs text-blue-600 mt-1">
+                        Matches in:{' '}
+                        {item.highlights.map((h) => h.field).join(', ')}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    {item.size && (
+                      <span>{searchUtils.formatFileSize(item.size)}</span>
+                    )}
+                    {item.modifiedAt && (
+                      <span>{item.modifiedAt.toLocaleDateString()}</span>
+                    )}
+                    <StatusBadge variant="info" size="sm">
+                      {Math.round(item.relevanceScore)}%
+                    </StatusBadge>
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+
+          {/* Pagination */}
+          {results!.hasMore && (
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => onPageChange?.(results!.page + 1)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Load More Results
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    return (
+      <div
+        className={clsx(
+          'bg-white border border-gray-200 rounded-lg overflow-hidden',
+          layout === 'compact' && 'p-4',
+          layout === 'standard' && 'p-6',
+          layout === 'expanded' && 'p-8',
+          className,
         )}
+        data-testid={testId}
+      >
+        {/* Search input and controls */}
+        <div>
+          {renderSearchInput()}
+          {renderSearchControls()}
+          {renderFiltersPanel()}
+          {renderSavedSearches()}
+        </div>
+
+        {/* Results */}
+        <div className="mt-6">{renderResults()}</div>
       </div>
+    );
+  },
+);
 
-      {/* Search Results */}
-      <div className="search-results">
-        {error && (
-          <Card className="p-4 mb-4 border-red-200 bg-red-50">
-            <div className="text-red-700">
-              <strong>Search Error:</strong> {error}
-            </div>
-          </Card>
-        )}
-
-        {loading && (
-          <Card className="p-8 text-center">
-            <div className="inline-flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              <span>Searching files...</span>
-            </div>
-          </Card>
-        )}
-
-        {!error && searchQuery && (
-          <SearchResults 
-            onFileSelect={onFileSelect}
-            onLoadMore={handleLoadMore}
-            hasNextPage={hasNextPage}
-            allResults={allResults}
-          />
-        )}
-
-        {!loading && !error && !hasResults && searchQuery && totalCount === 0 && (
-          <Card className="p-8 text-center text-gray-500">
-            <div className="mb-4">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No files found</h3>
-            <p className="text-gray-500">
-              Try adjusting your search terms or filters to find what you're looking for.
-            </p>
-          </Card>
-        )}
-
-        {!loading && !error && !hasResults && !searchQuery && (
-          <Card className="p-8 text-center text-gray-500">
-            <div className="mb-4">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Search Files</h3>
-            <p className="text-gray-500">
-              Enter search terms to find files across all volumes with powerful filtering options.
-            </p>
-          </Card>
-        )}
-      </div>
-    </div>
-  );
-};
+SearchInterface.displayName = 'SearchInterface';

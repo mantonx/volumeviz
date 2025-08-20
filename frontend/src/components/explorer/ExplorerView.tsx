@@ -9,6 +9,8 @@ import React, { useCallback, useState } from 'react';
 import { SearchIcon, BarChart3Icon, BellIcon } from 'lucide-react';
 import { Tree } from './Tree';
 import { FileTable } from './FileTable';
+import { FileGrid } from './FileGrid/FileGrid';
+import { ViewToggle, type ViewMode } from './ViewToggle/ViewToggle';
 import { FileDrawer } from './FileDrawer';
 import { VolumeCharts } from './Charts';
 import { AlertCenter } from './AlertCenter';
@@ -55,7 +57,8 @@ const mockFiles = [
     size: 5242880,
     modified: '2024-03-12T14:30:00Z',
     extension: 'pptx',
-    mediaType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    mediaType:
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     path: '/home/user/presentation.pptx',
   },
   {
@@ -115,6 +118,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
   const [activeTab, setActiveTab] = useState<
     'explorer' | 'insights' | 'alerts'
   >('explorer');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   const { status: wsStatus } = useWebSocket();
 
@@ -220,6 +224,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     <span className="font-medium">Path:</span> {currentPath}
                   </div>
+                  <ViewToggle view={viewMode} onViewChange={setViewMode} />
                 </div>
 
                 <div className="relative">
@@ -234,13 +239,23 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
                 </div>
               </div>
 
-              {/* File Table */}
-              <FileTable
-                files={mockFiles}
-                onFileSelect={handleFileSelect}
-                onFileDoubleClick={handleFileDoubleClick}
-                className="flex-1"
-              />
+              {/* File View - Table or Grid */}
+              <div className="flex-1 overflow-hidden">
+                {viewMode === 'list' ? (
+                  <FileTable
+                    onFileSelect={handleFileSelect}
+                    onFileDoubleClick={handleFileDoubleClick}
+                    className="h-full"
+                  />
+                ) : (
+                  <FileGrid
+                    onFileSelect={handleFileSelect}
+                    onFileDoubleClick={handleFileDoubleClick}
+                    className="h-full"
+                    itemSize="medium"
+                  />
+                )}
+              </div>
             </>
           )}
 

@@ -16,9 +16,21 @@ export const mocks = {
     stop: () => import('./setup').then((m) => m.stopMSW()),
     reset: () => import('./setup').then((m) => m.resetMSW()),
   },
-  // Node/testing environment
+  // Node/testing environment - only available in test environments
   node: {
-    setup: () => import('./server').then((m) => m.setupMSWServer()),
-    server: () => import('./server').then((m) => m.server),
+    setup: () => {
+      // Only import server in Node.js/test environments
+      if (typeof window === 'undefined') {
+        return import('./server').then((m) => m.setupMSWServer());
+      }
+      return Promise.resolve();
+    },
+    server: () => {
+      // Only import server in Node.js/test environments  
+      if (typeof window === 'undefined') {
+        return import('./server').then((m) => m.server);
+      }
+      return Promise.resolve(null);
+    },
   },
 };

@@ -16,8 +16,8 @@ export const treeIndexOptimization = {
   indexes: [
     'idx_folders_volume_parent',
     'idx_folders_depth',
-    'idx_folders_path_hash'
-  ]
+    'idx_folders_path_hash',
+  ],
 };
 
 // Efficient pagination queries implemented
@@ -25,7 +25,7 @@ export const paginationOptimization = {
   enabled: true,
   defaultPageSize: 50,
   maxPageSize: 200,
-  useCursorPagination: true
+  useCursorPagination: true,
 };
 
 // Metadata query optimization implemented
@@ -33,7 +33,7 @@ export const metadataQueryOptimization = {
   enabled: true,
   cacheMetadata: true,
   lazyLoadProperties: true,
-  batchRequests: true
+  batchRequests: true,
 };
 
 // Lazy loading for large directories implemented
@@ -41,7 +41,7 @@ export const lazyLoadingOptimization = {
   enabled: true,
   threshold: 1000, // Files threshold
   chunkSize: 100,
-  virtualScrolling: true
+  virtualScrolling: true,
 };
 
 // Response compression support implemented
@@ -49,7 +49,7 @@ export const compressionOptimization = {
   enabled: true,
   gzipLevel: 6,
   brotliEnabled: true,
-  staticContentCaching: true
+  staticContentCaching: true,
 };
 
 // Caching headers for static metadata implemented
@@ -57,5 +57,5 @@ export const cachingOptimization = {
   enabled: true,
   staticMetadataMaxAge: 300, // 5 minutes
   etagEnabled: true,
-  conditionalRequests: true
+  conditionalRequests: true,
 };

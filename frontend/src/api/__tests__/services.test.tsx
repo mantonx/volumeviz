@@ -8,7 +8,7 @@ import {
   type VolumeListParams,
 } from '../services';
 
-vi.mock('../generated/volumeviz-api', () => {
+vi.mock('../generated/Api', () => {
   const mockApi = {
     volumes: {
       listVolumes: vi.fn(),
@@ -32,7 +32,7 @@ vi.mock('../generated/volumeviz-api', () => {
 
 // Get reference to mocked API for tests
 const { __mockApi: mockApi } = (await import(
-  '../generated/volumeviz-api'
+  '../generated/Api'
 )) as any;
 
 // Mock error handling utilities
@@ -541,7 +541,7 @@ describe('useVolumeScanning Hook', () => {
       });
 
       const status = await act(async () => {
-        return await result.current.getScanStatus('vol_123', 'scan_123');
+        return await result.current.getScanStatus('scan_123');
       });
 
       expect(mockApi.volumes.getScanStatus).toHaveBeenCalledWith('vol_123', {

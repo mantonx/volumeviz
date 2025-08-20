@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAtomValue } from 'jotai';
 import {
   HardDrive,
@@ -9,10 +9,15 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
+  Search,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { ScanManagerDashboard } from '@/components/domain/ScanManagerDashboard';
+import { ScanNotificationCenter } from '@/components/domain/ScanNotificationCenter';
+import { ScanHistoryPanel } from '@/components/domain/ScanHistoryPanel';
+import { ScanPerformanceMetrics } from '@/components/domain/ScanPerformanceMetrics';
 import { formatBytes } from '@/utils/formatters';
 import {
   useVolumes,
@@ -29,6 +34,10 @@ import {
   scanResultsAtom,
 } from '@/store';
 import type { DashboardProps } from './Dashboard.types';
+import type { ScanOperation } from '@/components/domain/ScanManagerDashboard';
+import type { ScanNotification } from '@/components/domain/ScanNotificationCenter';
+// import { useScanHistory } from '@/hooks/useScanHistory'; // Disabled until backend implements endpoints
+import { useScanMonitoring } from '@/hooks/useScanMonitoring';
 
 /**
  * Dashboard page component providing an overview of VolumeViz system status.
@@ -57,6 +66,39 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const containerStats = useAtomValue(containerStatsAtom);
   const apiStatus = useAtomValue(apiStatusAtom);
   const lastUpdated = useAtomValue(volumesLastUpdatedAtom);
+  
+  // Real-time scan monitoring via WebSocket
+  const {
+    scanOperations,
+    notifications: scanNotifications,
+    startScan,
+    pauseScan,
+    resumeScan,
+    cancelScan,
+    retryScan,
+    clearCompleted,
+    clearNotification,
+    clearAllNotifications,
+    markNotificationAsRead,
+    isConnected: wsConnected,
+  } = useScanMonitoring({
+    autoSubscribe: true,
+    enableNotifications: true,
+  });
+  
+  // Scan history integration (disabled until backend implements endpoints)
+  // const { history: scanHistory, loading: historyLoading, fetchHistory, exportHistory } = useScanHistory({
+  //   autoFetch: true,
+  //   pageSize: 10,
+  // });
+  const scanHistory: any[] = [];
+  const historyLoading = false;
+  const exportHistory = (format: 'csv' | 'json') => {
+    console.warn(`Scan history export (${format}) not implemented in backend yet`);
+  };
+  const fetchHistory = () => {
+    console.warn('Scan history fetch not implemented in backend yet');
+  };
 
   // Debug logging
   useEffect(() => {
@@ -214,6 +256,12 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 <span>Last updated {formatLastUpdated(lastUpdated)}</span>
               </div>
             )}
+            {wsConnected && (
+              <div className="flex items-center space-x-1 text-sm text-green-600 dark:text-green-400">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                <span>Live Updates</span>
+              </div>
+            )}
           </div>
           <div className="flex space-x-2">
             <Button
@@ -260,13 +308,14 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 Storage Used
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {volumeStats.totalSize
+                {volumeStats.totalSize > 0
                   ? formatBytes(volumeStats.totalSize)
-                  : '0 B'}
+                  : Object.keys(scanResults).length > 0
+                    ? 'No data'
+                    : 'Scan volumes to see usage'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500">
-                Across {volumeStats.total} volumes (
-                {Object.keys(scanResults).length} scanned)
+                {Object.keys(scanResults).length} of {volumeStats.total} volumes scanned
               </p>
             </div>
             <div className="h-12 w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -275,18 +324,18 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           </div>
         </Card>
 
-        {/* Active Containers */}
+        {/* Active Scans */}
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Active Containers
+                Active Scans
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {containerStats.running || 0}
+                {scanOperations.filter(s => s.status === 'running').length}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500">
-                {containerStats.total || 0} total containers
+                {scanOperations.filter(s => s.status === 'pending').length} queued
               </p>
             </div>
             <div className="h-12 w-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
@@ -336,7 +385,28 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button className="justify-start h-auto p-4" variant="outline">
+          <Button 
+            className="justify-start h-auto p-4" 
+            variant="outline"
+            onClick={async () => {
+              // Start scan for first 3 volumes as a quick action
+              const volumesToScan = volumes.slice(0, 3);
+              console.log('[Dashboard] Starting scans for volumes:', volumesToScan.map(v => ({ id: v.id, name: v.name })));
+              for (const volume of volumesToScan) {
+                const volumeIdentifier = volume.name || volume.id;
+                if (volumeIdentifier) {
+                  console.log('[Dashboard] Triggering scan for:', volumeIdentifier);
+                  try {
+                    await startScan(volumeIdentifier);
+                    console.log('[Dashboard] Scan started successfully for:', volumeIdentifier);
+                  } catch (error) {
+                    console.error('[Dashboard] Scan failed for:', volumeIdentifier, error);
+                  }
+                  await new Promise(resolve => setTimeout(resolve, 300));
+                }
+              }
+            }}
+          >
             <div className="flex flex-col items-start space-y-1">
               <HardDrive className="h-5 w-5" />
               <span className="font-medium">Scan All Volumes</span>
@@ -345,7 +415,11 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               </span>
             </div>
           </Button>
-          <Button className="justify-start h-auto p-4" variant="outline">
+          <Button 
+            className="justify-start h-auto p-4" 
+            variant="outline"
+            onClick={() => window.location.href = '/volumes'}
+          >
             <div className="flex flex-col items-start space-y-1">
               <Database className="h-5 w-5" />
               <span className="font-medium">View Volumes</span>
@@ -354,37 +428,114 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               </span>
             </div>
           </Button>
-          <Button className="justify-start h-auto p-4" variant="outline">
+          <Button 
+            className="justify-start h-auto p-4" 
+            variant="outline"
+            onClick={() => window.location.href = '/explorer'}
+          >
             <div className="flex flex-col items-start space-y-1">
-              <Activity className="h-5 w-5" />
-              <span className="font-medium">Container Status</span>
+              <Search className="h-5 w-5" />
+              <span className="font-medium">Explore Files</span>
               <span className="text-xs text-gray-500">
-                Check container health
+                Browse volume contents
               </span>
             </div>
           </Button>
-          <Button className="justify-start h-auto p-4" variant="outline">
+          <Button 
+            className="justify-start h-auto p-4" 
+            variant="outline"
+            onClick={() => window.location.href = '/search'}
+          >
             <div className="flex flex-col items-start space-y-1">
               <TrendingUp className="h-5 w-5" />
-              <span className="font-medium">View Metrics</span>
+              <span className="font-medium">Search Files</span>
               <span className="text-xs text-gray-500">
-                Performance analytics
+                Find specific content
               </span>
             </div>
           </Button>
         </div>
       </Card>
 
+      {/* Scan Manager Dashboard */}
+      {scanOperations.length > 0 && (
+        <ScanManagerDashboard
+          scans={scanOperations}
+          systemMetrics={{
+            totalVolumes: volumeStats.total,
+            activeScans: scanOperations.filter(s => s.status === 'running').length,
+            queuedScans: scanOperations.filter(s => s.status === 'pending').length,
+            completedScans: scanOperations.filter(s => s.status === 'completed').length,
+            failedScans: scanOperations.filter(s => s.status === 'failed').length,
+            totalFilesScanned: scanOperations.reduce((sum, s) => sum + (s.filesScanned || 0), 0),
+            totalFoldersScanned: scanOperations.reduce((sum, s) => sum + (s.foldersScanned || 0), 0),
+            averageScanSpeed: scanOperations
+              .filter(s => s.filesPerSecond)
+              .reduce((sum, s, _, arr) => sum + (s.filesPerSecond || 0) / arr.length, 0),
+          }}
+          onScanPause={pauseScan}
+          onScanResume={resumeScan}
+          onScanStop={cancelScan}
+          onScanRetry={retryScan}
+          onViewScanDetails={(scanId) => window.location.href = `/scans/${scanId}`}
+          onClearCompleted={clearCompleted}
+        />
+      )}
+
+      {/* Scan Notifications */}
+      {scanNotifications.length > 0 && (
+        <ScanNotificationCenter
+          notifications={scanNotifications}
+          onMarkAsRead={markNotificationAsRead}
+          onMarkAllAsRead={() => {
+            scanNotifications.forEach(n => markNotificationAsRead(n.id));
+          }}
+          onDismiss={clearNotification}
+          onClearAll={clearAllNotifications}
+        />
+      )}
+
+      {/* Performance Metrics */}
+      {scanOperations.some(s => s.status === 'running') && (
+        <ScanPerformanceMetrics
+          realTime={true}
+          timeRange="15m"
+          showComparison={true}
+          showCharts={true}
+          className="mb-6"
+          onExportMetrics={(format) => console.log('Export metrics:', format)}
+        />
+      )}
+
+      {/* Scan History - Placeholder until backend implements endpoints */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Scan History
+          </h2>
+          <Button variant="ghost" size="sm" disabled>
+            Export
+          </Button>
+        </div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <Clock className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+          <p className="font-medium">Scan History Coming Soon</p>
+          <p className="text-sm mt-1">
+            Backend endpoints for scan history are being implemented
+          </p>
+        </div>
+      </Card>
+
       {/* Recent Activity Placeholder */}
       <Card className="p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Recent Activity
+          System Events
         </h2>
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <Activity className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-          <p>Activity monitoring coming soon</p>
+          <p>Event monitoring coming soon</p>
           <p className="text-sm">
-            Volume scans, size changes, and mount events will appear here
+            Volume mounts, unmounts, and system events will appear here
           </p>
         </div>
       </Card>

@@ -54,7 +54,24 @@ func NewHandler(dockerService interfaces.DockerService, hub *websocket.Hub, stor
 // Helper function to determine if volume is system-managed
 
 // ListVolumes returns paginated Docker volumes with metadata
-// Implements GET /api/v1/volumes with pagination, sorting, and filtering
+// @Summary List Docker volumes
+// @Description Get paginated list of Docker volumes with filtering, sorting, and search capabilities
+// @Tags volumes
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number for pagination (default: 1)"
+// @Param page_size query int false "Number of items per page (default: 25, max: 100)"
+// @Param sort query string false "Sort field and direction (e.g., 'name:asc', 'created_at:desc'). Available fields: name, driver, created_at, size_bytes"
+// @Param q query string false "Search query to filter volumes by name"
+// @Param driver query string false "Filter by volume driver" Enums(local, nfs, cifs, overlay2)
+// @Param orphaned query bool false "Filter orphaned volumes (not attached to any container)"
+// @Param system query bool false "Include system volumes (default: false)"
+// @Param created_after query string false "Filter volumes created after date (RFC3339 format)"
+// @Param created_before query string false "Filter volumes created before date (RFC3339 format)"
+// @Success 200 {object} apiutils.PagedResponse "Paginated list of volumes"
+// @Failure 400 {object} models.ErrorResponse "Bad request"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /volumes [get]
 func (h *Handler) ListVolumes(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -377,7 +394,17 @@ func sortVolumesByDriver(volumes []models.VolumeV1, asc bool) {
 }
 
 // GetVolume returns detailed information about a specific volume
-// Implements GET /api/v1/volumes/{name}
+// @Summary Get volume details
+// @Description Get detailed information about a specific Docker volume by name
+// @Tags volumes
+// @Accept json
+// @Produce json
+// @Param name path string true "Volume name"
+// @Success 200 {object} models.VolumeV1 "Volume details"
+// @Failure 400 {object} models.ErrorResponse "Bad request"
+// @Failure 404 {object} models.ErrorResponse "Volume not found"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /volumes/{name} [get]
 func (h *Handler) GetVolume(c *gin.Context) {
 	ctx := c.Request.Context()
 	volumeName := c.Param("name")
@@ -444,7 +471,17 @@ func (h *Handler) GetVolume(c *gin.Context) {
 }
 
 // GetVolumeAttachments returns all containers using a specific volume
-// Implements GET /api/v1/volumes/{name}/attachments
+// @Summary Get volume attachments
+// @Description Get list of containers that have the specified volume mounted
+// @Tags volumes
+// @Accept json
+// @Produce json
+// @Param name path string true "Volume name"
+// @Success 200 {object} apiutils.PagedResponse "List of container attachments"
+// @Failure 400 {object} models.ErrorResponse "Bad request"
+// @Failure 404 {object} models.ErrorResponse "Volume not found"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /volumes/{name}/attachments [get]
 func (h *Handler) GetVolumeAttachments(c *gin.Context) {
 	ctx := c.Request.Context()
 	volumeName := c.Param("name")
@@ -493,10 +530,20 @@ func (h *Handler) GetVolumeAttachments(c *gin.Context) {
 }
 
 // GetVolumeStats returns volume statistics and usage information
-// GET /api/v1/volumes/:id/stats
+// @Summary Get volume statistics
+// @Description Get detailed statistics and usage information for a specific volume
+// @Tags volumes
+// @Accept json
+// @Produce json
+// @Param name path string true "Volume name"
+// @Success 200 {object} models.VolumeStatsResponse "Volume statistics"
+// @Failure 400 {object} models.ErrorResponse "Bad request"
+// @Failure 404 {object} models.ErrorResponse "Volume not found"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /volumes/{name}/stats [get]
 func (h *Handler) GetVolumeStats(c *gin.Context) {
 	ctx := c.Request.Context()
-	volumeID := c.Param("id")
+	volumeID := c.Param("name")
 
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
@@ -677,7 +724,18 @@ func isAnonymousVolume(name string) bool {
 }
 
 // GetOrphanedVolumes returns all volumes with zero attachments
-// Implements GET /api/v1/reports/orphaned
+// @Summary Get orphaned volumes
+// @Description Get paginated list of volumes that are not attached to any containers
+// @Tags volumes
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number for pagination (default: 1)"
+// @Param page_size query int false "Number of items per page (default: 25, max: 100)"
+// @Param sort query string false "Sort field and direction (e.g., 'name:asc', 'size_bytes:desc'). Available fields: name, size_bytes, created_at"
+// @Success 200 {object} apiutils.PagedResponse "Paginated list of orphaned volumes"
+// @Failure 400 {object} models.ErrorResponse "Bad request"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /reports/orphaned [get]
 func (h *Handler) GetOrphanedVolumes(c *gin.Context) {
 	ctx := c.Request.Context()
 
