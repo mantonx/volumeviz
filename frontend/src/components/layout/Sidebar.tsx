@@ -11,6 +11,7 @@ import {
   Layers,
   Search,
   Settings,
+  Shield,
   TrendingUp,
   X,
   Zap,
@@ -55,6 +56,18 @@ const navigation: NavigationItem[] = [
     href: '/search',
     icon: Search,
     description: 'Global file search & advanced filtering',
+  },
+  {
+    name: 'Mounts',
+    href: '/mounts',
+    icon: Layers,
+    description: 'Docker mount catalog & metadata',
+  },
+  {
+    name: 'Rules',
+    href: '/rules',
+    icon: Shield,
+    description: 'Mount tracking rules & automation',
   },
   // Temporarily hidden - container management coming in future release
   // {

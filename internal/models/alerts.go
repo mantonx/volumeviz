@@ -32,8 +32,8 @@ type AlertRule struct {
 	Query       string            `json:"query"`
 	Condition   string            `json:"condition"` // e.g., "gt", "lt", "eq"
 	Threshold   float64           `json:"threshold"`
-	Interval    time.Duration     `json:"interval"`    // How often to evaluate
-	For         *time.Duration    `json:"for,omitempty"` // How long condition must persist
+	Interval    time.Duration     `json:"interval" swaggertype:"integer" format:"int64" example:"300000000000"`    // How often to evaluate (nanoseconds)
+	For         *time.Duration    `json:"for,omitempty" swaggertype:"integer" format:"int64" example:"600000000000"` // How long condition must persist (nanoseconds)
 	Labels      map[string]string `json:"labels,omitempty"`
 	IsEnabled   bool              `json:"is_enabled"`
 	CreatedAt   time.Time         `json:"created_at"`
@@ -122,8 +122,8 @@ type CreateAlertRuleParams struct {
 	Query       string            `json:"query" validate:"required"`
 	Condition   string            `json:"condition" validate:"required,oneof=gt lt eq ne gte lte"`
 	Threshold   float64           `json:"threshold" validate:"required"`
-	Interval    time.Duration     `json:"interval" validate:"required,min=1m"`
-	For         *time.Duration    `json:"for,omitempty" validate:"omitempty,min=0"`
+	Interval    time.Duration     `json:"interval" validate:"required,min=1m" swaggertype:"integer" format:"int64" example:"300000000000"`
+	For         *time.Duration    `json:"for,omitempty" validate:"omitempty,min=0" swaggertype:"integer" format:"int64" example:"600000000000"`
 	Labels      map[string]string `json:"labels,omitempty"`
 	IsEnabled   bool              `json:"is_enabled"`
 }
@@ -136,8 +136,8 @@ type UpdateAlertRuleParams struct {
 	Query       string            `json:"query" validate:"required"`
 	Condition   string            `json:"condition" validate:"required,oneof=gt lt eq ne gte lte"`
 	Threshold   float64           `json:"threshold" validate:"required"`
-	Interval    time.Duration     `json:"interval" validate:"required,min=1m"`
-	For         *time.Duration    `json:"for,omitempty" validate:"omitempty,min=0"`
+	Interval    time.Duration     `json:"interval" validate:"required,min=1m" swaggertype:"integer" format:"int64" example:"300000000000"`
+	For         *time.Duration    `json:"for,omitempty" validate:"omitempty,min=0" swaggertype:"integer" format:"int64" example:"600000000000"`
 	Labels      map[string]string `json:"labels,omitempty"`
 	IsEnabled   bool              `json:"is_enabled"`
 }

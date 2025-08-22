@@ -723,16 +723,10 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 			log.Printf("[ERROR] Worker %d failed to mark scan job as completed: %v", w.id, completeErr)
 		}
 
-		// Insert volume stats if repository is available
+		// Insert complete scan result including filesystem capacity if repository is available
 		if w.scheduler.repository != nil {
-			stats := &models.DirRollup{
-				SizeBytes: result.TotalSize,
-				FileCount: int64(result.FileCount),
-				CreatedAt: completedAt,
-			}
-
-			if err := w.scheduler.repository.InsertVolumeStats(w.ctx, stats); err != nil {
-				log.Printf("[ERROR] Worker %d failed to insert volume stats: %v", w.id, err)
+			if err := w.scheduler.repository.InsertScanResult(w.ctx, result); err != nil {
+				log.Printf("[ERROR] Worker %d failed to insert scan result: %v", w.id, err)
 			}
 		}
 
@@ -876,15 +870,9 @@ func (w *worker) processTask(task *ScanTask) {
 		log.Printf("[INFO] Worker %d completed scan for volume %s (size: %d bytes, duration: %v)",
 			w.id, task.VolumeName, result.TotalSize, duration)
 
-		// Insert volume stats - simplified for now
-		stats := &models.DirRollup{
-			SizeBytes: result.TotalSize,
-			FileCount: int64(result.FileCount),
-			CreatedAt: completedAt,
-		}
-
-		if err := w.scheduler.repository.InsertVolumeStats(w.ctx, stats); err != nil {
-			log.Printf("[ERROR] Worker %d failed to insert volume stats: %v", w.id, err)
+		// Insert complete scan result including filesystem capacity
+		if err := w.scheduler.repository.InsertScanResult(w.ctx, result); err != nil {
+			log.Printf("[ERROR] Worker %d failed to insert scan result: %v", w.id, err)
 		}
 
 		w.scheduler.statusMutex.Lock()

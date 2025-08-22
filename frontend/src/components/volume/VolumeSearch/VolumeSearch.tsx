@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, X, Filter, ChevronDown } from 'lucide-react';
-import { VolumeDriver } from '../../../types/api';
+import { VolumeDriver } from '@/api/generated/volumeviz-api';
 import { Badge } from '../../ui/Badge';
 import { clsx } from 'clsx';
 import { useDebounce } from '../../../hooks/useDebounce';

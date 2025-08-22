@@ -74,6 +74,20 @@ type ScanResult struct {
 	Duration       time.Duration `json:"duration"`
 	CacheHit       bool          `json:"cache_hit"`
 	FilesystemType string        `json:"filesystem_type"`
+	
+	// Filesystem capacity information (optional - may be nil if unavailable)
+	FilesystemCapacity *FilesystemInfo `json:"filesystem_capacity,omitempty"`
+}
+
+// FilesystemInfo represents filesystem capacity and usage information
+type FilesystemInfo struct {
+	TotalBytes     int64   `json:"total_bytes"`      // Total filesystem capacity
+	AvailableBytes int64   `json:"available_bytes"`  // Available space for users
+	UsedBytes      int64   `json:"used_bytes"`       // Used space
+	UsagePercent   float64 `json:"usage_percent"`    // Usage percentage (0-100)
+	BlockSize      int64   `json:"block_size"`       // Filesystem block size
+	TotalBlocks    uint64  `json:"total_blocks"`     // Total blocks
+	FreeBlocks     uint64  `json:"free_blocks"`      // Free blocks available to users
 }
 
 // ScanProgress represents the progress of an ongoing scan

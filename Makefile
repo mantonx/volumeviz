@@ -37,7 +37,11 @@ help:
 	@echo "  lint-clean    - Check clean architecture boundaries + sqlc (CI-friendly)"
 	@echo "  lint-all      - Run all lint checks (code + transactions + imports)"
 	@echo "  format        - Format Go code"
-	@echo "  migrate       - Show migration info (migrations run automatically on startup)"
+	@echo "  migrate       - Run database migrations using golang-migrate"
+	@echo "  migrate-version - Check current migration version"
+	@echo "  migrate-down  - Roll back one migration"
+	@echo "  migrate-force VERSION=<n> - Force migration version (use with caution)"
+	@echo "  migrate-create NAME=<name> - Create new migration files"
 	@echo "  migrate-test  - Test migrations on both PostgreSQL and SQLite"
 	@echo "  migrate-status - Show current migration files"
 	@echo "  sqlc          - Generate Go code from SQL queries"
@@ -165,12 +169,72 @@ format:
 	go fmt ./...
 	@echo "Formatting complete"
 
-# Run database migrations
+# Database migration variables
+DB_MIGRATE_URL ?= postgres://volumeviz:volumeviz@localhost:5432/volumeviz?sslmode=disable
+MIGRATE_PATH ?= migrations
+
+# Run database migrations using golang-migrate
 migrate:
-	@echo "Running database migrations..."
-	@echo "Applying migrations for configured database type..."
-	@echo "Note: The server applies migrations automatically on startup"
-	@echo "To test migrations, use migrate-test-postgres or migrate-test-sqlite"
+	@echo "Running database migrations with golang-migrate..."
+	@if ! command -v migrate > /dev/null 2>&1; then \
+		if ! command -v $(HOME)/go/bin/migrate > /dev/null 2>&1; then \
+			echo "Installing migrate..."; \
+			go install -tags 'postgres,sqlite3' github.com/golang-migrate/migrate/v4/cmd/migrate@latest; \
+		fi; \
+		$(HOME)/go/bin/migrate -path $(MIGRATE_PATH) -database "$(DB_MIGRATE_URL)" up; \
+	else \
+		migrate -path $(MIGRATE_PATH) -database "$(DB_MIGRATE_URL)" up; \
+	fi
+	@echo "Migration complete"
+
+# Check current migration version
+migrate-version:
+	@echo "Checking current migration version..."
+	@if ! command -v migrate > /dev/null 2>&1; then \
+		if command -v $(HOME)/go/bin/migrate > /dev/null 2>&1; then \
+			$(HOME)/go/bin/migrate -path $(MIGRATE_PATH) -database "$(DB_MIGRATE_URL)" version; \
+		else \
+			echo "migrate not installed. Run 'make install-tools' first."; \
+		fi; \
+	else \
+		migrate -path $(MIGRATE_PATH) -database "$(DB_MIGRATE_URL)" version; \
+	fi
+
+# Roll back one migration
+migrate-down:
+	@echo "Rolling back one migration..."
+	@if ! command -v migrate > /dev/null 2>&1; then \
+		$(HOME)/go/bin/migrate -path $(MIGRATE_PATH) -database "$(DB_MIGRATE_URL)" down 1; \
+	else \
+		migrate -path $(MIGRATE_PATH) -database "$(DB_MIGRATE_URL)" down 1; \
+	fi
+
+# Force migration version (use with caution)
+migrate-force:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Usage: make migrate-force VERSION=<version>"; \
+		exit 1; \
+	fi
+	@echo "Forcing migration version to $(VERSION)..."
+	@if ! command -v migrate > /dev/null 2>&1; then \
+		$(HOME)/go/bin/migrate -path $(MIGRATE_PATH) -database "$(DB_MIGRATE_URL)" force $(VERSION); \
+	else \
+		migrate -path $(MIGRATE_PATH) -database "$(DB_MIGRATE_URL)" force $(VERSION); \
+	fi
+
+# Create a new migration file
+migrate-create:
+	@if [ -z "$(NAME)" ]; then \
+		echo "Usage: make migrate-create NAME=<migration_name>"; \
+		exit 1; \
+	fi
+	@echo "Creating new migration: $(NAME)..."
+	@if ! command -v migrate > /dev/null 2>&1; then \
+		$(HOME)/go/bin/migrate create -ext sql -dir $(MIGRATE_PATH) -seq $(NAME); \
+	else \
+		migrate create -ext sql -dir $(MIGRATE_PATH) -seq $(NAME); \
+	fi
+	@echo "Migration files created in $(MIGRATE_PATH)/"
 
 migrate-test-postgres:
 	@echo "Testing PostgreSQL migrations in a container..."
@@ -277,6 +341,7 @@ install-tools:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/air-verse/air@latest
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+	go install -tags 'postgres,sqlite3' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 	@echo "Tools installed"
 
 # Docker Compose convenience commands

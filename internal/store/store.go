@@ -27,6 +27,9 @@ type Store interface {
 
 	// Health check
 	Health(ctx context.Context) error
+
+	// Raw SQLC queries access (for services that need direct query access)
+	Queries() interface{}
 }
 
 // TxStore provides access to repositories within a transaction context

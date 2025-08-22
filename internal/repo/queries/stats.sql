@@ -279,15 +279,19 @@ WHERE metric_timestamp < $1;
 INSERT INTO volume_sizes (
     volume_id, total_size, file_count, directory_count, 
     largest_file, scan_method, scan_duration, filesystem_type,
-    checksum_md5, is_valid, error_message
+    checksum_md5, is_valid, error_message,
+    fs_total_bytes, fs_available_bytes, fs_used_bytes, 
+    fs_usage_percent, fs_block_size, fs_total_blocks, fs_free_blocks
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 RETURNING id, created_at, updated_at;
 
 -- name: GetLatestVolumeSize :one
 SELECT id, volume_id, total_size, file_count, directory_count, 
        largest_file, scan_method, scan_duration, filesystem_type,
-       checksum_md5, is_valid, error_message, created_at, updated_at
+       checksum_md5, is_valid, error_message, created_at, updated_at,
+       fs_total_bytes, fs_available_bytes, fs_used_bytes, 
+       fs_usage_percent, fs_block_size, fs_total_blocks, fs_free_blocks
 FROM volume_sizes 
 WHERE volume_id = $1 AND is_valid = true
 ORDER BY created_at DESC

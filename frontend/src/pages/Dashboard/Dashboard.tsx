@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAtomValue } from 'jotai';
+import { useLocation } from 'react-router-dom';
 import {
   HardDrive,
   Database,
@@ -10,6 +11,8 @@ import {
   Clock,
   TrendingUp,
   Search,
+  Settings,
+  X,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -56,6 +59,14 @@ import { useScanMonitoring } from '@/hooks/useScanMonitoring';
  * Responsive design adapts the grid layout for mobile and desktop views.
  */
 export const Dashboard: React.FC<DashboardProps> = () => {
+  const location = useLocation();
+  const [showOnboardingSuccess, setShowOnboardingSuccess] = useState(false);
+  const [onboardingMessage, setOnboardingMessage] = useState<{
+    trackedCount: number;
+    rulesCreated: number;
+    presetUsed: string;
+  } | null>(null);
+
   const { fetchVolumes } = useVolumes();
   const { checkHealth } = useApiHealth();
   const { getVolumeSize } = useVolumeScanning();
@@ -99,6 +110,21 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const fetchHistory = () => {
     console.warn('Scan history fetch not implemented in backend yet');
   };
+
+  // Check for onboarding completion state
+  useEffect(() => {
+    if (location.state?.onboardingComplete) {
+      setShowOnboardingSuccess(true);
+      setOnboardingMessage({
+        trackedCount: location.state.trackedCount || 0,
+        rulesCreated: location.state.rulesCreated || 0,
+        presetUsed: location.state.presetUsed || 'Unknown'
+      });
+      
+      // Clear the location state to prevent showing the message on page refresh
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  }, [location]);
 
   // Debug logging
   useEffect(() => {
@@ -219,6 +245,64 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
   return (
     <div className="space-y-8">
+      {/* Onboarding Success Banner */}
+      {showOnboardingSuccess && onboardingMessage && (
+        <Card className="p-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 mt-0.5" />
+              <div>
+                <h3 className="text-lg font-medium text-green-900 dark:text-green-100">
+                  🎉 Setup Complete!
+                </h3>
+                <p className="mt-1 text-green-700 dark:text-green-200">
+                  VolumeViz has been configured successfully using the <strong>{onboardingMessage.presetUsed}</strong> preset.
+                </p>
+                <div className="mt-3 space-y-1 text-sm text-green-600 dark:text-green-300">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">✓ {onboardingMessage.rulesCreated} tracking rules created</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">✓ {onboardingMessage.trackedCount} mounts will be tracked</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">✓ Real-time monitoring active</span>
+                  </div>
+                </div>
+                <div className="mt-4 flex space-x-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-green-300 text-green-700 hover:bg-green-100 dark:border-green-600 dark:text-green-300 dark:hover:bg-green-800"
+                    onClick={() => window.location.href = '/rules'}
+                  >
+                    <Settings className="h-4 w-4 mr-1" />
+                    View Rules
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-green-300 text-green-700 hover:bg-green-100 dark:border-green-600 dark:text-green-300 dark:hover:bg-green-800"
+                    onClick={() => window.location.href = '/mounts'}
+                  >
+                    <HardDrive className="h-4 w-4 mr-1" />
+                    View Mounts
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowOnboardingSuccess(false)}
+              className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">

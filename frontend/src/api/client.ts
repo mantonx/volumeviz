@@ -42,7 +42,7 @@ interface Volume {
 // Create configured API client
 const volumeVizApi = new Api({
   baseUrl:
-    (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080/api/v1',
+    (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080',
   baseApiParams: {
     headers: {
       'Content-Type': 'application/json',

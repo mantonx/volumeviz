@@ -236,7 +236,7 @@ func (h *Handler) getEventsHealth() gin.H {
 // @Tags health
 // @Accept json
 // @Produce json
-// @Success 200 {object} gin.H
+// @Success 200 {object} object
 // @Failure 503 {object} models.ErrorResponse
 // @Router /health/events [get]
 func (h *Handler) GetEventsHealth(c *gin.Context) {
@@ -335,7 +335,7 @@ func (h *Handler) getSchedulerHealth() gin.H {
 // @Tags health
 // @Accept json
 // @Produce json
-// @Success 200 {object} gin.H
+// @Success 200 {object} object
 // @Failure 503 {object} models.ErrorResponse
 // @Router /health/scheduler [get]
 func (h *Handler) GetSchedulerHealth(c *gin.Context) {
@@ -368,7 +368,7 @@ func (h *Handler) GetSchedulerHealth(c *gin.Context) {
 // @Tags health
 // @Accept json
 // @Produce json
-// @Success 200 {object} gin.H
+// @Success 200 {object} object
 // @Failure 503 {object} models.ErrorResponse
 // @Router /health/database [get]
 func (h *Handler) GetDatabaseHealth(c *gin.Context) {

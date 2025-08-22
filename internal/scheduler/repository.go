@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/store"
 )
@@ -30,6 +31,11 @@ func NewScanRepository(storeInstance store.Store) ScanRepository {
 func (r *StoreBasedRepository) InsertVolumeStats(ctx context.Context, stats *models.DirRollup) error {
 	// Use the stats repository for inserting volume statistics
 	return r.store.Stats().InsertVolumeStats(ctx, stats)
+}
+
+func (r *StoreBasedRepository) InsertScanResult(ctx context.Context, scanResult *interfaces.ScanResult) error {
+	// Use the stats repository for inserting complete scan results
+	return r.store.Stats().InsertScanResult(ctx, scanResult)
 }
 
 func (r *StoreBasedRepository) GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*models.DirRollup, error) {
@@ -104,6 +110,10 @@ func (r *StoreBasedRepository) UpsertVolume(ctx context.Context, volume *models.
 // NoOpScanRepository implementation for fallback
 
 func (r *NoOpScanRepository) InsertVolumeStats(ctx context.Context, stats *models.DirRollup) error {
+	return nil
+}
+
+func (r *NoOpScanRepository) InsertScanResult(ctx context.Context, scanResult *interfaces.ScanResult) error {
 	return nil
 }
 

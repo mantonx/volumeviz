@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { VolumeActions } from './VolumeActions';
-import { Volume } from '../../../types/api';
+import { VolumeV1 as Volume } from '@/api/generated/volumeviz-api';
 
 const mockVolume: Volume = {
   id: 'test-volume',

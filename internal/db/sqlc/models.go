@@ -5,10 +5,181 @@
 package sqlc
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type RuleAction string
+
+const (
+	RuleActionInclude RuleAction = "include"
+	RuleActionExclude RuleAction = "exclude"
+)
+
+func (e *RuleAction) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RuleAction(s)
+	case string:
+		*e = RuleAction(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RuleAction: %T", src)
+	}
+	return nil
+}
+
+type NullRuleAction struct {
+	RuleAction RuleAction `json:"rule_action"`
+	Valid      bool       `json:"valid"` // Valid is true if RuleAction is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRuleAction) Scan(value interface{}) error {
+	if value == nil {
+		ns.RuleAction, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RuleAction.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRuleAction) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RuleAction), nil
+}
+
+func AllRuleActionValues() []RuleAction {
+	return []RuleAction{
+		RuleActionInclude,
+		RuleActionExclude,
+	}
+}
+
+type RuleEvaluationStatus string
+
+const (
+	RuleEvaluationStatusPending RuleEvaluationStatus = "pending"
+	RuleEvaluationStatusSuccess RuleEvaluationStatus = "success"
+	RuleEvaluationStatusError   RuleEvaluationStatus = "error"
+	RuleEvaluationStatusSkipped RuleEvaluationStatus = "skipped"
+)
+
+func (e *RuleEvaluationStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RuleEvaluationStatus(s)
+	case string:
+		*e = RuleEvaluationStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RuleEvaluationStatus: %T", src)
+	}
+	return nil
+}
+
+type NullRuleEvaluationStatus struct {
+	RuleEvaluationStatus RuleEvaluationStatus `json:"rule_evaluation_status"`
+	Valid                bool                 `json:"valid"` // Valid is true if RuleEvaluationStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRuleEvaluationStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.RuleEvaluationStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RuleEvaluationStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRuleEvaluationStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RuleEvaluationStatus), nil
+}
+
+func AllRuleEvaluationStatusValues() []RuleEvaluationStatus {
+	return []RuleEvaluationStatus{
+		RuleEvaluationStatusPending,
+		RuleEvaluationStatusSuccess,
+		RuleEvaluationStatusError,
+		RuleEvaluationStatusSkipped,
+	}
+}
+
+type RuleOperator string
+
+const (
+	RuleOperatorEquals      RuleOperator = "equals"
+	RuleOperatorNotEquals   RuleOperator = "not_equals"
+	RuleOperatorRegex       RuleOperator = "regex"
+	RuleOperatorNotRegex    RuleOperator = "not_regex"
+	RuleOperatorPrefix      RuleOperator = "prefix"
+	RuleOperatorSuffix      RuleOperator = "suffix"
+	RuleOperatorContains    RuleOperator = "contains"
+	RuleOperatorNotContains RuleOperator = "not_contains"
+	RuleOperatorGlob        RuleOperator = "glob"
+	RuleOperatorIn          RuleOperator = "in"
+	RuleOperatorNotIn       RuleOperator = "not_in"
+)
+
+func (e *RuleOperator) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RuleOperator(s)
+	case string:
+		*e = RuleOperator(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RuleOperator: %T", src)
+	}
+	return nil
+}
+
+type NullRuleOperator struct {
+	RuleOperator RuleOperator `json:"rule_operator"`
+	Valid        bool         `json:"valid"` // Valid is true if RuleOperator is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRuleOperator) Scan(value interface{}) error {
+	if value == nil {
+		ns.RuleOperator, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RuleOperator.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRuleOperator) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RuleOperator), nil
+}
+
+func AllRuleOperatorValues() []RuleOperator {
+	return []RuleOperator{
+		RuleOperatorEquals,
+		RuleOperatorNotEquals,
+		RuleOperatorRegex,
+		RuleOperatorNotRegex,
+		RuleOperatorPrefix,
+		RuleOperatorSuffix,
+		RuleOperatorContains,
+		RuleOperatorNotContains,
+		RuleOperatorGlob,
+		RuleOperatorIn,
+		RuleOperatorNotIn,
+	}
+}
 
 type AlertDeliveries struct {
 	ID              int64              `json:"id"`
@@ -87,13 +258,78 @@ type Containers struct {
 	Name        string           `json:"name"`
 	Image       string           `json:"image"`
 	State       string           `json:"state"`
-	Status      pgtype.Text      `json:"status"`
+	Status      string           `json:"status"`
 	Labels      pgtype.Text      `json:"labels"`
 	StartedAt   pgtype.Timestamp `json:"started_at"`
 	FinishedAt  pgtype.Timestamp `json:"finished_at"`
 	IsActive    pgtype.Bool      `json:"is_active"`
 	CreatedAt   time.Time        `json:"created_at"`
 	UpdatedAt   time.Time        `json:"updated_at"`
+}
+
+type DockerMountAttachments struct {
+	ID                              int64            `json:"id"`
+	MountCatalogID                  int64            `json:"mount_catalog_id"`
+	ContainerID                     string           `json:"container_id"`
+	ContainerName                   pgtype.Text      `json:"container_name"`
+	DestinationPath                 string           `json:"destination_path"`
+	AccessMode                      string           `json:"access_mode"`
+	Propagation                     pgtype.Text      `json:"propagation"`
+	ContainerState                  pgtype.Text      `json:"container_state"`
+	ContainerImage                  pgtype.Text      `json:"container_image"`
+	ContainerLabels                 []byte           `json:"container_labels"`
+	ContainerComposeProject         pgtype.Text      `json:"container_compose_project"`
+	ContainerComposeService         pgtype.Text      `json:"container_compose_service"`
+	ContainerComposeContainerNumber pgtype.Int4      `json:"container_compose_container_number"`
+	ContainerComposeConfigHash      pgtype.Text      `json:"container_compose_config_hash"`
+	AttachedAt                      pgtype.Timestamp `json:"attached_at"`
+	DetachedAt                      pgtype.Timestamp `json:"detached_at"`
+	IsActive                        bool             `json:"is_active"`
+	CreatedAt                       time.Time        `json:"created_at"`
+	UpdatedAt                       time.Time        `json:"updated_at"`
+}
+
+type DockerMountCatalog struct {
+	ID                 int64            `json:"id"`
+	MountID            string           `json:"mount_id"`
+	MountType          string           `json:"mount_type"`
+	VolumeName         pgtype.Text      `json:"volume_name"`
+	VolumeDriver       pgtype.Text      `json:"volume_driver"`
+	VolumeOptions      []byte           `json:"volume_options"`
+	VolumeLabels       []byte           `json:"volume_labels"`
+	VolumeScope        pgtype.Text      `json:"volume_scope"`
+	SourcePath         string           `json:"source_path"`
+	ContainerCount     int32            `json:"container_count"`
+	IsOrphaned         bool             `json:"is_orphaned"`
+	ComposeProject     pgtype.Text      `json:"compose_project"`
+	ComposeServices    []string         `json:"compose_services"`
+	ComposeVersion     pgtype.Text      `json:"compose_version"`
+	ComposeConfigFiles []string         `json:"compose_config_files"`
+	FirstDiscoveredAt  pgtype.Timestamp `json:"first_discovered_at"`
+	LastSeenAt         pgtype.Timestamp `json:"last_seen_at"`
+	DiscoverySource    string           `json:"discovery_source"`
+	IsTracked          bool             `json:"is_tracked"`
+	TrackingEnabledAt  pgtype.Timestamp `json:"tracking_enabled_at"`
+	TrackingDisabledAt pgtype.Timestamp `json:"tracking_disabled_at"`
+	CreatedAt          time.Time        `json:"created_at"`
+	UpdatedAt          time.Time        `json:"updated_at"`
+}
+
+type DockerMountStatistics struct {
+	ID                       int64            `json:"id"`
+	MountCatalogID           int64            `json:"mount_catalog_id"`
+	PeakContainerCount       int32            `json:"peak_container_count"`
+	TotalAttachments         int32            `json:"total_attachments"`
+	ComposeProjectsCount     int32            `json:"compose_projects_count"`
+	ComposeServicesCount     int32            `json:"compose_services_count"`
+	DaysSinceCreation        pgtype.Int4      `json:"days_since_creation"`
+	DaysSinceLastUse         pgtype.Int4      `json:"days_since_last_use"`
+	AttachmentFrequencyScore pgtype.Float4    `json:"attachment_frequency_score"`
+	LastKnownSizeBytes       pgtype.Int8      `json:"last_known_size_bytes"`
+	LastScannedAt            pgtype.Timestamp `json:"last_scanned_at"`
+	CalculatedAt             pgtype.Timestamp `json:"calculated_at"`
+	CreatedAt                time.Time        `json:"created_at"`
+	UpdatedAt                time.Time        `json:"updated_at"`
 }
 
 type FileMetadata struct {
@@ -181,6 +417,22 @@ type Folders struct {
 	SymlinkTarget           pgtype.Text `json:"symlink_target"`
 	CreatedAt               time.Time   `json:"created_at"`
 	UpdatedAt               time.Time   `json:"updated_at"`
+}
+
+type MountTrackingAssignments struct {
+	ID                int64              `json:"id"`
+	MountCatalogID    pgtype.Int8        `json:"mount_catalog_id"`
+	RuleID            pgtype.Int8        `json:"rule_id"`
+	EvaluationID      pgtype.Int8        `json:"evaluation_id"`
+	Action            string             `json:"action"`
+	IsActive          bool               `json:"is_active"`
+	MatchedConditions []byte             `json:"matched_conditions"`
+	RulePriority      pgtype.Int4        `json:"rule_priority"`
+	RuleName          pgtype.Text        `json:"rule_name"`
+	AssignedAt        pgtype.Timestamptz `json:"assigned_at"`
+	ExpiresAt         pgtype.Timestamptz `json:"expires_at"`
+	CreatedAt         time.Time          `json:"created_at"`
+	UpdatedAt         time.Time          `json:"updated_at"`
 }
 
 type PreviewStats struct {
@@ -304,6 +556,69 @@ type StatsJobs struct {
 	RecordsUpdated pgtype.Int4        `json:"records_updated"`
 }
 
+type TrackingRuleConditions struct {
+	ID              int64              `json:"id"`
+	RuleID          pgtype.Int8        `json:"rule_id"`
+	FieldName       string             `json:"field_name"`
+	Operator        string             `json:"operator"`
+	Value           pgtype.Text        `json:"value"`
+	Values          []string           `json:"values"`
+	IsCaseSensitive bool               `json:"is_case_sensitive"`
+	Description     pgtype.Text        `json:"description"`
+	MatchCount      int32              `json:"match_count"`
+	LastMatchedAt   pgtype.Timestamptz `json:"last_matched_at"`
+	CreatedAt       time.Time          `json:"created_at"`
+	UpdatedAt       time.Time          `json:"updated_at"`
+}
+
+type TrackingRuleEvaluations struct {
+	ID              int64              `json:"id"`
+	RuleID          pgtype.Int8        `json:"rule_id"`
+	EvaluationType  string             `json:"evaluation_type"`
+	TriggeredBy     pgtype.Text        `json:"triggered_by"`
+	Status          string             `json:"status"`
+	MountsEvaluated int32              `json:"mounts_evaluated"`
+	MountsMatched   int32              `json:"mounts_matched"`
+	MountsIncluded  int32              `json:"mounts_included"`
+	MountsExcluded  int32              `json:"mounts_excluded"`
+	ExecutionTimeMs pgtype.Int4        `json:"execution_time_ms"`
+	ErrorMessage    pgtype.Text        `json:"error_message"`
+	ErrorDetails    []byte             `json:"error_details"`
+	StartedAt       pgtype.Timestamptz `json:"started_at"`
+	CompletedAt     pgtype.Timestamptz `json:"completed_at"`
+	CreatedAt       time.Time          `json:"created_at"`
+}
+
+type TrackingRuleTemplates struct {
+	ID           int64              `json:"id"`
+	Name         string             `json:"name"`
+	Description  string             `json:"description"`
+	Category     string             `json:"category"`
+	TemplateData []byte             `json:"template_data"`
+	UsageCount   int32              `json:"usage_count"`
+	LastUsedAt   pgtype.Timestamptz `json:"last_used_at"`
+	IsBuiltin    bool               `json:"is_builtin"`
+	Tags         []string           `json:"tags"`
+	CreatedAt    time.Time          `json:"created_at"`
+	UpdatedAt    time.Time          `json:"updated_at"`
+}
+
+type TrackingRules struct {
+	ID               int64              `json:"id"`
+	Name             string             `json:"name"`
+	Description      pgtype.Text        `json:"description"`
+	Action           string             `json:"action"`
+	Priority         int32              `json:"priority"`
+	IsEnabled        bool               `json:"is_enabled"`
+	Conditions       []byte             `json:"conditions"`
+	MatchCount       int32              `json:"match_count"`
+	LastMatchedAt    pgtype.Timestamptz `json:"last_matched_at"`
+	LastEvaluationAt pgtype.Timestamptz `json:"last_evaluation_at"`
+	CreatedBy        pgtype.Text        `json:"created_by"`
+	CreatedAt        time.Time          `json:"created_at"`
+	UpdatedAt        time.Time          `json:"updated_at"`
+}
+
 type UsageSnapshots struct {
 	ID                    int64         `json:"id"`
 	VolumeID              string        `json:"volume_id"`
@@ -348,20 +663,27 @@ type VolumeMounts struct {
 }
 
 type VolumeSizes struct {
-	ID             int64       `json:"id"`
-	VolumeID       string      `json:"volume_id"`
-	TotalSize      int64       `json:"total_size"`
-	FileCount      int64       `json:"file_count"`
-	DirectoryCount int64       `json:"directory_count"`
-	LargestFile    int64       `json:"largest_file"`
-	ScanMethod     string      `json:"scan_method"`
-	ScanDuration   int64       `json:"scan_duration"`
-	FilesystemType pgtype.Text `json:"filesystem_type"`
-	ChecksumMd5    pgtype.Text `json:"checksum_md5"`
-	IsValid        pgtype.Bool `json:"is_valid"`
-	ErrorMessage   pgtype.Text `json:"error_message"`
-	CreatedAt      time.Time   `json:"created_at"`
-	UpdatedAt      time.Time   `json:"updated_at"`
+	ID               int64          `json:"id"`
+	VolumeID         string         `json:"volume_id"`
+	TotalSize        int64          `json:"total_size"`
+	FileCount        int64          `json:"file_count"`
+	DirectoryCount   int64          `json:"directory_count"`
+	LargestFile      int64          `json:"largest_file"`
+	ScanMethod       string         `json:"scan_method"`
+	ScanDuration     int64          `json:"scan_duration"`
+	FilesystemType   pgtype.Text    `json:"filesystem_type"`
+	ChecksumMd5      pgtype.Text    `json:"checksum_md5"`
+	IsValid          pgtype.Bool    `json:"is_valid"`
+	ErrorMessage     pgtype.Text    `json:"error_message"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	FsTotalBytes     pgtype.Int8    `json:"fs_total_bytes"`
+	FsAvailableBytes pgtype.Int8    `json:"fs_available_bytes"`
+	FsUsedBytes      pgtype.Int8    `json:"fs_used_bytes"`
+	FsUsagePercent   pgtype.Numeric `json:"fs_usage_percent"`
+	FsBlockSize      pgtype.Int8    `json:"fs_block_size"`
+	FsTotalBlocks    pgtype.Int8    `json:"fs_total_blocks"`
+	FsFreeBlocks     pgtype.Int8    `json:"fs_free_blocks"`
 }
 
 type Volumes struct {
@@ -373,7 +695,7 @@ type Volumes struct {
 	Labels      pgtype.Text      `json:"labels"`
 	Options     pgtype.Text      `json:"options"`
 	Scope       pgtype.Text      `json:"scope"`
-	Status      pgtype.Text      `json:"status"`
+	Status      string           `json:"status"`
 	LastScanned pgtype.Timestamp `json:"last_scanned"`
 	IsActive    pgtype.Bool      `json:"is_active"`
 	CreatedAt   time.Time        `json:"created_at"`

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/config"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
 )
 
@@ -30,6 +31,7 @@ type ScanScheduler interface {
 type ScanRepository interface {
 	// Volume stats operations
 	InsertVolumeStats(ctx context.Context, stats *models.DirRollup) error
+	InsertScanResult(ctx context.Context, scanResult *interfaces.ScanResult) error
 	GetVolumeStatsByName(ctx context.Context, volumeName string, limit int) ([]*models.DirRollup, error)
 	GetLatestVolumeStats(ctx context.Context, volumeName string) (*models.DirRollup, error)
 

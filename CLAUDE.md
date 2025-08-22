@@ -2,6 +2,56 @@
 
 This document outlines the role of Claude AI in the development of VolumeViz and provides guidelines for AI-assisted development practices within the project.
 
+## 🐳 Docker Development Environment
+
+VolumeViz uses Docker and Docker Compose for development. **Do not attempt to run services directly with npm or go commands**.
+
+### Development Commands
+
+```bash
+# Start all services (backend, frontend, database)
+docker-compose -f docker-compose.dev.yml up --build
+
+# Start just the backend and database
+docker-compose -f docker-compose.dev.yml up backend postgres
+
+# Start frontend development server
+docker-compose -f docker-compose.dev.yml up frontend
+
+# View logs
+docker-compose -f docker-compose.dev.yml logs -f [service_name]
+
+# Stop all services
+docker-compose -f docker-compose.dev.yml down
+
+# Rebuild services after code changes
+docker-compose -f docker-compose.dev.yml up --build [service_name]
+```
+
+### Service Access
+
+- **Frontend**: http://localhost:3000 (React development server)
+- **Backend API**: http://localhost:8080 (Go server)  
+- **Database**: localhost:5432 (PostgreSQL)
+
+### Testing Changes
+
+When testing backend changes:
+1. Rebuild the backend container: `docker-compose -f docker-compose.dev.yml up --build backend`
+2. Access API at http://localhost:8080
+3. Frontend should automatically connect to the backend
+
+When testing frontend changes:
+1. Changes are hot-reloaded automatically in development mode
+2. If needed, rebuild: `docker-compose -f docker-compose.dev.yml up --build frontend`
+
+### Important Notes
+
+- All development should be done through Docker containers
+- The backend API provides container names in the `container_names` field for volumes
+- Frontend connects to backend at http://localhost:8080 for API calls
+- Database migrations are handled automatically by the backend on startup
+
 ## 🤖 AI Assistant Integration
 
 ### Development Partnership

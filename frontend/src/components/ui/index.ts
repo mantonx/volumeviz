@@ -68,3 +68,5 @@ export type {
   FileEntry,
   ScanResult,
 } from './DataGrid';
+export { Checkbox } from './Checkbox';
+export { Input } from './Input';

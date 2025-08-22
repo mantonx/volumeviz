@@ -63,7 +63,7 @@ func (r *volumesRepo) CreateVolume(ctx context.Context, params models.CreateVolu
 		Labels:     pgtype.Text{String: string(labels), Valid: len(labels) > 0},
 		Options:    pgtype.Text{String: string(options), Valid: len(options) > 0},
 		Scope:      pgtype.Text{String: params.Scope, Valid: params.Scope != ""},
-		Status:     pgtype.Text{String: params.Status, Valid: params.Status != ""},
+		Status:     params.Status,
 		IsActive:   pgtype.Bool{Bool: params.IsActive, Valid: true},
 	})
 	if err != nil {
@@ -137,7 +137,7 @@ func (r *volumesRepo) UpdateVolume(ctx context.Context, params models.UpdateVolu
 		Labels:     pgtype.Text{String: string(labels), Valid: len(labels) > 0},
 		Options:    pgtype.Text{String: string(options), Valid: len(options) > 0},
 		Scope:      pgtype.Text{String: params.Scope, Valid: params.Scope != ""},
-		Status:     pgtype.Text{String: params.Status, Valid: params.Status != ""},
+		Status:     params.Status,
 		IsActive:   pgtype.Bool{Bool: params.IsActive, Valid: true},
 	})
 	if err != nil {
@@ -184,7 +184,7 @@ func (r *volumesRepo) UpsertVolume(ctx context.Context, params models.CreateVolu
 		Labels:     pgtype.Text{String: string(labels), Valid: len(labels) > 0},
 		Options:    pgtype.Text{String: string(options), Valid: len(options) > 0},
 		Scope:      pgtype.Text{String: params.Scope, Valid: params.Scope != ""},
-		Status:     pgtype.Text{String: params.Status, Valid: params.Status != ""},
+		Status:     params.Status,
 		IsActive:   pgtype.Bool{Bool: params.IsActive, Valid: true},
 	})
 	if err != nil {
@@ -265,7 +265,7 @@ func (r *volumesRepo) CreateContainer(ctx context.Context, params models.CreateC
 		Name:        params.Name,
 		Image:       params.Image,
 		State:       params.State,
-		Status:      pgtype.Text{String: params.Status, Valid: params.Status != ""},
+		Status:      params.Status,
 		Labels:      pgtype.Text{String: string(labels), Valid: len(labels) > 0},
 		StartedAt:   startedAt,
 		FinishedAt:  finishedAt,
@@ -310,7 +310,7 @@ func (r *volumesRepo) GetContainerByContainerID(ctx context.Context, containerID
 		Name:        row.Name,
 		Image:       row.Image,
 		State:       row.State,
-		Status:      row.Status.String,
+		Status:      row.Status,
 		Labels:      labels,
 		IsActive:    row.IsActive.Bool,
 		CreatedAt:   row.CreatedAt,
@@ -343,7 +343,7 @@ func (r *volumesRepo) UpsertContainer(ctx context.Context, params models.CreateC
 		Name:        params.Name,
 		Image:       params.Image,
 		State:       params.State,
-		Status:      pgtype.Text{String: params.Status, Valid: params.Status != ""},
+		Status:      params.Status,
 		Labels:      pgtype.Text{String: string(labels), Valid: len(labels) > 0},
 		StartedAt:   startedAt,
 		FinishedAt:  finishedAt,
@@ -463,7 +463,7 @@ func (r *volumesRepo) convertRowToVolume(row interface{}) (*models.Volume, error
 			Driver:     v.Driver,
 			Mountpoint: v.Mountpoint,
 			Scope:      v.Scope.String,
-			Status:     v.Status.String,
+			Status:     v.Status,
 			IsActive:   v.IsActive.Bool,
 			CreatedAt:  v.CreatedAt,
 			UpdatedAt:  v.UpdatedAt,

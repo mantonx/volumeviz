@@ -158,6 +158,44 @@ export interface FilesystemCapabilitiesResponse {
   supported_media_kinds?: string[];
 }
 
+export interface FilesystemCapacity {
+  /**
+   * Available space in bytes
+   * @example 114419344240640
+   */
+  available_bytes?: number;
+  /**
+   * Filesystem block size
+   * @example 1024
+   */
+  block_size?: number;
+  /**
+   * Free blocks available
+   * @example 111737640860
+   */
+  free_blocks?: number;
+  /**
+   * Total blocks
+   * @example 260720725420
+   */
+  total_blocks?: number;
+  /**
+   * Total filesystem capacity in bytes
+   * @example 266978022830080
+   */
+  total_bytes?: number;
+  /**
+   * Usage percentage (0-100)
+   * @example 57.14
+   */
+  usage_percent?: number;
+  /**
+   * Used space in bytes
+   * @example 152558678589440
+   */
+  used_bytes?: number;
+}
+
 export interface FilesystemIndexingResponse {
   /** @example 1073741824 */
   bytes_processed?: number;
@@ -361,10 +399,13 @@ export interface VolumeStatsResponse {
 export interface VolumeV1 {
   /** @example 2 */
   attachments_count?: number;
+  /** @example ["media-server", "plex"] */
+  container_names?: string[];
   /** @example "2023-01-01T10:00:00Z" */
   created_at?: string;
   /** @example "local" */
   driver?: string;
+  filesystem_capacity?: FilesystemCapacity;
   /** @example false */
   is_orphaned?: boolean;
   /** @example false */
@@ -557,6 +598,128 @@ export interface GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParams {
   name: string;
   query: string;
   threshold: number;
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesActionBreakdown {
+  exclude?: number;
+  include?: number;
+  unmatched?: number;
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesConditionResult {
+  error?: any;
+  field_name?: string;
+  matched?: boolean;
+  operator?: string;
+  value?: string;
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesConflictAnalysis {
+  conflicting_rules?: GithubComMantonxVolumevizInternalServicesRulesRuleConflict[];
+  has_conflicts?: boolean;
+  /** how conflicts are resolved */
+  resolution?: string;
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesMountPreview {
+  /** whether action would change */
+  action_changed?: boolean;
+  /** all matching rules (if detailed) */
+  all_matches?: GithubComMantonxVolumevizInternalServicesRulesRuleMatchSummary[];
+  /** rule conflicts if any */
+  conflict_details?: GithubComMantonxVolumevizInternalServicesRulesConflictAnalysis;
+  /** current tracking status */
+  current_action?: string;
+  mount?: GithubComMantonxVolumevizInternalServicesRulesMountSummary;
+  /** predicted action based on rules */
+  preview_action?: string;
+  /** highest priority matching rule */
+  winning_rule?: GithubComMantonxVolumevizInternalServicesRulesRuleMatchSummary;
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesMountSummary {
+  compose_project?: string;
+  compose_services?: string[];
+  container_count?: number;
+  id?: number;
+  is_orphaned?: boolean;
+  is_tracked?: boolean;
+  mount_id?: string;
+  mount_type?: string;
+  source_path?: string;
+  volume_name?: string;
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesPreviewRequest {
+  /** DryRun mode - if true, doesn't create evaluation records */
+  dry_run?: boolean;
+  /** IncludeRuleDetails whether to include detailed rule condition matching info */
+  include_rule_details?: boolean;
+  /** IncludeUnmatched whether to include mounts that don't match any rules */
+  include_unmatched?: boolean;
+  /** MountIDs to limit preview to specific mounts (if empty, all mounts are evaluated) */
+  mount_ids?: string[];
+  /** RuleIDs to include in preview (if empty, all enabled rules are used) */
+  rule_ids?: number[];
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesPreviewResponse {
+  completed_at?: string;
+  errors?: string[];
+  execution_time_ms?: number;
+  mount_previews?: GithubComMantonxVolumevizInternalServicesRulesMountPreview[];
+  preview_id?: string;
+  requested_at?: string;
+  rule_performance?: GithubComMantonxVolumevizInternalServicesRulesRulePerformanceResult[];
+  summary?: GithubComMantonxVolumevizInternalServicesRulesPreviewSummary;
+  warnings?: string[];
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesPreviewSummary {
+  action_breakdown?: Record<string, number>;
+  mounts_evaluated?: number;
+  mounts_excluded?: number;
+  mounts_included?: number;
+  mounts_matched?: number;
+  mounts_unmatched?: number;
+  project_breakdown?: Record<
+    string,
+    GithubComMantonxVolumevizInternalServicesRulesActionBreakdown
+  >;
+  rules_evaluated?: number;
+  total_mounts?: number;
+  type_breakdown?: Record<
+    string,
+    GithubComMantonxVolumevizInternalServicesRulesActionBreakdown
+  >;
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesRuleConflict {
+  /** description of the conflict */
+  conflict?: string;
+  rule1?: GithubComMantonxVolumevizInternalServicesRulesRuleMatchSummary;
+  rule2?: GithubComMantonxVolumevizInternalServicesRulesRuleMatchSummary;
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesRuleMatchSummary {
+  action?: string;
+  execution_time_ms?: number;
+  /** 0.0-1.0 based on condition matches */
+  match_confidence?: number;
+  matched?: boolean;
+  matched_conditions?: GithubComMantonxVolumevizInternalServicesRulesConditionResult[];
+  priority?: number;
+  rule_id?: number;
+  rule_name?: string;
+}
+
+export interface GithubComMantonxVolumevizInternalServicesRulesRulePerformanceResult {
+  avg_execution_time_ms?: number;
+  mounts_evaluated?: number;
+  mounts_matched?: number;
+  rule_id?: number;
+  rule_name?: string;
+  total_execution_time_ms?: number;
 }
 
 export interface InternalApiV1DiagRealtimeDiagnostics {
@@ -809,6 +972,93 @@ export interface InternalApiV1MetadataGetFilesByResolutionResponse {
   total_pages?: number;
 }
 
+export interface InternalApiV1MountsDiscoverMountsRequest {
+  /** @example false */
+  force?: boolean;
+}
+
+export interface InternalApiV1MountsDiscoverMountsResponse {
+  /** @example "Mount discovery completed successfully" */
+  message?: string;
+  /** @example true */
+  triggered?: boolean;
+}
+
+export interface InternalApiV1MountsMountCatalogResponse {
+  /** @example "myapp" */
+  compose_project?: string;
+  /** @example ["web","api"] */
+  compose_services?: string[];
+  /** @example "3.8" */
+  compose_version?: string;
+  /** @example 2 */
+  container_count?: number;
+  /**
+   * @format date-time
+   * @example "2024-01-01T12:00:00Z"
+   */
+  created_at?: string;
+  /** @example "docker_engine" */
+  discovery_source?: string;
+  /**
+   * @format date-time
+   * @example "2024-01-01T12:00:00Z"
+   */
+  first_discovered_at?: string;
+  /** @example 1 */
+  id?: number;
+  /** @example false */
+  is_orphaned?: boolean;
+  /** @example true */
+  is_tracked?: boolean;
+  /**
+   * @format date-time
+   * @example "2024-01-01T14:30:00Z"
+   */
+  last_seen_at?: string;
+  /** @example "vol_abc123" */
+  mount_id?: string;
+  /** @example "volume" */
+  mount_type?: "volume" | "bind" | "tmpfs";
+  /** @example "/var/lib/docker/volumes/my-app-data/_data" */
+  source_path?: string;
+  /** @format date-time */
+  tracking_disabled_at?: string;
+  /**
+   * @format date-time
+   * @example "2024-01-01T12:00:00Z"
+   */
+  tracking_enabled_at?: string;
+  /**
+   * @format date-time
+   * @example "2024-01-01T14:30:00Z"
+   */
+  updated_at?: string;
+  /** @example "local" */
+  volume_driver?: string;
+  /** @example "my-app-data" */
+  volume_name?: string;
+  /** @example "local" */
+  volume_scope?: string;
+}
+
+export interface InternalApiV1MountsMountCatalogSummaryResponse {
+  /** @example 8 */
+  bind_mounts?: number;
+  /** @example 5 */
+  compose_projects?: number;
+  /** @example 3 */
+  orphaned_mounts?: number;
+  /** @example 2 */
+  tmpfs_mounts?: number;
+  /** @example 25 */
+  total_mounts?: number;
+  /** @example 20 */
+  tracked_mounts?: number;
+  /** @example 15 */
+  volume_mounts?: number;
+}
+
 export interface InternalApiV1PreviewsPreviewRequest {
   file_hash?: string;
   file_id: number;
@@ -833,6 +1083,185 @@ export interface InternalApiV1PreviewsPreviewResponse {
   type?: string;
   url?: string;
   width?: number;
+}
+
+export interface InternalApiV1RulesApplyTrackingRulesRequest {
+  dry_run?: boolean;
+}
+
+export interface InternalApiV1RulesApplyTrackingRulesResponse {
+  applied_at?: string;
+  changes?: InternalApiV1RulesTrackingChange[];
+  changes_count?: number;
+  dry_run?: boolean;
+}
+
+export interface InternalApiV1RulesConditionRequest {
+  /** @example "source_type" */
+  field_name:
+    | "source_type"
+    | "docker_volume_name"
+    | "host_path"
+    | "compose_project"
+    | "compose_service"
+    | "container_image"
+    | "container_name"
+    | "read_only"
+    | "is_orphaned"
+    | "driver";
+  /** @example false */
+  is_case_sensitive?: boolean;
+  /** @example "equals" */
+  operator:
+    | "equals"
+    | "not_equals"
+    | "prefix"
+    | "suffix"
+    | "contains"
+    | "not_contains"
+    | "regex"
+    | "not_regex"
+    | "glob"
+    | "in"
+    | "not_in";
+  /** @example "volume" */
+  value?: string;
+  /** @example ["volume","bind"] */
+  values?: string[];
+}
+
+export interface InternalApiV1RulesCreateMountOverrideRequest {
+  action: "include" | "exclude";
+  created_by?: string;
+  mount_id: string;
+  reason?: string;
+}
+
+export interface InternalApiV1RulesCreateRuleRequest {
+  /** @example "include" */
+  action: "include" | "exclude";
+  /** @minItems 1 */
+  conditions: InternalApiV1RulesConditionRequest[];
+  /** @example "admin" */
+  created_by?: string;
+  /** @example "Include all named Docker volumes for tracking" */
+  description?: string;
+  /** @example true */
+  is_enabled?: boolean;
+  /** @example "Include Docker Volumes" */
+  name: string;
+  /**
+   * @min 1
+   * @max 1000
+   * @example 100
+   */
+  priority?: number;
+}
+
+export interface InternalApiV1RulesListMountOverridesResponse {
+  overrides?: InternalApiV1RulesMountOverrideResponse[];
+  total?: number;
+}
+
+export interface InternalApiV1RulesListRuleTemplatesResponse {
+  templates?: InternalApiV1RulesRuleTemplate[];
+  total?: number;
+}
+
+export interface InternalApiV1RulesListRulesResponse {
+  rules?: InternalApiV1RulesRuleResponse[];
+  total?: number;
+}
+
+export interface InternalApiV1RulesMountOverrideResponse {
+  action?: string;
+  created_at?: string;
+  created_by?: string;
+  id?: number;
+  mount_id?: string;
+  reason?: string;
+  updated_at?: string;
+}
+
+export interface InternalApiV1RulesRuleConfigUpdate {
+  id: number;
+  is_enabled?: boolean;
+  priority?: number;
+}
+
+export interface InternalApiV1RulesRuleResponse {
+  /** @example "include" */
+  action?: "include" | "exclude";
+  conditions?: InternalApiV1RulesConditionRequest[];
+  /** @format date-time */
+  created_at?: string;
+  /** @example "admin" */
+  created_by?: string;
+  /** @example "Include all named Docker volumes for tracking" */
+  description?: string;
+  /** @example 1 */
+  id?: number;
+  /** @example true */
+  is_enabled?: boolean;
+  /** @format date-time */
+  last_evaluation_at?: string;
+  /** @format date-time */
+  last_matched_at?: string;
+  /** @example 5 */
+  match_count?: number;
+  /** @example "Include Docker Volumes" */
+  name?: string;
+  /**
+   * @min 1
+   * @max 1000
+   * @example 100
+   */
+  priority?: number;
+  /** @format date-time */
+  updated_at?: string;
+}
+
+export interface InternalApiV1RulesRuleTemplate {
+  category?: string;
+  created_at?: string;
+  description?: string;
+  id?: number;
+  is_builtin?: boolean;
+  last_used_at?: string;
+  name?: string;
+  tags?: string[];
+  template_data?: Record<string, any>;
+  updated_at?: string;
+  usage_count?: number;
+}
+
+export interface InternalApiV1RulesTrackingChange {
+  mount_id?: string;
+  mount_name?: string;
+  mount_type?: string;
+  new_action?: string;
+  old_action?: string;
+  rule_name?: string;
+  rule_priority?: number;
+}
+
+export interface InternalApiV1RulesTrackingRulesConfigResponse {
+  enabled?: number;
+  rules?: InternalApiV1RulesRuleResponse[];
+  total?: number;
+}
+
+export interface InternalApiV1RulesUpdateRuleRequest {
+  action?: "include" | "exclude";
+  conditions?: InternalApiV1RulesConditionRequest[];
+  description?: string;
+  is_enabled?: boolean;
+  name?: string;
+  priority?: number;
+}
+
+export interface InternalApiV1RulesUpdateTrackingRulesConfigRequest {
+  rules: InternalApiV1RulesRuleConfigUpdate[];
 }
 
 export interface InternalApiV1SearchCreateSavedSearchRequest {
@@ -2446,6 +2875,330 @@ export class Api<
       }),
 
     /**
+     * @description Returns paginated list of Docker mount catalog entries with advanced filtering, search, and sorting capabilities
+     *
+     * @tags docker-mounts
+     * @name V1MountsList
+     * @summary List mount catalog entries
+     * @request GET:/api/v1/mounts
+     */
+    v1MountsList: (
+      query?: {
+        /**
+         * Page number (default: 1)
+         * @min 1
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Page size (default: 25)
+         * @min 1
+         * @max 100
+         * @example 25
+         */
+        page_size?: number;
+        /**
+         * Sort by: mount_type, compose_project, last_seen, container_count
+         * @example ""mount_type""
+         */
+        sort?: string;
+        /**
+         * Search query for general text search across mount fields
+         * @example ""myapp""
+         */
+        q?: string;
+        /**
+         * Filter by mount ID (partial match)
+         * @example ""vol_""
+         */
+        mount_id?: string;
+        /**
+         * Filter by volume name (partial match)
+         * @example ""data""
+         */
+        volume_name?: string;
+        /**
+         * Filter by Compose project (partial match)
+         * @example ""myproject""
+         */
+        compose_project?: string;
+        /**
+         * Filter by Compose service (partial match)
+         * @example ""web""
+         */
+        compose_service?: string;
+        /**
+         * Filter by mount type
+         * @example ""volume""
+         */
+        type?: "volume" | "bind" | "tmpfs";
+        /**
+         * Filter by status
+         * @example ""active""
+         */
+        status?: "orphaned" | "active";
+        /**
+         * Filter by orphaned status
+         * @example ""false""
+         */
+        is_orphaned?: "true" | "false";
+        /**
+         * Filter by tracking status
+         * @example ""true""
+         */
+        is_tracked?: "true" | "false";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        GinH & {
+          filters?: GinH;
+          mounts?: InternalApiV1MountsMountCatalogResponse[];
+          pagination?: GinH;
+        },
+        GinH
+      >({
+        path: `/api/v1/mounts`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Triggers discovery and cataloging of Docker mounts from the Docker Engine. Scans all running containers and volumes to build/update the mount catalog.
+     *
+     * @tags docker-mounts
+     * @name V1MountsDiscoverCreate
+     * @summary Trigger mount discovery
+     * @request POST:/api/v1/mounts/discover
+     */
+    v1MountsDiscoverCreate: (
+      request: InternalApiV1MountsDiscoverMountsRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1MountsDiscoverMountsResponse, GinH>({
+        path: `/api/v1/mounts/discover`,
+        method: "POST",
+        body: request,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Returns summary statistics for the Docker mount catalog including counts by type, orphaned status, and tracking status
+     *
+     * @tags docker-mounts
+     * @name V1MountsSummaryList
+     * @summary Get mount catalog summary
+     * @request GET:/api/v1/mounts/summary
+     */
+    v1MountsSummaryList: (params: RequestParams = {}) =>
+      this.request<InternalApiV1MountsMountCatalogSummaryResponse, GinH>({
+        path: `/api/v1/mounts/summary`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Returns detailed metadata for a specific mount including volume info, compose metadata, and tracking status
+     *
+     * @tags docker-mounts
+     * @name V1MountsDetail
+     * @summary Get mount details
+     * @request GET:/api/v1/mounts/{id}
+     */
+    v1MountsDetail: (id: string, params: RequestParams = {}) =>
+      this.request<InternalApiV1MountsMountCatalogResponse, GinH>({
+        path: `/api/v1/mounts/${id}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Enable or disable tracking for a specific mount. When tracking is enabled, the mount will be included in volume scans and analysis.
+     *
+     * @tags docker-mounts
+     * @name V1MountsTrackingUpdate
+     * @summary Update mount tracking status
+     * @request PUT:/api/v1/mounts/{mount_id}/tracking
+     */
+    v1MountsTrackingUpdate: (
+      mountId: string,
+      request: {
+        is_tracked?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1MountsMountCatalogResponse, GinH>({
+        path: `/api/v1/mounts/${mountId}/tracking`,
+        method: "PUT",
+        body: request,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Lists all tracking rules with optional filtering by enabled status or action
+     *
+     * @tags tracking-rules
+     * @name V1RulesList
+     * @summary List tracking rules
+     * @request GET:/api/v1/rules
+     */
+    v1RulesList: (
+      query?: {
+        /** Filter by enabled status */
+        enabled?: boolean;
+        /** Filter by action (include/exclude) */
+        action?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1RulesListRulesResponse, GinH>({
+        path: `/api/v1/rules`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Creates a new tracking rule for mount filtering
+     *
+     * @tags tracking-rules
+     * @name V1RulesCreate
+     * @summary Create a new tracking rule
+     * @request POST:/api/v1/rules
+     */
+    v1RulesCreate: (
+      rule: InternalApiV1RulesCreateRuleRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1RulesRuleResponse, GinH>({
+        path: `/api/v1/rules`,
+        method: "POST",
+        body: rule,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Lists available rule templates for quick rule creation
+     *
+     * @tags tracking-rules
+     * @name V1RulesTemplatesList
+     * @summary Get rule templates
+     * @request GET:/api/v1/rules/templates
+     */
+    v1RulesTemplatesList: (
+      query?: {
+        /** Filter by template category */
+        category?: string;
+        /** Filter builtin templates only */
+        builtin?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1RulesListRuleTemplatesResponse, any>({
+        path: `/api/v1/rules/templates`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieves a single tracking rule by its ID
+     *
+     * @tags tracking-rules
+     * @name V1RulesDetail
+     * @summary Get a tracking rule by ID
+     * @request GET:/api/v1/rules/{id}
+     */
+    v1RulesDetail: (id: number, params: RequestParams = {}) =>
+      this.request<InternalApiV1RulesRuleResponse, GinH>({
+        path: `/api/v1/rules/${id}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Updates an existing tracking rule
+     *
+     * @tags tracking-rules
+     * @name V1RulesUpdate
+     * @summary Update a tracking rule
+     * @request PUT:/api/v1/rules/{id}
+     */
+    v1RulesUpdate: (
+      id: number,
+      rule: InternalApiV1RulesUpdateRuleRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1RulesRuleResponse, GinH>({
+        path: `/api/v1/rules/${id}`,
+        method: "PUT",
+        body: rule,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Deletes a tracking rule by ID
+     *
+     * @tags tracking-rules
+     * @name V1RulesDelete
+     * @summary Delete a tracking rule
+     * @request DELETE:/api/v1/rules/{id}
+     */
+    v1RulesDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, GinH>({
+        path: `/api/v1/rules/${id}`,
+        method: "DELETE",
+        ...params,
+      }),
+
+    /**
+     * @description Disables a tracking rule by setting is_enabled to false
+     *
+     * @tags tracking-rules
+     * @name V1RulesDisableUpdate
+     * @summary Disable a tracking rule
+     * @request PUT:/api/v1/rules/{id}/disable
+     */
+    v1RulesDisableUpdate: (id: number, params: RequestParams = {}) =>
+      this.request<InternalApiV1RulesRuleResponse, GinH>({
+        path: `/api/v1/rules/${id}/disable`,
+        method: "PUT",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Enables a tracking rule by setting is_enabled to true
+     *
+     * @tags tracking-rules
+     * @name V1RulesEnableUpdate
+     * @summary Enable a tracking rule
+     * @request PUT:/api/v1/rules/{id}/enable
+     */
+    v1RulesEnableUpdate: (id: number, params: RequestParams = {}) =>
+      this.request<InternalApiV1RulesRuleResponse, GinH>({
+        path: `/api/v1/rules/${id}/enable`,
+        method: "PUT",
+        format: "json",
+        ...params,
+      }),
+
+    /**
      * @description Search files across volumes with text search and metadata filters
      *
      * @tags Search
@@ -2660,6 +3413,140 @@ export class Api<
         path: `/api/v1/search/suggestions`,
         method: "GET",
         query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Applies tracking rules to update mount tracking status in the catalog
+     *
+     * @tags tracking-rules-apply
+     * @name V1TrackingApplyCreate
+     * @summary Apply tracking rules
+     * @request POST:/api/v1/tracking/apply
+     */
+    v1TrackingApplyCreate: (
+      request: InternalApiV1RulesApplyTrackingRulesRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1RulesApplyTrackingRulesResponse, GinH>({
+        path: `/api/v1/tracking/apply`,
+        method: "POST",
+        body: request,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Lists all per-mount tracking overrides
+     *
+     * @tags tracking-overrides
+     * @name V1TrackingOverridesList
+     * @summary List mount tracking overrides
+     * @request GET:/api/v1/tracking/overrides
+     */
+    v1TrackingOverridesList: (params: RequestParams = {}) =>
+      this.request<InternalApiV1RulesListMountOverridesResponse, GinH>({
+        path: `/api/v1/tracking/overrides`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Creates a per-mount tracking override that supersedes rule-based decisions
+     *
+     * @tags tracking-overrides
+     * @name V1TrackingOverridesCreate
+     * @summary Create mount tracking override
+     * @request POST:/api/v1/tracking/overrides
+     */
+    v1TrackingOverridesCreate: (
+      override: InternalApiV1RulesCreateMountOverrideRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1RulesMountOverrideResponse, GinH>({
+        path: `/api/v1/tracking/overrides`,
+        method: "POST",
+        body: override,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Deletes a per-mount tracking override by mount ID
+     *
+     * @tags tracking-overrides
+     * @name V1TrackingOverridesDelete
+     * @summary Delete mount tracking override
+     * @request DELETE:/api/v1/tracking/overrides/{mount_id}
+     */
+    v1TrackingOverridesDelete: (mountId: string, params: RequestParams = {}) =>
+      this.request<void, GinH>({
+        path: `/api/v1/tracking/overrides/${mountId}`,
+        method: "DELETE",
+        ...params,
+      }),
+
+    /**
+     * @description Previews how tracking rules would be applied to the current mount catalog
+     *
+     * @tags tracking-rules-preview
+     * @name V1TrackingPreviewCreate
+     * @summary Preview tracking rules evaluation
+     * @request POST:/api/v1/tracking/preview
+     */
+    v1TrackingPreviewCreate: (
+      request: GithubComMantonxVolumevizInternalServicesRulesPreviewRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        GithubComMantonxVolumevizInternalServicesRulesPreviewResponse,
+        GinH
+      >({
+        path: `/api/v1/tracking/preview`,
+        method: "POST",
+        body: request,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Returns the complete tracking rules configuration with priority ordering
+     *
+     * @tags tracking-rules-config
+     * @name V1TrackingRulesList
+     * @summary Get tracking rules configuration
+     * @request GET:/api/v1/tracking/rules
+     */
+    v1TrackingRulesList: (params: RequestParams = {}) =>
+      this.request<InternalApiV1RulesTrackingRulesConfigResponse, GinH>({
+        path: `/api/v1/tracking/rules`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Updates tracking rules configuration including priority reordering and enable/disable
+     *
+     * @tags tracking-rules-config
+     * @name V1TrackingRulesUpdate
+     * @summary Update tracking rules configuration
+     * @request PUT:/api/v1/tracking/rules
+     */
+    v1TrackingRulesUpdate: (
+      config: InternalApiV1RulesUpdateTrackingRulesConfigRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<InternalApiV1RulesTrackingRulesConfigResponse, GinH>({
+        path: `/api/v1/tracking/rules`,
+        method: "PUT",
+        body: config,
         type: ContentType.Json,
         format: "json",
         ...params,

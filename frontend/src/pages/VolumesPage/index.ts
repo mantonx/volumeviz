@@ -13,4 +13,4 @@
  * synchronous and asynchronous scanning operations.
  */
 export { VolumesPage } from './VolumesPage';
-export type { VolumesPageProps, VolumeCardProps } from './VolumesPage.types';
+export type { VolumesPageProps } from './VolumesPage.types';

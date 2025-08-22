@@ -34,7 +34,7 @@ export interface ApiError {
 export const apiConfigAtom = atomWithStorage<ApiConfig>(
   'volumeviz-api-config',
   {
-    baseUrl: import.meta.env?.VITE_API_URL || 'http://localhost:8080/api/v1',
+    baseUrl: import.meta.env?.VITE_API_URL || 'http://localhost:8080',
     timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000,

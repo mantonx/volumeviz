@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
-import { VolumeDriver } from '../../../types/api';
+import { VolumeDriver } from '@/api/generated/volumeviz-api';
 import { formatBytes } from '../../../utils/formatters';
 
 export interface FilterChip {

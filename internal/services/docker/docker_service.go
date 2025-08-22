@@ -81,9 +81,38 @@ func (s *DockerService) ListVolumes(ctx context.Context) ([]models.Volume, error
 		return nil, utils.WrapError(err, "failed to list volumes")
 	}
 
+	// Get disk usage data which includes volume sizes
+	diskUsage, err := s.client.DiskUsage(ctx, types.DiskUsageOptions{
+		Types: []types.DiskUsageObject{types.VolumeObject},
+	})
+	if err != nil {
+		// Log the error but don't fail the request - volumes will just show without sizes
+		// This maintains backward compatibility if the Docker daemon doesn't support /system/df
+		diskUsage = types.DiskUsage{}
+	}
+
+	// Create a map of volume names to disk usage data for quick lookup
+	volumeSizeMap := make(map[string]*volume.UsageData)
+	if len(diskUsage.Volumes) > 0 {
+		for _, vol := range diskUsage.Volumes {
+			if vol.UsageData != nil {
+				volumeSizeMap[vol.Name] = vol.UsageData
+			}
+		}
+	}
+
 	volumes := make([]models.Volume, 0, len(volumeResp.Volumes))
 	for _, vol := range volumeResp.Volumes {
 		volume := s.convertToVolumeModel(*vol)
+		
+		// Override usage data with disk usage information if available
+		if usageData, exists := volumeSizeMap[vol.Name]; exists {
+			volume.UsageData = &models.VolumeUsage{
+				RefCount: int(usageData.RefCount),
+				Size:     usageData.Size,
+			}
+		}
+		
 		volumes = append(volumes, volume)
 	}
 
@@ -100,6 +129,24 @@ func (s *DockerService) GetVolume(ctx context.Context, volumeID string) (*models
 
 	// Convert to our model
 	volume := s.convertToVolumeModel(vol)
+
+	// Get disk usage data to populate size information
+	diskUsage, err := s.client.DiskUsage(ctx, types.DiskUsageOptions{
+		Types: []types.DiskUsageObject{types.VolumeObject},
+	})
+	if err == nil && len(diskUsage.Volumes) > 0 {
+		// Find this volume in the disk usage response
+		for _, diskVol := range diskUsage.Volumes {
+			if diskVol.Name == volumeID && diskVol.UsageData != nil {
+				volume.UsageData = &models.VolumeUsage{
+					RefCount: int(diskVol.UsageData.RefCount),
+					Size:     diskVol.UsageData.Size,
+				}
+				break
+			}
+		}
+	}
+
 	return &volume, nil
 }
 

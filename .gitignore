@@ -14,8 +14,13 @@
 # Go workspace file
 go.work
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Dependency directories 
+# Vendor binaries (migrate tool now in vendor/bin)
+vendor/bin/migrate
+vendor/**/*.exe
+vendor/**/*.dll
+vendor/**/*.so
+vendor/**/*.dylib
 
 # Go build cache
 /cmd/server/server

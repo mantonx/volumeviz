@@ -606,6 +606,7 @@ func (vs *VolumeScanner) scanWithMethod(
 	result.VolumeID = volumeID
 	result.Duration = duration
 	result.FilesystemType = vs.detectFilesystemType(path)
+	result.FilesystemCapacity = vs.getFilesystemCapacity(path)
 
 	if err := vs.validateResult(result); err != nil {
 		return nil, &coreModels.ScanError{
@@ -749,6 +750,38 @@ func (vs *VolumeScanner) detectFilesystemType(path string) string {
 		return "ramfs"
 	default:
 		return fmt.Sprintf("unknown(0x%x)", stat.Type)
+	}
+}
+
+// getFilesystemCapacity gets filesystem capacity and usage information
+func (vs *VolumeScanner) getFilesystemCapacity(path string) *interfaces.FilesystemInfo {
+	var stat syscall.Statfs_t
+	err := syscall.Statfs(path, &stat)
+	if err != nil {
+		// Return nil if we can't get filesystem stats
+		return nil
+	}
+
+	// Calculate sizes in bytes
+	blockSize := int64(stat.Bsize)
+	totalBytes := int64(stat.Blocks) * blockSize
+	availableBytes := int64(stat.Bavail) * blockSize  // Available to non-superuser
+	usedBytes := totalBytes - availableBytes
+
+	// Calculate usage percentage
+	var usagePercent float64
+	if totalBytes > 0 {
+		usagePercent = float64(usedBytes) / float64(totalBytes) * 100
+	}
+
+	return &interfaces.FilesystemInfo{
+		TotalBytes:     totalBytes,
+		AvailableBytes: availableBytes,
+		UsedBytes:      usedBytes,
+		UsagePercent:   usagePercent,
+		BlockSize:      blockSize,
+		TotalBlocks:    stat.Blocks,
+		FreeBlocks:     stat.Bavail,
 	}
 }
 

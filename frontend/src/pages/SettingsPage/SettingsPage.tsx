@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAtom, useAtomValue } from 'jotai';
+import { useNavigate } from 'react-router-dom';
 import {
   Settings,
   Monitor,
@@ -10,6 +11,7 @@ import {
   Save,
   RotateCcw,
   Info,
+  Play,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -22,6 +24,7 @@ import {
   featureFlagsAtom,
   environmentAtom,
 } from '@/store';
+import { resetOnboarding } from '@/hooks/useOnboardingCheck';
 import type { SettingsPageProps, ThemeOption } from './SettingsPage.types';
 
 /**
@@ -45,6 +48,7 @@ import type { SettingsPageProps, ThemeOption } from './SettingsPage.types';
  * values, and compatible feature flag combinations.
  */
 export const SettingsPage: React.FC<SettingsPageProps> = () => {
+  const navigate = useNavigate();
   const [theme, setTheme] = useAtom(themeAtom);
   const [autoRefresh, setAutoRefresh] = useAtom(autoRefreshEnabledAtom);
   const [refreshInterval, setRefreshInterval] = useAtom(
@@ -151,6 +155,19 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
   };
 
   /**
+   * Reset onboarding state and redirect to setup wizard.
+   * Shows confirmation dialog before proceeding.
+   */
+  const handleRerunWizard = () => {
+    if (
+      window.confirm('Are you sure you want to re-run the setup wizard? This will reset your onboarding state and redirect you to the wizard.')
+    ) {
+      resetOnboarding();
+      navigate('/onboarding');
+    }
+  };
+
+  /**
    * Get theme display name for UI.
    */
   const getThemeDisplayName = (themeValue: ThemeOption): string => {
@@ -197,6 +214,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
         <Button variant="outline" onClick={handleResetSettings}>
           <RotateCcw className="h-4 w-4 mr-2" />
           Reset to Defaults
+        </Button>
+        <Button variant="outline" onClick={handleRerunWizard}>
+          <Play className="h-4 w-4 mr-2" />
+          Re-run Setup Wizard
         </Button>
       </div>
 

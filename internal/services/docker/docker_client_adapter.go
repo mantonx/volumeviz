@@ -63,3 +63,8 @@ func (a *DockerClientAdapter) InspectContainer(ctx context.Context, containerID 
 func (a *DockerClientAdapter) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {
 	return a.service.Events(ctx, options)
 }
+
+// System operations
+func (a *DockerClientAdapter) DiskUsage(ctx context.Context, options types.DiskUsageOptions) (types.DiskUsage, error) {
+	return a.service.client.DiskUsage(ctx, options)
+}

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { VolumeActions, VolumeAction } from './VolumeActions';
-import { Volume } from '../../../types/api';
+import { VolumeV1 as Volume } from '@/api/generated/volumeviz-api';
 import { Eye, Download, Trash2 } from 'lucide-react';
 
 const meta = {

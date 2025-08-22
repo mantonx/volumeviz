@@ -29,4 +29,7 @@ type DockerClient interface {
 
 	// Events operations
 	Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error)
+
+	// System operations
+	DiskUsage(ctx context.Context, options types.DiskUsageOptions) (types.DiskUsage, error)
 }

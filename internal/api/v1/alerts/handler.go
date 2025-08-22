@@ -70,7 +70,7 @@ func (h *Handler) CreateAlertRule(c *gin.Context) {
 // @Param limit query int false "Number of items to return (default: 50, max: 100)"
 // @Param offset query int false "Number of items to skip (default: 0)"
 // @Param enabled query bool false "Filter by enabled status"
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /alerts/rules [get]
 func (h *Handler) GetAlertRules(c *gin.Context) {
@@ -158,7 +158,7 @@ func (h *Handler) GetAlertRule(c *gin.Context) {
 // @Produce json
 // @Param id path int true "Alert rule ID"
 // @Param rule body models.UpdateAlertRuleParams true "Alert rule updates"
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -228,7 +228,7 @@ func (h *Handler) DeleteAlertRule(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Alert rule ID"
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /alerts/rules/{id}/test [post]
@@ -309,7 +309,7 @@ func (h *Handler) CreateAlertDestination(c *gin.Context) {
 // @Param limit query int false "Number of items to return (default: 50, max: 100)"
 // @Param offset query int false "Number of items to skip (default: 0)"
 // @Param enabled query bool false "Filter by enabled status"
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /alerts/destinations [get]
 func (h *Handler) GetAlertDestinations(c *gin.Context) {
@@ -397,7 +397,7 @@ func (h *Handler) GetAlertDestination(c *gin.Context) {
 // @Produce json
 // @Param id path int true "Alert destination ID"
 // @Param destination body models.UpdateAlertDestinationParams true "Alert destination updates"
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -471,8 +471,8 @@ func (h *Handler) DeleteAlertDestination(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Alert destination ID"
-// @Param request body gin.H true "Test message request"
-// @Success 200 {object} gin.H
+// @Param request body object true "Test message request"
+// @Success 200 {object} models.ErrorResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -516,7 +516,7 @@ func (h *Handler) TestAlertDestination(c *gin.Context) {
 // @Tags alerts
 // @Accept json
 // @Produce json
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /alerts/engine/status [get]
 func (h *Handler) GetEngineStatus(c *gin.Context) {
@@ -538,7 +538,7 @@ func (h *Handler) GetEngineStatus(c *gin.Context) {
 // @Tags alerts
 // @Accept json
 // @Produce json
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /alerts/engine/evaluate [post]
 func (h *Handler) TriggerEvaluation(c *gin.Context) {
@@ -563,7 +563,7 @@ func (h *Handler) TriggerEvaluation(c *gin.Context) {
 // @Param offset query int false "Number of items to skip (default: 0)"
 // @Param status query string false "Filter by status (firing, resolved)"
 // @Param rule_id query int false "Filter by rule ID"
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /alerts [get]
 func (h *Handler) GetAlerts(c *gin.Context) {
@@ -693,7 +693,7 @@ func (h *Handler) CreateAlertRoute(c *gin.Context) {
 // @Param limit query int false "Number of items to return (default: 50, max: 100)"
 // @Param offset query int false "Number of items to skip (default: 0)"
 // @Param destination_id query int false "Filter by destination ID"
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /alerts/routes [get]
 func (h *Handler) GetAlertRoutes(c *gin.Context) {
@@ -784,7 +784,7 @@ func (h *Handler) GetAlertRoute(c *gin.Context) {
 // @Produce json
 // @Param id path int true "Alert route ID"
 // @Param route body models.UpdateAlertRouteParams true "Alert route updates"
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -858,7 +858,7 @@ func (h *Handler) DeleteAlertRoute(c *gin.Context) {
 // @Param alert_id query int false "Filter by alert ID"
 // @Param destination_id query int false "Filter by destination ID"
 // @Param status query string false "Filter by delivery status"
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /alerts/deliveries [get]
 func (h *Handler) GetDeliveryHistory(c *gin.Context) {

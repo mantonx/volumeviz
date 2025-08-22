@@ -10,7 +10,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { Volume } from '../../../types/api';
+import { VolumeV1 as Volume } from '@/api/generated/volumeviz-api';
 
 export interface VolumeAction {
   id: string;

@@ -3,10 +3,13 @@ package repo
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
 )
 
@@ -59,6 +62,74 @@ func (r *StatsRepo) InsertVolumeStats(ctx context.Context, stats *models.DirRoll
 	// For now, skip inserting stats to avoid foreign key constraint violations
 	// TODO: Migrate scheduler to use proper volume-aware stats insertion
 	return nil
+}
+
+// InsertScanResult inserts complete scan result including filesystem capacity
+func (r *StatsRepo) InsertScanResult(ctx context.Context, scanResult *interfaces.ScanResult) error {
+	// Convert ScanResult to InsertVolumeSizeParams
+	params := sqlc.InsertVolumeSizeParams{
+		VolumeID:        scanResult.VolumeID,
+		TotalSize:       scanResult.TotalSize,
+		FileCount:       int64(scanResult.FileCount),
+		DirectoryCount:  int64(scanResult.DirectoryCount),
+		LargestFile:     scanResult.LargestFile,
+		ScanMethod:      scanResult.Method,
+		ScanDuration:    scanResult.Duration.Nanoseconds(),
+		FilesystemType:  pgtype.Text{String: scanResult.FilesystemType, Valid: scanResult.FilesystemType != ""},
+		ChecksumMd5:     pgtype.Text{}, // TODO: Add checksum to ScanResult if needed
+		IsValid:         pgtype.Bool{Bool: true, Valid: true},
+		ErrorMessage:    pgtype.Text{}, // No error for successful scans
+	}
+
+	// Add filesystem capacity if available
+	if scanResult.FilesystemCapacity != nil {
+		params.FsTotalBytes = pgtype.Int8{Int64: scanResult.FilesystemCapacity.TotalBytes, Valid: true}
+		params.FsAvailableBytes = pgtype.Int8{Int64: scanResult.FilesystemCapacity.AvailableBytes, Valid: true}
+		params.FsUsedBytes = pgtype.Int8{Int64: scanResult.FilesystemCapacity.UsedBytes, Valid: true}
+		params.FsUsagePercent = pgtype.Numeric{
+			Int:   big.NewInt(int64(scanResult.FilesystemCapacity.UsagePercent * 100)), // Convert to basis points
+			Exp:   -2, // Two decimal places
+			Valid: true,
+		}
+		params.FsBlockSize = pgtype.Int8{Int64: int64(scanResult.FilesystemCapacity.BlockSize), Valid: true}
+		params.FsTotalBlocks = pgtype.Int8{Int64: int64(scanResult.FilesystemCapacity.TotalBlocks), Valid: true}
+		params.FsFreeBlocks = pgtype.Int8{Int64: int64(scanResult.FilesystemCapacity.FreeBlocks), Valid: true}
+	}
+
+	// Insert the scan result
+	_, err := r.queries.InsertVolumeSize(ctx, params)
+	return err
+}
+
+// GetVolumeFilesystemCapacity retrieves the latest filesystem capacity information for a volume
+func (r *StatsRepo) GetVolumeFilesystemCapacity(ctx context.Context, volumeID string) (*interfaces.FilesystemInfo, error) {
+	volumeSize, err := r.queries.GetLatestVolumeSize(ctx, volumeID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return nil if no filesystem capacity data is available
+	if !volumeSize.FsTotalBytes.Valid {
+		return nil, nil
+	}
+
+	// Convert pgtype values to FilesystemInfo
+	fsInfo := &interfaces.FilesystemInfo{
+		TotalBytes:     volumeSize.FsTotalBytes.Int64,
+		AvailableBytes: volumeSize.FsAvailableBytes.Int64,
+		UsedBytes:      volumeSize.FsUsedBytes.Int64,
+		BlockSize:      volumeSize.FsBlockSize.Int64,
+		TotalBlocks:    uint64(volumeSize.FsTotalBlocks.Int64),
+		FreeBlocks:     uint64(volumeSize.FsFreeBlocks.Int64),
+	}
+
+	// Convert usage percentage from numeric to float64
+	if volumeSize.FsUsagePercent.Valid {
+		// Convert from basis points back to percentage
+		fsInfo.UsagePercent = float64(volumeSize.FsUsagePercent.Int.Int64()) / 100.0
+	}
+
+	return fsInfo, nil
 }
 
 // InsertVolumeStatsWithVolumeID inserts volume statistics with proper volume ID

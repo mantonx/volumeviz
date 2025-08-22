@@ -82,6 +82,11 @@ func (s *pgStore) Health(ctx context.Context) error {
 	return s.conn.Pool.Ping(ctx)
 }
 
+// Queries returns the raw SQLC queries for direct access
+func (s *pgStore) Queries() interface{} {
+	return s.conn.Queries
+}
+
 
 
 

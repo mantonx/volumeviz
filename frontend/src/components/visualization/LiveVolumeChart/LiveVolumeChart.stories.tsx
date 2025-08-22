@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/test';
 import { Provider } from 'jotai';
 import { LiveVolumeChart } from './LiveVolumeChart';
-import type { Volume } from '../../../types/api';
+import type { VolumeV1 as Volume } from '@/api/generated/volumeviz-api';
 
 const meta: Meta<typeof LiveVolumeChart> = {
   title: 'Visualization/LiveVolumeChart',

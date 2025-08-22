@@ -39,3 +39,18 @@ sql:
           - column: "*.snapshot_date"
             go_type:
               type: "time.Time"
+          - column: "*.mount_type"
+            go_type:
+              type: "string"
+          - column: "*.access_mode"
+            go_type:
+              type: "string"
+          - column: "*.action"
+            go_type:
+              type: "string"
+          - column: "*.operator"
+            go_type:
+              type: "string"
+          - column: "*.status"
+            go_type:
+              type: "string"

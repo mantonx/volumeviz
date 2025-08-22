@@ -415,7 +415,9 @@ func (q *Queries) GetLatestVolumeMetric(ctx context.Context, volumeID string) (G
 const getLatestVolumeSize = `-- name: GetLatestVolumeSize :one
 SELECT id, volume_id, total_size, file_count, directory_count, 
        largest_file, scan_method, scan_duration, filesystem_type,
-       checksum_md5, is_valid, error_message, created_at, updated_at
+       checksum_md5, is_valid, error_message, created_at, updated_at,
+       fs_total_bytes, fs_available_bytes, fs_used_bytes, 
+       fs_usage_percent, fs_block_size, fs_total_blocks, fs_free_blocks
 FROM volume_sizes 
 WHERE volume_id = $1 AND is_valid = true
 ORDER BY created_at DESC
@@ -440,6 +442,13 @@ func (q *Queries) GetLatestVolumeSize(ctx context.Context, volumeID string) (Vol
 		&i.ErrorMessage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FsTotalBytes,
+		&i.FsAvailableBytes,
+		&i.FsUsedBytes,
+		&i.FsUsagePercent,
+		&i.FsBlockSize,
+		&i.FsTotalBlocks,
+		&i.FsFreeBlocks,
 	)
 	return i, err
 }
@@ -818,15 +827,32 @@ type GetVolumeSizesByVolumeIDParams struct {
 	Limit    int32  `json:"limit"`
 }
 
-func (q *Queries) GetVolumeSizesByVolumeID(ctx context.Context, arg GetVolumeSizesByVolumeIDParams) ([]VolumeSizes, error) {
+type GetVolumeSizesByVolumeIDRow struct {
+	ID             int64       `json:"id"`
+	VolumeID       string      `json:"volume_id"`
+	TotalSize      int64       `json:"total_size"`
+	FileCount      int64       `json:"file_count"`
+	DirectoryCount int64       `json:"directory_count"`
+	LargestFile    int64       `json:"largest_file"`
+	ScanMethod     string      `json:"scan_method"`
+	ScanDuration   int64       `json:"scan_duration"`
+	FilesystemType pgtype.Text `json:"filesystem_type"`
+	ChecksumMd5    pgtype.Text `json:"checksum_md5"`
+	IsValid        pgtype.Bool `json:"is_valid"`
+	ErrorMessage   pgtype.Text `json:"error_message"`
+	CreatedAt      time.Time   `json:"created_at"`
+	UpdatedAt      time.Time   `json:"updated_at"`
+}
+
+func (q *Queries) GetVolumeSizesByVolumeID(ctx context.Context, arg GetVolumeSizesByVolumeIDParams) ([]GetVolumeSizesByVolumeIDRow, error) {
 	rows, err := q.db.Query(ctx, getVolumeSizesByVolumeID, arg.VolumeID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []VolumeSizes{}
+	items := []GetVolumeSizesByVolumeIDRow{}
 	for rows.Next() {
-		var i VolumeSizes
+		var i GetVolumeSizesByVolumeIDRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.VolumeID,
@@ -908,24 +934,33 @@ const insertVolumeSize = `-- name: InsertVolumeSize :one
 INSERT INTO volume_sizes (
     volume_id, total_size, file_count, directory_count, 
     largest_file, scan_method, scan_duration, filesystem_type,
-    checksum_md5, is_valid, error_message
+    checksum_md5, is_valid, error_message,
+    fs_total_bytes, fs_available_bytes, fs_used_bytes, 
+    fs_usage_percent, fs_block_size, fs_total_blocks, fs_free_blocks
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 RETURNING id, created_at, updated_at
 `
 
 type InsertVolumeSizeParams struct {
-	VolumeID       string      `json:"volume_id"`
-	TotalSize      int64       `json:"total_size"`
-	FileCount      int64       `json:"file_count"`
-	DirectoryCount int64       `json:"directory_count"`
-	LargestFile    int64       `json:"largest_file"`
-	ScanMethod     string      `json:"scan_method"`
-	ScanDuration   int64       `json:"scan_duration"`
-	FilesystemType pgtype.Text `json:"filesystem_type"`
-	ChecksumMd5    pgtype.Text `json:"checksum_md5"`
-	IsValid        pgtype.Bool `json:"is_valid"`
-	ErrorMessage   pgtype.Text `json:"error_message"`
+	VolumeID         string         `json:"volume_id"`
+	TotalSize        int64          `json:"total_size"`
+	FileCount        int64          `json:"file_count"`
+	DirectoryCount   int64          `json:"directory_count"`
+	LargestFile      int64          `json:"largest_file"`
+	ScanMethod       string         `json:"scan_method"`
+	ScanDuration     int64          `json:"scan_duration"`
+	FilesystemType   pgtype.Text    `json:"filesystem_type"`
+	ChecksumMd5      pgtype.Text    `json:"checksum_md5"`
+	IsValid          pgtype.Bool    `json:"is_valid"`
+	ErrorMessage     pgtype.Text    `json:"error_message"`
+	FsTotalBytes     pgtype.Int8    `json:"fs_total_bytes"`
+	FsAvailableBytes pgtype.Int8    `json:"fs_available_bytes"`
+	FsUsedBytes      pgtype.Int8    `json:"fs_used_bytes"`
+	FsUsagePercent   pgtype.Numeric `json:"fs_usage_percent"`
+	FsBlockSize      pgtype.Int8    `json:"fs_block_size"`
+	FsTotalBlocks    pgtype.Int8    `json:"fs_total_blocks"`
+	FsFreeBlocks     pgtype.Int8    `json:"fs_free_blocks"`
 }
 
 type InsertVolumeSizeRow struct {
@@ -951,6 +986,13 @@ func (q *Queries) InsertVolumeSize(ctx context.Context, arg InsertVolumeSizePara
 		arg.ChecksumMd5,
 		arg.IsValid,
 		arg.ErrorMessage,
+		arg.FsTotalBytes,
+		arg.FsAvailableBytes,
+		arg.FsUsedBytes,
+		arg.FsUsagePercent,
+		arg.FsBlockSize,
+		arg.FsTotalBlocks,
+		arg.FsFreeBlocks,
 	)
 	var i InsertVolumeSizeRow
 	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)

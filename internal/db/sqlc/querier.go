@@ -28,6 +28,8 @@ type Querier interface {
 	CleanupOldAlerts(ctx context.Context) error
 	CleanupOldDeliveries(ctx context.Context) error
 	CleanupOrphanedPreviews(ctx context.Context) error
+	// Mark attachments as inactive if they haven't been updated recently
+	CleanupStaleAttachments(ctx context.Context) ([]DockerMountAttachments, error)
 	CompactDailyToWeekly(ctx context.Context) error
 	CompleteScanJob(ctx context.Context, arg CompleteScanJobParams) (CompleteScanJobRow, error)
 	// Compute daily aggregates for a volume on a specific date
@@ -99,6 +101,13 @@ type Querier interface {
 	// FOLDER OPERATIONS
 	// =======================
 	CreateFolder(ctx context.Context, arg CreateFolderParams) (CreateFolderRow, error)
+	CreateMountAttachment(ctx context.Context, arg CreateMountAttachmentParams) (DockerMountAttachments, error)
+	// Docker Mount Catalog Queries (VV-301)
+	// SQLC queries for Docker mount catalog operations
+	CreateMountCatalogEntry(ctx context.Context, arg CreateMountCatalogEntryParams) (DockerMountCatalog, error)
+	CreateMountStatistics(ctx context.Context, arg CreateMountStatisticsParams) (DockerMountStatistics, error)
+	// Mount Tracking Assignments
+	CreateMountTrackingAssignment(ctx context.Context, arg CreateMountTrackingAssignmentParams) (MountTrackingAssignments, error)
 	CreatePreview(ctx context.Context, arg CreatePreviewParams) (Previews, error)
 	// Saved Searches CRUD Operations
 	CreateSavedSearch(ctx context.Context, arg CreateSavedSearchParams) (SavedSearches, error)
@@ -110,6 +119,13 @@ type Querier interface {
 	CreateScanJob(ctx context.Context, arg CreateScanJobParams) (CreateScanJobRow, error)
 	// Job tracking queries
 	CreateStatsJob(ctx context.Context, arg CreateStatsJobParams) (int64, error)
+	CreateTrackingRule(ctx context.Context, arg CreateTrackingRuleParams) (TrackingRules, error)
+	// Rule Conditions
+	CreateTrackingRuleCondition(ctx context.Context, arg CreateTrackingRuleConditionParams) (TrackingRuleConditions, error)
+	// Rule Evaluations
+	CreateTrackingRuleEvaluation(ctx context.Context, arg CreateTrackingRuleEvaluationParams) (TrackingRuleEvaluations, error)
+	// Rule Templates
+	CreateTrackingRuleTemplate(ctx context.Context, arg CreateTrackingRuleTemplateParams) (TrackingRuleTemplates, error)
 	// =============================================================================
 	// VOLUMEVIZ STATISTICS QUERIES - CONSOLIDATED
 	// =============================================================================
@@ -131,6 +147,10 @@ type Querier interface {
 	// VOLUME MOUNT OPERATIONS
 	// =======================
 	CreateVolumeMount(ctx context.Context, arg CreateVolumeMountParams) (CreateVolumeMountRow, error)
+	DeactivateAllMountTrackingAssignments(ctx context.Context, mountCatalogID pgtype.Int8) error
+	DeactivateContainerAttachments(ctx context.Context, containerID string) ([]DockerMountAttachments, error)
+	DeactivateMountAttachment(ctx context.Context, arg DeactivateMountAttachmentParams) (DockerMountAttachments, error)
+	DeactivateMountTrackingAssignment(ctx context.Context, id int64) error
 	DeactivateVolumeMounts(ctx context.Context, containerID string) error
 	DeleteAlert(ctx context.Context, id int64) error
 	DeleteAlertDelivery(ctx context.Context, id int64) error
@@ -140,6 +160,7 @@ type Querier interface {
 	DeleteDirNodesByVolume(ctx context.Context, volumeID string) error
 	// This is a no-op in the new schema
 	DeleteDirRollupsByVolume(ctx context.Context) error
+	DeleteExpiredMountTrackingAssignments(ctx context.Context) error
 	DeleteFile(ctx context.Context, id int64) error
 	DeleteFileMetadataByFileID(ctx context.Context, fileID int64) error
 	DeleteFileMetadataByVolumeID(ctx context.Context, volumeID string) error
@@ -147,8 +168,11 @@ type Querier interface {
 	DeleteFilesByVolume(ctx context.Context, volumeID string) error
 	DeleteFolder(ctx context.Context, id int64) error
 	DeleteFoldersByVolume(ctx context.Context, volumeID string) error
+	DeleteMountCatalogEntry(ctx context.Context, mountID string) error
+	DeleteMountTrackingAssignment(ctx context.Context, id int64) error
 	DeleteOldDailySnapshots(ctx context.Context) error
 	DeleteOldScanJobs(ctx context.Context, createdAt time.Time) error
+	DeleteOldTrackingRuleEvaluations(ctx context.Context, startedAt pgtype.Timestamptz) error
 	DeleteOldVolumeMetrics(ctx context.Context, metricTimestamp pgtype.Timestamp) error
 	DeleteOldVolumeSizes(ctx context.Context, createdAt time.Time) error
 	DeleteOldWeeklySnapshots(ctx context.Context) error
@@ -157,11 +181,20 @@ type Querier interface {
 	DeletePreviewsForFile(ctx context.Context, fileID int64) error
 	DeleteSavedSearch(ctx context.Context, id int64) error
 	DeleteStatsForDate(ctx context.Context, arg DeleteStatsForDateParams) error
+	DeleteTrackingRule(ctx context.Context, id int64) error
+	DeleteTrackingRuleByName(ctx context.Context, name string) error
+	DeleteTrackingRuleCondition(ctx context.Context, id int64) error
+	DeleteTrackingRuleConditionsByRule(ctx context.Context, ruleID pgtype.Int8) error
+	DeleteTrackingRuleTemplate(ctx context.Context, id int64) error
+	DeleteTrackingRuleTemplateByName(ctx context.Context, name string) error
+	DisableTrackingRule(ctx context.Context, id int64) error
+	EnableTrackingRule(ctx context.Context, id int64) error
 	FailScanJob(ctx context.Context, arg FailScanJobParams) (FailScanJobRow, error)
 	FindFilesByPathHashLegacy(ctx context.Context, arg FindFilesByPathHashLegacyParams) ([]FindFilesByPathHashLegacyRow, error)
 	Get30DayTrend(ctx context.Context, volumeID string) (Get30DayTrendRow, error)
 	Get7DayTrend(ctx context.Context, volumeID string) (Get7DayTrendRow, error)
 	GetActiveContainerCount(ctx context.Context) (int64, error)
+	GetActiveMountTrackingAssignment(ctx context.Context, mountCatalogID pgtype.Int8) (MountTrackingAssignments, error)
 	// Get current active scan count for metrics
 	GetActiveScanCount(ctx context.Context) (int64, error)
 	GetActiveScanJobs(ctx context.Context) ([]ScanJobs, error)
@@ -185,6 +218,7 @@ type Querier interface {
 	// =============================================================================
 	GetAlertWithRule(ctx context.Context, id int64) (GetAlertWithRuleRow, error)
 	GetAllActiveVolumeIDs(ctx context.Context, metricTimestamp pgtype.Timestamp) ([]string, error)
+	GetComposeProjectMountSummary(ctx context.Context) ([]GetComposeProjectMountSummaryRow, error)
 	GetContainerByContainerID(ctx context.Context, containerID string) (Containers, error)
 	GetContainerByID(ctx context.Context, id int64) (Containers, error)
 	GetContainerCountForVolume(ctx context.Context, volumeID string) (int64, error)
@@ -274,6 +308,15 @@ type Querier interface {
 	// Find dates that are missing stats for a volume within a date range
 	GetMissingStatsDates(ctx context.Context, arg GetMissingStatsDatesParams) ([]pgtype.Date, error)
 	GetMostAccessedPreviews(ctx context.Context, limit int32) ([]Previews, error)
+	GetMostActiveTrackingRules(ctx context.Context, limit int32) ([]GetMostActiveTrackingRulesRow, error)
+	GetMountAttachment(ctx context.Context, arg GetMountAttachmentParams) (DockerMountAttachments, error)
+	GetMountCatalogEntry(ctx context.Context, mountID string) (DockerMountCatalog, error)
+	// Complex analytical queries
+	GetMountCatalogSummary(ctx context.Context) (GetMountCatalogSummaryRow, error)
+	GetMountStatistics(ctx context.Context, mountCatalogID int64) (DockerMountStatistics, error)
+	GetMountTrackingAssignment(ctx context.Context, id int64) (MountTrackingAssignments, error)
+	GetMountTrackingAssignmentStats(ctx context.Context) (GetMountTrackingAssignmentStatsRow, error)
+	GetMountUsageAnalytics(ctx context.Context, arg GetMountUsageAnalyticsParams) ([]GetMountUsageAnalyticsRow, error)
 	GetOldPreviews(ctx context.Context, arg GetOldPreviewsParams) ([]Previews, error)
 	GetPreviewByContentHash(ctx context.Context, contentHash string) (Previews, error)
 	GetPreviewByID(ctx context.Context, id int64) (Previews, error)
@@ -303,11 +346,22 @@ type Querier interface {
 	GetScanJobsByVolume(ctx context.Context, arg GetScanJobsByVolumeParams) ([]ScanJobs, error)
 	GetSnapshotsByDateRange(ctx context.Context, arg GetSnapshotsByDateRangeParams) ([]UsageSnapshots, error)
 	GetSnapshotsByVolume(ctx context.Context, arg GetSnapshotsByVolumeParams) ([]UsageSnapshots, error)
+	// Find attachments where container no longer exists (for cleanup)
+	GetStaleAttachments(ctx context.Context, limit int32) ([]DockerMountAttachments, error)
 	GetSubtitleFiles(ctx context.Context, volumeID string) ([]Files, error)
 	GetTopGrowingFolders(ctx context.Context, arg GetTopGrowingFoldersParams) ([]GetTopGrowingFoldersRow, error)
 	GetTotalMetricsCount(ctx context.Context) (int64, error)
 	GetTotalScanJobCount(ctx context.Context) (int64, error)
 	GetTotalVolumeCount(ctx context.Context) (int64, error)
+	GetTrackingRule(ctx context.Context, id int64) (TrackingRules, error)
+	GetTrackingRuleByName(ctx context.Context, name string) (TrackingRules, error)
+	GetTrackingRuleCondition(ctx context.Context, id int64) (TrackingRuleConditions, error)
+	GetTrackingRuleEvaluation(ctx context.Context, id int64) (TrackingRuleEvaluations, error)
+	GetTrackingRuleEvaluationStats(ctx context.Context, startedAt pgtype.Timestamptz) (GetTrackingRuleEvaluationStatsRow, error)
+	GetTrackingRuleTemplate(ctx context.Context, id int64) (TrackingRuleTemplates, error)
+	GetTrackingRuleTemplateByName(ctx context.Context, name string) (TrackingRuleTemplates, error)
+	// Statistics and Analytics
+	GetTrackingRulesStats(ctx context.Context) (GetTrackingRulesStatsRow, error)
 	GetTrendAnalysis(ctx context.Context, arg GetTrendAnalysisParams) ([]GetTrendAnalysisRow, error)
 	GetTrendSlope(ctx context.Context, arg GetTrendSlopeParams) (GetTrendSlopeRow, error)
 	GetUnenrichedFiles(ctx context.Context, arg GetUnenrichedFilesParams) ([]Files, error)
@@ -323,7 +377,7 @@ type Querier interface {
 	GetVolumeMountsByContainer(ctx context.Context, containerID string) ([]VolumeMounts, error)
 	GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]VolumeMounts, error)
 	GetVolumeSizeStats(ctx context.Context, volumeID string) (GetVolumeSizeStatsRow, error)
-	GetVolumeSizesByVolumeID(ctx context.Context, arg GetVolumeSizesByVolumeIDParams) ([]VolumeSizes, error)
+	GetVolumeSizesByVolumeID(ctx context.Context, arg GetVolumeSizesByVolumeIDParams) ([]GetVolumeSizesByVolumeIDRow, error)
 	GetVolumeStats(ctx context.Context) (GetVolumeStatsRow, error)
 	GetVolumeStatsHistory(ctx context.Context, arg GetVolumeStatsHistoryParams) ([]StatsDaily, error)
 	GetVolumeStepSeries(ctx context.Context, arg GetVolumeStepSeriesParams) ([]GetVolumeStepSeriesRow, error)
@@ -339,34 +393,56 @@ type Querier interface {
 	// HEALTH AND DIAGNOSTIC OPERATIONS
 	// =============================================================================
 	HealthCheck(ctx context.Context) (int32, error)
+	IncrementConditionMatchCount(ctx context.Context, id int64) error
+	IncrementRuleMatchCount(ctx context.Context, id int64) error
+	IncrementTemplateUsageCount(ctx context.Context, id int64) error
 	// =============================================================================
 	// VOLUME SIZES (SCAN STATS) OPERATIONS
 	// =============================================================================
 	// Handles volume size tracking from scan operations with validation
 	InsertVolumeSize(ctx context.Context, arg InsertVolumeSizeParams) (InsertVolumeSizeRow, error)
 	ListActiveAlerts(ctx context.Context, arg ListActiveAlertsParams) ([]Alerts, error)
+	ListActiveMountTrackingAssignments(ctx context.Context) ([]ListActiveMountTrackingAssignmentsRow, error)
 	ListAlertDeliveries(ctx context.Context, arg ListAlertDeliveriesParams) ([]AlertDeliveries, error)
 	ListAlertDestinations(ctx context.Context, arg ListAlertDestinationsParams) ([]AlertDestinations, error)
 	ListAlertRoutes(ctx context.Context, arg ListAlertRoutesParams) ([]AlertRoutes, error)
 	ListAlertRules(ctx context.Context, arg ListAlertRulesParams) ([]AlertRules, error)
 	ListAlerts(ctx context.Context, arg ListAlertsParams) ([]Alerts, error)
 	ListAlertsByRule(ctx context.Context, arg ListAlertsByRuleParams) ([]Alerts, error)
+	ListBuiltinTrackingRuleTemplates(ctx context.Context) ([]TrackingRuleTemplates, error)
+	ListContainerAttachments(ctx context.Context, containerID string) ([]ListContainerAttachmentsRow, error)
 	ListContainers(ctx context.Context, arg ListContainersParams) ([]Containers, error)
 	ListDeliveriesByAlert(ctx context.Context, alertID int64) ([]AlertDeliveries, error)
 	ListDeliveriesByDestination(ctx context.Context, arg ListDeliveriesByDestinationParams) ([]AlertDeliveries, error)
 	ListEnabledAlertDestinations(ctx context.Context) ([]AlertDestinations, error)
 	ListEnabledAlertRoutes(ctx context.Context) ([]AlertRoutes, error)
 	ListEnabledAlertRules(ctx context.Context) ([]AlertRules, error)
+	ListEnabledTrackingRules(ctx context.Context) ([]TrackingRules, error)
 	ListExplorerEntries(ctx context.Context, arg ListExplorerEntriesParams) ([]ListExplorerEntriesRow, error)
 	ListFilesByFolder(ctx context.Context, arg ListFilesByFolderParams) ([]ListFilesByFolderRow, error)
 	ListFilesByVolume(ctx context.Context, arg ListFilesByVolumeParams) ([]ListFilesByVolumeRow, error)
 	ListFoldersByParent(ctx context.Context, arg ListFoldersByParentParams) ([]ListFoldersByParentRow, error)
 	ListFoldersByVolume(ctx context.Context, arg ListFoldersByVolumeParams) ([]ListFoldersByVolumeRow, error)
+	ListMountAttachments(ctx context.Context, mountCatalogID int64) ([]DockerMountAttachments, error)
+	ListMountCatalogEntries(ctx context.Context, arg ListMountCatalogEntriesParams) ([]DockerMountCatalog, error)
+	ListMountCatalogEntriesByComposeProject(ctx context.Context, arg ListMountCatalogEntriesByComposeProjectParams) ([]DockerMountCatalog, error)
+	ListMountCatalogEntriesByType(ctx context.Context, arg ListMountCatalogEntriesByTypeParams) ([]DockerMountCatalog, error)
+	ListMountTrackingAssignments(ctx context.Context, mountCatalogID pgtype.Int8) ([]ListMountTrackingAssignmentsRow, error)
+	ListMountTrackingAssignmentsByAction(ctx context.Context, action string) ([]ListMountTrackingAssignmentsByActionRow, error)
+	ListOrphanedMounts(ctx context.Context, arg ListOrphanedMountsParams) ([]DockerMountCatalog, error)
 	ListPendingDeliveries(ctx context.Context, limit int32) ([]AlertDeliveries, error)
+	ListRecentTrackingRuleEvaluations(ctx context.Context, arg ListRecentTrackingRuleEvaluationsParams) ([]ListRecentTrackingRuleEvaluationsRow, error)
 	ListRoutesByDestination(ctx context.Context, destinationID int64) ([]AlertRoutes, error)
 	ListRoutesByPriority(ctx context.Context) ([]ListRoutesByPriorityRow, error)
 	ListSavedSearches(ctx context.Context, arg ListSavedSearchesParams) ([]SavedSearches, error)
 	ListScanJobs(ctx context.Context, arg ListScanJobsParams) ([]ScanJobs, error)
+	ListTrackedMounts(ctx context.Context, arg ListTrackedMountsParams) ([]DockerMountCatalog, error)
+	ListTrackingRuleConditions(ctx context.Context, ruleID pgtype.Int8) ([]TrackingRuleConditions, error)
+	ListTrackingRuleEvaluations(ctx context.Context, arg ListTrackingRuleEvaluationsParams) ([]TrackingRuleEvaluations, error)
+	ListTrackingRuleTemplates(ctx context.Context) ([]TrackingRuleTemplates, error)
+	ListTrackingRuleTemplatesByCategory(ctx context.Context, category string) ([]TrackingRuleTemplates, error)
+	ListTrackingRules(ctx context.Context) ([]TrackingRules, error)
+	ListTrackingRulesByAction(ctx context.Context, action string) ([]TrackingRules, error)
 	ListVolumeMounts(ctx context.Context, arg ListVolumeMountsParams) ([]VolumeMounts, error)
 	ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Volumes, error)
 	MarkDeliveryDelivered(ctx context.Context, arg MarkDeliveryDeliveredParams) error
@@ -394,6 +470,8 @@ type Querier interface {
 	// Advanced file search with filters and sorting
 	SearchFiles(ctx context.Context, arg SearchFilesParams) ([]SearchFilesRow, error)
 	SearchFilesByName(ctx context.Context, arg SearchFilesByNameParams) ([]SearchFilesByNameRow, error)
+	SearchMountCatalog(ctx context.Context, arg SearchMountCatalogParams) ([]DockerMountCatalog, error)
+	SearchTrackingRuleTemplates(ctx context.Context, dollar_1 pgtype.Text) ([]TrackingRuleTemplates, error)
 	SoftDeleteContainer(ctx context.Context, id int64) error
 	SoftDeleteVolume(ctx context.Context, id int64) error
 	SoftDeleteVolumeMount(ctx context.Context, id int64) error
@@ -413,6 +491,11 @@ type Querier interface {
 	UpdateFolderMetadata(ctx context.Context, arg UpdateFolderMetadataParams) error
 	UpdateFolderStats(ctx context.Context, arg UpdateFolderStatsParams) error
 	UpdateLastScanned(ctx context.Context, arg UpdateLastScannedParams) error
+	UpdateMountAttachment(ctx context.Context, arg UpdateMountAttachmentParams) (DockerMountAttachments, error)
+	UpdateMountCatalogEntry(ctx context.Context, arg UpdateMountCatalogEntryParams) (DockerMountCatalog, error)
+	UpdateMountStatistics(ctx context.Context, arg UpdateMountStatisticsParams) (DockerMountStatistics, error)
+	UpdateMountTrackingAssignment(ctx context.Context, arg UpdateMountTrackingAssignmentParams) (MountTrackingAssignments, error)
+	UpdateMountTrackingStatus(ctx context.Context, arg UpdateMountTrackingStatusParams) (DockerMountCatalog, error)
 	UpdatePreviewAccessTime(ctx context.Context, id int64) error
 	UpdatePreviewAccessTimeByPath(ctx context.Context, storagePath string) error
 	UpdatePreviewStatsCleanup(ctx context.Context) error
@@ -425,6 +508,13 @@ type Querier interface {
 	UpdateScanJobStatus(ctx context.Context, arg UpdateScanJobStatusParams) (time.Time, error)
 	UpdateScanJobStatusAndProgress(ctx context.Context, arg UpdateScanJobStatusAndProgressParams) (UpdateScanJobStatusAndProgressRow, error)
 	UpdateStatsJob(ctx context.Context, arg UpdateStatsJobParams) error
+	UpdateTrackingRule(ctx context.Context, arg UpdateTrackingRuleParams) (TrackingRules, error)
+	UpdateTrackingRuleCondition(ctx context.Context, arg UpdateTrackingRuleConditionParams) (TrackingRuleConditions, error)
+	UpdateTrackingRuleConditionStats(ctx context.Context, arg UpdateTrackingRuleConditionStatsParams) error
+	UpdateTrackingRuleEvaluationResults(ctx context.Context, arg UpdateTrackingRuleEvaluationResultsParams) error
+	UpdateTrackingRuleEvaluationStatus(ctx context.Context, arg UpdateTrackingRuleEvaluationStatusParams) error
+	UpdateTrackingRuleStats(ctx context.Context, arg UpdateTrackingRuleStatsParams) error
+	UpdateTrackingRuleTemplate(ctx context.Context, arg UpdateTrackingRuleTemplateParams) (TrackingRuleTemplates, error)
 	UpdateVolume(ctx context.Context, arg UpdateVolumeParams) (time.Time, error)
 	UpdateVolumeMount(ctx context.Context, arg UpdateVolumeMountParams) (time.Time, error)
 	UpsertContainer(ctx context.Context, arg UpsertContainerParams) (UpsertContainerRow, error)

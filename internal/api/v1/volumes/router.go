@@ -20,6 +20,13 @@ func NewRouter(dockerService interfaces.DockerService, hub *websocket.Hub, store
 	}
 }
 
+// NewRouterWithScanner creates a new volume router with volume scanner integration
+func NewRouterWithScanner(dockerService interfaces.DockerService, hub *websocket.Hub, store store.Store, publisher *realtime.Publisher, scanner interfaces.VolumeScanner) *Router {
+	return &Router{
+		handler: NewHandlerWithScanner(dockerService, hub, store, publisher, scanner),
+	}
+}
+
 // RegisterRoutes registers all volume-related routes
 func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	// Volume endpoints

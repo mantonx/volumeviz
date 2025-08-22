@@ -164,3 +164,15 @@ func (c *Client) IsConnected(ctx context.Context) bool {
 func (c *Client) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {
 	return c.cli.Events(ctx, options)
 }
+
+// DiskUsage gets Docker disk usage information via the /system/df endpoint
+func (c *Client) DiskUsage(ctx context.Context, options types.DiskUsageOptions) (types.DiskUsage, error) {
+	ctx, cancel := c.contextWithTimeout(ctx)
+	defer cancel()
+
+	usage, err := c.cli.DiskUsage(ctx, options)
+	if err != nil {
+		return types.DiskUsage{}, fmt.Errorf("failed to get disk usage: %w", err)
+	}
+	return usage, nil
+}

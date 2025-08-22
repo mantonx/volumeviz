@@ -57,7 +57,7 @@ type CreateContainerParams struct {
 	Name        string           `json:"name"`
 	Image       string           `json:"image"`
 	State       string           `json:"state"`
-	Status      pgtype.Text      `json:"status"`
+	Status      string           `json:"status"`
 	Labels      pgtype.Text      `json:"labels"`
 	StartedAt   pgtype.Timestamp `json:"started_at"`
 	FinishedAt  pgtype.Timestamp `json:"finished_at"`
@@ -106,7 +106,7 @@ type CreateVolumeParams struct {
 	Labels     pgtype.Text `json:"labels"`
 	Options    pgtype.Text `json:"options"`
 	Scope      pgtype.Text `json:"scope"`
-	Status     pgtype.Text `json:"status"`
+	Status     string      `json:"status"`
 	IsActive   pgtype.Bool `json:"is_active"`
 }
 
@@ -953,7 +953,7 @@ type UpdateContainerParams struct {
 	Name       string           `json:"name"`
 	Image      string           `json:"image"`
 	State      string           `json:"state"`
-	Status     pgtype.Text      `json:"status"`
+	Status     string           `json:"status"`
 	Labels     pgtype.Text      `json:"labels"`
 	StartedAt  pgtype.Timestamp `json:"started_at"`
 	FinishedAt pgtype.Timestamp `json:"finished_at"`
@@ -1008,7 +1008,7 @@ type UpdateVolumeParams struct {
 	Labels     pgtype.Text `json:"labels"`
 	Options    pgtype.Text `json:"options"`
 	Scope      pgtype.Text `json:"scope"`
-	Status     pgtype.Text `json:"status"`
+	Status     string      `json:"status"`
 	IsActive   pgtype.Bool `json:"is_active"`
 }
 
@@ -1071,7 +1071,7 @@ type UpsertContainerParams struct {
 	Name        string           `json:"name"`
 	Image       string           `json:"image"`
 	State       string           `json:"state"`
-	Status      pgtype.Text      `json:"status"`
+	Status      string           `json:"status"`
 	Labels      pgtype.Text      `json:"labels"`
 	StartedAt   pgtype.Timestamp `json:"started_at"`
 	FinishedAt  pgtype.Timestamp `json:"finished_at"`
@@ -1126,7 +1126,7 @@ type UpsertVolumeParams struct {
 	Labels     pgtype.Text `json:"labels"`
 	Options    pgtype.Text `json:"options"`
 	Scope      pgtype.Text `json:"scope"`
-	Status     pgtype.Text `json:"status"`
+	Status     string      `json:"status"`
 	IsActive   pgtype.Bool `json:"is_active"`
 }
 

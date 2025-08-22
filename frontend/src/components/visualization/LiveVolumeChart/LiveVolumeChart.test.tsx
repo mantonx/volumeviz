@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { LiveVolumeChart } from './LiveVolumeChart';
-import type { Volume } from '../../../types/api';
+import type { VolumeV1 as Volume } from '@/api/generated/volumeviz-api';
 
 const mockVolumes: Volume[] = [
   {

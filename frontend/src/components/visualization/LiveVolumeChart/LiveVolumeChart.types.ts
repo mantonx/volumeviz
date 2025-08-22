@@ -1,4 +1,4 @@
-import type { Volume } from '../../../types/api';
+import type { VolumeV1 as Volume } from '@/api/generated/volumeviz-api';
 
 export interface VolumeChartData {
   id: string;

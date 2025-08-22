@@ -29,11 +29,17 @@ type Handler struct {
 	store             store.Store // Modern store interface using sqlc
 	realtimePublisher *realtime.Publisher
 	systemVolumeRegex *regexp.Regexp
+	volumeScanner     interfaces.VolumeScanner // VolumeViz scanner for size calculation
 }
 
 // NewHandler creates a new volume handler with store interface
-// Pass in your Docker service, WebSocket hub, store, and realtime publisher to get started
+// Pass in your Docker service, WebSocket hub, store, realtime publisher, and optional volume scanner
 func NewHandler(dockerService interfaces.DockerService, hub *websocket.Hub, store store.Store, publisher *realtime.Publisher) *Handler {
+	return NewHandlerWithScanner(dockerService, hub, store, publisher, nil)
+}
+
+// NewHandlerWithScanner creates a new volume handler with volume scanner for size calculation
+func NewHandlerWithScanner(dockerService interfaces.DockerService, hub *websocket.Hub, store store.Store, publisher *realtime.Publisher, scanner interfaces.VolumeScanner) *Handler {
 	// Default system volume regex pattern
 	pattern := `^(docker_|builder_|containerd|_data$)`
 	regex, err := regexp.Compile(pattern)
@@ -48,6 +54,7 @@ func NewHandler(dockerService interfaces.DockerService, hub *websocket.Hub, stor
 		store:             store,
 		realtimePublisher: publisher,
 		systemVolumeRegex: regex,
+		volumeScanner:     scanner,
 	}
 }
 
@@ -171,10 +178,45 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 	// Apply filters
 	filtered := h.filterVolumes(volumes, filters)
 
-	// Convert to API format
+	// Convert to API format and enhance with VolumeViz scanner data
 	apiVolumes := make([]models.VolumeV1, 0, len(filtered))
 	for _, vol := range filtered {
 		apiVol := h.convertToAPIVolume(vol)
+		
+		// First check for stored filesystem capacity from previous scans
+		if h.store != nil {
+			if fsInfo, err := h.store.Stats().GetVolumeFilesystemCapacity(ctx, vol.VolumeID); err == nil && fsInfo != nil {
+				apiVol.FilesystemCapacity = &models.FilesystemCapacity{
+					TotalBytes:     fsInfo.TotalBytes,
+					AvailableBytes: fsInfo.AvailableBytes,
+					UsedBytes:      fsInfo.UsedBytes,
+					UsagePercent:   fsInfo.UsagePercent,
+					BlockSize:      fsInfo.BlockSize,
+					TotalBlocks:    fsInfo.TotalBlocks,
+					FreeBlocks:     fsInfo.FreeBlocks,
+				}
+			}
+		}
+		
+		// Use VolumeViz scanner as fallback for volumes without size data
+		if h.volumeScanner != nil && apiVol.SizeBytes == nil {
+			if scanResult, err := h.volumeScanner.ScanVolume(ctx, vol.VolumeID); err == nil {
+				apiVol.SizeBytes = &scanResult.TotalSize
+				// Add filesystem capacity information if available and not already retrieved from database
+				if apiVol.FilesystemCapacity == nil && scanResult.FilesystemCapacity != nil {
+					apiVol.FilesystemCapacity = &models.FilesystemCapacity{
+						TotalBytes:     scanResult.FilesystemCapacity.TotalBytes,
+						AvailableBytes: scanResult.FilesystemCapacity.AvailableBytes,
+						UsedBytes:      scanResult.FilesystemCapacity.UsedBytes,
+						UsagePercent:   scanResult.FilesystemCapacity.UsagePercent,
+						BlockSize:      scanResult.FilesystemCapacity.BlockSize,
+						TotalBlocks:    scanResult.FilesystemCapacity.TotalBlocks,
+						FreeBlocks:     scanResult.FilesystemCapacity.FreeBlocks,
+					}
+				}
+			}
+		}
+		
 		apiVolumes = append(apiVolumes, apiVol)
 	}
 
@@ -247,12 +289,18 @@ func (h *Handler) filterVolumes(volumes []coremodels.Volume, filters *apiutils.V
 
 // convertToAPIVolume converts internal volume model to API format
 func (h *Handler) convertToAPIVolume(vol coremodels.Volume) models.VolumeV1 {
-	// Get container count for attachments_count
+	// Get container information for attachments_count and container names
 	containers, err := h.dockerService.GetVolumeContainers(context.Background(), vol.VolumeID)
 	if err != nil {
 		containers = []coremodels.VolumeContainer{}
 	}
 	attachmentsCount := len(containers)
+
+	// Extract container names
+	containerNames := make([]string, len(containers))
+	for i, container := range containers {
+		containerNames[i] = container.Name
+	}
 
 	// Get size if available from volume usage data
 	var sizeBytes *int64
@@ -269,6 +317,7 @@ func (h *Handler) convertToAPIVolume(vol coremodels.Volume) models.VolumeV1 {
 		Mountpoint:       vol.Mountpoint,
 		SizeBytes:        sizeBytes,
 		AttachmentsCount: attachmentsCount,
+		ContainerNames:   containerNames,
 		IsSystem:         h.isSystemVolume(vol),
 		IsOrphaned:       attachmentsCount == 0,
 	}
@@ -446,22 +495,57 @@ func (h *Handler) GetVolume(c *gin.Context) {
 
 	// Get size if available
 	var sizeBytes *int64
+	var filesystemCapacity *models.FilesystemCapacity
+	
+	// First check for stored filesystem capacity from previous scans
+	if h.store != nil {
+		if fsInfo, err := h.store.Stats().GetVolumeFilesystemCapacity(ctx, volumeName); err == nil && fsInfo != nil {
+			filesystemCapacity = &models.FilesystemCapacity{
+				TotalBytes:     fsInfo.TotalBytes,
+				AvailableBytes: fsInfo.AvailableBytes,
+				UsedBytes:      fsInfo.UsedBytes,
+				UsagePercent:   fsInfo.UsagePercent,
+				BlockSize:      fsInfo.BlockSize,
+				TotalBlocks:    fsInfo.TotalBlocks,
+				FreeBlocks:     fsInfo.FreeBlocks,
+			}
+		}
+	}
+	
 	if volume.UsageData != nil && volume.UsageData.Size >= 0 {
 		sizeBytes = &volume.UsageData.Size
+	} else if h.volumeScanner != nil {
+		// Use VolumeViz scanner as fallback for volumes without size data
+		if scanResult, err := h.volumeScanner.ScanVolume(ctx, volumeName); err == nil {
+			sizeBytes = &scanResult.TotalSize
+			// Add filesystem capacity information if available and not already retrieved from database
+			if filesystemCapacity == nil && scanResult.FilesystemCapacity != nil {
+				filesystemCapacity = &models.FilesystemCapacity{
+					TotalBytes:     scanResult.FilesystemCapacity.TotalBytes,
+					AvailableBytes: scanResult.FilesystemCapacity.AvailableBytes,
+					UsedBytes:      scanResult.FilesystemCapacity.UsedBytes,
+					UsagePercent:   scanResult.FilesystemCapacity.UsagePercent,
+					BlockSize:      scanResult.FilesystemCapacity.BlockSize,
+					TotalBlocks:    scanResult.FilesystemCapacity.TotalBlocks,
+					FreeBlocks:     scanResult.FilesystemCapacity.FreeBlocks,
+				}
+			}
+		}
 	}
 
 	// Build response
 	response := models.VolumeDetailV1{
-		Name:        volume.Name,
-		Driver:      volume.Driver,
-		CreatedAt:   volume.CreatedAt,
-		Labels:      volume.Labels,
-		Scope:       volume.Scope,
-		Mountpoint:  volume.Mountpoint,
-		SizeBytes:   sizeBytes,
-		Attachments: attachments,
-		IsSystem:    h.isSystemVolume(*volume),
-		IsOrphaned:  len(attachments) == 0,
+		Name:               volume.Name,
+		Driver:             volume.Driver,
+		CreatedAt:          volume.CreatedAt,
+		Labels:             volume.Labels,
+		Scope:              volume.Scope,
+		Mountpoint:         volume.Mountpoint,
+		SizeBytes:          sizeBytes,
+		Attachments:        attachments,
+		IsSystem:           h.isSystemVolume(*volume),
+		IsOrphaned:         len(attachments) == 0,
+		FilesystemCapacity: filesystemCapacity,
 		Meta: map[string]interface{}{
 			"driver_opts": volume.Options,
 		},

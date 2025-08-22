@@ -14,6 +14,9 @@ import (
 	"github.com/mantonx/volumeviz/internal/api/v1/explorer"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
 	"github.com/mantonx/volumeviz/internal/api/v1/metadata"
+	"github.com/mantonx/volumeviz/internal/api/v1/mounts"
+	"github.com/mantonx/volumeviz/internal/api/v1/rules"
+	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	previewsAPI "github.com/mantonx/volumeviz/internal/api/v1/previews"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
 	"github.com/mantonx/volumeviz/internal/api/v1/search"
@@ -27,6 +30,7 @@ import (
 	oldInterfaces "github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/realtime"
+	"github.com/mantonx/volumeviz/internal/repo"
 	"github.com/mantonx/volumeviz/internal/scheduler"
 	alertsService "github.com/mantonx/volumeviz/internal/services/alerts"
 	"github.com/mantonx/volumeviz/internal/services/cache"
@@ -35,6 +39,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/services/filesystem"
 	coreMetrics "github.com/mantonx/volumeviz/internal/services/metrics"
 	previewsService "github.com/mantonx/volumeviz/internal/services/previews"
+	rulesService "github.com/mantonx/volumeviz/internal/services/rules"
 	"github.com/mantonx/volumeviz/internal/services/scanner"
 	statsService "github.com/mantonx/volumeviz/internal/services/stats"
 	"github.com/mantonx/volumeviz/internal/store"
@@ -47,18 +52,23 @@ import (
 
 // Router manages all v1 API routes
 type Router struct {
-	engine            *gin.Engine
-	dockerService     *dockerService.DockerService
-	scanner           oldInterfaces.VolumeScanner
-	store             store.Store // Modern store interface using sqlc
-	websocketHub      *websocket.Hub
-	realtimePublisher *realtime.Publisher
-	scheduler         scheduler.ScanScheduler         // Optional scan scheduler - using store façade
-	eventsService     events.EventService             // Optional events service - using store façade
-	alertsEngine      interfaces.AlertEngine          // Alerts engine for alert management
-	enrichmentManager oldInterfaces.EnrichmentManager // Media enrichment manager
-	previewService    *previewsService.Service        // Preview service for file thumbnails
-	healthRouter      *health.Router                  // Health router for external access
+	engine               *gin.Engine
+	dockerService        *dockerService.DockerService
+	mountCatalogService  *dockerService.MountCatalogService // Docker mount catalog service
+	scanner              oldInterfaces.VolumeScanner
+	store                store.Store // Modern store interface using sqlc
+	websocketHub         *websocket.Hub
+	realtimePublisher    *realtime.Publisher
+	scheduler            scheduler.ScanScheduler         // Optional scan scheduler - using store façade
+	eventsService        events.EventService             // Optional events service - using store façade
+	alertsEngine         interfaces.AlertEngine          // Alerts engine for alert management
+	enrichmentManager    oldInterfaces.EnrichmentManager // Media enrichment manager
+	previewService       *previewsService.Service        // Preview service for file thumbnails
+	healthRouter         *health.Router                  // Health router for external access
+	rulesRepo            *repo.TrackingRulesRepository    // Rules repository
+	mountsRepo           *repo.MountCatalogRepository     // Mount catalog repository  
+	rulesEngine          *rulesService.TrackingRulesEngine // Rules engine
+	rulesPreviewService  *rulesService.EvaluationPreviewService // Rules preview service
 }
 
 // NewRouter creates a new v1 API router
@@ -276,6 +286,29 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		log.Printf("[INFO] Events service initialized successfully")
 	}
 
+	// Initialize Docker mount catalog service
+	queries := storeInstance.Queries().(*sqlc.Queries)
+	dockerClient := dockerSvc.GetDockerClient()
+	mountCatalogService := dockerService.NewMountCatalogService(dockerClient, queries)
+
+	// Initialize tracking rules repository and services
+	// For now, we'll create placeholder services since we need proper database connection setup
+	var rulesRepo *repo.TrackingRulesRepository
+	var mountsRepo *repo.MountCatalogRepository
+	var rulesEngine *rulesService.TrackingRulesEngine
+	var rulesPreviewService *rulesService.EvaluationPreviewService
+
+	// These would be properly initialized with a real database connection
+	// For development, we'll create minimal instances
+	if queries != nil {
+		// Create placeholder database connection for development
+		// In production, this would use a proper connection pool
+		rulesRepo = repo.NewTrackingRulesRepository(queries, nil)
+		mountsRepo = repo.NewMountCatalogRepository(queries, nil)
+		rulesEngine = rulesService.NewTrackingRulesEngine(rulesRepo, mountsRepo)
+		rulesPreviewService = rulesService.NewEvaluationPreviewService(rulesEngine, rulesRepo, mountsRepo)
+	}
+
 	// Initialize alerts engine if enabled
 	var alertsEngine interfaces.AlertEngine
 	if config.Alerts.Enabled {
@@ -292,17 +325,22 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 	}
 
 	router := &Router{
-		engine:            gin.New(),
-		dockerService:     dockerSvc,
-		scanner:           volumeScanner,
-		store:             storeInstance,
-		websocketHub:      hub,
-		realtimePublisher: publisher,
-		scheduler:         scanScheduler,
-		eventsService:     eventsService,
-		alertsEngine:      alertsEngine,
-		enrichmentManager: enrichmentManager,
-		previewService:    previewService,
+		engine:               gin.New(),
+		dockerService:        dockerSvc,
+		mountCatalogService:  mountCatalogService,
+		scanner:              volumeScanner,
+		store:                storeInstance,
+		websocketHub:         hub,
+		realtimePublisher:    publisher,
+		scheduler:            scanScheduler,
+		eventsService:        eventsService,
+		alertsEngine:         alertsEngine,
+		enrichmentManager:    enrichmentManager,
+		previewService:       previewService,
+		rulesRepo:            rulesRepo,
+		mountsRepo:           mountsRepo,
+		rulesEngine:          rulesEngine,
+		rulesPreviewService:  rulesPreviewService,
 	}
 
 	router.setupMiddleware(config)
@@ -452,7 +490,7 @@ func (r *Router) setupRoutes(config *config.Config) {
 		r.healthRouter = health.NewRouter(r.dockerService, r.store, r.eventsService, r.scheduler)
 		r.healthRouter.RegisterRoutes(v1)
 
-		volumesRouter := volumes.NewRouter(r.dockerService, r.websocketHub, r.store, r.realtimePublisher)
+		volumesRouter := volumes.NewRouterWithScanner(r.dockerService, r.websocketHub, r.store, r.realtimePublisher, r.scanner)
 		volumesRouter.RegisterRoutes(v1)
 
 		// Explorer router for directory browsing and file operations
@@ -514,6 +552,19 @@ func (r *Router) setupRoutes(config *config.Config) {
 		if r.alertsEngine != nil {
 			alertsRouter := alerts.NewRouter(r.store, r.alertsEngine)
 			alertsRouter.RegisterRoutes(v1)
+		}
+
+		// Mount catalog router for Docker mount discovery and management
+		mountsHandler := mounts.NewHandler(r.mountCatalogService)
+		mounts.RegisterRoutes(v1, mountsHandler)
+
+		// Tracking rules router for mount tracking rules management
+		if r.rulesRepo != nil && r.rulesEngine != nil && r.rulesPreviewService != nil {
+			rulesHandler := rules.NewHandler(r.rulesRepo, r.mountsRepo, r.rulesEngine, r.rulesPreviewService)
+			rules.SetupRoutes(v1, rulesHandler)
+			log.Printf("[INFO] Tracking rules API routes registered successfully")
+		} else {
+			log.Printf("[WARNING] Tracking rules services unavailable - rules routes not registered")
 		}
 	}
 }
