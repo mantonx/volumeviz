@@ -98,7 +98,7 @@ export function useVolumesAndMounts() {
       container_count: volume.attachments_count || 0,
       readonly: false, // Volumes are typically read-write
       status: volume.is_orphaned ? 'orphaned' : 'tracked',
-      last_seen: volume.last_scan_at || volume.created_at || new Date().toISOString(),
+      last_seen: volume.last_scan_at, // Don't fallback to created_at for scan timestamps
       size_bytes: volume.size_bytes,
       created_at: volume.created_at || new Date().toISOString(),
       mount_point: volume.mountpoint,

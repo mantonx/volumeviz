@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import type {
   InternalApiV1MountsMountCatalogResponse as MountCatalogEntry,
   InternalApiV1MountsMountCatalogSummaryResponse as MountCatalogSummary,
@@ -193,10 +194,7 @@ export const MountsPage: React.FC = () => {
       {/* Mounts Table */}
       <div className="bg-white rounded-lg shadow border overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-gray-600">Loading mounts...</p>
-          </div>
+          <TableSkeleton rows={10} columns={5} />
         ) : error ? (
           <div className="p-8 text-center text-red-600">
             <p>Error: {error}</p>

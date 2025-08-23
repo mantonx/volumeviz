@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
@@ -183,8 +184,9 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 	for _, vol := range filtered {
 		apiVol := h.convertToAPIVolume(vol)
 		
-		// First check for stored filesystem capacity from previous scans
+		// Enhance with database information if store is available
 		if h.store != nil {
+			// Get filesystem capacity from previous scans
 			if fsInfo, err := h.store.Stats().GetVolumeFilesystemCapacity(ctx, vol.VolumeID); err == nil && fsInfo != nil {
 				apiVol.FilesystemCapacity = &models.FilesystemCapacity{
 					TotalBytes:     fsInfo.TotalBytes,
@@ -195,6 +197,11 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 					TotalBlocks:    fsInfo.TotalBlocks,
 					FreeBlocks:     fsInfo.FreeBlocks,
 				}
+			}
+			
+			// Get last scan timestamp from database
+			if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, vol.VolumeID); err == nil && dbVol.LastScanned != nil {
+				apiVol.LastScanAt = dbVol.LastScanned
 			}
 		}
 		
@@ -316,6 +323,7 @@ func (h *Handler) convertToAPIVolume(vol coremodels.Volume) models.VolumeV1 {
 		Scope:            vol.Scope,
 		Mountpoint:       vol.Mountpoint,
 		SizeBytes:        sizeBytes,
+		LastScanAt:       vol.LastScanned, // Map LastScanned to LastScanAt
 		AttachmentsCount: attachmentsCount,
 		ContainerNames:   containerNames,
 		IsSystem:         h.isSystemVolume(vol),
@@ -496,9 +504,11 @@ func (h *Handler) GetVolume(c *gin.Context) {
 	// Get size if available
 	var sizeBytes *int64
 	var filesystemCapacity *models.FilesystemCapacity
+	var lastScanAt *time.Time
 	
-	// First check for stored filesystem capacity from previous scans
+	// Enhance with database information if store is available
 	if h.store != nil {
+		// Get filesystem capacity from previous scans
 		if fsInfo, err := h.store.Stats().GetVolumeFilesystemCapacity(ctx, volumeName); err == nil && fsInfo != nil {
 			filesystemCapacity = &models.FilesystemCapacity{
 				TotalBytes:     fsInfo.TotalBytes,
@@ -509,6 +519,11 @@ func (h *Handler) GetVolume(c *gin.Context) {
 				TotalBlocks:    fsInfo.TotalBlocks,
 				FreeBlocks:     fsInfo.FreeBlocks,
 			}
+		}
+		
+		// Get last scan timestamp from database
+		if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, volumeName); err == nil && dbVol.LastScanned != nil {
+			lastScanAt = dbVol.LastScanned
 		}
 	}
 	
@@ -542,6 +557,7 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		Scope:              volume.Scope,
 		Mountpoint:         volume.Mountpoint,
 		SizeBytes:          sizeBytes,
+		LastScanAt:         lastScanAt,
 		Attachments:        attachments,
 		IsSystem:           h.isSystemVolume(*volume),
 		IsOrphaned:         len(attachments) == 0,

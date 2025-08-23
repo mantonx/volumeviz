@@ -22,6 +22,8 @@ import { ScanNotificationCenter } from '@/components/domain/ScanNotificationCent
 import { ScanHistoryPanel } from '@/components/domain/ScanHistoryPanel';
 import { ScanPerformanceMetrics } from '@/components/domain/ScanPerformanceMetrics';
 import { formatBytes } from '@/utils/formatters';
+import { FreshnessIndicator } from '@/components/ui/FreshnessIndicator';
+import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import {
   useVolumes,
   useApiHealth,
@@ -243,6 +245,13 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     return date.toLocaleDateString();
   };
 
+  // Show loading skeleton if essential data is not yet available
+  const isLoading = !volumes || volumes.length === 0 && apiStatus !== 'online';
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="space-y-8">
       {/* Onboarding Success Banner */}
@@ -335,10 +344,12 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               </span>
             </div>
             {lastUpdated && (
-              <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-gray-400">
-                <Clock className="h-4 w-4" />
-                <span>Last updated {formatLastUpdated(lastUpdated)}</span>
-              </div>
+              <FreshnessIndicator
+                lastSeen={lastUpdated.toISOString()}
+                compact={true}
+                showIcon={true}
+                showLabel={false}
+              />
             )}
             {wsConnected && (
               <div className="flex items-center space-x-1 text-sm text-green-600 dark:text-green-400">

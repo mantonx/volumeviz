@@ -32,6 +32,10 @@ type FilesRepository interface {
 	DeleteFilesByVolume(ctx context.Context, volumeID string) error
 }
 
+type VolumesRepository interface {
+	UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error
+}
+
 // VolumeScanner implements the main volume scanning service
 // Uses multiple scanning methods with intelligent fallback
 type VolumeScanner struct {
@@ -50,6 +54,7 @@ type VolumeScanner struct {
 	filesystemIndexer *filesystem.FilesystemIndexer
 	foldersRepo       FoldersRepository
 	filesRepo         FilesRepository
+	volumesRepo       VolumesRepository
 
 	// Preview generation integration
 	previewService *previews.Service
@@ -131,6 +136,7 @@ func NewVolumeScannerWithIndexing(
 		filesystemIndexer: filesystemIndexer,
 		foldersRepo:       foldersRepo,
 		filesRepo:         filesRepo,
+		volumesRepo:       store.Volumes(), // Get volumes repository from store
 		previewService:    previewService,
 	}
 }
@@ -863,6 +869,19 @@ func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID
 	// Update metrics for successful indexing
 	if vs.metrics != nil && progress != nil {
 		vs.metrics.ScanCompleted(volumeID, "filesystem_indexer", duration, progress.BytesProcessed)
+	}
+
+	// Update last_scanned timestamp for the volume
+	if vs.volumesRepo != nil {
+		// Use a fresh context to avoid cancellation issues from the indexing timeout
+		updateCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		
+		if err := vs.volumesRepo.UpdateLastScanned(updateCtx, volumeID, time.Now()); err != nil {
+			if vs.logger != nil {
+				vs.logger.Printf("Failed to update last_scanned for volume %s: %v", volumeID, err)
+			}
+		}
 	}
 
 	// Trigger media enrichment if enabled

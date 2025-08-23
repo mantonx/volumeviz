@@ -8,7 +8,7 @@ import { Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/utils';
 
 interface FreshnessIndicatorProps {
-  lastSeen: string;
+  lastSeen?: string | null;
   showIcon?: boolean;
   showLabel?: boolean;
   compact?: boolean;
@@ -101,6 +101,23 @@ export const FreshnessIndicator: React.FC<FreshnessIndicatorProps> = ({
   compact = false,
   className,
 }) => {
+  // Handle null/undefined case for never-scanned volumes
+  if (!lastSeen) {
+    return (
+      <div 
+        className={cn('flex items-center gap-1', className)}
+        title="This volume has never been scanned for size information"
+      >
+        {showIcon && (
+          <AlertTriangle className="h-3 w-3 text-gray-400" />
+        )}
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+          Never scanned
+        </span>
+      </div>
+    );
+  }
+
   const timeInfo = getTimeAgo(lastSeen);
   const level = getFreshnessLevel(lastSeen);
   const styles = getFreshnessStyles(level);
@@ -141,7 +158,7 @@ export const FreshnessIndicator: React.FC<FreshnessIndicatorProps> = ({
         </span>
         {showLabel && (
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            Last scan
+            Size scan
           </span>
         )}
       </div>

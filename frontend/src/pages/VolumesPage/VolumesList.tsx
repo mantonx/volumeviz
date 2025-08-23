@@ -46,6 +46,9 @@ import { KeyboardShortcutsHelp } from '@/components/ui/KeyboardShortcutsHelp';
 import { SizeVisualization, formatBytes } from '@/components/ui/SizeVisualization';
 import { GrowthIndicator } from '@/components/ui/GrowthIndicator';
 import { ContainerStatus, ContainerBadge } from '@/components/ui/ContainerStatus';
+import { FreshnessIndicator } from '@/components/ui/FreshnessIndicator';
+import { VolumeListSkeleton } from '@/components/ui/Skeleton';
+import VolumeDetailsModal from '@/components/modals/VolumeDetailsModal';
 
 // Types for filters and UI components
 
@@ -127,6 +130,8 @@ export const VolumesList: React.FC = () => {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [showColumnConfig, setShowColumnConfig] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [selectedVolumeForDetails, setSelectedVolumeForDetails] = useState<string>('');
+  const [showVolumeDetailsModal, setShowVolumeDetailsModal] = useState(false);
 
   // Derived state from currentConfig
   const searchQuery = currentConfig.search || '';
@@ -178,7 +183,7 @@ export const VolumesList: React.FC = () => {
     { key: 'readonly', label: 'RO/RW', sortable: true },
     { key: 'status', label: 'Status', sortable: true },
     { key: 'size_bytes', label: 'Size', sortable: true },
-    { key: 'last_seen', label: 'Last Scanned', sortable: true },
+    { key: 'last_seen', label: 'Size Scan', sortable: true },
     { key: 'growth_rate', label: 'Growth', sortable: true },
     { key: 'created_at', label: 'Created', sortable: true },
   ];
@@ -684,6 +689,16 @@ export const VolumesList: React.FC = () => {
       bulkHide(Array.from(selectedIds));
     }
   }, [selectedIds, bulkHide]);
+
+  const handleOpenVolumeDetails = useCallback((volumeName: string) => {
+    setSelectedVolumeForDetails(volumeName);
+    setShowVolumeDetailsModal(true);
+  }, []);
+
+  const handleCloseVolumeDetails = useCallback(() => {
+    setShowVolumeDetailsModal(false);
+    setSelectedVolumeForDetails('');
+  }, []);
 
   const handleToggleQuickFilter = useCallback((filterId: string) => {
     const filter = getQuickFilterById(filterId);
@@ -1398,15 +1413,8 @@ export const VolumesList: React.FC = () => {
         </Card>
       )}
 
-      {/* Loading State */}
-      {loading ? (
-        <Card className="p-8">
-          <div className="flex items-center justify-center text-gray-900 dark:text-white">
-            <RefreshCw className="h-6 w-6 animate-spin mr-2 text-gray-500 dark:text-gray-400" />
-            Loading volumes and mounts...
-          </div>
-        </Card>
-      ) : error ? (
+      {/* Error State */}
+      {error ? (
         <Card className="p-8">
           <div className="text-center">
             <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
@@ -1423,65 +1431,7 @@ export const VolumesList: React.FC = () => {
       ) : loading ? (
         // Loading State with Skeletons
         <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <tr>
-                  <th className="p-3 w-10">
-                    <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                  </th>
-                  <th className="p-3 text-left">
-                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                  </th>
-                  <th className="p-3 text-left">
-                    <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                  </th>
-                  <th className="p-3 text-left">
-                    <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                  </th>
-                  <th className="p-3 text-left">
-                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                  </th>
-                  <th className="p-3 text-left">
-                    <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {[...Array(8)].map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="p-3">
-                      <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded" />
-                    </td>
-                    <td className="p-3">
-                      <div className="space-y-2">
-                        <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
-                        <div className="h-3 w-48 bg-gray-100 dark:bg-gray-800 rounded" />
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
-                    </td>
-                    <td className="p-3">
-                      <div className="space-y-2">
-                        <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded" />
-                        <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full" />
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <div className="space-y-2">
-                        <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
-                        <div className="h-3 w-12 bg-gray-100 dark:bg-gray-800 rounded" />
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <VolumeListSkeleton rows={paginationMeta.pageSize || 25} />
         </Card>
       ) : data.length === 0 ? (
         <Card className="p-8">
@@ -1536,11 +1486,12 @@ export const VolumesList: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="flex-shrink-0"
-                        aria-label={`More options for ${item.name}`}
+                        className="flex-shrink-0 cursor-pointer hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400 transition-colors"
+                        onClick={() => handleOpenVolumeDetails(item.name)}
+                        aria-label={`View details for ${item.name}`}
                       >
-                        <MoreHorizontal
-                          className="h-4 w-4"
+                        <Eye
+                          className="h-4 w-4 transition-transform hover:scale-110"
                           aria-hidden="true"
                         />
                       </Button>
@@ -1641,16 +1592,14 @@ export const VolumesList: React.FC = () => {
 
                       <div className="flex items-center justify-between">
                         <span className="text-gray-500 dark:text-gray-400">
-                          Last seen:
+                          Size scan:
                         </span>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-gray-400" />
-                          <span className="text-xs">
-                            {item.last_seen
-                              ? formatDate(item.last_seen)
-                              : 'Unknown'}
-                          </span>
-                        </div>
+                        <FreshnessIndicator
+                          lastSeen={item.last_seen}
+                          compact={true}
+                          showIcon={true}
+                          showLabel={false}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1977,25 +1926,24 @@ export const VolumesList: React.FC = () => {
 
                         {visibleColumns.has('last_seen') && (
                           <td className="p-3">
-                            <div className="flex items-center gap-2 text-sm text-gray-900 dark:text-white">
-                              <Clock className="h-4 w-4 text-gray-400" />
-                              <div>
-                                <div className="font-medium">
-                                  {formatRelativeTime(item.last_seen)}
-                                </div>
-                                {item.last_seen && (
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    {formatDate(item.last_seen)}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                            <FreshnessIndicator
+                              lastSeen={item.last_seen}
+                              compact={false}
+                              showIcon={true}
+                              showLabel={true}
+                            />
                           </td>
                         )}
 
                         <td className="p-3">
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="cursor-pointer hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400 transition-colors"
+                            onClick={() => handleOpenVolumeDetails(item.name)}
+                            aria-label={`View details for ${item.name}`}
+                          >
+                            <Eye className="h-4 w-4 transition-transform hover:scale-110" />
                           </Button>
                         </td>
                       </tr>
@@ -2079,6 +2027,13 @@ export const VolumesList: React.FC = () => {
         onClose={() => setShowKeyboardHelp(false)}
         shortcutGroups={keyboardShortcutGroups}
         title="VolumesList Keyboard Shortcuts"
+      />
+
+      {/* Volume Details Modal */}
+      <VolumeDetailsModal
+        isOpen={showVolumeDetailsModal}
+        onClose={handleCloseVolumeDetails}
+        volumeName={selectedVolumeForDetails}
       />
     </div>
   );
