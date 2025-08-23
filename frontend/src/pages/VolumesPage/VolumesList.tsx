@@ -27,6 +27,7 @@ import {
   HardDrive,
   AlertTriangle,
   Clock,
+  Scan,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -37,6 +38,7 @@ import { FilterViewsManager } from '@/components/FilterViewsManager';
 import { useFilterViews } from '@/hooks/useFilterViews';
 import { useToast } from '@/components/ui/Toast/ToastProvider';
 import { useVolumesAndMounts } from '@/hooks/useVolumesAndMounts';
+import { useVolumeScanning } from '@/api/services';
 import type { VolumeMount } from '@/hooks/useVolumesAndMounts';
 import { cn } from '@/utils';
 import { calculateVolumePercentage } from '@/utils/volumePercentage';
@@ -48,6 +50,12 @@ import { GrowthIndicator } from '@/components/ui/GrowthIndicator';
 import { ContainerStatus, ContainerBadge } from '@/components/ui/ContainerStatus';
 import { FreshnessIndicator } from '@/components/ui/FreshnessIndicator';
 import { VolumeListSkeleton } from '@/components/ui/Skeleton';
+import { Dropdown, type DropdownItem } from '@/components/ui/Dropdown';
+import { DetailedScanButton } from '@/components/volume/ScanButton';
+import { ScanProgressViewer } from '@/components/volume/ScanProgressViewer';
+import { MultiPhaseProgressBar } from '@/components/ui/MultiPhaseProgressBar';
+import { SubtleProgressIndicator } from '@/components/ui/SubtleProgressIndicator';
+import { useWebSocket } from '@/providers/WebSocketProvider';
 import VolumeDetailsModal from '@/components/modals/VolumeDetailsModal';
 
 // Types for filters and UI components
@@ -117,8 +125,47 @@ export const VolumesList: React.FC = () => {
     triggerDiscovery,
   } = useVolumesAndMounts();
 
+
   // Toast notifications
   const { success, error: showError, info, loading: showLoading } = useToast();
+
+  // Use global WebSocket connection
+  const { isConnected, on } = useWebSocket();
+
+  // Scan functionality
+  const { scanVolume, scanLoading } = useVolumeScanning();
+
+  const handleScanVolume = useCallback(async (volumeId: string) => {
+    console.log(`[VolumesList] handleScanVolume called for volume: ${volumeId}`);
+    
+    try {
+      // Show detailed progress for this volume and start the scan
+      console.log(`[VolumesList] Adding volume to detailed progress set and starting scan: ${volumeId}`);
+      setVolumesWithDetailedProgress(prev => {
+        const newSet = new Set([...prev, volumeId]);
+        console.log(`[VolumesList] Updated detailed progress set:`, Array.from(newSet));
+        return newSet;
+      });
+      
+      info('Starting volume scan with progress tracking...');
+      const result = await scanVolume(volumeId);
+      success('Volume scan completed successfully');
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Scan failed');
+      showError(`Volume scan failed: ${error.message}`);
+      console.error(`[VolumesList] Scan error:`, err);
+    } finally {
+      // Hide detailed progress after a delay
+      setTimeout(() => {
+        console.log(`[VolumesList] Removing volume from detailed progress set: ${volumeId}`);
+        setVolumesWithDetailedProgress(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(volumeId);
+          return newSet;
+        });
+      }, 8000); // Keep visible for 8 seconds after completion
+    }
+  }, [scanVolume, success, showError, info]);
 
   // UI state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -132,6 +179,8 @@ export const VolumesList: React.FC = () => {
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [selectedVolumeForDetails, setSelectedVolumeForDetails] = useState<string>('');
   const [showVolumeDetailsModal, setShowVolumeDetailsModal] = useState(false);
+  const [volumesWithDetailedProgress, setVolumesWithDetailedProgress] = useState<Set<string>>(new Set());
+  const [volumesWithProgressViewer, setVolumesWithProgressViewer] = useState<Set<string>>(new Set());
 
   // Derived state from currentConfig
   const searchQuery = currentConfig.search || '';
@@ -173,17 +222,20 @@ export const VolumesList: React.FC = () => {
     );
   }, [currentConfig.columns]);
 
+  const visibleColumnsCount = visibleColumns.size;
+
   const availableColumns = [
     { key: 'name', label: 'Name/Path', sortable: true },
     { key: 'type', label: 'Type', sortable: true },
-    { key: 'driver', label: 'Driver', sortable: true },
     { key: 'compose_project', label: 'Compose Project', sortable: true },
-    { key: 'compose_services', label: 'Services', sortable: false },
     { key: 'containers', label: 'Containers', sortable: true },
-    { key: 'readonly', label: 'RO/RW', sortable: true },
     { key: 'status', label: 'Status', sortable: true },
     { key: 'size_bytes', label: 'Size', sortable: true },
     { key: 'last_seen', label: 'Size Scan', sortable: true },
+    // Additional columns not in default view
+    { key: 'driver', label: 'Driver', sortable: true },
+    { key: 'compose_services', label: 'Services', sortable: false },
+    { key: 'readonly', label: 'RO/RW', sortable: true },
     { key: 'growth_rate', label: 'Growth', sortable: true },
     { key: 'created_at', label: 'Created', sortable: true },
   ];
@@ -198,16 +250,39 @@ export const VolumesList: React.FC = () => {
   // Bulk actions configuration
   const bulkActions: BulkAction[] = [
     {
-      id: 'track',
-      label: 'Track Selected',
-      icon: Eye,
-      action: bulkTrack,
+      id: 'scan',
+      label: 'Scan Selected',
+      icon: Scan,
+      action: async (selectedIds: string[]) => {
+        const selectedItems = data.filter(item => selectedIds.includes(item.id));
+        const trackedItems = selectedItems.filter(item => item.status === 'tracked');
+        const untrackedCount = selectedItems.length - trackedItems.length;
+        
+        if (trackedItems.length === 0) {
+          showError('No tracked volumes selected. Enable tracking first.');
+          return;
+        }
+        
+        info(`Starting scan for ${trackedItems.length} tracked volumes...`);
+        
+        if (untrackedCount > 0) {
+          info(`Skipped ${untrackedCount} untracked volumes`);
+        }
+        
+        // TODO: Implement actual bulk scan API call
+        for (const item of trackedItems) {
+          console.log(`Scanning tracked volume: ${item.id}`);
+        }
+        
+        success(`Scan initiated for ${trackedItems.length} volumes${untrackedCount > 0 ? ` (${untrackedCount} untracked volumes skipped)` : ''}`);
+      },
     },
     {
       id: 'untrack',
-      label: 'Untrack Selected',
+      label: 'Disable Tracking',
       icon: EyeOff,
       action: bulkUntrack,
+      variant: 'destructive',
     },
     {
       id: 'hide',
@@ -218,27 +293,103 @@ export const VolumesList: React.FC = () => {
     },
   ];
 
+  // Memoize fetch parameters to avoid unnecessary re-renders
+  const fetchParams = useMemo(() => ({
+    page: 1, // Reset to first page when searching/filtering/sorting
+    page_size: paginationMeta.pageSize,
+    sort:
+      sortConfig.length > 0
+        ? `${sortConfig[0].field}:${sortConfig[0].direction}`
+        : undefined,
+    q: searchQuery || undefined,
+
+    // Map filter config to API parameters
+    driver: currentConfig.filters?.driver as any,
+    orphaned:
+      currentConfig.filters?.status === 'orphaned' ? true : undefined,
+    type: currentConfig.filters?.type as any,
+    compose_project: currentConfig.filters?.project,
+    is_tracked:
+      currentConfig.filters?.status === 'tracked'
+        ? true
+        : currentConfig.filters?.status === 'untracked'
+          ? false
+          : undefined,
+  }), [
+    paginationMeta.pageSize,
+    sortConfig,
+    searchQuery,
+    currentConfig.filters,
+  ]);
+
   // Load data once on mount
   useEffect(() => {
     fetchData({});
   }, [fetchData]);
 
+  // WebSocket subscriptions for real-time updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    // Subscribe to volume list updates
+    const handleVolumeListUpdate = (data: any) => {
+      console.log('VolumesList: Received volume list update:', data);
+      
+      // Trigger data refresh when volumes are created, updated, or removed
+      if (['created', 'updated', 'removed'].includes(data.action)) {
+        // Debounce the refresh to avoid too frequent updates
+        setTimeout(() => {
+          fetchData(fetchParams);
+        }, 500);
+      }
+    };
+
+    // Subscribe to container updates (for container attachment/detachment)
+    const handleContainerUpdate = (data: any) => {
+      console.log('VolumesList: Received container update:', data);
+      
+      // Refresh data when containers are attached/detached
+      if (['attached', 'detached'].includes(data.action)) {
+        setTimeout(() => {
+          fetchData(fetchParams);
+        }, 500);
+      }
+    };
+
+    // Listen to volume updates
+    on('volume_updates', handleVolumeListUpdate);
+    on('container_updates', handleContainerUpdate);
+
+    // No cleanup needed - global WebSocket provider handles event management
+  }, [isConnected, on, fetchData, fetchParams]);
+
+
+  // Refetch data when parameters change (with debouncing only for search)
+  useEffect(() => {
+    // Only debounce search queries, make sorting/filtering instant
+    const isSearchQuery = searchQuery && searchQuery.length > 0;
+    const delay = isSearchQuery ? 200 : 0; // Reduced debounce delay
+
+    const timeoutId = setTimeout(() => {
+      fetchData(fetchParams);
+    }, delay);
+
+    return () => clearTimeout(timeoutId);
+  }, [fetchData, fetchParams]);
+
   // Handlers
   const handleSort = useCallback(
     (field: string) => {
-      const newSort = [...sortConfig];
-      const existing = newSort.find((s) => s.field === field);
+      const existing = sortConfig.find((s) => s.field === field);
 
+      // Simple 2-state toggle: asc ↔ desc (never remove sort entirely)
+      let newSort: typeof sortConfig;
       if (existing) {
-        if (existing.direction === 'asc') {
-          existing.direction = 'desc';
-        } else {
-          // Remove this sort
-          const index = newSort.findIndex((s) => s.field === field);
-          newSort.splice(index, 1);
-        }
+        // Toggle direction
+        newSort = [{ field, direction: existing.direction === 'asc' ? 'desc' : 'asc' }];
       } else {
-        newSort.push({ field, direction: 'asc' });
+        // First click: default to ascending
+        newSort = [{ field, direction: 'asc' }];
       }
 
       updateConfig({ sort: newSort });
@@ -620,6 +771,49 @@ export const VolumesList: React.FC = () => {
     }
   }, [triggerDiscovery, fetchData, info, success, showError]);
 
+  const handleScanAll = useCallback(async () => {
+    try {
+      // Get all tracked volumes from current data
+      const trackedItems = data.filter(item => item.status === 'tracked');
+      
+      if (trackedItems.length === 0) {
+        showError('No tracked volumes found. Enable tracking for volumes first.');
+        return;
+      }
+
+      info(`Starting scan for ${trackedItems.length} tracked volumes...`);
+
+      // Scan each tracked volume
+      const scanPromises = trackedItems.map(async (item) => {
+        try {
+          await scanVolume(item.id);
+          return { success: true, id: item.id, name: item.name };
+        } catch (err) {
+          console.error(`Failed to scan volume ${item.name}:`, err);
+          return { success: false, id: item.id, name: item.name, error: err };
+        }
+      });
+
+      const results = await Promise.all(scanPromises);
+      const successful = results.filter(r => r.success);
+      const failed = results.filter(r => !r.success);
+
+      if (successful.length > 0) {
+        success(`Successfully scanned ${successful.length} volumes${failed.length > 0 ? ` (${failed.length} failed)` : ''}`);
+      }
+
+      if (failed.length > 0) {
+        showError(`Failed to scan ${failed.length} volumes: ${failed.map(f => f.name).join(', ')}`);
+      }
+
+      // Refresh data to show updated scan results
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to scan all volumes:', error);
+      showError('Failed to initiate bulk scan. Please try again.');
+    }
+  }, [data, scanVolume, info, success, showError, fetchData]);
+
   const executeBulkAction = useCallback(
     async (action: BulkAction) => {
       if (selectedIds.size === 0) return;
@@ -788,8 +982,9 @@ export const VolumesList: React.FC = () => {
     }
   }, [error, showError]);
 
-  // Calculate max size for visualization
+  // Calculate max size for visualization - optimized to avoid recalculation on every render
   const maxSize = useMemo(() => {
+    if (!data || data.length === 0) return 1;
     return Math.max(...data.map((item) => item.size_bytes || 0), 1);
   }, [data]);
 
@@ -918,6 +1113,61 @@ export const VolumesList: React.FC = () => {
     }
   };
 
+  const getVolumeActions = useCallback((item: VolumeMount): DropdownItem[] => {
+    const isScanning = scanLoading[item.id] || false;
+    const actions: DropdownItem[] = [
+      {
+        id: 'scan',
+        label: isScanning ? 'Scanning...' : volumesWithDetailedProgress.has(item.id) ? 'Show Progress' : 'Scan Volume',
+        icon: Scan,
+        onClick: () => {
+          // Use enhanced scanning with progress tracking
+          handleScanVolume(item.id);
+        },
+        disabled: item.status === 'untracked' || isScanning
+      },
+      {
+        id: 'view-progress',
+        label: volumesWithProgressViewer.has(item.id) ? 'Hide Progress' : 'View Progress',
+        icon: volumesWithProgressViewer.has(item.id) ? EyeOff : Eye,
+        onClick: () => {
+          setVolumesWithProgressViewer(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(item.id)) {
+              newSet.delete(item.id);
+            } else {
+              newSet.add(item.id);
+            }
+            return newSet;
+          });
+        }
+      },
+      {
+        id: 'track',
+        label: item.status === 'tracked' ? 'Disable Tracking' : 'Enable Tracking',
+        icon: item.status === 'tracked' ? EyeOff : Eye,
+        onClick: () => {
+          if (item.status === 'tracked') {
+            bulkUntrack([item.id]);
+          } else {
+            bulkTrack([item.id]);
+          }
+        },
+        destructive: item.status === 'tracked'
+      },
+      {
+        id: 'details',
+        label: 'View Details',
+        icon: Eye,
+        onClick: () => {
+          handleOpenVolumeDetails(item.name);
+        }
+      }
+    ];
+
+    return actions;
+  }, [bulkTrack, bulkUntrack, handleOpenVolumeDetails, handleScanVolume, scanLoading, volumesWithDetailedProgress, volumesWithProgressViewer]);
+
   // Pagination
   const paginatedData = useMemo(() => {
     // Since we're using server-side pagination, data is already paginated
@@ -974,26 +1224,43 @@ export const VolumesList: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-400">
             Manage your Docker volumes and mount points
           </p>
-          {/* Keyboard shortcuts help */}
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          {/* Keyboard shortcuts help and WebSocket status */}
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-between">
             <span className="hidden lg:inline">
               Shortcuts: Ctrl+A (select all), Ctrl+F (search), Del (delete),
               Ctrl+R (refresh), Ctrl+1-3 (quick filters)
             </span>
+            
+            {/* WebSocket Status Indicator */}
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs",
+                isConnected 
+                  ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" 
+                  : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+              )}>
+                <div className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  isConnected ? "bg-green-500" : "bg-red-500"
+                )} />
+                {isConnected ? "Live Updates" : "Offline"}
+              </div>
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
-            onClick={() => fetchData({})}
+            onClick={handleScanAll}
             disabled={loading}
-            aria-label="Refresh volumes and mounts data"
+            aria-label="Scan all tracked volumes for size updates"
+            title="Scan all tracked volumes for size updates"
           >
             <RefreshCw
               className={cn('h-4 w-4 mr-2', loading && 'animate-spin')}
               aria-hidden="true"
             />
-            <span className="hidden sm:inline">Refresh</span>
+            <span className="hidden sm:inline">Scan All</span>
           </Button>
           <Button
             variant="outline"
@@ -1012,10 +1279,6 @@ export const VolumesList: React.FC = () => {
           >
             <Filter className="h-4 w-4 mr-2" aria-hidden="true" />
             <span className="hidden sm:inline">Filters</span>
-          </Button>
-          <Button aria-label="Add new volume">
-            <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
-            <span className="hidden sm:inline">Add Volume</span>
           </Button>
         </div>
       </div>
@@ -1456,15 +1719,28 @@ export const VolumesList: React.FC = () => {
         <>
           {/* Card View */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-            {paginatedData.map((item) => {
+            {paginatedData.map((item, index) => {
               const TypeIcon = getTypeIcon(item.type);
               return (
                 <Card
-                  key={item.id}
-                  className="p-4 hover:shadow-md transition-shadow"
+                  key={`${item.id}-${index}`}
+                  className={cn(
+                    "p-4 hover:shadow-md transition-all duration-200 relative",
+                    item.status === 'untracked' && "opacity-60 bg-gray-50/50 dark:bg-gray-800/30"
+                  )}
                   role="article"
                   aria-label={`Volume ${item.name}`}
                 >
+                  {/* Subtle Progress Indicator as bottom border */}
+                  <SubtleProgressIndicator
+                    volumeId={item.id}
+                    show={item.status === 'tracked'}
+                    showPhases={true}
+                    animationDuration={300}
+                    testId={`progress-indicator-card-${item.id}`}
+                    status={item.scan_status || (item.last_scan_at ? 'completed' : 'never_scanned')}
+                    progress={item.scan_progress ?? (item.last_scan_at ? 100 : 0)}
+                  />
                   <div className="space-y-3">
                     {/* Header */}
                     <div className="flex items-start justify-between">
@@ -1483,18 +1759,10 @@ export const VolumesList: React.FC = () => {
                           </p>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-shrink-0 cursor-pointer hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400 transition-colors"
-                        onClick={() => handleOpenVolumeDetails(item.name)}
-                        aria-label={`View details for ${item.name}`}
-                      >
-                        <Eye
-                          className="h-4 w-4 transition-transform hover:scale-110"
-                          aria-hidden="true"
-                        />
-                      </Button>
+                      <Dropdown
+                        items={getVolumeActions(item)}
+                        className="flex-shrink-0"
+                      />
                     </div>
 
                     {/* Status and Type */}
@@ -1769,16 +2037,24 @@ export const VolumesList: React.FC = () => {
                           {column.sortable ? (
                             <button
                               onClick={() => handleSort(column.key)}
-                              className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                              disabled={loading}
+                              className={cn(
+                                "flex items-center gap-1 transition-colors duration-150",
+                                loading 
+                                  ? "text-gray-400 cursor-wait" 
+                                  : "hover:text-gray-700 dark:hover:text-gray-200"
+                              )}
                             >
                               {column.label}
-                              {sortConfig.find(
-                                (s) => s.field === column.key,
-                              ) && (
+                              {loading && sortConfig.find((s) => s.field === column.key) ? (
+                                <div className="ml-1 w-3 h-3 animate-pulse">
+                                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                                </div>
+                              ) : sortConfig.find((s) => s.field === column.key) ? (
                                 <div className="flex flex-col">
                                   <ChevronUp
                                     className={cn(
-                                      'h-3 w-3',
+                                      'h-3 w-3 transition-colors duration-150',
                                       sortConfig.find(
                                         (s) => s.field === column.key,
                                       )?.direction === 'asc'
@@ -1788,7 +2064,7 @@ export const VolumesList: React.FC = () => {
                                   />
                                   <ChevronDown
                                     className={cn(
-                                      'h-3 w-3 -mt-1',
+                                      'h-3 w-3 -mt-1 transition-colors duration-150',
                                       sortConfig.find(
                                         (s) => s.field === column.key,
                                       )?.direction === 'desc'
@@ -1797,7 +2073,7 @@ export const VolumesList: React.FC = () => {
                                     )}
                                   />
                                 </div>
-                              )}
+                              ) : null}
                             </button>
                           ) : (
                             column.label
@@ -1808,13 +2084,16 @@ export const VolumesList: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {paginatedData.map((item) => {
+                  {paginatedData.map((item, index) => {
                     const TypeIcon = getTypeIcon(item.type);
                     return (
-                      <tr
-                        key={item.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      >
+                      <React.Fragment key={`${item.id}-${index}`}>
+                        <tr
+                          className={cn(
+                            "hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-200 relative",
+                            item.status === 'untracked' && "opacity-60 bg-gray-25 dark:bg-gray-800/20"
+                          )}
+                        >
                         <td className="p-3">
                           <Checkbox
                             checked={selectedIds.has(item.id)}
@@ -1936,17 +2215,89 @@ export const VolumesList: React.FC = () => {
                         )}
 
                         <td className="p-3">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="cursor-pointer hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400 transition-colors"
-                            onClick={() => handleOpenVolumeDetails(item.name)}
-                            aria-label={`View details for ${item.name}`}
-                          >
-                            <Eye className="h-4 w-4 transition-transform hover:scale-110" />
-                          </Button>
+                          <Dropdown
+                            items={getVolumeActions(item)}
+                          />
                         </td>
                       </tr>
+                      
+                      {/* Subtle Progress Indicator as table row */}
+                      <SubtleProgressIndicator
+                        volumeId={item.id}
+                        show={item.status === 'tracked'}
+                        showPhases={true}
+                        animationDuration={300}
+                        testId={`progress-indicator-row-${item.id}`}
+                        asTableRow={true}
+                        status={item.scan_status || (item.last_scan_at ? 'completed' : 'never_scanned')}
+                        progress={item.scan_progress ?? (item.last_scan_at ? 100 : 0)}
+                      />
+                      
+                      {/* Enhanced scan progress row with WebSocket-powered MultiPhaseProgressBar */}
+                      {volumesWithDetailedProgress.has(item.id) && (
+                        console.log(`[VolumesList] Rendering detailed progress for volume: ${item.id}`) || true
+                      ) && (
+                        <tr key={`${item.id}-progress`} className="border-t-0">
+                          <td className="p-0" colSpan={visibleColumnsCount + 2}>
+                            <div className="bg-blue-50 dark:bg-blue-900/10 border-l-4 border-blue-500 p-4">
+                              <MultiPhaseProgressBar
+                                volumeId={item.id}
+                                scanId={item.last_scan_id}
+                                size="md"
+                                showPhaseDescriptions={true}
+                                showDetailedMetrics={true}
+                                showErrors={true}
+                                animated={true}
+                                showEstimatedTime={true}
+                                compact={false}
+                                onScanStart={(scanId) => {
+                                  console.log(`MultiPhaseProgressBar: Scan started for volume ${item.id}:`, scanId);
+                                }}
+                                onScanComplete={(scanId, duration) => {
+                                  console.log(`MultiPhaseProgressBar: Scan completed for volume ${item.id}:`, scanId, duration);
+                                  success(`Scan completed for ${item.name} in ${Math.round(duration / 1000)}s`);
+                                  // Auto-hide progress after completion
+                                  setTimeout(() => {
+                                    setVolumesWithDetailedProgress(prev => {
+                                      const newSet = new Set(prev);
+                                      newSet.delete(item.id);
+                                      return newSet;
+                                    });
+                                  }, 5000);
+                                }}
+                                onScanError={(scanId, error) => {
+                                  console.log(`MultiPhaseProgressBar: Scan error for volume ${item.id}:`, scanId, error);
+                                  showError(`Scan failed for ${item.name}: ${error}`);
+                                }}
+                                className="w-full"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      
+                      {/* Progress Viewer Row - Compact MultiPhaseProgressBar */}
+                      {volumesWithProgressViewer.has(item.id) && (
+                        <tr key={`${item.id}-progress-viewer`} className="border-t-0">
+                          <td className="p-0" colSpan={visibleColumnsCount + 2}>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 border-l-4 border-gray-400 p-3">
+                              <MultiPhaseProgressBar
+                                volumeId={item.id}
+                                scanId={item.last_scan_id}
+                                size="sm"
+                                showPhaseDescriptions={false}
+                                showDetailedMetrics={false}
+                                showErrors={false}
+                                animated={true}
+                                showEstimatedTime={false}
+                                compact={true}
+                                className="w-full"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>

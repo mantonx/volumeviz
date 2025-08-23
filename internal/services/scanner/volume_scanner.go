@@ -64,6 +64,9 @@ type VolumeScanner struct {
 
 	// Daily stats integration
 	statsService interfaces.StatsService
+
+	// Database store for progress tracking
+	store store.Store
 }
 
 // NewVolumeScanner creates a new volume scanner instance
@@ -138,6 +141,7 @@ func NewVolumeScannerWithIndexing(
 		filesRepo:         filesRepo,
 		volumesRepo:       store.Volumes(), // Get volumes repository from store
 		previewService:    previewService,
+		store:             store, // Store for scan progress tracking
 	}
 }
 
@@ -152,6 +156,7 @@ func (vs *VolumeScanner) SetFilesystemIndexing(
 	vs.foldersRepo = foldersRepo
 	vs.filesRepo = filesRepo
 	vs.previewService = previewService
+	vs.store = store // Set store for scan progress tracking
 	vs.filesystemIndexer = filesystem.NewFilesystemIndexer(
 		store,
 		indexerConfig,
@@ -307,6 +312,12 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 	vs.volumeToScan[volumeID] = scanID
 	vs.scanMutex.Unlock()
 
+	// Initialize database progress tracking if store is available
+	if vs.store != nil {
+		// Use background context to avoid cancellation when HTTP request completes
+		go vs.initializeDatabaseProgress(context.Background(), scanID, volumeID)
+	}
+
 	// Start the scan in background
 	go func() {
 		// Update status to running
@@ -325,10 +336,19 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 			if vs.logger != nil {
 				vs.logger.Printf("Async scan failed for volume %s: %v", volumeID, err)
 			}
+			// Update database - mark volume scan phase as failed
+			if vs.store != nil {
+				go vs.updateVolumePhaseStatus(context.Background(), scanID, "failed", err.Error())
+			}
 		} else {
 			progress.Status = coreModels.ScanStatusCompleted
 			progress.Progress = 1.0
 			progress.Method = result.Method
+
+			// Update database - mark volume scan phase as completed
+			if vs.store != nil {
+				go vs.updateVolumePhaseStatus(context.Background(), scanID, "completed", "")
+			}
 
 			// Trigger daily stats computation if stats service is available (async)
 			if vs.statsService != nil {
@@ -480,6 +500,118 @@ func calculatePhaseProgress(indexing *filesystem.IndexingProgress) float64 {
 }
 
 // Helper function to calculate overall progress from phases
+// initializeDatabaseProgress creates scan phases in the database for detailed tracking
+func (vs *VolumeScanner) initializeDatabaseProgress(ctx context.Context, scanID, volumeID string) {
+	if vs.store == nil {
+		if vs.logger != nil {
+			vs.logger.Printf("Store is nil, skipping database progress initialization for scan %s", scanID)
+		}
+		return
+	}
+	
+	if vs.logger != nil {
+		vs.logger.Printf("Initializing database progress for scan %s (volume: %s)", scanID, volumeID)
+	}
+
+	scanProgressRepo := vs.store.ScanProgress()
+	if scanProgressRepo == nil {
+		if vs.logger != nil {
+			vs.logger.Printf("ScanProgress repo is nil for scan %s", scanID)
+		}
+		return
+	}
+	
+	now := time.Now()
+
+	// Create volume scan phase
+	if vs.logger != nil {
+		vs.logger.Printf("Creating volume_scan phase for scan %s", scanID)
+	}
+	_, err := scanProgressRepo.CreateScanPhase(ctx, models.CreateScanPhaseParams{
+		ScanID:     scanID,
+		PhaseName:  "volume_scan",
+		PhaseOrder: 1,
+		Status:     "running",
+		StartedAt:  &now,
+		Metadata:   "{}",
+	})
+	if err != nil && vs.logger != nil {
+		vs.logger.Printf("Failed to create volume_scan phase for scan %s: %v", scanID, err)
+	} else if vs.logger != nil {
+		vs.logger.Printf("Successfully created volume_scan phase for scan %s", scanID)
+	}
+
+	// Create filesystem indexing phase
+	if vs.logger != nil {
+		vs.logger.Printf("Creating filesystem_indexing phase for scan %s", scanID)
+	}
+	_, err = scanProgressRepo.CreateScanPhase(ctx, models.CreateScanPhaseParams{
+		ScanID:     scanID,
+		PhaseName:  "filesystem_indexing",
+		PhaseOrder: 2,
+		Status:     "pending",
+		Metadata:   "{}",
+	})
+	if err != nil && vs.logger != nil {
+		vs.logger.Printf("Failed to create filesystem_indexing phase for scan %s: %v", scanID, err)
+	} else if vs.logger != nil {
+		vs.logger.Printf("Successfully created filesystem_indexing phase for scan %s", scanID)
+	}
+
+	// Create media enrichment phase
+	if vs.logger != nil {
+		vs.logger.Printf("Creating media_enrichment phase for scan %s", scanID)
+	}
+	_, err = scanProgressRepo.CreateScanPhase(ctx, models.CreateScanPhaseParams{
+		ScanID:     scanID,
+		PhaseName:  "media_enrichment",
+		PhaseOrder: 3,
+		Status:     "pending",
+		Metadata:   "{}",
+	})
+	if err != nil && vs.logger != nil {
+		vs.logger.Printf("Failed to create media_enrichment phase for scan %s: %v", scanID, err)
+	} else if vs.logger != nil {
+		vs.logger.Printf("Successfully created media_enrichment phase for scan %s", scanID)
+	}
+	
+	if vs.logger != nil {
+		vs.logger.Printf("Database progress initialization completed for scan %s", scanID)
+	}
+}
+
+// updateVolumePhaseStatus updates the volume scan phase status in the database
+func (vs *VolumeScanner) updateVolumePhaseStatus(ctx context.Context, scanID, status, errorMessage string) {
+	if vs.store == nil {
+		return
+	}
+
+	scanProgressRepo := vs.store.ScanProgress()
+	
+	if status == "completed" {
+		err := scanProgressRepo.CompleteScanPhase(ctx, scanID, "volume_scan")
+		if err != nil && vs.logger != nil {
+			vs.logger.Printf("Failed to complete volume_scan phase for scan %s: %v", scanID, err)
+		}
+	} else if status == "failed" {
+		err := scanProgressRepo.FailScanPhase(ctx, scanID, "volume_scan", errorMessage)
+		if err != nil && vs.logger != nil {
+			vs.logger.Printf("Failed to mark volume_scan phase as failed for scan %s: %v", scanID, err)
+		}
+	}
+}
+
+// getScanIDForVolume retrieves the scan ID for a given volume ID
+func (vs *VolumeScanner) getScanIDForVolume(volumeID string) string {
+	vs.scanMutex.RLock()
+	defer vs.scanMutex.RUnlock()
+	
+	if scanID, exists := vs.volumeToScan[volumeID]; exists {
+		return scanID
+	}
+	return ""
+}
+
 func calculateOverallProgress(phases map[string]*interfaces.PhaseInfo) float64 {
 	if phases == nil {
 		return 0.0
@@ -843,8 +975,16 @@ func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID
 
 	start := time.Now()
 
+	// Get scan ID for this volume if available
+	scanID := vs.getScanIDForVolume(volumeID)
+
 	// Perform filesystem indexing (delta mode for efficiency)
-	err := vs.filesystemIndexer.IndexVolume(indexCtx, volumeID, volumePath, true)
+	var err error
+	if scanID != "" {
+		err = vs.filesystemIndexer.IndexVolumeWithScanID(indexCtx, volumeID, volumePath, true, scanID)
+	} else {
+		err = vs.filesystemIndexer.IndexVolume(indexCtx, volumeID, volumePath, true)
+	}
 	duration := time.Since(start)
 
 	if err != nil {
@@ -886,7 +1026,8 @@ func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID
 
 	// Trigger media enrichment if enabled
 	if vs.enrichmentManager != nil && vs.enrichmentManager.IsEnabled() {
-		go vs.performMediaEnrichment(ctx, volumeID)
+		// Use background context so enrichment can continue after scan completes
+		go vs.performMediaEnrichment(context.Background(), volumeID)
 	}
 }
 
@@ -900,15 +1041,60 @@ func (vs *VolumeScanner) performMediaEnrichment(ctx context.Context, volumeID st
 		vs.logger.Printf("Starting media enrichment for volume %s", volumeID)
 	}
 
-	// Create context with cancellation
-	enrichCtx, cancel := context.WithTimeout(ctx, 30*time.Minute) // 30 min max for enrichment
+	// Initialize enrichment phase tracking
+	vs.scanMutex.Lock()
+	scanID := vs.volumeToScan[volumeID]
+	if scanID != "" && vs.activeScans[scanID] != nil {
+		if vs.activeScans[scanID].Phases == nil {
+			vs.activeScans[scanID].Phases = make(map[string]*interfaces.PhaseInfo)
+		}
+		startedAt := time.Now()
+		vs.activeScans[scanID].Phases["media_enrichment"] = &interfaces.PhaseInfo{
+			Status:      coreModels.ScanStatusRunning,
+			Progress:    0.0,
+			StartedAt:   &startedAt,
+		}
+		// Update overall progress
+		vs.activeScans[scanID].Progress = calculateOverallProgress(vs.activeScans[scanID].Phases)
+	}
+	vs.scanMutex.Unlock()
+
+	// Create context with cancellation using background context to avoid cancellation when scan completes
+	enrichCtx, cancel := context.WithTimeout(context.Background(), 30*time.Minute) // 30 min max for enrichment
 	defer cancel()
 
 	start := time.Now()
 
+	// Monitor enrichment progress in background
+	go vs.monitorEnrichmentProgress(volumeID, scanID)
+
 	// Perform media enrichment
-	err := vs.enrichmentManager.EnrichVolume(enrichCtx, volumeID)
+	var err error
+	if scanID != "" {
+		err = vs.enrichmentManager.EnrichVolumeWithScanID(enrichCtx, volumeID, scanID)
+	} else {
+		err = vs.enrichmentManager.EnrichVolume(enrichCtx, volumeID)
+	}
 	duration := time.Since(start)
+
+	// Update final enrichment phase status
+	vs.scanMutex.Lock()
+	if scanID != "" && vs.activeScans[scanID] != nil && vs.activeScans[scanID].Phases != nil {
+		if err != nil {
+			vs.activeScans[scanID].Phases["media_enrichment"].Status = coreModels.ScanStatusFailed
+			vs.activeScans[scanID].Phases["media_enrichment"].Error = err.Error()
+		} else {
+			vs.activeScans[scanID].Phases["media_enrichment"].Status = coreModels.ScanStatusCompleted
+			vs.activeScans[scanID].Phases["media_enrichment"].Progress = 1.0
+		}
+		completedAt := time.Now()
+		vs.activeScans[scanID].Phases["media_enrichment"].CompletedAt = &completedAt
+		vs.activeScans[scanID].Phases["media_enrichment"].Duration = duration
+		
+		// Update overall progress
+		vs.activeScans[scanID].Progress = calculateOverallProgress(vs.activeScans[scanID].Phases)
+	}
+	vs.scanMutex.Unlock()
 
 	if err != nil {
 		if vs.logger != nil {
@@ -928,6 +1114,88 @@ func (vs *VolumeScanner) performMediaEnrichment(ctx context.Context, volumeID st
 	// Update metrics for successful enrichment
 	if vs.metrics != nil {
 		vs.metrics.ScanCompleted(volumeID, "media_enricher", duration, 0) // No bytes metric for enrichment
+	}
+}
+
+// monitorEnrichmentProgress monitors enrichment progress and updates phase tracking
+func (vs *VolumeScanner) monitorEnrichmentProgress(volumeID, scanID string) {
+	if vs.enrichmentManager == nil || scanID == "" {
+		return
+	}
+
+	ticker := time.NewTicker(2 * time.Second) // Check every 2 seconds
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			// Get enrichment progress from manager
+			progress := vs.enrichmentManager.GetProgress(volumeID)
+			if progress == nil {
+				continue
+			}
+
+			vs.scanMutex.Lock()
+			if vs.activeScans[scanID] != nil && vs.activeScans[scanID].Phases != nil {
+				if phase, exists := vs.activeScans[scanID].Phases["media_enrichment"]; exists {
+					// Update phase progress based on enrichment status
+					if progress.TotalFiles > 0 {
+						phase.Progress = float64(progress.ProcessedFiles) / float64(progress.TotalFiles)
+					}
+					
+					// Update items processed count
+					phase.ItemsProcessed = progress.ProcessedFiles
+
+					// Update phase status
+					switch progress.Status {
+					case "running":
+						phase.Status = coreModels.ScanStatusRunning
+					case "completed":
+						phase.Status = coreModels.ScanStatusCompleted
+						phase.Progress = 1.0
+					case "failed":
+						phase.Status = coreModels.ScanStatusFailed
+						if progress.LastError != "" {
+							phase.Error = progress.LastError
+						}
+					}
+
+					// Store detailed error information in phase for frontend access
+					if len(progress.RecentErrors) > 0 {
+						// Store recent errors as additional data in the phase
+						// This will be accessible via the phases API field
+						if vs.activeScans[scanID].Phases["media_enrichment"] != nil {
+							// Add error details to the overall scan progress errors
+							vs.activeScans[scanID].ErrorsCount = progress.ErrorsCount
+							vs.activeScans[scanID].LastError = progress.LastError
+							
+							// Format recent errors for the API response
+							errorMessages := make([]string, 0, len(progress.RecentErrors))
+							for _, err := range progress.RecentErrors {
+								errorMsg := fmt.Sprintf("%s: %s (%s) - %s", err.EnricherName, err.ErrorType, err.FileName, err.ErrorMessage)
+								if err.TechnicalDetails != "" {
+									errorMsg += fmt.Sprintf(" [%s]", err.TechnicalDetails)
+								}
+								errorMessages = append(errorMessages, errorMsg)
+							}
+							vs.activeScans[scanID].Errors = errorMessages
+						}
+					}
+
+					// Update overall scan progress
+					vs.activeScans[scanID].Progress = calculateOverallProgress(vs.activeScans[scanID].Phases)
+				}
+			}
+			vs.scanMutex.Unlock()
+
+			// Exit if enrichment is completed or failed
+			if progress.Status == "completed" || progress.Status == "failed" {
+				return
+			}
+
+		case <-time.After(5 * time.Minute): // Timeout after 5 minutes of no updates
+			return
+		}
 	}
 }
 
@@ -984,8 +1252,16 @@ func (vs *VolumeScanner) performFilesystemIndexingAsync(ctx context.Context, vol
 
 	start := time.Now()
 
+	// Get scan ID for this volume if available
+	scanID := vs.getScanIDForVolume(volumeID)
+
 	// Perform filesystem indexing
-	err := vs.filesystemIndexer.IndexVolume(indexCtx, volumeID, volumePath, deltaMode)
+	var err error
+	if scanID != "" {
+		err = vs.filesystemIndexer.IndexVolumeWithScanID(indexCtx, volumeID, volumePath, deltaMode, scanID)
+	} else {
+		err = vs.filesystemIndexer.IndexVolume(indexCtx, volumeID, volumePath, deltaMode)
+	}
 	duration := time.Since(start)
 
 	if err != nil {

@@ -121,24 +121,52 @@ WHERE scan_id = $1 AND status = 'running';
 -- name: MarkStaleScanJobsAsFailed :many
 -- Mark scan jobs as failed if they haven't been updated within the timeout period
 -- This is the watchdog functionality
-UPDATE scan_jobs 
-SET status = 'failed', 
-    error_message = 'Scan job timed out - no heartbeat received within ' || $1 || ' seconds',
-    completed_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE status = 'running' 
-AND updated_at < (CURRENT_TIMESTAMP - INTERVAL '1 second' * $1)
-RETURNING scan_id;
+WITH stale_jobs AS (
+    UPDATE scan_jobs 
+    SET status = 'failed', 
+        error_message = 'Scan job timed out - no heartbeat received within ' || $1 || ' seconds',
+        completed_at = CURRENT_TIMESTAMP,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE status = 'running' 
+    AND updated_at < (CURRENT_TIMESTAMP - INTERVAL '1 second' * $1)
+    RETURNING scan_id
+),
+failed_phases AS (
+    UPDATE scan_phases
+    SET status = 'failed',
+        error_message = 'Scan job timed out - no heartbeat received within ' || $1 || ' seconds',
+        completed_at = CURRENT_TIMESTAMP,
+        duration_ms = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - started_at)) * 1000,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE scan_id IN (SELECT scan_id FROM stale_jobs)
+    AND status IN ('running', 'pending')
+    RETURNING scan_id
+)
+SELECT scan_id FROM stale_jobs;
 
 -- name: MarkInFlightJobsAsFailed :many
 -- Mark all running scan jobs as failed (used during graceful restart)
-UPDATE scan_jobs 
-SET status = 'failed',
-    error_message = $1,
-    completed_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP  
-WHERE status = 'running'
-RETURNING scan_id;
+WITH failed_jobs AS (
+    UPDATE scan_jobs 
+    SET status = 'failed',
+        error_message = $1,
+        completed_at = CURRENT_TIMESTAMP,
+        updated_at = CURRENT_TIMESTAMP  
+    WHERE status = 'running'
+    RETURNING scan_id
+),
+failed_phases AS (
+    UPDATE scan_phases
+    SET status = 'failed',
+        error_message = $1,
+        completed_at = CURRENT_TIMESTAMP,
+        duration_ms = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - started_at)) * 1000,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE scan_id IN (SELECT scan_id FROM failed_jobs)
+    AND status IN ('running', 'pending')
+    RETURNING scan_id
+)
+SELECT scan_id FROM failed_jobs;
 
 -- name: GetQueueDepth :one
 -- Get current queue depth for metrics

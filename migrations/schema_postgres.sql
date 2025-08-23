@@ -1055,3 +1055,51 @@ CREATE TRIGGER tracking_rule_templates_updated_at_trigger
     BEFORE UPDATE ON tracking_rule_templates
     FOR EACH ROW
     EXECUTE FUNCTION update_tracking_rules_updated_at();
+-- Scan phases table - tracks each phase of the scan process
+CREATE TABLE IF NOT EXISTS scan_phases (
+    id BIGSERIAL PRIMARY KEY,
+    scan_id TEXT NOT NULL,
+    phase_name TEXT NOT NULL, -- 'volume_scan', 'filesystem_indexing', 'media_enrichment', 'preview_generation'
+    phase_order INTEGER NOT NULL, -- 1, 2, 3, 4
+    status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'running', 'completed', 'failed', 'skipped'
+    progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+    
+    -- Counts and metrics
+    items_total BIGINT DEFAULT 0,
+    items_processed BIGINT DEFAULT 0,
+    items_successful BIGINT DEFAULT 0,
+    items_failed BIGINT DEFAULT 0,
+    items_skipped BIGINT DEFAULT 0,
+    
+    -- Size tracking (in bytes)
+    bytes_total BIGINT DEFAULT 0,
+    bytes_processed BIGINT DEFAULT 0,
+    
+    -- Performance metrics
+    items_per_second DECIMAL(10,2) DEFAULT 0,
+    bytes_per_second BIGINT DEFAULT 0,
+    
+    -- Timing
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    estimated_completion_at TIMESTAMPTZ,
+    duration_ms BIGINT,
+    
+    -- Current processing info
+    current_item TEXT, -- current file/directory being processed
+    current_depth INTEGER DEFAULT 0,
+    
+    -- Error tracking
+    error_message TEXT,
+    error_count BIGINT DEFAULT 0,
+    last_error_at TIMESTAMPTZ,
+    
+    -- Metadata
+    metadata JSONB DEFAULT '{}',
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    FOREIGN KEY (scan_id) REFERENCES scan_jobs(scan_id) ON DELETE CASCADE,
+    UNIQUE(scan_id, phase_name)
+);

@@ -16,7 +16,7 @@ interface SizeVisualizationProps {
 }
 
 export const formatBytes = (bytes?: number): string => {
-  if (bytes === undefined || bytes === null) return 'Unknown';
+  if (bytes === undefined || bytes === null) return '—';
   if (bytes === 0) return '0 B';
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));

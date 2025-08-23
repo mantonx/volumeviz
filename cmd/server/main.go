@@ -35,9 +35,63 @@ import (
 // @description ## Features
 // @description - Multi-method volume size calculation (du, find, stat)
 // @description - Asynchronous scanning with progress tracking for large volumes
+// @description - Real-time WebSocket progress updates during scan operations
 // @description - High-performance caching with TTL-based invalidation
 // @description - Comprehensive Prometheus metrics integration
 // @description - Circuit breaker patterns for resilience
+// @description
+// @description ## WebSocket API
+// @description WebSocket endpoint: `ws://localhost:8080/ws`
+// @description
+// @description ### Scan Progress Events
+// @description Subscribe to real-time scan progress updates:
+// @description ```json
+// @description {
+// @description   "type": "subscribe",
+// @description   "event": "scan_progress",
+// @description   "data": {
+// @description     "volume_id": "volume_id_here",
+// @description     "scan_id": "scan_id_here"
+// @description   }
+// @description }
+// @description ```
+// @description
+// @description Progress updates are broadcast as:
+// @description ```json
+// @description {
+// @description   "type": "scan_progress_update",
+// @description   "data": {
+// @description     "scan_id": "scan_id",
+// @description     "volume_id": "volume_id",
+// @description     "overall_status": "running|completed|failed",
+// @description     "overall_progress": 75,
+// @description     "phases": [
+// @description       {
+// @description         "phase_name": "volume_scan",
+// @description         "status": "completed",
+// @description         "progress": 100,
+// @description         "items_processed": 1,
+// @description         "items_total": 1
+// @description       },
+// @description       {
+// @description         "phase_name": "filesystem_indexing",
+// @description         "status": "running",
+// @description         "progress": 50,
+// @description         "items_processed": 5000,
+// @description         "items_total": 10000,
+// @description         "items_per_second": 125.5,
+// @description         "current_item": "/path/to/current/file"
+// @description       },
+// @description       {
+// @description         "phase_name": "media_enrichment",
+// @description         "status": "pending",
+// @description         "progress": 0
+// @description       }
+// @description     ],
+// @description     "errors": []
+// @description   }
+// @description }
+// @description ```
 // @description
 // @description ## Performance SLO
 // @description - 95th percentile response time < 500ms for volume listing

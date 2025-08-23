@@ -131,7 +131,7 @@ func (h *Handler) GetMountCatalogSummary(c *gin.Context) {
 // @Param status query string false "Filter by status" enums(orphaned,active) example("active")
 // @Param is_orphaned query string false "Filter by orphaned status" enums(true,false) example("false")
 // @Param is_tracked query string false "Filter by tracking status" enums(true,false) example("true")
-// @Success 200 {object} gin.H{mounts=[]MountCatalogResponse,pagination=object,filters=object}
+// @Success 200 {object} object
 // @Failure 400 {object} object
 // @Failure 500 {object} object
 // @Router /api/v1/mounts [get]
@@ -330,7 +330,7 @@ func (h *Handler) GetMountDetails(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param mount_id path string true "Mount ID" example("vol_abc123")
-// @Param request body gin.H{is_tracked=bool} true "Tracking status" example({"is_tracked": true})
+// @Param request body object true "Tracking status" example({"is_tracked": true})
 // @Success 200 {object} MountCatalogResponse
 // @Failure 400 {object} object
 // @Failure 404 {object} object

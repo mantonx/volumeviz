@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -229,6 +230,104 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// GetScanProgress returns comprehensive progress information for a scan
+// GET /api/v1/scans/{scanId}/progress
+// @Summary Get detailed scan progress
+// @Description Get comprehensive progress information including phases, items, and errors
+// @Tags scan
+// @Accept json
+// @Produce json
+// @Param scanId path string true "Scan ID"
+// @Success 200 {object} map[string]interface{} "Comprehensive scan progress"
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /scans/{scanId}/progress [get]
+func (h *Handler) GetScanProgress(c *gin.Context) {
+	scanID := c.Param("id")
+	if scanID == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Scan ID is required",
+			Code:    "MISSING_SCAN_ID",
+			Details: map[string]any{"message": "Scan ID parameter is missing from the request"},
+		})
+		return
+	}
+
+	if h.store == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+			Error:   "Progress tracking not available",
+			Code:    "PROGRESS_TRACKING_DISABLED",
+			Details: map[string]any{"message": "Database progress tracking is not configured"},
+		})
+		return
+	}
+
+	scanProgressRepo := h.store.ScanProgress()
+
+	// Get scan phases
+	phases, err := scanProgressRepo.GetScanPhases(c.Request.Context(), scanID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error:   "Scan not found",
+			Code:    "SCAN_NOT_FOUND",
+			Details: map[string]any{"message": fmt.Sprintf("No scan found with ID %s", scanID), "scan_id": scanID},
+		})
+		return
+	}
+
+	if len(phases) == 0 {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error:   "No progress data found",
+			Code:    "NO_PROGRESS_DATA",
+			Details: map[string]any{"message": "Scan exists but no progress data available", "scan_id": scanID},
+		})
+		return
+	}
+
+	// Get progress items for detailed tracking
+	items, err := scanProgressRepo.GetScanProgressItems(c.Request.Context(), scanID)
+	if err != nil {
+		// Log error but don't fail - items are optional
+		items = []coremodels.ScanProgressItem{}
+	}
+
+	// Get scan errors
+	errorPointers, err := scanProgressRepo.GetScanErrors(c.Request.Context(), scanID, "", 100, 0)
+	if err != nil {
+		// Log error but don't fail - errors are optional
+		errorPointers = []*coremodels.ScanProgressError{}
+	}
+	
+	// Convert from pointers to values
+	errors := make([]coremodels.ScanProgressError, len(errorPointers))
+	for i, errorPtr := range errorPointers {
+		if errorPtr != nil {
+			errors[i] = *errorPtr
+		}
+	}
+
+	// Get the overall status from the scan_jobs table (single source of truth)
+	var overallStatus string = "unknown"
+	if scansRepo := h.store.Scans(); scansRepo != nil {
+		if scanJob, err := scansRepo.GetScanJobByScanID(c.Request.Context(), scanID); err == nil {
+			overallStatus = scanJob.Status
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"scan_id": scanID,
+		"phases":  phases,
+		"items":   items,
+		"errors":  errors,
+		"summary": gin.H{
+			"total_phases":  len(phases),
+			"total_items":   len(items),
+			"total_errors":  len(errors),
+			"overall_status": overallStatus,
+		},
+	})
 }
 
 // GetScanStatus returns the status of an async scan.
@@ -1043,6 +1142,290 @@ func (h *Handler) GetMediaEnrichmentStatus(c *gin.Context) {
 		"message":   "Progress tracking not available",
 		"note":      "Media enrichment runs asynchronously after filesystem indexing",
 	})
+}
+
+// GetScanErrors returns scan errors with filtering and pagination
+// GET /api/v1/scans/{scanId}/errors
+// @Summary Get scan errors
+// @Description Get detailed error information for a scan with filtering and pagination
+// @Tags scan
+// @Accept json
+// @Produce json
+// @Param scanId path string true "Scan ID"
+// @Param phase query string false "Filter by phase name"
+// @Param error_type query string false "Filter by error type"
+// @Param limit query int false "Limit number of results (default: 50)"
+// @Param offset query int false "Offset for pagination (default: 0)"
+// @Success 200 {object} map[string]interface{} "Scan errors with pagination"
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /scans/{scanId}/errors [get]
+func (h *Handler) GetScanErrors(c *gin.Context) {
+	scanID := c.Param("id")
+	if scanID == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Scan ID is required",
+			Code:    "MISSING_SCAN_ID",
+			Details: map[string]any{"message": "Scan ID parameter is missing from the request"},
+		})
+		return
+	}
+
+	if h.store == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+			Error:   "Progress tracking not available",
+			Code:    "PROGRESS_TRACKING_DISABLED",
+			Details: map[string]any{"message": "Database progress tracking is not configured"},
+		})
+		return
+	}
+
+	// Parse query parameters
+	phaseFilter := c.Query("phase")
+	errorTypeFilter := c.Query("error_type")
+	limit := 50 // Default limit
+	if limitParam := c.Query("limit"); limitParam != "" {
+		if l, err := strconv.Atoi(limitParam); err == nil && l > 0 && l <= 200 {
+			limit = l
+		}
+	}
+	offset := 0
+	if offsetParam := c.Query("offset"); offsetParam != "" {
+		if o, err := strconv.Atoi(offsetParam); err == nil && o >= 0 {
+			offset = o
+		}
+	}
+
+	scanProgressRepo := h.store.ScanProgress()
+
+	// Get filtered errors
+	errors, err := scanProgressRepo.GetScanErrorsFiltered(c.Request.Context(), coremodels.ScanErrorFilterParams{
+		ScanID:       scanID,
+		PhaseName:    phaseFilter,
+		ErrorType:    errorTypeFilter,
+		Limit:        limit,
+		Offset:       offset,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to retrieve scan errors",
+			Code:    "SCAN_ERRORS_RETRIEVAL_FAILED",
+			Details: map[string]any{"message": err.Error(), "scan_id": scanID},
+		})
+		return
+	}
+
+	// Get total count for pagination
+	totalCount, err := scanProgressRepo.GetScanErrorsCount(c.Request.Context(), scanID, phaseFilter, errorTypeFilter)
+	if err != nil {
+		totalCount = int64(len(errors)) // Fallback to current result count
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"scan_id": scanID,
+		"errors":  errors,
+		"pagination": gin.H{
+			"limit":       limit,
+			"offset":      offset,
+			"total":       totalCount,
+			"has_next":    int64(offset+limit) < totalCount,
+			"has_prev":    offset > 0,
+			"next_offset": offset + limit,
+			"prev_offset": max(0, offset-limit),
+		},
+		"filters": gin.H{
+			"phase":      phaseFilter,
+			"error_type": errorTypeFilter,
+		},
+	})
+}
+
+// GetActiveScans returns all currently active scans
+// GET /api/v1/scans/active
+// @Summary Get active scans
+// @Description Get list of all currently active/running scans
+// @Tags scan
+// @Accept json
+// @Produce json
+// @Param limit query int false "Limit number of results (default: 20)"
+// @Param offset query int false "Offset for pagination (default: 0)"
+// @Success 200 {object} map[string]interface{} "Active scans with pagination"
+// @Failure 500 {object} models.ErrorResponse
+// @Router /scans/active [get]
+func (h *Handler) GetActiveScans(c *gin.Context) {
+	if h.store == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+			Error:   "Progress tracking not available",
+			Code:    "PROGRESS_TRACKING_DISABLED",
+			Details: map[string]any{"message": "Database progress tracking is not configured"},
+		})
+		return
+	}
+
+	// Parse pagination parameters
+	limit := 20 // Default limit
+	if limitParam := c.Query("limit"); limitParam != "" {
+		if l, err := strconv.Atoi(limitParam); err == nil && l > 0 && l <= 100 {
+			limit = l
+		}
+	}
+	offset := 0
+	if offsetParam := c.Query("offset"); offsetParam != "" {
+		if o, err := strconv.Atoi(offsetParam); err == nil && o >= 0 {
+			offset = o
+		}
+	}
+
+	scanProgressRepo := h.store.ScanProgress()
+
+	// Get active scans
+	activeScans, err := scanProgressRepo.GetActiveScans(c.Request.Context(), limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to retrieve active scans",
+			Code:    "ACTIVE_SCANS_RETRIEVAL_FAILED",
+			Details: map[string]any{"message": err.Error()},
+		})
+		return
+	}
+
+	// Get total count
+	totalCount, err := scanProgressRepo.GetActiveScansCount(c.Request.Context())
+	if err != nil {
+		totalCount = int64(len(activeScans)) // Fallback
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"active_scans": activeScans,
+		"pagination": gin.H{
+			"limit":       limit,
+			"offset":      offset,
+			"total":       totalCount,
+			"has_next":    int64(offset+limit) < totalCount,
+			"has_prev":    offset > 0,
+			"next_offset": offset + limit,
+			"prev_offset": max(0, offset-limit),
+		},
+		"summary": gin.H{
+			"total_active": totalCount,
+			"current_page_count": len(activeScans),
+		},
+	})
+}
+
+// GetRecentScanErrors returns recent scan errors across all scans
+// GET /api/v1/scans/recent-errors
+// @Summary Get recent scan errors
+// @Description Get recent scan errors across all scans with filtering
+// @Tags scan
+// @Accept json
+// @Produce json
+// @Param hours query int false "Hours back to search (default: 24)"
+// @Param error_type query string false "Filter by error type"
+// @Param phase query string false "Filter by phase name"
+// @Param limit query int false "Limit number of results (default: 50)"
+// @Success 200 {object} map[string]interface{} "Recent scan errors"
+// @Failure 500 {object} models.ErrorResponse
+// @Router /scans/recent-errors [get]
+func (h *Handler) GetRecentScanErrors(c *gin.Context) {
+	if h.store == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+			Error:   "Progress tracking not available",
+			Code:    "PROGRESS_TRACKING_DISABLED",
+			Details: map[string]any{"message": "Database progress tracking is not configured"},
+		})
+		return
+	}
+
+	// Parse parameters
+	hours := 24 // Default: last 24 hours
+	if hoursParam := c.Query("hours"); hoursParam != "" {
+		if h, err := strconv.Atoi(hoursParam); err == nil && h > 0 && h <= 168 { // Max 1 week
+			hours = h
+		}
+	}
+
+	errorTypeFilter := c.Query("error_type")
+	phaseFilter := c.Query("phase")
+	limit := 50
+	if limitParam := c.Query("limit"); limitParam != "" {
+		if l, err := strconv.Atoi(limitParam); err == nil && l > 0 && l <= 200 {
+			limit = l
+		}
+	}
+
+	scanProgressRepo := h.store.ScanProgress()
+
+	// Get recent errors
+	recentErrors, err := scanProgressRepo.GetRecentScanErrors(c.Request.Context(), coremodels.RecentErrorsParams{
+		HoursBack:    hours,
+		ErrorType:    errorTypeFilter,
+		PhaseName:    phaseFilter,
+		Limit:        limit,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to retrieve recent scan errors",
+			Code:    "RECENT_ERRORS_RETRIEVAL_FAILED",
+			Details: map[string]any{"message": err.Error()},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"recent_errors": recentErrors,
+		"parameters": gin.H{
+			"hours_back": hours,
+			"error_type": errorTypeFilter,
+			"phase":      phaseFilter,
+			"limit":      limit,
+		},
+		"summary": gin.H{
+			"total_errors": len(recentErrors),
+			"time_range":   fmt.Sprintf("Last %d hours", hours),
+		},
+	})
+}
+
+// calculateOverallStatus determines overall scan status from phases
+func (h *Handler) calculateOverallStatus(phases []coremodels.ScanPhase) string {
+	if len(phases) == 0 {
+		return "unknown"
+	}
+
+	hasRunning := false
+	hasFailed := false
+	completedCount := 0
+
+	for _, phase := range phases {
+		switch phase.Status {
+		case "running", "pending":
+			hasRunning = true
+		case "failed":
+			hasFailed = true
+		case "completed":
+			completedCount++
+		}
+	}
+
+	if hasRunning {
+		return "running"
+	}
+	if hasFailed {
+		return "failed"
+	}
+	if completedCount == len(phases) {
+		return "completed"
+	}
+	return "partial"
+}
+
+// max returns the maximum of two integers
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 // GetMediaEnrichmentCapabilities returns media enrichment capabilities

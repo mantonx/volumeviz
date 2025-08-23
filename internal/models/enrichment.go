@@ -113,6 +113,9 @@ type EnrichmentProgress struct {
 	// Error tracking
 	LastError   string `json:"last_error,omitempty"`
 	ErrorsCount int64  `json:"errors_count"`
+	
+	// Detailed error information
+	RecentErrors []EnrichmentError `json:"recent_errors,omitempty"`
 
 	// Enricher-specific progress
 	EnricherProgress map[string]*EnricherProgress `json:"enricher_progress,omitempty"`
@@ -128,4 +131,16 @@ type EnricherProgress struct {
 	SkippedFiles    int64         `json:"skipped_files"`
 	LastUpdate      time.Time     `json:"last_update"`
 	AverageTime     time.Duration `json:"average_time"`
+	LastError       string        `json:"last_error,omitempty"`
+}
+
+// EnrichmentError represents a detailed error that occurred during enrichment
+type EnrichmentError struct {
+	Timestamp     time.Time `json:"timestamp"`
+	FileName      string    `json:"file_name"`
+	FilePath      string    `json:"file_path"`
+	EnricherName  string    `json:"enricher_name"`
+	ErrorType     string    `json:"error_type"`     // "ffprobe_failed", "exiftool_failed", "file_not_found", etc.
+	ErrorMessage  string    `json:"error_message"`  // Human-readable error message
+	TechnicalDetails string `json:"technical_details,omitempty"` // stderr, exit codes, etc.
 }

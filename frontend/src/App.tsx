@@ -8,7 +8,7 @@ import {
 import {
   AlertsPage,
   Dashboard,
-  ExplorerPage,
+  // ExplorerPage,
   HealthPage,
   MountsPage,
   NotFoundPage,
@@ -93,8 +93,8 @@ const App: React.FC = () => {
                 <Route path="/rules" element={<RulesPage />} />
 
                 {/* Explorer Routes */}
-                <Route path="/explorer" element={<ExplorerPage />} />
-                <Route path="/explorer/:volumeId" element={<ExplorerPage />} />
+                {/* <Route path="/explorer" element={<ExplorerPage />} />
+                <Route path="/explorer/:volumeId" element={<ExplorerPage />} /> */}
 
                 {/* Search Routes */}
                 <Route path="/search" element={<SearchPage />} />

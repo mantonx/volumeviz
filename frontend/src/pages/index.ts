@@ -1,7 +1,7 @@
 // Export all page components
 export { AlertsPage } from './AlertsPage';
 export { Dashboard } from './Dashboard';
-export { ExplorerPage } from './ExplorerPage';
+// export { ExplorerPage } from './ExplorerPage'; // TODO: Implement ExplorerPage component
 export { HealthPage } from './HealthPage';
 export { MountsPage } from './MountsPage';
 export { NotFoundPage } from './NotFoundPage';

@@ -22,7 +22,7 @@ export enum TimeDuration {
   Hour = 3600000000000,
 }
 
-export enum InternalApiV1DiagRealtimeMode {
+export enum DiagRealtimeMode {
   ModeWebSocket = "ws",
   ModePolling = "polling",
   ModeSSE = "sse",
@@ -399,7 +399,7 @@ export interface VolumeStatsResponse {
 export interface VolumeV1 {
   /** @example 2 */
   attachments_count?: number;
-  /** @example ["media-server", "plex"] */
+  /** @example ["media-server","plex"] */
   container_names?: string[];
   /** @example "2023-01-01T10:00:00Z" */
   created_at?: string;
@@ -422,310 +422,18 @@ export interface VolumeV1 {
   scope?: string;
   /** @example 1073741824 */
   size_bytes?: number;
+  /** @example "completed" */
+  scan_status?: string;
+  /** @example 100 */
+  scan_progress?: number;
+  /** @example "scan_abc123def" */
+  last_scan_id?: string;
 }
 
-export type GinH = Record<string, any>;
-
-export interface GithubComMantonxVolumevizInternalApiUtilsPagedResponse {
-  data?: any;
-  filters?: Record<string, any>;
-  page?: number;
-  page_size?: number;
-  sort?: string;
-  total?: number;
-}
-
-export interface GithubComMantonxVolumevizInternalModelsAlert {
-  annotations?: Record<string, string>;
-  created_at?: string;
-  /** For deduplication */
-  dedupe_key?: string;
-  ends_at?: string;
-  /** e.g., volume_id, container_id */
-  entity_id?: string;
-  /** e.g., "volume", "container" */
-  entity_type?: string;
-  id?: number;
-  labels?: Record<string, string>;
-  /** Relationships */
-  rule?: GithubComMantonxVolumevizInternalModelsAlertRule;
-  rule_id?: number;
-  starts_at?: string;
-  /** "firing", "resolved" */
-  status?: string;
-  updated_at?: string;
-  value?: number;
-}
-
-export interface GithubComMantonxVolumevizInternalModelsAlertDestination {
-  config?: Record<string, any>;
-  created_at?: string;
-  id?: number;
-  is_enabled?: boolean;
-  name?: string;
-  /** "webhook", "slack", "pushover" */
-  type?: string;
-  updated_at?: string;
-}
-
-export interface GithubComMantonxVolumevizInternalModelsAlertRoute {
-  created_at?: string;
-  /** Relationships */
-  destination?: GithubComMantonxVolumevizInternalModelsAlertDestination;
-  destination_id?: number;
-  id?: number;
-  is_enabled?: boolean;
-  /** Label matchers */
-  matchers?: Record<string, string>;
-  name?: string;
-  /** Lower number = higher priority */
-  priority?: number;
-  updated_at?: string;
-}
-
-export interface GithubComMantonxVolumevizInternalModelsAlertRule {
-  /** e.g., "gt", "lt", "eq" */
-  condition?: string;
-  created_at?: string;
-  description?: string;
-  /** How long condition must persist */
-  for?: TimeDuration;
-  id?: number;
-  /** How often to evaluate */
-  interval?: TimeDuration;
-  is_enabled?: boolean;
-  labels?: Record<string, string>;
-  name?: string;
-  query?: string;
-  threshold?: number;
-  updated_at?: string;
-}
-
-export interface GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParams {
-  config: Record<string, any>;
-  is_enabled?: boolean;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   */
-  name: string;
-  type: "webhook" | "slack" | "pushover";
-}
-
-export interface GithubComMantonxVolumevizInternalModelsCreateAlertRouteParams {
-  destination_id: number;
-  is_enabled?: boolean;
-  matchers: Record<string, string>;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   */
-  name: string;
-  /** @min 0 */
-  priority?: number;
-}
-
-export interface GithubComMantonxVolumevizInternalModelsCreateAlertRuleParams {
-  condition: "gt" | "lt" | "eq" | "ne" | "gte" | "lte";
-  /** @maxLength 500 */
-  description?: string;
-  /** @min 0 */
-  for?: TimeDuration;
-  interval: TimeDuration;
-  is_enabled?: boolean;
-  labels?: Record<string, string>;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   */
-  name: string;
-  query: string;
-  threshold: number;
-}
-
-export interface GithubComMantonxVolumevizInternalModelsErrorResponse {
-  code?: string;
-  details?: string;
-  error?: string;
-  message?: string;
-}
-
-export interface GithubComMantonxVolumevizInternalModelsFilesystemIndexingRequest {
-  delta_mode?: boolean;
-  full_scan?: boolean;
-}
-
-export interface GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParams {
-  config: Record<string, any>;
-  id?: number;
-  is_enabled?: boolean;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   */
-  name: string;
-  type: "webhook" | "slack" | "pushover";
-}
-
-export interface GithubComMantonxVolumevizInternalModelsUpdateAlertRouteParams {
-  destination_id: number;
-  id?: number;
-  is_enabled?: boolean;
-  matchers: Record<string, string>;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   */
-  name: string;
-  /** @min 0 */
-  priority?: number;
-}
-
-export interface GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParams {
-  condition: "gt" | "lt" | "eq" | "ne" | "gte" | "lte";
-  /** @maxLength 500 */
-  description?: string;
-  /** @min 0 */
-  for?: TimeDuration;
-  id?: number;
-  interval: TimeDuration;
-  is_enabled?: boolean;
-  labels?: Record<string, string>;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   */
-  name: string;
-  query: string;
-  threshold: number;
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesActionBreakdown {
-  exclude?: number;
-  include?: number;
-  unmatched?: number;
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesConditionResult {
-  error?: any;
-  field_name?: string;
-  matched?: boolean;
-  operator?: string;
-  value?: string;
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesConflictAnalysis {
-  conflicting_rules?: GithubComMantonxVolumevizInternalServicesRulesRuleConflict[];
-  has_conflicts?: boolean;
-  /** how conflicts are resolved */
-  resolution?: string;
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesMountPreview {
-  /** whether action would change */
-  action_changed?: boolean;
-  /** all matching rules (if detailed) */
-  all_matches?: GithubComMantonxVolumevizInternalServicesRulesRuleMatchSummary[];
-  /** rule conflicts if any */
-  conflict_details?: GithubComMantonxVolumevizInternalServicesRulesConflictAnalysis;
-  /** current tracking status */
-  current_action?: string;
-  mount?: GithubComMantonxVolumevizInternalServicesRulesMountSummary;
-  /** predicted action based on rules */
-  preview_action?: string;
-  /** highest priority matching rule */
-  winning_rule?: GithubComMantonxVolumevizInternalServicesRulesRuleMatchSummary;
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesMountSummary {
-  compose_project?: string;
-  compose_services?: string[];
-  container_count?: number;
-  id?: number;
-  is_orphaned?: boolean;
-  is_tracked?: boolean;
-  mount_id?: string;
-  mount_type?: string;
-  source_path?: string;
-  volume_name?: string;
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesPreviewRequest {
-  /** DryRun mode - if true, doesn't create evaluation records */
-  dry_run?: boolean;
-  /** IncludeRuleDetails whether to include detailed rule condition matching info */
-  include_rule_details?: boolean;
-  /** IncludeUnmatched whether to include mounts that don't match any rules */
-  include_unmatched?: boolean;
-  /** MountIDs to limit preview to specific mounts (if empty, all mounts are evaluated) */
-  mount_ids?: string[];
-  /** RuleIDs to include in preview (if empty, all enabled rules are used) */
-  rule_ids?: number[];
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesPreviewResponse {
-  completed_at?: string;
-  errors?: string[];
-  execution_time_ms?: number;
-  mount_previews?: GithubComMantonxVolumevizInternalServicesRulesMountPreview[];
-  preview_id?: string;
-  requested_at?: string;
-  rule_performance?: GithubComMantonxVolumevizInternalServicesRulesRulePerformanceResult[];
-  summary?: GithubComMantonxVolumevizInternalServicesRulesPreviewSummary;
-  warnings?: string[];
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesPreviewSummary {
-  action_breakdown?: Record<string, number>;
-  mounts_evaluated?: number;
-  mounts_excluded?: number;
-  mounts_included?: number;
-  mounts_matched?: number;
-  mounts_unmatched?: number;
-  project_breakdown?: Record<
-    string,
-    GithubComMantonxVolumevizInternalServicesRulesActionBreakdown
-  >;
-  rules_evaluated?: number;
-  total_mounts?: number;
-  type_breakdown?: Record<
-    string,
-    GithubComMantonxVolumevizInternalServicesRulesActionBreakdown
-  >;
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesRuleConflict {
-  /** description of the conflict */
-  conflict?: string;
-  rule1?: GithubComMantonxVolumevizInternalServicesRulesRuleMatchSummary;
-  rule2?: GithubComMantonxVolumevizInternalServicesRulesRuleMatchSummary;
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesRuleMatchSummary {
-  action?: string;
-  execution_time_ms?: number;
-  /** 0.0-1.0 based on condition matches */
-  match_confidence?: number;
-  matched?: boolean;
-  matched_conditions?: GithubComMantonxVolumevizInternalServicesRulesConditionResult[];
-  priority?: number;
-  rule_id?: number;
-  rule_name?: string;
-}
-
-export interface GithubComMantonxVolumevizInternalServicesRulesRulePerformanceResult {
-  avg_execution_time_ms?: number;
-  mounts_evaluated?: number;
-  mounts_matched?: number;
-  rule_id?: number;
-  rule_name?: string;
-  total_execution_time_ms?: number;
-}
-
-export interface InternalApiV1DiagRealtimeDiagnostics {
+export interface DiagRealtimeDiagnostics {
   active_connections?: number;
   features?: string[];
-  mode?: InternalApiV1DiagRealtimeMode;
+  mode?: DiagRealtimeMode;
   polling_enabled?: boolean;
   polling_interval_ms?: number;
   sse_enabled?: boolean;
@@ -734,7 +442,7 @@ export interface InternalApiV1DiagRealtimeDiagnostics {
 }
 
 /** Applied filters for the file query */
-export interface InternalApiV1ExplorerAppliedFilters {
+export interface ExplorerAppliedFilters {
   /** @example "pdf" */
   file_type?: string;
   /** @example 10485760 */
@@ -746,7 +454,7 @@ export interface InternalApiV1ExplorerAppliedFilters {
 }
 
 /** Enhanced file item with performance and metadata information */
-export interface InternalApiV1ExplorerEnhancedFileItem {
+export interface ExplorerEnhancedFileItem {
   /** @example 1024000 */
   disk_usage?: number;
   /** @example "pdf" */
@@ -770,7 +478,7 @@ export interface InternalApiV1ExplorerEnhancedFileItem {
 }
 
 /** File or directory information for explorer browsing */
-export interface InternalApiV1ExplorerFileInfo {
+export interface ExplorerFileInfo {
   /** @example "pdf" */
   extension?: string;
   /** @example false */
@@ -788,7 +496,7 @@ export interface InternalApiV1ExplorerFileInfo {
 }
 
 /** A folder item with parent/child relationship information */
-export interface InternalApiV1ExplorerFolderBrowsingItem {
+export interface ExplorerFolderBrowsingItem {
   /** @example 42 */
   file_count?: number;
   /** @example 5 */
@@ -808,10 +516,10 @@ export interface InternalApiV1ExplorerFolderBrowsingItem {
 }
 
 /** Response containing folder hierarchy with parent/child relationships */
-export interface InternalApiV1ExplorerFolderBrowsingResponse {
-  children?: InternalApiV1ExplorerFolderBrowsingItem[];
+export interface ExplorerFolderBrowsingResponse {
+  children?: ExplorerFolderBrowsingItem[];
   /** A folder item with parent/child relationship information */
-  current?: InternalApiV1ExplorerFolderBrowsingItem;
+  current?: ExplorerFolderBrowsingItem;
   /** @example "/home/user/documents" */
   current_path?: string;
   /** @example 100 */
@@ -819,7 +527,7 @@ export interface InternalApiV1ExplorerFolderBrowsingResponse {
   /** @example 1 */
   page?: number;
   /** A folder item with parent/child relationship information */
-  parent?: InternalApiV1ExplorerFolderBrowsingItem;
+  parent?: ExplorerFolderBrowsingItem;
   /** @example 15 */
   total_children?: number;
   /** @example 2 */
@@ -829,8 +537,8 @@ export interface InternalApiV1ExplorerFolderBrowsingResponse {
 }
 
 /** A node in the hierarchical folder structure */
-export interface InternalApiV1ExplorerFolderNode {
-  children?: InternalApiV1ExplorerFolderNode[];
+export interface ExplorerFolderNode {
+  children?: ExplorerFolderNode[];
   /** @example 15 */
   file_count?: number;
   /** @example 3 */
@@ -844,8 +552,8 @@ export interface InternalApiV1ExplorerFolderNode {
 }
 
 /** Response containing files in a folder with pagination */
-export interface InternalApiV1ExplorerGetFilesByFolderResponse {
-  files?: InternalApiV1ExplorerFileInfo[];
+export interface ExplorerGetFilesByFolderResponse {
+  files?: ExplorerFileInfo[];
   /** @example 100 */
   limit?: number;
   /** @example 1 */
@@ -857,13 +565,13 @@ export interface InternalApiV1ExplorerGetFilesByFolderResponse {
 }
 
 /** Response containing hierarchical folder structure */
-export interface InternalApiV1ExplorerGetFolderTreeResponse {
-  tree?: InternalApiV1ExplorerFolderNode[];
+export interface ExplorerGetFolderTreeResponse {
+  tree?: ExplorerFolderNode[];
 }
 
 /** Response containing immediate children of a path */
-export interface InternalApiV1ExplorerGetTreeChildrenResponse {
-  children?: InternalApiV1ExplorerTreeChildItem[];
+export interface ExplorerGetTreeChildrenResponse {
+  children?: ExplorerTreeChildItem[];
   /** @example 100 */
   limit?: number;
   /** @example 1 */
@@ -877,12 +585,12 @@ export interface InternalApiV1ExplorerGetTreeChildrenResponse {
 }
 
 /** Enhanced response for paginated file listing with performance metadata */
-export interface InternalApiV1ExplorerPaginatedFileResponse {
+export interface ExplorerPaginatedFileResponse {
   /** @example false */
   cache_hit?: boolean;
-  files?: InternalApiV1ExplorerEnhancedFileItem[];
+  files?: ExplorerEnhancedFileItem[];
   /** Applied filters for the file query */
-  filters?: InternalApiV1ExplorerAppliedFilters;
+  filters?: ExplorerAppliedFilters;
   /** @example true */
   has_more?: boolean;
   /** @example 50 */
@@ -902,7 +610,7 @@ export interface InternalApiV1ExplorerPaginatedFileResponse {
 }
 
 /** A child file or folder in tree navigation */
-export interface InternalApiV1ExplorerTreeChildItem {
+export interface ExplorerTreeChildItem {
   /** @example "pdf" */
   extension?: string;
   /** @example true */
@@ -919,7 +627,31 @@ export interface InternalApiV1ExplorerTreeChildItem {
   size?: number;
 }
 
-export interface InternalApiV1MetadataFileDurationItem {
+export type GinH = Record<string, any>;
+
+export interface GithubComMantonxVolumevizInternalApiV1PreviewsPreviewRequest {
+  file_hash?: string;
+  file_id: number;
+  file_path: string;
+  mime_type: string;
+  size: "small" | "medium" | "large";
+  time_offset?: string;
+  type: "thumbnail" | "poster" | "cover";
+}
+
+export interface GithubComMantonxVolumevizInternalModelsErrorResponse {
+  code?: string;
+  details?: string;
+  error?: string;
+  message?: string;
+}
+
+export interface GithubComMantonxVolumevizInternalModelsFilesystemIndexingRequest {
+  delta_mode?: boolean;
+  full_scan?: boolean;
+}
+
+export interface MetadataFileDurationItem {
   duration_seconds?: number;
   id?: number;
   media_type?: string;
@@ -928,7 +660,7 @@ export interface InternalApiV1MetadataFileDurationItem {
   size?: number;
 }
 
-export interface InternalApiV1MetadataFileLocationItem {
+export interface MetadataFileLocationItem {
   id?: number;
   latitude?: number;
   longitude?: number;
@@ -938,7 +670,7 @@ export interface InternalApiV1MetadataFileLocationItem {
   size?: number;
 }
 
-export interface InternalApiV1MetadataFileResolutionItem {
+export interface MetadataFileResolutionItem {
   height?: number;
   id?: number;
   media_type?: string;
@@ -948,43 +680,220 @@ export interface InternalApiV1MetadataFileResolutionItem {
   width?: number;
 }
 
-export interface InternalApiV1MetadataGetFilesByDurationResponse {
-  files?: InternalApiV1MetadataFileDurationItem[];
+export interface MetadataGetFilesByDurationResponse {
+  files?: MetadataFileDurationItem[];
   limit?: number;
   page?: number;
   total_count?: number;
   total_pages?: number;
 }
 
-export interface InternalApiV1MetadataGetFilesByLocationResponse {
-  files?: InternalApiV1MetadataFileLocationItem[];
+export interface MetadataGetFilesByLocationResponse {
+  files?: MetadataFileLocationItem[];
   limit?: number;
   page?: number;
   total_count?: number;
   total_pages?: number;
 }
 
-export interface InternalApiV1MetadataGetFilesByResolutionResponse {
-  files?: InternalApiV1MetadataFileResolutionItem[];
+export interface MetadataGetFilesByResolutionResponse {
+  files?: MetadataFileResolutionItem[];
   limit?: number;
   page?: number;
   total_count?: number;
   total_pages?: number;
 }
 
-export interface InternalApiV1MountsDiscoverMountsRequest {
+export interface ModelsAlert {
+  annotations?: Record<string, string>;
+  created_at?: string;
+  /** For deduplication */
+  dedupe_key?: string;
+  ends_at?: string;
+  /** e.g., volume_id, container_id */
+  entity_id?: string;
+  /** e.g., "volume", "container" */
+  entity_type?: string;
+  id?: number;
+  labels?: Record<string, string>;
+  /** Relationships */
+  rule?: ModelsAlertRule;
+  rule_id?: number;
+  starts_at?: string;
+  /** "firing", "resolved" */
+  status?: string;
+  updated_at?: string;
+  value?: number;
+}
+
+export interface ModelsAlertDestination {
+  config?: Record<string, any>;
+  created_at?: string;
+  id?: number;
+  is_enabled?: boolean;
+  name?: string;
+  /** "webhook", "slack", "pushover" */
+  type?: string;
+  updated_at?: string;
+}
+
+export interface ModelsAlertRoute {
+  created_at?: string;
+  /** Relationships */
+  destination?: ModelsAlertDestination;
+  destination_id?: number;
+  id?: number;
+  is_enabled?: boolean;
+  /** Label matchers */
+  matchers?: Record<string, string>;
+  name?: string;
+  /** Lower number = higher priority */
+  priority?: number;
+  updated_at?: string;
+}
+
+export interface ModelsAlertRule {
+  /** e.g., "gt", "lt", "eq" */
+  condition?: string;
+  created_at?: string;
+  description?: string;
+  /**
+   * How long condition must persist (nanoseconds)
+   * @format int64
+   * @example 600000000000
+   */
+  for?: number;
+  id?: number;
+  /**
+   * How often to evaluate (nanoseconds)
+   * @format int64
+   * @example 300000000000
+   */
+  interval?: number;
+  is_enabled?: boolean;
+  labels?: Record<string, string>;
+  name?: string;
+  query?: string;
+  threshold?: number;
+  updated_at?: string;
+}
+
+export interface ModelsCreateAlertDestinationParams {
+  config: Record<string, any>;
+  is_enabled?: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  type: "webhook" | "slack" | "pushover";
+}
+
+export interface ModelsCreateAlertRouteParams {
+  destination_id: number;
+  is_enabled?: boolean;
+  matchers: Record<string, string>;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /** @min 0 */
+  priority?: number;
+}
+
+export interface ModelsCreateAlertRuleParams {
+  condition: "gt" | "lt" | "eq" | "ne" | "gte" | "lte";
+  /** @maxLength 500 */
+  description?: string;
+  /**
+   * @format int64
+   * @min 0
+   * @example 600000000000
+   */
+  for?: number;
+  /**
+   * @format int64
+   * @example 300000000000
+   */
+  interval: number;
+  is_enabled?: boolean;
+  labels?: Record<string, string>;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  query: string;
+  threshold: number;
+}
+
+export interface ModelsUpdateAlertDestinationParams {
+  config: Record<string, any>;
+  id?: number;
+  is_enabled?: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  type: "webhook" | "slack" | "pushover";
+}
+
+export interface ModelsUpdateAlertRouteParams {
+  destination_id: number;
+  id?: number;
+  is_enabled?: boolean;
+  matchers: Record<string, string>;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /** @min 0 */
+  priority?: number;
+}
+
+export interface ModelsUpdateAlertRuleParams {
+  condition: "gt" | "lt" | "eq" | "ne" | "gte" | "lte";
+  /** @maxLength 500 */
+  description?: string;
+  /**
+   * @format int64
+   * @min 0
+   * @example 600000000000
+   */
+  for?: number;
+  id?: number;
+  /**
+   * @format int64
+   * @example 300000000000
+   */
+  interval: number;
+  is_enabled?: boolean;
+  labels?: Record<string, string>;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  query: string;
+  threshold: number;
+}
+
+export interface MountsDiscoverMountsRequest {
   /** @example false */
   force?: boolean;
 }
 
-export interface InternalApiV1MountsDiscoverMountsResponse {
+export interface MountsDiscoverMountsResponse {
   /** @example "Mount discovery completed successfully" */
   message?: string;
   /** @example true */
   triggered?: boolean;
 }
 
-export interface InternalApiV1MountsMountCatalogResponse {
+export interface MountsMountCatalogResponse {
   /** @example "myapp" */
   compose_project?: string;
   /** @example ["web","api"] */
@@ -1042,7 +951,7 @@ export interface InternalApiV1MountsMountCatalogResponse {
   volume_scope?: string;
 }
 
-export interface InternalApiV1MountsMountCatalogSummaryResponse {
+export interface MountsMountCatalogSummaryResponse {
   /** @example 8 */
   bind_mounts?: number;
   /** @example 5 */
@@ -1059,17 +968,7 @@ export interface InternalApiV1MountsMountCatalogSummaryResponse {
   volume_mounts?: number;
 }
 
-export interface InternalApiV1PreviewsPreviewRequest {
-  file_hash?: string;
-  file_id: number;
-  file_path: string;
-  mime_type: string;
-  size: "small" | "medium" | "large";
-  time_offset?: string;
-  type: "thumbnail" | "poster" | "cover";
-}
-
-export interface InternalApiV1PreviewsPreviewResponse {
+export interface PreviewsPreviewResponse {
   cache_hit?: boolean;
   created_at?: string;
   etag?: string;
@@ -1085,18 +984,24 @@ export interface InternalApiV1PreviewsPreviewResponse {
   width?: number;
 }
 
-export interface InternalApiV1RulesApplyTrackingRulesRequest {
+export interface RulesActionBreakdown {
+  exclude?: number;
+  include?: number;
+  unmatched?: number;
+}
+
+export interface RulesApplyTrackingRulesRequest {
   dry_run?: boolean;
 }
 
-export interface InternalApiV1RulesApplyTrackingRulesResponse {
+export interface RulesApplyTrackingRulesResponse {
   applied_at?: string;
-  changes?: InternalApiV1RulesTrackingChange[];
+  changes?: RulesTrackingChange[];
   changes_count?: number;
   dry_run?: boolean;
 }
 
-export interface InternalApiV1RulesConditionRequest {
+export interface RulesConditionRequest {
   /** @example "source_type" */
   field_name:
     | "source_type"
@@ -1130,18 +1035,33 @@ export interface InternalApiV1RulesConditionRequest {
   values?: string[];
 }
 
-export interface InternalApiV1RulesCreateMountOverrideRequest {
+export interface RulesConditionResult {
+  error?: any;
+  field_name?: string;
+  matched?: boolean;
+  operator?: string;
+  value?: string;
+}
+
+export interface RulesConflictAnalysis {
+  conflicting_rules?: RulesRuleConflict[];
+  has_conflicts?: boolean;
+  /** how conflicts are resolved */
+  resolution?: string;
+}
+
+export interface RulesCreateMountOverrideRequest {
   action: "include" | "exclude";
   created_by?: string;
   mount_id: string;
   reason?: string;
 }
 
-export interface InternalApiV1RulesCreateRuleRequest {
+export interface RulesCreateRuleRequest {
   /** @example "include" */
   action: "include" | "exclude";
   /** @minItems 1 */
-  conditions: InternalApiV1RulesConditionRequest[];
+  conditions: RulesConditionRequest[];
   /** @example "admin" */
   created_by?: string;
   /** @example "Include all named Docker volumes for tracking" */
@@ -1158,22 +1078,22 @@ export interface InternalApiV1RulesCreateRuleRequest {
   priority?: number;
 }
 
-export interface InternalApiV1RulesListMountOverridesResponse {
-  overrides?: InternalApiV1RulesMountOverrideResponse[];
+export interface RulesListMountOverridesResponse {
+  overrides?: RulesMountOverrideResponse[];
   total?: number;
 }
 
-export interface InternalApiV1RulesListRuleTemplatesResponse {
-  templates?: InternalApiV1RulesRuleTemplate[];
+export interface RulesListRuleTemplatesResponse {
+  templates?: RulesRuleTemplate[];
   total?: number;
 }
 
-export interface InternalApiV1RulesListRulesResponse {
-  rules?: InternalApiV1RulesRuleResponse[];
+export interface RulesListRulesResponse {
+  rules?: RulesRuleResponse[];
   total?: number;
 }
 
-export interface InternalApiV1RulesMountOverrideResponse {
+export interface RulesMountOverrideResponse {
   action?: string;
   created_at?: string;
   created_by?: string;
@@ -1183,16 +1103,111 @@ export interface InternalApiV1RulesMountOverrideResponse {
   updated_at?: string;
 }
 
-export interface InternalApiV1RulesRuleConfigUpdate {
+export interface RulesMountPreview {
+  /** whether action would change */
+  action_changed?: boolean;
+  /** all matching rules (if detailed) */
+  all_matches?: RulesRuleMatchSummary[];
+  /** rule conflicts if any */
+  conflict_details?: RulesConflictAnalysis;
+  /** current tracking status */
+  current_action?: string;
+  mount?: RulesMountSummary;
+  /** predicted action based on rules */
+  preview_action?: string;
+  /** highest priority matching rule */
+  winning_rule?: RulesRuleMatchSummary;
+}
+
+export interface RulesMountSummary {
+  compose_project?: string;
+  compose_services?: string[];
+  container_count?: number;
+  id?: number;
+  is_orphaned?: boolean;
+  is_tracked?: boolean;
+  mount_id?: string;
+  mount_type?: string;
+  source_path?: string;
+  volume_name?: string;
+}
+
+export interface RulesPreviewRequest {
+  /** DryRun mode - if true, doesn't create evaluation records */
+  dry_run?: boolean;
+  /** IncludeRuleDetails whether to include detailed rule condition matching info */
+  include_rule_details?: boolean;
+  /** IncludeUnmatched whether to include mounts that don't match any rules */
+  include_unmatched?: boolean;
+  /** MountIDs to limit preview to specific mounts (if empty, all mounts are evaluated) */
+  mount_ids?: string[];
+  /** RuleIDs to include in preview (if empty, all enabled rules are used) */
+  rule_ids?: number[];
+}
+
+export interface RulesPreviewResponse {
+  completed_at?: string;
+  errors?: string[];
+  execution_time_ms?: number;
+  mount_previews?: RulesMountPreview[];
+  preview_id?: string;
+  requested_at?: string;
+  rule_performance?: RulesRulePerformanceResult[];
+  summary?: RulesPreviewSummary;
+  warnings?: string[];
+}
+
+export interface RulesPreviewSummary {
+  action_breakdown?: Record<string, number>;
+  mounts_evaluated?: number;
+  mounts_excluded?: number;
+  mounts_included?: number;
+  mounts_matched?: number;
+  mounts_unmatched?: number;
+  project_breakdown?: Record<string, RulesActionBreakdown>;
+  rules_evaluated?: number;
+  total_mounts?: number;
+  type_breakdown?: Record<string, RulesActionBreakdown>;
+}
+
+export interface RulesRuleConfigUpdate {
   id: number;
   is_enabled?: boolean;
   priority?: number;
 }
 
-export interface InternalApiV1RulesRuleResponse {
+export interface RulesRuleConflict {
+  /** description of the conflict */
+  conflict?: string;
+  rule1?: RulesRuleMatchSummary;
+  rule2?: RulesRuleMatchSummary;
+}
+
+export interface RulesRuleMatchSummary {
+  action?: string;
+  execution_time_ms?: number;
+  /** 0.0-1.0 based on condition matches */
+  match_confidence?: number;
+  matched?: boolean;
+  matched_conditions?: RulesConditionResult[];
+  priority?: number;
+  rule_id?: number;
+  rule_name?: string;
+}
+
+export interface RulesRulePerformanceResult {
+  avg_execution_time_ms?: number;
+  mounts_evaluated?: number;
+  mounts_matched?: number;
+  rule_id?: number;
+  rule_name?: string;
+  total_execution_time_ms?: number;
+}
+
+export interface RulesRuleResponse {
   /** @example "include" */
   action?: "include" | "exclude";
-  conditions?: InternalApiV1RulesConditionRequest[];
+  conditions?: RulesConditionRequest[];
   /** @format date-time */
   created_at?: string;
   /** @example "admin" */
@@ -1221,7 +1236,7 @@ export interface InternalApiV1RulesRuleResponse {
   updated_at?: string;
 }
 
-export interface InternalApiV1RulesRuleTemplate {
+export interface RulesRuleTemplate {
   category?: string;
   created_at?: string;
   description?: string;
@@ -1235,7 +1250,7 @@ export interface InternalApiV1RulesRuleTemplate {
   usage_count?: number;
 }
 
-export interface InternalApiV1RulesTrackingChange {
+export interface RulesTrackingChange {
   mount_id?: string;
   mount_name?: string;
   mount_type?: string;
@@ -1245,35 +1260,35 @@ export interface InternalApiV1RulesTrackingChange {
   rule_priority?: number;
 }
 
-export interface InternalApiV1RulesTrackingRulesConfigResponse {
+export interface RulesTrackingRulesConfigResponse {
   enabled?: number;
-  rules?: InternalApiV1RulesRuleResponse[];
+  rules?: RulesRuleResponse[];
   total?: number;
 }
 
-export interface InternalApiV1RulesUpdateRuleRequest {
+export interface RulesUpdateRuleRequest {
   action?: "include" | "exclude";
-  conditions?: InternalApiV1RulesConditionRequest[];
+  conditions?: RulesConditionRequest[];
   description?: string;
   is_enabled?: boolean;
   name?: string;
   priority?: number;
 }
 
-export interface InternalApiV1RulesUpdateTrackingRulesConfigRequest {
-  rules: InternalApiV1RulesRuleConfigUpdate[];
+export interface RulesUpdateTrackingRulesConfigRequest {
+  rules: RulesRuleConfigUpdate[];
 }
 
-export interface InternalApiV1SearchCreateSavedSearchRequest {
+export interface SearchCreateSavedSearchRequest {
   description?: string;
   is_public?: boolean;
   metadata?: Record<string, any>;
   name: string;
-  query: InternalApiV1SearchSearchFilesRequest;
+  query: SearchSearchFilesRequest;
   tags?: string[];
 }
 
-export interface InternalApiV1SearchFileResult {
+export interface SearchFileResult {
   audio_codec?: string;
   camera_model?: string;
   capture_date?: string;
@@ -1300,14 +1315,14 @@ export interface InternalApiV1SearchFileResult {
   width?: number;
 }
 
-export interface InternalApiV1SearchListSavedSearchesResponse {
+export interface SearchListSavedSearchesResponse {
   page?: number;
   per_page?: number;
-  searches?: InternalApiV1SearchSavedSearch[];
+  searches?: SearchSavedSearch[];
   total_count?: number;
 }
 
-export interface InternalApiV1SearchSavedSearch {
+export interface SearchSavedSearch {
   created_at?: string;
   description?: string;
   id?: number;
@@ -1315,13 +1330,13 @@ export interface InternalApiV1SearchSavedSearch {
   last_run_at?: string;
   metadata?: Record<string, any>;
   name: string;
-  query?: InternalApiV1SearchSearchFilesRequest;
+  query?: SearchSearchFilesRequest;
   run_count?: number;
   tags?: string[];
   updated_at?: string;
 }
 
-export interface InternalApiV1SearchSearchFilesRequest {
+export interface SearchSearchFilesRequest {
   /** Media metadata filters */
   durationFrom?: number;
   /** Max duration in ms */
@@ -1376,8 +1391,8 @@ export interface InternalApiV1SearchSearchFilesRequest {
   sort?: string;
 }
 
-export interface InternalApiV1SearchSearchFilesResponse {
-  files?: InternalApiV1SearchFileResult[];
+export interface SearchSearchFilesResponse {
+  files?: SearchFileResult[];
   filters?: any;
   page?: number;
   per_page?: number;
@@ -1386,7 +1401,7 @@ export interface InternalApiV1SearchSearchFilesResponse {
   total_pages?: number;
 }
 
-export interface InternalApiV1SearchSearchSuggestion {
+export interface SearchSearchSuggestion {
   /** Number of matching files */
   count?: number;
   /** Optional description */
@@ -1397,18 +1412,27 @@ export interface InternalApiV1SearchSearchSuggestion {
   type?: string;
 }
 
-export interface InternalApiV1SearchSearchSuggestionsResponse {
+export interface SearchSearchSuggestionsResponse {
   query_time_ms?: number;
-  suggestions?: InternalApiV1SearchSearchSuggestion[];
+  suggestions?: SearchSearchSuggestion[];
 }
 
-export interface InternalApiV1SearchUpdateSavedSearchRequest {
+export interface SearchUpdateSavedSearchRequest {
   description?: string;
   is_public?: boolean;
   metadata?: Record<string, any>;
   name?: string;
-  query?: InternalApiV1SearchSearchFilesRequest;
+  query?: SearchSearchFilesRequest;
   tags?: string[];
+}
+
+export interface UtilsPagedResponse {
+  data?: any;
+  filters?: Record<string, any>;
+  page?: number;
+  page_size?: number;
+  sort?: string;
+  total?: number;
 }
 
 export type QueryParamsType = Record<string | number, any>;
@@ -1684,9 +1708,63 @@ export class HttpClient<SecurityDataType = unknown> {
  * ## Features
  * - Multi-method volume size calculation (du, find, stat)
  * - Asynchronous scanning with progress tracking for large volumes
+ * - Real-time WebSocket progress updates during scan operations
  * - High-performance caching with TTL-based invalidation
  * - Comprehensive Prometheus metrics integration
  * - Circuit breaker patterns for resilience
+ *
+ * ## WebSocket API
+ * WebSocket endpoint: `ws://localhost:8080/ws`
+ *
+ * ### Scan Progress Events
+ * Subscribe to real-time scan progress updates:
+ * ```json
+ * {
+ * "type": "subscribe",
+ * "event": "scan_progress",
+ * "data": {
+ * "volume_id": "volume_id_here",
+ * "scan_id": "scan_id_here"
+ * }
+ * }
+ * ```
+ *
+ * Progress updates are broadcast as:
+ * ```json
+ * {
+ * "type": "scan_progress_update",
+ * "data": {
+ * "scan_id": "scan_id",
+ * "volume_id": "volume_id",
+ * "overall_status": "running|completed|failed",
+ * "overall_progress": 75,
+ * "phases": [
+ * {
+ * "phase_name": "volume_scan",
+ * "status": "completed",
+ * "progress": 100,
+ * "items_processed": 1,
+ * "items_total": 1
+ * },
+ * {
+ * "phase_name": "filesystem_indexing",
+ * "status": "running",
+ * "progress": 50,
+ * "items_processed": 5000,
+ * "items_total": 10000,
+ * "items_per_second": 125.5,
+ * "current_item": "/path/to/current/file"
+ * },
+ * {
+ * "phase_name": "media_enrichment",
+ * "status": "pending",
+ * "progress": 0
+ * }
+ * ],
+ * "errors": []
+ * }
+ * }
+ * ```
  *
  * ## Performance SLO
  * - 95th percentile response time < 500ms for volume listing
@@ -1718,7 +1796,10 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts`,
         method: "GET",
         query: query,
@@ -1750,7 +1831,10 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/deliveries`,
         method: "GET",
         query: query,
@@ -1778,7 +1862,10 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/destinations`,
         method: "GET",
         query: query,
@@ -1796,11 +1883,11 @@ export class Api<
      * @request POST:/alerts/destinations
      */
     destinationsCreate: (
-      destination: GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParams,
+      destination: ModelsCreateAlertDestinationParams,
       params: RequestParams = {},
     ) =>
       this.request<
-        GithubComMantonxVolumevizInternalModelsAlertDestination,
+        ModelsAlertDestination,
         GithubComMantonxVolumevizInternalModelsErrorResponse
       >({
         path: `/alerts/destinations`,
@@ -1821,7 +1908,7 @@ export class Api<
      */
     destinationsDetail: (id: number, params: RequestParams = {}) =>
       this.request<
-        GithubComMantonxVolumevizInternalModelsAlertDestination,
+        ModelsAlertDestination,
         GithubComMantonxVolumevizInternalModelsErrorResponse
       >({
         path: `/alerts/destinations/${id}`,
@@ -1841,10 +1928,13 @@ export class Api<
      */
     destinationsUpdate: (
       id: number,
-      destination: GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParams,
+      destination: ModelsUpdateAlertDestinationParams,
       params: RequestParams = {},
     ) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/destinations/${id}`,
         method: "PUT",
         body: destination,
@@ -1879,10 +1969,13 @@ export class Api<
      */
     destinationsTestCreate: (
       id: number,
-      request: GinH,
+      request: object,
       params: RequestParams = {},
     ) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/destinations/${id}/test`,
         method: "POST",
         body: request,
@@ -1900,7 +1993,10 @@ export class Api<
      * @request POST:/alerts/engine/evaluate
      */
     engineEvaluateCreate: (params: RequestParams = {}) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/engine/evaluate`,
         method: "POST",
         type: ContentType.Json,
@@ -1917,7 +2013,10 @@ export class Api<
      * @request GET:/alerts/engine/status
      */
     engineStatusList: (params: RequestParams = {}) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/engine/status`,
         method: "GET",
         type: ContentType.Json,
@@ -1944,7 +2043,10 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/routes`,
         method: "GET",
         query: query,
@@ -1962,11 +2064,11 @@ export class Api<
      * @request POST:/alerts/routes
      */
     routesCreate: (
-      route: GithubComMantonxVolumevizInternalModelsCreateAlertRouteParams,
+      route: ModelsCreateAlertRouteParams,
       params: RequestParams = {},
     ) =>
       this.request<
-        GithubComMantonxVolumevizInternalModelsAlertRoute,
+        ModelsAlertRoute,
         GithubComMantonxVolumevizInternalModelsErrorResponse
       >({
         path: `/alerts/routes`,
@@ -1987,7 +2089,7 @@ export class Api<
      */
     routesDetail: (id: number, params: RequestParams = {}) =>
       this.request<
-        GithubComMantonxVolumevizInternalModelsAlertRoute,
+        ModelsAlertRoute,
         GithubComMantonxVolumevizInternalModelsErrorResponse
       >({
         path: `/alerts/routes/${id}`,
@@ -2007,10 +2109,13 @@ export class Api<
      */
     routesUpdate: (
       id: number,
-      route: GithubComMantonxVolumevizInternalModelsUpdateAlertRouteParams,
+      route: ModelsUpdateAlertRouteParams,
       params: RequestParams = {},
     ) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/routes/${id}`,
         method: "PUT",
         body: route,
@@ -2054,7 +2159,10 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/rules`,
         method: "GET",
         query: query,
@@ -2072,11 +2180,11 @@ export class Api<
      * @request POST:/alerts/rules
      */
     rulesCreate: (
-      rule: GithubComMantonxVolumevizInternalModelsCreateAlertRuleParams,
+      rule: ModelsCreateAlertRuleParams,
       params: RequestParams = {},
     ) =>
       this.request<
-        GithubComMantonxVolumevizInternalModelsAlertRule,
+        ModelsAlertRule,
         GithubComMantonxVolumevizInternalModelsErrorResponse
       >({
         path: `/alerts/rules`,
@@ -2097,7 +2205,7 @@ export class Api<
      */
     rulesDetail: (id: number, params: RequestParams = {}) =>
       this.request<
-        GithubComMantonxVolumevizInternalModelsAlertRule,
+        ModelsAlertRule,
         GithubComMantonxVolumevizInternalModelsErrorResponse
       >({
         path: `/alerts/rules/${id}`,
@@ -2117,10 +2225,13 @@ export class Api<
      */
     rulesUpdate: (
       id: number,
-      rule: GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParams,
+      rule: ModelsUpdateAlertRuleParams,
       params: RequestParams = {},
     ) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/rules/${id}`,
         method: "PUT",
         body: rule,
@@ -2154,7 +2265,10 @@ export class Api<
      * @request POST:/alerts/rules/{id}/test
      */
     rulesTestCreate: (id: number, params: RequestParams = {}) =>
-      this.request<GinH, GithubComMantonxVolumevizInternalModelsErrorResponse>({
+      this.request<
+        GithubComMantonxVolumevizInternalModelsErrorResponse,
+        GithubComMantonxVolumevizInternalModelsErrorResponse
+      >({
         path: `/alerts/rules/${id}/test`,
         method: "POST",
         type: ContentType.Json,
@@ -2172,7 +2286,7 @@ export class Api<
      */
     alertsDetail: (id: number, params: RequestParams = {}) =>
       this.request<
-        GithubComMantonxVolumevizInternalModelsAlert,
+        ModelsAlert,
         GithubComMantonxVolumevizInternalModelsErrorResponse
       >({
         path: `/alerts/${id}`,
@@ -2192,7 +2306,7 @@ export class Api<
      * @request GET:/api/v1/diag/realtime
      */
     v1DiagRealtimeList: (params: RequestParams = {}) =>
-      this.request<InternalApiV1DiagRealtimeDiagnostics, any>({
+      this.request<DiagRealtimeDiagnostics, any>({
         path: `/api/v1/diag/realtime`,
         method: "GET",
         type: ContentType.Json,
@@ -2243,7 +2357,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1ExplorerFolderBrowsingResponse, GinH>({
+      this.request<ExplorerFolderBrowsingResponse, GinH>({
         path: `/api/v1/explorer/browse`,
         method: "GET",
         query: query,
@@ -2310,7 +2424,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1ExplorerGetFilesByFolderResponse, GinH>({
+      this.request<ExplorerGetFilesByFolderResponse, GinH>({
         path: `/api/v1/explorer/files`,
         method: "GET",
         query: query,
@@ -2352,7 +2466,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1ExplorerGetFilesByFolderResponse, GinH>({
+      this.request<ExplorerGetFilesByFolderResponse, GinH>({
         path: `/api/v1/explorer/files/by-extension`,
         method: "GET",
         query: query,
@@ -2394,7 +2508,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1ExplorerGetFilesByFolderResponse, GinH>({
+      this.request<ExplorerGetFilesByFolderResponse, GinH>({
         path: `/api/v1/explorer/files/by-media-type`,
         method: "GET",
         query: query,
@@ -2466,7 +2580,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1ExplorerPaginatedFileResponse, GinH>({
+      this.request<ExplorerPaginatedFileResponse, GinH>({
         path: `/api/v1/explorer/files/paginated`,
         method: "GET",
         query: query,
@@ -2503,7 +2617,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1ExplorerGetFilesByFolderResponse, GinH>({
+      this.request<ExplorerGetFilesByFolderResponse, GinH>({
         path: `/api/v1/explorer/files/recent`,
         method: "GET",
         query: query,
@@ -2540,7 +2654,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1ExplorerGetFilesByFolderResponse, GinH>({
+      this.request<ExplorerGetFilesByFolderResponse, GinH>({
         path: `/api/v1/explorer/files/search`,
         method: "GET",
         query: query,
@@ -2582,7 +2696,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1ExplorerGetFolderTreeResponse, GinH>({
+      this.request<ExplorerGetFolderTreeResponse, GinH>({
         path: `/api/v1/explorer/tree`,
         method: "GET",
         query: query,
@@ -2629,7 +2743,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1ExplorerGetTreeChildrenResponse, GinH>({
+      this.request<ExplorerGetTreeChildrenResponse, GinH>({
         path: `/api/v1/explorer/tree/children`,
         method: "GET",
         query: query,
@@ -2676,7 +2790,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1MetadataGetFilesByDurationResponse, GinH>({
+      this.request<MetadataGetFilesByDurationResponse, GinH>({
         path: `/api/v1/metadata/files/by-duration`,
         method: "GET",
         query: query,
@@ -2736,7 +2850,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1MetadataGetFilesByLocationResponse, GinH>({
+      this.request<MetadataGetFilesByLocationResponse, GinH>({
         path: `/api/v1/metadata/files/by-location`,
         method: "GET",
         query: query,
@@ -2845,7 +2959,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1MetadataGetFilesByResolutionResponse, GinH>({
+      this.request<MetadataGetFilesByResolutionResponse, GinH>({
         path: `/api/v1/metadata/files/by-resolution`,
         method: "GET",
         query: query,
@@ -2952,11 +3066,11 @@ export class Api<
     ) =>
       this.request<
         GinH & {
-          filters?: GinH;
-          mounts?: InternalApiV1MountsMountCatalogResponse[];
-          pagination?: GinH;
+          filters?: object;
+          mounts?: MountsMountCatalogResponse[];
+          pagination?: object;
         },
-        GinH
+        object
       >({
         path: `/api/v1/mounts`,
         method: "GET",
@@ -2974,10 +3088,10 @@ export class Api<
      * @request POST:/api/v1/mounts/discover
      */
     v1MountsDiscoverCreate: (
-      request: InternalApiV1MountsDiscoverMountsRequest,
+      request: MountsDiscoverMountsRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1MountsDiscoverMountsResponse, GinH>({
+      this.request<MountsDiscoverMountsResponse, object>({
         path: `/api/v1/mounts/discover`,
         method: "POST",
         body: request,
@@ -2995,7 +3109,7 @@ export class Api<
      * @request GET:/api/v1/mounts/summary
      */
     v1MountsSummaryList: (params: RequestParams = {}) =>
-      this.request<InternalApiV1MountsMountCatalogSummaryResponse, GinH>({
+      this.request<MountsMountCatalogSummaryResponse, object>({
         path: `/api/v1/mounts/summary`,
         method: "GET",
         format: "json",
@@ -3011,7 +3125,7 @@ export class Api<
      * @request GET:/api/v1/mounts/{id}
      */
     v1MountsDetail: (id: string, params: RequestParams = {}) =>
-      this.request<InternalApiV1MountsMountCatalogResponse, GinH>({
+      this.request<MountsMountCatalogResponse, object>({
         path: `/api/v1/mounts/${id}`,
         method: "GET",
         format: "json",
@@ -3028,12 +3142,12 @@ export class Api<
      */
     v1MountsTrackingUpdate: (
       mountId: string,
-      request: {
+      request: GinH & {
         is_tracked?: boolean;
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1MountsMountCatalogResponse, GinH>({
+      this.request<MountsMountCatalogResponse, object>({
         path: `/api/v1/mounts/${mountId}/tracking`,
         method: "PUT",
         body: request,
@@ -3059,7 +3173,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1RulesListRulesResponse, GinH>({
+      this.request<RulesListRulesResponse, GinH>({
         path: `/api/v1/rules`,
         method: "GET",
         query: query,
@@ -3075,11 +3189,8 @@ export class Api<
      * @summary Create a new tracking rule
      * @request POST:/api/v1/rules
      */
-    v1RulesCreate: (
-      rule: InternalApiV1RulesCreateRuleRequest,
-      params: RequestParams = {},
-    ) =>
-      this.request<InternalApiV1RulesRuleResponse, GinH>({
+    v1RulesCreate: (rule: RulesCreateRuleRequest, params: RequestParams = {}) =>
+      this.request<RulesRuleResponse, GinH>({
         path: `/api/v1/rules`,
         method: "POST",
         body: rule,
@@ -3105,7 +3216,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1RulesListRuleTemplatesResponse, any>({
+      this.request<RulesListRuleTemplatesResponse, any>({
         path: `/api/v1/rules/templates`,
         method: "GET",
         query: query,
@@ -3122,7 +3233,7 @@ export class Api<
      * @request GET:/api/v1/rules/{id}
      */
     v1RulesDetail: (id: number, params: RequestParams = {}) =>
-      this.request<InternalApiV1RulesRuleResponse, GinH>({
+      this.request<RulesRuleResponse, GinH>({
         path: `/api/v1/rules/${id}`,
         method: "GET",
         format: "json",
@@ -3139,10 +3250,10 @@ export class Api<
      */
     v1RulesUpdate: (
       id: number,
-      rule: InternalApiV1RulesUpdateRuleRequest,
+      rule: RulesUpdateRuleRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1RulesRuleResponse, GinH>({
+      this.request<RulesRuleResponse, GinH>({
         path: `/api/v1/rules/${id}`,
         method: "PUT",
         body: rule,
@@ -3175,7 +3286,7 @@ export class Api<
      * @request PUT:/api/v1/rules/{id}/disable
      */
     v1RulesDisableUpdate: (id: number, params: RequestParams = {}) =>
-      this.request<InternalApiV1RulesRuleResponse, GinH>({
+      this.request<RulesRuleResponse, GinH>({
         path: `/api/v1/rules/${id}/disable`,
         method: "PUT",
         format: "json",
@@ -3191,7 +3302,7 @@ export class Api<
      * @request PUT:/api/v1/rules/{id}/enable
      */
     v1RulesEnableUpdate: (id: number, params: RequestParams = {}) =>
-      this.request<InternalApiV1RulesRuleResponse, GinH>({
+      this.request<RulesRuleResponse, GinH>({
         path: `/api/v1/rules/${id}/enable`,
         method: "PUT",
         format: "json",
@@ -3257,7 +3368,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1SearchSearchFilesResponse, any>({
+      this.request<SearchSearchFilesResponse, any>({
         path: `/api/v1/search/files`,
         method: "GET",
         query: query,
@@ -3285,7 +3396,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1SearchListSavedSearchesResponse, any>({
+      this.request<SearchListSavedSearchesResponse, any>({
         path: `/api/v1/search/saved`,
         method: "GET",
         query: query,
@@ -3303,10 +3414,10 @@ export class Api<
      * @request POST:/api/v1/search/saved
      */
     v1SearchSavedCreate: (
-      search: InternalApiV1SearchCreateSavedSearchRequest,
+      search: SearchCreateSavedSearchRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1SearchSavedSearch, any>({
+      this.request<SearchSavedSearch, any>({
         path: `/api/v1/search/saved`,
         method: "POST",
         body: search,
@@ -3324,7 +3435,7 @@ export class Api<
      * @request GET:/api/v1/search/saved/{id}
      */
     v1SearchSavedDetail: (id: number, params: RequestParams = {}) =>
-      this.request<InternalApiV1SearchSavedSearch, any>({
+      this.request<SearchSavedSearch, any>({
         path: `/api/v1/search/saved/${id}`,
         method: "GET",
         type: ContentType.Json,
@@ -3342,10 +3453,10 @@ export class Api<
      */
     v1SearchSavedUpdate: (
       id: number,
-      search: InternalApiV1SearchUpdateSavedSearchRequest,
+      search: SearchUpdateSavedSearchRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1SearchSavedSearch, any>({
+      this.request<SearchSavedSearch, any>({
         path: `/api/v1/search/saved/${id}`,
         method: "PUT",
         body: search,
@@ -3379,7 +3490,7 @@ export class Api<
      * @request POST:/api/v1/search/saved/{id}/run
      */
     v1SearchSavedRunCreate: (id: number, params: RequestParams = {}) =>
-      this.request<InternalApiV1SearchSearchFilesResponse, any>({
+      this.request<SearchSearchFilesResponse, any>({
         path: `/api/v1/search/saved/${id}/run`,
         method: "POST",
         type: ContentType.Json,
@@ -3409,7 +3520,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1SearchSearchSuggestionsResponse, any>({
+      this.request<SearchSearchSuggestionsResponse, any>({
         path: `/api/v1/search/suggestions`,
         method: "GET",
         query: query,
@@ -3427,10 +3538,10 @@ export class Api<
      * @request POST:/api/v1/tracking/apply
      */
     v1TrackingApplyCreate: (
-      request: InternalApiV1RulesApplyTrackingRulesRequest,
+      request: RulesApplyTrackingRulesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1RulesApplyTrackingRulesResponse, GinH>({
+      this.request<RulesApplyTrackingRulesResponse, GinH>({
         path: `/api/v1/tracking/apply`,
         method: "POST",
         body: request,
@@ -3448,7 +3559,7 @@ export class Api<
      * @request GET:/api/v1/tracking/overrides
      */
     v1TrackingOverridesList: (params: RequestParams = {}) =>
-      this.request<InternalApiV1RulesListMountOverridesResponse, GinH>({
+      this.request<RulesListMountOverridesResponse, GinH>({
         path: `/api/v1/tracking/overrides`,
         method: "GET",
         format: "json",
@@ -3464,10 +3575,10 @@ export class Api<
      * @request POST:/api/v1/tracking/overrides
      */
     v1TrackingOverridesCreate: (
-      override: InternalApiV1RulesCreateMountOverrideRequest,
+      override: RulesCreateMountOverrideRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1RulesMountOverrideResponse, GinH>({
+      this.request<RulesMountOverrideResponse, GinH>({
         path: `/api/v1/tracking/overrides`,
         method: "POST",
         body: override,
@@ -3500,13 +3611,10 @@ export class Api<
      * @request POST:/api/v1/tracking/preview
      */
     v1TrackingPreviewCreate: (
-      request: GithubComMantonxVolumevizInternalServicesRulesPreviewRequest,
+      request: RulesPreviewRequest,
       params: RequestParams = {},
     ) =>
-      this.request<
-        GithubComMantonxVolumevizInternalServicesRulesPreviewResponse,
-        GinH
-      >({
+      this.request<RulesPreviewResponse, GinH>({
         path: `/api/v1/tracking/preview`,
         method: "POST",
         body: request,
@@ -3524,7 +3632,7 @@ export class Api<
      * @request GET:/api/v1/tracking/rules
      */
     v1TrackingRulesList: (params: RequestParams = {}) =>
-      this.request<InternalApiV1RulesTrackingRulesConfigResponse, GinH>({
+      this.request<RulesTrackingRulesConfigResponse, GinH>({
         path: `/api/v1/tracking/rules`,
         method: "GET",
         format: "json",
@@ -3540,10 +3648,10 @@ export class Api<
      * @request PUT:/api/v1/tracking/rules
      */
     v1TrackingRulesUpdate: (
-      config: InternalApiV1RulesUpdateTrackingRulesConfigRequest,
+      config: RulesUpdateTrackingRulesConfigRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1RulesTrackingRulesConfigResponse, GinH>({
+      this.request<RulesTrackingRulesConfigResponse, GinH>({
         path: `/api/v1/tracking/rules`,
         method: "PUT",
         body: config,
@@ -3663,7 +3771,7 @@ export class Api<
      * @request GET:/health/database
      */
     databaseList: (params: RequestParams = {}) =>
-      this.request<GinH, ErrorResponse>({
+      this.request<object, ErrorResponse>({
         path: `/health/database`,
         method: "GET",
         type: ContentType.Json,
@@ -3697,7 +3805,7 @@ export class Api<
      * @request GET:/health/events
      */
     eventsList: (params: RequestParams = {}) =>
-      this.request<GinH, ErrorResponse>({
+      this.request<object, ErrorResponse>({
         path: `/health/events`,
         method: "GET",
         type: ContentType.Json,
@@ -3714,7 +3822,7 @@ export class Api<
      * @request GET:/health/scheduler
      */
     schedulerList: (params: RequestParams = {}) =>
-      this.request<GinH, ErrorResponse>({
+      this.request<object, ErrorResponse>({
         path: `/health/scheduler`,
         method: "GET",
         type: ContentType.Json,
@@ -3750,10 +3858,10 @@ export class Api<
      * @request POST:/previews
      */
     previewsCreate: (
-      request: InternalApiV1PreviewsPreviewRequest,
+      request: GithubComMantonxVolumevizInternalApiV1PreviewsPreviewRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InternalApiV1PreviewsPreviewResponse, GinH>({
+      this.request<PreviewsPreviewResponse, GinH>({
         path: `/previews`,
         method: "POST",
         body: request,
@@ -3875,10 +3983,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<
-        GithubComMantonxVolumevizInternalApiUtilsPagedResponse,
-        ErrorResponse
-      >({
+      this.request<UtilsPagedResponse, ErrorResponse>({
         path: `/reports/orphaned`,
         method: "GET",
         query: query,
@@ -3888,6 +3993,62 @@ export class Api<
       }),
   };
   scans = {
+    /**
+     * @description Get list of all currently active/running scans
+     *
+     * @tags scan
+     * @name ActiveList
+     * @summary Get active scans
+     * @request GET:/scans/active
+     */
+    activeList: (
+      query?: {
+        /** Limit number of results (default: 20) */
+        limit?: number;
+        /** Offset for pagination (default: 0) */
+        offset?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, ErrorResponse>({
+        path: `/scans/active`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get recent scan errors across all scans with filtering
+     *
+     * @tags scan
+     * @name RecentErrorsList
+     * @summary Get recent scan errors
+     * @request GET:/scans/recent-errors
+     */
+    recentErrorsList: (
+      query?: {
+        /** Hours back to search (default: 24) */
+        hours?: number;
+        /** Filter by error type */
+        error_type?: string;
+        /** Filter by phase name */
+        phase?: string;
+        /** Limit number of results (default: 50) */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, ErrorResponse>({
+        path: `/scans/recent-errors`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
     /**
      * @description Get the status of a volume scan by volume ID or scan ID
      *
@@ -3899,6 +4060,54 @@ export class Api<
     statusList: (id: string, params: RequestParams = {}) =>
       this.request<GinH, GinH>({
         path: `/scans/${id}/status`,
+        method: "GET",
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get detailed error information for a scan with filtering and pagination
+     *
+     * @tags scan
+     * @name ErrorsList
+     * @summary Get scan errors
+     * @request GET:/scans/{scanId}/errors
+     */
+    errorsList: (
+      scanId: string,
+      query?: {
+        /** Filter by phase name */
+        phase?: string;
+        /** Filter by error type */
+        error_type?: string;
+        /** Limit number of results (default: 50) */
+        limit?: number;
+        /** Offset for pagination (default: 0) */
+        offset?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GinH, ErrorResponse>({
+        path: `/scans/${scanId}/errors`,
+        method: "GET",
+        query: query,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get comprehensive progress information including phases, items, and errors
+     *
+     * @tags scan
+     * @name ProgressList
+     * @summary Get detailed scan progress
+     * @request GET:/scans/{scanId}/progress
+     */
+    progressList: (scanId: string, params: RequestParams = {}) =>
+      this.request<GinH, ErrorResponse>({
+        path: `/scans/${scanId}/progress`,
         method: "GET",
         type: ContentType.Json,
         format: "json",
@@ -4223,7 +4432,7 @@ export class Api<
         page?: number;
         /** Number of items per page (default: 25, max: 100) */
         page_size?: number;
-        /** Sort field and direction (e.g., 'name:asc', 'created_at:desc'). Available fields: name, driver, created_at, size_bytes */
+        /** Sort field and direction (e.g., 'name:asc', 'created_at:desc'). Available fields: name, driver, created_at, size_bytes, type, status, compose_project, containers */
         sort?: string;
         /** Search query to filter volumes by name */
         q?: string;
@@ -4240,10 +4449,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<
-        GithubComMantonxVolumevizInternalApiUtilsPagedResponse,
-        ErrorResponse
-      >({
+      this.request<UtilsPagedResponse, ErrorResponse>({
         path: `/volumes`,
         method: "GET",
         query: query,
@@ -4408,10 +4614,7 @@ export class Api<
      * @request GET:/volumes/{name}/attachments
      */
     attachmentsList: (name: string, params: RequestParams = {}) =>
-      this.request<
-        GithubComMantonxVolumevizInternalApiUtilsPagedResponse,
-        ErrorResponse
-      >({
+      this.request<UtilsPagedResponse, ErrorResponse>({
         path: `/volumes/${name}/attachments`,
         method: "GET",
         type: ContentType.Json,

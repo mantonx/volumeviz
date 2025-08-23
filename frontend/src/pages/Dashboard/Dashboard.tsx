@@ -406,7 +406,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 {volumeStats.totalSize > 0
                   ? formatBytes(volumeStats.totalSize)
                   : Object.keys(scanResults).length > 0
-                    ? 'No data'
+                    ? '—'
                     : 'Scan volumes to see usage'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500">

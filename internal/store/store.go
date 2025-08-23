@@ -17,6 +17,7 @@ type Store interface {
 	// Repository access (non-transactional)
 	Volumes() repo.VolumesRepo
 	Scans() repo.ScansRepo
+	ScanProgress() repo.ScanProgressRepo
 	Retention() repo.RetentionRepo
 	Stats() *repo.StatsRepo
 	Files() *repo.FilesRepo
@@ -37,6 +38,7 @@ type TxStore interface {
 	// Repository access (transactional)
 	Volumes() repo.VolumesRepo
 	Scans() repo.ScansRepo
+	ScanProgress() repo.ScanProgressRepo
 	Retention() repo.RetentionRepo
 	Stats() *repo.StatsRepo
 	Files() *repo.FilesRepo

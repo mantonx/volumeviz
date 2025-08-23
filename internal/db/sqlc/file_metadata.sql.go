@@ -1201,9 +1201,16 @@ AND mime IN (
     -- Subtitle types that should be enriched
     'text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass'
 )
-AND duration_ms IS NULL
-AND capture_datetime IS NULL
-AND subtitle_language IS NULL
+AND (
+    -- Video/audio files missing duration or codec info
+    (mime LIKE 'video/%' OR mime LIKE 'audio/%') AND (duration_ms IS NULL OR video_codec IS NULL OR audio_codec IS NULL)
+    OR
+    -- Image files missing dimensions or EXIF data
+    mime LIKE 'image/%' AND (width IS NULL OR height IS NULL OR capture_datetime IS NULL)
+    OR
+    -- Subtitle files missing subtitle info
+    mime IN ('text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass') AND subtitle_language IS NULL
+)
 ORDER BY size_bytes DESC
 LIMIT $2
 `

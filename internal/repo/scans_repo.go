@@ -20,6 +20,7 @@ type ScansRepo interface {
 	UpdateScanJobStatus(ctx context.Context, id int64, status string) error
 	UpdateScanJobProgress(ctx context.Context, scanID string, progress int32) error
 	CompletesScanJob(ctx context.Context, scanID string) error
+	FailScanJob(ctx context.Context, scanID string, errorMessage string) error
 	ListScanJobs(ctx context.Context, limit, offset int32) ([]*models.ScanJob, error)
 	// Atomic claim and hardened worker operations
 	ClaimNextScanJob(ctx context.Context, startedAt time.Time) (*models.ScanJob, error)
@@ -165,6 +166,15 @@ func (r *scansRepo) CompletesScanJob(ctx context.Context, scanID string) error {
 		Status:      "completed",
 		CompletedAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
 		ResultID:    pgtype.Int8{}, // Optional result ID
+	})
+	return err
+}
+
+func (r *scansRepo) FailScanJob(ctx context.Context, scanID string, errorMessage string) error {
+	_, err := r.queries.FailScanJob(ctx, sqlc.FailScanJobParams{
+		ScanID:       scanID,
+		ErrorMessage: pgtype.Text{String: errorMessage, Valid: true},
+		CompletedAt:  pgtype.Timestamp{Time: time.Now(), Valid: true},
 	})
 	return err
 }

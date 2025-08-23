@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/store"
 )
 
@@ -24,7 +25,8 @@ type Scheduler struct {
 	volumeProvider   VolumeProvider
 	metricsCollector interfaces.MetricsCollector
 	// Enhanced store integration for atomic operations
-	store            store.Store
+	store               store.Store
+	progressBroadcaster *realtime.ProgressBroadcaster
 
 	// Worker pool and queue
 	taskQueue chan *ScanTask
@@ -85,6 +87,7 @@ func NewScheduler(
 	volumeProvider VolumeProvider,
 	metricsCollector interfaces.MetricsCollector,
 	store store.Store,
+	progressBroadcaster *realtime.ProgressBroadcaster,
 ) (*Scheduler, error) {
 	// Compile skip pattern if provided
 	var skipPattern *regexp.Regexp
@@ -104,15 +107,16 @@ func NewScheduler(
 	}
 
 	scheduler := &Scheduler{
-		config:           config,
-		scanner:          scanner,
-		repository:       repository,
-		volumeProvider:   volumeProvider,
-		metricsCollector: metricsCollector,
-		store:            store,
-		taskQueue:        make(chan *ScanTask, config.QueueSize),
-		skipPattern:      skipPattern,
-		heartbeatConfig:  heartbeatConfig,
+		config:              config,
+		scanner:             scanner,
+		repository:          repository,
+		volumeProvider:      volumeProvider,
+		metricsCollector:    metricsCollector,
+		store:               store,
+		progressBroadcaster: progressBroadcaster,
+		taskQueue:           make(chan *ScanTask, config.QueueSize),
+		skipPattern:         skipPattern,
+		heartbeatConfig:     heartbeatConfig,
 		metrics: &SchedulerMetrics{
 			CompletedScans: make(map[string]int64),
 			ScanDurations:  make(map[string]float64),
@@ -671,6 +675,21 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 
 	log.Printf("[INFO] Worker %d processing claimed scan %s (volume: %s)", w.id, scanJob.ScanID, scanJob.VolumeID)
 
+	// Ensure scan job is marked as failed if we panic or exit early
+	var scanCompleted bool
+	defer func() {
+		if !scanCompleted {
+			// Mark as failed if we didn't complete normally
+			if err := recover(); err != nil {
+				log.Printf("[ERROR] Worker %d panic during scan %s: %v", w.id, scanJob.ScanID, err)
+				errorMsg := fmt.Sprintf("Scan panic: %v", err)
+				if failErr := w.scheduler.store.Scans().FailScanJob(context.Background(), scanJob.ScanID, errorMsg); failErr != nil {
+					log.Printf("[ERROR] Worker %d failed to mark panicked scan as failed: %v", w.id, failErr)
+				}
+			}
+		}
+	}()
+
 	// Start heartbeat goroutine
 	heartbeatCtx, heartbeatCancel := context.WithCancel(w.ctx)
 	defer heartbeatCancel()
@@ -686,6 +705,16 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 	ctx, cancel := context.WithTimeout(w.ctx, w.scheduler.heartbeatConfig.Timeout)
 	defer cancel()
 
+	// Initialize database progress tracking before starting scan
+	if w.scheduler.store != nil {
+		w.initializeDatabaseProgressTracking(ctx, scanJob.ScanID, scanJob.VolumeID)
+	}
+	
+	// Broadcast scan started event
+	if w.scheduler.progressBroadcaster != nil {
+		w.scheduler.progressBroadcaster.BroadcastScanStarted(scanJob.ScanID, scanJob.VolumeID)
+	}
+	
 	// Perform the scan
 	result, err := w.scheduler.scanner.ScanVolume(ctx, scanJob.VolumeID)
 	completedAt := time.Now()
@@ -698,9 +727,14 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 		log.Printf("[ERROR] Worker %d scan failed for volume %s: %v", w.id, scanJob.VolumeID, err)
 		w.incrementErrorCount()
 		
-		// Complete scan job as failed
-		if completeErr := w.scheduler.store.Scans().CompletesScanJob(ctx, scanJob.ScanID); completeErr != nil {
-			log.Printf("[ERROR] Worker %d failed to mark scan job as failed: %v", w.id, completeErr)
+		// Mark scan job as failed with error message
+		if failErr := w.scheduler.store.Scans().FailScanJob(ctx, scanJob.ScanID, err.Error()); failErr != nil {
+			log.Printf("[ERROR] Worker %d failed to mark scan job as failed: %v", w.id, failErr)
+		}
+		
+		// Broadcast scan error
+		if w.scheduler.progressBroadcaster != nil {
+			w.scheduler.progressBroadcaster.BroadcastScanError(scanJob.ScanID, scanJob.VolumeID, err.Error(), "scan_failure")
 		}
 
 		w.scheduler.statusMutex.Lock()
@@ -712,6 +746,9 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 		if w.scheduler.metricsCollector != nil {
 			w.scheduler.metricsCollector.RecordScanFailure(scanJob.Method, "scan_error")
 		}
+		
+		// Mark scan as completed (even though it failed)
+		scanCompleted = true
 	} else {
 		// Handle success
 		duration := completedAt.Sub(*scanJob.StartedAt)
@@ -721,6 +758,11 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 		// Complete scan job as successful
 		if completeErr := w.scheduler.store.Scans().CompletesScanJob(ctx, scanJob.ScanID); completeErr != nil {
 			log.Printf("[ERROR] Worker %d failed to mark scan job as completed: %v", w.id, completeErr)
+		}
+		
+		// Broadcast scan completion
+		if w.scheduler.progressBroadcaster != nil {
+			w.scheduler.progressBroadcaster.BroadcastScanComplete(scanJob.ScanID, scanJob.VolumeID)
 		}
 
 		// Insert complete scan result including filesystem capacity if repository is available
@@ -741,6 +783,9 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 		if w.scheduler.metricsCollector != nil {
 			w.scheduler.metricsCollector.ScanCompleted(scanJob.VolumeID, scanJob.Method, duration, result.TotalSize)
 		}
+		
+		// Mark scan as successfully completed
+		scanCompleted = true
 	}
 
 	// Update metrics
@@ -769,6 +814,16 @@ func (w *worker) runHeartbeat(ctx context.Context, scanID string) {
 			if err != nil {
 				log.Printf("[WARN] Worker %d failed to send heartbeat for scan %s: %v", w.id, scanID, err)
 				return
+			}
+			
+			// Broadcast comprehensive progress update
+			if w.scheduler.progressBroadcaster != nil {
+				scanJob, getErr := w.scheduler.store.Scans().GetScanJobByScanID(ctx, scanID)
+				if getErr == nil && scanJob != nil {
+					if broadcastErr := w.scheduler.progressBroadcaster.BroadcastComprehensiveScanProgress(ctx, scanID, scanJob.VolumeID); broadcastErr != nil {
+						log.Printf("[WARN] Worker %d failed to broadcast progress for scan %s: %v", w.id, scanID, broadcastErr)
+					}
+				}
 			}
 			
 			log.Printf("[DEBUG] Worker %d sent heartbeat for scan %s (progress: %d%%)", w.id, scanID, progress)
@@ -836,6 +891,16 @@ func (w *worker) processTask(task *ScanTask) {
 	ctx, cancel := context.WithTimeout(w.ctx, task.Timeout)
 	defer cancel()
 
+	// Initialize database progress tracking before starting scan
+	if w.scheduler.store != nil {
+		w.initializeDatabaseProgressTracking(ctx, task.ScanID, task.VolumeName)
+	}
+	
+	// Broadcast scan started event
+	if w.scheduler.progressBroadcaster != nil {
+		w.scheduler.progressBroadcaster.BroadcastScanStarted(task.ScanID, task.VolumeName)
+	}
+	
 	// Perform the scan
 	result, err := w.scheduler.scanner.ScanVolume(ctx, task.VolumeName)
 	completedAt := time.Now()
@@ -853,6 +918,11 @@ func (w *worker) processTask(task *ScanTask) {
 		scanRun.ErrorMessage = &errorMsg
 
 		log.Printf("[ERROR] Worker %d scan failed for volume %s: %v", w.id, task.VolumeName, err)
+		
+		// Broadcast scan error
+		if w.scheduler.progressBroadcaster != nil {
+			w.scheduler.progressBroadcaster.BroadcastScanError(task.ScanID, task.VolumeName, err.Error(), "scan_failure")
+		}
 
 		w.scheduler.statusMutex.Lock()
 		w.scheduler.status.TotalFailed++
@@ -869,6 +939,11 @@ func (w *worker) processTask(task *ScanTask) {
 
 		log.Printf("[INFO] Worker %d completed scan for volume %s (size: %d bytes, duration: %v)",
 			w.id, task.VolumeName, result.TotalSize, duration)
+		
+		// Broadcast scan completion
+		if w.scheduler.progressBroadcaster != nil {
+			w.scheduler.progressBroadcaster.BroadcastScanComplete(task.ScanID, task.VolumeName)
+		}
 
 		// Insert complete scan result including filesystem capacity
 		if err := w.scheduler.repository.InsertScanResult(w.ctx, result); err != nil {
@@ -910,4 +985,69 @@ func (w *worker) updateActiveScans(delta int) {
 		w.scheduler.metricsCollector.UpdateSchedulerWorkerUtilization(utilization)
 	}
 	w.scheduler.statusMutex.Unlock()
+}
+
+// initializeDatabaseProgressTracking creates scan phases in the database for detailed tracking
+func (w *worker) initializeDatabaseProgressTracking(ctx context.Context, scanID, volumeID string) {
+	scanProgressRepo := w.scheduler.store.ScanProgress()
+	if scanProgressRepo == nil {
+		log.Printf("[WARN] Worker %d: ScanProgress repo is nil for scan %s", w.id, scanID)
+		return
+	}
+	
+	log.Printf("[INFO] Worker %d initializing database progress for scan %s (volume: %s)", w.id, scanID, volumeID)
+	
+	now := time.Now()
+
+	// Create volume scan phase
+	_, err := scanProgressRepo.CreateScanPhase(ctx, models.CreateScanPhaseParams{
+		ScanID:     scanID,
+		PhaseName:  "volume_scan",
+		PhaseOrder: 1,
+		Status:     "running",
+		StartedAt:  &now,
+		Metadata:   "{}",
+	})
+	if err != nil {
+		log.Printf("[ERROR] Worker %d failed to create volume_scan phase for scan %s: %v", w.id, scanID, err)
+	} else {
+		log.Printf("[INFO] Worker %d successfully created volume_scan phase for scan %s", w.id, scanID)
+	}
+
+	// Create filesystem indexing phase
+	_, err = scanProgressRepo.CreateScanPhase(ctx, models.CreateScanPhaseParams{
+		ScanID:     scanID,
+		PhaseName:  "filesystem_indexing",
+		PhaseOrder: 2,
+		Status:     "pending",
+		Metadata:   "{}",
+	})
+	if err != nil {
+		log.Printf("[ERROR] Worker %d failed to create filesystem_indexing phase for scan %s: %v", w.id, scanID, err)
+	} else {
+		log.Printf("[INFO] Worker %d successfully created filesystem_indexing phase for scan %s", w.id, scanID)
+	}
+
+	// Create media enrichment phase
+	_, err = scanProgressRepo.CreateScanPhase(ctx, models.CreateScanPhaseParams{
+		ScanID:     scanID,
+		PhaseName:  "media_enrichment",
+		PhaseOrder: 3,
+		Status:     "pending",
+		Metadata:   "{}",
+	})
+	if err != nil {
+		log.Printf("[ERROR] Worker %d failed to create media_enrichment phase for scan %s: %v", w.id, scanID, err)
+	} else {
+		log.Printf("[INFO] Worker %d successfully created media_enrichment phase for scan %s", w.id, scanID)
+	}
+	
+	log.Printf("[INFO] Worker %d completed database progress initialization for scan %s", w.id, scanID)
+	
+	// Broadcast initial comprehensive progress state
+	if w.scheduler.progressBroadcaster != nil {
+		if err := w.scheduler.progressBroadcaster.BroadcastComprehensiveScanProgress(ctx, scanID, volumeID); err != nil {
+			log.Printf("[WARN] Worker %d failed to broadcast initial progress for scan %s: %v", w.id, scanID, err)
+		}
+	}
 }

@@ -171,7 +171,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 
 		// Create enrichment manager with logger
 		enrichmentLogger := log.New(os.Stdout, "[ENRICHMENT] ", log.LstdFlags)
-		enrichmentManager = enrichers.NewManager(enricherConfig, enrichmentRepo, enrichmentLogger)
+		enrichmentManager = enrichers.NewManager(enricherConfig, enrichmentRepo, enrichmentLogger, storeInstance)
 
 		// Set enrichment manager on volume scanner for automatic enrichment after filesystem indexing
 		if volumeScannerImpl, ok := volumeScannerConcrete.(*scanner.VolumeScanner); ok {
@@ -204,6 +204,9 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 			// Create volume provider
 			volumeProvider := scheduler.NewDockerVolumeProvider(dockerSvc)
 
+			// Create progress broadcaster for WebSocket integration
+			progressBroadcaster := realtime.NewProgressBroadcaster(hub, storeInstance)
+
 			// Create scheduler
 			sch, err := scheduler.NewScheduler(
 				schedulerConfig,
@@ -212,6 +215,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 				volumeProvider,
 				metricsCollector,
 				storeInstance,
+				progressBroadcaster,
 			)
 			if err != nil {
 				log.Printf("[ERROR] Failed to create scan scheduler: %v", err)
@@ -411,7 +415,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 	tieredRateLimitConfig := &middleware.TieredRateLimitConfig{
 		Enabled:   config.RateLimit.Enabled,
 		KeyFunc:   middleware.DefaultKeyFunc,
-		SkipPaths: []string{"/api/v1/health", "/health", "/metrics"},
+		SkipPaths: []string{"/api/v1/health", "/health", "/metrics", "/api/v1/ws", "/api/v1/ws/metrics"},
 
 		// Standard endpoints: 120 RPM, 60 burst
 		DefaultRPM:   config.RateLimit.RPM,

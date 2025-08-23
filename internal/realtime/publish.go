@@ -166,6 +166,63 @@ func (p *Publisher) PublishScanComplete(data ScanCompleteData) {
 func (p *Publisher) PublishVolumeUpdate(data VolumeUpdateData) {
 	p.emitEvent(EventTypeVolumeUpdate, data, data.VolumeID)
 
+	// Also broadcast as volume list update to subscribed clients
+	if p.hub != nil {
+		// Convert to WebSocket VolumeListUpdate format
+		volumeListUpdate := websocket.VolumeListUpdate{
+			Action:    data.Action, // created, removed, attached, detached, updated
+			Timestamp: time.Now(),
+		}
+		
+		// Add volume data if it's a create/update action
+		if data.Action == "created" || data.Action == "updated" {
+			volumeData := &websocket.VolumeData{
+				ID:         data.VolumeID,
+				Name:       data.VolumeName,
+				CreatedAt:  time.Now(),
+			}
+			
+			// Extract additional details if available
+			if driver, ok := data.Details["driver"].(string); ok {
+				volumeData.Driver = driver
+			}
+			if mountpoint, ok := data.Details["mountpoint"].(string); ok {
+				volumeData.Mountpoint = mountpoint
+			}
+			
+			volumeListUpdate.Volume = volumeData
+		}
+		
+		// Broadcast to clients subscribed to volume updates
+		p.hub.BroadcastVolumeListUpdate(volumeListUpdate)
+		
+		// For container attachment/detachment events, also broadcast container update
+		if (data.Action == "attached" || data.Action == "detached") && data.ContainerID != "" {
+			containerUpdate := websocket.ContainerUpdate{
+				Action:      data.Action,
+				ContainerID: data.ContainerID,
+				VolumeID:    data.VolumeID,
+				Status:      "updated",
+				Timestamp:   time.Now(),
+			}
+			
+			// Create message and broadcast to container update subscribers
+			message := websocket.Message{
+				Type:      websocket.MessageTypeContainerUpdate,
+				Data:      containerUpdate,
+				VolumeID:  data.VolumeID,
+				Timestamp: time.Now(),
+			}
+			
+			// Broadcast to clients subscribed to container updates
+			filters := map[string]string{
+				"volume_id":    data.VolumeID,
+				"container_id": data.ContainerID,
+			}
+			p.hub.BroadcastToSubscribed("container_updates", filters, message)
+		}
+	}
+
 	log.Printf("realtime: volume update for %s (%s): %s",
 		data.VolumeName, data.VolumeID, data.Action)
 }
@@ -245,6 +302,16 @@ func (p *Publisher) Stop() {
 	p.progressLimiter = make(map[string]*progressTracker)
 
 	log.Printf("realtime: publisher stopped")
+}
+
+// PublishSystemStats publishes system-wide statistics
+func (p *Publisher) PublishSystemStats(stats websocket.SystemStats) {
+	if p.hub != nil {
+		p.hub.BroadcastSystemStats(stats)
+	}
+	
+	log.Printf("realtime: system stats published - %d volumes, %d active scans", 
+		stats.TotalVolumes, stats.ActiveScans)
 }
 
 // GetActiveScans returns the list of volume IDs currently being tracked for progress

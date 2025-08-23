@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -46,6 +47,10 @@ type Client struct {
 	lastPongTime time.Time
 	missedPongs  int
 	token        string
+	
+	// Subscription management
+	subscriptions map[string]SubscriptionData // event -> subscription data
+	subscMutex    sync.RWMutex
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -90,7 +95,7 @@ func (c *Client) readPump() {
 			continue
 		}
 
-		// Handle ping/pong messages
+		// Handle incoming messages
 		switch msg.Type {
 		case MessageTypePing:
 			pongMsg := Message{
@@ -101,6 +106,10 @@ func (c *Client) readPump() {
 		case MessageTypePong:
 			c.lastPongTime = time.Now()
 			c.missedPongs = 0
+		case MessageTypeSubscribe:
+			c.handleSubscribe(msg)
+		case MessageTypeUnsubscribe:
+			c.handleUnsubscribe(msg)
 		}
 	}
 }
@@ -130,30 +139,21 @@ func (c *Client) writePump() {
 				return
 			}
 
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
-			}
-			if _, err := w.Write(message); err != nil {
+			// Send the current message as a separate WebSocket frame
+			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
 				log.Printf("error writing message: %v", err)
 				return
 			}
-
-			// Add queued chat messages to the current websocket message.
+			
+			// Send any additional queued messages as separate WebSocket frames
+			// This ensures each JSON message is sent individually rather than concatenated
 			n := len(c.send)
 			for i := 0; i < n; i++ {
-				if _, err := w.Write([]byte{'\n'}); err != nil {
-					log.Printf("error writing newline: %v", err)
-					return
-				}
-				if _, err := w.Write(<-c.send); err != nil {
+				queuedMessage := <-c.send
+				if err := c.conn.WriteMessage(websocket.TextMessage, queuedMessage); err != nil {
 					log.Printf("error writing queued message: %v", err)
 					return
 				}
-			}
-
-			if err := w.Close(); err != nil {
-				return
 			}
 		case <-ticker.C:
 			// Check missed pongs
@@ -188,6 +188,57 @@ func (c *Client) sendMessage(message Message) {
 		log.Printf("ws %s: send buffer full, dropping message", c.id)
 		close(c.send)
 		delete(c.hub.clients, c)
+	}
+}
+
+// handleSubscribe processes subscription requests from client
+func (c *Client) handleSubscribe(msg Message) {
+	if msg.Data == nil {
+		return
+	}
+	
+	// Extract subscription data
+	subData, ok := msg.Data.(map[string]interface{})
+	if !ok {
+		return
+	}
+	
+	event, ok := subData["event"].(string)
+	if !ok {
+		return
+	}
+	
+	filters := make(map[string]string)
+	if filtersData, ok := subData["filters"].(map[string]interface{}); ok {
+		for key, value := range filtersData {
+			if strValue, ok := value.(string); ok {
+				filters[key] = strValue
+			}
+		}
+	}
+	
+	// Store subscription
+	c.subscMutex.Lock()
+	c.subscriptions[event] = SubscriptionData{
+		Event:   event,
+		Filters: filters,
+	}
+	c.subscMutex.Unlock()
+}
+
+// handleUnsubscribe processes unsubscription requests from client
+func (c *Client) handleUnsubscribe(msg Message) {
+	if msg.Data == nil {
+		return
+	}
+	
+	// Extract event name
+	if eventData, ok := msg.Data.(map[string]interface{}); ok {
+		if event, ok := eventData["event"].(string); ok {
+			c.subscMutex.Lock()
+			delete(c.subscriptions, event)
+			c.subscMutex.Unlock()
+		}
 	}
 }
 
@@ -229,13 +280,14 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	clientID := generateClientID()
 
 	client := &Client{
-		hub:          hub,
-		conn:         conn,
-		send:         make(chan []byte, 256),
-		id:           clientID,
-		connectedAt:  time.Now(),
-		lastPongTime: time.Now(),
-		token:        token,
+		hub:           hub,
+		conn:          conn,
+		send:          make(chan []byte, 256),
+		id:            clientID,
+		connectedAt:   time.Now(),
+		lastPongTime:  time.Now(),
+		token:         token,
+		subscriptions: make(map[string]SubscriptionData),
 	}
 
 	client.hub.register <- client
@@ -251,4 +303,40 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 // generateClientID generates a unique client identifier
 func generateClientID() string {
 	return fmt.Sprintf("client_%d", time.Now().UnixNano())
+}
+
+
+// isSubscribedTo checks if client is subscribed to a specific event with optional filters
+func (c *Client) isSubscribedTo(event string, filters map[string]string) bool {
+	c.subscMutex.RLock()
+	defer c.subscMutex.RUnlock()
+
+	subscription, exists := c.subscriptions[event]
+	if !exists {
+		return false
+	}
+
+	// Check filters if provided
+	for key, value := range filters {
+		if subValue, ok := subscription.Filters[key]; ok {
+			if subValue != value {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+// getSubscriptions returns all active subscriptions for this client
+func (c *Client) getSubscriptions() map[string]SubscriptionData {
+	c.subscMutex.RLock()
+	defer c.subscMutex.RUnlock()
+
+	// Create a copy to avoid race conditions
+	subs := make(map[string]SubscriptionData)
+	for k, v := range c.subscriptions {
+		subs[k] = v
+	}
+	return subs
 }

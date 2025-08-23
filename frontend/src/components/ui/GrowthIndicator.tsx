@@ -58,7 +58,7 @@ export const GrowthIndicator: React.FC<GrowthIndicatorProps> = ({
   if (growthRate === undefined || growthRate === null) {
     return (
       <span className={cn('text-sm text-gray-500 dark:text-gray-400', className)}>
-        No data
+        —
       </span>
     );
   }

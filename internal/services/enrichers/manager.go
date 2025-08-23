@@ -4,8 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/store"
 )
 
 // Manager implements the EnrichmentManager interface
@@ -14,6 +18,7 @@ type Manager struct {
 	enrichers    []Enricher
 	repository   MediaMetadataRepository
 	logger       *log.Logger
+	store        store.Store // Database store for progress tracking
 	
 	// Progress tracking
 	progressMutex sync.RWMutex
@@ -27,12 +32,13 @@ type Manager struct {
 }
 
 // NewManager creates a new enrichment manager
-func NewManager(config EnricherConfig, repository MediaMetadataRepository, logger *log.Logger) *Manager {
+func NewManager(config EnricherConfig, repository MediaMetadataRepository, logger *log.Logger, store store.Store) *Manager {
 	manager := &Manager{
 		config:          config,
 		enrichers:       make([]Enricher, 0),
 		repository:      repository,
 		logger:          logger,
+		store:           store,
 		progressMap:     make(map[string]*EnrichmentProgress),
 		workerSemaphore: make(chan struct{}, config.MaxConcurrentWorkers),
 		eventHandlers:   make([]func(EnrichmentEvent), 0),
@@ -110,6 +116,11 @@ func (m *Manager) GetCapabilities() []EnricherCapabilities {
 
 // EnrichVolume enriches all eligible files in a volume
 func (m *Manager) EnrichVolume(ctx context.Context, volumeID string) error {
+	return m.EnrichVolumeWithScanID(ctx, volumeID, "")
+}
+
+// EnrichVolumeWithScanID enriches all eligible files in a volume with scan ID for database tracking
+func (m *Manager) EnrichVolumeWithScanID(ctx context.Context, volumeID string, scanID string) error {
 	if !m.IsEnabled() {
 		return fmt.Errorf("enrichment is disabled")
 	}
@@ -132,6 +143,11 @@ func (m *Manager) EnrichVolume(ctx context.Context, volumeID string) error {
 	}
 	
 	m.setProgress(volumeID, progress)
+	
+	// Update database progress tracking if scanID provided
+	if scanID != "" && m.store != nil {
+		go m.updateDatabasePhaseStatus(context.Background(), scanID, "media_enrichment", "running", "")
+	}
 	
 	// Emit started event
 	m.emitEvent(EnrichmentEvent{
@@ -157,6 +173,11 @@ func (m *Manager) EnrichVolume(ctx context.Context, volumeID string) error {
 		progress.Status = "completed"
 		progress.LastUpdate = time.Now()
 		m.setProgress(volumeID, progress)
+		
+		// Update database - mark media enrichment phase as completed
+		if scanID != "" && m.store != nil {
+			go m.updateDatabasePhaseStatus(context.Background(), scanID, "media_enrichment", "completed", "")
+		}
 		
 		m.emitEvent(EnrichmentEvent{
 			Type:      "completed",
@@ -190,6 +211,20 @@ func (m *Manager) EnrichVolume(ctx context.Context, volumeID string) error {
 			
 			result, err := m.EnrichFile(ctx, fileInfo)
 			if err != nil {
+				// Create detailed error record
+				enrichmentErr := models.EnrichmentError{
+					Timestamp:     time.Now(),
+					FileName:      fileInfo.Name,
+					FilePath:      fileInfo.Path,
+					EnricherName:  m.determineEnricherFromError(err),
+					ErrorType:     m.categorizeError(err),
+					ErrorMessage:  err.Error(),
+					TechnicalDetails: m.extractTechnicalDetails(err),
+				}
+				
+				// Add to progress tracking
+				m.addErrorToProgress(volumeID, enrichmentErr)
+				
 				errors <- err
 			} else {
 				results <- *result
@@ -235,6 +270,12 @@ func (m *Manager) EnrichVolume(ctx context.Context, volumeID string) error {
 			progress.Status = "cancelled"
 			progress.LastError = "Context cancelled"
 			m.setProgress(volumeID, progress)
+			
+			// Update database - mark media enrichment phase as failed due to cancellation
+			if scanID != "" && m.store != nil {
+				go m.updateDatabasePhaseStatus(context.Background(), scanID, "media_enrichment", "failed", "Context cancelled")
+			}
+			
 			return ctx.Err()
 		}
 		
@@ -255,11 +296,20 @@ func (m *Manager) EnrichVolume(ctx context.Context, volumeID string) error {
 	
 	// Finalize progress
 	progress.Status = "completed"
+	var finalStatus = "completed"
+	var errorMessage = ""
 	if lastError != nil && progress.SuccessfulFiles == 0 {
 		progress.Status = "failed"
+		finalStatus = "failed"
+		errorMessage = progress.LastError
 	}
 	progress.LastUpdate = time.Now()
 	m.setProgress(volumeID, progress)
+	
+	// Update database - mark media enrichment phase as completed or failed
+	if scanID != "" && m.store != nil {
+		go m.updateDatabasePhaseStatus(context.Background(), scanID, "media_enrichment", finalStatus, errorMessage)
+	}
 	
 	// Emit completion event
 	m.emitEvent(EnrichmentEvent{
@@ -464,4 +514,124 @@ func (m *Manager) ClearProgress(volumeID string) {
 	defer m.progressMutex.Unlock()
 	
 	delete(m.progressMap, volumeID)
+}
+
+// addErrorToProgress adds a detailed error to the progress tracking
+func (m *Manager) addErrorToProgress(volumeID string, enrichmentErr models.EnrichmentError) {
+	m.progressMutex.Lock()
+	defer m.progressMutex.Unlock()
+	
+	if progress, exists := m.progressMap[volumeID]; exists {
+		// Add to recent errors (keep last 20 errors)
+		progress.RecentErrors = append(progress.RecentErrors, enrichmentErr)
+		if len(progress.RecentErrors) > 20 {
+			progress.RecentErrors = progress.RecentErrors[len(progress.RecentErrors)-20:]
+		}
+		
+		// Update enricher-specific progress
+		if progress.EnricherProgress == nil {
+			progress.EnricherProgress = make(map[string]*EnricherProgress)
+		}
+		if enricherProgress, exists := progress.EnricherProgress[enrichmentErr.EnricherName]; exists {
+			enricherProgress.FailedFiles++
+			enricherProgress.LastError = enrichmentErr.ErrorMessage
+			enricherProgress.LastUpdate = time.Now()
+		}
+	}
+}
+
+// determineEnricherFromError extracts the enricher name from an error
+func (m *Manager) determineEnricherFromError(err error) string {
+	errStr := err.Error()
+	if strings.Contains(errStr, "ffprobe") {
+		return "ffprobe"
+	}
+	if strings.Contains(errStr, "exiftool") {
+		return "exiftool"  
+	}
+	if strings.Contains(errStr, "subtitle") {
+		return "subtitle"
+	}
+	return "unknown"
+}
+
+// categorizeError determines the error type from an error
+func (m *Manager) categorizeError(err error) string {
+	errStr := err.Error()
+	if strings.Contains(errStr, "ffprobe failed") {
+		return "ffprobe_execution_failed"
+	}
+	if strings.Contains(errStr, "exiftool failed") {
+		return "exiftool_execution_failed"
+	}
+	if strings.Contains(errStr, "no such file") || strings.Contains(errStr, "file not found") {
+		return "file_not_found"
+	}
+	if strings.Contains(errStr, "permission denied") {
+		return "permission_denied"
+	}
+	if strings.Contains(errStr, "timeout") || strings.Contains(errStr, "context deadline exceeded") {
+		return "timeout"
+	}
+	if strings.Contains(errStr, "exit status") {
+		return "tool_exit_error"
+	}
+	return "unknown_error"
+}
+
+// extractTechnicalDetails extracts technical details from an error
+func (m *Manager) extractTechnicalDetails(err error) string {
+	errStr := err.Error()
+	
+	// Look for stderr output in parentheses
+	if idx := strings.LastIndex(errStr, "(stderr:"); idx != -1 {
+		if endIdx := strings.Index(errStr[idx:], ")"); endIdx != -1 {
+			return strings.TrimSpace(errStr[idx+9:idx+endIdx])
+		}
+	}
+	
+	// Look for exit status
+	if strings.Contains(errStr, "exit status") {
+		return errStr
+	}
+	
+	return ""
+}
+
+// updateDatabasePhaseStatus updates the media enrichment phase status in the database
+func (m *Manager) updateDatabasePhaseStatus(ctx context.Context, scanID, phaseName, status, errorMessage string) {
+	if m.store == nil {
+		return
+	}
+
+	scanProgressRepo := m.store.ScanProgress()
+	
+	if status == "completed" {
+		err := scanProgressRepo.CompleteScanPhase(ctx, scanID, phaseName)
+		if err != nil {
+			// Log error but don't fail the enrichment
+			if m.logger != nil {
+				m.logger.Printf("Failed to complete %s phase for scan %s: %v", phaseName, scanID, err)
+			}
+		}
+	} else if status == "failed" {
+		err := scanProgressRepo.FailScanPhase(ctx, scanID, phaseName, errorMessage)
+		if err != nil {
+			if m.logger != nil {
+				m.logger.Printf("Failed to mark %s phase as failed for scan %s: %v", phaseName, scanID, err)
+			}
+		}
+	} else if status == "running" {
+		// Update phase progress to running
+		err := scanProgressRepo.UpdateScanPhaseProgress(ctx, models.UpdateScanPhaseParams{
+			ScanID:    scanID,
+			PhaseName: phaseName,
+			Status:    &status,
+		})
+		if err != nil {
+			if m.logger != nil {
+				m.logger.Printf("Failed to update %s phase status for scan %s: %v", phaseName, scanID, err)
+			}
+		}
+	}
 }

@@ -251,7 +251,7 @@ func TestManager_EnrichFile(t *testing.T) {
 			repo := &MockRepository{}
 			logger := log.New(&testLogWriter{t: t}, "test: ", 0)
 			
-			manager := NewManager(config, repo, logger)
+			manager := NewManager(config, repo, logger, nil)
 			
 			// Register enrichers
 			for _, enricher := range tt.enrichers {
@@ -344,7 +344,7 @@ func TestManager_EnrichVolume(t *testing.T) {
 			}
 			logger := log.New(&testLogWriter{t: t}, "test: ", 0)
 			
-			manager := NewManager(config, repo, logger)
+			manager := NewManager(config, repo, logger, nil)
 			
 			// Register a custom enricher that returns predefined results based on file ID
 			customEnricher := &FileIDBasedEnricher{
@@ -422,7 +422,7 @@ func TestManager_Concurrency(t *testing.T) {
 	}
 	
 	logger := log.New(&testLogWriter{t: t}, "test: ", 0)
-	manager := NewManager(config, repo, logger)
+	manager := NewManager(config, repo, logger, nil)
 	manager.RegisterEnricher(wrappedEnricher)
 	
 	ctx := context.Background()

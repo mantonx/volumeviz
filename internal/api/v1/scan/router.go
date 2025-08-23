@@ -17,7 +17,7 @@ type Router struct {
 // NewRouter creates a new scan router
 func NewRouter(scanner interfaces.VolumeScanner, hub *websocket.Hub, store store.Store, scanScheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Router {
 	return &Router{
-		handler: NewHandler(scanner, hub, scanScheduler, publisher),
+		handler: NewHandlerWithStore(scanner, hub, store, scanScheduler, publisher),
 	}
 }
 
@@ -37,6 +37,12 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 
 	// Scan status by scan ID (used by tests and clients)
 	group.GET("/scans/:id/status", r.handler.GetScanStatus)
+	
+	// Comprehensive progress tracking endpoints
+	group.GET("/scans/:id/progress", r.handler.GetScanProgress)        // Detailed scan progress
+	group.GET("/scans/:id/errors", r.handler.GetScanErrors)            // Scan errors with filtering
+	group.GET("/scans/active", r.handler.GetActiveScans)               // Active scans list
+	group.GET("/scans/recent-errors", r.handler.GetRecentScanErrors)   // Recent errors across all scans
 
 	// Bulk scanning
 	group.POST("/volumes/bulk-scan", r.handler.BulkScan)

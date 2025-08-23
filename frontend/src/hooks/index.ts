@@ -14,4 +14,4 @@ export {
 export * from './useRealTimeScans';
 export * from './useVisualizationData';
 export * from './useAutoRefresh';
-export * from './useWebSocketConnection';
+export { useMultiPhaseScanProgress } from './useMultiPhaseScanProgress';

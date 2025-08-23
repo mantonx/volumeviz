@@ -230,7 +230,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         }
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);
-        emit('error', { type: 'parse_error', error });
+        console.error('Raw message data:', event.data);
+        // Log first 200 characters to help debug malformed JSON
+        const preview = typeof event.data === 'string' 
+          ? event.data.substring(0, 200) + (event.data.length > 200 ? '...' : '')
+          : event.data;
+        console.error('Message preview:', preview);
+        emit('error', { type: 'parse_error', error, rawData: event.data });
       }
     },
     [send, emit],

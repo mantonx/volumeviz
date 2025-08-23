@@ -19,7 +19,7 @@ import type {
   ChartTooltipData,
 } from './LiveVolumeChart.types';
 import { formatBytes } from '../../../utils/formatters';
-import { useWebSocketConnection } from '../../../hooks/useWebSocketConnection';
+import { useWebSocket } from '../../../providers/WebSocketProvider';
 import type { VolumeResponseType } from '../../../api/generated/volumeviz-api';
 
 // Predefined color palette for volume segments
@@ -77,23 +77,17 @@ export const LiveVolumeChart: React.FC<LiveVolumeChartProps> = ({
   );
 
   // WebSocket connection for real-time updates
-  const { isConnected, connectionStatus } = useWebSocketConnection({
-    onVolumeUpdate: (volumes: VolumeResponseType[]) => {
-      setRealtimeVolumes(volumes);
-      setLastUpdated(new Date());
-    },
-    onScanComplete: (data) => {
-      // Update the specific volume with new size data
-      setRealtimeVolumes((prev) =>
-        prev.map((vol) =>
-          vol.id === data.volume_id
-            ? { ...vol, size: data.result.total_size }
-            : vol,
-        ),
-      );
-      setLastUpdated(new Date());
-    },
-  });
+  const { isConnected, state } = useWebSocket();
+  const connectionStatus = state.status;
+
+  // Handle WebSocket events
+  useEffect(() => {
+    if (!isConnected) return;
+
+    // Note: This component may need specific volume update events
+    // For now, we'll rely on parent components to provide updated data
+    // If real-time updates are needed, implement volume_updates event handling
+  }, [isConnected]);
 
   // Use real-time data if available, otherwise fallback to props
   const volumeData = realtimeVolumes.length > 0 ? realtimeVolumes : volumes;

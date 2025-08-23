@@ -2,8 +2,9 @@ package store
 
 import (
 	"context"
-
+	
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mantonx/volumeviz/internal/db"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/repo"
@@ -38,6 +39,11 @@ func (s *pgStore) Volumes() repo.VolumesRepo {
 // Scans returns a scans repository using the pool connection
 func (s *pgStore) Scans() repo.ScansRepo {
 	return repo.NewScansRepo(s.conn.Queries)
+}
+
+// ScanProgress returns a scan progress repository using the pool connection
+func (s *pgStore) ScanProgress() repo.ScanProgressRepo {
+	return repo.NewScanProgressRepo(s.conn.Pool)
 }
 
 // Retention returns a retention repository using the pool connection
@@ -107,6 +113,22 @@ func (s *pgTxStore) Volumes() repo.VolumesRepo {
 // Scans returns a scans repository using the transaction connection
 func (s *pgTxStore) Scans() repo.ScansRepo {
 	return repo.NewScansRepo(s.queries)
+}
+
+// ScanProgress returns a scan progress repository using the transaction connection
+// Note: For now, scan progress uses a separate pool connection since it uses raw SQL
+// This means scan progress operations won't be transactional with other operations
+func (s *pgTxStore) ScanProgress() repo.ScanProgressRepo {
+	// TODO: Adapt scan progress repo to properly support pgx transactions
+	// For now, create a temporary pool from the connection (not ideal)
+	config := s.tx.Conn().Config()
+	// We'll use a simple approach: create a new pool with the same config
+	// This is a workaround and not ideal for production
+	poolConfig, _ := pgxpool.ParseConfig(config.ConnString())
+	poolConfig.MaxConns = 1
+	poolConfig.MinConns = 1
+	tmpPool, _ := pgxpool.NewWithConfig(context.Background(), poolConfig)
+	return repo.NewScanProgressRepo(tmpPool)
 }
 
 // Retention returns a retention repository using the transaction connection

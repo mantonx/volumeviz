@@ -492,6 +492,36 @@ type ScanJobs struct {
 	UpdatedAt         time.Time        `json:"updated_at"`
 }
 
+type ScanPhases struct {
+	ID                    int64              `json:"id"`
+	ScanID                string             `json:"scan_id"`
+	PhaseName             string             `json:"phase_name"`
+	PhaseOrder            int32              `json:"phase_order"`
+	Status                string             `json:"status"`
+	Progress              pgtype.Int4        `json:"progress"`
+	ItemsTotal            pgtype.Int8        `json:"items_total"`
+	ItemsProcessed        pgtype.Int8        `json:"items_processed"`
+	ItemsSuccessful       pgtype.Int8        `json:"items_successful"`
+	ItemsFailed           pgtype.Int8        `json:"items_failed"`
+	ItemsSkipped          pgtype.Int8        `json:"items_skipped"`
+	BytesTotal            pgtype.Int8        `json:"bytes_total"`
+	BytesProcessed        pgtype.Int8        `json:"bytes_processed"`
+	ItemsPerSecond        pgtype.Numeric     `json:"items_per_second"`
+	BytesPerSecond        pgtype.Int8        `json:"bytes_per_second"`
+	StartedAt             pgtype.Timestamptz `json:"started_at"`
+	CompletedAt           pgtype.Timestamptz `json:"completed_at"`
+	EstimatedCompletionAt pgtype.Timestamptz `json:"estimated_completion_at"`
+	DurationMs            pgtype.Int8        `json:"duration_ms"`
+	CurrentItem           pgtype.Text        `json:"current_item"`
+	CurrentDepth          pgtype.Int4        `json:"current_depth"`
+	ErrorMessage          pgtype.Text        `json:"error_message"`
+	ErrorCount            pgtype.Int8        `json:"error_count"`
+	LastErrorAt           pgtype.Timestamptz `json:"last_error_at"`
+	Metadata              []byte             `json:"metadata"`
+	CreatedAt             time.Time          `json:"created_at"`
+	UpdatedAt             time.Time          `json:"updated_at"`
+}
+
 type StatsDaily struct {
 	ID            int64       `json:"id"`
 	Date          pgtype.Date `json:"date"`

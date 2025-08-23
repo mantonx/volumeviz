@@ -28,9 +28,9 @@ type FilesystemIndexer struct {
 	mimeDetector   *MimeDetector
 	previewService *previews.Service
 
-	// Progress tracking
+	// Progress tracking - map by volume ID to support multiple concurrent scans
 	progressMutex sync.RWMutex
-	currentScan   *IndexingProgress
+	activeScans   map[string]*IndexingProgress
 }
 
 // IndexerConfig holds configuration for filesystem indexing
@@ -86,14 +86,20 @@ func NewFilesystemIndexer(store store.Store, config IndexerConfig, previewServic
 		config:         config,
 		mimeDetector:   NewMimeDetector(),
 		previewService: previewService,
+		activeScans:    make(map[string]*IndexingProgress),
 	}
 }
 
 // IndexVolume performs complete filesystem indexing for a volume
 func (fi *FilesystemIndexer) IndexVolume(ctx context.Context, volumeID, mountpoint string, deltaMode bool) error {
+	return fi.IndexVolumeWithScanID(ctx, volumeID, mountpoint, deltaMode, "")
+}
+
+// IndexVolumeWithScanID performs complete filesystem indexing for a volume with scan ID for database progress tracking
+func (fi *FilesystemIndexer) IndexVolumeWithScanID(ctx context.Context, volumeID, mountpoint string, deltaMode bool, scanID string) error {
 	// Initialize progress tracking
 	fi.progressMutex.Lock()
-	fi.currentScan = &IndexingProgress{
+	fi.activeScans[volumeID] = &IndexingProgress{
 		VolumeID:   volumeID,
 		Status:     "running",
 		StartedAt:  time.Now(),
@@ -101,13 +107,38 @@ func (fi *FilesystemIndexer) IndexVolume(ctx context.Context, volumeID, mountpoi
 	}
 	fi.progressMutex.Unlock()
 
+	// Update database progress tracking if scanID provided
+	if scanID != "" {
+		go fi.updateDatabasePhaseStatus(context.Background(), scanID, "filesystem_indexing", "running", "")
+	}
+
 	defer func() {
 		fi.progressMutex.Lock()
-		if fi.currentScan.Status == "running" {
-			fi.currentScan.Status = "completed"
+		var finalStatus string
+		var errorMessage string
+		if scan, exists := fi.activeScans[volumeID]; exists {
+			if scan.Status == "running" {
+				scan.Status = "completed"
+				finalStatus = "completed"
+			} else {
+				finalStatus = scan.Status
+				errorMessage = scan.LastError
+			}
+			scan.LastUpdate = time.Now()
+			// Keep completed scans for a short time then remove
+			go func() {
+				time.Sleep(30 * time.Second)
+				fi.progressMutex.Lock()
+				delete(fi.activeScans, volumeID)
+				fi.progressMutex.Unlock()
+			}()
 		}
-		fi.currentScan.LastUpdate = time.Now()
 		fi.progressMutex.Unlock()
+
+		// Update database progress tracking
+		if scanID != "" {
+			go fi.updateDatabasePhaseStatus(context.Background(), scanID, "filesystem_indexing", finalStatus, errorMessage)
+		}
 	}()
 
 	// Clear existing data if not in delta mode
@@ -144,13 +175,16 @@ func (fi *FilesystemIndexer) GetProgress() *IndexingProgress {
 	fi.progressMutex.RLock()
 	defer fi.progressMutex.RUnlock()
 
-	if fi.currentScan == nil {
-		return nil
+	// Return the first active scan if any
+	for _, scan := range fi.activeScans {
+		if scan != nil && scan.Status == "running" {
+			// Create a copy to avoid race conditions
+			progress := *scan
+			return &progress
+		}
 	}
 
-	// Create a copy to avoid race conditions
-	progress := *fi.currentScan
-	return &progress
+	return nil
 }
 
 // compileSkipPatterns compiles skip patterns into regex
@@ -213,7 +247,7 @@ func (w *indexingWalker) walk(rootPath string) error {
 
 		// Handle walk errors
 		if err != nil {
-			w.indexer.recordError(fmt.Sprintf("walk error for %s: %v", path, err))
+			w.indexer.recordError(w.volumeID, fmt.Sprintf("walk error for %s: %v", path, err))
 			return nil // Continue walking
 		}
 
@@ -235,7 +269,7 @@ func (w *indexingWalker) walk(rootPath string) error {
 		}
 
 		// Update progress
-		w.indexer.updateProgress(path, depth)
+		w.indexer.updateProgress(w.volumeID, path, depth)
 
 		// Process based on type
 		if info.IsDir() {
@@ -270,11 +304,14 @@ func (w *indexingWalker) processFolder(path string, info os.FileInfo, depth int)
 				err = w.indexer.store.Folders().UpdateFolderMetadata(w.ctx, existing.ID,
 					folderParams.Mtime, folderParams.Ctime, folderParams.Uid, folderParams.Gid, folderParams.Mode)
 				if err != nil {
-					w.indexer.recordError(fmt.Sprintf("failed to update folder %s: %v", path, err))
+					w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to update folder %s: %v", path, err))
 				}
 			}
 			// Cache the existing folder
 			w.folderCache[path] = existing
+			
+			// Increment counter for progress tracking even if folder exists
+			w.indexer.incrementFolderCount(w.volumeID)
 			return nil
 		}
 	}
@@ -282,14 +319,14 @@ func (w *indexingWalker) processFolder(path string, info os.FileInfo, depth int)
 	// Create new folder
 	folder, err := w.indexer.store.Folders().CreateFolder(w.ctx, folderParams)
 	if err != nil {
-		w.indexer.recordError(fmt.Sprintf("failed to create folder %s: %v", path, err))
+		w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to create folder %s: %v", path, err))
 		return nil
 	}
 
 	// Cache the folder for child references
 	w.folderCache[path] = folder
 
-	w.indexer.incrementFolderCount()
+	w.indexer.incrementFolderCount(w.volumeID)
 	return nil
 }
 
@@ -299,7 +336,7 @@ func (w *indexingWalker) processFile(path string, info os.FileInfo, depth int) e
 	folderPath := filepath.Dir(path)
 	folder, exists := w.folderCache[folderPath]
 	if !exists {
-		w.indexer.recordError(fmt.Sprintf("parent folder not found for file %s", path))
+		w.indexer.recordError(w.volumeID, fmt.Sprintf("parent folder not found for file %s", path))
 		return nil
 	}
 
@@ -318,9 +355,13 @@ func (w *indexingWalker) processFile(path string, info os.FileInfo, depth int) e
 					fileParams.Mtime, fileParams.Ctime, fileParams.Birthtime,
 					fileParams.Uid, fileParams.Gid, fileParams.Mode)
 				if err != nil {
-					w.indexer.recordError(fmt.Sprintf("failed to update file %s: %v", path, err))
+					w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to update file %s: %v", path, err))
 				}
 			}
+			
+			// Increment counter for progress tracking even if file exists
+			w.indexer.incrementFileCount(w.volumeID)
+			w.indexer.addBytesProcessed(w.volumeID, info.Size())
 			return nil
 		}
 	}
@@ -328,7 +369,7 @@ func (w *indexingWalker) processFile(path string, info os.FileInfo, depth int) e
 	// Create new file
 	file, err := w.indexer.store.Files().CreateFile(w.ctx, fileParams)
 	if err != nil {
-		w.indexer.recordError(fmt.Sprintf("failed to create file %s: %v", path, err))
+		w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to create file %s: %v", path, err))
 		return nil
 	}
 
@@ -337,8 +378,8 @@ func (w *indexingWalker) processFile(path string, info os.FileInfo, depth int) e
 		go w.generatePreviewAsync(file, path, info)
 	}
 
-	w.indexer.incrementFileCount()
-	w.indexer.addBytesProcessed(info.Size())
+	w.indexer.incrementFileCount(w.volumeID)
+	w.indexer.addBytesProcessed(w.volumeID, info.Size())
 	return nil
 }
 
@@ -445,54 +486,54 @@ func (w *indexingWalker) extractFileMetadata(path string, info os.FileInfo, fold
 }
 
 // Helper methods for progress tracking
-func (fi *FilesystemIndexer) updateProgress(currentPath string, depth int) {
+func (fi *FilesystemIndexer) updateProgress(volumeID, currentPath string, depth int) {
 	fi.progressMutex.Lock()
 	defer fi.progressMutex.Unlock()
 
-	if fi.currentScan != nil {
-		fi.currentScan.CurrentPath = currentPath
-		fi.currentScan.CurrentDepth = depth
-		fi.currentScan.LastUpdate = time.Now()
+	if scan, exists := fi.activeScans[volumeID]; exists && scan != nil {
+		scan.CurrentPath = currentPath
+		scan.CurrentDepth = depth
+		scan.LastUpdate = time.Now()
 
 		// Calculate rates
-		elapsed := time.Since(fi.currentScan.StartedAt).Seconds()
+		elapsed := time.Since(scan.StartedAt).Seconds()
 		if elapsed > 0 {
-			fi.currentScan.FoldersPerSec = float64(fi.currentScan.FoldersScanned) / elapsed
-			fi.currentScan.FilesPerSec = float64(fi.currentScan.FilesScanned) / elapsed
+			scan.FoldersPerSec = float64(scan.FoldersScanned) / elapsed
+			scan.FilesPerSec = float64(scan.FilesScanned) / elapsed
 		}
 	}
 }
 
-func (fi *FilesystemIndexer) incrementFolderCount() {
+func (fi *FilesystemIndexer) incrementFolderCount(volumeID string) {
 	fi.progressMutex.Lock()
 	defer fi.progressMutex.Unlock()
-	if fi.currentScan != nil {
-		fi.currentScan.FoldersScanned++
+	if scan, exists := fi.activeScans[volumeID]; exists && scan != nil {
+		scan.FoldersScanned++
 	}
 }
 
-func (fi *FilesystemIndexer) incrementFileCount() {
+func (fi *FilesystemIndexer) incrementFileCount(volumeID string) {
 	fi.progressMutex.Lock()
 	defer fi.progressMutex.Unlock()
-	if fi.currentScan != nil {
-		fi.currentScan.FilesScanned++
+	if scan, exists := fi.activeScans[volumeID]; exists && scan != nil {
+		scan.FilesScanned++
 	}
 }
 
-func (fi *FilesystemIndexer) addBytesProcessed(bytes int64) {
+func (fi *FilesystemIndexer) addBytesProcessed(volumeID string, bytes int64) {
 	fi.progressMutex.Lock()
 	defer fi.progressMutex.Unlock()
-	if fi.currentScan != nil {
-		fi.currentScan.BytesProcessed += bytes
+	if scan, exists := fi.activeScans[volumeID]; exists && scan != nil {
+		scan.BytesProcessed += bytes
 	}
 }
 
-func (fi *FilesystemIndexer) recordError(msg string) {
+func (fi *FilesystemIndexer) recordError(volumeID, msg string) {
 	fi.progressMutex.Lock()
 	defer fi.progressMutex.Unlock()
-	if fi.currentScan != nil {
-		fi.currentScan.ErrorsCount++
-		fi.currentScan.LastError = msg
+	if scan, exists := fi.activeScans[volumeID]; exists && scan != nil {
+		scan.ErrorsCount++
+		scan.LastError = msg
 	}
 }
 
@@ -507,9 +548,9 @@ func (fi *FilesystemIndexer) GetIndexingProgress(volumeID string) *IndexingProgr
 	fi.progressMutex.RLock()
 	defer fi.progressMutex.RUnlock()
 	
-	if fi.currentScan != nil && fi.currentScan.VolumeID == volumeID {
+	if scan, exists := fi.activeScans[volumeID]; exists && scan != nil {
 		// Create a copy to avoid race conditions
-		progress := *fi.currentScan
+		progress := *scan
 		
 		// Calculate rates if we have data
 		if progress.LastUpdate.After(progress.StartedAt) {
@@ -881,7 +922,7 @@ func (w *indexingWalker) generatePreviewAsync(file *models.File, path string, in
 	_, err := w.indexer.previewService.GeneratePreview(ctx, req, mimeType)
 	if err != nil {
 		// Log error but don't block indexing
-		w.indexer.recordError(fmt.Sprintf("failed to generate preview for %s: %v", path, err))
+		w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to generate preview for %s: %v", path, err))
 	}
 }
 
@@ -899,4 +940,32 @@ func (w *indexingWalker) calculateFileHash(filePath string) (string, error) {
 	}
 
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+// updateDatabasePhaseStatus updates the filesystem indexing phase status in the database
+func (fi *FilesystemIndexer) updateDatabasePhaseStatus(ctx context.Context, scanID, phaseName, status, errorMessage string) {
+	scanProgressRepo := fi.store.ScanProgress()
+	
+	if status == "completed" {
+		err := scanProgressRepo.CompleteScanPhase(ctx, scanID, phaseName)
+		if err != nil {
+			// Log error but don't fail the indexing
+			fmt.Printf("Failed to complete %s phase for scan %s: %v\n", phaseName, scanID, err)
+		}
+	} else if status == "failed" {
+		err := scanProgressRepo.FailScanPhase(ctx, scanID, phaseName, errorMessage)
+		if err != nil {
+			fmt.Printf("Failed to mark %s phase as failed for scan %s: %v\n", phaseName, scanID, err)
+		}
+	} else if status == "running" {
+		// Update phase progress to running
+		err := scanProgressRepo.UpdateScanPhaseProgress(ctx, models.UpdateScanPhaseParams{
+			ScanID:    scanID,
+			PhaseName: phaseName,
+			Status:    &status,
+		})
+		if err != nil {
+			fmt.Printf("Failed to update %s phase status for scan %s: %v\n", phaseName, scanID, err)
+		}
+	}
 }

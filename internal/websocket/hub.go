@@ -117,7 +117,7 @@ func (h *Hub) BroadcastVolumeUpdate(volumes []VolumeData) {
 	h.BroadcastMessage(message)
 }
 
-// BroadcastScanProgress broadcasts scan progress updates
+// BroadcastScanProgress broadcasts scan progress updates (legacy)
 func (h *Hub) BroadcastScanProgress(volumeID string, progress ScanProgressData) {
 	message := Message{
 		Type:      MessageTypeScanProgress,
@@ -126,6 +126,59 @@ func (h *Hub) BroadcastScanProgress(volumeID string, progress ScanProgressData) 
 		Timestamp: time.Now(),
 	}
 	h.BroadcastMessage(message)
+}
+
+// BroadcastComprehensiveScanProgress broadcasts comprehensive scan progress updates
+func (h *Hub) BroadcastComprehensiveScanProgress(progress ComprehensiveScanProgress) {
+	message := Message{
+		Type:      MessageTypeScanProgress,
+		VolumeID:  progress.VolumeID,
+		Data:      progress,
+		Timestamp: time.Now(),
+	}
+	
+	// Send to clients subscribed to scan_progress with volume_id filter
+	filters := map[string]string{
+		"volume_id": progress.VolumeID,
+		"scan_id":   progress.ScanID,
+	}
+	h.BroadcastToSubscribed("scan_progress", filters, message)
+}
+
+// BroadcastScanPhaseUpdate broadcasts scan phase updates
+func (h *Hub) BroadcastScanPhaseUpdate(scanID, volumeID string, phase ScanPhaseProgress) {
+	message := Message{
+		Type:      MessageTypeScanPhaseUpdate,
+		VolumeID:  volumeID,
+		Data:      phase,
+		Timestamp: time.Now(),
+	}
+	
+	filters := map[string]string{
+		"volume_id": volumeID,
+		"scan_id":   scanID,
+	}
+	h.BroadcastToSubscribed("scan_progress", filters, message)
+}
+
+// BroadcastVolumeListUpdate broadcasts volume list updates
+func (h *Hub) BroadcastVolumeListUpdate(update VolumeListUpdate) {
+	message := Message{
+		Type:      MessageTypeVolumeListUpdate,
+		Data:      update,
+		Timestamp: time.Now(),
+	}
+	h.BroadcastToSubscribed("volume_updates", nil, message)
+}
+
+// BroadcastSystemStats broadcasts system statistics
+func (h *Hub) BroadcastSystemStats(stats SystemStats) {
+	message := Message{
+		Type:      MessageTypeSystemStats,
+		Data:      stats,
+		Timestamp: time.Now(),
+	}
+	h.BroadcastToSubscribed("system_stats", nil, message)
 }
 
 // BroadcastScanComplete broadcasts scan completion
@@ -188,4 +241,47 @@ func (h *Hub) Stop() {
 	h.mu.Unlock()
 
 	log.Printf("WebSocket hub stopped")
+}
+
+// BroadcastToSubscribed sends messages only to clients subscribed to specific events
+func (h *Hub) BroadcastToSubscribed(event string, filters map[string]string, message Message) {
+	data, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("error marshaling targeted broadcast message: %v", err)
+		return
+	}
+
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	sentCount := 0
+	for client := range h.clients {
+		if client.isSubscribedTo(event, filters) {
+			select {
+			case client.send <- data:
+				sentCount++
+			default:
+				// Client's send buffer is full, remove client
+				close(client.send)
+				delete(h.clients, client)
+			}
+		}
+	}
+
+	log.Printf("broadcast %s to %d subscribers (event: %s, filters: %v)", 
+		message.Type, sentCount, event, filters)
+}
+
+// GetSubscribedClients returns clients subscribed to a specific event
+func (h *Hub) GetSubscribedClients(event string) []string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	var clientIDs []string
+	for client := range h.clients {
+		if client.isSubscribedTo(event, nil) {
+			clientIDs = append(clientIDs, client.id)
+		}
+	}
+	return clientIDs
 }

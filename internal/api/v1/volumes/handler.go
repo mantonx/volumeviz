@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	apiutils "github.com/mantonx/volumeviz/internal/api/utils"
+	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	coremodels "github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/realtime"
@@ -69,7 +70,7 @@ func NewHandlerWithScanner(dockerService interfaces.DockerService, hub *websocke
 // @Produce json
 // @Param page query int false "Page number for pagination (default: 1)"
 // @Param page_size query int false "Number of items per page (default: 25, max: 100)"
-// @Param sort query string false "Sort field and direction (e.g., 'name:asc', 'created_at:desc'). Available fields: name, driver, created_at, size_bytes"
+// @Param sort query string false "Sort field and direction (e.g., 'name:asc', 'created_at:desc'). Available fields: name, driver, created_at, size_bytes, type, status, compose_project, containers"
 // @Param q query string false "Search query to filter volumes by name"
 // @Param driver query string false "Filter by volume driver" Enums(local, nfs, cifs, overlay2)
 // @Param orphaned query bool false "Filter orphaned volumes (not attached to any container)"
@@ -90,8 +91,8 @@ func (h *Handler) ListVolumes(c *gin.Context) {
 		return
 	}
 
-	// Parse sort params
-	allowedSortFields := []string{"name", "driver", "created_at", "size_bytes"}
+	// Parse sort params - expanded to support frontend requirements
+	allowedSortFields := []string{"name", "driver", "created_at", "size_bytes", "type", "status", "compose_project", "containers", "readonly", "last_seen", "growth_rate"}
 	sortParams, err := apiutils.ParseSortParams(c, allowedSortFields)
 	if err != nil {
 		apiutils.RespondWithBadRequest(c, err.Error(), nil)
@@ -203,9 +204,37 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 			if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, vol.VolumeID); err == nil && dbVol.LastScanned != nil {
 				apiVol.LastScanAt = dbVol.LastScanned
 			}
+			
+			// Get latest scan status and progress
+			if queries, ok := h.store.Queries().(*sqlc.Queries); ok {
+				if latestScan, err := queries.GetLatestScanJobByVolumeID(ctx, vol.VolumeID); err == nil {
+					apiVol.ScanStatus = &latestScan.Status
+					apiVol.LastScanID = &latestScan.ScanID
+					if latestScan.Progress.Valid {
+						progress := int(latestScan.Progress.Int32)
+						apiVol.ScanProgress = &progress
+					}
+				}
+			}
 		}
 		
-		// Use VolumeViz scanner as fallback for volumes without size data
+		// Check for cached scan results from Docker volume usage data (no new scan triggered)
+		if vol.UsageData != nil && vol.UsageData.Size >= 0 {
+			apiVol.SizeBytes = &vol.UsageData.Size
+		} else if h.store != nil {
+			// Check database for cached scan results (no new scan triggered)
+			if totalSize, err := h.store.Stats().GetLatestVolumeTotalSize(ctx, vol.VolumeID); err == nil && totalSize != nil {
+				apiVol.SizeBytes = totalSize
+			}
+		}
+		
+		// Skip real-time scanning to avoid blocking API responses
+		// Background scanning will populate size data asynchronously
+		// Users can refresh to see updated scan results
+		//
+		// Note: Commenting out synchronous scanning to prevent 20+ second API timeouts
+		// The VolumeViz scanner should run in background via scheduled jobs instead
+		/*
 		if h.volumeScanner != nil && apiVol.SizeBytes == nil {
 			if scanResult, err := h.volumeScanner.ScanVolume(ctx, vol.VolumeID); err == nil {
 				apiVol.SizeBytes = &scanResult.TotalSize
@@ -223,6 +252,7 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 				}
 			}
 		}
+		*/
 		
 		apiVolumes = append(apiVolumes, apiVol)
 	}
@@ -401,6 +431,21 @@ func (h *Handler) sortVolumes(volumes []models.VolumeV1, sortParams []apiutils.S
 			} else {
 				sortVolumesByDriver(volumes, false)
 			}
+		case "type":
+			// For volumes, type is always "volume", but we'll support it for consistency
+			sortVolumesByType(volumes, param.Direction == "asc")
+		case "status":
+			sortVolumesByStatus(volumes, param.Direction == "asc")
+		case "compose_project":
+			sortVolumesByComposeProject(volumes, param.Direction == "asc")
+		case "containers":
+			sortVolumesByContainers(volumes, param.Direction == "asc")
+		case "readonly":
+			sortVolumesByReadonly(volumes, param.Direction == "asc")
+		case "last_seen":
+			sortVolumesByLastSeen(volumes, param.Direction == "asc")
+		case "growth_rate":
+			sortVolumesByGrowthRate(volumes, param.Direction == "asc")
 		}
 	}
 }
@@ -447,6 +492,131 @@ func sortVolumesByDriver(volumes []models.VolumeV1, asc bool) {
 			return volumes[i].Driver < volumes[j].Driver
 		}
 		return volumes[i].Driver > volumes[j].Driver
+	})
+}
+
+func sortVolumesByType(volumes []models.VolumeV1, asc bool) {
+	// For volumes, type is always "volume", so this will result in no sorting
+	// but we implement it for consistency with frontend expectations
+	sort.Slice(volumes, func(i, j int) bool {
+		typeI := "volume"
+		typeJ := "volume"
+		if asc {
+			return typeI < typeJ
+		}
+		return typeI > typeJ
+	})
+}
+
+func sortVolumesByStatus(volumes []models.VolumeV1, asc bool) {
+	sort.Slice(volumes, func(i, j int) bool {
+		statusI := "active"  // Default status
+		statusJ := "active"
+		
+		// Determine status based on orphaned state
+		if volumes[i].IsOrphaned {
+			statusI = "orphaned"
+		}
+		if volumes[j].IsOrphaned {
+			statusJ = "orphaned"
+		}
+		
+		if asc {
+			return statusI < statusJ
+		}
+		return statusI > statusJ
+	})
+}
+
+func sortVolumesByComposeProject(volumes []models.VolumeV1, asc bool) {
+	sort.Slice(volumes, func(i, j int) bool {
+		projectI := ""
+		projectJ := ""
+		
+		// Extract compose project from labels
+		if volumes[i].Labels != nil {
+			if project, ok := volumes[i].Labels["com.docker.compose.project"]; ok {
+				projectI = project
+			}
+		}
+		if volumes[j].Labels != nil {
+			if project, ok := volumes[j].Labels["com.docker.compose.project"]; ok {
+				projectJ = project
+			}
+		}
+		
+		if asc {
+			return projectI < projectJ
+		}
+		return projectI > projectJ
+	})
+}
+
+func sortVolumesByContainers(volumes []models.VolumeV1, asc bool) {
+	sort.Slice(volumes, func(i, j int) bool {
+		countI := volumes[i].AttachmentsCount
+		countJ := volumes[j].AttachmentsCount
+		
+		if asc {
+			return countI < countJ
+		}
+		return countI > countJ
+	})
+}
+
+func sortVolumesByReadonly(volumes []models.VolumeV1, asc bool) {
+	sort.Slice(volumes, func(i, j int) bool {
+		// Volumes are typically read-write, but we can check mount options
+		// For now, assume all volumes are read-write (false for readonly)
+		readonlyI := false
+		readonlyJ := false
+		
+		if asc {
+			return !readonlyI && readonlyJ // false < true in ascending order
+		}
+		return readonlyI && !readonlyJ // true > false in descending order
+	})
+}
+
+func sortVolumesByLastSeen(volumes []models.VolumeV1, asc bool) {
+	sort.Slice(volumes, func(i, j int) bool {
+		timeI := volumes[i].CreatedAt // Fallback to created_at
+		timeJ := volumes[j].CreatedAt
+		
+		// Use LastScanAt if available
+		if volumes[i].LastScanAt != nil {
+			timeI = *volumes[i].LastScanAt
+		}
+		if volumes[j].LastScanAt != nil {
+			timeJ = *volumes[j].LastScanAt
+		}
+		
+		if asc {
+			return timeI.Before(timeJ)
+		}
+		return timeI.After(timeJ)
+	})
+}
+
+func sortVolumesByGrowthRate(volumes []models.VolumeV1, asc bool) {
+	sort.Slice(volumes, func(i, j int) bool {
+		// Growth rate is not currently calculated for volumes
+		// This would require historical size data
+		// For now, sort by size as a proxy
+		sizeI := int64(0)
+		sizeJ := int64(0)
+		
+		if volumes[i].SizeBytes != nil {
+			sizeI = *volumes[i].SizeBytes
+		}
+		if volumes[j].SizeBytes != nil {
+			sizeJ = *volumes[j].SizeBytes
+		}
+		
+		if asc {
+			return sizeI < sizeJ
+		}
+		return sizeI > sizeJ
 	})
 }
 
@@ -505,6 +675,9 @@ func (h *Handler) GetVolume(c *gin.Context) {
 	var sizeBytes *int64
 	var filesystemCapacity *models.FilesystemCapacity
 	var lastScanAt *time.Time
+	var scanStatus *string
+	var scanProgress *int
+	var lastScanID *string
 	
 	// Enhance with database information if store is available
 	if h.store != nil {
@@ -524,6 +697,18 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		// Get last scan timestamp from database
 		if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, volumeName); err == nil && dbVol.LastScanned != nil {
 			lastScanAt = dbVol.LastScanned
+		}
+		
+		// Get latest scan status and progress
+		if queries, ok := h.store.Queries().(*sqlc.Queries); ok {
+			if latestScan, err := queries.GetLatestScanJobByVolumeID(ctx, volumeName); err == nil {
+				scanStatus = &latestScan.Status
+				lastScanID = &latestScan.ScanID
+				if latestScan.Progress.Valid {
+					progress := int(latestScan.Progress.Int32)
+					scanProgress = &progress
+				}
+			}
 		}
 	}
 	
@@ -562,6 +747,9 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		IsSystem:           h.isSystemVolume(*volume),
 		IsOrphaned:         len(attachments) == 0,
 		FilesystemCapacity: filesystemCapacity,
+		ScanStatus:         scanStatus,
+		ScanProgress:       scanProgress,
+		LastScanID:         lastScanID,
 		Meta: map[string]interface{}{
 			"driver_opts": volume.Options,
 		},
@@ -846,8 +1034,8 @@ func (h *Handler) GetOrphanedVolumes(c *gin.Context) {
 		return
 	}
 
-	// Parse sort params - default to size_bytes:desc
-	allowedSortFields := []string{"name", "driver", "created_at", "size_bytes"}
+	// Parse sort params - default to size_bytes:desc, expanded to support frontend requirements
+	allowedSortFields := []string{"name", "driver", "created_at", "size_bytes", "type", "status", "compose_project", "containers", "readonly", "last_seen", "growth_rate"}
 	sortParams, err := apiutils.ParseSortParams(c, allowedSortFields)
 	if err != nil {
 		apiutils.RespondWithBadRequest(c, err.Error(), nil)

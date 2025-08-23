@@ -132,6 +132,16 @@ func (r *StatsRepo) GetVolumeFilesystemCapacity(ctx context.Context, volumeID st
 	return fsInfo, nil
 }
 
+// GetLatestVolumeTotalSize retrieves the latest volume scan size from the database
+func (r *StatsRepo) GetLatestVolumeTotalSize(ctx context.Context, volumeID string) (*int64, error) {
+	volumeSize, err := r.queries.GetLatestVolumeSize(ctx, volumeID)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &volumeSize.TotalSize, nil
+}
+
 // InsertVolumeStatsWithVolumeID inserts volume statistics with proper volume ID
 func (r *StatsRepo) InsertVolumeStatsWithVolumeID(ctx context.Context, volumeID string, stats *models.DirRollup) error {
 	// Convert DirRollup to DailyStat for storage

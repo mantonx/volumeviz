@@ -84,8 +84,21 @@ export function useVolumesAndMounts() {
 
   // Transform volume data to VolumeMount format
   const transformVolume = useCallback((volume: VolumeV1): VolumeMount => {
+    // Check localStorage for volume tracking status
+    const volumeTracking = JSON.parse(localStorage.getItem('volumeviz_volume_tracking') || '{}');
+    const volumeId = volume.name || 'unknown';
+    const isTrackedInStorage = volumeTracking[volumeId];
+    
+    // Determine status: orphaned takes precedence, then localStorage, then default to tracked
+    let status: 'tracked' | 'untracked' | 'orphaned' = 'tracked';
+    if (volume.is_orphaned) {
+      status = 'orphaned';
+    } else if (isTrackedInStorage !== undefined) {
+      status = isTrackedInStorage ? 'tracked' : 'untracked';
+    }
+    
     return {
-      id: volume.name || 'unknown',
+      id: volumeId,
       name: volume.name || 'unknown',
       path: volume.mountpoint || 'unknown',
       type: 'volume',
@@ -97,7 +110,7 @@ export function useVolumesAndMounts() {
       containers: volume.container_names || [], // Use container names from API
       container_count: volume.attachments_count || 0,
       readonly: false, // Volumes are typically read-write
-      status: volume.is_orphaned ? 'orphaned' : 'tracked',
+      status,
       last_seen: volume.last_scan_at, // Don't fallback to created_at for scan timestamps
       size_bytes: volume.size_bytes,
       created_at: volume.created_at || new Date().toISOString(),
@@ -108,6 +121,11 @@ export function useVolumesAndMounts() {
       attachments_count: volume.attachments_count,
       is_system: volume.is_system,
       labels: volume.labels,
+      // Include scan status fields from API
+      scan_status: volume.scan_status,
+      scan_progress: volume.scan_progress,
+      last_scan_id: volume.last_scan_id,
+      last_scan_at: volume.last_scan_at,
     };
   }, []);
 
@@ -176,7 +194,13 @@ export function useVolumesAndMounts() {
             ...(params?.orphaned && { orphaned: params.orphaned.toString() }),
             ...(params?.system && { system: params.system.toString() }),
           })}`)
-            .then(res => res.json()),
+            .then(async res => {
+              if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
+              }
+              return res.json();
+            }),
           
           api.api.v1MountsList({
             page,
@@ -204,7 +228,13 @@ export function useVolumesAndMounts() {
             ...(params?.orphaned && { orphaned: params.orphaned.toString() }),
             ...(params?.system && { system: params.system.toString() }),
           })}`)
-            .then(res => res.json()),
+            .then(async res => {
+              if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
+              }
+              return res.json();
+            }),
           
           api.api.v1MountsList({
             page,
@@ -240,17 +270,38 @@ export function useVolumesAndMounts() {
         return acc;
       }, [] as VolumeMount[]);
 
-      // Sort combined data if needed
+      // Apply sorting to combined data (since combining volumes + mounts destroys backend sort order)
       if (params?.sort) {
         const [field, direction] = params.sort.split(':');
         deduped.sort((a, b) => {
           const aValue = a[field as keyof VolumeMount];
           const bValue = b[field as keyof VolumeMount];
           
-          let comparison = 0;
-          if (aValue < bValue) comparison = -1;
-          else if (aValue > bValue) comparison = 1;
+          // Handle null/undefined values
+          if (aValue == null && bValue == null) return 0;
+          if (aValue == null) return direction === 'asc' ? -1 : 1;
+          if (bValue == null) return direction === 'asc' ? 1 : -1;
           
+          // Handle string comparison
+          if (typeof aValue === 'string' && typeof bValue === 'string') {
+            const comparison = aValue.localeCompare(bValue);
+            return direction === 'desc' ? -comparison : comparison;
+          }
+          
+          // Handle numeric comparison
+          if (typeof aValue === 'number' && typeof bValue === 'number') {
+            const comparison = aValue - bValue;
+            return direction === 'desc' ? -comparison : comparison;
+          }
+          
+          // Handle date comparison
+          if (aValue instanceof Date && bValue instanceof Date) {
+            const comparison = aValue.getTime() - bValue.getTime();
+            return direction === 'desc' ? -comparison : comparison;
+          }
+          
+          // Fallback to string comparison
+          const comparison = String(aValue).localeCompare(String(bValue));
           return direction === 'desc' ? -comparison : comparison;
         });
       }
@@ -265,9 +316,20 @@ export function useVolumesAndMounts() {
       });
 
     } catch (err) {
-      const errorMessage = getErrorMessage(err);
+      let errorMessage = getErrorMessage(err);
+      
+      // Add more details for JSON parsing errors
+      if (err instanceof Error && err.message.includes('JSON.parse')) {
+        errorMessage = `API returned invalid JSON: ${err.message}. This may be due to special characters in the search query.`;
+        console.error('[useVolumesAndMounts] JSON parsing error details:', {
+          error: err.message,
+          params: params,
+          stack: err.stack
+        });
+      }
+      
+      console.error('Failed to fetch volumes and mounts:', err, 'with params:', params);
       setError(errorMessage);
-      console.error('Failed to fetch volumes and mounts:', err);
     } finally {
       setLoading(false);
     }
@@ -278,24 +340,44 @@ export function useVolumesAndMounts() {
     items: VolumeMount[], 
     tracked: boolean
   ): Promise<void> => {
+    // For volumes, store tracking status in localStorage
+    const volumeItems = items.filter(item => item.source_type === 'volume');
+    if (volumeItems.length > 0) {
+      const existingVolumeTracking = JSON.parse(localStorage.getItem('volumeviz_volume_tracking') || '{}');
+      volumeItems.forEach(item => {
+        existingVolumeTracking[item.id] = tracked;
+      });
+      localStorage.setItem('volumeviz_volume_tracking', JSON.stringify(existingVolumeTracking));
+    }
+
+    // Update local state immediately for instant feedback
+    setData(prevData => 
+      prevData.map(item => {
+        const targetItem = items.find(i => i.id === item.id);
+        if (targetItem) {
+          return {
+            ...item,
+            status: tracked ? 'tracked' : 'untracked'
+          } as VolumeMount;
+        }
+        return item;
+      })
+    );
+
+    // Then make API calls for mounts only
     const promises = items.map(async (item) => {
       if (item.source_type === 'mount' && item.id) {
-        // Update mount tracking status
+        // Update mount tracking status via API
         return api.api.v1MountsTrackingUpdate(
           item.id,
           { is_tracked: tracked }
         );
       }
-      // For volumes, tracking is implicit (they're always tracked unless orphaned)
       return Promise.resolve();
     });
 
     await Promise.all(promises);
-    
-    // Refresh data after update
-    // Note: We'll need to pass current params here in a real implementation
-    await fetchData();
-  }, [fetchData]);
+  }, []);
 
   const bulkTrack = useCallback(async (selectedIds: string[]): Promise<void> => {
     const selectedItems = data.filter(item => selectedIds.includes(item.id));

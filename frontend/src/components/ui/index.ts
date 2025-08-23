@@ -42,6 +42,20 @@ export type {
   MetricCardSize,
   MetricCardLayout
 } from './MetricCard';
+export { MultiPhaseProgressBar } from './MultiPhaseProgressBar';
+export type {
+  MultiPhaseProgressBarProps,
+  ComprehensiveScanProgress,
+  ScanPhaseProgress,
+  ScanProgressError,
+  MultiPhaseProgressBarSize,
+  ScanStatus,
+} from './MultiPhaseProgressBar';
+export { SubtleProgressIndicator } from './SubtleProgressIndicator';
+export type {
+  SubtleProgressIndicatorProps,
+  ScanProgressState,
+} from './SubtleProgressIndicator';
 export { Modal, useModal } from './Modal';
 export type {
   ModalProps,

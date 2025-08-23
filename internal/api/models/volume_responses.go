@@ -19,6 +19,10 @@ type VolumeV1 struct {
 	IsSystem           bool                 `json:"is_system" example:"false"`
 	IsOrphaned         bool                 `json:"is_orphaned" example:"false"`
 	FilesystemCapacity *FilesystemCapacity  `json:"filesystem_capacity,omitempty"`
+	// Scan status information
+	ScanStatus         *string              `json:"scan_status,omitempty" example:"completed"`         // Latest scan status: pending, running, completed, failed
+	ScanProgress       *int                 `json:"scan_progress,omitempty" example:"100"`             // Latest scan progress (0-100)
+	LastScanID         *string              `json:"last_scan_id,omitempty" example:"scan_abc123def"`   // Latest scan ID for tracking
 } // @name VolumeV1
 
 // VolumeDetailV1 represents detailed volume information
@@ -36,6 +40,10 @@ type VolumeDetailV1 struct {
 	IsOrphaned         bool                   `json:"is_orphaned" example:"false"`
 	Meta               map[string]interface{} `json:"meta,omitempty"`
 	FilesystemCapacity *FilesystemCapacity    `json:"filesystem_capacity,omitempty"`
+	// Scan status information  
+	ScanStatus         *string                `json:"scan_status,omitempty" example:"completed"`         // Latest scan status: pending, running, completed, failed
+	ScanProgress       *int                   `json:"scan_progress,omitempty" example:"100"`             // Latest scan progress (0-100)
+	LastScanID         *string                `json:"last_scan_id,omitempty" example:"scan_abc123def"`   // Latest scan ID for tracking
 } // @name VolumeDetailV1
 
 // AttachmentV1 represents a container attachment to a volume
