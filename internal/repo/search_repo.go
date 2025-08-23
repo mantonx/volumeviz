@@ -23,27 +23,27 @@ func NewSearchRepo(queries *sqlc.Queries) *SearchRepo {
 
 // SearchFilesParams represents search parameters
 type SearchFilesParams struct {
-	SearchQuery   string
-	PathPrefix    string
-	MediaKind     string
-	MimeType      string
-	MinSize       int64
-	MaxSize       int64
-	MtimeFrom     *time.Time
-	MtimeTo       *time.Time
-	DurationFrom  int64
-	DurationTo    int64
-	MinWidth      int32
-	MaxWidth      int32
-	MinHeight     int32
-	MaxHeight     int32
-	HasGPS        *bool
-	HasSubs       *bool
-	HasHash       *bool
-	SortField     string
-	SortOrder     string
-	PageLimit     int32
-	PageOffset    int32
+	SearchQuery  string
+	PathPrefix   string
+	MediaKind    string
+	MimeType     string
+	MinSize      int64
+	MaxSize      int64
+	MtimeFrom    *time.Time
+	MtimeTo      *time.Time
+	DurationFrom int64
+	DurationTo   int64
+	MinWidth     int32
+	MaxWidth     int32
+	MinHeight    int32
+	MaxHeight    int32
+	HasGPS       *bool
+	HasSubs      *bool
+	HasHash      *bool
+	SortField    string
+	SortOrder    string
+	PageLimit    int32
+	PageOffset   int32
 }
 
 // SearchFiles performs advanced file search
@@ -147,7 +147,7 @@ func (r *SearchRepo) CreateSavedSearch(ctx context.Context, params SavedSearchPa
 		IsPublic:    pgtype.Bool{Bool: params.IsPublic, Valid: true},
 		Metadata:    metadataJSON,
 	})
-	
+
 	if err != nil {
 		return nil, err
 	}

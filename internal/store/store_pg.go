@@ -2,7 +2,7 @@ package store
 
 import (
 	"context"
-	
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mantonx/volumeviz/internal/db"
@@ -92,12 +92,6 @@ func (s *pgStore) Health(ctx context.Context) error {
 func (s *pgStore) Queries() interface{} {
 	return s.conn.Queries
 }
-
-
-
-
-
-
 
 // pgTxStore implements TxStore for PostgreSQL transactions
 type pgTxStore struct {

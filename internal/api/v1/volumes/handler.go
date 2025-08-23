@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	apiutils "github.com/mantonx/volumeviz/internal/api/utils"
+	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	coremodels "github.com/mantonx/volumeviz/internal/models"
@@ -32,6 +33,7 @@ type Handler struct {
 	realtimePublisher *realtime.Publisher
 	systemVolumeRegex *regexp.Regexp
 	volumeScanner     interfaces.VolumeScanner // VolumeViz scanner for size calculation
+	volumeMapping     *config.VolumeMappingConfig
 }
 
 // NewHandler creates a new volume handler with store interface
@@ -57,6 +59,7 @@ func NewHandlerWithScanner(dockerService interfaces.DockerService, hub *websocke
 		realtimePublisher: publisher,
 		systemVolumeRegex: regex,
 		volumeScanner:     scanner,
+		volumeMapping:     config.NewVolumeMappingConfig(),
 	}
 }
 
@@ -184,7 +187,7 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 	apiVolumes := make([]models.VolumeV1, 0, len(filtered))
 	for _, vol := range filtered {
 		apiVol := h.convertToAPIVolume(vol)
-		
+
 		// Enhance with database information if store is available
 		if h.store != nil {
 			// Get filesystem capacity from previous scans
@@ -199,12 +202,12 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 					FreeBlocks:     fsInfo.FreeBlocks,
 				}
 			}
-			
+
 			// Get last scan timestamp from database
 			if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, vol.VolumeID); err == nil && dbVol.LastScanned != nil {
 				apiVol.LastScanAt = dbVol.LastScanned
 			}
-			
+
 			// Get latest scan status and progress
 			if queries, ok := h.store.Queries().(*sqlc.Queries); ok {
 				if latestScan, err := queries.GetLatestScanJobByVolumeID(ctx, vol.VolumeID); err == nil {
@@ -217,7 +220,7 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 				}
 			}
 		}
-		
+
 		// Check for cached scan results from Docker volume usage data (no new scan triggered)
 		if vol.UsageData != nil && vol.UsageData.Size >= 0 {
 			apiVol.SizeBytes = &vol.UsageData.Size
@@ -227,7 +230,7 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 				apiVol.SizeBytes = totalSize
 			}
 		}
-		
+
 		// Skip real-time scanning to avoid blocking API responses
 		// Background scanning will populate size data asynchronously
 		// Users can refresh to see updated scan results
@@ -235,25 +238,25 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 		// Note: Commenting out synchronous scanning to prevent 20+ second API timeouts
 		// The VolumeViz scanner should run in background via scheduled jobs instead
 		/*
-		if h.volumeScanner != nil && apiVol.SizeBytes == nil {
-			if scanResult, err := h.volumeScanner.ScanVolume(ctx, vol.VolumeID); err == nil {
-				apiVol.SizeBytes = &scanResult.TotalSize
-				// Add filesystem capacity information if available and not already retrieved from database
-				if apiVol.FilesystemCapacity == nil && scanResult.FilesystemCapacity != nil {
-					apiVol.FilesystemCapacity = &models.FilesystemCapacity{
-						TotalBytes:     scanResult.FilesystemCapacity.TotalBytes,
-						AvailableBytes: scanResult.FilesystemCapacity.AvailableBytes,
-						UsedBytes:      scanResult.FilesystemCapacity.UsedBytes,
-						UsagePercent:   scanResult.FilesystemCapacity.UsagePercent,
-						BlockSize:      scanResult.FilesystemCapacity.BlockSize,
-						TotalBlocks:    scanResult.FilesystemCapacity.TotalBlocks,
-						FreeBlocks:     scanResult.FilesystemCapacity.FreeBlocks,
+			if h.volumeScanner != nil && apiVol.SizeBytes == nil {
+				if scanResult, err := h.volumeScanner.ScanVolume(ctx, vol.VolumeID); err == nil {
+					apiVol.SizeBytes = &scanResult.TotalSize
+					// Add filesystem capacity information if available and not already retrieved from database
+					if apiVol.FilesystemCapacity == nil && scanResult.FilesystemCapacity != nil {
+						apiVol.FilesystemCapacity = &models.FilesystemCapacity{
+							TotalBytes:     scanResult.FilesystemCapacity.TotalBytes,
+							AvailableBytes: scanResult.FilesystemCapacity.AvailableBytes,
+							UsedBytes:      scanResult.FilesystemCapacity.UsedBytes,
+							UsagePercent:   scanResult.FilesystemCapacity.UsagePercent,
+							BlockSize:      scanResult.FilesystemCapacity.BlockSize,
+							TotalBlocks:    scanResult.FilesystemCapacity.TotalBlocks,
+							FreeBlocks:     scanResult.FilesystemCapacity.FreeBlocks,
+						}
 					}
 				}
 			}
-		}
 		*/
-		
+
 		apiVolumes = append(apiVolumes, apiVol)
 	}
 
@@ -345,13 +348,22 @@ func (h *Handler) convertToAPIVolume(vol coremodels.Volume) models.VolumeV1 {
 		sizeBytes = &vol.UsageData.Size
 	}
 
+	// Determine the best mountpoint to display
+	// Priority: 1) Configured container path 2) Original mountpoint
+	displayMountpoint := vol.Mountpoint
+	if h.volumeMapping != nil {
+		if configuredPath, exists := h.volumeMapping.GetContainerPath(vol.Name); exists {
+			displayMountpoint = configuredPath
+		}
+	}
+
 	return models.VolumeV1{
 		Name:             vol.Name,
 		Driver:           vol.Driver,
 		CreatedAt:        vol.CreatedAt,
 		Labels:           vol.Labels,
 		Scope:            vol.Scope,
-		Mountpoint:       vol.Mountpoint,
+		Mountpoint:       displayMountpoint,
 		SizeBytes:        sizeBytes,
 		LastScanAt:       vol.LastScanned, // Map LastScanned to LastScanAt
 		AttachmentsCount: attachmentsCount,
@@ -510,9 +522,9 @@ func sortVolumesByType(volumes []models.VolumeV1, asc bool) {
 
 func sortVolumesByStatus(volumes []models.VolumeV1, asc bool) {
 	sort.Slice(volumes, func(i, j int) bool {
-		statusI := "active"  // Default status
+		statusI := "active" // Default status
 		statusJ := "active"
-		
+
 		// Determine status based on orphaned state
 		if volumes[i].IsOrphaned {
 			statusI = "orphaned"
@@ -520,7 +532,7 @@ func sortVolumesByStatus(volumes []models.VolumeV1, asc bool) {
 		if volumes[j].IsOrphaned {
 			statusJ = "orphaned"
 		}
-		
+
 		if asc {
 			return statusI < statusJ
 		}
@@ -532,7 +544,7 @@ func sortVolumesByComposeProject(volumes []models.VolumeV1, asc bool) {
 	sort.Slice(volumes, func(i, j int) bool {
 		projectI := ""
 		projectJ := ""
-		
+
 		// Extract compose project from labels
 		if volumes[i].Labels != nil {
 			if project, ok := volumes[i].Labels["com.docker.compose.project"]; ok {
@@ -544,7 +556,7 @@ func sortVolumesByComposeProject(volumes []models.VolumeV1, asc bool) {
 				projectJ = project
 			}
 		}
-		
+
 		if asc {
 			return projectI < projectJ
 		}
@@ -556,7 +568,7 @@ func sortVolumesByContainers(volumes []models.VolumeV1, asc bool) {
 	sort.Slice(volumes, func(i, j int) bool {
 		countI := volumes[i].AttachmentsCount
 		countJ := volumes[j].AttachmentsCount
-		
+
 		if asc {
 			return countI < countJ
 		}
@@ -570,7 +582,7 @@ func sortVolumesByReadonly(volumes []models.VolumeV1, asc bool) {
 		// For now, assume all volumes are read-write (false for readonly)
 		readonlyI := false
 		readonlyJ := false
-		
+
 		if asc {
 			return !readonlyI && readonlyJ // false < true in ascending order
 		}
@@ -582,7 +594,7 @@ func sortVolumesByLastSeen(volumes []models.VolumeV1, asc bool) {
 	sort.Slice(volumes, func(i, j int) bool {
 		timeI := volumes[i].CreatedAt // Fallback to created_at
 		timeJ := volumes[j].CreatedAt
-		
+
 		// Use LastScanAt if available
 		if volumes[i].LastScanAt != nil {
 			timeI = *volumes[i].LastScanAt
@@ -590,7 +602,7 @@ func sortVolumesByLastSeen(volumes []models.VolumeV1, asc bool) {
 		if volumes[j].LastScanAt != nil {
 			timeJ = *volumes[j].LastScanAt
 		}
-		
+
 		if asc {
 			return timeI.Before(timeJ)
 		}
@@ -605,14 +617,14 @@ func sortVolumesByGrowthRate(volumes []models.VolumeV1, asc bool) {
 		// For now, sort by size as a proxy
 		sizeI := int64(0)
 		sizeJ := int64(0)
-		
+
 		if volumes[i].SizeBytes != nil {
 			sizeI = *volumes[i].SizeBytes
 		}
 		if volumes[j].SizeBytes != nil {
 			sizeJ = *volumes[j].SizeBytes
 		}
-		
+
 		if asc {
 			return sizeI < sizeJ
 		}
@@ -678,7 +690,7 @@ func (h *Handler) GetVolume(c *gin.Context) {
 	var scanStatus *string
 	var scanProgress *int
 	var lastScanID *string
-	
+
 	// Enhance with database information if store is available
 	if h.store != nil {
 		// Get filesystem capacity from previous scans
@@ -693,12 +705,12 @@ func (h *Handler) GetVolume(c *gin.Context) {
 				FreeBlocks:     fsInfo.FreeBlocks,
 			}
 		}
-		
+
 		// Get last scan timestamp from database
 		if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, volumeName); err == nil && dbVol.LastScanned != nil {
 			lastScanAt = dbVol.LastScanned
 		}
-		
+
 		// Get latest scan status and progress
 		if queries, ok := h.store.Queries().(*sqlc.Queries); ok {
 			if latestScan, err := queries.GetLatestScanJobByVolumeID(ctx, volumeName); err == nil {
@@ -711,7 +723,7 @@ func (h *Handler) GetVolume(c *gin.Context) {
 			}
 		}
 	}
-	
+
 	if volume.UsageData != nil && volume.UsageData.Size >= 0 {
 		sizeBytes = &volume.UsageData.Size
 	} else if h.volumeScanner != nil {

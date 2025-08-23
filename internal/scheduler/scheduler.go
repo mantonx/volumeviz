@@ -34,8 +34,8 @@ type Scheduler struct {
 	workerWG  sync.WaitGroup
 
 	// Hardened features
-	watchdog         *Watchdog
-	heartbeatConfig  HeartbeatConfig
+	watchdog        *Watchdog
+	heartbeatConfig HeartbeatConfig
 
 	// Scheduler state
 	running     bool
@@ -56,8 +56,8 @@ type Scheduler struct {
 	rateLimitMutex sync.Mutex
 
 	// Graceful shutdown
-	shuttingDown   bool
-	shutdownMutex  sync.RWMutex
+	shuttingDown  bool
+	shutdownMutex sync.RWMutex
 }
 
 // worker represents a scan worker goroutine with heartbeat capabilities
@@ -77,7 +77,6 @@ type HeartbeatConfig struct {
 	Timeout         time.Duration
 	WatchdogEnabled bool
 }
-
 
 // NewScheduler creates a new scan scheduler with hardened features
 func NewScheduler(
@@ -300,20 +299,20 @@ func (s *Scheduler) GetMetrics() *SchedulerMetrics {
 // GetDetailedMetrics returns enhanced metrics including worker and watchdog stats (hardened mode)
 func (s *Scheduler) GetDetailedMetrics() *EnhancedSchedulerMetrics {
 	status := s.GetStatus()
-	
+
 	// Collect worker stats
 	workerStats := make([]WorkerStats, len(s.workers))
 	for i, worker := range s.workers {
 		workerStats[i] = worker.GetStats()
 	}
-	
+
 	// Get watchdog stats if available
 	var watchdogStats *WatchdogStats
 	if s.watchdog != nil {
 		stats := s.watchdog.GetStats()
 		watchdogStats = &stats
 	}
-	
+
 	return &EnhancedSchedulerMetrics{
 		QueueDepth:        status.QueueDepth,
 		ActiveScans:       status.ActiveScans,
@@ -380,7 +379,7 @@ func (s *Scheduler) EnqueueVolume(volumeName string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("failed to check active scans for volume %s: %w", volumeName, err)
 		}
-		
+
 		if hasActive {
 			return "", fmt.Errorf("volume %s already has an active scan", volumeName)
 		}
@@ -393,13 +392,13 @@ func (s *Scheduler) EnqueueVolume(volumeName string) (string, error) {
 			Status:   "queued",
 			Method:   s.selectScanMethod(),
 		}
-		
+
 		// Insert scan job atomically
 		_, err = s.store.Scans().CreateScanJob(s.ctx, scanJob)
 		if err != nil {
 			return "", fmt.Errorf("failed to create scan job: %w", err)
 		}
-		
+
 		log.Printf("[INFO] Enqueued volume %s for scanning using hardened store (scan_id: %s)", volumeName, scanID)
 		return scanID, nil
 	}
@@ -629,17 +628,11 @@ func (w *worker) run() {
 
 	for {
 		select {
-		case task := <-w.scheduler.taskQueue:
-			// Update queue depth metrics after dequeue
-			if w.scheduler.metricsCollector != nil {
-				w.scheduler.metricsCollector.UpdateSchedulerQueueDepth(len(w.scheduler.taskQueue))
-			}
-			w.processTask(task)
 		case <-w.ctx.Done():
 			log.Printf("[INFO] Worker %d stopped", w.id)
 			return
 		case <-time.After(1 * time.Second):
-			// Try to claim work from store if available (hardened mode)
+			// Try to claim work from store (hardened mode)
 			if w.scheduler.store != nil {
 				w.tryClaimScanJob()
 			}
@@ -655,14 +648,14 @@ func (w *worker) tryClaimScanJob() {
 		// No jobs available or error - just continue
 		return
 	}
-	
+
 	if scanJob == nil {
 		// No jobs available
 		return
 	}
-	
+
 	log.Printf("[INFO] Worker %d claimed scan job %s (volume: %s)", w.id, scanJob.ScanID, scanJob.VolumeID)
-	
+
 	// Process the claimed scan job with heartbeats
 	w.processClaimedScanJob(scanJob)
 }
@@ -693,7 +686,7 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 	// Start heartbeat goroutine
 	heartbeatCtx, heartbeatCancel := context.WithCancel(w.ctx)
 	defer heartbeatCancel()
-	
+
 	go w.runHeartbeat(heartbeatCtx, scanJob.ScanID)
 
 	// Update metrics
@@ -709,16 +702,16 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 	if w.scheduler.store != nil {
 		w.initializeDatabaseProgressTracking(ctx, scanJob.ScanID, scanJob.VolumeID)
 	}
-	
+
 	// Broadcast scan started event
 	if w.scheduler.progressBroadcaster != nil {
 		w.scheduler.progressBroadcaster.BroadcastScanStarted(scanJob.ScanID, scanJob.VolumeID)
 	}
-	
+
 	// Perform the scan
 	result, err := w.scheduler.scanner.ScanVolume(ctx, scanJob.VolumeID)
 	completedAt := time.Now()
-	
+
 	// Stop heartbeat
 	heartbeatCancel()
 
@@ -726,12 +719,24 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 		// Handle failure
 		log.Printf("[ERROR] Worker %d scan failed for volume %s: %v", w.id, scanJob.VolumeID, err)
 		w.incrementErrorCount()
-		
+
+		// Mark all scan phases as failed first
+		if w.scheduler.store != nil && w.scheduler.store.ScanProgress() != nil {
+			phases := []string{"volume_scan", "filesystem_indexing", "media_enrichment"}
+			for _, phase := range phases {
+				if phaseErr := w.scheduler.store.ScanProgress().FailScanPhase(ctx, scanJob.ScanID, phase, err.Error()); phaseErr != nil {
+					log.Printf("[ERROR] Worker %d failed to mark phase %s as failed for scan %s: %v", w.id, phase, scanJob.ScanID, phaseErr)
+				} else {
+					log.Printf("[INFO] Worker %d marked phase %s as failed for scan %s", w.id, phase, scanJob.ScanID)
+				}
+			}
+		}
+
 		// Mark scan job as failed with error message
 		if failErr := w.scheduler.store.Scans().FailScanJob(ctx, scanJob.ScanID, err.Error()); failErr != nil {
 			log.Printf("[ERROR] Worker %d failed to mark scan job as failed: %v", w.id, failErr)
 		}
-		
+
 		// Broadcast scan error
 		if w.scheduler.progressBroadcaster != nil {
 			w.scheduler.progressBroadcaster.BroadcastScanError(scanJob.ScanID, scanJob.VolumeID, err.Error(), "scan_failure")
@@ -746,7 +751,7 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 		if w.scheduler.metricsCollector != nil {
 			w.scheduler.metricsCollector.RecordScanFailure(scanJob.Method, "scan_error")
 		}
-		
+
 		// Mark scan as completed (even though it failed)
 		scanCompleted = true
 	} else {
@@ -755,14 +760,55 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 		log.Printf("[INFO] Worker %d completed scan for volume %s (size: %d bytes, duration: %v)",
 			w.id, scanJob.VolumeID, result.TotalSize, duration)
 
-		// Complete scan job as successful
-		if completeErr := w.scheduler.store.Scans().CompletesScanJob(ctx, scanJob.ScanID); completeErr != nil {
-			log.Printf("[ERROR] Worker %d failed to mark scan job as completed: %v", w.id, completeErr)
+		// Complete volume_scan phase with actual file count data
+		if w.scheduler.store != nil && w.scheduler.store.ScanProgress() != nil {
+			// Update volume_scan phase with completion status and file count
+			completedStatus := "completed"
+			progress := 100
+			itemsProcessed := int64(result.FileCount)
+			itemsTotal := int64(result.FileCount + result.DirectoryCount)
+			itemsSuccessful := int64(result.FileCount)
+
+			updateParams := models.UpdateScanPhaseParams{
+				ScanID:          scanJob.ScanID,
+				PhaseName:       "volume_scan",
+				Status:          &completedStatus,
+				Progress:        &progress,
+				ItemsProcessed:  &itemsProcessed,
+				ItemsTotal:      &itemsTotal,
+				ItemsSuccessful: &itemsSuccessful,
+			}
+
+			if err := w.scheduler.store.ScanProgress().UpdateScanPhaseProgress(ctx, updateParams); err != nil {
+				log.Printf("[ERROR] Worker %d failed to update volume_scan phase for scan %s: %v", w.id, scanJob.ScanID, err)
+			} else {
+				log.Printf("[INFO] Worker %d completed volume_scan phase for scan %s (processed %d files)", w.id, scanJob.ScanID, result.FileCount)
+			}
+
+			// Trigger filesystem indexing with scan ID for progress tracking
+			if err := w.scheduler.scanner.TriggerFilesystemIndexingWithScanID(ctx, scanJob.VolumeID, true, scanJob.ScanID); err != nil {
+				log.Printf("[ERROR] Worker %d failed to trigger filesystem indexing for scan %s: %v", w.id, scanJob.ScanID, err)
+				// Update filesystem_indexing phase as failed
+				if failErr := w.scheduler.store.ScanProgress().FailScanPhase(ctx, scanJob.ScanID, "filesystem_indexing", err.Error()); failErr != nil {
+					log.Printf("[ERROR] Worker %d failed to mark filesystem_indexing phase as failed for scan %s: %v", w.id, scanJob.ScanID, failErr)
+				}
+			} else {
+				log.Printf("[INFO] Worker %d triggered filesystem indexing for scan %s", w.id, scanJob.ScanID)
+			}
+
+			// Note: media_enrichment phase should be completed by
+			// the enrichment manager when it actually completes its work
 		}
-		
-		// Broadcast scan completion
+
+		// Don't mark scan job as completed here - let it complete naturally
+		// when all phases are actually finished. The scan job will be marked
+		// as completed by the watchdog or when the last phase finishes.
+
+		// Broadcast scan progress (not completion yet)
 		if w.scheduler.progressBroadcaster != nil {
-			w.scheduler.progressBroadcaster.BroadcastScanComplete(scanJob.ScanID, scanJob.VolumeID)
+			if err := w.scheduler.progressBroadcaster.BroadcastComprehensiveScanProgress(ctx, scanJob.ScanID, scanJob.VolumeID); err != nil {
+				log.Printf("[WARN] Worker %d failed to broadcast progress for scan %s: %v", w.id, scanJob.ScanID, err)
+			}
 		}
 
 		// Insert complete scan result including filesystem capacity if repository is available
@@ -783,7 +829,7 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 		if w.scheduler.metricsCollector != nil {
 			w.scheduler.metricsCollector.ScanCompleted(scanJob.VolumeID, scanJob.Method, duration, result.TotalSize)
 		}
-		
+
 		// Mark scan as successfully completed
 		scanCompleted = true
 	}
@@ -800,7 +846,7 @@ func (w *worker) runHeartbeat(ctx context.Context, scanID string) {
 	defer ticker.Stop()
 
 	progress := int32(0)
-	
+
 	for {
 		select {
 		case <-ticker.C:
@@ -809,13 +855,13 @@ func (w *worker) runHeartbeat(ctx context.Context, scanID string) {
 			if progress > 90 {
 				progress = 90 // Cap at 90%
 			}
-			
+
 			err := w.scheduler.store.Scans().UpdateScanJobHeartbeat(ctx, scanID, progress)
 			if err != nil {
 				log.Printf("[WARN] Worker %d failed to send heartbeat for scan %s: %v", w.id, scanID, err)
 				return
 			}
-			
+
 			// Broadcast comprehensive progress update
 			if w.scheduler.progressBroadcaster != nil {
 				scanJob, getErr := w.scheduler.store.Scans().GetScanJobByScanID(ctx, scanID)
@@ -825,7 +871,7 @@ func (w *worker) runHeartbeat(ctx context.Context, scanID string) {
 					}
 				}
 			}
-			
+
 			log.Printf("[DEBUG] Worker %d sent heartbeat for scan %s (progress: %d%%)", w.id, scanID, progress)
 		case <-ctx.Done():
 			return
@@ -849,128 +895,12 @@ func (w *worker) incrementErrorCount() {
 func (w *worker) GetStats() WorkerStats {
 	w.statsMutex.RLock()
 	defer w.statsMutex.RUnlock()
-	
+
 	return WorkerStats{
 		ID:             w.id,
 		ProcessedCount: w.processedJobs,
 		ErrorCount:     w.errorCount,
 		IsActive:       false, // Simple worker doesn't track current scan
-	}
-}
-
-// processTask processes a single scan task
-func (w *worker) processTask(task *ScanTask) {
-	w.updateActiveScans(1)
-	defer w.updateActiveScans(-1)
-
-	log.Printf("[INFO] Worker %d processing scan %s (volume: %s)", w.id, task.ScanID, task.VolumeName)
-
-	// Create scan run record - using models types now
-	scanRun := &models.ScanJob{
-		ScanID:   task.ScanID,
-		VolumeID: task.VolumeName,
-		Status:   "running",
-		Method:   task.Method,
-		Progress: new(int32), // Initialize as pointer
-	}
-	now := time.Now()
-	scanRun.StartedAt = &now
-
-	// Insert initial scan run
-	if err := w.scheduler.repository.InsertScanRun(w.ctx, scanRun); err != nil {
-		log.Printf("[ERROR] Worker %d failed to insert scan run: %v", w.id, err)
-		return
-	}
-
-	// Update metrics
-	if w.scheduler.metricsCollector != nil {
-		w.scheduler.metricsCollector.ScanStarted(task.Method)
-	}
-
-	// Create timeout context
-	ctx, cancel := context.WithTimeout(w.ctx, task.Timeout)
-	defer cancel()
-
-	// Initialize database progress tracking before starting scan
-	if w.scheduler.store != nil {
-		w.initializeDatabaseProgressTracking(ctx, task.ScanID, task.VolumeName)
-	}
-	
-	// Broadcast scan started event
-	if w.scheduler.progressBroadcaster != nil {
-		w.scheduler.progressBroadcaster.BroadcastScanStarted(task.ScanID, task.VolumeName)
-	}
-	
-	// Perform the scan
-	result, err := w.scheduler.scanner.ScanVolume(ctx, task.VolumeName)
-	completedAt := time.Now()
-	duration := completedAt.Sub(now)
-
-	// Update scan run with results
-	scanRun.CompletedAt = &completedAt
-	progress := int32(100)
-	scanRun.Progress = &progress
-
-	if err != nil {
-		// Handle failure
-		scanRun.Status = "failed"
-		errorMsg := err.Error()
-		scanRun.ErrorMessage = &errorMsg
-
-		log.Printf("[ERROR] Worker %d scan failed for volume %s: %v", w.id, task.VolumeName, err)
-		
-		// Broadcast scan error
-		if w.scheduler.progressBroadcaster != nil {
-			w.scheduler.progressBroadcaster.BroadcastScanError(task.ScanID, task.VolumeName, err.Error(), "scan_failure")
-		}
-
-		w.scheduler.statusMutex.Lock()
-		w.scheduler.status.TotalFailed++
-		w.scheduler.metrics.CompletedScans["failed"]++
-		w.scheduler.metrics.ErrorCounts["scan_error"]++
-		w.scheduler.statusMutex.Unlock()
-
-		if w.scheduler.metricsCollector != nil {
-			w.scheduler.metricsCollector.RecordScanFailure(task.Method, "scan_error")
-		}
-	} else {
-		// Handle success
-		scanRun.Status = "completed"
-
-		log.Printf("[INFO] Worker %d completed scan for volume %s (size: %d bytes, duration: %v)",
-			w.id, task.VolumeName, result.TotalSize, duration)
-		
-		// Broadcast scan completion
-		if w.scheduler.progressBroadcaster != nil {
-			w.scheduler.progressBroadcaster.BroadcastScanComplete(task.ScanID, task.VolumeName)
-		}
-
-		// Insert complete scan result including filesystem capacity
-		if err := w.scheduler.repository.InsertScanResult(w.ctx, result); err != nil {
-			log.Printf("[ERROR] Worker %d failed to insert scan result: %v", w.id, err)
-		}
-
-		w.scheduler.statusMutex.Lock()
-		w.scheduler.status.TotalCompleted++
-		w.scheduler.metrics.CompletedScans["completed"]++
-		// Update average duration for this method
-		currentAvg := w.scheduler.metrics.ScanDurations[task.Method]
-		w.scheduler.metrics.ScanDurations[task.Method] = (currentAvg + duration.Seconds()) / 2
-		w.scheduler.statusMutex.Unlock()
-
-		if w.scheduler.metricsCollector != nil {
-			w.scheduler.metricsCollector.ScanCompleted(task.VolumeName, task.Method, duration, result.TotalSize)
-		}
-	}
-
-	// Update scan run in database
-	if err := w.scheduler.repository.UpdateScanRun(w.ctx, scanRun); err != nil {
-		log.Printf("[ERROR] Worker %d failed to update scan run: %v", w.id, err)
-	}
-
-	// Update metrics
-	if w.scheduler.metricsCollector != nil {
-		w.scheduler.metricsCollector.ScanFinished(task.Method)
 	}
 }
 
@@ -994,9 +924,9 @@ func (w *worker) initializeDatabaseProgressTracking(ctx context.Context, scanID,
 		log.Printf("[WARN] Worker %d: ScanProgress repo is nil for scan %s", w.id, scanID)
 		return
 	}
-	
+
 	log.Printf("[INFO] Worker %d initializing database progress for scan %s (volume: %s)", w.id, scanID, volumeID)
-	
+
 	now := time.Now()
 
 	// Create volume scan phase
@@ -1041,9 +971,9 @@ func (w *worker) initializeDatabaseProgressTracking(ctx context.Context, scanID,
 	} else {
 		log.Printf("[INFO] Worker %d successfully created media_enrichment phase for scan %s", w.id, scanID)
 	}
-	
+
 	log.Printf("[INFO] Worker %d completed database progress initialization for scan %s", w.id, scanID)
-	
+
 	// Broadcast initial comprehensive progress state
 	if w.scheduler.progressBroadcaster != nil {
 		if err := w.scheduler.progressBroadcaster.BroadcastComprehensiveScanProgress(ctx, scanID, volumeID); err != nil {

@@ -37,12 +37,12 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 
 	// Scan status by scan ID (used by tests and clients)
 	group.GET("/scans/:id/status", r.handler.GetScanStatus)
-	
+
 	// Comprehensive progress tracking endpoints
-	group.GET("/scans/:id/progress", r.handler.GetScanProgress)        // Detailed scan progress
-	group.GET("/scans/:id/errors", r.handler.GetScanErrors)            // Scan errors with filtering
-	group.GET("/scans/active", r.handler.GetActiveScans)               // Active scans list
-	group.GET("/scans/recent-errors", r.handler.GetRecentScanErrors)   // Recent errors across all scans
+	group.GET("/scans/:id/progress", r.handler.GetScanProgress)      // Detailed scan progress
+	group.GET("/scans/:id/errors", r.handler.GetScanErrors)          // Scan errors with filtering
+	group.GET("/scans/active", r.handler.GetActiveScans)             // Active scans list
+	group.GET("/scans/recent-errors", r.handler.GetRecentScanErrors) // Recent errors across all scans
 
 	// Bulk scanning
 	group.POST("/volumes/bulk-scan", r.handler.BulkScan)

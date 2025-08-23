@@ -104,7 +104,7 @@ func (s *DockerService) ListVolumes(ctx context.Context) ([]models.Volume, error
 	volumes := make([]models.Volume, 0, len(volumeResp.Volumes))
 	for _, vol := range volumeResp.Volumes {
 		volume := s.convertToVolumeModel(*vol)
-		
+
 		// Override usage data with disk usage information if available
 		if usageData, exists := volumeSizeMap[vol.Name]; exists {
 			volume.UsageData = &models.VolumeUsage{
@@ -112,7 +112,7 @@ func (s *DockerService) ListVolumes(ctx context.Context) ([]models.Volume, error
 				Size:     usageData.Size,
 			}
 		}
-		
+
 		volumes = append(volumes, volume)
 	}
 

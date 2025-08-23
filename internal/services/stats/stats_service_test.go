@@ -195,7 +195,7 @@ func (m *MockMetricsCollector) SetStatsServiceStatus(enabled bool) {
 // Test fixtures
 func createTestDailyStats() []*models.DailyStat {
 	baseDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
-	
+
 	return []*models.DailyStat{
 		{
 			ID:           1,
@@ -247,24 +247,24 @@ func createTestDailyStats() []*models.DailyStat {
 
 func createTestTrendAnalysis() []*models.TrendAnalysis {
 	baseDate := time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC)
-	
+
 	return []*models.TrendAnalysis{
 		{
-			Date:                baseDate,
-			VolumeID:            "test-volume",
-			FolderID:            nil,
-			MediaKind:           nil,
-			FilesCount:          1200,
-			TotalBytes:          1024 * 1024 * 125,
-			AddedBytes:          1024 * 1024 * 20,
-			RemovedBytes:        1024 * 1024 * 5,
-			BytesChange7d:       int64Ptr(1024 * 1024 * 25), // 25MB growth over 7 days
-			FilesChange7d:       int64Ptr(200),              // 200 files added
-			BytesChange30d:      nil,                        // Not enough data yet
-			FilesChange30d:      nil,
-			BytesGrowthRate7d:   stringPtr("0.25"),          // 25% growth rate
-			BytesGrowthRate30d:  nil,
-			ComputedAt:          baseDate,
+			Date:               baseDate,
+			VolumeID:           "test-volume",
+			FolderID:           nil,
+			MediaKind:          nil,
+			FilesCount:         1200,
+			TotalBytes:         1024 * 1024 * 125,
+			AddedBytes:         1024 * 1024 * 20,
+			RemovedBytes:       1024 * 1024 * 5,
+			BytesChange7d:      int64Ptr(1024 * 1024 * 25), // 25MB growth over 7 days
+			FilesChange7d:      int64Ptr(200),              // 200 files added
+			BytesChange30d:     nil,                        // Not enough data yet
+			FilesChange30d:     nil,
+			BytesGrowthRate7d:  stringPtr("0.25"), // 25% growth rate
+			BytesGrowthRate30d: nil,
+			ComputedAt:         baseDate,
 		},
 	}
 }
@@ -272,46 +272,46 @@ func createTestTrendAnalysis() []*models.TrendAnalysis {
 func createTestTopGrowingFolders() []*models.TopGrowingFolder {
 	return []*models.TopGrowingFolder{
 		{
-			FolderID:            int64Ptr(1),
-			FolderName:          "Documents",
-			FolderPath:          "/data/Documents",
-			TotalAddedBytes:     1024 * 1024 * 15, // 15MB
-			TotalAddedFiles:     100,
-			AvgDailyAddedBytes:  stringPtr("5242880"), // 5MB/day
-			DaysTracked:         3,
+			FolderID:           int64Ptr(1),
+			FolderName:         "Documents",
+			FolderPath:         "/data/Documents",
+			TotalAddedBytes:    1024 * 1024 * 15, // 15MB
+			TotalAddedFiles:    100,
+			AvgDailyAddedBytes: stringPtr("5242880"), // 5MB/day
+			DaysTracked:        3,
 		},
 		{
-			FolderID:            int64Ptr(2),
-			FolderName:          "Media",
-			FolderPath:          "/data/Media",
-			TotalAddedBytes:     1024 * 1024 * 10, // 10MB
-			TotalAddedFiles:     20,
-			AvgDailyAddedBytes:  stringPtr("3145728"), // 3MB/day
-			DaysTracked:         3,
+			FolderID:           int64Ptr(2),
+			FolderName:         "Media",
+			FolderPath:         "/data/Media",
+			TotalAddedBytes:    1024 * 1024 * 10, // 10MB
+			TotalAddedFiles:    20,
+			AvgDailyAddedBytes: stringPtr("3145728"), // 3MB/day
+			DaysTracked:        3,
 		},
 	}
 }
 
 func createTestMediaComposition() []*models.MediaKindComposition {
 	baseDate := time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC)
-	
+
 	return []*models.MediaKindComposition{
 		{
-			MediaKind:        stringPtr("documents"),
+			MediaKind:       stringPtr("documents"),
 			Date:            baseDate,
 			FilesCount:      600,
 			TotalBytes:      1024 * 1024 * 50, // 50MB
 			PercentOfVolume: stringPtr("40.0"),
 		},
 		{
-			MediaKind:        stringPtr("images"),
+			MediaKind:       stringPtr("images"),
 			Date:            baseDate,
 			FilesCount:      400,
 			TotalBytes:      1024 * 1024 * 45, // 45MB
 			PercentOfVolume: stringPtr("36.0"),
 		},
 		{
-			MediaKind:        stringPtr("other"),
+			MediaKind:       stringPtr("other"),
 			Date:            baseDate,
 			FilesCount:      200,
 			TotalBytes:      1024 * 1024 * 30, // 30MB
@@ -556,14 +556,14 @@ func TestStatsService_GetMediaKindComposition(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedComposition, result)
 	assert.Len(t, result, 3)
-	
+
 	// Verify composition data
 	totalPercentage := 0.0
 	for _, comp := range result {
 		totalPercentage += comp.PercentOfVolume
 	}
 	assert.Equal(t, 100.0, totalPercentage) // Should add up to 100%
-	
+
 	// Verify documents is the largest
 	assert.Equal(t, "documents", result[0].MediaKind)
 	assert.Equal(t, 40.0, result[0].PercentOfVolume)
@@ -587,13 +587,13 @@ func TestStatsService_ComputeHistoricalStats(t *testing.T) {
 	// Mock expectations
 	mockMetrics.On("StatsJobStarted", "historical_compute", volumeID).Once()
 	mockRepo.On("CreateStatsJob", ctx, "historical_compute", volumeID, mock.AnythingOfType("time.Time"), "running").Return(int64(1), nil)
-	
+
 	// Expect calls for each date in range
 	mockRepo.On("ComputeVolumeDailyStats", ctx, volumeID, startDate, (*string)(nil)).Return(nil)
 	mockRepo.On("ComputeVolumeDailyStats", ctx, volumeID, startDate.AddDate(0, 0, 1), (*string)(nil)).Return(nil)
 	mockRepo.On("ComputeVolumeDailyStats", ctx, volumeID, startDate.AddDate(0, 0, 2), (*string)(nil)).Return(nil)
 	mockRepo.On("ComputeVolumeDailyStats", ctx, volumeID, endDate, (*string)(nil)).Return(nil)
-	
+
 	mockMetrics.On("StatsJobCompleted", "historical_compute", volumeID, mock.AnythingOfType("time.Duration"), 4).Once()
 	mockRepo.On("UpdateStatsJob", ctx, mock.AnythingOfType("models.UpdateStatsJobParams")).Return(nil)
 

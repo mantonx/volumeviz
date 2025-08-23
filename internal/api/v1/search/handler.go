@@ -27,39 +27,39 @@ func NewHandler(store store.Store) *Handler {
 // SearchFilesRequest represents the search request with advanced filters
 type SearchFilesRequest struct {
 	// Text search
-	Q      string `form:"q" json:"q"`                           // Query string for text search
-	Path   string `form:"path" json:"path"`                     // Path prefix filter
-	Glob   string `form:"glob" json:"glob"`                     // Glob pattern for path matching
-	Regex  string `form:"regex" json:"regex"`                   // Regex pattern for path matching
-	
+	Q     string `form:"q" json:"q"`         // Query string for text search
+	Path  string `form:"path" json:"path"`   // Path prefix filter
+	Glob  string `form:"glob" json:"glob"`   // Glob pattern for path matching
+	Regex string `form:"regex" json:"regex"` // Regex pattern for path matching
+
 	// Media filters
-	MediaKind string   `form:"mediaKind" json:"mediaKind"`         // Media kind: video, audio, image, document
-	Mime      []string `form:"mime" json:"mime"`                   // MIME type filters
-	
+	MediaKind string   `form:"mediaKind" json:"mediaKind"` // Media kind: video, audio, image, document
+	Mime      []string `form:"mime" json:"mime"`           // MIME type filters
+
 	// Size filters
-	MinSize int64 `form:"minSize" json:"minSize"`               // Minimum file size in bytes
-	MaxSize int64 `form:"maxSize" json:"maxSize"`               // Maximum file size in bytes
-	
+	MinSize int64 `form:"minSize" json:"minSize"` // Minimum file size in bytes
+	MaxSize int64 `form:"maxSize" json:"maxSize"` // Maximum file size in bytes
+
 	// Time filters
 	MtimeFrom time.Time `form:"mtimeFrom" json:"mtimeFrom" time_format:"2006-01-02T15:04:05Z"` // Modified time from
 	MtimeTo   time.Time `form:"mtimeTo" json:"mtimeTo" time_format:"2006-01-02T15:04:05Z"`     // Modified time to
-	
+
 	// Media metadata filters
-	DurationFrom int64   `form:"durationFrom" json:"durationFrom"`   // Min duration in ms (video/audio)
-	DurationTo   int64   `form:"durationTo" json:"durationTo"`       // Max duration in ms
-	MinWidth     int32   `form:"minWidth" json:"minWidth"`           // Min width in pixels (video/image)
-	MaxWidth     int32   `form:"maxWidth" json:"maxWidth"`           // Max width in pixels
-	MinHeight    int32   `form:"minHeight" json:"minHeight"`         // Min height in pixels
-	MaxHeight    int32   `form:"maxHeight" json:"maxHeight"`         // Max height in pixels
-	HasGPS       *bool   `form:"hasGps" json:"hasGps"`               // Has GPS coordinates
-	HasSubs      *bool   `form:"hasSubs" json:"hasSubs"`             // Has subtitles
-	HashPresent  *bool   `form:"hashPresent" json:"hashPresent"`     // Has computed hash
-	
+	DurationFrom int64 `form:"durationFrom" json:"durationFrom"` // Min duration in ms (video/audio)
+	DurationTo   int64 `form:"durationTo" json:"durationTo"`     // Max duration in ms
+	MinWidth     int32 `form:"minWidth" json:"minWidth"`         // Min width in pixels (video/image)
+	MaxWidth     int32 `form:"maxWidth" json:"maxWidth"`         // Max width in pixels
+	MinHeight    int32 `form:"minHeight" json:"minHeight"`       // Min height in pixels
+	MaxHeight    int32 `form:"maxHeight" json:"maxHeight"`       // Max height in pixels
+	HasGPS       *bool `form:"hasGps" json:"hasGps"`             // Has GPS coordinates
+	HasSubs      *bool `form:"hasSubs" json:"hasSubs"`           // Has subtitles
+	HashPresent  *bool `form:"hashPresent" json:"hashPresent"`   // Has computed hash
+
 	// Pagination and sorting
 	Page    int    `form:"page" json:"page" binding:"min=1"`
 	PerPage int    `form:"perPage" json:"perPage" binding:"min=1,max=100"`
-	Sort    string `form:"sort" json:"sort"`                      // Sort field: relevance, name, size, mtime, ctime, duration, type, media_kind
-	Order   string `form:"order" json:"order"`                    // Sort order: asc, desc
+	Sort    string `form:"sort" json:"sort"`   // Sort field: relevance, name, size, mtime, ctime, duration, type, media_kind
+	Order   string `form:"order" json:"order"` // Sort order: asc, desc
 }
 
 // SearchFilesResponse represents the search response
@@ -88,18 +88,18 @@ type FileResult struct {
 	CreatedTime  *time.Time             `json:"created_time,omitempty"`
 	Metadata     map[string]interface{} `json:"metadata,omitempty"`
 	PreviewURL   string                 `json:"preview_url,omitempty"`
-	
+
 	// Media metadata
-	Duration     *int64   `json:"duration_ms,omitempty"`
-	Width        *int32   `json:"width,omitempty"`
-	Height       *int32   `json:"height,omitempty"`
-	VideoCodec   *string  `json:"video_codec,omitempty"`
-	AudioCodec   *string  `json:"audio_codec,omitempty"`
-	HasGPS       bool     `json:"has_gps,omitempty"`
-	GPSLat       *float64 `json:"gps_lat,omitempty"`
-	GPSLon       *float64 `json:"gps_lon,omitempty"`
-	CameraModel  *string  `json:"camera_model,omitempty"`
-	CaptureDate  *time.Time `json:"capture_date,omitempty"`
+	Duration    *int64     `json:"duration_ms,omitempty"`
+	Width       *int32     `json:"width,omitempty"`
+	Height      *int32     `json:"height,omitempty"`
+	VideoCodec  *string    `json:"video_codec,omitempty"`
+	AudioCodec  *string    `json:"audio_codec,omitempty"`
+	HasGPS      bool       `json:"has_gps,omitempty"`
+	GPSLat      *float64   `json:"gps_lat,omitempty"`
+	GPSLon      *float64   `json:"gps_lon,omitempty"`
+	CameraModel *string    `json:"camera_model,omitempty"`
+	CaptureDate *time.Time `json:"capture_date,omitempty"`
 }
 
 // SearchFiles performs advanced file search with filters
@@ -166,12 +166,12 @@ func (h *Handler) SearchFiles(c *gin.Context) {
 		if req.Sort == "relevance" || req.Sort == "mtime" || req.Sort == "ctime" || req.Sort == "size" {
 			req.Order = "desc" // Most relevant, newest, or largest first
 		} else {
-			req.Order = "asc"  // Alphabetical, smallest first
+			req.Order = "asc" // Alphabetical, smallest first
 		}
 	}
 
 	startTime := time.Now()
-	
+
 	// Convert request to repo parameters
 	searchParams := h.buildSearchParams(req)
 
@@ -248,7 +248,6 @@ func (h *Handler) buildSearchParams(req SearchFilesRequest) repo.SearchFilesPara
 		PageLimit:    int32(req.PerPage),
 	}
 }
-
 
 // executeRepoSearch executes search using repository
 func (h *Handler) executeRepoSearch(ctx context.Context, params repo.SearchFilesParams) ([]FileResult, int64, error) {
@@ -340,7 +339,7 @@ func (h *Handler) canGeneratePreview(mimeType string) bool {
 	if mimeType == "" {
 		return false
 	}
-	
+
 	// Check if it's an image, video, or audio file
 	return strings.HasPrefix(mimeType, "image/") ||
 		strings.HasPrefix(mimeType, "video/") ||
@@ -350,7 +349,7 @@ func (h *Handler) canGeneratePreview(mimeType string) bool {
 // getActiveFilters returns the active filters for the response
 func (h *Handler) getActiveFilters(req SearchFilesRequest) map[string]interface{} {
 	filters := make(map[string]interface{})
-	
+
 	if req.Q != "" {
 		filters["q"] = req.Q
 	}
@@ -405,6 +404,6 @@ func (h *Handler) getActiveFilters(req SearchFilesRequest) map[string]interface{
 	if req.HashPresent != nil {
 		filters["hashPresent"] = *req.HashPresent
 	}
-	
+
 	return filters
 }

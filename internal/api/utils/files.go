@@ -29,8 +29,8 @@ type SortParamsForFiles struct {
 
 // ExtensionFilterParams represents extension-based filtering for files
 type ExtensionFilterParams struct {
-	Extension string `json:"extension" example:"pdf"`
-	MimeFilter string `json:"mime_filter" example:"application/pdf"`
+	Extension   string `json:"extension" example:"pdf"`
+	MimeFilter  string `json:"mime_filter" example:"application/pdf"`
 	MediaFilter string `json:"media_filter" example:"video"`
 }
 
@@ -38,7 +38,7 @@ type ExtensionFilterParams struct {
 func ParseFilesPaginationParams(c *gin.Context) FilesPaginationParams {
 	paginationParams, _ := ParsePaginationParams(c)
 	sortParams, _ := ParseSortParams(c, []string{"name", "date", "size"})
-	
+
 	// Convert []SortParam to SortParams (using the first sort parameter if available)
 	var sortParam SortParams
 	if len(sortParams) > 0 {
@@ -48,7 +48,7 @@ func ParseFilesPaginationParams(c *gin.Context) FilesPaginationParams {
 		sortParam.Field = "name"
 		sortParam.Direction = "asc"
 	}
-	
+
 	return FilesPaginationParams{
 		PaginationParams: *paginationParams,
 		SortParams:       sortParam,

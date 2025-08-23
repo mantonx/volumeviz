@@ -36,19 +36,19 @@ type ConditionRequest struct {
 
 // RuleResponse represents a tracking rule in API responses
 type RuleResponse struct {
-	ID                int64              `json:"id" example:"1"`
-	Name              string             `json:"name" example:"Include Docker Volumes"`
-	Description       *string            `json:"description,omitempty" example:"Include all named Docker volumes for tracking" swaggertype:"string"`
-	Action            string             `json:"action" example:"include" enums:"include,exclude"`
-	Priority          int32              `json:"priority" example:"100" minimum:"1" maximum:"1000"`
-	IsEnabled         bool               `json:"is_enabled" example:"true"`
-	Conditions        []ConditionRequest `json:"conditions"`
-	MatchCount        int32              `json:"match_count" example:"5"`
-	LastMatchedAt     *time.Time         `json:"last_matched_at,omitempty" swaggertype:"string" format:"date-time"`
-	LastEvaluationAt  *time.Time         `json:"last_evaluation_at,omitempty" swaggertype:"string" format:"date-time"`
-	CreatedBy         *string            `json:"created_by,omitempty" example:"admin" swaggertype:"string"`
-	CreatedAt         time.Time          `json:"created_at" swaggertype:"string" format:"date-time"`
-	UpdatedAt         time.Time          `json:"updated_at" swaggertype:"string" format:"date-time"`
+	ID               int64              `json:"id" example:"1"`
+	Name             string             `json:"name" example:"Include Docker Volumes"`
+	Description      *string            `json:"description,omitempty" example:"Include all named Docker volumes for tracking" swaggertype:"string"`
+	Action           string             `json:"action" example:"include" enums:"include,exclude"`
+	Priority         int32              `json:"priority" example:"100" minimum:"1" maximum:"1000"`
+	IsEnabled        bool               `json:"is_enabled" example:"true"`
+	Conditions       []ConditionRequest `json:"conditions"`
+	MatchCount       int32              `json:"match_count" example:"5"`
+	LastMatchedAt    *time.Time         `json:"last_matched_at,omitempty" swaggertype:"string" format:"date-time"`
+	LastEvaluationAt *time.Time         `json:"last_evaluation_at,omitempty" swaggertype:"string" format:"date-time"`
+	CreatedBy        *string            `json:"created_by,omitempty" example:"admin" swaggertype:"string"`
+	CreatedAt        time.Time          `json:"created_at" swaggertype:"string" format:"date-time"`
+	UpdatedAt        time.Time          `json:"updated_at" swaggertype:"string" format:"date-time"`
 }
 
 // ListRulesResponse represents a response containing multiple rules
@@ -160,7 +160,7 @@ type FieldDefinition struct {
 	Name        string   `json:"name"`
 	DisplayName string   `json:"display_name"`
 	Description string   `json:"description"`
-	Type        string   `json:"type"` // string, boolean, number
+	Type        string   `json:"type"`             // string, boolean, number
 	Values      []string `json:"values,omitempty"` // For enum-like fields
 	Operators   []string `json:"operators"`        // Available operators for this field
 }
@@ -259,10 +259,10 @@ type ValidateRuleRequest struct {
 
 // ValidateRuleResponse represents the response from rule validation
 type ValidateRuleResponse struct {
-	IsValid  bool                    `json:"is_valid"`
-	Errors   []ValidationError       `json:"errors,omitempty"`
-	Warnings []ValidationWarning     `json:"warnings,omitempty"`
-	Preview  *ValidationPreview      `json:"preview,omitempty"`
+	IsValid  bool                `json:"is_valid"`
+	Errors   []ValidationError   `json:"errors,omitempty"`
+	Warnings []ValidationWarning `json:"warnings,omitempty"`
+	Preview  *ValidationPreview  `json:"preview,omitempty"`
 }
 
 // ValidationError represents a validation error
@@ -337,19 +337,19 @@ type ApplyTrackingRulesRequest struct {
 
 // ApplyTrackingRulesResponse represents the response from applying tracking rules
 type ApplyTrackingRulesResponse struct {
-	DryRun       bool               `json:"dry_run"`
-	ChangesCount int32              `json:"changes_count"`
-	Changes      []*TrackingChange  `json:"changes"`
-	AppliedAt    *time.Time         `json:"applied_at,omitempty"`
+	DryRun       bool              `json:"dry_run"`
+	ChangesCount int32             `json:"changes_count"`
+	Changes      []*TrackingChange `json:"changes"`
+	AppliedAt    *time.Time        `json:"applied_at,omitempty"`
 }
 
 // TrackingChange represents a change in mount tracking status
 type TrackingChange struct {
-	MountID       string  `json:"mount_id"`
-	MountName     *string `json:"mount_name,omitempty"`
-	MountType     string  `json:"mount_type"`
-	OldAction     string  `json:"old_action"`
-	NewAction     string  `json:"new_action"`
-	RuleName      *string `json:"rule_name,omitempty"`
-	RulePriority  *int32  `json:"rule_priority,omitempty"`
+	MountID      string  `json:"mount_id"`
+	MountName    *string `json:"mount_name,omitempty"`
+	MountType    string  `json:"mount_type"`
+	OldAction    string  `json:"old_action"`
+	NewAction    string  `json:"new_action"`
+	RuleName     *string `json:"rule_name,omitempty"`
+	RulePriority *int32  `json:"rule_priority,omitempty"`
 }

@@ -39,19 +39,19 @@ type PreviewRequest struct {
 
 // PreviewResponse represents a preview API response
 type PreviewResponse struct {
-	ID           int64             `json:"id"`
-	FileID       int64             `json:"file_id"`
-	Type         string            `json:"type"`
-	Size         string            `json:"size"`
-	Format       string            `json:"format"`
-	Width        int               `json:"width,omitempty"`
-	Height       int               `json:"height,omitempty"`
-	FileSize     int64             `json:"file_size"`
-	URL          string            `json:"url"`
-	ETag         string            `json:"etag"`
-	ProcessingMS int64             `json:"processing_ms"`
-	CacheHit     bool              `json:"cache_hit"`
-	CreatedAt    time.Time         `json:"created_at"`
+	ID           int64     `json:"id"`
+	FileID       int64     `json:"file_id"`
+	Type         string    `json:"type"`
+	Size         string    `json:"size"`
+	Format       string    `json:"format"`
+	Width        int       `json:"width,omitempty"`
+	Height       int       `json:"height,omitempty"`
+	FileSize     int64     `json:"file_size"`
+	URL          string    `json:"url"`
+	ETag         string    `json:"etag"`
+	ProcessingMS int64     `json:"processing_ms"`
+	CacheHit     bool      `json:"cache_hit"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // GeneratePreview generates a new preview
@@ -200,7 +200,7 @@ func (h *Handler) GetPreview(c *gin.Context) {
 		mtime = file.Mtime.Unix()
 	}
 	req.FileHash = fmt.Sprintf("file_%d_mtime_%d", fileID, mtime)
-	
+
 	// Check if preview exists
 	if existingKey := h.service.FindExistingPreview(req.FileHash, req.Type, req.Size); existingKey != "" {
 		// Serve existing preview
@@ -213,10 +213,10 @@ func (h *Handler) GetPreview(c *gin.Context) {
 			},
 			CacheHit: true,
 		}
-		
+
 		// Get ETag for the preview
 		etag := h.service.GetETag(result.Metadata.StoragePath)
-		
+
 		// Check If-None-Match header for 304 responses
 		if ifNoneMatch := c.GetHeader("If-None-Match"); ifNoneMatch != "" {
 			if ifNoneMatch == etag {
@@ -224,12 +224,12 @@ func (h *Handler) GetPreview(c *gin.Context) {
 				return
 			}
 		}
-		
+
 		// Set cache headers
 		c.Header("ETag", etag)
 		c.Header("Cache-Control", "public, max-age=2592000") // 30 days
 		c.Header("Content-Type", previews.ImagePreviewMimeType)
-		
+
 		// Stream the preview directly to response
 		c.Stream(func(w io.Writer) bool {
 			err := h.service.StreamPreview(result.Metadata.StoragePath, w)
@@ -240,10 +240,10 @@ func (h *Handler) GetPreview(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// No preview available - return 404 with a message
 	c.JSON(http.StatusNotFound, gin.H{
-		"error": "Preview not yet generated",
+		"error":   "Preview not yet generated",
 		"message": "Preview is being generated in the background, please try again in a few moments",
 	})
 }
@@ -349,7 +349,7 @@ func (h *Handler) DeletePreview(c *gin.Context) {
 		return
 	}
 
-	// For now, we'll just return not implemented since we need to 
+	// For now, we'll just return not implemented since we need to
 	// implement storage key lookup by file ID
 	c.JSON(http.StatusNotImplemented, gin.H{
 		"error": "delete by file ID not yet implemented",

@@ -39,10 +39,10 @@ type PushoverConfig struct {
 
 // Priority constants for Pushover
 const (
-	PushoverPriorityLowest  = -2
-	PushoverPriorityLow     = -1
-	PushoverPriorityNormal  = 0
-	PushoverPriorityHigh    = 1
+	PushoverPriorityLowest    = -2
+	PushoverPriorityLow       = -1
+	PushoverPriorityNormal    = 0
+	PushoverPriorityHigh      = 1
 	PushoverPriorityEmergency = 2
 )
 
@@ -77,22 +77,22 @@ func (p *PushoverProvider) Validate(config map[string]interface{}) error {
 	if !ok || apiToken == "" {
 		return fmt.Errorf("Pushover API token is required")
 	}
-	
+
 	userKey, ok := config["user_key"].(string)
 	if !ok || userKey == "" {
 		return fmt.Errorf("Pushover user key is required")
 	}
-	
+
 	// Validate API token format (30 characters, alphanumeric)
 	if len(apiToken) != 30 {
 		return fmt.Errorf("invalid Pushover API token format")
 	}
-	
+
 	// Validate user key format (30 characters, alphanumeric)
 	if len(userKey) != 30 {
 		return fmt.Errorf("invalid Pushover user key format")
 	}
-	
+
 	// Validate priority if provided
 	if priority, ok := config["priority"]; ok {
 		var priorityInt int
@@ -110,20 +110,20 @@ func (p *PushoverProvider) Validate(config map[string]interface{}) error {
 		default:
 			return fmt.Errorf("invalid priority format: must be integer between -2 and 2")
 		}
-		
+
 		if priorityInt < -2 || priorityInt > 2 {
 			return fmt.Errorf("priority must be between -2 and 2")
 		}
-		
+
 		// Validate emergency priority requirements
 		if priorityInt == PushoverPriorityEmergency {
 			retryPeriod, hasRetry := config["retry_period"]
 			expireTime, hasExpire := config["expire_time"]
-			
+
 			if !hasRetry || !hasExpire {
 				return fmt.Errorf("emergency priority requires retry_period and expire_time")
 			}
-			
+
 			// Validate retry period
 			var retryInt int
 			switch v := retryPeriod.(type) {
@@ -134,11 +134,11 @@ func (p *PushoverProvider) Validate(config map[string]interface{}) error {
 			default:
 				return fmt.Errorf("retry_period must be integer >= 30")
 			}
-			
+
 			if retryInt < 30 {
 				return fmt.Errorf("retry_period must be at least 30 seconds for emergency priority")
 			}
-			
+
 			// Validate expire time
 			var expireInt int
 			switch v := expireTime.(type) {
@@ -149,13 +149,13 @@ func (p *PushoverProvider) Validate(config map[string]interface{}) error {
 			default:
 				return fmt.Errorf("expire_time must be integer between 0 and 10800")
 			}
-			
+
 			if expireInt <= 0 || expireInt > 10800 {
 				return fmt.Errorf("expire_time must be between 1 and 10800 seconds")
 			}
 		}
 	}
-	
+
 	// Validate sound if provided
 	if sound, ok := config["sound"].(string); ok && sound != "" {
 		validSound := false
@@ -169,14 +169,14 @@ func (p *PushoverProvider) Validate(config map[string]interface{}) error {
 			return fmt.Errorf("invalid sound: must be one of %v", PushoverSounds)
 		}
 	}
-	
+
 	// Validate template if provided
 	if template, ok := config["template"].(string); ok && template != "" {
 		if err := p.renderer.ValidateTemplate(template); err != nil {
 			return fmt.Errorf("invalid template: %w", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -187,7 +187,7 @@ func (p *PushoverProvider) Send(ctx context.Context, destination *models.AlertDe
 	if err != nil {
 		return fmt.Errorf("failed to create Pushover message: %w", err)
 	}
-	
+
 	// Send message
 	return p.sendMessage(ctx, message)
 }
@@ -196,7 +196,7 @@ func (p *PushoverProvider) Send(ctx context.Context, destination *models.AlertDe
 func (p *PushoverProvider) Test(ctx context.Context, destination *models.AlertDestination, message string) error {
 	apiToken, _ := destination.Config["api_token"].(string)
 	userKey, _ := destination.Config["user_key"].(string)
-	
+
 	// Create test message
 	testMessage := url.Values{
 		"token":   {apiToken},
@@ -204,12 +204,12 @@ func (p *PushoverProvider) Test(ctx context.Context, destination *models.AlertDe
 		"message": {fmt.Sprintf("🧪 Test message from VolumeViz: %s", message)},
 		"title":   {"VolumeViz Test"},
 	}
-	
+
 	// Add optional device if configured
 	if device, ok := destination.Config["device"].(string); ok && device != "" {
 		testMessage.Set("device", device)
 	}
-	
+
 	// Send test message
 	return p.sendMessage(ctx, testMessage)
 }
@@ -218,13 +218,13 @@ func (p *PushoverProvider) Test(ctx context.Context, destination *models.AlertDe
 func (p *PushoverProvider) createMessage(alert *models.Alert, config map[string]interface{}) (url.Values, error) {
 	apiToken, _ := config["api_token"].(string)
 	userKey, _ := config["user_key"].(string)
-	
+
 	// Start with basic message
 	message := url.Values{
 		"token": {apiToken},
 		"user":  {userKey},
 	}
-	
+
 	// Handle custom template
 	if template, ok := config["template"].(string); ok && template != "" {
 		alertContext := &models.AlertContext{
@@ -234,93 +234,93 @@ func (p *PushoverProvider) createMessage(alert *models.Alert, config map[string]
 			Labels:      alert.Labels,
 			Annotations: alert.Annotations,
 		}
-		
+
 		rendered, err := p.renderer.Render(template, alertContext)
 		if err != nil {
 			return nil, fmt.Errorf("failed to render template: %w", err)
 		}
-		
+
 		message.Set("message", rendered)
 	} else {
 		// Create default message
 		messageText := p.createDefaultMessage(alert)
 		message.Set("message", messageText)
 	}
-	
+
 	// Set title
 	title := p.getTitle(alert, config)
 	message.Set("title", title)
-	
+
 	// Set priority based on alert status
 	priority := p.getPriority(alert, config)
 	message.Set("priority", strconv.Itoa(priority))
-	
+
 	// Add optional parameters
 	if device, ok := config["device"].(string); ok && device != "" {
 		message.Set("device", device)
 	}
-	
+
 	if sound, ok := config["sound"].(string); ok && sound != "" {
 		message.Set("sound", sound)
 	}
-	
+
 	if urlStr, ok := config["url"].(string); ok && urlStr != "" {
 		message.Set("url", urlStr)
-		
+
 		if urlTitle, ok := config["url_title"].(string); ok && urlTitle != "" {
 			message.Set("url_title", urlTitle)
 		}
 	}
-	
+
 	// Handle emergency priority settings
 	if priority == PushoverPriorityEmergency {
 		if retryPeriod, ok := config["retry_period"]; ok {
 			message.Set("retry", fmt.Sprintf("%v", retryPeriod))
 		}
-		
+
 		if expireTime, ok := config["expire_time"]; ok {
 			message.Set("expire", fmt.Sprintf("%v", expireTime))
 		}
 	}
-	
+
 	// Enable HTML if configured
 	if html, ok := config["html"].(bool); ok && html {
 		message.Set("html", "1")
 	}
-	
+
 	return message, nil
 }
 
 // createDefaultMessage creates a default message text for an alert
 func (p *PushoverProvider) createDefaultMessage(alert *models.Alert) string {
 	var parts []string
-	
+
 	// Alert status
 	status := "FIRING"
 	if alert.Status == models.AlertStatusResolved {
 		status = "RESOLVED"
 	}
 	parts = append(parts, fmt.Sprintf("Status: %s", status))
-	
+
 	// Entity information
 	parts = append(parts, fmt.Sprintf("Entity: %s (%s)", alert.EntityID, alert.EntityType))
-	
+
 	// Value if available
 	if alert.Value != nil {
 		parts = append(parts, fmt.Sprintf("Value: %.2f", *alert.Value))
 	}
-	
+
 	// Rule condition if available
 	if alert.Rule != nil {
 		parts = append(parts, fmt.Sprintf("Threshold: %s %.2f", alert.Rule.Condition, alert.Rule.Threshold))
 	}
-	
+
 	// Duration for firing alerts
 	if alert.Status == models.AlertStatusFiring {
 		duration := time.Since(alert.StartsAt)
 		parts = append(parts, fmt.Sprintf("Duration: %s", p.formatDuration(duration)))
 	}
-	
+
 	// Labels
 	if len(alert.Labels) > 0 {
 		var labels []string
@@ -329,7 +329,7 @@ func (p *PushoverProvider) createDefaultMessage(alert *models.Alert) string {
 		}
 		parts = append(parts, fmt.Sprintf("Labels: %s", strings.Join(labels, ", ")))
 	}
-	
+
 	return strings.Join(parts, "\n")
 }
 
@@ -338,18 +338,18 @@ func (p *PushoverProvider) getTitle(alert *models.Alert, config map[string]inter
 	if title, ok := config["title"].(string); ok && title != "" {
 		return title
 	}
-	
+
 	// Default title based on rule name and status
 	ruleName := "Unknown Rule"
 	if alert.Rule != nil && alert.Rule.Name != "" {
 		ruleName = alert.Rule.Name
 	}
-	
+
 	status := "🔥"
 	if alert.Status == models.AlertStatusResolved {
 		status = "✅"
 	}
-	
+
 	return fmt.Sprintf("%s %s", status, ruleName)
 }
 
@@ -368,7 +368,7 @@ func (p *PushoverProvider) getPriority(alert *models.Alert, config map[string]in
 			}
 		}
 	}
-	
+
 	// Default priority based on alert status
 	switch alert.Status {
 	case models.AlertStatusFiring:
@@ -387,21 +387,21 @@ func (p *PushoverProvider) sendMessage(ctx context.Context, message url.Values) 
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	
+
 	// Send request
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check response status
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("Pushover API returned HTTP %d: %s", resp.StatusCode, resp.Status)
 	}
-	
+
 	return nil
 }
 

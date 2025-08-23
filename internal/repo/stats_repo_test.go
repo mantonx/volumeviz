@@ -141,9 +141,9 @@ func createTestSqlcTrendAnalysisRow() sqlc.StatsDailyTrendsRow {
 
 func TestNewStatsRepo(t *testing.T) {
 	mockQueries := &MockQueries{}
-	
+
 	repo := NewStatsRepo(mockQueries)
-	
+
 	assert.NotNil(t, repo)
 	assert.Equal(t, mockQueries, repo.queries)
 }
@@ -151,22 +151,22 @@ func TestNewStatsRepo(t *testing.T) {
 func TestStatsRepo_CreateDailyStat(t *testing.T) {
 	mockQueries := &MockQueries{}
 	repo := NewStatsRepo(mockQueries)
-	
+
 	ctx := context.Background()
 	params := models.CreateDailyStatParams{
-		Date:           time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		VolumeID:       "test-volume",
-		FolderID:       nil,
-		MediaKind:      nil,
-		FilesCount:     1000,
-		TotalBytes:     1024 * 1024 * 100,
-		AddedBytes:     1024 * 1024 * 100,
-		RemovedBytes:   0,
-		AddedFiles:     1000,
-		RemovedFiles:   0,
-		ComputedAt:     time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		ScanID:         stringPtr("scan-1"),
-		JobDurationMs:  int64Ptr(30000),
+		Date:          time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		VolumeID:      "test-volume",
+		FolderID:      nil,
+		MediaKind:     nil,
+		FilesCount:    1000,
+		TotalBytes:    1024 * 1024 * 100,
+		AddedBytes:    1024 * 1024 * 100,
+		RemovedBytes:  0,
+		AddedFiles:    1000,
+		RemovedFiles:  0,
+		ComputedAt:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		ScanID:        stringPtr("scan-1"),
+		JobDurationMs: int64Ptr(30000),
 	}
 
 	expectedRow := sqlc.CreateDailyStatRow{
@@ -193,7 +193,7 @@ func TestStatsRepo_CreateDailyStat(t *testing.T) {
 func TestStatsRepo_GetVolumeStatsHistory(t *testing.T) {
 	mockQueries := &MockQueries{}
 	repo := NewStatsRepo(mockQueries)
-	
+
 	ctx := context.Background()
 	volumeID := "test-volume"
 	startDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -223,7 +223,7 @@ func TestStatsRepo_GetVolumeStatsHistory(t *testing.T) {
 func TestStatsRepo_GetTrendAnalysis(t *testing.T) {
 	mockQueries := &MockQueries{}
 	repo := NewStatsRepo(mockQueries)
-	
+
 	ctx := context.Background()
 	volumeID := "test-volume"
 	startDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -255,7 +255,7 @@ func TestStatsRepo_GetTrendAnalysis(t *testing.T) {
 func TestStatsRepo_GetTopGrowingFolders(t *testing.T) {
 	mockQueries := &MockQueries{}
 	repo := NewStatsRepo(mockQueries)
-	
+
 	ctx := context.Background()
 	volumeID := "test-volume"
 	since := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -263,13 +263,13 @@ func TestStatsRepo_GetTopGrowingFolders(t *testing.T) {
 
 	expectedRows := []sqlc.GetTopGrowingFoldersRow{
 		{
-			FolderID:            pgtype.Int8{Int64: 1, Valid: true},
-			FolderName:          "Documents",
-			FolderPath:          "/data/Documents",
-			TotalAddedBytes:     1024 * 1024 * 15,
-			TotalAddedFiles:     100,
-			AvgDailyAddedBytes:  pgtype.Numeric{Valid: true},
-			DaysTracked:         3,
+			FolderID:           pgtype.Int8{Int64: 1, Valid: true},
+			FolderName:         "Documents",
+			FolderPath:         "/data/Documents",
+			TotalAddedBytes:    1024 * 1024 * 15,
+			TotalAddedFiles:    100,
+			AvgDailyAddedBytes: pgtype.Numeric{Valid: true},
+			DaysTracked:        3,
 		},
 	}
 
@@ -295,7 +295,7 @@ func TestStatsRepo_GetTopGrowingFolders(t *testing.T) {
 func TestStatsRepo_GetMediaKindComposition(t *testing.T) {
 	mockQueries := &MockQueries{}
 	repo := NewStatsRepo(mockQueries)
-	
+
 	ctx := context.Background()
 	volumeID := "test-volume"
 	startDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -331,7 +331,7 @@ func TestStatsRepo_GetMediaKindComposition(t *testing.T) {
 func TestStatsRepo_ComputeVolumeDailyStats(t *testing.T) {
 	mockQueries := &MockQueries{}
 	repo := NewStatsRepo(mockQueries)
-	
+
 	ctx := context.Background()
 	volumeID := "test-volume"
 	date := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -339,9 +339,9 @@ func TestStatsRepo_ComputeVolumeDailyStats(t *testing.T) {
 
 	// Mock expectations
 	mockQueries.On("ComputeVolumeDailyStats", ctx, mock.MatchedBy(func(arg sqlc.ComputeVolumeDailyStatsParams) bool {
-		return arg.VolumeID == volumeID && 
-			   arg.Date_2.Time.Equal(date) &&
-			   arg.ScanID.String == scanID
+		return arg.VolumeID == volumeID &&
+			arg.Date_2.Time.Equal(date) &&
+			arg.ScanID.String == scanID
 	})).Return(nil)
 
 	// Execute
@@ -355,7 +355,7 @@ func TestStatsRepo_ComputeVolumeDailyStats(t *testing.T) {
 func TestStatsRepo_GetMissingStatsDates(t *testing.T) {
 	mockQueries := &MockQueries{}
 	repo := NewStatsRepo(mockQueries)
-	
+
 	ctx := context.Background()
 	volumeID := "test-volume"
 	startDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -384,7 +384,7 @@ func TestStatsRepo_GetMissingStatsDates(t *testing.T) {
 func TestStatsRepo_CreateStatsJob(t *testing.T) {
 	mockQueries := &MockQueries{}
 	repo := NewStatsRepo(mockQueries)
-	
+
 	ctx := context.Background()
 	jobType := "scan_completion"
 	volumeID := "test-volume"
@@ -395,9 +395,9 @@ func TestStatsRepo_CreateStatsJob(t *testing.T) {
 
 	// Mock expectations
 	mockQueries.On("CreateStatsJob", ctx, mock.MatchedBy(func(arg sqlc.CreateStatsJobParams) bool {
-		return arg.JobType == jobType && 
-			   arg.VolumeID == volumeID && 
-			   arg.Status == status
+		return arg.JobType == jobType &&
+			arg.VolumeID == volumeID &&
+			arg.Status == status
 	})).Return(expectedJobID, nil)
 
 	// Execute
@@ -412,14 +412,14 @@ func TestStatsRepo_CreateStatsJob(t *testing.T) {
 func TestStatsRepo_UpdateStatsJob(t *testing.T) {
 	mockQueries := &MockQueries{}
 	repo := NewStatsRepo(mockQueries)
-	
+
 	ctx := context.Background()
 	now := time.Now()
 	durationMs := int64(30000)
 	processedDates := int32(1)
 	recordsCreated := int32(5)
 	recordsUpdated := int32(0)
-	
+
 	params := models.UpdateStatsJobParams{
 		ID:             1,
 		CompletedAt:    &now,
@@ -447,7 +447,7 @@ func TestStatsRepo_UpdateStatsJob(t *testing.T) {
 func TestStatsRepo_RefreshDailySummaryView(t *testing.T) {
 	mockQueries := &MockQueries{}
 	repo := NewStatsRepo(mockQueries)
-	
+
 	ctx := context.Background()
 
 	// Mock expectations

@@ -111,7 +111,7 @@ type MockVolumeProvider struct {
 	mock.Mock
 }
 
-// MockStore implements store.Store for testing  
+// MockStore implements store.Store for testing
 type MockStore struct {
 	mock.Mock
 }
@@ -738,11 +738,11 @@ func TestEnhancedFeatures(t *testing.T) {
 		// Test enhanced interface methods (before starting)
 		assert.False(t, scheduler.IsHardenedMode())
 		assert.Nil(t, scheduler.GetWatchdogStats())
-		
+
 		// Workers are only created after Start() is called
 		workerStats := scheduler.GetWorkerStats()
 		assert.Len(t, workerStats, 0) // No workers before Start()
-		
+
 		detailedMetrics := scheduler.GetDetailedMetrics()
 		assert.NotNil(t, detailedMetrics)
 		assert.False(t, detailedMetrics.IsHardened)
@@ -772,10 +772,10 @@ func TestEnhancedFeatures(t *testing.T) {
 
 		// Test hardened mode features
 		assert.True(t, scheduler.IsHardenedMode())
-		
+
 		watchdogStats := scheduler.GetWatchdogStats()
 		assert.NotNil(t, watchdogStats) // Watchdog should be enabled with store
-		
+
 		detailedMetrics := scheduler.GetDetailedMetrics()
 		assert.NotNil(t, detailedMetrics)
 		assert.True(t, detailedMetrics.IsHardened)

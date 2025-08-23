@@ -78,10 +78,10 @@ type AlertsRepo interface {
 
 // AlertsStats represents overall alerts statistics
 type AlertsStats struct {
-	TotalAlerts     int64 `json:"total_alerts"`
-	FiringAlerts    int64 `json:"firing_alerts"`
-	ResolvedAlerts  int64 `json:"resolved_alerts"`
-	ActiveRules     int64 `json:"active_rules"`
+	TotalAlerts      int64 `json:"total_alerts"`
+	FiringAlerts     int64 `json:"firing_alerts"`
+	ResolvedAlerts   int64 `json:"resolved_alerts"`
+	ActiveRules      int64 `json:"active_rules"`
 	AffectedEntities int64 `json:"affected_entities"`
 }
 

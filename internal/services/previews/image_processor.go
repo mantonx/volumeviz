@@ -65,7 +65,7 @@ func (ip *ImageProcessor) GenerateThumbnail(ctx context.Context, sourcePath stri
 	// Create a temporary output file since vipsthumbnail doesn't support stdout well
 	tempFile := filepath.Join(os.TempDir(), fmt.Sprintf("thumb_%d.webp", time.Now().UnixNano()))
 	defer os.Remove(tempFile)
-	
+
 	args := []string{
 		sourcePath,
 		"-s", fmt.Sprintf("%d", sizeConfig.MaxWidth), // Just width, height will be proportional
@@ -106,7 +106,7 @@ func (ip *ImageProcessor) GenerateThumbnail(ctx context.Context, sourcePath stri
 	if err != nil {
 		return nil, fmt.Errorf("failed to read generated thumbnail: %w", err)
 	}
-	
+
 	if len(webpData) == 0 {
 		return nil, fmt.Errorf("vipsthumbnail produced empty output")
 	}

@@ -3,8 +3,8 @@ package scheduler
 import (
 	"context"
 
-	docker "github.com/mantonx/volumeviz/internal/services/docker"
 	"github.com/mantonx/volumeviz/internal/models"
+	docker "github.com/mantonx/volumeviz/internal/services/docker"
 )
 
 // DockerVolumeProvider implements VolumeProvider using DockerService

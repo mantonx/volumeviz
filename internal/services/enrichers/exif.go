@@ -37,7 +37,7 @@ func (e *EXIFEnricher) CanEnrich(fileInfo FileInfo) bool {
 	if !e.config.EXIFEnabled {
 		return false
 	}
-	
+
 	// Check if it's an image file
 	return strings.HasPrefix(fileInfo.MimeType, "image/")
 }
@@ -47,7 +47,7 @@ func (e *EXIFEnricher) IsAvailable() bool {
 	if !e.config.EXIFEnabled {
 		return false
 	}
-	
+
 	_, err := exec.LookPath(e.exiftoolPath)
 	return err == nil
 }
@@ -62,14 +62,14 @@ func (e *EXIFEnricher) GetCapabilities() EnricherCapabilities {
 			"image/heif", "image/cr2", "image/nef", "image/arw",
 		},
 		ExtractedFields: []string{
-			"width", "height", "capture_datetime", "camera_make", 
-			"camera_model", "lens_model", "orientation", 
+			"width", "height", "capture_datetime", "camera_make",
+			"camera_model", "lens_model", "orientation",
 			"gps_latitude", "gps_longitude",
 		},
 		RequiredTools: []string{"exiftool"},
-		Performance: "fast",
-		Accuracy: "high",
-		Features: []string{"gps_data", "camera_info", "datetime_extraction", "orientation"},
+		Performance:   "fast",
+		Accuracy:      "high",
+		Features:      []string{"gps_data", "camera_info", "datetime_extraction", "orientation"},
 	}
 }
 
@@ -78,59 +78,59 @@ func (e *EXIFEnricher) Enrich(ctx context.Context, fileInfo FileInfo) (*MediaMet
 	// Create context with timeout
 	timeoutCtx, cancel := context.WithTimeout(ctx, e.config.TimeoutPerFile)
 	defer cancel()
-	
+
 	// Run exiftool to get JSON metadata
 	exifData, err := e.runExiftool(timeoutCtx, fileInfo.Path)
 	if err != nil {
 		return nil, fmt.Errorf("exiftool failed: %w", err)
 	}
-	
+
 	// Parse and convert to our metadata format
 	metadata, err := e.parseEXIFOutput(exifData, fileInfo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse EXIF output: %w", err)
 	}
-	
+
 	return metadata, nil
 }
 
 // EXIFOutput represents the structure of exiftool JSON output
 type EXIFOutput struct {
-	ImageWidth      int     `json:"ImageWidth,omitempty"`
-	ImageHeight     int     `json:"ImageHeight,omitempty"`
-	ExifImageWidth  int     `json:"ExifImageWidth,omitempty"`
-	ExifImageHeight int     `json:"ExifImageHeight,omitempty"`
-	
+	ImageWidth      int `json:"ImageWidth,omitempty"`
+	ImageHeight     int `json:"ImageHeight,omitempty"`
+	ExifImageWidth  int `json:"ExifImageWidth,omitempty"`
+	ExifImageHeight int `json:"ExifImageHeight,omitempty"`
+
 	// Date/time fields
 	DateTimeOriginal string `json:"DateTimeOriginal,omitempty"`
 	CreateDate       string `json:"CreateDate,omitempty"`
 	ModifyDate       string `json:"ModifyDate,omitempty"`
-	
+
 	// Camera information
-	Make     string `json:"Make,omitempty"`
-	Model    string `json:"Model,omitempty"`
+	Make      string `json:"Make,omitempty"`
+	Model     string `json:"Model,omitempty"`
 	LensModel string `json:"LensModel,omitempty"`
 	LensInfo  string `json:"LensInfo,omitempty"`
-	
+
 	// Orientation
 	Orientation interface{} `json:"Orientation,omitempty"`
-	
+
 	// GPS data
-	GPSLatitude      string `json:"GPSLatitude,omitempty"`
-	GPSLongitude     string `json:"GPSLongitude,omitempty"`
-	GPSLatitudeRef   string `json:"GPSLatitudeRef,omitempty"`
-	GPSLongitudeRef  string `json:"GPSLongitudeRef,omitempty"`
-	GPSAltitude      string `json:"GPSAltitude,omitempty"`
-	GPSDateTime      string `json:"GPSDateTime,omitempty"`
-	
+	GPSLatitude     string `json:"GPSLatitude,omitempty"`
+	GPSLongitude    string `json:"GPSLongitude,omitempty"`
+	GPSLatitudeRef  string `json:"GPSLatitudeRef,omitempty"`
+	GPSLongitudeRef string `json:"GPSLongitudeRef,omitempty"`
+	GPSAltitude     string `json:"GPSAltitude,omitempty"`
+	GPSDateTime     string `json:"GPSDateTime,omitempty"`
+
 	// Additional metadata for raw storage
-	ExposureTime     string `json:"ExposureTime,omitempty"`
-	FNumber          string `json:"FNumber,omitempty"`
-	ISO              int    `json:"ISO,omitempty"`
-	FocalLength      string `json:"FocalLength,omitempty"`
-	Flash            string `json:"Flash,omitempty"`
-	WhiteBalance     string `json:"WhiteBalance,omitempty"`
-	ColorSpace       string `json:"ColorSpace,omitempty"`
+	ExposureTime string `json:"ExposureTime,omitempty"`
+	FNumber      string `json:"FNumber,omitempty"`
+	ISO          int    `json:"ISO,omitempty"`
+	FocalLength  string `json:"FocalLength,omitempty"`
+	Flash        string `json:"Flash,omitempty"`
+	WhiteBalance string `json:"WhiteBalance,omitempty"`
+	ColorSpace   string `json:"ColorSpace,omitempty"`
 }
 
 // runExiftool executes exiftool and returns the JSON output
@@ -143,9 +143,9 @@ func (e *EXIFEnricher) runExiftool(ctx context.Context, filePath string) (*EXIFO
 		"-ignoreMinorErrors",
 		filePath,
 	}
-	
+
 	cmd := exec.CommandContext(ctx, e.exiftoolPath, args...)
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
@@ -153,17 +153,17 @@ func (e *EXIFEnricher) runExiftool(ctx context.Context, filePath string) (*EXIFO
 		}
 		return nil, fmt.Errorf("exiftool execution failed: %w", err)
 	}
-	
+
 	// exiftool returns an array, we want the first element
 	var exifArray []EXIFOutput
 	if err := json.Unmarshal(output, &exifArray); err != nil {
 		return nil, fmt.Errorf("failed to parse exiftool JSON: %w", err)
 	}
-	
+
 	if len(exifArray) == 0 {
 		return nil, fmt.Errorf("no EXIF data found")
 	}
-	
+
 	return &exifArray[0], nil
 }
 
@@ -173,7 +173,7 @@ func (e *EXIFEnricher) parseEXIFOutput(exifData *EXIFOutput, fileInfo FileInfo) 
 		Kind:        EnrichmentKindImage,
 		RawMetadata: make(map[string]any),
 	}
-	
+
 	// Image dimensions - prefer EXIF dimensions over image dimensions
 	width := exifData.ExifImageWidth
 	if width == 0 {
@@ -183,7 +183,7 @@ func (e *EXIFEnricher) parseEXIFOutput(exifData *EXIFOutput, fileInfo FileInfo) 
 		w := int32(width)
 		metadata.Width = &w
 	}
-	
+
 	height := exifData.ExifImageHeight
 	if height == 0 {
 		height = exifData.ImageHeight
@@ -192,7 +192,7 @@ func (e *EXIFEnricher) parseEXIFOutput(exifData *EXIFOutput, fileInfo FileInfo) 
 		h := int32(height)
 		metadata.Height = &h
 	}
-	
+
 	// Date/time - prefer DateTimeOriginal, then CreateDate, then ModifyDate
 	dateTime := e.parseDateTime(exifData.DateTimeOriginal)
 	if dateTime == nil {
@@ -204,7 +204,7 @@ func (e *EXIFEnricher) parseEXIFOutput(exifData *EXIFOutput, fileInfo FileInfo) 
 	if dateTime != nil {
 		metadata.CaptureDateTime = dateTime
 	}
-	
+
 	// Camera information
 	if exifData.Make != "" {
 		make := strings.TrimSpace(exifData.Make)
@@ -214,7 +214,7 @@ func (e *EXIFEnricher) parseEXIFOutput(exifData *EXIFOutput, fileInfo FileInfo) 
 		model := strings.TrimSpace(exifData.Model)
 		metadata.CameraModel = &model
 	}
-	
+
 	// Lens information
 	lensModel := exifData.LensModel
 	if lensModel == "" && exifData.LensInfo != "" {
@@ -224,7 +224,7 @@ func (e *EXIFEnricher) parseEXIFOutput(exifData *EXIFOutput, fileInfo FileInfo) 
 		lens := strings.TrimSpace(lensModel)
 		metadata.LensModel = &lens
 	}
-	
+
 	// Orientation
 	if exifData.Orientation != nil {
 		var orientationValue int
@@ -243,7 +243,7 @@ func (e *EXIFEnricher) parseEXIFOutput(exifData *EXIFOutput, fileInfo FileInfo) 
 			metadata.Orientation = &orientation
 		}
 	}
-	
+
 	// GPS data (with privacy options)
 	if e.config.EnableGPS && exifData.GPSLatitude != "" && exifData.GPSLongitude != "" {
 		lat, lon, err := e.parseGPSCoordinates(exifData)
@@ -257,10 +257,10 @@ func (e *EXIFEnricher) parseEXIFOutput(exifData *EXIFOutput, fileInfo FileInfo) 
 			metadata.GPSLongitude = &lon
 		}
 	}
-	
+
 	// Store raw EXIF data for advanced queries
 	metadata.RawMetadata["exif"] = exifData
-	
+
 	return metadata, nil
 }
 
@@ -269,7 +269,7 @@ func (e *EXIFEnricher) parseDateTime(dateStr string) *time.Time {
 	if dateStr == "" {
 		return nil
 	}
-	
+
 	// Common EXIF datetime formats
 	formats := []string{
 		"2006:01:02 15:04:05",
@@ -278,13 +278,13 @@ func (e *EXIFEnricher) parseDateTime(dateStr string) *time.Time {
 		"2006-01-02T15:04:05Z",
 		"2006-01-02T15:04:05-07:00",
 	}
-	
+
 	for _, format := range formats {
 		if t, err := time.Parse(format, dateStr); err == nil {
 			return &t
 		}
 	}
-	
+
 	return nil
 }
 
@@ -295,13 +295,13 @@ func (e *EXIFEnricher) parseGPSCoordinates(exifData *EXIFOutput) (lat, lon float
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to parse latitude: %w", err)
 	}
-	
+
 	// Parse longitude
 	lon, err = e.parseGPSCoordinate(exifData.GPSLongitude, exifData.GPSLongitudeRef)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to parse longitude: %w", err)
 	}
-	
+
 	return lat, lon, nil
 }
 
@@ -310,7 +310,7 @@ func (e *EXIFEnricher) parseGPSCoordinate(coordStr, refStr string) (float64, err
 	if coordStr == "" {
 		return 0, fmt.Errorf("empty coordinate string")
 	}
-	
+
 	// Try parsing as decimal degrees first
 	if coord, err := strconv.ParseFloat(coordStr, 64); err == nil {
 		// Apply hemisphere reference
@@ -319,19 +319,19 @@ func (e *EXIFEnricher) parseGPSCoordinate(coordStr, refStr string) (float64, err
 		}
 		return coord, nil
 	}
-	
+
 	// Try parsing as degrees/minutes/seconds format
 	// Formats like "40 deg 44' 54.36\" N" or "40°44'54.36\"N"
 	coord, err := e.parseDMSCoordinate(coordStr)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	// Apply hemisphere reference
 	if refStr == "S" || refStr == "W" {
 		coord = -coord
 	}
-	
+
 	return coord, nil
 }
 
@@ -341,26 +341,26 @@ func (e *EXIFEnricher) parseDMSCoordinate(dmsStr string) (float64, error) {
 	// Examples: "40 deg 44' 54.36\" N", "40°44'54.36\"N", "40d44m54.36s"
 	re := regexp.MustCompile(`(\d+(?:\.\d+)?)[°d\s]?\s*(\d+(?:\.\d+)?)['\s]?\s*(\d+(?:\.\d+)?)["\s]?`)
 	matches := re.FindStringSubmatch(dmsStr)
-	
+
 	if len(matches) < 4 {
 		return 0, fmt.Errorf("invalid DMS format: %s", dmsStr)
 	}
-	
+
 	degrees, err := strconv.ParseFloat(matches[1], 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid degrees: %s", matches[1])
 	}
-	
+
 	minutes, err := strconv.ParseFloat(matches[2], 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid minutes: %s", matches[2])
 	}
-	
+
 	seconds, err := strconv.ParseFloat(matches[3], 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid seconds: %s", matches[3])
 	}
-	
+
 	// Convert to decimal degrees
 	decimal := degrees + (minutes / 60.0) + (seconds / 3600.0)
 	return decimal, nil

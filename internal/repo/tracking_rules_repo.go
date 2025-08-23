@@ -27,19 +27,19 @@ func NewTrackingRulesRepository(queries *sqlc.Queries, db *pgx.Conn) *TrackingRu
 
 // TrackingRule represents a rule for mount tracking
 type TrackingRule struct {
-	ID                int64                  `json:"id"`
-	Name              string                 `json:"name"`
-	Description       *string                `json:"description,omitempty"`
-	Action            string                 `json:"action"` // 'include' or 'exclude'
-	Priority          int32                  `json:"priority"`
-	IsEnabled         bool                   `json:"is_enabled"`
-	Conditions        []TrackingCondition    `json:"conditions"`
-	MatchCount        int32                  `json:"match_count"`
-	LastMatchedAt     *time.Time             `json:"last_matched_at,omitempty"`
-	LastEvaluationAt  *time.Time             `json:"last_evaluation_at,omitempty"`
-	CreatedBy         *string                `json:"created_by,omitempty"`
-	CreatedAt         time.Time              `json:"created_at"`
-	UpdatedAt         time.Time              `json:"updated_at"`
+	ID               int64               `json:"id"`
+	Name             string              `json:"name"`
+	Description      *string             `json:"description,omitempty"`
+	Action           string              `json:"action"` // 'include' or 'exclude'
+	Priority         int32               `json:"priority"`
+	IsEnabled        bool                `json:"is_enabled"`
+	Conditions       []TrackingCondition `json:"conditions"`
+	MatchCount       int32               `json:"match_count"`
+	LastMatchedAt    *time.Time          `json:"last_matched_at,omitempty"`
+	LastEvaluationAt *time.Time          `json:"last_evaluation_at,omitempty"`
+	CreatedBy        *string             `json:"created_by,omitempty"`
+	CreatedAt        time.Time           `json:"created_at"`
+	UpdatedAt        time.Time           `json:"updated_at"`
 }
 
 // TrackingCondition represents a single condition within a rule
@@ -53,21 +53,21 @@ type TrackingCondition struct {
 
 // TrackingRuleEvaluation represents an evaluation session
 type TrackingRuleEvaluation struct {
-	ID               int64                  `json:"id"`
-	RuleID           int64                  `json:"rule_id"`
-	EvaluationType   string                 `json:"evaluation_type"`
-	TriggeredBy      *string                `json:"triggered_by,omitempty"`
-	Status           string                 `json:"status"`
-	MountsEvaluated  int32                  `json:"mounts_evaluated"`
-	MountsMatched    int32                  `json:"mounts_matched"`
-	MountsIncluded   int32                  `json:"mounts_included"`
-	MountsExcluded   int32                  `json:"mounts_excluded"`
-	ExecutionTimeMs  *int32                 `json:"execution_time_ms,omitempty"`
-	ErrorMessage     *string                `json:"error_message,omitempty"`
-	ErrorDetails     map[string]interface{} `json:"error_details,omitempty"`
-	StartedAt        time.Time              `json:"started_at"`
-	CompletedAt      *time.Time             `json:"completed_at,omitempty"`
-	CreatedAt        time.Time              `json:"created_at"`
+	ID              int64                  `json:"id"`
+	RuleID          int64                  `json:"rule_id"`
+	EvaluationType  string                 `json:"evaluation_type"`
+	TriggeredBy     *string                `json:"triggered_by,omitempty"`
+	Status          string                 `json:"status"`
+	MountsEvaluated int32                  `json:"mounts_evaluated"`
+	MountsMatched   int32                  `json:"mounts_matched"`
+	MountsIncluded  int32                  `json:"mounts_included"`
+	MountsExcluded  int32                  `json:"mounts_excluded"`
+	ExecutionTimeMs *int32                 `json:"execution_time_ms,omitempty"`
+	ErrorMessage    *string                `json:"error_message,omitempty"`
+	ErrorDetails    map[string]interface{} `json:"error_details,omitempty"`
+	StartedAt       time.Time              `json:"started_at"`
+	CompletedAt     *time.Time             `json:"completed_at,omitempty"`
+	CreatedAt       time.Time              `json:"created_at"`
 }
 
 // MountTrackingAssignment represents a mount assignment based on rule evaluation
@@ -100,17 +100,17 @@ type MountTrackingOverride struct {
 
 // TrackingRuleTemplate represents a reusable rule template
 type TrackingRuleTemplate struct {
-	ID          int64                  `json:"id"`
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Category    string                 `json:"category"`
+	ID           int64                  `json:"id"`
+	Name         string                 `json:"name"`
+	Description  string                 `json:"description"`
+	Category     string                 `json:"category"`
 	TemplateData map[string]interface{} `json:"template_data"`
-	UsageCount  int32                  `json:"usage_count"`
-	LastUsedAt  *time.Time             `json:"last_used_at,omitempty"`
-	IsBuiltin   bool                   `json:"is_builtin"`
-	Tags        []string               `json:"tags"`
-	CreatedAt   time.Time              `json:"created_at"`
-	UpdatedAt   time.Time              `json:"updated_at"`
+	UsageCount   int32                  `json:"usage_count"`
+	LastUsedAt   *time.Time             `json:"last_used_at,omitempty"`
+	IsBuiltin    bool                   `json:"is_builtin"`
+	Tags         []string               `json:"tags"`
+	CreatedAt    time.Time              `json:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at"`
 }
 
 // Helper functions to convert between domain models and SQLC models
@@ -124,19 +124,19 @@ func (r *TrackingRulesRepository) convertFromSQLCRule(rule sqlc.TrackingRules) (
 	}
 
 	return &TrackingRule{
-		ID:                rule.ID,
-		Name:              rule.Name,
-		Description:       nullTextToStringPtr(rule.Description),
-		Action:            rule.Action,
-		Priority:          rule.Priority,
-		IsEnabled:         rule.IsEnabled,
-		Conditions:        conditions,
-		MatchCount:        rule.MatchCount,
-		LastMatchedAt:     nullTimestampToTimePtr(rule.LastMatchedAt),
-		LastEvaluationAt:  nullTimestampToTimePtr(rule.LastEvaluationAt),
-		CreatedBy:         nullTextToStringPtr(rule.CreatedBy),
-		CreatedAt:         rule.CreatedAt,
-		UpdatedAt:         rule.UpdatedAt,
+		ID:               rule.ID,
+		Name:             rule.Name,
+		Description:      nullTextToStringPtr(rule.Description),
+		Action:           rule.Action,
+		Priority:         rule.Priority,
+		IsEnabled:        rule.IsEnabled,
+		Conditions:       conditions,
+		MatchCount:       rule.MatchCount,
+		LastMatchedAt:    nullTimestampToTimePtr(rule.LastMatchedAt),
+		LastEvaluationAt: nullTimestampToTimePtr(rule.LastEvaluationAt),
+		CreatedBy:        nullTextToStringPtr(rule.CreatedBy),
+		CreatedAt:        rule.CreatedAt,
+		UpdatedAt:        rule.UpdatedAt,
 	}, nil
 }
 

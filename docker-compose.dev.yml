@@ -67,6 +67,9 @@ services:
       VV_FILESYSTEM_INDEXING_ENABLED: "true"
       GOCACHE: "/tmp/gocache"
       GOMODCACHE: "/tmp/gomodcache"
+      # Volume mount path mappings for custom scanning paths
+      VV_VOLUME_MAPPING_VOLUMEVIZ_MOVIES_DEV: "/cifs/movies"
+      VV_VOLUME_MAPPING_VOLUMEVIZ_TV_SHOWS_DEV: "/cifs/tv"
     volumes:
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock:ro

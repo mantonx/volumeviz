@@ -70,10 +70,10 @@ func (s *MountCatalogService) DiscoverMounts(ctx context.Context) error {
 		if vol == nil {
 			continue
 		}
-		
+
 		mountID := vol.Name
 		discoveredMountIDs[mountID] = true
-		
+
 		if err := s.processVolume(ctx, *vol, containers); err != nil {
 			log.Printf("[MOUNT-CATALOG] Failed to process volume %s: %v", vol.Name, err)
 		}
@@ -103,7 +103,7 @@ func (s *MountCatalogService) DiscoverMounts(ctx context.Context) error {
 // processVolume processes a Docker volume and updates catalog
 func (s *MountCatalogService) processVolume(ctx context.Context, vol volume.Volume, containers []types.Container) error {
 	mountID := vol.Name
-	
+
 	// Convert volume labels to JSON bytes
 	volumeLabels, err := s.toJSONBytes(vol.Labels)
 	if err != nil {
@@ -135,7 +135,7 @@ func (s *MountCatalogService) processVolume(ctx context.Context, vol volume.Volu
 		for _, mount := range containerInfo.Mounts {
 			if mount.Type == "volume" && mount.Name == vol.Name {
 				containerCount++
-				
+
 				// Extract Compose metadata from container labels
 				if labels := containerInfo.Config.Labels; labels != nil {
 					if project := labels["com.docker.compose.project"]; project != "" {
@@ -190,16 +190,16 @@ func (s *MountCatalogService) processVolume(ctx context.Context, vol volume.Volu
 	} else {
 		// Mount exists, update it
 		params := sqlc.UpdateMountCatalogEntryParams{
-			MountID:        mountID,
-			VolumeDriver:   pgtype.Text{String: vol.Driver, Valid: true},
-			VolumeOptions:  volumeOptions,
-			VolumeLabels:   volumeLabels,
-			VolumeScope:    pgtype.Text{String: vol.Scope, Valid: true},
-			ContainerCount: int32(containerCount),
-			IsOrphaned:     containerCount == 0,
-			ComposeProject: pgtype.Text{String: s.stringPtrValue(composeProject), Valid: composeProject != nil},
-			ComposeServices: composeServices,
-			ComposeVersion: pgtype.Text{String: s.stringPtrValue(composeVersion), Valid: composeVersion != nil},
+			MountID:            mountID,
+			VolumeDriver:       pgtype.Text{String: vol.Driver, Valid: true},
+			VolumeOptions:      volumeOptions,
+			VolumeLabels:       volumeLabels,
+			VolumeScope:        pgtype.Text{String: vol.Scope, Valid: true},
+			ContainerCount:     int32(containerCount),
+			IsOrphaned:         containerCount == 0,
+			ComposeProject:     pgtype.Text{String: s.stringPtrValue(composeProject), Valid: composeProject != nil},
+			ComposeServices:    composeServices,
+			ComposeVersion:     pgtype.Text{String: s.stringPtrValue(composeVersion), Valid: composeVersion != nil},
 			ComposeConfigFiles: composeConfigFiles,
 		}
 
@@ -224,7 +224,7 @@ func (s *MountCatalogService) processContainerMounts(ctx context.Context, contai
 		if mount.Type == "bind" || mount.Type == "tmpfs" {
 			mountID := s.generateMountID(mount)
 			discoveredMountIDs[mountID] = true
-			
+
 			if err := s.processNonVolumeMount(ctx, mount, containerInfo); err != nil {
 				log.Printf("[MOUNT-CATALOG] Failed to process %s mount %s: %v", mount.Type, mountID, err)
 			}
@@ -237,7 +237,7 @@ func (s *MountCatalogService) processContainerMounts(ctx context.Context, contai
 // processNonVolumeMount processes bind mounts and tmpfs
 func (s *MountCatalogService) processNonVolumeMount(ctx context.Context, mount types.MountPoint, containerInfo types.ContainerJSON) error {
 	mountID := s.generateMountID(mount)
-	
+
 	var mountType string
 	switch mount.Type {
 	case "bind":
@@ -361,19 +361,19 @@ func (s *MountCatalogService) createOrUpdateAttachment(ctx context.Context, moun
 	if err != nil {
 		// Create new attachment
 		params := sqlc.CreateMountAttachmentParams{
-			MountCatalogID:                    mountCatalogID,
-			ContainerID:                       containerInfo.ID,
-			ContainerName:                     pgtype.Text{String: containerInfo.Name, Valid: true},
-			DestinationPath:                   mount.Destination,
-			AccessMode:                        accessMode,
-			Propagation:                       pgtype.Text{String: string(mount.Propagation), Valid: mount.Propagation != ""},
-			ContainerState:                    pgtype.Text{String: containerInfo.State.Status, Valid: true},
-			ContainerImage:                    pgtype.Text{String: containerInfo.Config.Image, Valid: true},
-			ContainerLabels:                   containerLabels,
-			ContainerComposeProject:           pgtype.Text{String: s.stringPtrValue(composeProject), Valid: composeProject != nil},
-			ContainerComposeService:           pgtype.Text{String: s.stringPtrValue(composeService), Valid: composeService != nil},
-			ContainerComposeContainerNumber:   pgtype.Int4{Int32: s.int32PtrValue(composeContainerNumber), Valid: composeContainerNumber != nil},
-			ContainerComposeConfigHash:        pgtype.Text{String: s.stringPtrValue(composeConfigHash), Valid: composeConfigHash != nil},
+			MountCatalogID:                  mountCatalogID,
+			ContainerID:                     containerInfo.ID,
+			ContainerName:                   pgtype.Text{String: containerInfo.Name, Valid: true},
+			DestinationPath:                 mount.Destination,
+			AccessMode:                      accessMode,
+			Propagation:                     pgtype.Text{String: string(mount.Propagation), Valid: mount.Propagation != ""},
+			ContainerState:                  pgtype.Text{String: containerInfo.State.Status, Valid: true},
+			ContainerImage:                  pgtype.Text{String: containerInfo.Config.Image, Valid: true},
+			ContainerLabels:                 containerLabels,
+			ContainerComposeProject:         pgtype.Text{String: s.stringPtrValue(composeProject), Valid: composeProject != nil},
+			ContainerComposeService:         pgtype.Text{String: s.stringPtrValue(composeService), Valid: composeService != nil},
+			ContainerComposeContainerNumber: pgtype.Int4{Int32: s.int32PtrValue(composeContainerNumber), Valid: composeContainerNumber != nil},
+			ContainerComposeConfigHash:      pgtype.Text{String: s.stringPtrValue(composeConfigHash), Valid: composeConfigHash != nil},
 		}
 
 		_, err = s.queries.CreateMountAttachment(ctx, params)
@@ -383,19 +383,19 @@ func (s *MountCatalogService) createOrUpdateAttachment(ctx context.Context, moun
 	} else {
 		// Update existing attachment
 		params := sqlc.UpdateMountAttachmentParams{
-			MountCatalogID:                    mountCatalogID,
-			ContainerID:                       containerInfo.ID,
-			DestinationPath:                   mount.Destination,
-			ContainerName:                     pgtype.Text{String: containerInfo.Name, Valid: true},
-			AccessMode:                        accessMode,
-			Propagation:                       pgtype.Text{String: string(mount.Propagation), Valid: mount.Propagation != ""},
-			ContainerState:                    pgtype.Text{String: containerInfo.State.Status, Valid: true},
-			ContainerImage:                    pgtype.Text{String: containerInfo.Config.Image, Valid: true},
-			ContainerLabels:                   containerLabels,
-			ContainerComposeProject:           pgtype.Text{String: s.stringPtrValue(composeProject), Valid: composeProject != nil},
-			ContainerComposeService:           pgtype.Text{String: s.stringPtrValue(composeService), Valid: composeService != nil},
-			ContainerComposeContainerNumber:   pgtype.Int4{Int32: s.int32PtrValue(composeContainerNumber), Valid: composeContainerNumber != nil},
-			ContainerComposeConfigHash:        pgtype.Text{String: s.stringPtrValue(composeConfigHash), Valid: composeConfigHash != nil},
+			MountCatalogID:                  mountCatalogID,
+			ContainerID:                     containerInfo.ID,
+			DestinationPath:                 mount.Destination,
+			ContainerName:                   pgtype.Text{String: containerInfo.Name, Valid: true},
+			AccessMode:                      accessMode,
+			Propagation:                     pgtype.Text{String: string(mount.Propagation), Valid: mount.Propagation != ""},
+			ContainerState:                  pgtype.Text{String: containerInfo.State.Status, Valid: true},
+			ContainerImage:                  pgtype.Text{String: containerInfo.Config.Image, Valid: true},
+			ContainerLabels:                 containerLabels,
+			ContainerComposeProject:         pgtype.Text{String: s.stringPtrValue(composeProject), Valid: composeProject != nil},
+			ContainerComposeService:         pgtype.Text{String: s.stringPtrValue(composeService), Valid: composeService != nil},
+			ContainerComposeContainerNumber: pgtype.Int4{Int32: s.int32PtrValue(composeContainerNumber), Valid: composeContainerNumber != nil},
+			ContainerComposeConfigHash:      pgtype.Text{String: s.stringPtrValue(composeConfigHash), Valid: composeConfigHash != nil},
 		}
 
 		_, err = s.queries.UpdateMountAttachment(ctx, params)
@@ -504,14 +504,14 @@ func parseInt32(s string) *int32 {
 	if s == "" {
 		return nil
 	}
-	
+
 	var result int32
 	parsed, err := strconv.ParseInt(s, 10, 32)
 	if err != nil {
 		return nil
 	}
 	result = int32(parsed)
-	
+
 	return &result
 }
 

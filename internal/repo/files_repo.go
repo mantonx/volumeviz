@@ -29,7 +29,7 @@ func NewFilesRepo(db sqlc.DBTX) *FilesRepo {
 // CreateFile creates a new file record
 func (r *FilesRepo) CreateFile(ctx context.Context, params models.CreateFileParams) (*models.File, error) {
 	pathHash := sha256.Sum256([]byte(params.Path))
-	
+
 	result, err := r.queries.CreateFile(ctx, sqlc.CreateFileParams{
 		FolderID:       params.FolderID,
 		VolumeID:       params.VolumeID,
@@ -75,7 +75,7 @@ func (r *FilesRepo) GetFileByID(ctx context.Context, id int64) (*models.File, er
 // GetFileByPath retrieves a file by volume ID and path
 func (r *FilesRepo) GetFileByPath(ctx context.Context, volumeID, path string) (*models.File, error) {
 	pathHash := sha256.Sum256([]byte(path))
-	
+
 	file, err := r.queries.GetFileByPath(ctx, sqlc.GetFileByPathParams{
 		VolumeID: volumeID,
 		PathHash: pathHash[:],
@@ -270,10 +270,10 @@ func (r *FilesRepo) SearchFilesByName(ctx context.Context, volumeID, pattern str
 // GetFilesBySize gets files within a size range
 func (r *FilesRepo) GetFilesBySize(ctx context.Context, volumeID string, minSize, maxSize int64, limit int32) ([]*models.File, error) {
 	files, err := r.queries.GetFilesBySize(ctx, sqlc.GetFilesBySizeParams{
-		VolumeID:  volumeID,
-		SizeBytes: minSize,
+		VolumeID:    volumeID,
+		SizeBytes:   minSize,
 		SizeBytes_2: maxSize,
-		Limit:     limit,
+		Limit:       limit,
 	})
 	if err != nil {
 		return nil, err
@@ -289,7 +289,7 @@ func (r *FilesRepo) GetFilesBySize(ctx context.Context, volumeID string, minSize
 // UpsertFile creates or updates a file
 func (r *FilesRepo) UpsertFile(ctx context.Context, params models.CreateFileParams) (*models.File, error) {
 	pathHash := sha256.Sum256([]byte(params.Path))
-	
+
 	result, err := r.queries.UpsertFile(ctx, sqlc.UpsertFileParams{
 		FolderID:       params.FolderID,
 		VolumeID:       params.VolumeID,
@@ -531,20 +531,20 @@ func (r *FilesRepo) convertToFile(file sqlc.Files) *models.File {
 
 // FileRowLike represents any SQLC generated row type that contains file data
 type FileRowLike interface {
-	sqlc.Files | 
-	sqlc.GetFileByIDRow |
-	sqlc.GetFileByPathRow |
-	sqlc.ListFilesByFolderRow |
-	sqlc.ListFilesByVolumeRow |
-	sqlc.GetLargestFilesRow |
-	sqlc.GetFilesByMediaKindRow |
-	sqlc.GetFilesByExtensionRow |
-	sqlc.GetFilesByMimeTypeRow |
-	sqlc.GetDuplicateFilesRow |
-	sqlc.GetRecentFilesRow |
-	sqlc.GetFilesModifiedSinceRow |
-	sqlc.SearchFilesByNameRow |
-	sqlc.GetFilesBySizeRow
+	sqlc.Files |
+		sqlc.GetFileByIDRow |
+		sqlc.GetFileByPathRow |
+		sqlc.ListFilesByFolderRow |
+		sqlc.ListFilesByVolumeRow |
+		sqlc.GetLargestFilesRow |
+		sqlc.GetFilesByMediaKindRow |
+		sqlc.GetFilesByExtensionRow |
+		sqlc.GetFilesByMimeTypeRow |
+		sqlc.GetDuplicateFilesRow |
+		sqlc.GetRecentFilesRow |
+		sqlc.GetFilesModifiedSinceRow |
+		sqlc.SearchFilesByNameRow |
+		sqlc.GetFilesBySizeRow
 }
 
 // convertAnyFileRowToFile converts any file row type to domain model using type assertion
@@ -719,12 +719,11 @@ func ExtractFileExtension(filename string) *string {
 	if ext == "" {
 		return nil
 	}
-	
+
 	// Remove the leading dot
 	if len(ext) > 1 {
 		ext = ext[1:]
 	}
-	
+
 	return &ext
 }
-

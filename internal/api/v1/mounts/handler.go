@@ -25,53 +25,53 @@ func NewHandler(mountCatalogService *docker.MountCatalogService) *Handler {
 
 // MountCatalogResponse represents a mount catalog entry in API response
 type MountCatalogResponse struct {
-	ID                   int64    `json:"id" example:"1"`
-	MountID              string   `json:"mount_id" example:"vol_abc123"`
-	MountType            string   `json:"mount_type" example:"volume" enums:"volume,bind,tmpfs"`
-	VolumeName           *string  `json:"volume_name,omitempty" example:"my-app-data" swaggertype:"string"`
-	VolumeDriver         *string  `json:"volume_driver,omitempty" example:"local" swaggertype:"string"`
-	VolumeScope          *string  `json:"volume_scope,omitempty" example:"local" swaggertype:"string"`
-	SourcePath           string   `json:"source_path" example:"/var/lib/docker/volumes/my-app-data/_data"`
-	ContainerCount       int32    `json:"container_count" example:"2"`
-	IsOrphaned           bool     `json:"is_orphaned" example:"false"`
-	ComposeProject       *string  `json:"compose_project,omitempty" example:"myapp" swaggertype:"string"`
-	ComposeServices      []string `json:"compose_services" example:"web,api"`
-	ComposeVersion       *string  `json:"compose_version,omitempty" example:"3.8" swaggertype:"string"`
-	DiscoverySource      string   `json:"discovery_source" example:"docker_engine"`
-	IsTracked            bool     `json:"is_tracked" example:"true"`
-	FirstDiscoveredAt    string   `json:"first_discovered_at" swaggertype:"string" format:"date-time" example:"2024-01-01T12:00:00Z"`
-	LastSeenAt           string   `json:"last_seen_at" swaggertype:"string" format:"date-time" example:"2024-01-01T14:30:00Z"`
-	TrackingEnabledAt    *string  `json:"tracking_enabled_at,omitempty" swaggertype:"string" format:"date-time" example:"2024-01-01T12:00:00Z"`
-	TrackingDisabledAt   *string  `json:"tracking_disabled_at,omitempty" swaggertype:"string" format:"date-time"`
-	CreatedAt            string   `json:"created_at" swaggertype:"string" format:"date-time" example:"2024-01-01T12:00:00Z"`
-	UpdatedAt            string   `json:"updated_at" swaggertype:"string" format:"date-time" example:"2024-01-01T14:30:00Z"`
+	ID                 int64    `json:"id" example:"1"`
+	MountID            string   `json:"mount_id" example:"vol_abc123"`
+	MountType          string   `json:"mount_type" example:"volume" enums:"volume,bind,tmpfs"`
+	VolumeName         *string  `json:"volume_name,omitempty" example:"my-app-data" swaggertype:"string"`
+	VolumeDriver       *string  `json:"volume_driver,omitempty" example:"local" swaggertype:"string"`
+	VolumeScope        *string  `json:"volume_scope,omitempty" example:"local" swaggertype:"string"`
+	SourcePath         string   `json:"source_path" example:"/var/lib/docker/volumes/my-app-data/_data"`
+	ContainerCount     int32    `json:"container_count" example:"2"`
+	IsOrphaned         bool     `json:"is_orphaned" example:"false"`
+	ComposeProject     *string  `json:"compose_project,omitempty" example:"myapp" swaggertype:"string"`
+	ComposeServices    []string `json:"compose_services" example:"web,api"`
+	ComposeVersion     *string  `json:"compose_version,omitempty" example:"3.8" swaggertype:"string"`
+	DiscoverySource    string   `json:"discovery_source" example:"docker_engine"`
+	IsTracked          bool     `json:"is_tracked" example:"true"`
+	FirstDiscoveredAt  string   `json:"first_discovered_at" swaggertype:"string" format:"date-time" example:"2024-01-01T12:00:00Z"`
+	LastSeenAt         string   `json:"last_seen_at" swaggertype:"string" format:"date-time" example:"2024-01-01T14:30:00Z"`
+	TrackingEnabledAt  *string  `json:"tracking_enabled_at,omitempty" swaggertype:"string" format:"date-time" example:"2024-01-01T12:00:00Z"`
+	TrackingDisabledAt *string  `json:"tracking_disabled_at,omitempty" swaggertype:"string" format:"date-time"`
+	CreatedAt          string   `json:"created_at" swaggertype:"string" format:"date-time" example:"2024-01-01T12:00:00Z"`
+	UpdatedAt          string   `json:"updated_at" swaggertype:"string" format:"date-time" example:"2024-01-01T14:30:00Z"`
 }
 
 // MountCatalogSummaryResponse represents mount catalog summary
 type MountCatalogSummaryResponse struct {
-	TotalMounts      int64 `json:"total_mounts" example:"25"`
-	VolumeMounts     int64 `json:"volume_mounts" example:"15"`
-	BindMounts       int64 `json:"bind_mounts" example:"8"`
-	TmpfsMounts      int64 `json:"tmpfs_mounts" example:"2"`
-	OrphanedMounts   int64 `json:"orphaned_mounts" example:"3"`
-	TrackedMounts    int64 `json:"tracked_mounts" example:"20"`
-	ComposeProjects  int64 `json:"compose_projects" example:"5"`
+	TotalMounts     int64 `json:"total_mounts" example:"25"`
+	VolumeMounts    int64 `json:"volume_mounts" example:"15"`
+	BindMounts      int64 `json:"bind_mounts" example:"8"`
+	TmpfsMounts     int64 `json:"tmpfs_mounts" example:"2"`
+	OrphanedMounts  int64 `json:"orphaned_mounts" example:"3"`
+	TrackedMounts   int64 `json:"tracked_mounts" example:"20"`
+	ComposeProjects int64 `json:"compose_projects" example:"5"`
 }
 
 // ListMountCatalogRequest represents request parameters for listing mounts
 type ListMountCatalogRequest struct {
-	Page             int    `form:"page" binding:"min=1"`
-	PageSize         int    `form:"page_size" binding:"min=1,max=100"`
-	Sort             string `form:"sort"`
-	Query            string `form:"q"`
-	MountID          string `form:"mount_id"`
-	VolumeName       string `form:"volume_name"`
-	ComposeProject   string `form:"compose_project"`
-	ComposeService   string `form:"compose_service"`
-	MountType        string `form:"type"`
-	Status           string `form:"status"`
-	IsOrphaned       string `form:"is_orphaned"`
-	IsTracked        string `form:"is_tracked"`
+	Page           int    `form:"page" binding:"min=1"`
+	PageSize       int    `form:"page_size" binding:"min=1,max=100"`
+	Sort           string `form:"sort"`
+	Query          string `form:"q"`
+	MountID        string `form:"mount_id"`
+	VolumeName     string `form:"volume_name"`
+	ComposeProject string `form:"compose_project"`
+	ComposeService string `form:"compose_service"`
+	MountType      string `form:"type"`
+	Status         string `form:"status"`
+	IsOrphaned     string `form:"is_orphaned"`
+	IsTracked      string `form:"is_tracked"`
 }
 
 // DiscoverMountsRequest represents request to trigger mount discovery
@@ -139,7 +139,7 @@ func (h *Handler) ListMountCatalog(c *gin.Context) {
 	var req ListMountCatalogRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid query parameters",
+			"error":   "Invalid query parameters",
 			"details": err.Error(),
 		})
 		return
@@ -162,8 +162,8 @@ func (h *Handler) ListMountCatalog(c *gin.Context) {
 	var err error
 
 	// Check if we need to use search or simple list
-	hasFilters := req.Query != "" || req.MountID != "" || req.VolumeName != "" || 
-		req.ComposeProject != "" || req.ComposeService != "" || req.MountType != "" || 
+	hasFilters := req.Query != "" || req.MountID != "" || req.VolumeName != "" ||
+		req.ComposeProject != "" || req.ComposeService != "" || req.MountType != "" ||
 		req.Status != "" || req.IsOrphaned != "" || req.IsTracked != ""
 
 	if hasFilters {
@@ -257,7 +257,7 @@ func (h *Handler) DiscoverMounts(c *gin.Context) {
 		// If JSON binding fails, try form binding for simple POST
 		if err := c.ShouldBind(&req); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Invalid request format",
+				"error":   "Invalid request format",
 				"details": err.Error(),
 			})
 			return
@@ -270,7 +270,7 @@ func (h *Handler) DiscoverMounts(c *gin.Context) {
 	if err != nil {
 		log.Printf("[API] Failed to discover mounts: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to discover mounts",
+			"error":   "Failed to discover mounts",
 			"details": err.Error(),
 		})
 		return
@@ -308,7 +308,7 @@ func (h *Handler) GetMountDetails(c *gin.Context) {
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Mount not found",
+				"error":    "Mount not found",
 				"mount_id": mountID,
 			})
 			return
@@ -351,7 +351,7 @@ func (h *Handler) UpdateMountTracking(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid request format",
+			"error":   "Invalid request format",
 			"details": err.Error(),
 		})
 		return
@@ -360,8 +360,8 @@ func (h *Handler) UpdateMountTracking(c *gin.Context) {
 	// Note: This would need to be implemented in the mount catalog service
 	// For now, return a not implemented response
 	c.JSON(http.StatusNotImplemented, gin.H{
-		"error": "Mount tracking update not yet implemented",
-		"mount_id": mountID,
+		"error":      "Mount tracking update not yet implemented",
+		"mount_id":   mountID,
 		"is_tracked": req.IsTracked,
 	})
 }

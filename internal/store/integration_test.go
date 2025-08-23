@@ -25,7 +25,7 @@ func TestStoreIntegration(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	
+
 	// Test database connection
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
@@ -58,7 +58,7 @@ func TestStoreIntegration(t *testing.T) {
 
 func testVolumeOperations(t *testing.T, store Store) {
 	ctx := context.Background()
-	
+
 	// Create a volume
 	createParams := models.CreateVolumeParams{
 		VolumeID:   "test-vol-123",
@@ -97,7 +97,7 @@ func testVolumeOperations(t *testing.T, store Store) {
 	volumes, err := store.Volumes().ListVolumes(ctx, 10, 0)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, len(volumes), 1)
-	
+
 	// Find our volume in the list
 	found := false
 	for _, v := range volumes {
@@ -114,10 +114,9 @@ func testVolumeOperations(t *testing.T, store Store) {
 	assert.GreaterOrEqual(t, count, int64(1))
 }
 
-
 func testTransactionBoundaries(t *testing.T, store Store) {
 	ctx := context.Background()
-	
+
 	// Test successful transaction
 	var volumeID string
 	err := store.WithTx(ctx, func(txStore TxStore) error {

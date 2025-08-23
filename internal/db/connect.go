@@ -16,7 +16,6 @@ type PostgreSQLConnection struct {
 	Queries *sqlc.Queries
 }
 
-
 // ConnectPostgreSQL creates a PostgreSQL connection with proper configuration
 func ConnectPostgreSQL(ctx context.Context, dsn string, maxConns int) (*PostgreSQLConnection, error) {
 	poolConfig, err := pgxpool.ParseConfig(dsn)
@@ -44,7 +43,6 @@ func ConnectPostgreSQL(ctx context.Context, dsn string, maxConns int) (*PostgreS
 	}, nil
 }
 
-
 // Close closes the PostgreSQL connection pool
 func (c *PostgreSQLConnection) Close() {
 	if c.Pool != nil {
@@ -52,9 +50,7 @@ func (c *PostgreSQLConnection) Close() {
 	}
 }
 
-
 // Health checks the PostgreSQL connection health
 func (c *PostgreSQLConnection) Health(ctx context.Context) error {
 	return c.Pool.Ping(ctx)
 }
-

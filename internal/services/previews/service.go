@@ -109,7 +109,7 @@ func (s *Service) GeneratePreview(ctx context.Context, req *PreviewRequest, mime
 
 	// Generate a job key to prevent duplicate processing
 	jobKey := fmt.Sprintf("%s_%s_%s", req.FileHash, req.Type, req.Size)
-	
+
 	// First check if preview already exists in storage (fast path)
 	// We check for any existing preview with this source hash pattern
 	if existingKey := s.storage.FindExistingPreview(req.FileHash, req.Type, req.Size); existingKey != "" {

@@ -130,7 +130,7 @@ func (h *Handler) ListSavedSearches(c *gin.Context) {
 
 	// Use repository to list saved searches
 	searchRepo := h.store.Search()
-	
+
 	// Get count first
 	totalCount, err := searchRepo.CountSavedSearches(c.Request.Context(), tags)
 	if err != nil {
@@ -353,7 +353,7 @@ func (h *Handler) RunSavedSearch(c *gin.Context) {
 	}
 
 	searchRepo := h.store.Search()
-	
+
 	// Get saved search query
 	queryJSON, err := searchRepo.GetSavedSearchQuery(c.Request.Context(), id)
 	if err != nil {

@@ -41,11 +41,11 @@ type FileNode struct {
 
 // DirectoryListing represents the contents of a directory
 type DirectoryListing struct {
-	Volume     string                  `json:"volume" example:"media-library"`
-	Path       string                  `json:"path" example:"/movies"`
-	Parent     *FolderNode             `json:"parent,omitempty"`
-	Children   []TreeNode              `json:"children"`
-	Pagination PaginationResponse      `json:"pagination"`
+	Volume     string             `json:"volume" example:"media-library"`
+	Path       string             `json:"path" example:"/movies"`
+	Parent     *FolderNode        `json:"parent,omitempty"`
+	Children   []TreeNode         `json:"children"`
+	Pagination PaginationResponse `json:"pagination"`
 } // @name DirectoryListing
 
 // FileListResponse represents a list of files
@@ -59,10 +59,10 @@ type FileListResponse struct {
 
 // FileFilters represents file filtering options
 type FileFilters struct {
-	Extension string  `json:"extension,omitempty" example:"mp4"`
-	MimeType  string  `json:"mime_type,omitempty" example:"video/mp4"`
-	MinSize   *int64  `json:"min_size,omitempty" example:"1048576"`
-	MaxSize   *int64  `json:"max_size,omitempty" example:"10737418240"`
+	Extension string `json:"extension,omitempty" example:"mp4"`
+	MimeType  string `json:"mime_type,omitempty" example:"video/mp4"`
+	MinSize   *int64 `json:"min_size,omitempty" example:"1048576"`
+	MaxSize   *int64 `json:"max_size,omitempty" example:"10737418240"`
 } // @name FileFilters
 
 // PaginationResponse represents pagination metadata
@@ -75,21 +75,21 @@ type PaginationResponse struct {
 
 // FileDetailsResponse represents detailed file information
 type FileDetailsResponse struct {
-	ID           int64             `json:"id" example:"123"`
-	Name         string            `json:"name" example:"movie.mp4"`
-	Path         string            `json:"path" example:"/media/movies/movie.mp4"`
-	VolumeID     string            `json:"volume_id" example:"media-library"`
-	Size         int64             `json:"size" example:"1073741824"`
-	DiskUsage    int64             `json:"disk_usage" example:"1073741824"`
-	MimeType     string            `json:"mime_type" example:"video/mp4"`
-	MediaKind    string            `json:"media_kind,omitempty" example:"video"`
-	Extension    string            `json:"extension" example:"mp4"`
-	Modified     time.Time         `json:"modified"`
-	Created      *time.Time        `json:"created,omitempty"`
-	Permissions  *FilePermissions  `json:"permissions,omitempty"`
-	Checksums    map[string]string `json:"checksums,omitempty"`
-	IsSymlink    bool              `json:"is_symlink,omitempty"`
-	SymlinkTarget string           `json:"symlink_target,omitempty"`
+	ID            int64             `json:"id" example:"123"`
+	Name          string            `json:"name" example:"movie.mp4"`
+	Path          string            `json:"path" example:"/media/movies/movie.mp4"`
+	VolumeID      string            `json:"volume_id" example:"media-library"`
+	Size          int64             `json:"size" example:"1073741824"`
+	DiskUsage     int64             `json:"disk_usage" example:"1073741824"`
+	MimeType      string            `json:"mime_type" example:"video/mp4"`
+	MediaKind     string            `json:"media_kind,omitempty" example:"video"`
+	Extension     string            `json:"extension" example:"mp4"`
+	Modified      time.Time         `json:"modified"`
+	Created       *time.Time        `json:"created,omitempty"`
+	Permissions   *FilePermissions  `json:"permissions,omitempty"`
+	Checksums     map[string]string `json:"checksums,omitempty"`
+	IsSymlink     bool              `json:"is_symlink,omitempty"`
+	SymlinkTarget string            `json:"symlink_target,omitempty"`
 } // @name FileDetailsResponse
 
 // FilePermissions represents file system permissions
@@ -103,10 +103,10 @@ type FilePermissions struct {
 
 // FileMetadataResponse represents rich media metadata for a file
 type FileMetadataResponse struct {
-	FileID   int64                  `json:"file_id" example:"123"`
-	Metadata map[string]interface{} `json:"metadata"`
-	Enriched bool                   `json:"enriched" example:"true"`
-	UpdatedAt time.Time             `json:"updated_at"`
+	FileID    int64                  `json:"file_id" example:"123"`
+	Metadata  map[string]interface{} `json:"metadata"`
+	Enriched  bool                   `json:"enriched" example:"true"`
+	UpdatedAt time.Time              `json:"updated_at"`
 } // @name FileMetadataResponse
 
 // FilterMetadataResponse represents available filter options

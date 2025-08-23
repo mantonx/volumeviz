@@ -19,13 +19,13 @@ type AlertDeliveryService struct {
 	providers    map[string]interfaces.AlertProvider
 	renderer     interfaces.TemplateRenderer
 	retryManager *RetryManager
-	
+
 	// Delivery processing
 	workers       int
 	workerStop    chan struct{}
 	workerWg      sync.WaitGroup
 	deliveryQueue chan int64 // Channel for delivery IDs
-	
+
 	// Statistics
 	statsLock     sync.RWMutex
 	deliveryStats *DeliveryServiceStats
@@ -33,14 +33,14 @@ type AlertDeliveryService struct {
 
 // DeliveryServiceStats tracks delivery service statistics
 type DeliveryServiceStats struct {
-	TotalProcessed    int64     `json:"total_processed"`
-	SuccessfulSent    int64     `json:"successful_sent"`
-	Failed            int64     `json:"failed"`
-	Retries           int64     `json:"retries"`
-	CurrentlyPending  int64     `json:"currently_pending"`
-	AverageLatency    float64   `json:"average_latency_ms"`
-	LastProcessedAt   time.Time `json:"last_processed_at"`
-	WorkersRunning    int       `json:"workers_running"`
+	TotalProcessed   int64     `json:"total_processed"`
+	SuccessfulSent   int64     `json:"successful_sent"`
+	Failed           int64     `json:"failed"`
+	Retries          int64     `json:"retries"`
+	CurrentlyPending int64     `json:"currently_pending"`
+	AverageLatency   float64   `json:"average_latency_ms"`
+	LastProcessedAt  time.Time `json:"last_processed_at"`
+	WorkersRunning   int       `json:"workers_running"`
 }
 
 // NewAlertDeliveryService creates a new alert delivery service
@@ -54,7 +54,7 @@ func NewAlertDeliveryService(
 	if workers <= 0 {
 		workers = 3 // Default worker count
 	}
-	
+
 	return &AlertDeliveryService{
 		store:         store,
 		providers:     providers,
@@ -72,53 +72,53 @@ func NewAlertDeliveryService(
 // Start starts the delivery service workers
 func (ds *AlertDeliveryService) Start(ctx context.Context) error {
 	log.Printf("Starting alert delivery service with %d workers", ds.workers)
-	
+
 	// Start worker goroutines
 	for i := 0; i < ds.workers; i++ {
 		ds.workerWg.Add(1)
 		go ds.deliveryWorker(ctx, i)
 	}
-	
+
 	// Start pending delivery processor
 	ds.workerWg.Add(1)
 	go ds.pendingDeliveryProcessor(ctx)
-	
+
 	return nil
 }
 
 // Stop stops the delivery service workers
 func (ds *AlertDeliveryService) Stop() error {
 	log.Printf("Stopping alert delivery service")
-	
+
 	close(ds.workerStop)
 	ds.workerWg.Wait()
-	
+
 	log.Printf("Alert delivery service stopped")
 	return nil
 }
 
 // QueueDelivery queues a new delivery for processing
 func (ds *AlertDeliveryService) QueueDelivery(ctx context.Context, alertID, destinationID, routeID int64) error {
-	// Get the alert  
+	// Get the alert
 	_, err := ds.store.Alerts().GetAlert(ctx, alertID)
 	if err != nil {
 		return fmt.Errorf("failed to get alert: %w", err)
 	}
-	
+
 	// Get the destination
 	destination, err := ds.store.Alerts().GetAlertDestination(ctx, destinationID)
 	if err != nil {
 		return fmt.Errorf("failed to get destination: %w", err)
 	}
-	
+
 	// Create the delivery record
 	delivery, err := ds.store.Alerts().CreateAlertDelivery(ctx, alertID, destinationID, routeID, int32(ds.retryManager.config.MaxRetries))
 	if err != nil {
 		return fmt.Errorf("failed to create delivery: %w", err)
 	}
-	
+
 	log.Printf("Queued delivery: alert=%d, destination=%s, delivery=%d", alertID, destination.Name, delivery.ID)
-	
+
 	// Queue the delivery for processing
 	select {
 	case ds.deliveryQueue <- delivery.ID:
@@ -136,15 +136,15 @@ func (ds *AlertDeliveryService) ProcessPendingDeliveries(ctx context.Context) er
 	if err != nil {
 		return fmt.Errorf("failed to list pending deliveries: %w", err)
 	}
-	
+
 	log.Printf("Processing %d pending deliveries", len(deliveries))
-	
+
 	for _, delivery := range deliveries {
 		// Check if delivery is ready for retry
 		if delivery.NextAttemptAt != nil && delivery.NextAttemptAt.After(time.Now()) {
 			continue // Not ready for retry yet
 		}
-		
+
 		// Queue the delivery
 		select {
 		case ds.deliveryQueue <- delivery.ID:
@@ -156,7 +156,7 @@ func (ds *AlertDeliveryService) ProcessPendingDeliveries(ctx context.Context) er
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -166,21 +166,21 @@ func (ds *AlertDeliveryService) TestDelivery(ctx context.Context, destinationID 
 	if err != nil {
 		return fmt.Errorf("failed to get destination: %w", err)
 	}
-	
+
 	provider, exists := ds.providers[destination.Type]
 	if !exists {
 		return fmt.Errorf("no provider found for destination type: %s", destination.Type)
 	}
-	
+
 	return provider.Test(ctx, destination, message)
 }
 
 // deliveryWorker processes deliveries from the queue
 func (ds *AlertDeliveryService) deliveryWorker(ctx context.Context, workerID int) {
 	defer ds.workerWg.Done()
-	
+
 	log.Printf("Delivery worker %d started", workerID)
-	
+
 	for {
 		select {
 		case <-ds.workerStop:
@@ -200,12 +200,12 @@ func (ds *AlertDeliveryService) deliveryWorker(ctx context.Context, workerID int
 // pendingDeliveryProcessor periodically processes pending deliveries
 func (ds *AlertDeliveryService) pendingDeliveryProcessor(ctx context.Context) {
 	defer ds.workerWg.Done()
-	
+
 	ticker := time.NewTicker(30 * time.Second) // Check every 30 seconds
 	defer ticker.Stop()
-	
+
 	log.Printf("Pending delivery processor started")
-	
+
 	for {
 		select {
 		case <-ds.workerStop:
@@ -225,31 +225,31 @@ func (ds *AlertDeliveryService) pendingDeliveryProcessor(ctx context.Context) {
 // processDelivery processes a single delivery
 func (ds *AlertDeliveryService) processDelivery(ctx context.Context, deliveryID int64) error {
 	startTime := time.Now()
-	
+
 	// Update stats
 	ds.updateStatsStart()
 	defer func() {
 		ds.updateStatsEnd(time.Since(startTime))
 	}()
-	
+
 	// Get the delivery
 	delivery, err := ds.store.Alerts().GetAlertDelivery(ctx, deliveryID)
 	if err != nil {
 		return fmt.Errorf("failed to get delivery: %w", err)
 	}
-	
+
 	// Get the alert
 	alert, err := ds.store.Alerts().GetAlert(ctx, delivery.AlertID)
 	if err != nil {
 		return fmt.Errorf("failed to get alert: %w", err)
 	}
-	
+
 	// Get the destination
 	destination, err := ds.store.Alerts().GetAlertDestination(ctx, delivery.DestinationID)
 	if err != nil {
 		return fmt.Errorf("failed to get destination: %w", err)
 	}
-	
+
 	// Get the provider
 	provider, exists := ds.providers[destination.Type]
 	if !exists {
@@ -257,41 +257,41 @@ func (ds *AlertDeliveryService) processDelivery(ctx context.Context, deliveryID 
 		ds.markDeliveryFailed(ctx, delivery, err, nil, nil, nil)
 		return err
 	}
-	
-	log.Printf("Processing delivery: id=%d, alert=%d, destination=%s, attempt=%d", 
+
+	log.Printf("Processing delivery: id=%d, alert=%d, destination=%s, attempt=%d",
 		delivery.ID, alert.ID, destination.Name, delivery.AttemptCount+1)
-	
+
 	// Prepare the delivery payload
 	payload, err := ds.preparePayload(ctx, alert, destination)
 	if err != nil {
 		ds.markDeliveryFailed(ctx, delivery, err, nil, nil, nil)
 		return fmt.Errorf("failed to prepare payload: %w", err)
 	}
-	
+
 	// Attempt delivery
 	err = provider.Send(ctx, destination, alert)
-	
+
 	// Update delivery attempt count and next attempt time
 	delivery.AttemptCount++
 	nextAttemptAt := ds.retryManager.CalculateNextAttempt(delivery)
-	
+
 	if err != nil {
 		// Delivery failed
 		ds.updateStatsFailure()
-		
+
 		// Check if we should retry
 		if ds.retryManager.ShouldRetry(delivery, err) {
 			// Schedule retry
 			ds.updateStatsRetry()
-			
+
 			errorMsg := err.Error()
 			if updateErr := ds.store.Alerts().UpdateDeliveryAttempt(
-				ctx, delivery.ID, models.DeliveryStatusPending, delivery.AttemptCount, 
+				ctx, delivery.ID, models.DeliveryStatusPending, delivery.AttemptCount,
 				&nextAttemptAt, &errorMsg, &payload, nil, nil,
 			); updateErr != nil {
 				log.Printf("Failed to update delivery for retry: %v", updateErr)
 			}
-			
+
 			log.Printf("Delivery failed, scheduled for retry: id=%d, attempt=%d, next_at=%v, error=%v",
 				delivery.ID, delivery.AttemptCount, nextAttemptAt, err)
 		} else {
@@ -299,20 +299,20 @@ func (ds *AlertDeliveryService) processDelivery(ctx context.Context, deliveryID 
 			ds.markDeliveryFailed(ctx, delivery, err, &payload, nil, nil)
 			log.Printf("Delivery permanently failed: id=%d, error=%v", delivery.ID, err)
 		}
-		
+
 		return err
 	}
-	
+
 	// Delivery succeeded
 	ds.updateStatsSuccess()
-	
+
 	if err := ds.store.Alerts().MarkDeliveryDelivered(ctx, delivery.ID, &payload, nil, nil); err != nil {
 		log.Printf("Failed to mark delivery as delivered: %v", err)
 	}
-	
-	log.Printf("Delivery successful: id=%d, alert=%d, destination=%s", 
+
+	log.Printf("Delivery successful: id=%d, alert=%d, destination=%s",
 		delivery.ID, alert.ID, destination.Name)
-	
+
 	return nil
 }
 
@@ -335,7 +335,7 @@ Started: {{.Alert.StartsAt}}
 			}
 		}
 	}
-	
+
 	// Create alert context for rendering
 	alertContext := &models.AlertContext{
 		Alert:       alert,
@@ -344,13 +344,13 @@ Started: {{.Alert.StartsAt}}
 		Labels:      alert.Labels,
 		Annotations: alert.Annotations,
 	}
-	
+
 	// Render the template
 	payload, err := ds.renderer.Render(template, alertContext)
 	if err != nil {
 		return "", fmt.Errorf("failed to render template: %w", err)
 	}
-	
+
 	return payload, nil
 }
 
@@ -366,7 +366,7 @@ func (ds *AlertDeliveryService) markDeliveryFailed(ctx context.Context, delivery
 func (ds *AlertDeliveryService) updateStatsStart() {
 	ds.statsLock.Lock()
 	defer ds.statsLock.Unlock()
-	
+
 	ds.deliveryStats.TotalProcessed++
 	ds.deliveryStats.LastProcessedAt = time.Now()
 }
@@ -375,13 +375,13 @@ func (ds *AlertDeliveryService) updateStatsStart() {
 func (ds *AlertDeliveryService) updateStatsEnd(duration time.Duration) {
 	ds.statsLock.Lock()
 	defer ds.statsLock.Unlock()
-	
+
 	// Update average latency (simple moving average)
 	latencyMs := float64(duration.Nanoseconds()) / 1000000.0
 	if ds.deliveryStats.AverageLatency == 0 {
 		ds.deliveryStats.AverageLatency = latencyMs
 	} else {
-		ds.deliveryStats.AverageLatency = (ds.deliveryStats.AverageLatency*0.9) + (latencyMs*0.1)
+		ds.deliveryStats.AverageLatency = (ds.deliveryStats.AverageLatency * 0.9) + (latencyMs * 0.1)
 	}
 }
 
@@ -389,7 +389,7 @@ func (ds *AlertDeliveryService) updateStatsEnd(duration time.Duration) {
 func (ds *AlertDeliveryService) updateStatsSuccess() {
 	ds.statsLock.Lock()
 	defer ds.statsLock.Unlock()
-	
+
 	ds.deliveryStats.SuccessfulSent++
 }
 
@@ -397,7 +397,7 @@ func (ds *AlertDeliveryService) updateStatsSuccess() {
 func (ds *AlertDeliveryService) updateStatsFailure() {
 	ds.statsLock.Lock()
 	defer ds.statsLock.Unlock()
-	
+
 	ds.deliveryStats.Failed++
 }
 
@@ -405,7 +405,7 @@ func (ds *AlertDeliveryService) updateStatsFailure() {
 func (ds *AlertDeliveryService) updateStatsRetry() {
 	ds.statsLock.Lock()
 	defer ds.statsLock.Unlock()
-	
+
 	ds.deliveryStats.Retries++
 }
 
@@ -413,7 +413,7 @@ func (ds *AlertDeliveryService) updateStatsRetry() {
 func (ds *AlertDeliveryService) GetStats() interface{} {
 	ds.statsLock.RLock()
 	defer ds.statsLock.RUnlock()
-	
+
 	// Make a copy to avoid race conditions
 	stats := *ds.deliveryStats
 	return &stats
@@ -440,19 +440,19 @@ func (ds *AlertDeliveryService) GetDeliveryInfo(ctx context.Context, deliveryID 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	alert, err := ds.store.Alerts().GetAlert(ctx, delivery.AlertID)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	destination, err := ds.store.Alerts().GetAlertDestination(ctx, delivery.DestinationID)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	retryInfo := ds.retryManager.GetRetryInfo(delivery)
-	
+
 	return &DeliveryInfo{
 		Delivery:    delivery,
 		Alert:       alert,

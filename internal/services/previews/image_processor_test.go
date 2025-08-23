@@ -96,10 +96,10 @@ func TestImageProcessor_GenerateThumbnail_InvalidFile(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name       string
-		sourcePath string
-		size       PreviewSize
-		wantErr    bool
+		name        string
+		sourcePath  string
+		size        PreviewSize
+		wantErr     bool
 		errContains string
 	}{
 		{
@@ -201,9 +201,9 @@ func TestIsVipsAvailable(t *testing.T) {
 
 func TestGetSizeConfig(t *testing.T) {
 	tests := []struct {
-		name         string
-		size         PreviewSize
-		expectedWidth int
+		name           string
+		size           PreviewSize
+		expectedWidth  int
 		expectedHeight int
 	}{
 		{
@@ -245,7 +245,7 @@ func TestGetSizeConfig(t *testing.T) {
 // Helper function to create a large file for testing
 func createLargeFile(t *testing.T) string {
 	tempFile := filepath.Join(t.TempDir(), "large.jpg")
-	
+
 	// Create file larger than 500MB limit
 	file, err := os.Create(tempFile)
 	require.NoError(t, err)

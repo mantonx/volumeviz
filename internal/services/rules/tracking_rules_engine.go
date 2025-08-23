@@ -12,8 +12,8 @@ import (
 
 // TrackingRulesEngine evaluates rules against Docker mounts
 type TrackingRulesEngine struct {
-	rulesRepo   *repo.TrackingRulesRepository
-	mountsRepo  *repo.MountCatalogRepository // We'll need this for mount data
+	rulesRepo  *repo.TrackingRulesRepository
+	mountsRepo *repo.MountCatalogRepository // We'll need this for mount data
 }
 
 // NewTrackingRulesEngine creates a new rules engine
@@ -26,35 +26,35 @@ func NewTrackingRulesEngine(rulesRepo *repo.TrackingRulesRepository, mountsRepo 
 
 // MountInfo represents Docker mount information for rule evaluation
 type MountInfo struct {
-	ID                int64               `json:"id"`
-	MountID           string              `json:"mount_id"`
-	MountType         string              `json:"mount_type"`         // volume, bind, tmpfs
-	Driver            string              `json:"driver"`             // local, nfs, etc.
-	VolumeName        *string             `json:"volume_name"`        // Docker volume name
-	HostPath          *string             `json:"host_path"`          // For bind mounts
-	ContainerPath     string              `json:"container_path"`     // Mount destination
-	ComposeProject    *string             `json:"compose_project"`    // Compose project name
-	ComposeServices   []string            `json:"compose_services"`   // Compose service names
-	ContainerID       *string             `json:"container_id"`       // Container using mount
-	ContainerName     *string             `json:"container_name"`     // Container name
-	ContainerImage    *string             `json:"container_image"`    // Container image
-	ReadOnly          bool                `json:"read_only"`          // Read-only mount
-	IsOrphaned        bool                `json:"is_orphaned"`        // No active containers
-	CreatedAt         time.Time           `json:"created_at"`
-	UpdatedAt         time.Time           `json:"updated_at"`
-	Metadata          map[string]string   `json:"metadata"`           // Additional metadata
+	ID              int64             `json:"id"`
+	MountID         string            `json:"mount_id"`
+	MountType       string            `json:"mount_type"`       // volume, bind, tmpfs
+	Driver          string            `json:"driver"`           // local, nfs, etc.
+	VolumeName      *string           `json:"volume_name"`      // Docker volume name
+	HostPath        *string           `json:"host_path"`        // For bind mounts
+	ContainerPath   string            `json:"container_path"`   // Mount destination
+	ComposeProject  *string           `json:"compose_project"`  // Compose project name
+	ComposeServices []string          `json:"compose_services"` // Compose service names
+	ContainerID     *string           `json:"container_id"`     // Container using mount
+	ContainerName   *string           `json:"container_name"`   // Container name
+	ContainerImage  *string           `json:"container_image"`  // Container image
+	ReadOnly        bool              `json:"read_only"`        // Read-only mount
+	IsOrphaned      bool              `json:"is_orphaned"`      // No active containers
+	CreatedAt       time.Time         `json:"created_at"`
+	UpdatedAt       time.Time         `json:"updated_at"`
+	Metadata        map[string]string `json:"metadata"` // Additional metadata
 }
 
 // RuleEvaluationResult represents the result of evaluating a single rule
 type RuleEvaluationResult struct {
-	RuleID            int64                  `json:"rule_id"`
-	RuleName          string                 `json:"rule_name"`
-	Action            string                 `json:"action"`
-	Priority          int32                  `json:"priority"`
-	Matched           bool                   `json:"matched"`
-	MatchedConditions []ConditionResult      `json:"matched_conditions"`
-	ExecutionTimeMs   int64                  `json:"execution_time_ms"`
-	Error             error                  `json:"error,omitempty"`
+	RuleID            int64             `json:"rule_id"`
+	RuleName          string            `json:"rule_name"`
+	Action            string            `json:"action"`
+	Priority          int32             `json:"priority"`
+	Matched           bool              `json:"matched"`
+	MatchedConditions []ConditionResult `json:"matched_conditions"`
+	ExecutionTimeMs   int64             `json:"execution_time_ms"`
+	Error             error             `json:"error,omitempty"`
 }
 
 // ConditionResult represents the result of evaluating a single condition
@@ -121,13 +121,13 @@ func (e *TrackingRulesEngine) EvaluateRulesForAllMounts(ctx context.Context, eva
 	}
 
 	result := &FullEvaluationResult{
-		EvaluationType:    evalCtx.EvaluationType,
-		TriggeredBy:       evalCtx.TriggeredBy,
-		StartedAt:         evalCtx.StartedAt,
-		TotalMounts:       int32(len(mounts)),
-		TotalRules:        int32(len(rules)),
-		MountResults:      make(map[int64]*MountEvaluationResult),
-		RulePerformance:   make([]*RulePerformanceResult, 0, len(rules)),
+		EvaluationType:  evalCtx.EvaluationType,
+		TriggeredBy:     evalCtx.TriggeredBy,
+		StartedAt:       evalCtx.StartedAt,
+		TotalMounts:     int32(len(mounts)),
+		TotalRules:      int32(len(rules)),
+		MountResults:    make(map[int64]*MountEvaluationResult),
+		RulePerformance: make([]*RulePerformanceResult, 0, len(rules)),
 	}
 
 	var totalMatched, totalIncluded, totalExcluded int32
@@ -135,11 +135,11 @@ func (e *TrackingRulesEngine) EvaluateRulesForAllMounts(ctx context.Context, eva
 	// Evaluate each mount against all rules
 	for _, mount := range mounts {
 		mountResult := &MountEvaluationResult{
-			MountID:       mount.ID,
-			MountName:     mount.MountID,
-			RuleResults:   make([]*RuleEvaluationResult, 0, len(rules)),
-			FinalAction:   "none",
-			WinningRule:   nil,
+			MountID:     mount.ID,
+			MountName:   mount.MountID,
+			RuleResults: make([]*RuleEvaluationResult, 0, len(rules)),
+			FinalAction: "none",
+			WinningRule: nil,
 		}
 
 		var winningRule *RuleEvaluationResult
@@ -154,7 +154,7 @@ func (e *TrackingRulesEngine) EvaluateRulesForAllMounts(ctx context.Context, eva
 
 			if len(ruleResult) > 0 {
 				mountResult.RuleResults = append(mountResult.RuleResults, ruleResult[0])
-				
+
 				// Check if this rule matches and has higher priority
 				if ruleResult[0].Matched && rule.Priority < highestPriority {
 					winningRule = ruleResult[0]
@@ -223,7 +223,7 @@ func (e *TrackingRulesEngine) evaluateRule(rule *repo.TrackingRule, mount *Mount
 // evaluateCondition evaluates a single condition against a mount
 func (e *TrackingRulesEngine) evaluateCondition(condition *repo.TrackingCondition, mount *MountInfo) (bool, error) {
 	fieldValue := e.extractFieldValue(condition.FieldName, mount)
-	
+
 	switch condition.Operator {
 	case "equals":
 		return e.evaluateEquals(fieldValue, condition.Value, condition.IsCaseSensitive), nil
@@ -324,7 +324,7 @@ func (e *TrackingRulesEngine) evaluateEquals(fieldValue string, conditionValue *
 	if conditionValue == nil {
 		return fieldValue == ""
 	}
-	
+
 	if caseSensitive {
 		return fieldValue == *conditionValue
 	}
@@ -335,7 +335,7 @@ func (e *TrackingRulesEngine) evaluatePrefix(fieldValue string, conditionValue *
 	if conditionValue == nil {
 		return true
 	}
-	
+
 	if caseSensitive {
 		return strings.HasPrefix(fieldValue, *conditionValue)
 	}
@@ -346,7 +346,7 @@ func (e *TrackingRulesEngine) evaluateSuffix(fieldValue string, conditionValue *
 	if conditionValue == nil {
 		return true
 	}
-	
+
 	if caseSensitive {
 		return strings.HasSuffix(fieldValue, *conditionValue)
 	}
@@ -357,7 +357,7 @@ func (e *TrackingRulesEngine) evaluateContains(fieldValue string, conditionValue
 	if conditionValue == nil {
 		return true
 	}
-	
+
 	if caseSensitive {
 		return strings.Contains(fieldValue, *conditionValue)
 	}
@@ -368,17 +368,17 @@ func (e *TrackingRulesEngine) evaluateRegex(fieldValue string, conditionValue *s
 	if conditionValue == nil {
 		return true, nil
 	}
-	
+
 	pattern := *conditionValue
 	if !caseSensitive {
 		pattern = "(?i)" + pattern
 	}
-	
+
 	regex, err := regexp.Compile(pattern)
 	if err != nil {
 		return false, fmt.Errorf("invalid regex pattern: %w", err)
 	}
-	
+
 	return regex.MatchString(fieldValue), nil
 }
 
@@ -386,20 +386,20 @@ func (e *TrackingRulesEngine) evaluateGlob(fieldValue string, conditionValue *st
 	if conditionValue == nil {
 		return true
 	}
-	
+
 	// Convert glob pattern to regex
 	pattern := strings.ReplaceAll(*conditionValue, "*", ".*")
 	pattern = strings.ReplaceAll(pattern, "?", ".")
-	
+
 	if !caseSensitive {
 		pattern = "(?i)" + pattern
 	}
-	
+
 	regex, err := regexp.Compile("^" + pattern + "$")
 	if err != nil {
 		return false
 	}
-	
+
 	return regex.MatchString(fieldValue)
 }
 
@@ -407,7 +407,7 @@ func (e *TrackingRulesEngine) evaluateIn(fieldValue string, conditionValues []st
 	if len(conditionValues) == 0 {
 		return true
 	}
-	
+
 	for _, value := range conditionValues {
 		if caseSensitive {
 			if fieldValue == value {
@@ -479,27 +479,27 @@ func convertCatalogEntryToMountInfo(entry *repo.MountCatalogEntry) *MountInfo {
 		UpdatedAt:       time.Time{}, // Initialize with zero time
 		Metadata:        entry.Metadata,
 		// These fields would need to be populated from container information
-		ContainerID:     nil,
-		ContainerName:   nil,
-		ContainerImage:  nil,
+		ContainerID:    nil,
+		ContainerName:  nil,
+		ContainerImage: nil,
 	}
 }
 
 // Result structures for full evaluation
 
 type FullEvaluationResult struct {
-	EvaluationType    string                            `json:"evaluation_type"`
-	TriggeredBy       *string                           `json:"triggered_by"`
-	StartedAt         time.Time                         `json:"started_at"`
-	CompletedAt       time.Time                         `json:"completed_at"`
-	ExecutionTimeMs   int64                             `json:"execution_time_ms"`
-	TotalMounts       int32                             `json:"total_mounts"`
-	TotalRules        int32                             `json:"total_rules"`
-	MountsMatched     int32                             `json:"mounts_matched"`
-	MountsIncluded    int32                             `json:"mounts_included"`
-	MountsExcluded    int32                             `json:"mounts_excluded"`
-	MountResults      map[int64]*MountEvaluationResult  `json:"mount_results"`
-	RulePerformance   []*RulePerformanceResult          `json:"rule_performance"`
+	EvaluationType  string                           `json:"evaluation_type"`
+	TriggeredBy     *string                          `json:"triggered_by"`
+	StartedAt       time.Time                        `json:"started_at"`
+	CompletedAt     time.Time                        `json:"completed_at"`
+	ExecutionTimeMs int64                            `json:"execution_time_ms"`
+	TotalMounts     int32                            `json:"total_mounts"`
+	TotalRules      int32                            `json:"total_rules"`
+	MountsMatched   int32                            `json:"mounts_matched"`
+	MountsIncluded  int32                            `json:"mounts_included"`
+	MountsExcluded  int32                            `json:"mounts_excluded"`
+	MountResults    map[int64]*MountEvaluationResult `json:"mount_results"`
+	RulePerformance []*RulePerformanceResult         `json:"rule_performance"`
 }
 
 type MountEvaluationResult struct {
@@ -511,10 +511,10 @@ type MountEvaluationResult struct {
 }
 
 type RulePerformanceResult struct {
-	RuleID            int64   `json:"rule_id"`
-	RuleName          string  `json:"rule_name"`
-	MountsEvaluated   int32   `json:"mounts_evaluated"`
-	MountsMatched     int32   `json:"mounts_matched"`
-	AvgExecutionTimeMs int64  `json:"avg_execution_time_ms"`
-	TotalExecutionTimeMs int64 `json:"total_execution_time_ms"`
+	RuleID               int64  `json:"rule_id"`
+	RuleName             string `json:"rule_name"`
+	MountsEvaluated      int32  `json:"mounts_evaluated"`
+	MountsMatched        int32  `json:"mounts_matched"`
+	AvgExecutionTimeMs   int64  `json:"avg_execution_time_ms"`
+	TotalExecutionTimeMs int64  `json:"total_execution_time_ms"`
 }

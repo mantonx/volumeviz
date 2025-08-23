@@ -68,17 +68,17 @@ func (r *StatsRepo) InsertVolumeStats(ctx context.Context, stats *models.DirRoll
 func (r *StatsRepo) InsertScanResult(ctx context.Context, scanResult *interfaces.ScanResult) error {
 	// Convert ScanResult to InsertVolumeSizeParams
 	params := sqlc.InsertVolumeSizeParams{
-		VolumeID:        scanResult.VolumeID,
-		TotalSize:       scanResult.TotalSize,
-		FileCount:       int64(scanResult.FileCount),
-		DirectoryCount:  int64(scanResult.DirectoryCount),
-		LargestFile:     scanResult.LargestFile,
-		ScanMethod:      scanResult.Method,
-		ScanDuration:    scanResult.Duration.Nanoseconds(),
-		FilesystemType:  pgtype.Text{String: scanResult.FilesystemType, Valid: scanResult.FilesystemType != ""},
-		ChecksumMd5:     pgtype.Text{}, // TODO: Add checksum to ScanResult if needed
-		IsValid:         pgtype.Bool{Bool: true, Valid: true},
-		ErrorMessage:    pgtype.Text{}, // No error for successful scans
+		VolumeID:       scanResult.VolumeID,
+		TotalSize:      scanResult.TotalSize,
+		FileCount:      int64(scanResult.FileCount),
+		DirectoryCount: int64(scanResult.DirectoryCount),
+		LargestFile:    scanResult.LargestFile,
+		ScanMethod:     scanResult.Method,
+		ScanDuration:   scanResult.Duration.Nanoseconds(),
+		FilesystemType: pgtype.Text{String: scanResult.FilesystemType, Valid: scanResult.FilesystemType != ""},
+		ChecksumMd5:    pgtype.Text{}, // TODO: Add checksum to ScanResult if needed
+		IsValid:        pgtype.Bool{Bool: true, Valid: true},
+		ErrorMessage:   pgtype.Text{}, // No error for successful scans
 	}
 
 	// Add filesystem capacity if available
@@ -88,7 +88,7 @@ func (r *StatsRepo) InsertScanResult(ctx context.Context, scanResult *interfaces
 		params.FsUsedBytes = pgtype.Int8{Int64: scanResult.FilesystemCapacity.UsedBytes, Valid: true}
 		params.FsUsagePercent = pgtype.Numeric{
 			Int:   big.NewInt(int64(scanResult.FilesystemCapacity.UsagePercent * 100)), // Convert to basis points
-			Exp:   -2, // Two decimal places
+			Exp:   -2,                                                                  // Two decimal places
 			Valid: true,
 		}
 		params.FsBlockSize = pgtype.Int8{Int64: int64(scanResult.FilesystemCapacity.BlockSize), Valid: true}
@@ -138,7 +138,7 @@ func (r *StatsRepo) GetLatestVolumeTotalSize(ctx context.Context, volumeID strin
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &volumeSize.TotalSize, nil
 }
 

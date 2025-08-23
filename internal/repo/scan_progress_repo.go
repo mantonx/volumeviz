@@ -21,7 +21,7 @@ type ScanProgressRepo interface {
 	CompleteScanPhase(ctx context.Context, scanID, phaseName string) error
 	FailScanPhase(ctx context.Context, scanID, phaseName, errorMessage string) error
 
-	// Progress items operations  
+	// Progress items operations
 	CreateProgressItem(ctx context.Context, params models.CreateProgressItemParams) (*models.ScanProgressItem, error)
 	UpdateProgressItem(ctx context.Context, params models.UpdateProgressItemParams) error
 	GetProgressItems(ctx context.Context, scanID, phaseName string, limit, offset int32) ([]*models.ScanProgressItem, error)
@@ -51,7 +51,7 @@ type ScanProgressRepo interface {
 	GetRecentScanErrors(ctx context.Context, params models.RecentErrorsParams) ([]*models.ScanProgressError, error)
 }
 
-// scanProgressRepo implements ScanProgressRepo using pgx queries  
+// scanProgressRepo implements ScanProgressRepo using pgx queries
 type scanProgressRepo struct {
 	pool *pgxpool.Pool
 }
@@ -1019,7 +1019,7 @@ func (r *scanProgressRepo) GetScanErrorsFiltered(ctx context.Context, params mod
 			occurred_at, context, retry_count, max_retries, retry_after, created_at
 		FROM scan_errors 
 		WHERE scan_id = $1`
-	
+
 	args := []interface{}{params.ScanID}
 	argCount := 1
 
@@ -1138,7 +1138,7 @@ func (r *scanProgressRepo) GetRecentScanErrors(ctx context.Context, params model
 			occurred_at, context, retry_count, max_retries, retry_after, created_at
 		FROM scan_errors 
 		WHERE occurred_at > NOW() - INTERVAL $1::text::interval`
-	
+
 	args := []interface{}{fmt.Sprintf("%d hours", params.HoursBack)}
 	argCount := 1
 

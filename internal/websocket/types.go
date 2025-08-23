@@ -9,34 +9,34 @@ type MessageType string
 
 const (
 	// Client to Server - Control Messages
-	MessageTypePing       MessageType = "ping"
-	MessageTypeSubscribe  MessageType = "subscribe"
+	MessageTypePing        MessageType = "ping"
+	MessageTypeSubscribe   MessageType = "subscribe"
 	MessageTypeUnsubscribe MessageType = "unsubscribe"
 
 	// Server to Client - Control Messages
-	MessageTypePong           MessageType = "pong"
-	MessageTypeSubscribed     MessageType = "subscribed"
-	MessageTypeUnsubscribed   MessageType = "unsubscribed"
-	MessageTypeError          MessageType = "error"
+	MessageTypePong         MessageType = "pong"
+	MessageTypeSubscribed   MessageType = "subscribed"
+	MessageTypeUnsubscribed MessageType = "unsubscribed"
+	MessageTypeError        MessageType = "error"
 
 	// Server to Client - Data Updates
 	MessageTypeVolumeUpdate     MessageType = "volume_update"
 	MessageTypeVolumeListUpdate MessageType = "volume_list_update"
-	
+
 	// Scan Progress Events
-	MessageTypeScanProgress       MessageType = "scan_progress_update"
-	MessageTypeScanPhaseUpdate    MessageType = "scan_phase_update" 
-	MessageTypeScanComplete       MessageType = "scan_complete"
-	MessageTypeScanError          MessageType = "scan_error"
-	MessageTypeScanStarted        MessageType = "scan_started"
-	
+	MessageTypeScanProgress    MessageType = "scan_progress_update"
+	MessageTypeScanPhaseUpdate MessageType = "scan_phase_update"
+	MessageTypeScanComplete    MessageType = "scan_complete"
+	MessageTypeScanError       MessageType = "scan_error"
+	MessageTypeScanStarted     MessageType = "scan_started"
+
 	// File/Container Events
-	MessageTypeFileUpdate       MessageType = "file_update"
-	MessageTypeContainerUpdate  MessageType = "container_update"
-	
+	MessageTypeFileUpdate      MessageType = "file_update"
+	MessageTypeContainerUpdate MessageType = "container_update"
+
 	// System Events
-	MessageTypeSystemStats      MessageType = "system_stats"
-	MessageTypeHealthUpdate     MessageType = "health_update"
+	MessageTypeSystemStats  MessageType = "system_stats"
+	MessageTypeHealthUpdate MessageType = "health_update"
 )
 
 // Message represents a WebSocket message
@@ -91,8 +91,8 @@ type ScanErrorData struct {
 
 // SubscriptionData represents subscription request data
 type SubscriptionData struct {
-	Event    string            `json:"event"`    // scan_progress, volume_updates, etc.
-	Filters  map[string]string `json:"filters"`  // volume_id, scan_id, etc.
+	Event    string            `json:"event"`   // scan_progress, volume_updates, etc.
+	Filters  map[string]string `json:"filters"` // volume_id, scan_id, etc.
 	ClientID string            `json:"client_id,omitempty"`
 }
 
@@ -104,14 +104,14 @@ type ErrorData struct {
 }
 
 // =======================================
-// Enhanced Progress Data Types  
+// Enhanced Progress Data Types
 // =======================================
 
 // ComprehensiveScanProgress represents complete scan progress with all phases
 type ComprehensiveScanProgress struct {
 	ScanID           string                `json:"scan_id"`
 	VolumeID         string                `json:"volume_id"`
-	OverallStatus    string                `json:"overall_status"` // running, completed, failed
+	OverallStatus    string                `json:"overall_status"`   // running, completed, failed
 	OverallProgress  int                   `json:"overall_progress"` // 0-100
 	StartedAt        *time.Time            `json:"started_at,omitempty"`
 	CompletedAt      *time.Time            `json:"completed_at,omitempty"`
@@ -125,7 +125,7 @@ type ComprehensiveScanProgress struct {
 type ScanPhaseProgress struct {
 	PhaseName        string     `json:"phase_name"` // volume_scan, filesystem_indexing, media_enrichment
 	PhaseOrder       int        `json:"phase_order"`
-	Status           string     `json:"status"` // pending, running, completed, failed, skipped
+	Status           string     `json:"status"`   // pending, running, completed, failed, skipped
 	Progress         int        `json:"progress"` // 0-100
 	ItemsProcessed   int64      `json:"items_processed"`
 	ItemsTotal       int64      `json:"items_total"`
@@ -161,13 +161,13 @@ type ScanProgressError struct {
 
 // ScanPerformanceStats represents performance metrics for the scan
 type ScanPerformanceStats struct {
-	ElapsedSeconds        int     `json:"elapsed_seconds"`
-	EstimatedRemainingSeconds int `json:"estimated_remaining_seconds"`
-	OverallItemsPerSecond float64 `json:"overall_items_per_second"`
-	OverallBytesPerSecond int64   `json:"overall_bytes_per_second"`
-	ErrorRate             float64 `json:"error_rate"` // errors per minute
-	MemoryUsageBytes      int64   `json:"memory_usage_bytes,omitempty"`
-	CPUUsagePercent       float64 `json:"cpu_usage_percent,omitempty"`
+	ElapsedSeconds            int     `json:"elapsed_seconds"`
+	EstimatedRemainingSeconds int     `json:"estimated_remaining_seconds"`
+	OverallItemsPerSecond     float64 `json:"overall_items_per_second"`
+	OverallBytesPerSecond     int64   `json:"overall_bytes_per_second"`
+	ErrorRate                 float64 `json:"error_rate"` // errors per minute
+	MemoryUsageBytes          int64   `json:"memory_usage_bytes,omitempty"`
+	CPUUsagePercent           float64 `json:"cpu_usage_percent,omitempty"`
 }
 
 // =======================================
@@ -176,23 +176,23 @@ type ScanPerformanceStats struct {
 
 // VolumeListUpdate represents updates to the volume list
 type VolumeListUpdate struct {
-	Action    string      `json:"action"` // added, removed, updated, refreshed
-	Volume    *VolumeData `json:"volume,omitempty"`
+	Action    string       `json:"action"` // added, removed, updated, refreshed
+	Volume    *VolumeData  `json:"volume,omitempty"`
 	Volumes   []VolumeData `json:"volumes,omitempty"` // for bulk updates
-	Timestamp time.Time   `json:"timestamp"`
+	Timestamp time.Time    `json:"timestamp"`
 }
 
 // EnhancedVolumeData represents enhanced volume information
 type EnhancedVolumeData struct {
 	VolumeData
-	SizeBytes         int64                      `json:"size_bytes,omitempty"`
-	FileCount         int64                      `json:"file_count,omitempty"`
-	LastScanned       *time.Time                 `json:"last_scanned,omitempty"`
-	ScanStatus        string                     `json:"scan_status,omitempty"`
-	ActiveScan        *ComprehensiveScanProgress `json:"active_scan,omitempty"`
-	ContainerCount    int                        `json:"container_count,omitempty"`
-	AttachedContainers []string                  `json:"attached_containers,omitempty"`
-	HealthStatus      string                     `json:"health_status,omitempty"`
+	SizeBytes          int64                      `json:"size_bytes,omitempty"`
+	FileCount          int64                      `json:"file_count,omitempty"`
+	LastScanned        *time.Time                 `json:"last_scanned,omitempty"`
+	ScanStatus         string                     `json:"scan_status,omitempty"`
+	ActiveScan         *ComprehensiveScanProgress `json:"active_scan,omitempty"`
+	ContainerCount     int                        `json:"container_count,omitempty"`
+	AttachedContainers []string                   `json:"attached_containers,omitempty"`
+	HealthStatus       string                     `json:"health_status,omitempty"`
 }
 
 // ContainerUpdate represents container attachment changes

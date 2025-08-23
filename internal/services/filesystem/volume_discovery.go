@@ -17,11 +17,11 @@ type VolumeDiscoveryService struct {
 	dockerService *docker.DockerService
 	store         store.Store
 	config        VolumeDiscoveryConfig
-	
+
 	// Discovery state
 	lastScan      time.Time
 	lastScanMutex sync.RWMutex
-	
+
 	// Metrics
 	discoveredCount int64
 	updatedCount    int64
@@ -32,16 +32,16 @@ type VolumeDiscoveryService struct {
 // VolumeDiscoveryConfig holds configuration for volume discovery
 type VolumeDiscoveryConfig struct {
 	// Discovery settings
-	Enabled         bool          `yaml:"enabled" env:"VV_DISCOVERY_ENABLED" envDefault:"true"`
-	Interval        time.Duration `yaml:"interval" env:"VV_DISCOVERY_INTERVAL" envDefault:"5m"`
-	InitialDelay    time.Duration `yaml:"initial_delay" env:"VV_DISCOVERY_INITIAL_DELAY" envDefault:"10s"`
-	
+	Enabled      bool          `yaml:"enabled" env:"VV_DISCOVERY_ENABLED" envDefault:"true"`
+	Interval     time.Duration `yaml:"interval" env:"VV_DISCOVERY_INTERVAL" envDefault:"5m"`
+	InitialDelay time.Duration `yaml:"initial_delay" env:"VV_DISCOVERY_INITIAL_DELAY" envDefault:"10s"`
+
 	// Volume filtering
-	IncludeDrivers  []string      `yaml:"include_drivers" env:"VV_DISCOVERY_INCLUDE_DRIVERS"`
-	ExcludeDrivers  []string      `yaml:"exclude_drivers" env:"VV_DISCOVERY_EXCLUDE_DRIVERS"`
-	IncludeLabels   []string      `yaml:"include_labels" env:"VV_DISCOVERY_INCLUDE_LABELS"`
-	ExcludeLabels   []string      `yaml:"exclude_labels" env:"VV_DISCOVERY_EXCLUDE_LABELS"`
-	
+	IncludeDrivers []string `yaml:"include_drivers" env:"VV_DISCOVERY_INCLUDE_DRIVERS"`
+	ExcludeDrivers []string `yaml:"exclude_drivers" env:"VV_DISCOVERY_EXCLUDE_DRIVERS"`
+	IncludeLabels  []string `yaml:"include_labels" env:"VV_DISCOVERY_INCLUDE_LABELS"`
+	ExcludeLabels  []string `yaml:"exclude_labels" env:"VV_DISCOVERY_EXCLUDE_LABELS"`
+
 	// Performance
 	ConcurrentScans int           `yaml:"concurrent_scans" env:"VV_DISCOVERY_CONCURRENT_SCANS" envDefault:"3"`
 	Timeout         time.Duration `yaml:"timeout" env:"VV_DISCOVERY_TIMEOUT" envDefault:"30s"`

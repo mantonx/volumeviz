@@ -196,12 +196,6 @@ func (m *MockStore) Health(ctx context.Context) error {
 	return args.Error(0)
 }
 
-
-
-
-
-
-
 func setupTestRouter(handler *trends.Handler) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()

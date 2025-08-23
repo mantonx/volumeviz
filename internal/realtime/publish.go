@@ -173,15 +173,15 @@ func (p *Publisher) PublishVolumeUpdate(data VolumeUpdateData) {
 			Action:    data.Action, // created, removed, attached, detached, updated
 			Timestamp: time.Now(),
 		}
-		
+
 		// Add volume data if it's a create/update action
 		if data.Action == "created" || data.Action == "updated" {
 			volumeData := &websocket.VolumeData{
-				ID:         data.VolumeID,
-				Name:       data.VolumeName,
-				CreatedAt:  time.Now(),
+				ID:        data.VolumeID,
+				Name:      data.VolumeName,
+				CreatedAt: time.Now(),
 			}
-			
+
 			// Extract additional details if available
 			if driver, ok := data.Details["driver"].(string); ok {
 				volumeData.Driver = driver
@@ -189,13 +189,13 @@ func (p *Publisher) PublishVolumeUpdate(data VolumeUpdateData) {
 			if mountpoint, ok := data.Details["mountpoint"].(string); ok {
 				volumeData.Mountpoint = mountpoint
 			}
-			
+
 			volumeListUpdate.Volume = volumeData
 		}
-		
+
 		// Broadcast to clients subscribed to volume updates
 		p.hub.BroadcastVolumeListUpdate(volumeListUpdate)
-		
+
 		// For container attachment/detachment events, also broadcast container update
 		if (data.Action == "attached" || data.Action == "detached") && data.ContainerID != "" {
 			containerUpdate := websocket.ContainerUpdate{
@@ -205,7 +205,7 @@ func (p *Publisher) PublishVolumeUpdate(data VolumeUpdateData) {
 				Status:      "updated",
 				Timestamp:   time.Now(),
 			}
-			
+
 			// Create message and broadcast to container update subscribers
 			message := websocket.Message{
 				Type:      websocket.MessageTypeContainerUpdate,
@@ -213,7 +213,7 @@ func (p *Publisher) PublishVolumeUpdate(data VolumeUpdateData) {
 				VolumeID:  data.VolumeID,
 				Timestamp: time.Now(),
 			}
-			
+
 			// Broadcast to clients subscribed to container updates
 			filters := map[string]string{
 				"volume_id":    data.VolumeID,
@@ -309,8 +309,8 @@ func (p *Publisher) PublishSystemStats(stats websocket.SystemStats) {
 	if p.hub != nil {
 		p.hub.BroadcastSystemStats(stats)
 	}
-	
-	log.Printf("realtime: system stats published - %d volumes, %d active scans", 
+
+	log.Printf("realtime: system stats published - %d volumes, %d active scans",
 		stats.TotalVolumes, stats.ActiveScans)
 }
 

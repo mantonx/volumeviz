@@ -33,7 +33,7 @@ func (r *storeRepository) UpsertVolume(ctx context.Context, volume *models.Volum
 		Status:     volume.Status,
 		IsActive:   volume.IsActive,
 	}
-	
+
 	_, err := r.store.Volumes().UpsertVolume(ctx, params)
 	return err
 }
@@ -44,7 +44,7 @@ func (r *storeRepository) DeleteVolume(ctx context.Context, volumeID string) err
 	if err != nil {
 		return err
 	}
-	
+
 	// Then soft delete using the internal ID
 	return r.store.Volumes().SoftDeleteVolume(ctx, volume.ID)
 }
@@ -67,7 +67,7 @@ func (r *storeRepository) UpsertContainer(ctx context.Context, container *models
 		FinishedAt:  container.FinishedAt,
 		IsActive:    container.IsActive,
 	}
-	
+
 	_, err := r.store.Volumes().UpsertContainer(ctx, params)
 	return err
 }
@@ -79,7 +79,7 @@ func (r *storeRepository) DeleteContainer(ctx context.Context, containerID strin
 	if err != nil {
 		return err
 	}
-	
+
 	// Update container to mark as inactive
 	updateParams := models.CreateContainerParams{
 		ContainerID: container.ContainerID,
@@ -92,7 +92,7 @@ func (r *storeRepository) DeleteContainer(ctx context.Context, containerID strin
 		FinishedAt:  container.FinishedAt,
 		IsActive:    false, // Mark as inactive
 	}
-	
+
 	_, err = r.store.Volumes().UpsertContainer(ctx, updateParams)
 	return err
 }
@@ -110,7 +110,7 @@ func (r *storeRepository) UpsertVolumeMount(ctx context.Context, mount *models.V
 		AccessMode:  mount.AccessMode,
 		IsActive:    mount.IsActive,
 	}
-	
+
 	_, err := r.store.Volumes().UpsertVolumeMount(ctx, params)
 	return err
 }
@@ -123,7 +123,7 @@ func (r *storeRepository) DeleteVolumeMount(ctx context.Context, volumeID, conta
 	if err != nil {
 		return err
 	}
-	
+
 	for _, mount := range mounts {
 		if mount.ContainerID == containerID {
 			// Update this mount to be inactive

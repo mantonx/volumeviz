@@ -30,8 +30,8 @@ func (pb *ProgressBroadcaster) BroadcastScanStarted(scanID, volumeID string) {
 	}
 
 	message := websocket.Message{
-		Type:      websocket.MessageTypeScanStarted,
-		VolumeID:  volumeID,
+		Type:     websocket.MessageTypeScanStarted,
+		VolumeID: volumeID,
 		Data: map[string]interface{}{
 			"scan_id":   scanID,
 			"volume_id": volumeID,

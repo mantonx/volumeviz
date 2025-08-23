@@ -254,8 +254,8 @@ func (h *Handler) TestAlertRule(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"rule":    rule,
-		"results": results,
+		"rule":      rule,
+		"results":   results,
 		"tested_at": time.Now(),
 	})
 }
@@ -503,7 +503,7 @@ func (h *Handler) TestAlertDestination(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Test message sent successfully",
+		"message":   "Test message sent successfully",
 		"tested_at": time.Now(),
 	})
 }
@@ -527,7 +527,7 @@ func (h *Handler) GetEngineStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"engine":      stats,
+		"engine":       stats,
 		"retrieved_at": time.Now(),
 	})
 }
@@ -548,7 +548,7 @@ func (h *Handler) TriggerEvaluation(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Alert evaluation triggered successfully",
+		"message":      "Alert evaluation triggered successfully",
 		"triggered_at": time.Now(),
 	})
 }

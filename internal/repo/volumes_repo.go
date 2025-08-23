@@ -214,8 +214,8 @@ func (r *volumesRepo) GetVolumeStats(ctx context.Context) (*models.VolumeStats, 
 	}
 
 	result := &models.VolumeStats{
-		TotalVolumes:   stats.TotalVolumes,
-		UniqueDrivers:  stats.UniqueDrivers,
+		TotalVolumes:  stats.TotalVolumes,
+		UniqueDrivers: stats.UniqueDrivers,
 	}
 
 	// Handle interface{} types with type assertions

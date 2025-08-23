@@ -91,7 +91,8 @@ type EnrichmentResult struct {
 // EnrichmentProgress represents the progress of enriching a volume
 type EnrichmentProgress struct {
 	VolumeID   string    `json:"volume_id"`
-	Status     string    `json:"status"` // "running", "completed", "failed", "paused"
+	ScanID     string    `json:"scan_id,omitempty"` // Associated scan ID for database tracking
+	Status     string    `json:"status"`            // "running", "completed", "failed", "paused"
 	StartedAt  time.Time `json:"started_at"`
 	LastUpdate time.Time `json:"last_update"`
 
@@ -113,7 +114,7 @@ type EnrichmentProgress struct {
 	// Error tracking
 	LastError   string `json:"last_error,omitempty"`
 	ErrorsCount int64  `json:"errors_count"`
-	
+
 	// Detailed error information
 	RecentErrors []EnrichmentError `json:"recent_errors,omitempty"`
 
@@ -136,11 +137,11 @@ type EnricherProgress struct {
 
 // EnrichmentError represents a detailed error that occurred during enrichment
 type EnrichmentError struct {
-	Timestamp     time.Time `json:"timestamp"`
-	FileName      string    `json:"file_name"`
-	FilePath      string    `json:"file_path"`
-	EnricherName  string    `json:"enricher_name"`
-	ErrorType     string    `json:"error_type"`     // "ffprobe_failed", "exiftool_failed", "file_not_found", etc.
-	ErrorMessage  string    `json:"error_message"`  // Human-readable error message
-	TechnicalDetails string `json:"technical_details,omitempty"` // stderr, exit codes, etc.
+	Timestamp        time.Time `json:"timestamp"`
+	FileName         string    `json:"file_name"`
+	FilePath         string    `json:"file_path"`
+	EnricherName     string    `json:"enricher_name"`
+	ErrorType        string    `json:"error_type"`                  // "ffprobe_failed", "exiftool_failed", "file_not_found", etc.
+	ErrorMessage     string    `json:"error_message"`               // Human-readable error message
+	TechnicalDetails string    `json:"technical_details,omitempty"` // stderr, exit codes, etc.
 }

@@ -61,7 +61,7 @@ func TestErrorHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			router := gin.New()
 			router.Use(ErrorHandler())
-			
+
 			router.GET("/test", func(c *gin.Context) {
 				panic(tt.panicValue)
 			})
@@ -81,7 +81,7 @@ func TestDockerErrorHandler(t *testing.T) {
 
 	router := gin.New()
 	router.Use(DockerErrorHandler())
-	
+
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})

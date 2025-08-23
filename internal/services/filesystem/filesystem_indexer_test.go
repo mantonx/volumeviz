@@ -68,15 +68,15 @@ func TestMimeDetector(t *testing.T) {
 
 func TestIndexerConfig(t *testing.T) {
 	config := IndexerConfig{
-		EnableHashing:      true,
+		EnableHashing:       true,
 		MaxFileBytesForHash: 1024,
-		HashAlgorithm:      "sha256",
-		SkipPatterns:       []string{`\.git`, `\.tmp$`},
-		SkipHidden:         true,
-		MaxDepth:           10,
-		ConcurrentReads:    3,
-		BatchSize:          500,
-		DetectMimeTypes:    true,
+		HashAlgorithm:       "sha256",
+		SkipPatterns:        []string{`\.git`, `\.tmp$`},
+		SkipHidden:          true,
+		MaxDepth:            10,
+		ConcurrentReads:     3,
+		BatchSize:           500,
+		DetectMimeTypes:     true,
 	}
 
 	// Test that config values are set correctly
@@ -178,10 +178,10 @@ func TestIndexingProgress(t *testing.T) {
 	// Test progress initialization
 	volumeID := "test-volume"
 	indexer.currentScan = &IndexingProgress{
-		VolumeID:    volumeID,
-		Status:      "running",
-		StartedAt:   time.Now(),
-		LastUpdate:  time.Now(),
+		VolumeID:   volumeID,
+		Status:     "running",
+		StartedAt:  time.Now(),
+		LastUpdate: time.Now(),
 	}
 
 	// Test progress retrieval
@@ -343,7 +343,7 @@ func TestMediaKindClassification(t *testing.T) {
 		t.Run(test.mimeType, func(t *testing.T) {
 			kind := detector.classifyMediaKind(test.mimeType)
 			if kind != test.expectedKind {
-				t.Errorf("Expected media kind %s for MIME type %s, got %s", 
+				t.Errorf("Expected media kind %s for MIME type %s, got %s",
 					test.expectedKind, test.mimeType, kind)
 			}
 		})

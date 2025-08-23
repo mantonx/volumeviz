@@ -11,13 +11,13 @@ import (
 func TestVolumesRepoInterface(t *testing.T) {
 	// This test verifies that our interface methods exist and have correct signatures
 	// It's a compile-time test to ensure our repository interface is properly defined
-	
+
 	var repo VolumesRepo = (*volumesRepo)(nil)
-	
+
 	// Test that all interface methods exist (this will fail to compile if they don't)
 	if repo != nil {
 		ctx := context.Background()
-		
+
 		// Test method signatures exist
 		_ = func() {
 			_, _ = repo.CreateVolume(ctx, models.CreateVolumeParams{})
@@ -43,7 +43,7 @@ func TestModelsConversions(t *testing.T) {
 			Status:     "active",
 			IsActive:   true,
 		}
-		
+
 		// Verify all fields are accessible and have expected types
 		if params.VolumeID != "vol-123" {
 			t.Errorf("VolumeID = %v, want vol-123", params.VolumeID)
@@ -55,7 +55,7 @@ func TestModelsConversions(t *testing.T) {
 			t.Error("IsActive should be true")
 		}
 	})
-	
+
 	t.Run("Volume model fields", func(t *testing.T) {
 		volume := models.Volume{
 			ID:         1,
@@ -69,7 +69,7 @@ func TestModelsConversions(t *testing.T) {
 			Status:     "active",
 			IsActive:   true,
 		}
-		
+
 		// Verify all fields are accessible and have expected types
 		if volume.ID != 1 {
 			t.Errorf("ID = %v, want 1", volume.ID)
@@ -91,7 +91,7 @@ func TestRepositoryPattern(t *testing.T) {
 		if repo == nil {
 			t.Error("NewVolumesRepo should not return nil")
 		}
-		
+
 		// Verify it implements the interface
 		var _ VolumesRepo = repo
 	})

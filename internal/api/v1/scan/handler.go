@@ -299,7 +299,7 @@ func (h *Handler) GetScanProgress(c *gin.Context) {
 		// Log error but don't fail - errors are optional
 		errorPointers = []*coremodels.ScanProgressError{}
 	}
-	
+
 	// Convert from pointers to values
 	errors := make([]coremodels.ScanProgressError, len(errorPointers))
 	for i, errorPtr := range errorPointers {
@@ -343,18 +343,18 @@ func (h *Handler) GetScanProgress(c *gin.Context) {
 	// Calculate overall progress from phase data
 	var overallProgress float64 = 0.0
 	phaseWeights := map[string]float64{
-		"volume_scan":        0.15,  // 15%
-		"filesystem_indexing": 0.70,  // 70%
-		"media_enrichment":   0.15,  // 15%
+		"volume_scan":         0.15, // 15%
+		"filesystem_indexing": 0.70, // 70%
+		"media_enrichment":    0.15, // 15%
 	}
-	
+
 	totalWeight := 0.0
 	weightedProgress := 0.0
-	
+
 	for _, phase := range phases {
 		if weight, exists := phaseWeights[phase.PhaseName]; exists {
 			totalWeight += weight
-			
+
 			// Calculate phase progress based on status and progress
 			var phaseProgress float64
 			switch phase.Status {
@@ -370,16 +370,16 @@ func (h *Handler) GetScanProgress(c *gin.Context) {
 			default:
 				phaseProgress = 0.0
 			}
-			
+
 			weightedProgress += weight * phaseProgress
 		}
 	}
-	
+
 	// Calculate final overall progress
 	if totalWeight > 0 {
 		overallProgress = weightedProgress / totalWeight
 	}
-	
+
 	// For completed scans, ensure 100% progress
 	if overallStatus == "completed" {
 		overallProgress = 100.0
@@ -403,18 +403,18 @@ func (h *Handler) GetScanProgress(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"scan_id":           scanID,
-		"volume_id":         volumeID,
-		"overall_status":    overallStatus,
-		"overall_progress":  overallProgress,
-		"started_at":        startedAt,
-		"completed_at":      completedAt,
-		"phases":            phases,
-		"recent_errors":     errors,
+		"scan_id":          scanID,
+		"volume_id":        volumeID,
+		"overall_status":   overallStatus,
+		"overall_progress": overallProgress,
+		"started_at":       startedAt,
+		"completed_at":     completedAt,
+		"phases":           phases,
+		"recent_errors":    errors,
 		"performance_stats": gin.H{
-			"total_phases":    len(phases),
-			"total_items":     len(items),
-			"total_errors":    len(errors),
+			"total_phases": len(phases),
+			"total_items":  len(items),
+			"total_errors": len(errors),
 		},
 	})
 }
@@ -1289,11 +1289,11 @@ func (h *Handler) GetScanErrors(c *gin.Context) {
 
 	// Get filtered errors
 	errors, err := scanProgressRepo.GetScanErrorsFiltered(c.Request.Context(), coremodels.ScanErrorFilterParams{
-		ScanID:       scanID,
-		PhaseName:    phaseFilter,
-		ErrorType:    errorTypeFilter,
-		Limit:        limit,
-		Offset:       offset,
+		ScanID:    scanID,
+		PhaseName: phaseFilter,
+		ErrorType: errorTypeFilter,
+		Limit:     limit,
+		Offset:    offset,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -1396,7 +1396,7 @@ func (h *Handler) GetActiveScans(c *gin.Context) {
 			"prev_offset": max(0, offset-limit),
 		},
 		"summary": gin.H{
-			"total_active": totalCount,
+			"total_active":       totalCount,
 			"current_page_count": len(activeScans),
 		},
 	})
@@ -1447,10 +1447,10 @@ func (h *Handler) GetRecentScanErrors(c *gin.Context) {
 
 	// Get recent errors
 	recentErrors, err := scanProgressRepo.GetRecentScanErrors(c.Request.Context(), coremodels.RecentErrorsParams{
-		HoursBack:    hours,
-		ErrorType:    errorTypeFilter,
-		PhaseName:    phaseFilter,
-		Limit:        limit,
+		HoursBack: hours,
+		ErrorType: errorTypeFilter,
+		PhaseName: phaseFilter,
+		Limit:     limit,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{

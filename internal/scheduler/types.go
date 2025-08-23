@@ -19,7 +19,7 @@ type ScanScheduler interface {
 	EnqueueVolume(volumeName string) (string, error)
 	EnqueueAllVolumes() (string, error)
 	GetScanStatus(scanID string) (*ScanStatus, error)
-	
+
 	// Enhanced features for hardened mode
 	GetDetailedMetrics() *EnhancedSchedulerMetrics
 	IsHardenedMode() bool
@@ -150,14 +150,14 @@ type HardenedScanConfig struct {
 	HeartbeatInterval time.Duration `yaml:"heartbeat_interval" env:"VV_SCAN_HEARTBEAT_INTERVAL" envDefault:"7s"`
 	WatchdogInterval  time.Duration `yaml:"watchdog_interval" env:"VV_SCAN_WATCHDOG_INTERVAL" envDefault:"30s"`
 	ScanTimeout       time.Duration `yaml:"scan_timeout" env:"VV_SCAN_TIMEOUT" envDefault:"300s"`
-	
-	// Graceful restart behavior  
+
+	// Graceful restart behavior
 	GracefulShutdownTimeout time.Duration `yaml:"graceful_shutdown_timeout" env:"VV_SCAN_GRACEFUL_SHUTDOWN_TIMEOUT" envDefault:"60s"`
 	MarkInFlightAsFailed    bool          `yaml:"mark_inflight_as_failed" env:"VV_SCAN_MARK_INFLIGHT_AS_FAILED" envDefault:"true"`
-	
+
 	// Metrics and observability
-	MetricsEnabled   bool          `yaml:"metrics_enabled" env:"VV_SCAN_METRICS_ENABLED" envDefault:"true"`
-	MetricsInterval  time.Duration `yaml:"metrics_interval" env:"VV_SCAN_METRICS_INTERVAL" envDefault:"10s"`
+	MetricsEnabled  bool          `yaml:"metrics_enabled" env:"VV_SCAN_METRICS_ENABLED" envDefault:"true"`
+	MetricsInterval time.Duration `yaml:"metrics_interval" env:"VV_SCAN_METRICS_INTERVAL" envDefault:"10s"`
 }
 
 // WatchdogStats holds statistics for the watchdog
@@ -170,12 +170,12 @@ type WatchdogStats struct {
 
 // EnhancedSchedulerMetrics represents enhanced metrics for hardened scheduler mode
 type EnhancedSchedulerMetrics struct {
-	QueueDepth        int              `json:"queue_depth"`
-	ActiveScans       int              `json:"active_scans"`
-	WorkerUtilization float64          `json:"worker_utilization"`
-	WorkerStats       []WorkerStats    `json:"worker_stats"`
-	WatchdogStats     *WatchdogStats   `json:"watchdog_stats,omitempty"`
-	IsHardened        bool             `json:"is_hardened"`
-	HeartbeatInterval time.Duration    `json:"heartbeat_interval"`
-	WatchdogEnabled   bool             `json:"watchdog_enabled"`
+	QueueDepth        int            `json:"queue_depth"`
+	ActiveScans       int            `json:"active_scans"`
+	WorkerUtilization float64        `json:"worker_utilization"`
+	WorkerStats       []WorkerStats  `json:"worker_stats"`
+	WatchdogStats     *WatchdogStats `json:"watchdog_stats,omitempty"`
+	IsHardened        bool           `json:"is_hardened"`
+	HeartbeatInterval time.Duration  `json:"heartbeat_interval"`
+	WatchdogEnabled   bool           `json:"watchdog_enabled"`
 }

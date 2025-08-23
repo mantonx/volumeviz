@@ -25,12 +25,12 @@ func NewStatsService(statsRepo *repo.StatsRepo, metrics interfaces.MetricsCollec
 		metrics:   metrics,
 		logger:    logger,
 	}
-	
+
 	// Report service status to metrics
 	if metrics != nil {
 		metrics.SetStatsServiceStatus(true)
 	}
-	
+
 	return service
 }
 
@@ -43,12 +43,12 @@ func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, sca
 
 	startTime := time.Now()
 	today := time.Now().Truncate(24 * time.Hour)
-	
+
 	// Report job start to metrics
 	if s.metrics != nil {
 		s.metrics.StatsJobStarted("scan_completion", volumeID)
 	}
-	
+
 	// Create job record
 	jobID, err := s.statsRepo.CreateStatsJob(ctx, "scan_completion", volumeID, startTime, "running")
 	if err != nil {
@@ -64,13 +64,13 @@ func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, sca
 	// Compute stats
 	err = s.statsRepo.ComputeVolumeDailyStats(ctx, volumeID, today, scanID)
 	duration := time.Since(startTime)
-	
+
 	// Update job record
 	var status string
 	var errorMessage *string
 	var processedDates int32 = 1
 	var recordsCreated int32 = 0 // We don't track individual records in the bulk operation
-	
+
 	if err != nil {
 		status = "failed"
 		errMsg := err.Error()
@@ -90,10 +90,10 @@ func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, sca
 			s.metrics.StatsJobCompleted("scan_completion", volumeID, duration, int(processedDates))
 		}
 	}
-	
+
 	completedAt := time.Now()
 	durationMs := duration.Milliseconds()
-	
+
 	updateErr := s.statsRepo.UpdateStatsJob(ctx, models.UpdateStatsJobParams{
 		ID:             jobID,
 		CompletedAt:    &completedAt,
@@ -104,7 +104,7 @@ func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, sca
 		RecordsCreated: &recordsCreated,
 		RecordsUpdated: &recordsCreated, // Same as created for bulk operations
 	})
-	
+
 	if updateErr != nil && s.logger != nil {
 		s.logger.Printf("Failed to update stats job %d: %v", jobID, updateErr)
 	}
@@ -119,13 +119,13 @@ func (s *StatsService) ComputeHistoricalStats(ctx context.Context, volumeID stri
 	}
 
 	jobStartTime := time.Now()
-	
+
 	// Report job start to metrics
 	if s.metrics != nil {
 		s.metrics.StatsJobStarted("historical_compute", volumeID)
 	}
-	
-	// Create job record  
+
+	// Create job record
 	jobID, err := s.statsRepo.CreateStatsJob(ctx, "historical_compute", volumeID, jobStartTime, "running")
 	if err != nil {
 		if s.metrics != nil {
@@ -136,7 +136,7 @@ func (s *StatsService) ComputeHistoricalStats(ctx context.Context, volumeID stri
 
 	var processedDates int32 = 0
 	var lastError error
-	
+
 	// Process each date
 	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
 		err := s.statsRepo.ComputeVolumeDailyStats(ctx, volumeID, date, nil)
@@ -149,12 +149,12 @@ func (s *StatsService) ComputeHistoricalStats(ctx context.Context, volumeID stri
 			processedDates++
 		}
 	}
-	
+
 	// Update job record
 	duration := time.Since(jobStartTime)
 	completedAt := time.Now()
 	durationMs := duration.Milliseconds()
-	
+
 	var status string
 	var errorMessage *string
 	if lastError != nil {
@@ -170,7 +170,7 @@ func (s *StatsService) ComputeHistoricalStats(ctx context.Context, volumeID stri
 			s.metrics.StatsJobCompleted("historical_compute", volumeID, duration, int(processedDates))
 		}
 	}
-	
+
 	updateErr := s.statsRepo.UpdateStatsJob(ctx, models.UpdateStatsJobParams{
 		ID:             jobID,
 		CompletedAt:    &completedAt,
@@ -181,13 +181,13 @@ func (s *StatsService) ComputeHistoricalStats(ctx context.Context, volumeID stri
 		RecordsCreated: &processedDates, // Approximate
 		RecordsUpdated: &processedDates,
 	})
-	
+
 	if updateErr != nil && s.logger != nil {
 		s.logger.Printf("Failed to update historical stats job %d: %v", jobID, updateErr)
 	}
 
 	if s.logger != nil {
-		s.logger.Printf("Historical stats computation completed for volume %s: processed %d dates (duration: %v)", 
+		s.logger.Printf("Historical stats computation completed for volume %s: processed %d dates (duration: %v)",
 			volumeID, processedDates, duration)
 	}
 
@@ -198,7 +198,7 @@ func (s *StatsService) ComputeHistoricalStats(ctx context.Context, volumeID stri
 func (s *StatsService) GetMissingStatsDateRange(ctx context.Context, volumeID string, lookbackDays int) ([]time.Time, error) {
 	endDate := time.Now().Truncate(24 * time.Hour)
 	startDate := endDate.AddDate(0, 0, -lookbackDays)
-	
+
 	return s.statsRepo.GetMissingStatsDates(ctx, volumeID, startDate, endDate)
 }
 
@@ -207,22 +207,22 @@ func (s *StatsService) RefreshMaterializedViews(ctx context.Context) error {
 	if s.logger != nil {
 		s.logger.Printf("Refreshing daily stats materialized views")
 	}
-	
+
 	startTime := time.Now()
 	err := s.statsRepo.RefreshDailySummaryView(ctx)
 	duration := time.Since(startTime)
-	
+
 	if err != nil {
 		if s.logger != nil {
 			s.logger.Printf("Failed to refresh materialized views: %v", err)
 		}
 		return err
 	}
-	
+
 	if s.logger != nil {
 		s.logger.Printf("Successfully refreshed materialized views (duration: %v)", duration)
 	}
-	
+
 	return nil
 }
 

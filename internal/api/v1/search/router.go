@@ -24,7 +24,7 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 		// File search
 		searchGroup.GET("/files", r.handler.SearchFiles)
 		searchGroup.GET("/suggestions", r.handler.GetSearchSuggestions)
-		
+
 		// Saved searches CRUD
 		searchGroup.POST("/saved", r.handler.CreateSavedSearch)
 		searchGroup.GET("/saved", r.handler.ListSavedSearches)

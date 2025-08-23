@@ -11,23 +11,23 @@ func RegisterRoutes(router *gin.RouterGroup, handler *Handler) {
 	{
 		// Generate preview
 		previews.POST("", handler.GeneratePreview)
-		
-		// Service endpoints  
+
+		// Service endpoints
 		previews.GET("/stats", handler.GetStats)
 		previews.GET("/supported", handler.GetSupportedTypes)
 		previews.GET("/health", handler.HealthCheck)
 	}
-	
+
 	// Preview file access (separate to avoid wildcard conflicts)
 	previewFiles := router.Group("/previews")
 	{
 		// Serve preview file by ID
 		previewFiles.GET("/:file_id", handler.GetPreview)
-		
+
 		// Delete preview by ID
 		previewFiles.DELETE("/:file_id", handler.DeletePreview)
 	}
-	
+
 	// File-specific preview endpoints
 	files := router.Group("/files")
 	{

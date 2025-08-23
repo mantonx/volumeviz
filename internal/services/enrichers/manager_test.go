@@ -92,11 +92,11 @@ func (f *FileIDBasedEnricher) GetCapabilities() EnricherCapabilities {
 
 // MockRepository is a mock implementation of MediaMetadataRepository
 type MockRepository struct {
-	savedMetadata    []EnrichmentResult
-	unenrichedFiles  []FileInfo
-	saveError        error
-	bulkSaveError    error
-	getError         error
+	savedMetadata   []EnrichmentResult
+	unenrichedFiles []FileInfo
+	saveError       error
+	bulkSaveError   error
+	getError        error
 }
 
 func (m *MockRepository) SaveMetadata(ctx context.Context, fileID int64, kind EnrichmentKind, metadata *MediaMetadata) error {
@@ -247,32 +247,32 @@ func TestManager_EnrichFile(t *testing.T) {
 				MaxConcurrentWorkers: 2,
 				TimeoutPerFile:       5 * time.Second,
 			}
-			
+
 			repo := &MockRepository{}
 			logger := log.New(&testLogWriter{t: t}, "test: ", 0)
-			
+
 			manager := NewManager(config, repo, logger, nil)
-			
+
 			// Register enrichers
 			for _, enricher := range tt.enrichers {
 				manager.RegisterEnricher(enricher)
 			}
-			
+
 			ctx := context.Background()
 			result, err := manager.EnrichFile(ctx, tt.fileInfo)
-			
+
 			if tt.expectError && err == nil {
 				t.Errorf("Expected error but got none")
 			}
-			
+
 			if !tt.expectError && err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			
+
 			if tt.expectSuccess && (result == nil || !result.Success) {
 				t.Errorf("Expected successful result but got: %+v", result)
 			}
-			
+
 			if !tt.expectSuccess && result != nil && result.Success {
 				t.Errorf("Expected failure but got success")
 			}
@@ -282,12 +282,12 @@ func TestManager_EnrichFile(t *testing.T) {
 
 func TestManager_EnrichVolume(t *testing.T) {
 	tests := []struct {
-		name             string
-		volumeID         string
-		unenrichedFiles  []FileInfo
-		enricherResults  map[int64]*MediaMetadata
-		expectError      bool
-		expectedSuccess  int
+		name            string
+		volumeID        string
+		unenrichedFiles []FileInfo
+		enricherResults map[int64]*MediaMetadata
+		expectError     bool
+		expectedSuccess int
 	}{
 		{
 			name:     "Enrich multiple files successfully",
@@ -338,14 +338,14 @@ func TestManager_EnrichVolume(t *testing.T) {
 				MaxConcurrentWorkers: 3,
 				TimeoutPerFile:       2 * time.Second,
 			}
-			
+
 			repo := &MockRepository{
 				unenrichedFiles: tt.unenrichedFiles,
 			}
 			logger := log.New(&testLogWriter{t: t}, "test: ", 0)
-			
+
 			manager := NewManager(config, repo, logger, nil)
-			
+
 			// Register a custom enricher that returns predefined results based on file ID
 			customEnricher := &FileIDBasedEnricher{
 				name:            "file-id-enricher",
@@ -354,24 +354,24 @@ func TestManager_EnrichVolume(t *testing.T) {
 				enricherResults: tt.enricherResults,
 			}
 			manager.RegisterEnricher(customEnricher)
-			
+
 			ctx := context.Background()
 			err := manager.EnrichVolume(ctx, tt.volumeID)
-			
+
 			if tt.expectError && err == nil {
 				t.Errorf("Expected error but got none")
 			}
-			
+
 			if !tt.expectError && err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			
+
 			// Check progress
 			progress := manager.GetProgress(tt.volumeID)
 			if progress == nil {
 				t.Fatal("Expected progress but got nil")
 			}
-			
+
 			if progress.SuccessfulFiles != int64(tt.expectedSuccess) {
 				t.Errorf("Expected %d successful files, got %d", tt.expectedSuccess, progress.SuccessfulFiles)
 			}
@@ -386,31 +386,31 @@ func TestManager_Concurrency(t *testing.T) {
 		MaxConcurrentWorkers: 2, // Only 2 workers
 		TimeoutPerFile:       5 * time.Second,
 	}
-	
+
 	// Track concurrent executions
 	var concurrentCount int32
 	var maxConcurrent int32
 	var mu sync.Mutex
-	
+
 	// Create enricher that tracks concurrency
 	enricher := &MockEnricher{
-		name:      "slow-enricher",
-		canEnrich: true,
-		available: true,
+		name:        "slow-enricher",
+		canEnrich:   true,
+		available:   true,
 		enrichDelay: 100 * time.Millisecond, // Slow enrichment
 		enrichResult: &MediaMetadata{
 			Kind: EnrichmentKindVideo,
 		},
 	}
-	
+
 	// Wrap enricher to track concurrency
 	wrappedEnricher := &concurrencyTrackingEnricher{
-		MockEnricher:     enricher,
-		concurrentCount:  &concurrentCount,
-		maxConcurrent:    &maxConcurrent,
-		mu:               &mu,
+		MockEnricher:    enricher,
+		concurrentCount: &concurrentCount,
+		maxConcurrent:   &maxConcurrent,
+		mu:              &mu,
 	}
-	
+
 	repo := &MockRepository{
 		unenrichedFiles: []FileInfo{
 			{ID: 1, Path: "/1.mp4", MimeType: "video/mp4"},
@@ -420,17 +420,17 @@ func TestManager_Concurrency(t *testing.T) {
 			{ID: 5, Path: "/5.mp4", MimeType: "video/mp4"},
 		},
 	}
-	
+
 	logger := log.New(&testLogWriter{t: t}, "test: ", 0)
 	manager := NewManager(config, repo, logger, nil)
 	manager.RegisterEnricher(wrappedEnricher)
-	
+
 	ctx := context.Background()
 	err := manager.EnrichVolume(ctx, "test-volume")
 	if err != nil {
 		t.Fatalf("EnrichVolume failed: %v", err)
 	}
-	
+
 	// Check that we never exceeded max workers
 	mu.Lock()
 	defer mu.Unlock()
@@ -465,11 +465,11 @@ func (c *concurrencyTrackingEnricher) Enrich(ctx context.Context, fileInfo FileI
 		atomic.StoreInt32(c.maxConcurrent, current)
 	}
 	c.mu.Unlock()
-	
+
 	defer func() {
 		atomic.AddInt32(c.concurrentCount, -1)
 	}()
-	
+
 	return c.MockEnricher.Enrich(ctx, fileInfo)
 }
 

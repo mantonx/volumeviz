@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/mantonx/volumeviz/internal/repo"
 	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 // Mock store for testing
@@ -106,7 +106,7 @@ func TestRetentionService_Lifecycle(t *testing.T) {
 	// Create mocks
 	mockStore := new(mockStore)
 	mockRepo := new(mockRetentionRepo)
-	
+
 	// Setup expectations
 	mockStore.On("Retention").Return(mockRepo)
 	mockRepo.On("PruneVolumeMetrics", mock.Anything, 7).Return(int64(10), nil)
@@ -114,7 +114,7 @@ func TestRetentionService_Lifecycle(t *testing.T) {
 	mockRepo.On("PruneScanJobs", mock.Anything, 30).Return(int64(3), nil)
 	mockRepo.On("CreateDailyRollupTable", mock.Anything).Return(nil)
 	mockRepo.On("RollupDailyMetrics", mock.Anything).Return(nil)
-	
+
 	cfg := Config{
 		Enabled:        true,
 		MetricsTTLDays: 7,
@@ -123,13 +123,13 @@ func TestRetentionService_Lifecycle(t *testing.T) {
 		Interval:       1 * time.Hour,
 		InitialDelay:   0,
 	}
-	
+
 	service := New(mockStore, cfg)
-	
+
 	// Test runOnce
 	ctx := context.Background()
 	service.runOnce(ctx)
-	
+
 	// Verify all expectations were met
 	mockStore.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
@@ -137,14 +137,14 @@ func TestRetentionService_Lifecycle(t *testing.T) {
 
 func TestRetentionService_DisabledConfig(t *testing.T) {
 	mockStore := new(mockStore)
-	
+
 	cfg := Config{
 		Enabled: false,
 	}
-	
+
 	service := New(mockStore, cfg)
 	service.Start()
-	
+
 	// Service should exit immediately when disabled
 	select {
 	case <-service.doneCh:
@@ -157,13 +157,13 @@ func TestRetentionService_DisabledConfig(t *testing.T) {
 func TestRetentionService_StartStop(t *testing.T) {
 	mockStore := new(mockStore)
 	mockRepo := new(mockRetentionRepo)
-	
+
 	// Setup expectations for at least one run
 	mockStore.On("Retention").Return(mockRepo).Maybe()
 	mockRepo.On("PruneVolumeMetrics", mock.Anything, mock.Anything).Return(int64(0), nil).Maybe()
 	mockRepo.On("PruneVolumeSizes", mock.Anything, mock.Anything).Return(int64(0), nil).Maybe()
 	mockRepo.On("PruneScanJobs", mock.Anything, mock.Anything).Return(int64(0), nil).Maybe()
-	
+
 	cfg := Config{
 		Enabled:        true,
 		MetricsTTLDays: 7,
@@ -172,16 +172,16 @@ func TestRetentionService_StartStop(t *testing.T) {
 		Interval:       10 * time.Second, // Long interval to avoid multiple runs
 		InitialDelay:   50 * time.Millisecond,
 	}
-	
+
 	service := New(mockStore, cfg)
 	service.Start()
-	
+
 	// Let it run briefly
 	time.Sleep(100 * time.Millisecond)
-	
+
 	// Stop the service
 	service.Stop()
-	
+
 	// Verify service stopped
 	select {
 	case <-service.doneCh:

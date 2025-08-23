@@ -6,23 +6,26 @@ import (
 
 // VolumeV1 represents a volume in the v1 API format
 type VolumeV1 struct {
-	Name               string               `json:"name" example:"tv-shows-readonly"`
-	Driver             string               `json:"driver" example:"local"`
-	CreatedAt          time.Time            `json:"created_at" example:"2023-01-01T10:00:00Z"`
-	Labels             map[string]string    `json:"labels,omitempty" example:"com.docker.compose.project:media"`
-	Scope              string               `json:"scope" example:"local"`
-	Mountpoint         string               `json:"mountpoint" example:"/var/lib/docker/volumes/tv-shows-readonly/_data"`
-	SizeBytes          *int64               `json:"size_bytes,omitempty" example:"1073741824"`
-	LastScanAt         *time.Time           `json:"last_scan_at,omitempty" example:"2023-01-01T12:00:00Z"`
-	AttachmentsCount   int                  `json:"attachments_count" example:"2"`
-	ContainerNames     []string             `json:"container_names,omitempty" example:"media-server,plex"`
-	IsSystem           bool                 `json:"is_system" example:"false"`
-	IsOrphaned         bool                 `json:"is_orphaned" example:"false"`
-	FilesystemCapacity *FilesystemCapacity  `json:"filesystem_capacity,omitempty"`
+	Name               string              `json:"name" example:"tv-shows-readonly"`
+	Driver             string              `json:"driver" example:"local"`
+	CreatedAt          time.Time           `json:"created_at" example:"2023-01-01T10:00:00Z"`
+	Labels             map[string]string   `json:"labels,omitempty" example:"com.docker.compose.project:media"`
+	Scope              string              `json:"scope" example:"local"`
+	Mountpoint         string              `json:"mountpoint" example:"/var/lib/docker/volumes/tv-shows-readonly/_data"`
+	SizeBytes          *int64              `json:"size_bytes,omitempty" example:"1073741824"`
+	LastScanAt         *time.Time          `json:"last_scan_at,omitempty" example:"2023-01-01T12:00:00Z"`
+	AttachmentsCount   int                 `json:"attachments_count" example:"2"`
+	ContainerNames     []string            `json:"container_names,omitempty" example:"media-server,plex"`
+	IsSystem           bool                `json:"is_system" example:"false"`
+	IsOrphaned         bool                `json:"is_orphaned" example:"false"`
+	FilesystemCapacity *FilesystemCapacity `json:"filesystem_capacity,omitempty"`
 	// Scan status information
-	ScanStatus         *string              `json:"scan_status,omitempty" example:"completed"`         // Latest scan status: pending, running, completed, failed
-	ScanProgress       *int                 `json:"scan_progress,omitempty" example:"100"`             // Latest scan progress (0-100)
-	LastScanID         *string              `json:"last_scan_id,omitempty" example:"scan_abc123def"`   // Latest scan ID for tracking
+	ScanStatus   *string `json:"scan_status,omitempty" example:"completed"`       // Latest scan status: pending, running, completed, failed
+	ScanProgress *int    `json:"scan_progress,omitempty" example:"100"`           // Latest scan progress (0-100)
+	LastScanID   *string `json:"last_scan_id,omitempty" example:"scan_abc123def"` // Latest scan ID for tracking
+	// Background filesystem indexing status
+	FilesystemStatus   *string                 `json:"filesystem_status,omitempty" example:"indexing"` // Background indexing status: indexing, completed, not_started
+	FilesystemProgress *map[string]interface{} `json:"filesystem_progress,omitempty"`                  // Background indexing progress details
 } // @name VolumeV1
 
 // VolumeDetailV1 represents detailed volume information
@@ -40,10 +43,10 @@ type VolumeDetailV1 struct {
 	IsOrphaned         bool                   `json:"is_orphaned" example:"false"`
 	Meta               map[string]interface{} `json:"meta,omitempty"`
 	FilesystemCapacity *FilesystemCapacity    `json:"filesystem_capacity,omitempty"`
-	// Scan status information  
-	ScanStatus         *string                `json:"scan_status,omitempty" example:"completed"`         // Latest scan status: pending, running, completed, failed
-	ScanProgress       *int                   `json:"scan_progress,omitempty" example:"100"`             // Latest scan progress (0-100)
-	LastScanID         *string                `json:"last_scan_id,omitempty" example:"scan_abc123def"`   // Latest scan ID for tracking
+	// Scan status information
+	ScanStatus   *string `json:"scan_status,omitempty" example:"completed"`       // Latest scan status: pending, running, completed, failed
+	ScanProgress *int    `json:"scan_progress,omitempty" example:"100"`           // Latest scan progress (0-100)
+	LastScanID   *string `json:"last_scan_id,omitempty" example:"scan_abc123def"` // Latest scan ID for tracking
 } // @name VolumeDetailV1
 
 // AttachmentV1 represents a container attachment to a volume
@@ -64,13 +67,13 @@ type AttachmentsListV1 struct {
 
 // FilesystemCapacity represents filesystem capacity and usage information
 type FilesystemCapacity struct {
-	TotalBytes     int64   `json:"total_bytes" example:"266978022830080"`       // Total filesystem capacity in bytes  
-	AvailableBytes int64   `json:"available_bytes" example:"114419344240640"`   // Available space in bytes
-	UsedBytes      int64   `json:"used_bytes" example:"152558678589440"`        // Used space in bytes
-	UsagePercent   float64 `json:"usage_percent" example:"57.14"`               // Usage percentage (0-100)
-	BlockSize      int64   `json:"block_size" example:"1024"`                   // Filesystem block size
-	TotalBlocks    uint64  `json:"total_blocks" example:"260720725420"`         // Total blocks
-	FreeBlocks     uint64  `json:"free_blocks" example:"111737640860"`          // Free blocks available
+	TotalBytes     int64   `json:"total_bytes" example:"266978022830080"`     // Total filesystem capacity in bytes
+	AvailableBytes int64   `json:"available_bytes" example:"114419344240640"` // Available space in bytes
+	UsedBytes      int64   `json:"used_bytes" example:"152558678589440"`      // Used space in bytes
+	UsagePercent   float64 `json:"usage_percent" example:"57.14"`             // Usage percentage (0-100)
+	BlockSize      int64   `json:"block_size" example:"1024"`                 // Filesystem block size
+	TotalBlocks    uint64  `json:"total_blocks" example:"260720725420"`       // Total blocks
+	FreeBlocks     uint64  `json:"free_blocks" example:"111737640860"`        // Free blocks available
 } // @name FilesystemCapacity
 
 // OrphanedVolumeV1 represents an orphaned volume in the report

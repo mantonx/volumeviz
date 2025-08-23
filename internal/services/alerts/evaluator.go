@@ -380,13 +380,13 @@ func (e *AlertEvaluator) routeAndDeliverAlert(ctx context.Context, alert *models
 
 // EvaluationStats provides statistics about rule evaluation
 type EvaluationStats struct {
-	RulesEvaluated    int           `json:"rules_evaluated"`
-	MetricsProcessed  int           `json:"metrics_processed"`
-	AlertsFired       int           `json:"alerts_fired"`
-	AlertsResolved    int           `json:"alerts_resolved"`
-	AlertsSuppressed  int           `json:"alerts_suppressed"`
-	EvaluationTime    time.Duration `json:"evaluation_time"`
-	Errors            []string      `json:"errors,omitempty"`
+	RulesEvaluated   int           `json:"rules_evaluated"`
+	MetricsProcessed int           `json:"metrics_processed"`
+	AlertsFired      int           `json:"alerts_fired"`
+	AlertsResolved   int           `json:"alerts_resolved"`
+	AlertsSuppressed int           `json:"alerts_suppressed"`
+	EvaluationTime   time.Duration `json:"evaluation_time"`
+	Errors           []string      `json:"errors,omitempty"`
 }
 
 // EvaluateRulesWithStats evaluates all rules and returns statistics

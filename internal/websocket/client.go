@@ -47,7 +47,7 @@ type Client struct {
 	lastPongTime time.Time
 	missedPongs  int
 	token        string
-	
+
 	// Subscription management
 	subscriptions map[string]SubscriptionData // event -> subscription data
 	subscMutex    sync.RWMutex
@@ -144,7 +144,7 @@ func (c *Client) writePump() {
 				log.Printf("error writing message: %v", err)
 				return
 			}
-			
+
 			// Send any additional queued messages as separate WebSocket frames
 			// This ensures each JSON message is sent individually rather than concatenated
 			n := len(c.send)
@@ -196,18 +196,18 @@ func (c *Client) handleSubscribe(msg Message) {
 	if msg.Data == nil {
 		return
 	}
-	
+
 	// Extract subscription data
 	subData, ok := msg.Data.(map[string]interface{})
 	if !ok {
 		return
 	}
-	
+
 	event, ok := subData["event"].(string)
 	if !ok {
 		return
 	}
-	
+
 	filters := make(map[string]string)
 	if filtersData, ok := subData["filters"].(map[string]interface{}); ok {
 		for key, value := range filtersData {
@@ -216,7 +216,7 @@ func (c *Client) handleSubscribe(msg Message) {
 			}
 		}
 	}
-	
+
 	// Store subscription
 	c.subscMutex.Lock()
 	c.subscriptions[event] = SubscriptionData{
@@ -231,7 +231,7 @@ func (c *Client) handleUnsubscribe(msg Message) {
 	if msg.Data == nil {
 		return
 	}
-	
+
 	// Extract event name
 	if eventData, ok := msg.Data.(map[string]interface{}); ok {
 		if event, ok := eventData["event"].(string); ok {
@@ -304,7 +304,6 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 func generateClientID() string {
 	return fmt.Sprintf("client_%d", time.Now().UnixNano())
 }
-
 
 // isSubscribedTo checks if client is subscribed to a specific event with optional filters
 func (c *Client) isSubscribedTo(event string, filters map[string]string) bool {

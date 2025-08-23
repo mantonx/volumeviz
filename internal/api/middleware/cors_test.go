@@ -11,7 +11,7 @@ import (
 
 func TestDefaultCORSConfig(t *testing.T) {
 	config := DefaultCORSConfig()
-	
+
 	assert.Equal(t, []string{"http://localhost:3000"}, config.AllowedOrigins)
 	assert.Equal(t, []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}, config.AllowedMethods)
 	assert.Equal(t, []string{"Accept", "Authorization", "Content-Type", "X-Requested-With"}, config.AllowedHeaders)
@@ -43,10 +43,10 @@ func TestCORSMiddleware(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:   "preflight OPTIONS request",
-			config: DefaultCORSConfig(),
-			method: "OPTIONS",
-			origin: "http://localhost:3000",
+			name:           "preflight OPTIONS request",
+			config:         DefaultCORSConfig(),
+			method:         "OPTIONS",
+			origin:         "http://localhost:3000",
 			requestHeaders: "Content-Type, Authorization",
 			expectHeaders: map[string]string{
 				"Access-Control-Allow-Origin":  "http://localhost:3000",
@@ -81,8 +81,8 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowedMethods: []string{"GET", "POST"},
 				AllowedHeaders: []string{"Content-Type"},
 			},
-			method: "GET",
-			origin: "https://blocked.com",
+			method:        "GET",
+			origin:        "https://blocked.com",
 			expectHeaders: map[string]string{
 				// Should not have CORS headers for disallowed origin
 			},
@@ -94,11 +94,11 @@ func TestCORSMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			router := gin.New()
 			router.Use(CORSMiddleware(tt.config))
-			
+
 			router.GET("/test", func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"message": "success"})
 			})
-			
+
 			router.OPTIONS("/test", func(c *gin.Context) {
 				// This should be handled by CORS middleware
 			})
@@ -139,7 +139,7 @@ func TestCORSMiddleware_WithWildcard(t *testing.T) {
 
 	router := gin.New()
 	router.Use(CORSMiddleware(config))
-	
+
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})
@@ -162,7 +162,7 @@ func TestCORSMiddleware_NoOriginHeader(t *testing.T) {
 
 	router := gin.New()
 	router.Use(CORSMiddleware(config))
-	
+
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})

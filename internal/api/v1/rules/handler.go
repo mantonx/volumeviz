@@ -14,10 +14,10 @@ import (
 
 // Handler handles tracking rules API requests
 type Handler struct {
-	rulesRepo         *repo.TrackingRulesRepository
-	mountsRepo        *repo.MountCatalogRepository
-	rulesEngine       *rules.TrackingRulesEngine
-	previewService    *rules.EvaluationPreviewService
+	rulesRepo      *repo.TrackingRulesRepository
+	mountsRepo     *repo.MountCatalogRepository
+	rulesEngine    *rules.TrackingRulesEngine
+	previewService *rules.EvaluationPreviewService
 }
 
 // NewHandler creates a new rules handler
@@ -344,7 +344,7 @@ func (h *Handler) PreviewRuleEvaluation(c *gin.Context) {
 		req = &rules.PreviewRequest{
 			IncludeRuleDetails: false,
 			IncludeUnmatched:   false,
-			DryRun:            true,
+			DryRun:             true,
 		}
 	}
 
@@ -479,7 +479,7 @@ func (h *Handler) UpdateTrackingRulesConfig(c *gin.Context) {
 		_, err = h.rulesRepo.UpdateRule(c.Request.Context(), rule)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": fmt.Sprintf("Failed to update rule %d", ruleUpdate.ID),
+				"error":   fmt.Sprintf("Failed to update rule %d", ruleUpdate.ID),
 				"details": err.Error(),
 			})
 			return
@@ -507,7 +507,7 @@ func (h *Handler) PreviewTrackingRules(c *gin.Context) {
 		req = &rules.PreviewRequest{
 			IncludeRuleDetails: true,
 			IncludeUnmatched:   false,
-			DryRun:            true,
+			DryRun:             true,
 		}
 	}
 
@@ -516,14 +516,14 @@ func (h *Handler) PreviewTrackingRules(c *gin.Context) {
 		req = &rules.PreviewRequest{
 			IncludeRuleDetails: true,
 			IncludeUnmatched:   false,
-			DryRun:            true,
+			DryRun:             true,
 		}
 	}
 
 	preview, err := h.previewService.PreviewRuleEvaluation(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to preview tracking rules",
+			"error":   "Failed to preview tracking rules",
 			"details": err.Error(),
 		})
 		return
@@ -569,7 +569,7 @@ func (h *Handler) CreateMountOverride(c *gin.Context) {
 	createdOverride, err := h.rulesRepo.CreateMountOverride(c.Request.Context(), override)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to create mount override",
+			"error":   "Failed to create mount override",
 			"details": err.Error(),
 		})
 		return
@@ -591,7 +591,7 @@ func (h *Handler) ListMountOverrides(c *gin.Context) {
 	overrides, err := h.rulesRepo.ListMountOverrides(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to list mount overrides",
+			"error":   "Failed to list mount overrides",
 			"details": err.Error(),
 		})
 		return
@@ -628,7 +628,7 @@ func (h *Handler) DeleteMountOverride(c *gin.Context) {
 	err := h.rulesRepo.DeleteMountOverride(c.Request.Context(), mountID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to delete mount override",
+			"error":   "Failed to delete mount override",
 			"details": err.Error(),
 		})
 		return
@@ -658,13 +658,13 @@ func (h *Handler) ApplyTrackingRules(c *gin.Context) {
 	previewReq := &rules.PreviewRequest{
 		IncludeRuleDetails: false,
 		IncludeUnmatched:   false,
-		DryRun:            true,
+		DryRun:             true,
 	}
 
 	preview, err := h.previewService.PreviewRuleEvaluation(c.Request.Context(), previewReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to preview rule application",
+			"error":   "Failed to preview rule application",
 			"details": err.Error(),
 		})
 		return
@@ -672,10 +672,10 @@ func (h *Handler) ApplyTrackingRules(c *gin.Context) {
 
 	if req.DryRun {
 		c.JSON(http.StatusOK, &ApplyTrackingRulesResponse{
-			DryRun:        true,
-			ChangesCount:  calculateChangesCount(preview),
-			Changes:       convertPreviewToChanges(preview),
-			AppliedAt:     nil,
+			DryRun:       true,
+			ChangesCount: calculateChangesCount(preview),
+			Changes:      convertPreviewToChanges(preview),
+			AppliedAt:    nil,
 		})
 		return
 	}
@@ -684,7 +684,7 @@ func (h *Handler) ApplyTrackingRules(c *gin.Context) {
 	changesCount, changes, err := h.applyTrackingChanges(c.Request.Context(), preview)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to apply tracking rules",
+			"error":   "Failed to apply tracking rules",
 			"details": err.Error(),
 		})
 		return
@@ -705,19 +705,19 @@ func (h *Handler) ApplyTrackingRules(c *gin.Context) {
 
 func convertRuleToResponse(rule *repo.TrackingRule) *RuleResponse {
 	return &RuleResponse{
-		ID:                rule.ID,
-		Name:              rule.Name,
-		Description:       rule.Description,
-		Action:            rule.Action,
-		Priority:          rule.Priority,
-		IsEnabled:         rule.IsEnabled,
-		Conditions:        convertConditionsToAPI(rule.Conditions),
-		MatchCount:        rule.MatchCount,
-		LastMatchedAt:     rule.LastMatchedAt,
-		LastEvaluationAt:  rule.LastEvaluationAt,
-		CreatedBy:         rule.CreatedBy,
-		CreatedAt:         rule.CreatedAt,
-		UpdatedAt:         rule.UpdatedAt,
+		ID:               rule.ID,
+		Name:             rule.Name,
+		Description:      rule.Description,
+		Action:           rule.Action,
+		Priority:         rule.Priority,
+		IsEnabled:        rule.IsEnabled,
+		Conditions:       convertConditionsToAPI(rule.Conditions),
+		MatchCount:       rule.MatchCount,
+		LastMatchedAt:    rule.LastMatchedAt,
+		LastEvaluationAt: rule.LastEvaluationAt,
+		CreatedBy:        rule.CreatedBy,
+		CreatedAt:        rule.CreatedAt,
+		UpdatedAt:        rule.UpdatedAt,
 	}
 }
 
@@ -806,7 +806,7 @@ func convertPreviewToChanges(preview *rules.PreviewResponse) []*TrackingChange {
 
 func (h *Handler) applyTrackingChanges(ctx context.Context, preview *rules.PreviewResponse) (int32, []*TrackingChange, error) {
 	changes := convertPreviewToChanges(preview)
-	
+
 	// Apply changes to mount catalog (update tracking status)
 	for _, change := range changes {
 		// Update tracking status
@@ -816,7 +816,7 @@ func (h *Handler) applyTrackingChanges(ctx context.Context, preview *rules.Previ
 			return 0, nil, fmt.Errorf("failed to update tracking status for mount %s: %w", change.MountID, err)
 		}
 	}
-	
+
 	return int32(len(changes)), changes, nil
 }
 
@@ -831,9 +831,9 @@ func getStaticRuleTemplates() []*RuleTemplate {
 			IsBuiltin:   true,
 			Tags:        []string{"volume", "basic", "include"},
 			TemplateData: map[string]interface{}{
-				"name":        "Include All Docker Volumes",
-				"action":      "include",
-				"priority":    100,
+				"name":     "Include All Docker Volumes",
+				"action":   "include",
+				"priority": 100,
 				"conditions": []map[string]interface{}{
 					{
 						"field_name": "source_type",
@@ -853,9 +853,9 @@ func getStaticRuleTemplates() []*RuleTemplate {
 			IsBuiltin:   true,
 			Tags:        []string{"tmpfs", "exclude", "temporary"},
 			TemplateData: map[string]interface{}{
-				"name":        "Exclude Temporary Mounts",
-				"action":      "exclude",
-				"priority":    200,
+				"name":     "Exclude Temporary Mounts",
+				"action":   "exclude",
+				"priority": 200,
 				"conditions": []map[string]interface{}{
 					{
 						"field_name": "source_type",
@@ -875,9 +875,9 @@ func getStaticRuleTemplates() []*RuleTemplate {
 			IsBuiltin:   true,
 			Tags:        []string{"compose", "production", "include"},
 			TemplateData: map[string]interface{}{
-				"name":        "Include Production Compose Projects",
-				"action":      "include",
-				"priority":    150,
+				"name":     "Include Production Compose Projects",
+				"action":   "include",
+				"priority": 150,
 				"conditions": []map[string]interface{}{
 					{
 						"field_name": "compose_project",
@@ -897,9 +897,9 @@ func getStaticRuleTemplates() []*RuleTemplate {
 			IsBuiltin:   true,
 			Tags:        []string{"database", "service", "include"},
 			TemplateData: map[string]interface{}{
-				"name":        "Include Database Volumes",
-				"action":      "include",
-				"priority":    120,
+				"name":     "Include Database Volumes",
+				"action":   "include",
+				"priority": 120,
 				"conditions": []map[string]interface{}{
 					{
 						"field_name": "container_image",

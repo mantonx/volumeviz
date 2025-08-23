@@ -7,24 +7,24 @@ import (
 	"sync"
 	"time"
 
-	coreInterfaces "github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/interfaces"
+	coreInterfaces "github.com/mantonx/volumeviz/internal/interfaces"
 )
 
 // StatsSchedulerConfig holds configuration for the stats scheduler
 type StatsSchedulerConfig struct {
 	// ReconciliationInterval defines how often to run nightly reconciliation
 	ReconciliationInterval time.Duration
-	
+
 	// BackfillLookbackDays defines how many days back to check for missing stats
 	BackfillLookbackDays int
-	
+
 	// MaterializedViewRefreshInterval defines how often to refresh materialized views
 	MaterializedViewRefreshInterval time.Duration
-	
+
 	// Enabled controls whether the scheduler is active
 	Enabled bool
-	
+
 	// MaxConcurrentJobs limits parallel stats job execution
 	MaxConcurrentJobs int
 }
@@ -33,26 +33,26 @@ type StatsSchedulerConfig struct {
 func DefaultStatsSchedulerConfig() StatsSchedulerConfig {
 	return StatsSchedulerConfig{
 		ReconciliationInterval:          12 * time.Hour, // Run twice daily
-		BackfillLookbackDays:           7,              // Check past week
+		BackfillLookbackDays:            7,              // Check past week
 		MaterializedViewRefreshInterval: 2 * time.Hour,  // Refresh views every 2 hours
-		Enabled:                        true,
-		MaxConcurrentJobs:              3,
+		Enabled:                         true,
+		MaxConcurrentJobs:               3,
 	}
 }
 
 // StatsScheduler manages periodic stats computation and maintenance tasks
 type StatsScheduler struct {
-	config       StatsSchedulerConfig
-	statsService coreInterfaces.StatsService
+	config        StatsSchedulerConfig
+	statsService  coreInterfaces.StatsService
 	dockerService interfaces.DockerService // For getting volume list
-	metrics      coreInterfaces.MetricsCollector
-	logger       *log.Logger
-	
+	metrics       coreInterfaces.MetricsCollector
+	logger        *log.Logger
+
 	// Control channels
-	stopChan     chan struct{}
-	doneChan     chan struct{}
-	semaphore    chan struct{} // Limit concurrent jobs
-	
+	stopChan  chan struct{}
+	doneChan  chan struct{}
+	semaphore chan struct{} // Limit concurrent jobs
+
 	// State tracking
 	running         bool
 	lastReconcile   time.Time
@@ -160,7 +160,7 @@ func (s *StatsScheduler) Stop() error {
 	}
 
 	close(s.stopChan)
-	
+
 	// Wait for graceful shutdown with timeout
 	select {
 	case <-s.doneChan:
@@ -174,12 +174,12 @@ func (s *StatsScheduler) Stop() error {
 	}
 
 	s.running = false
-	
+
 	// Report scheduler status to metrics
 	if s.metrics != nil {
 		s.metrics.SetSchedulerRunningStatus(false)
 	}
-	
+
 	return nil
 }
 
@@ -211,7 +211,7 @@ func (s *StatsScheduler) runReconciliation(ctx context.Context) {
 	}
 
 	startTime := time.Now()
-	
+
 	s.mutex.Lock()
 	s.lastReconcile = startTime
 	s.mutex.Unlock()
@@ -232,11 +232,11 @@ func (s *StatsScheduler) runReconciliation(ctx context.Context) {
 	// Process each volume
 	for _, volume := range volumes {
 		wg.Add(1)
-		
+
 		// Acquire semaphore for concurrency control
 		go func(volumeID string) {
 			defer wg.Done()
-			
+
 			select {
 			case s.semaphore <- struct{}{}:
 				defer func() { <-s.semaphore }()
@@ -259,12 +259,12 @@ func (s *StatsScheduler) runReconciliation(ctx context.Context) {
 				if s.logger != nil {
 					s.logger.Printf("Computing stats for volume %s: %d missing dates", volumeID, len(missingDates))
 				}
-				
+
 				// Find date range bounds
 				if len(missingDates) > 0 {
 					startDate := missingDates[0]
 					endDate := missingDates[len(missingDates)-1]
-					
+
 					err := s.statsService.ComputeHistoricalStats(ctx, volumeID, startDate, endDate)
 					if err != nil {
 						if s.logger != nil {
@@ -298,7 +298,7 @@ func (s *StatsScheduler) runViewRefresh(ctx context.Context) {
 	}
 
 	startTime := time.Now()
-	
+
 	s.mutex.Lock()
 	s.lastViewRefresh = startTime
 	s.mutex.Unlock()
@@ -339,15 +339,15 @@ func (s *StatsScheduler) GetStatus() map[string]interface{} {
 	defer s.mutex.RUnlock()
 
 	return map[string]interface{}{
-		"running":            s.running,
-		"last_reconcile":     s.lastReconcile,
-		"last_view_refresh":  s.lastViewRefresh,
+		"running":           s.running,
+		"last_reconcile":    s.lastReconcile,
+		"last_view_refresh": s.lastViewRefresh,
 		"config": map[string]interface{}{
 			"reconciliation_interval":            s.config.ReconciliationInterval.String(),
-			"backfill_lookback_days":            s.config.BackfillLookbackDays,
+			"backfill_lookback_days":             s.config.BackfillLookbackDays,
 			"materialized_view_refresh_interval": s.config.MaterializedViewRefreshInterval.String(),
-			"enabled":                           s.config.Enabled,
-			"max_concurrent_jobs":               s.config.MaxConcurrentJobs,
+			"enabled":                            s.config.Enabled,
+			"max_concurrent_jobs":                s.config.MaxConcurrentJobs,
 		},
 	}
 }

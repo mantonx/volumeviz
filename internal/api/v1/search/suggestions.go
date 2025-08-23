@@ -9,17 +9,17 @@ import (
 
 // SearchSuggestionsRequest represents the suggestions request
 type SearchSuggestionsRequest struct {
-	Q     string `form:"q" json:"q" binding:"required,min=1"`           // Partial query string
-	Limit int    `form:"limit" json:"limit" binding:"min=1,max=20"`     // Max suggestions to return
-	Type  string `form:"type" json:"type"`                              // Suggestion type: "filename", "extension", "path"
+	Q     string `form:"q" json:"q" binding:"required,min=1"`       // Partial query string
+	Limit int    `form:"limit" json:"limit" binding:"min=1,max=20"` // Max suggestions to return
+	Type  string `form:"type" json:"type"`                          // Suggestion type: "filename", "extension", "path"
 }
 
 // SearchSuggestion represents a single search suggestion
 type SearchSuggestion struct {
-	Text        string `json:"text"`                    // Suggested text
-	Type        string `json:"type"`                    // Type: "filename", "extension", "path", "recent"
-	Description string `json:"description,omitempty"`  // Optional description
-	Count       int64  `json:"count,omitempty"`        // Number of matching files
+	Text        string `json:"text"`                  // Suggested text
+	Type        string `json:"type"`                  // Type: "filename", "extension", "path", "recent"
+	Description string `json:"description,omitempty"` // Optional description
+	Count       int64  `json:"count,omitempty"`       // Number of matching files
 }
 
 // SearchSuggestionsResponse represents the suggestions response

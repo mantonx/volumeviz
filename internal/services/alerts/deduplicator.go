@@ -29,13 +29,13 @@ func NewAlertDeduplicator(store store.Store) interfaces.Deduplicator {
 func (d *AlertDeduplicator) GenerateKey(rule *models.AlertRule, entityID, entityType string, value *float64, labels map[string]string) string {
 	// Create a deterministic key based on rule, entity, and relevant labels
 	var keyParts []string
-	
+
 	// Add rule identifier
 	keyParts = append(keyParts, fmt.Sprintf("rule:%d", rule.ID))
-	
+
 	// Add entity information
 	keyParts = append(keyParts, fmt.Sprintf("entity:%s:%s", entityType, entityID))
-	
+
 	// Add significant labels (exclude metadata labels)
 	if labels != nil {
 		var labelPairs []string
@@ -45,24 +45,24 @@ func (d *AlertDeduplicator) GenerateKey(rule *models.AlertRule, entityID, entity
 				labelPairs = append(labelPairs, fmt.Sprintf("%s=%s", key, value))
 			}
 		}
-		
+
 		// Sort for consistency
 		sort.Strings(labelPairs)
 		if len(labelPairs) > 0 {
 			keyParts = append(keyParts, "labels:"+strings.Join(labelPairs, ","))
 		}
 	}
-	
+
 	// Add rule condition for threshold-based alerts
 	if value != nil {
 		// Group similar values to prevent excessive alert churn
 		bucket := d.getValueBucket(rule, *value)
 		keyParts = append(keyParts, fmt.Sprintf("bucket:%s", bucket))
 	}
-	
+
 	// Create final key
 	keyString := strings.Join(keyParts, "|")
-	
+
 	// Hash for consistent length and to avoid key length issues
 	hash := sha256.Sum256([]byte(keyString))
 	return fmt.Sprintf("%x", hash)
@@ -76,13 +76,13 @@ func (d *AlertDeduplicator) ShouldSuppress(ctx context.Context, alert *models.Al
 		// If no existing alert found, don't suppress
 		return false, nil
 	}
-	
+
 	// If we found an existing alert, check its status
 	if existingAlert.Status == models.AlertStatusFiring {
 		// There's already a firing alert with the same dedupe key - suppress this one
 		return true, nil
 	}
-	
+
 	// If the existing alert is resolved, we can fire a new one
 	return false, nil
 }
@@ -91,25 +91,25 @@ func (d *AlertDeduplicator) ShouldSuppress(ctx context.Context, alert *models.Al
 func (d *AlertDeduplicator) isSignificantLabel(labelKey string) bool {
 	// Exclude metadata labels that are added by the system
 	excludedLabels := map[string]bool{
-		"alertmanager":   true,
-		"__name__":       true,
-		"__timestamp__":  true,
-		"__value__":      true,
-		"__interval__":   true,
-		"__alert_id__":   true,
-		"__rule_id__":    true,
-		"source":         false, // Include source as it's significant
-		"environment":    false, // Include environment as it's significant
-		"service":        false, // Include service as it's significant
-		"instance":       false, // Include instance as it's significant
-		"job":            false, // Include job as it's significant
+		"alertmanager":  true,
+		"__name__":      true,
+		"__timestamp__": true,
+		"__value__":     true,
+		"__interval__":  true,
+		"__alert_id__":  true,
+		"__rule_id__":   true,
+		"source":        false, // Include source as it's significant
+		"environment":   false, // Include environment as it's significant
+		"service":       false, // Include service as it's significant
+		"instance":      false, // Include instance as it's significant
+		"job":           false, // Include job as it's significant
 	}
-	
+
 	// If explicitly excluded, don't include
 	if excluded, exists := excludedLabels[labelKey]; exists && excluded {
 		return false
 	}
-	
+
 	// Include labels that start with common prefixes
 	significantPrefixes := []string{
 		"env",
@@ -122,14 +122,14 @@ func (d *AlertDeduplicator) isSignificantLabel(labelKey string) bool {
 		"region",
 		"zone",
 	}
-	
+
 	lowerKey := strings.ToLower(labelKey)
 	for _, prefix := range significantPrefixes {
 		if strings.HasPrefix(lowerKey, prefix) {
 			return true
 		}
 	}
-	
+
 	// Default to including the label
 	return true
 }
@@ -141,17 +141,17 @@ func (d *AlertDeduplicator) getValueBucket(rule *models.AlertRule, value float64
 		bucket := int(value/5) * 5
 		return fmt.Sprintf("pct_%d", bucket)
 	}
-	
+
 	// For size-based metrics, use logarithmic buckets
 	if d.isSizeMetric(rule.Query) {
 		return d.getSizeBucket(value)
 	}
-	
+
 	// For count-based metrics, use small buckets for low values, larger for high
 	if d.isCountMetric(rule.Query) {
 		return d.getCountBucket(value)
 	}
-	
+
 	// For other metrics, use the threshold to determine bucket size
 	bucketSize := d.calculateBucketSize(rule.Threshold)
 	bucket := int(value/bucketSize) * int(bucketSize)
@@ -191,7 +191,7 @@ func (d *AlertDeduplicator) isCountMetric(query string) bool {
 func (d *AlertDeduplicator) getSizeBucket(value float64) string {
 	// Convert to MB for easier bucket calculation
 	valueMB := value / (1024 * 1024)
-	
+
 	switch {
 	case valueMB < 1:
 		return "size_sub_mb"
@@ -245,20 +245,20 @@ func (d *AlertDeduplicator) calculateBucketSize(threshold float64) float64 {
 // GetDedupeInfo returns information about deduplication for debugging
 func (d *AlertDeduplicator) GetDedupeInfo(rule *models.AlertRule, entityID, entityType string, value *float64, labels map[string]string) map[string]interface{} {
 	dedupeKey := d.GenerateKey(rule, entityID, entityType, value, labels)
-	
+
 	info := map[string]interface{}{
-		"dedupe_key": dedupeKey,
-		"rule_id":    rule.ID,
-		"entity_id":  entityID,
+		"dedupe_key":  dedupeKey,
+		"rule_id":     rule.ID,
+		"entity_id":   entityID,
 		"entity_type": entityType,
 	}
-	
+
 	if value != nil {
 		bucket := d.getValueBucket(rule, *value)
 		info["value"] = *value
 		info["value_bucket"] = bucket
 	}
-	
+
 	if labels != nil {
 		significantLabels := make(map[string]string)
 		for key, val := range labels {
@@ -268,6 +268,6 @@ func (d *AlertDeduplicator) GetDedupeInfo(rule *models.AlertRule, entityID, enti
 		}
 		info["significant_labels"] = significantLabels
 	}
-	
+
 	return info
 }

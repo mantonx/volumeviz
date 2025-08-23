@@ -27,7 +27,7 @@ type ScansRepo interface {
 	UpdateScanJobHeartbeat(ctx context.Context, scanID string, progress int32) error
 	MarkStaleScanJobsAsFailed(ctx context.Context, timeoutSeconds int) ([]string, error)
 	MarkInFlightJobsAsFailed(ctx context.Context, reason string) ([]string, error)
-	
+
 	// Metrics and monitoring
 	GetQueueDepth(ctx context.Context) (int64, error)
 	GetActiveScanCount(ctx context.Context) (int64, error)
@@ -145,9 +145,9 @@ func (r *scansRepo) GetScanJobByScanID(ctx context.Context, scanID string) (*mod
 
 func (r *scansRepo) UpdateScanJobStatus(ctx context.Context, id int64, status string) error {
 	_, err := r.queries.UpdateScanJobStatus(ctx, sqlc.UpdateScanJobStatusParams{
-		ID:       id,
-		Status:   status,
-		Progress: pgtype.Int4{}, // Optional progress field
+		ID:           id,
+		Status:       status,
+		Progress:     pgtype.Int4{}, // Optional progress field
 		ErrorMessage: pgtype.Text{}, // Optional error message field
 	})
 	return err
@@ -309,4 +309,3 @@ func (r *scansRepo) convertScanJobToModel(job sqlc.ScanJobs) *models.ScanJob {
 
 	return result
 }
-

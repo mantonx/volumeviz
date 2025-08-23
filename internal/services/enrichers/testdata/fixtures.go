@@ -34,30 +34,30 @@ var FFprobeFixtures = map[string]FFprobeTestCase{
 					ColorSpace:     "bt709",
 				},
 				{
-					Index:       1,
-					CodecName:   "aac",
-					CodecType:   "audio",
-					SampleRate:  "48000",
-					Channels:    2,
+					Index:      1,
+					CodecName:  "aac",
+					CodecType:  "audio",
+					SampleRate: "48000",
+					Channels:   2,
 				},
 			},
 		},
 		Expected: ExpectedMetadata{
-			Kind:                  "video",
-			DurationMs:            120500,
-			BitrateKbps:           3321,
-			Width:                 1920,
-			Height:                1080,
-			FPS:                   29.97,
-			ColorPrimaries:        "bt709",
+			Kind:                   "video",
+			DurationMs:             120500,
+			BitrateKbps:            3321,
+			Width:                  1920,
+			Height:                 1080,
+			FPS:                    29.97,
+			ColorPrimaries:         "bt709",
 			TransferCharacteristic: "bt709",
-			HDRFormat:             "none",
-			VideoCodec:            "h264",
-			VideoProfile:          "High",
-			VideoLevel:            "4.1",
-			AudioChannels:         2,
-			AudioCodec:            "aac",
-			AudioSampleRate:       48000,
+			HDRFormat:              "none",
+			VideoCodec:             "h264",
+			VideoProfile:           "High",
+			VideoLevel:             "4.1",
+			AudioChannels:          2,
+			AudioCodec:             "aac",
+			AudioSampleRate:        48000,
 		},
 	},
 	"video_hdr10": {
@@ -86,18 +86,18 @@ var FFprobeFixtures = map[string]FFprobeTestCase{
 			},
 		},
 		Expected: ExpectedMetadata{
-			Kind:                  "video",
-			DurationMs:            90000,
-			BitrateKbps:           8888,
-			Width:                 3840,
-			Height:                2160,
-			FPS:                   24.0,
-			ColorPrimaries:        "bt2020",
+			Kind:                   "video",
+			DurationMs:             90000,
+			BitrateKbps:            8888,
+			Width:                  3840,
+			Height:                 2160,
+			FPS:                    24.0,
+			ColorPrimaries:         "bt2020",
 			TransferCharacteristic: "smpte2084",
-			HDRFormat:             "hdr10",
-			VideoCodec:            "hevc",
-			VideoProfile:          "Main 10",
-			VideoLevel:            "5.1",
+			HDRFormat:              "hdr10",
+			VideoCodec:             "hevc",
+			VideoProfile:           "Main 10",
+			VideoLevel:             "5.1",
 		},
 	},
 	"audio_flac": {
@@ -111,12 +111,12 @@ var FFprobeFixtures = map[string]FFprobeTestCase{
 			},
 			Streams: []FFprobeStream{
 				{
-					Index:       0,
-					CodecName:   "flac",
-					CodecType:   "audio",
-					SampleRate:  "96000",
-					Channels:    2,
-					BitRate:     "1328903",
+					Index:      0,
+					CodecName:  "flac",
+					CodecType:  "audio",
+					SampleRate: "96000",
+					Channels:   2,
+					BitRate:    "1328903",
 				},
 			},
 		},
@@ -274,9 +274,9 @@ type EXIFTestCase struct {
 }
 
 type SubtitleTestCase struct {
-	Content  string                    `json:"content"`
-	FileName string                    `json:"filename"`
-	Expected ExpectedSubtitleMetadata  `json:"expected"`
+	Content  string                   `json:"content"`
+	FileName string                   `json:"filename"`
+	Expected ExpectedSubtitleMetadata `json:"expected"`
 }
 
 // FFprobe output structures
@@ -296,22 +296,22 @@ type FFprobeFormat struct {
 }
 
 type FFprobeStream struct {
-	Index          int               `json:"index"`
-	CodecName      string            `json:"codec_name"`
-	CodecType      string            `json:"codec_type"`
-	Width          int               `json:"width,omitempty"`
-	Height         int               `json:"height,omitempty"`
-	AvgFrameRate   string            `json:"avg_frame_rate,omitempty"`
-	RFrameRate     string            `json:"r_frame_rate,omitempty"`
-	SampleRate     string            `json:"sample_rate,omitempty"`
-	Channels       int               `json:"channels,omitempty"`
-	Duration       string            `json:"duration,omitempty"`
-	BitRate        string            `json:"bit_rate,omitempty"`
-	Profile        string            `json:"profile,omitempty"`
-	Level          string            `json:"level,omitempty"`
-	ColorPrimaries string            `json:"color_primaries,omitempty"`
-	ColorTransfer  string            `json:"color_transfer,omitempty"`
-	ColorSpace     string            `json:"color_space,omitempty"`
+	Index          int    `json:"index"`
+	CodecName      string `json:"codec_name"`
+	CodecType      string `json:"codec_type"`
+	Width          int    `json:"width,omitempty"`
+	Height         int    `json:"height,omitempty"`
+	AvgFrameRate   string `json:"avg_frame_rate,omitempty"`
+	RFrameRate     string `json:"r_frame_rate,omitempty"`
+	SampleRate     string `json:"sample_rate,omitempty"`
+	Channels       int    `json:"channels,omitempty"`
+	Duration       string `json:"duration,omitempty"`
+	BitRate        string `json:"bit_rate,omitempty"`
+	Profile        string `json:"profile,omitempty"`
+	Level          string `json:"level,omitempty"`
+	ColorPrimaries string `json:"color_primaries,omitempty"`
+	ColorTransfer  string `json:"color_transfer,omitempty"`
+	ColorSpace     string `json:"color_space,omitempty"`
 }
 
 // EXIF output structures
@@ -384,12 +384,12 @@ func FFprobeJSONString(testCase string) (string, error) {
 	if !ok {
 		return "", nil
 	}
-	
+
 	data, err := json.Marshal(fixture.Input)
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(data), nil
 }
 
@@ -399,12 +399,12 @@ func EXIFJSONString(testCase string) (string, error) {
 	if !ok {
 		return "", nil
 	}
-	
+
 	// exiftool returns an array
 	data, err := json.Marshal([]EXIFJSONOutput{fixture.Input})
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(data), nil
 }

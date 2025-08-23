@@ -11,10 +11,10 @@ import (
 
 // LayerRule defines import restrictions for each layer
 type LayerRule struct {
-	Layer           string
-	AllowedImports  []string // Packages that are allowed to be imported
+	Layer            string
+	AllowedImports   []string // Packages that are allowed to be imported
 	ForbiddenImports []string // Packages that must not be imported
-	Description     string
+	Description      string
 }
 
 var layerRules = []LayerRule{
@@ -22,7 +22,7 @@ var layerRules = []LayerRule{
 		Layer: "internal/db/connect.go",
 		AllowedImports: []string{
 			"context",
-			"fmt", 
+			"fmt",
 			"github.com/jackc/pgx/v5/pgxpool",
 			"github.com/mantonx/volumeviz/internal/db/sqlc",
 		},
@@ -34,7 +34,7 @@ var layerRules = []LayerRule{
 		Description: "db layer should only handle connections and sqlc generated code",
 	},
 	{
-		Layer: "internal/repo/", 
+		Layer: "internal/repo/",
 		AllowedImports: []string{
 			"context",
 			"encoding/json",
@@ -58,7 +58,7 @@ var layerRules = []LayerRule{
 			"context",
 			"github.com/jackc/pgx/v5",
 			"github.com/mantonx/volumeviz/internal/db",
-			"github.com/mantonx/volumeviz/internal/db/sqlc", 
+			"github.com/mantonx/volumeviz/internal/db/sqlc",
 			"github.com/mantonx/volumeviz/internal/repo",
 		},
 		ForbiddenImports: []string{
@@ -140,7 +140,7 @@ func checkFileImports(filePath string, rule LayerRule) (int, error) {
 
 	for _, imp := range node.Imports {
 		importPath := strings.Trim(imp.Path.Value, `"`)
-		
+
 		// Check forbidden imports
 		for _, forbidden := range rule.ForbiddenImports {
 			if strings.Contains(importPath, forbidden) || importPath == forbidden {
@@ -159,7 +159,7 @@ func checkFileImports(filePath string, rule LayerRule) (int, error) {
 					break
 				}
 			}
-			
+
 			if !allowed {
 				// Check if it's a standard library or external dependency (those are generally allowed)
 				if !isStandardLibrary(importPath) && !isExternalDependency(importPath) {
@@ -181,16 +181,16 @@ func isInternalImport(importPath string) bool {
 func isStandardLibrary(importPath string) bool {
 	// Simple heuristic: standard library packages don't contain dots or are well-known
 	standardPkgs := []string{
-		"context", "fmt", "os", "path", "strings", "time", "encoding/json", 
+		"context", "fmt", "os", "path", "strings", "time", "encoding/json",
 		"net/http", "database/sql", "log", "errors", "io", "sync", "syscall",
 	}
-	
+
 	for _, pkg := range standardPkgs {
 		if importPath == pkg || strings.HasPrefix(importPath, pkg+"/") {
 			return true
 		}
 	}
-	
+
 	return !strings.Contains(importPath, ".")
 }
 

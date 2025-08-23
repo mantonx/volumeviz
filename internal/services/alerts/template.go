@@ -25,13 +25,13 @@ func NewSafeTemplateRenderer() interfaces.TemplateRenderer {
 		safeFields: make(map[string]bool),
 		funcMap:    make(template.FuncMap),
 	}
-	
+
 	// Define safe fields that can be accessed in templates
 	renderer.defineSafeFields()
-	
+
 	// Define safe template functions
 	renderer.defineSafeFunctions()
-	
+
 	return renderer
 }
 
@@ -42,19 +42,19 @@ func (r *SafeTemplateRenderer) Render(templateStr string, context *models.AlertC
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
-	
+
 	// Create safe context
 	safeContext, err := r.createSafeContext(context)
 	if err != nil {
 		return "", fmt.Errorf("failed to create safe context: %w", err)
 	}
-	
+
 	// Execute template
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, safeContext); err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
-	
+
 	return buf.String(), nil
 }
 
@@ -65,11 +65,11 @@ func (r *SafeTemplateRenderer) ValidateTemplate(templateStr string) error {
 	if err != nil {
 		return fmt.Errorf("template syntax error: %w", err)
 	}
-	
+
 	// Try to execute with a dummy context to catch runtime errors
 	dummyContext := r.createDummyContext()
 	tmpl, _ := template.New("validation").Funcs(r.funcMap).Parse(templateStr)
-	
+
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, dummyContext); err != nil {
 		// Check if it's a safe field access error
@@ -78,7 +78,7 @@ func (r *SafeTemplateRenderer) ValidateTemplate(templateStr string) error {
 		}
 		return fmt.Errorf("template execution error: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -101,7 +101,7 @@ func (r *SafeTemplateRenderer) defineSafeFields() {
 	r.safeFields["Alert.Value"] = true
 	r.safeFields["Alert.StartsAt"] = true
 	r.safeFields["Alert.EndsAt"] = true
-	
+
 	// Rule fields
 	r.safeFields["Rule.ID"] = true
 	r.safeFields["Rule.Name"] = true
@@ -110,7 +110,7 @@ func (r *SafeTemplateRenderer) defineSafeFields() {
 	r.safeFields["Rule.Condition"] = true
 	r.safeFields["Rule.Threshold"] = true
 	r.safeFields["Rule.Interval"] = true
-	
+
 	// Labels and annotations (these are maps, so we allow access)
 	r.safeFields["Labels"] = true
 	r.safeFields["Annotations"] = true
@@ -124,17 +124,17 @@ func (r *SafeTemplateRenderer) defineSafeFunctions() {
 	r.funcMap["title"] = strings.Title
 	r.funcMap["trim"] = strings.TrimSpace
 	r.funcMap["join"] = strings.Join
-	
+
 	// Time formatting functions
 	r.funcMap["formatTime"] = r.formatTime
 	r.funcMap["formatDuration"] = r.formatDuration
 	r.funcMap["timeAgo"] = r.timeAgo
 	r.funcMap["now"] = time.Now
-	
+
 	// Numeric functions
 	r.funcMap["round"] = r.round
 	r.funcMap["printf"] = fmt.Sprintf
-	
+
 	// Conditional functions
 	r.funcMap["eq"] = r.eq
 	r.funcMap["ne"] = r.ne
@@ -142,13 +142,13 @@ func (r *SafeTemplateRenderer) defineSafeFunctions() {
 	r.funcMap["ge"] = r.ge
 	r.funcMap["lt"] = r.lt
 	r.funcMap["le"] = r.le
-	
+
 	// String functions
 	r.funcMap["contains"] = strings.Contains
 	r.funcMap["hasPrefix"] = strings.HasPrefix
 	r.funcMap["hasSuffix"] = strings.HasSuffix
 	r.funcMap["replace"] = strings.Replace
-	
+
 	// Safety functions
 	r.funcMap["safeHTML"] = r.safeHTML
 	r.funcMap["truncate"] = r.truncate
@@ -159,9 +159,9 @@ func (r *SafeTemplateRenderer) createSafeContext(context *models.AlertContext) (
 	if context == nil {
 		return map[string]interface{}{}, nil
 	}
-	
+
 	safeContext := make(map[string]interface{})
-	
+
 	// Add safe alert fields
 	if context.Alert != nil {
 		safeContext["Alert"] = map[string]interface{}{
@@ -174,7 +174,7 @@ func (r *SafeTemplateRenderer) createSafeContext(context *models.AlertContext) (
 			"EndsAt":     context.Alert.EndsAt,
 		}
 	}
-	
+
 	// Add safe rule fields
 	if context.Rule != nil {
 		safeContext["Rule"] = map[string]interface{}{
@@ -187,19 +187,19 @@ func (r *SafeTemplateRenderer) createSafeContext(context *models.AlertContext) (
 			"Interval":    context.Rule.Interval,
 		}
 	}
-	
+
 	// Add labels and annotations (sanitized)
 	if context.Labels != nil {
 		safeContext["Labels"] = r.sanitizeStringMap(context.Labels)
 	}
-	
+
 	if context.Annotations != nil {
 		safeContext["Annotations"] = r.sanitizeStringMap(context.Annotations)
 	}
-	
+
 	// Add value
 	safeContext["Value"] = context.Value
-	
+
 	return safeContext, nil
 }
 
@@ -317,7 +317,7 @@ func (r *SafeTemplateRenderer) le(a, b interface{}) bool {
 func (r *SafeTemplateRenderer) compare(a, b interface{}) int {
 	va := reflect.ValueOf(a)
 	vb := reflect.ValueOf(b)
-	
+
 	// Handle numeric comparisons
 	if va.Kind() == reflect.Float64 && vb.Kind() == reflect.Float64 {
 		af, bf := va.Float(), vb.Float()
@@ -328,12 +328,12 @@ func (r *SafeTemplateRenderer) compare(a, b interface{}) int {
 		}
 		return 0
 	}
-	
+
 	// Handle string comparisons
 	if va.Kind() == reflect.String && vb.Kind() == reflect.String {
 		return strings.Compare(va.String(), vb.String())
 	}
-	
+
 	return 0
 }
 
@@ -351,11 +351,10 @@ func (r *SafeTemplateRenderer) truncate(s string, length int) string {
 	if len(s) <= length {
 		return s
 	}
-	
+
 	if length <= 3 {
 		return s[:length]
 	}
-	
+
 	return s[:length-3] + "..."
 }
-

@@ -51,7 +51,7 @@ func (sm *StorageManager) GenerateStorageKey(sourceHash string, previewType Prev
 			contentHash+ImagePreviewExtension,
 		)
 	}
-	
+
 	// Traditional hash-based storage for backward compatibility
 	if len(sourceHash) < 4 || len(contentHash) < 4 {
 		// Fallback for short hashes
@@ -63,7 +63,7 @@ func (sm *StorageManager) GenerateStorageKey(sourceHash string, previewType Prev
 			contentHash+ImagePreviewExtension,
 		)
 	}
-	
+
 	// Use first 2 chars of source hash for directory sharding
 	// This prevents too many files in a single directory
 	dir1 := sourceHash[:2]
@@ -181,7 +181,7 @@ func (sm *StorageManager) Exists(storageKey string) bool {
 // Returns the storage key if found, empty string if not
 func (sm *StorageManager) FindExistingPreview(sourceHash string, previewType PreviewType, size PreviewSize) string {
 	var searchDir string
-	
+
 	// For file ID based hashes, we need a different approach
 	// The hash format is "file_<id>_mtime_<timestamp>"
 	if strings.HasPrefix(sourceHash, "file_") {
@@ -206,12 +206,12 @@ func (sm *StorageManager) FindExistingPreview(sourceHash string, previewType Pre
 	} else {
 		return "" // Invalid hash
 	}
-	
+
 	// Check if directory exists
 	if _, err := os.Stat(searchDir); os.IsNotExist(err) {
 		return ""
 	}
-	
+
 	// Find the first .webp file in the directory structure
 	var foundKey string
 	filepath.Walk(searchDir, func(path string, info os.FileInfo, err error) error {
@@ -226,7 +226,7 @@ func (sm *StorageManager) FindExistingPreview(sourceHash string, previewType Pre
 		}
 		return nil
 	})
-	
+
 	return foundKey
 }
 

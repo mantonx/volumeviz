@@ -136,7 +136,7 @@ func (h *Hub) BroadcastComprehensiveScanProgress(progress ComprehensiveScanProgr
 		Data:      progress,
 		Timestamp: time.Now(),
 	}
-	
+
 	// Send to clients subscribed to scan_progress with volume_id filter
 	filters := map[string]string{
 		"volume_id": progress.VolumeID,
@@ -153,7 +153,7 @@ func (h *Hub) BroadcastScanPhaseUpdate(scanID, volumeID string, phase ScanPhaseP
 		Data:      phase,
 		Timestamp: time.Now(),
 	}
-	
+
 	filters := map[string]string{
 		"volume_id": volumeID,
 		"scan_id":   scanID,
@@ -268,7 +268,7 @@ func (h *Hub) BroadcastToSubscribed(event string, filters map[string]string, mes
 		}
 	}
 
-	log.Printf("broadcast %s to %d subscribers (event: %s, filters: %v)", 
+	log.Printf("broadcast %s to %d subscribers (event: %s, filters: %v)",
 		message.Type, sentCount, event, filters)
 }
 

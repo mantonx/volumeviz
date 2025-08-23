@@ -50,12 +50,12 @@ func (rm *RetryManager) ShouldRetry(delivery *models.AlertDelivery, err error) b
 	if delivery.AttemptCount >= delivery.MaxAttempts {
 		return false
 	}
-	
+
 	// Don't retry certain types of errors
 	if !rm.isRetriableError(err) {
 		return false
 	}
-	
+
 	return true
 }
 
@@ -63,17 +63,17 @@ func (rm *RetryManager) ShouldRetry(delivery *models.AlertDelivery, err error) b
 func (rm *RetryManager) CalculateNextAttempt(delivery *models.AlertDelivery) time.Time {
 	// Calculate delay using exponential backoff
 	delay := rm.calculateDelay(delivery.AttemptCount)
-	
+
 	// Add jitter if enabled
 	if rm.config.Jitter {
 		delay = rm.addJitter(delay)
 	}
-	
+
 	// Ensure delay doesn't exceed maximum
 	if delay > rm.config.MaxDelay {
 		delay = rm.config.MaxDelay
 	}
-	
+
 	return time.Now().Add(delay)
 }
 
@@ -82,7 +82,7 @@ func (rm *RetryManager) calculateDelay(attemptCount int32) time.Duration {
 	// Exponential backoff: baseDelay * (backoffFactor ^ attemptCount)
 	multiplier := math.Pow(rm.config.BackoffFactor, float64(attemptCount))
 	delay := time.Duration(float64(rm.config.BaseDelay) * multiplier)
-	
+
 	return delay
 }
 
@@ -91,12 +91,12 @@ func (rm *RetryManager) addJitter(delay time.Duration) time.Duration {
 	// Add up to 25% jitter
 	jitterRange := float64(delay) * 0.25
 	jitter := time.Duration(jitterRange * (2*math.Mod(float64(time.Now().UnixNano()), 1) - 1))
-	
+
 	result := delay + jitter
 	if result < 0 {
 		result = delay
 	}
-	
+
 	return result
 }
 
@@ -105,9 +105,9 @@ func (rm *RetryManager) isRetriableError(err error) bool {
 	if err == nil {
 		return false
 	}
-	
+
 	errorMessage := err.Error()
-	
+
 	// Non-retriable errors (4xx HTTP status codes, auth failures, etc.)
 	nonRetriablePatterns := []string{
 		"400", "401", "403", "404", "405", "406", "410", "422", "429",
@@ -119,13 +119,13 @@ func (rm *RetryManager) isRetriableError(err error) bool {
 		"malformed request",
 		"bad request",
 	}
-	
+
 	for _, pattern := range nonRetriablePatterns {
 		if contains(errorMessage, pattern) {
 			return false
 		}
 	}
-	
+
 	// Retriable errors (5xx HTTP status codes, network issues, timeouts)
 	retriablePatterns := []string{
 		"500", "502", "503", "504",
@@ -139,13 +139,13 @@ func (rm *RetryManager) isRetriableError(err error) bool {
 		"bad gateway",
 		"gateway timeout",
 	}
-	
+
 	for _, pattern := range retriablePatterns {
 		if contains(errorMessage, pattern) {
 			return true
 		}
 	}
-	
+
 	// Default to retriable for unknown errors
 	return true
 }
@@ -153,30 +153,30 @@ func (rm *RetryManager) isRetriableError(err error) bool {
 // GetRetryInfo returns information about retry configuration and status
 func (rm *RetryManager) GetRetryInfo(delivery *models.AlertDelivery) *RetryInfo {
 	info := &RetryInfo{
-		AttemptCount:    delivery.AttemptCount,
-		MaxAttempts:     delivery.MaxAttempts,
-		NextAttemptAt:   delivery.NextAttemptAt,
-		CanRetry:        delivery.AttemptCount < delivery.MaxAttempts,
-		RetryConfig:     rm.config,
+		AttemptCount:  delivery.AttemptCount,
+		MaxAttempts:   delivery.MaxAttempts,
+		NextAttemptAt: delivery.NextAttemptAt,
+		CanRetry:      delivery.AttemptCount < delivery.MaxAttempts,
+		RetryConfig:   rm.config,
 	}
-	
+
 	if info.CanRetry {
 		info.NextDelay = rm.calculateDelay(delivery.AttemptCount)
 		info.NextAttemptCalculated = rm.CalculateNextAttempt(delivery)
 	}
-	
+
 	return info
 }
 
 // RetryInfo provides information about retry status and configuration
 type RetryInfo struct {
-	AttemptCount           int32           `json:"attempt_count"`
-	MaxAttempts            int32           `json:"max_attempts"`
-	NextAttemptAt          *time.Time      `json:"next_attempt_at,omitempty"`
-	NextAttemptCalculated  time.Time       `json:"next_attempt_calculated,omitempty"`
-	NextDelay              time.Duration   `json:"next_delay,omitempty"`
-	CanRetry               bool            `json:"can_retry"`
-	RetryConfig            *RetryConfig    `json:"retry_config"`
+	AttemptCount          int32         `json:"attempt_count"`
+	MaxAttempts           int32         `json:"max_attempts"`
+	NextAttemptAt         *time.Time    `json:"next_attempt_at,omitempty"`
+	NextAttemptCalculated time.Time     `json:"next_attempt_calculated,omitempty"`
+	NextDelay             time.Duration `json:"next_delay,omitempty"`
+	CanRetry              bool          `json:"can_retry"`
+	RetryConfig           *RetryConfig  `json:"retry_config"`
 }
 
 // BackoffSchedule represents a complete backoff schedule
@@ -186,8 +186,8 @@ type BackoffSchedule struct {
 
 // ScheduledAttempt represents a single scheduled attempt
 type ScheduledAttempt struct {
-	AttemptNumber int           `json:"attempt_number"`
-	Delay         time.Duration `json:"delay"`
+	AttemptNumber   int           `json:"attempt_number"`
+	Delay           time.Duration `json:"delay"`
 	CumulativeDelay time.Duration `json:"cumulative_delay"`
 }
 
@@ -196,26 +196,26 @@ func (rm *RetryManager) GenerateBackoffSchedule(maxAttempts int32) *BackoffSched
 	schedule := &BackoffSchedule{
 		Attempts: make([]ScheduledAttempt, maxAttempts),
 	}
-	
+
 	var cumulativeDelay time.Duration
-	
+
 	for i := int32(0); i < maxAttempts; i++ {
 		delay := rm.calculateDelay(i)
 		if delay > rm.config.MaxDelay {
 			delay = rm.config.MaxDelay
 		}
-		
+
 		if i > 0 {
 			cumulativeDelay += delay
 		}
-		
+
 		schedule.Attempts[i] = ScheduledAttempt{
 			AttemptNumber:   int(i + 1),
-			Delay:          delay,
+			Delay:           delay,
 			CumulativeDelay: cumulativeDelay,
 		}
 	}
-	
+
 	return schedule
 }
 
@@ -224,31 +224,31 @@ func ValidateRetryConfig(config *RetryConfig) error {
 	if config.MaxRetries < 0 {
 		return fmt.Errorf("max_retries must be non-negative")
 	}
-	
+
 	if config.MaxRetries > 10 {
 		return fmt.Errorf("max_retries cannot exceed 10 for safety")
 	}
-	
+
 	if config.BaseDelay <= 0 {
 		return fmt.Errorf("base_delay must be positive")
 	}
-	
+
 	if config.MaxDelay <= 0 {
 		return fmt.Errorf("max_delay must be positive")
 	}
-	
+
 	if config.BaseDelay > config.MaxDelay {
 		return fmt.Errorf("base_delay cannot be greater than max_delay")
 	}
-	
+
 	if config.BackoffFactor <= 1.0 {
 		return fmt.Errorf("backoff_factor must be greater than 1.0")
 	}
-	
+
 	if config.BackoffFactor > 10.0 {
 		return fmt.Errorf("backoff_factor cannot exceed 10.0 for safety")
 	}
-	
+
 	return nil
 }
 
@@ -291,12 +291,12 @@ func getEnvBool(key string, defaultValue bool) bool {
 }
 
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && 
-		   (s == substr || 
-			(len(s) > len(substr) && 
-			 (s[:len(substr)] == substr || 
-			  s[len(s)-len(substr):] == substr ||
-			  containsSubstring(s, substr))))
+	return len(s) >= len(substr) &&
+		(s == substr ||
+			(len(s) > len(substr) &&
+				(s[:len(substr)] == substr ||
+					s[len(s)-len(substr):] == substr ||
+					containsSubstring(s, substr))))
 }
 
 func containsSubstring(s, substr string) bool {

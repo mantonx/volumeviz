@@ -33,45 +33,45 @@ func NewEvaluationPreviewService(
 type PreviewRequest struct {
 	// RuleIDs to include in preview (if empty, all enabled rules are used)
 	RuleIDs []int64 `json:"rule_ids,omitempty"`
-	
+
 	// MountIDs to limit preview to specific mounts (if empty, all mounts are evaluated)
 	MountIDs []string `json:"mount_ids,omitempty"`
-	
+
 	// IncludeRuleDetails whether to include detailed rule condition matching info
 	IncludeRuleDetails bool `json:"include_rule_details"`
-	
+
 	// IncludeUnmatched whether to include mounts that don't match any rules
 	IncludeUnmatched bool `json:"include_unmatched"`
-	
+
 	// DryRun mode - if true, doesn't create evaluation records
 	DryRun bool `json:"dry_run"`
 }
 
 // PreviewResponse represents the response from a rule evaluation preview
 type PreviewResponse struct {
-	PreviewID         string                     `json:"preview_id"`
-	RequestedAt       time.Time                  `json:"requested_at"`
-	CompletedAt       time.Time                  `json:"completed_at"`
-	ExecutionTimeMs   int64                      `json:"execution_time_ms"`
-	Summary           *PreviewSummary            `json:"summary"`
-	MountPreviews     []*MountPreview            `json:"mount_previews"`
-	RulePerformance   []*RulePerformanceResult   `json:"rule_performance"`
-	Warnings          []string                   `json:"warnings,omitempty"`
-	Errors            []string                   `json:"errors,omitempty"`
+	PreviewID       string                   `json:"preview_id"`
+	RequestedAt     time.Time                `json:"requested_at"`
+	CompletedAt     time.Time                `json:"completed_at"`
+	ExecutionTimeMs int64                    `json:"execution_time_ms"`
+	Summary         *PreviewSummary          `json:"summary"`
+	MountPreviews   []*MountPreview          `json:"mount_previews"`
+	RulePerformance []*RulePerformanceResult `json:"rule_performance"`
+	Warnings        []string                 `json:"warnings,omitempty"`
+	Errors          []string                 `json:"errors,omitempty"`
 }
 
 // PreviewSummary provides high-level statistics about the preview
 type PreviewSummary struct {
-	TotalMounts       int32                      `json:"total_mounts"`
-	MountsEvaluated   int32                      `json:"mounts_evaluated"`
-	MountsMatched     int32                      `json:"mounts_matched"`
-	MountsIncluded    int32                      `json:"mounts_included"`
-	MountsExcluded    int32                      `json:"mounts_excluded"`
-	MountsUnmatched   int32                      `json:"mounts_unmatched"`
-	RulesEvaluated    int32                      `json:"rules_evaluated"`
-	ActionBreakdown   map[string]int32           `json:"action_breakdown"`
-	TypeBreakdown     map[string]ActionBreakdown `json:"type_breakdown"`
-	ProjectBreakdown  map[string]ActionBreakdown `json:"project_breakdown"`
+	TotalMounts      int32                      `json:"total_mounts"`
+	MountsEvaluated  int32                      `json:"mounts_evaluated"`
+	MountsMatched    int32                      `json:"mounts_matched"`
+	MountsIncluded   int32                      `json:"mounts_included"`
+	MountsExcluded   int32                      `json:"mounts_excluded"`
+	MountsUnmatched  int32                      `json:"mounts_unmatched"`
+	RulesEvaluated   int32                      `json:"rules_evaluated"`
+	ActionBreakdown  map[string]int32           `json:"action_breakdown"`
+	TypeBreakdown    map[string]ActionBreakdown `json:"type_breakdown"`
+	ProjectBreakdown map[string]ActionBreakdown `json:"project_breakdown"`
 }
 
 // ActionBreakdown shows include/exclude counts for a category
@@ -83,13 +83,13 @@ type ActionBreakdown struct {
 
 // MountPreview represents the preview result for a single mount
 type MountPreview struct {
-	Mount           *MountSummary            `json:"mount"`
-	CurrentAction   string                   `json:"current_action"`   // current tracking status
-	PreviewAction   string                   `json:"preview_action"`   // predicted action based on rules
-	ActionChanged   bool                     `json:"action_changed"`   // whether action would change
-	WinningRule     *RuleMatchSummary        `json:"winning_rule"`     // highest priority matching rule
-	AllMatches      []*RuleMatchSummary      `json:"all_matches"`      // all matching rules (if detailed)
-	ConflictDetails *ConflictAnalysis        `json:"conflict_details"` // rule conflicts if any
+	Mount           *MountSummary       `json:"mount"`
+	CurrentAction   string              `json:"current_action"`   // current tracking status
+	PreviewAction   string              `json:"preview_action"`   // predicted action based on rules
+	ActionChanged   bool                `json:"action_changed"`   // whether action would change
+	WinningRule     *RuleMatchSummary   `json:"winning_rule"`     // highest priority matching rule
+	AllMatches      []*RuleMatchSummary `json:"all_matches"`      // all matching rules (if detailed)
+	ConflictDetails *ConflictAnalysis   `json:"conflict_details"` // rule conflicts if any
 }
 
 // MountSummary represents a simplified mount for preview
@@ -108,21 +108,21 @@ type MountSummary struct {
 
 // RuleMatchSummary represents a rule match in the preview
 type RuleMatchSummary struct {
-	RuleID           int64                `json:"rule_id"`
-	RuleName         string               `json:"rule_name"`
-	Action           string               `json:"action"`
-	Priority         int32                `json:"priority"`
-	Matched          bool                 `json:"matched"`
-	MatchConfidence  float64              `json:"match_confidence"` // 0.0-1.0 based on condition matches
-	MatchedConditions []ConditionResult   `json:"matched_conditions,omitempty"`
-	ExecutionTimeMs  int64                `json:"execution_time_ms"`
+	RuleID            int64             `json:"rule_id"`
+	RuleName          string            `json:"rule_name"`
+	Action            string            `json:"action"`
+	Priority          int32             `json:"priority"`
+	Matched           bool              `json:"matched"`
+	MatchConfidence   float64           `json:"match_confidence"` // 0.0-1.0 based on condition matches
+	MatchedConditions []ConditionResult `json:"matched_conditions,omitempty"`
+	ExecutionTimeMs   int64             `json:"execution_time_ms"`
 }
 
 // ConflictAnalysis identifies potential rule conflicts
 type ConflictAnalysis struct {
-	HasConflicts     bool                  `json:"has_conflicts"`
-	ConflictingRules []*RuleConflict       `json:"conflicting_rules,omitempty"`
-	Resolution       string                `json:"resolution"` // how conflicts are resolved
+	HasConflicts     bool            `json:"has_conflicts"`
+	ConflictingRules []*RuleConflict `json:"conflicting_rules,omitempty"`
+	Resolution       string          `json:"resolution"` // how conflicts are resolved
 }
 
 // RuleConflict represents a conflict between rules
@@ -136,7 +136,7 @@ type RuleConflict struct {
 func (s *EvaluationPreviewService) PreviewRuleEvaluation(ctx context.Context, req *PreviewRequest) (*PreviewResponse, error) {
 	startTime := time.Now()
 	previewID := fmt.Sprintf("preview_%d", startTime.Unix())
-	
+
 	response := &PreviewResponse{
 		PreviewID:   previewID,
 		RequestedAt: startTime,
@@ -170,12 +170,12 @@ func (s *EvaluationPreviewService) PreviewRuleEvaluation(ctx context.Context, re
 	// Evaluate each mount against rules
 	mountPreviews := make([]*MountPreview, 0, len(mounts))
 	rulePerformance := make(map[int64]*RulePerformanceResult)
-	
+
 	for _, mount := range mounts {
 		mountInfo := convertCatalogEntryToMountInfo(mount)
 		preview, err := s.evaluateMountPreview(ctx, mountInfo, rules, req.IncludeRuleDetails)
 		if err != nil {
-			response.Warnings = append(response.Warnings, 
+			response.Warnings = append(response.Warnings,
 				fmt.Sprintf("Failed to evaluate mount %s: %v", mount.MountID, err))
 			continue
 		}
@@ -241,7 +241,7 @@ func (s *EvaluationPreviewService) PreviewRuleEvaluation(ctx context.Context, re
 	// Create evaluation record if not dry run
 	if !req.DryRun {
 		if err := s.createEvaluationRecord(ctx, response, rules); err != nil {
-			response.Warnings = append(response.Warnings, 
+			response.Warnings = append(response.Warnings,
 				fmt.Sprintf("Failed to create evaluation record: %v", err))
 		}
 	}
@@ -256,7 +256,7 @@ func (s *EvaluationPreviewService) evaluateMountPreview(
 	rules []*repo.TrackingRule,
 	includeDetails bool,
 ) (*MountPreview, error) {
-	
+
 	preview := &MountPreview{
 		Mount: &MountSummary{
 			ID:              mount.ID,
@@ -327,7 +327,7 @@ func (s *EvaluationPreviewService) evaluateMountPreview(
 
 	// Analyze conflicts
 	preview.ConflictDetails = s.analyzeConflicts(preview.AllMatches)
-	
+
 	// Check if action would change
 	preview.ActionChanged = preview.CurrentAction != preview.PreviewAction
 

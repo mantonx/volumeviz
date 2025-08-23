@@ -14,15 +14,15 @@ import (
 
 // Handler handles trends-related API requests
 type Handler struct {
-	store           store.Store
-	statsService    interfaces.StatsService // New daily stats service
+	store        store.Store
+	statsService interfaces.StatsService // New daily stats service
 }
 
 // NewHandler creates a new trends handler
 func NewHandler(store store.Store, statsService interfaces.StatsService) *Handler {
 	return &Handler{
-		store:           store,
-		statsService:    statsService,
+		store:        store,
+		statsService: statsService,
 	}
 }
 
@@ -75,8 +75,8 @@ func (h *Handler) GetVolumeTrends(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": trendsData,
 		"meta": gin.H{
-			"volume_id":    volumeID,
-			"period_days":  days,
+			"volume_id":   volumeID,
+			"period_days": days,
 			"date_range": gin.H{
 				"start": startDate.Format("2006-01-02"),
 				"end":   endDate.Format("2006-01-02"),
@@ -173,7 +173,7 @@ func (h *Handler) GetVolumeGrowthDeltas(c *gin.Context) {
 				"start": startDate.Format("2006-01-02"),
 				"end":   endDate.Format("2006-01-02"),
 			},
-			"generated_at":  time.Now(),
+			"generated_at": time.Now(),
 		},
 	})
 }
@@ -321,7 +321,7 @@ func (h *Handler) GetVolumeTrendSlope(c *gin.Context) {
 	if len(trendAnalysis) > 0 {
 		latest := trendAnalysis[0]
 		var bytesSlope, filesSlope interface{}
-		
+
 		// Use the growth rates as slope indicators
 		if latest.BytesGrowthRate7d != nil {
 			bytesSlope = *latest.BytesGrowthRate7d
@@ -329,35 +329,35 @@ func (h *Handler) GetVolumeTrendSlope(c *gin.Context) {
 		if latest.BytesGrowthRate30d != nil && days >= 30 {
 			bytesSlope = *latest.BytesGrowthRate30d
 		}
-		
+
 		// For files, calculate a simple slope if we have enough data
 		if len(trendAnalysis) >= 2 {
 			first := trendAnalysis[len(trendAnalysis)-1]
 			filesSlope = float64(latest.FilesCount-first.FilesCount) / float64(days)
 		}
-		
+
 		slope = gin.H{
-			"bytes_slope":       bytesSlope,
-			"files_slope":       filesSlope,
-			"period_days":       days,
-			"growth_rate_7d":    latest.BytesGrowthRate7d,
-			"growth_rate_30d":   latest.BytesGrowthRate30d,
-			"bytes_change_7d":   latest.BytesChange7d,
-			"bytes_change_30d":  latest.BytesChange30d,
-			"files_change_7d":   latest.FilesChange7d,
-			"files_change_30d":  latest.FilesChange30d,
+			"bytes_slope":      bytesSlope,
+			"files_slope":      filesSlope,
+			"period_days":      days,
+			"growth_rate_7d":   latest.BytesGrowthRate7d,
+			"growth_rate_30d":  latest.BytesGrowthRate30d,
+			"bytes_change_7d":  latest.BytesChange7d,
+			"bytes_change_30d": latest.BytesChange30d,
+			"files_change_7d":  latest.FilesChange7d,
+			"files_change_30d": latest.FilesChange30d,
 		}
 	} else {
 		slope = gin.H{
-			"bytes_slope":       0,
-			"files_slope":       0,
-			"period_days":       days,
-			"growth_rate_7d":    nil,
-			"growth_rate_30d":   nil,
-			"bytes_change_7d":   0,
-			"bytes_change_30d":  0,
-			"files_change_7d":   0,
-			"files_change_30d":  0,
+			"bytes_slope":      0,
+			"files_slope":      0,
+			"period_days":      days,
+			"growth_rate_7d":   nil,
+			"growth_rate_30d":  nil,
+			"bytes_change_7d":  0,
+			"bytes_change_30d": 0,
+			"files_change_7d":  0,
+			"files_change_30d": 0,
 		}
 	}
 
@@ -399,7 +399,7 @@ func (h *Handler) Get7DayTrend(c *gin.Context) {
 	// Get 7-day trend data using our stats service
 	endDate := time.Now().Truncate(24 * time.Hour)
 	startDate := endDate.AddDate(0, 0, -7)
-	
+
 	trendAnalysis, err := h.statsService.GetTrendAnalysis(c.Request.Context(), volumeID, startDate, endDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -415,30 +415,30 @@ func (h *Handler) Get7DayTrend(c *gin.Context) {
 	if len(trendAnalysis) > 0 {
 		latest := trendAnalysis[0] // Most recent data
 		summary = gin.H{
-			"current_size":        latest.TotalBytes,
-			"current_files":       latest.FilesCount,
-			"bytes_change_7d":     latest.BytesChange7d,
-			"files_change_7d":     latest.FilesChange7d,
-			"bytes_growth_rate":   latest.BytesGrowthRate7d,
+			"current_size":      latest.TotalBytes,
+			"current_files":     latest.FilesCount,
+			"bytes_change_7d":   latest.BytesChange7d,
+			"files_change_7d":   latest.FilesChange7d,
+			"bytes_growth_rate": latest.BytesGrowthRate7d,
 		}
 	} else {
 		summary = gin.H{
-			"current_size":        0,
-			"current_files":       0,
-			"bytes_change_7d":     0,
-			"files_change_7d":     0,
-			"bytes_growth_rate":   nil,
+			"current_size":      0,
+			"current_files":     0,
+			"bytes_change_7d":   0,
+			"files_change_7d":   0,
+			"bytes_growth_rate": nil,
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"summary": summary,
+			"summary":        summary,
 			"trend_analysis": trendAnalysis,
 		},
 		"meta": gin.H{
-			"volume_id":    volumeID,
-			"period":       "7 days",
+			"volume_id": volumeID,
+			"period":    "7 days",
 			"date_range": gin.H{
 				"start": startDate.Format("2006-01-02"),
 				"end":   endDate.Format("2006-01-02"),
@@ -474,7 +474,7 @@ func (h *Handler) Get30DayTrend(c *gin.Context) {
 	// Get 30-day trend data using our stats service
 	endDate := time.Now().Truncate(24 * time.Hour)
 	startDate := endDate.AddDate(0, 0, -30)
-	
+
 	trendAnalysis, err := h.statsService.GetTrendAnalysis(c.Request.Context(), volumeID, startDate, endDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -490,30 +490,30 @@ func (h *Handler) Get30DayTrend(c *gin.Context) {
 	if len(trendAnalysis) > 0 {
 		latest := trendAnalysis[0] // Most recent data
 		summary = gin.H{
-			"current_size":        latest.TotalBytes,
-			"current_files":       latest.FilesCount,
-			"bytes_change_30d":    latest.BytesChange30d,
-			"files_change_30d":    latest.FilesChange30d,
-			"bytes_growth_rate":   latest.BytesGrowthRate30d,
+			"current_size":      latest.TotalBytes,
+			"current_files":     latest.FilesCount,
+			"bytes_change_30d":  latest.BytesChange30d,
+			"files_change_30d":  latest.FilesChange30d,
+			"bytes_growth_rate": latest.BytesGrowthRate30d,
 		}
 	} else {
 		summary = gin.H{
-			"current_size":        0,
-			"current_files":       0,
-			"bytes_change_30d":    0,
-			"files_change_30d":    0,
-			"bytes_growth_rate":   nil,
+			"current_size":      0,
+			"current_files":     0,
+			"bytes_change_30d":  0,
+			"files_change_30d":  0,
+			"bytes_growth_rate": nil,
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"summary": summary,
+			"summary":        summary,
 			"trend_analysis": trendAnalysis,
 		},
 		"meta": gin.H{
-			"volume_id":    volumeID,
-			"period":       "30 days",
+			"volume_id": volumeID,
+			"period":    "30 days",
 			"date_range": gin.H{
 				"start": startDate.Format("2006-01-02"),
 				"end":   endDate.Format("2006-01-02"),
@@ -557,7 +557,6 @@ func (h *Handler) GetAllVolumesTrendsSummary(c *gin.Context) {
 		},
 	})
 }
-
 
 // getTrendsDataFromStats creates comprehensive trends data using our daily stats service
 func (h *Handler) getTrendsDataFromStats(ctx context.Context, volumeID string, startDate, endDate time.Time, days int) (interface{}, error) {
@@ -615,16 +614,16 @@ func (h *Handler) getTrendsDataFromStats(ctx context.Context, volumeID string, s
 	trendsData := gin.H{
 		"volume_id": volumeID,
 		"summary": gin.H{
-			"current_size":          getCurrentSize(latestStats),
-			"current_files":         getCurrentFiles(latestStats),
-			"total_growth_bytes":    totalGrowthBytes,
-			"total_growth_files":    totalGrowthFiles,
+			"current_size":           getCurrentSize(latestStats),
+			"current_files":          getCurrentFiles(latestStats),
+			"total_growth_bytes":     totalGrowthBytes,
+			"total_growth_files":     totalGrowthFiles,
 			"avg_daily_growth_bytes": avgDailyGrowthBytes,
 			"avg_daily_growth_files": avgDailyGrowthFiles,
 		},
-		"daily_stats":       volumeStats,
-		"trend_analysis":    trendAnalysis,
-		"media_composition": mediaComposition,
+		"daily_stats":         volumeStats,
+		"trend_analysis":      trendAnalysis,
+		"media_composition":   mediaComposition,
 		"top_growing_folders": topGrowingFolders,
 	}
 

@@ -657,54 +657,54 @@ func generateMimeTypeLabel(mimeType string) string {
 	// Map of common MIME types to user-friendly labels
 	labelMap := map[string]string{
 		// Video
-		"video/x-matroska":    "MKV Video",
-		"video/mp4":           "MP4 Video",
-		"video/x-msvideo":     "AVI Video",
-		"video/x-flv":         "FLV Video",
-		"video/mp2t":          "TS Video",
-		"video/quicktime":     "MOV Video",
-		"video/webm":          "WebM Video",
-		"video/x-ms-wmv":      "WMV Video",
-		"video/3gpp":          "3GP Video",
-		
+		"video/x-matroska": "MKV Video",
+		"video/mp4":        "MP4 Video",
+		"video/x-msvideo":  "AVI Video",
+		"video/x-flv":      "FLV Video",
+		"video/mp2t":       "TS Video",
+		"video/quicktime":  "MOV Video",
+		"video/webm":       "WebM Video",
+		"video/x-ms-wmv":   "WMV Video",
+		"video/3gpp":       "3GP Video",
+
 		// Audio
-		"audio/mpeg":          "MP3 Audio",
-		"audio/flac":          "FLAC Audio",
-		"audio/wav":           "WAV Audio",
-		"audio/x-wav":         "WAV Audio",
-		"audio/mp4":           "M4A Audio",
-		"audio/ogg":           "OGG Audio",
-		"audio/x-mod":         "MOD Audio",
-		"audio/aac":           "AAC Audio",
-		"audio/x-ms-wma":      "WMA Audio",
-		
+		"audio/mpeg":     "MP3 Audio",
+		"audio/flac":     "FLAC Audio",
+		"audio/wav":      "WAV Audio",
+		"audio/x-wav":    "WAV Audio",
+		"audio/mp4":      "M4A Audio",
+		"audio/ogg":      "OGG Audio",
+		"audio/x-mod":    "MOD Audio",
+		"audio/aac":      "AAC Audio",
+		"audio/x-ms-wma": "WMA Audio",
+
 		// Image
-		"image/jpeg":          "JPEG Image",
-		"image/png":           "PNG Image",
-		"image/gif":           "GIF Image",
-		"image/webp":          "WebP Image",
-		"image/svg+xml":       "SVG Image",
-		"image/tiff":          "TIFF Image",
-		"image/bmp":           "BMP Image",
-		"image/x-icon":        "ICO Image",
-		"image/heic":          "HEIC Image",
-		
+		"image/jpeg":    "JPEG Image",
+		"image/png":     "PNG Image",
+		"image/gif":     "GIF Image",
+		"image/webp":    "WebP Image",
+		"image/svg+xml": "SVG Image",
+		"image/tiff":    "TIFF Image",
+		"image/bmp":     "BMP Image",
+		"image/x-icon":  "ICO Image",
+		"image/heic":    "HEIC Image",
+
 		// Document
-		"application/pdf":     "PDF Document",
-		"text/plain":          "Text File",
-		"application/json":    "JSON File",
-		"text/x-nfo":          "NFO File",
-		"application/xml":     "XML File",
-		"text/html":           "HTML File",
-		"text/css":            "CSS File",
+		"application/pdf":        "PDF Document",
+		"text/plain":             "Text File",
+		"application/json":       "JSON File",
+		"text/x-nfo":             "NFO File",
+		"application/xml":        "XML File",
+		"text/html":              "HTML File",
+		"text/css":               "CSS File",
 		"application/javascript": "JavaScript File",
-		
+
 		// Archive
-		"application/zip":     "ZIP Archive",
+		"application/zip":              "ZIP Archive",
 		"application/x-rar-compressed": "RAR Archive",
 		"application/x-7z-compressed":  "7Z Archive",
-		"application/x-tar":   "TAR Archive",
-		"application/gzip":    "GZIP Archive",
+		"application/x-tar":            "TAR Archive",
+		"application/gzip":             "GZIP Archive",
 	}
 
 	if label, exists := labelMap[mimeType]; exists {

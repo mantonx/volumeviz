@@ -44,7 +44,7 @@ func TestNewStorageManager(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, sm)
 				assert.Equal(t, tt.rootDir, sm.rootDir)
-				
+
 				// Verify directory was created
 				_, err := os.Stat(tt.rootDir)
 				assert.NoError(t, err)
@@ -98,7 +98,7 @@ func TestStorageManager_GetFullPath(t *testing.T) {
 
 	storageKey := "ab/cd/test.webp"
 	expectedPath := filepath.Join(rootDir, storageKey)
-	
+
 	fullPath := sm.GetFullPath(storageKey)
 	assert.Equal(t, expectedPath, fullPath)
 }
@@ -268,7 +268,7 @@ func TestStorageManager_CleanupOldPreviews(t *testing.T) {
 	// Store some data
 	storageKey1, _, err := sm.Store(testData, sourceHash+"1", PreviewTypeThumbnail, PreviewSizeMedium)
 	require.NoError(t, err)
-	
+
 	storageKey2, _, err := sm.Store(testData, sourceHash+"2", PreviewTypeThumbnail, PreviewSizeMedium)
 	require.NoError(t, err)
 
@@ -362,8 +362,8 @@ func TestStorageManager_GetStats(t *testing.T) {
 	require.NoError(t, err)
 
 	stats = sm.GetStats()
-	assert.Equal(t, int64(1), stats.TotalGenerated) // Still 1
+	assert.Equal(t, int64(1), stats.TotalGenerated)             // Still 1
 	assert.Equal(t, int64(len(testData)), stats.TotalSizeBytes) // Same size
-	assert.Equal(t, int64(1), stats.CacheHits) // Incremented
-	assert.Equal(t, int64(1), stats.CacheMisses) // Same
+	assert.Equal(t, int64(1), stats.CacheHits)                  // Incremented
+	assert.Equal(t, int64(1), stats.CacheMisses)                // Same
 }

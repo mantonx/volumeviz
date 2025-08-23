@@ -28,15 +28,15 @@ func NewMountCatalogRepository(queries *sqlc.Queries, db *pgx.Conn) *MountCatalo
 type MountCatalogEntry struct {
 	ID                int64             `json:"id"`
 	MountID           string            `json:"mount_id"`
-	MountType         string            `json:"mount_type"`         // volume, bind, tmpfs
-	VolumeName        *string           `json:"volume_name"`        // Docker volume name
-	VolumeDriver      *string           `json:"volume_driver"`      // Volume driver
-	SourcePath        string            `json:"source_path"`        // Source path (host path for bind mounts)
-	ComposeProject    *string           `json:"compose_project"`    // Compose project name
-	ComposeServices   []string          `json:"compose_services"`   // Compose service names
-	IsOrphaned        bool              `json:"is_orphaned"`        // No active containers
-	IsTracked         bool              `json:"is_tracked"`         // Currently being tracked
-	ContainerCount    int32             `json:"container_count"`    // Number of containers using this mount
+	MountType         string            `json:"mount_type"`       // volume, bind, tmpfs
+	VolumeName        *string           `json:"volume_name"`      // Docker volume name
+	VolumeDriver      *string           `json:"volume_driver"`    // Volume driver
+	SourcePath        string            `json:"source_path"`      // Source path (host path for bind mounts)
+	ComposeProject    *string           `json:"compose_project"`  // Compose project name
+	ComposeServices   []string          `json:"compose_services"` // Compose service names
+	IsOrphaned        bool              `json:"is_orphaned"`      // No active containers
+	IsTracked         bool              `json:"is_tracked"`       // Currently being tracked
+	ContainerCount    int32             `json:"container_count"`  // Number of containers using this mount
 	FirstDiscoveredAt *time.Time        `json:"first_discovered_at"`
 	LastSeenAt        *time.Time        `json:"last_seen_at"`
 	DiscoverySource   string            `json:"discovery_source"`

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	metricsOnce sync.Once
+	metricsOnce            sync.Once
 	globalMetricsCollector interfaces.MetricsCollector
 )
 
@@ -59,223 +59,223 @@ func NewPrometheusMetricsCollector(namespace, subsystem string, labels prometheu
 	if globalMetricsCollector != nil {
 		return globalMetricsCollector
 	}
-	
+
 	metricsOnce.Do(func() {
 		globalMetricsCollector = &PrometheusMetricsCollector{
-		// Cache metrics
-		cacheHitsTotal: promauto.NewCounter(prometheus.CounterOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "cache_hits_total",
-			Help:        "Total number of cache hits for volume scans",
-			ConstLabels: labels,
-		}),
+			// Cache metrics
+			cacheHitsTotal: promauto.NewCounter(prometheus.CounterOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "cache_hits_total",
+				Help:        "Total number of cache hits for volume scans",
+				ConstLabels: labels,
+			}),
 
-		cacheMissesTotal: promauto.NewCounter(prometheus.CounterOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "cache_misses_total",
-			Help:        "Total number of cache misses for volume scans",
-			ConstLabels: labels,
-		}),
+			cacheMissesTotal: promauto.NewCounter(prometheus.CounterOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "cache_misses_total",
+				Help:        "Total number of cache misses for volume scans",
+				ConstLabels: labels,
+			}),
 
-		cacheSize: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "cache_size",
-			Help:        "Current number of items in the scan cache",
-			ConstLabels: labels,
-		}),
+			cacheSize: promauto.NewGauge(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "cache_size",
+				Help:        "Current number of items in the scan cache",
+				ConstLabels: labels,
+			}),
 
-		// Scan duration histogram with appropriate buckets for volume scanning
-		scanDurationHistogram: *promauto.NewHistogramVec(prometheus.HistogramOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "scan_duration_seconds",
-			Help:        "Duration of volume scans in seconds",
-			Buckets:     []float64{0.1, 0.5, 1, 5, 10, 30, 60, 120, 300, 600, 1200}, // Up to 20 minutes
-			ConstLabels: labels,
-		}, []string{"method", "volume_id", "filesystem_type"}),
+			// Scan duration histogram with appropriate buckets for volume scanning
+			scanDurationHistogram: *promauto.NewHistogramVec(prometheus.HistogramOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "scan_duration_seconds",
+				Help:        "Duration of volume scans in seconds",
+				Buckets:     []float64{0.1, 0.5, 1, 5, 10, 30, 60, 120, 300, 600, 1200}, // Up to 20 minutes
+				ConstLabels: labels,
+			}, []string{"method", "volume_id", "filesystem_type"}),
 
-		scanAttemptsTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "scan_attempts_total",
-			Help:        "Total number of scan attempts",
-			ConstLabels: labels,
-		}, []string{"method"}),
+			scanAttemptsTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "scan_attempts_total",
+				Help:        "Total number of scan attempts",
+				ConstLabels: labels,
+			}, []string{"method"}),
 
-		scanSuccessTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "scan_success_total",
-			Help:        "Total number of successful scans",
-			ConstLabels: labels,
-		}, []string{"method"}),
+			scanSuccessTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "scan_success_total",
+				Help:        "Total number of successful scans",
+				ConstLabels: labels,
+			}, []string{"method"}),
 
-		scanFailuresTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "scan_errors_total",
-			Help:        "Total number of scan errors",
-			ConstLabels: labels,
-		}, []string{"method", "error_code"}),
+			scanFailuresTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "scan_errors_total",
+				Help:        "Total number of scan errors",
+				ConstLabels: labels,
+			}, []string{"method", "error_code"}),
 
-		scanQueueDepthGauge: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "scan_queue_depth",
-			Help:        "Current depth of the scan queue",
-			ConstLabels: labels,
-		}),
+			scanQueueDepthGauge: promauto.NewGauge(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "scan_queue_depth",
+				Help:        "Current depth of the scan queue",
+				ConstLabels: labels,
+			}),
 
-		// Size histogram with buckets appropriate for volume sizes
-		scanSizeHistogram: *promauto.NewHistogramVec(prometheus.HistogramOpts{
-			Namespace: namespace,
-			Subsystem: subsystem,
-			Name:      "volume_size_bytes",
-			Help:      "Size of scanned volumes in bytes",
-			Buckets: []float64{
-				1024,                            // 1KB
-				1024 * 1024,                     // 1MB
-				100 * 1024 * 1024,               // 100MB
-				1024 * 1024 * 1024,              // 1GB
-				10 * 1024 * 1024 * 1024,         // 10GB
-				100 * 1024 * 1024 * 1024,        // 100GB
-				1024 * 1024 * 1024 * 1024,       // 1TB
-				10 * 1024 * 1024 * 1024 * 1024,  // 10TB
-				100 * 1024 * 1024 * 1024 * 1024, // 100TB
-			},
-			ConstLabels: labels,
-		}, []string{"volume_id", "method", "filesystem_type"}),
+			// Size histogram with buckets appropriate for volume sizes
+			scanSizeHistogram: *promauto.NewHistogramVec(prometheus.HistogramOpts{
+				Namespace: namespace,
+				Subsystem: subsystem,
+				Name:      "volume_size_bytes",
+				Help:      "Size of scanned volumes in bytes",
+				Buckets: []float64{
+					1024,                            // 1KB
+					1024 * 1024,                     // 1MB
+					100 * 1024 * 1024,               // 100MB
+					1024 * 1024 * 1024,              // 1GB
+					10 * 1024 * 1024 * 1024,         // 10GB
+					100 * 1024 * 1024 * 1024,        // 100GB
+					1024 * 1024 * 1024 * 1024,       // 1TB
+					10 * 1024 * 1024 * 1024 * 1024,  // 10TB
+					100 * 1024 * 1024 * 1024 * 1024, // 100TB
+				},
+				ConstLabels: labels,
+			}, []string{"volume_id", "method", "filesystem_type"}),
 
-		scansInProgressGauge: *promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "scan_active",
-			Help:        "Number of scans currently active",
-			ConstLabels: labels,
-		}, []string{"method"}),
+			scansInProgressGauge: *promauto.NewGaugeVec(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "scan_active",
+				Help:        "Number of scans currently active",
+				ConstLabels: labels,
+			}, []string{"method"}),
 
-		// Volume-specific metrics
-		volumeTotalSizeGauge: *promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "volume_total_size_bytes",
-			Help:        "Total size of each volume in bytes",
-			ConstLabels: labels,
-		}, []string{"volume_id", "volume_name", "driver"}),
+			// Volume-specific metrics
+			volumeTotalSizeGauge: *promauto.NewGaugeVec(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "volume_total_size_bytes",
+				Help:        "Total size of each volume in bytes",
+				ConstLabels: labels,
+			}, []string{"volume_id", "volume_name", "driver"}),
 
-		volumeFileCountGauge: *promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "volume_file_count",
-			Help:        "Number of files in each volume",
-			ConstLabels: labels,
-		}, []string{"volume_id", "volume_name"}),
+			volumeFileCountGauge: *promauto.NewGaugeVec(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "volume_file_count",
+				Help:        "Number of files in each volume",
+				ConstLabels: labels,
+			}, []string{"volume_id", "volume_name"}),
 
-		volumeScanTimestampGauge: *promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "volume_last_scan_timestamp",
-			Help:        "Unix timestamp of last successful scan for each volume",
-			ConstLabels: labels,
-		}, []string{"volume_id", "method"}),
+			volumeScanTimestampGauge: *promauto.NewGaugeVec(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "volume_last_scan_timestamp",
+				Help:        "Unix timestamp of last successful scan for each volume",
+				ConstLabels: labels,
+			}, []string{"volume_id", "method"}),
 
-		// System health metrics
-		dockerConnectionStatus: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "docker_connection_status",
-			Help:        "Status of Docker daemon connection (1=connected, 0=disconnected)",
-			ConstLabels: labels,
-		}),
+			// System health metrics
+			dockerConnectionStatus: promauto.NewGauge(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "docker_connection_status",
+				Help:        "Status of Docker daemon connection (1=connected, 0=disconnected)",
+				ConstLabels: labels,
+			}),
 
-		activeScanners: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "active_scanners",
-			Help:        "Number of active scanner goroutines",
-			ConstLabels: labels,
-		}),
+			activeScanners: promauto.NewGauge(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   subsystem,
+				Name:        "active_scanners",
+				Help:        "Number of active scanner goroutines",
+				ConstLabels: labels,
+			}),
 
-		// Scheduler status metrics
-		schedulerRunningStatus: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   "scheduler",
-			Name:        "running_status",
-			Help:        "Status of the scan scheduler (1=running, 0=stopped)",
-			ConstLabels: labels,
-		}),
+			// Scheduler status metrics
+			schedulerRunningStatus: promauto.NewGauge(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   "scheduler",
+				Name:        "running_status",
+				Help:        "Status of the scan scheduler (1=running, 0=stopped)",
+				ConstLabels: labels,
+			}),
 
-		schedulerQueueDepthGauge: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   "scheduler",
-			Name:        "queue_depth",
-			Help:        "Current depth of the scheduler task queue",
-			ConstLabels: labels,
-		}),
+			schedulerQueueDepthGauge: promauto.NewGauge(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   "scheduler",
+				Name:        "queue_depth",
+				Help:        "Current depth of the scheduler task queue",
+				ConstLabels: labels,
+			}),
 
-		schedulerWorkerUtilization: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   "scheduler",
-			Name:        "worker_utilization",
-			Help:        "Scheduler worker utilization as percentage (0.0-1.0)",
-			ConstLabels: labels,
-		}),
+			schedulerWorkerUtilization: promauto.NewGauge(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   "scheduler",
+				Name:        "worker_utilization",
+				Help:        "Scheduler worker utilization as percentage (0.0-1.0)",
+				ConstLabels: labels,
+			}),
 
-		// Stats job metrics
-		statsJobsStartedTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
-			Namespace:   namespace,
-			Subsystem:   "stats",
-			Name:        "jobs_started_total",
-			Help:        "Total number of stats jobs started",
-			ConstLabels: labels,
-		}, []string{"job_type", "volume_id"}),
+			// Stats job metrics
+			statsJobsStartedTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
+				Namespace:   namespace,
+				Subsystem:   "stats",
+				Name:        "jobs_started_total",
+				Help:        "Total number of stats jobs started",
+				ConstLabels: labels,
+			}, []string{"job_type", "volume_id"}),
 
-		statsJobsCompletedTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
-			Namespace:   namespace,
-			Subsystem:   "stats",
-			Name:        "jobs_completed_total",
-			Help:        "Total number of stats jobs completed successfully",
-			ConstLabels: labels,
-		}, []string{"job_type", "volume_id"}),
+			statsJobsCompletedTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
+				Namespace:   namespace,
+				Subsystem:   "stats",
+				Name:        "jobs_completed_total",
+				Help:        "Total number of stats jobs completed successfully",
+				ConstLabels: labels,
+			}, []string{"job_type", "volume_id"}),
 
-		statsJobsFailedTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
-			Namespace:   namespace,
-			Subsystem:   "stats",
-			Name:        "jobs_failed_total",
-			Help:        "Total number of stats jobs that failed",
-			ConstLabels: labels,
-		}, []string{"job_type", "volume_id", "error_type"}),
+			statsJobsFailedTotal: *promauto.NewCounterVec(prometheus.CounterOpts{
+				Namespace:   namespace,
+				Subsystem:   "stats",
+				Name:        "jobs_failed_total",
+				Help:        "Total number of stats jobs that failed",
+				ConstLabels: labels,
+			}, []string{"job_type", "volume_id", "error_type"}),
 
-		statsJobDurationHistogram: *promauto.NewHistogramVec(prometheus.HistogramOpts{
-			Namespace:   namespace,
-			Subsystem:   "stats",
-			Name:        "job_duration_seconds",
-			Help:        "Duration of stats jobs in seconds",
-			Buckets:     []float64{0.1, 0.5, 1, 5, 10, 30, 60, 120, 300, 600}, // Up to 10 minutes
-			ConstLabels: labels,
-		}, []string{"job_type", "volume_id"}),
+			statsJobDurationHistogram: *promauto.NewHistogramVec(prometheus.HistogramOpts{
+				Namespace:   namespace,
+				Subsystem:   "stats",
+				Name:        "job_duration_seconds",
+				Help:        "Duration of stats jobs in seconds",
+				Buckets:     []float64{0.1, 0.5, 1, 5, 10, 30, 60, 120, 300, 600}, // Up to 10 minutes
+				ConstLabels: labels,
+			}, []string{"job_type", "volume_id"}),
 
-		statsJobQueueDepthGauge: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   "stats",
-			Name:        "job_queue_depth",
-			Help:        "Current depth of the stats job queue",
-			ConstLabels: labels,
-		}),
+			statsJobQueueDepthGauge: promauto.NewGauge(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   "stats",
+				Name:        "job_queue_depth",
+				Help:        "Current depth of the stats job queue",
+				ConstLabels: labels,
+			}),
 
-		statsServiceStatus: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Subsystem:   "stats",
-			Name:        "service_status",
-			Help:        "Status of the stats service (1=enabled, 0=disabled)",
-			ConstLabels: labels,
-		}),
+			statsServiceStatus: promauto.NewGauge(prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Subsystem:   "stats",
+				Name:        "service_status",
+				Help:        "Status of the stats service (1=enabled, 0=disabled)",
+				ConstLabels: labels,
+			}),
 		}
 	})
-	
+
 	return globalMetricsCollector
 }
 

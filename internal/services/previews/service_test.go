@@ -190,7 +190,7 @@ func TestService_GetSupportedTypes(t *testing.T) {
 	require.NoError(t, err)
 
 	supported := service.GetSupportedTypes()
-	
+
 	// Since no processors are available in test env, should be empty
 	assert.Empty(t, supported)
 }
@@ -227,9 +227,9 @@ func TestService_BuildMetadata(t *testing.T) {
 
 	startTime := time.Now()
 	time.Sleep(10 * time.Millisecond) // Small delay to ensure processing time > 0
-	
+
 	metadata := service.buildMetadata(req, "storage/key", "contenthash", startTime, false)
-	
+
 	assert.Equal(t, int64(123), metadata.FileID)
 	assert.Equal(t, PreviewTypeThumbnail, metadata.Type)
 	assert.Equal(t, PreviewSizeMedium, metadata.Size)
@@ -345,7 +345,7 @@ func TestService_CleanupLoop(t *testing.T) {
 
 	// The cleanup loop runs in a goroutine, just verify it doesn't panic
 	time.Sleep(200 * time.Millisecond)
-	
+
 	// Get stats to ensure service is still functional
 	stats := service.GetStats()
 	assert.NotNil(t, stats)

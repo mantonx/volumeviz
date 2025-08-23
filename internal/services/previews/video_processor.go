@@ -137,7 +137,7 @@ func (vp *VideoProcessor) GeneratePoster(ctx context.Context, sourcePath string,
 		if ctx.Err() == context.DeadlineExceeded {
 			return nil, fmt.Errorf("poster generation timeout")
 		}
-		
+
 		// If frame extraction failed, try different time offsets
 		if timeOffset > 30 {
 			// Try 30 seconds into the video
@@ -149,7 +149,7 @@ func (vp *VideoProcessor) GeneratePoster(ctx context.Context, sourcePath string,
 			// Try near the beginning
 			return vp.GeneratePoster(ctx, sourcePath, size, 1.0)
 		}
-		
+
 		return nil, fmt.Errorf("ffmpeg failed after trying multiple time offsets: %w (stderr: %s)", err, stderr.String())
 	}
 

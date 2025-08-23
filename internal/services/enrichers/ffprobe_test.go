@@ -184,7 +184,7 @@ func TestFFprobeEnricher_detectHDRFormat(t *testing.T) {
 func parseTestFFprobeOutput(t *testing.T, testOutput *testdata.FFprobeJSONOutput) *MediaMetadata {
 	enricher := &FFprobeEnricher{}
 	fileInfo := FileInfo{Path: testOutput.Format.Filename}
-	
+
 	// Convert test data to internal format
 	output := &FFprobeOutput{
 		Format: FFprobeFormat{
@@ -198,7 +198,7 @@ func parseTestFFprobeOutput(t *testing.T, testOutput *testdata.FFprobeJSONOutput
 		},
 		Streams: make([]FFprobeStream, len(testOutput.Streams)),
 	}
-	
+
 	for i, s := range testOutput.Streams {
 		output.Streams[i] = FFprobeStream{
 			Index:          s.Index,
@@ -219,12 +219,12 @@ func parseTestFFprobeOutput(t *testing.T, testOutput *testdata.FFprobeJSONOutput
 			ColorSpace:     s.ColorSpace,
 		}
 	}
-	
+
 	metadata, err := enricher.parseFFprobeOutput(output, fileInfo)
 	if err != nil {
 		t.Fatalf("parseFFprobeOutput failed: %v", err)
 	}
-	
+
 	return metadata
 }
 

@@ -16,22 +16,22 @@ import (
 
 // AlertEngine coordinates alert evaluation, routing, and delivery
 type AlertEngine struct {
-	store            store.Store
-	evaluator        interfaces.AlertEvaluator
-	router           interfaces.AlertRouter
-	delivery         interfaces.AlertDeliveryService
-	deduplicator     interfaces.Deduplicator
-	renderer         interfaces.TemplateRenderer
-	providers        map[string]interfaces.AlertProvider
-	
+	store        store.Store
+	evaluator    interfaces.AlertEvaluator
+	router       interfaces.AlertRouter
+	delivery     interfaces.AlertDeliveryService
+	deduplicator interfaces.Deduplicator
+	renderer     interfaces.TemplateRenderer
+	providers    map[string]interfaces.AlertProvider
+
 	// Configuration
 	evaluationInterval time.Duration
 	enabled            bool
-	
+
 	// Control
-	stopChan   chan struct{}
-	wg         sync.WaitGroup
-	mu         sync.RWMutex
+	stopChan chan struct{}
+	wg       sync.WaitGroup
+	mu       sync.RWMutex
 }
 
 // EngineConfig holds configuration for the alerts engine
@@ -256,7 +256,7 @@ func (e *AlertEngine) runEvaluation(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("evaluation failed: %w", err)
 	}
-	
+
 	log.Printf("Evaluation completed successfully")
 	return nil
 }
@@ -334,13 +334,13 @@ func (e *AlertEngine) GetStats(ctx context.Context) (interface{}, error) {
 
 // AlertsStats provides alert statistics
 type AlertsStats struct {
-	Total         int64 `json:"total"`
-	Active        int64 `json:"active"`
-	Acknowledged  int64 `json:"acknowledged"`
-	Resolved      int64 `json:"resolved"`
+	Total        int64 `json:"total"`
+	Active       int64 `json:"active"`
+	Acknowledged int64 `json:"acknowledged"`
+	Resolved     int64 `json:"resolved"`
 }
 
-// DeliveryStats provides delivery statistics  
+// DeliveryStats provides delivery statistics
 type DeliveryStats struct {
 	Delivered int64 `json:"delivered"`
 	Failed    int64 `json:"failed"`
@@ -350,15 +350,15 @@ type DeliveryStats struct {
 
 // EngineStats provides comprehensive engine statistics
 type EngineStats struct {
-	Enabled            bool                  `json:"enabled"`
-	EvaluationInterval time.Duration         `json:"evaluation_interval"`
-	QueueSize          int                   `json:"queue_size"`
-	Rules              int64                 `json:"rules"`
-	Destinations       int64                 `json:"destinations"`
-	Alerts             AlertsStats           `json:"alerts"`
-	Deliveries         DeliveryStats         `json:"deliveries"`
-	Service            DeliveryServiceStats  `json:"service"`
-	ProvidersEnabled   []string              `json:"providers_enabled"`
+	Enabled            bool                 `json:"enabled"`
+	EvaluationInterval time.Duration        `json:"evaluation_interval"`
+	QueueSize          int                  `json:"queue_size"`
+	Rules              int64                `json:"rules"`
+	Destinations       int64                `json:"destinations"`
+	Alerts             AlertsStats          `json:"alerts"`
+	Deliveries         DeliveryStats        `json:"deliveries"`
+	Service            DeliveryServiceStats `json:"service"`
+	ProvidersEnabled   []string             `json:"providers_enabled"`
 }
 
 // getEnabledProviders returns a list of enabled provider types
@@ -452,7 +452,7 @@ func (e *AlertEngine) UpdateConfig(config *EngineConfig) error {
 
 	e.enabled = config.Enabled
 
-	log.Printf("Engine configuration updated: interval=%v, enabled=%v", 
+	log.Printf("Engine configuration updated: interval=%v, enabled=%v",
 		e.evaluationInterval, e.enabled)
 
 	return nil

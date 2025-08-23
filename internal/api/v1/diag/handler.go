@@ -65,15 +65,15 @@ func (h *Handler) GetRealtimeDiagnostics(c *gin.Context) {
 	if h.config.Events.Enabled && h.hub != nil {
 		diag.Mode = ModeWebSocket
 		diag.ActiveConnections = h.hub.GetClientCount()
-		diag.Features = append(diag.Features, 
+		diag.Features = append(diag.Features,
 			"volume_updates",
-			"scan_progress", 
+			"scan_progress",
 			"filesystem_indexing",
 			"media_enrichment",
 			"heartbeat",
 			"auto_reconnect",
 		)
-		
+
 		// Set WebSocket URL based on request
 		scheme := "ws"
 		if c.Request.TLS != nil {

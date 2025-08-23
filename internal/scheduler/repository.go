@@ -63,7 +63,7 @@ func (r *StoreBasedRepository) InsertScanRun(ctx context.Context, run *models.Sc
 		StartedAt:    run.StartedAt,
 		CompletedAt:  run.CompletedAt,
 	}
-	
+
 	_, err := r.store.Scans().CreateScanJob(ctx, params)
 	return err
 }
@@ -102,7 +102,7 @@ func (r *StoreBasedRepository) UpsertVolume(ctx context.Context, volume *models.
 		Status:     volume.Status,
 		IsActive:   volume.IsActive,
 	}
-	
+
 	_, err := r.store.Volumes().UpsertVolume(ctx, params)
 	return err
 }

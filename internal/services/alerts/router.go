@@ -29,16 +29,16 @@ func (r *AlertRouter) Route(ctx context.Context, alert *models.Alert) ([]*models
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var matchedRoutes []*models.AlertRoute
-	
+
 	// Check each route to see if it matches the alert
 	for _, route := range routes {
 		if r.MatchesRoute(alert, route) {
 			matchedRoutes = append(matchedRoutes, route)
 		}
 	}
-	
+
 	return matchedRoutes, nil
 }
 
@@ -48,14 +48,14 @@ func (r *AlertRouter) MatchesRoute(alert *models.Alert, route *models.AlertRoute
 	if !route.IsEnabled {
 		return false
 	}
-	
+
 	// Check each matcher in the route
 	for matcherKey, matcherValue := range route.Matchers {
 		if !r.matchesCriteria(alert, matcherKey, matcherValue) {
 			return false
 		}
 	}
-	
+
 	return true
 }
 
@@ -129,29 +129,29 @@ func (r *AlertRouter) matchesPattern(value, pattern string) bool {
 func (r *AlertRouter) matchesGlob(value, pattern string) bool {
 	// Simple implementation for basic glob patterns
 	// This could be enhanced with a proper glob library
-	
+
 	if pattern == "*" {
 		return true
 	}
-	
+
 	if strings.HasPrefix(pattern, "*") && strings.HasSuffix(pattern, "*") {
 		// *substring*
 		substring := pattern[1 : len(pattern)-1]
 		return strings.Contains(strings.ToLower(value), strings.ToLower(substring))
 	}
-	
+
 	if strings.HasPrefix(pattern, "*") {
 		// *suffix
 		suffix := pattern[1:]
 		return strings.HasSuffix(strings.ToLower(value), strings.ToLower(suffix))
 	}
-	
+
 	if strings.HasSuffix(pattern, "*") {
 		// prefix*
 		prefix := pattern[:len(pattern)-1]
 		return strings.HasPrefix(strings.ToLower(value), strings.ToLower(prefix))
 	}
-	
+
 	// No wildcard, exact match
 	return strings.EqualFold(value, pattern)
 }
@@ -172,7 +172,7 @@ func (r *AlertRouter) ValidateRouteMatchers(matchers map[string]string) error {
 		"severity":    true,
 		// Any other key is assumed to be a label/annotation name
 	}
-	
+
 	for key, pattern := range matchers {
 		// Check if key is valid (either predefined or a custom label)
 		if _, isValid := validKeys[key]; !isValid {
@@ -184,7 +184,7 @@ func (r *AlertRouter) ValidateRouteMatchers(matchers map[string]string) error {
 				}
 			}
 		}
-		
+
 		// Validate pattern
 		if pattern == "" {
 			return &RouteValidationError{
@@ -192,7 +192,7 @@ func (r *AlertRouter) ValidateRouteMatchers(matchers map[string]string) error {
 				Message: "matcher pattern cannot be empty",
 			}
 		}
-		
+
 		// Check for invalid regex patterns (basic validation)
 		if strings.HasPrefix(pattern, "~") {
 			regexPattern := pattern[1:]
@@ -204,7 +204,7 @@ func (r *AlertRouter) ValidateRouteMatchers(matchers map[string]string) error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -220,9 +220,9 @@ func (e *RouteValidationError) Error() string {
 
 // MatchingInfo provides debugging information about route matching
 type MatchingInfo struct {
-	Route     *models.AlertRoute    `json:"route"`
-	Matches   bool                  `json:"matches"`
-	Criteria  []CriteriaMatch       `json:"criteria"`
+	Route    *models.AlertRoute `json:"route"`
+	Matches  bool               `json:"matches"`
+	Criteria []CriteriaMatch    `json:"criteria"`
 }
 
 // CriteriaMatch represents the result of matching a single criteria
@@ -239,35 +239,35 @@ func (r *AlertRouter) GetMatchingInfo(ctx context.Context, alert *models.Alert) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var infos []*MatchingInfo
-	
+
 	for _, route := range routes {
 		info := &MatchingInfo{
 			Route:   route,
 			Matches: true,
 		}
-		
+
 		// Check each matcher
 		for key, pattern := range route.Matchers {
 			value := r.getAlertValue(alert, key)
 			matches := r.matchesCriteria(alert, key, pattern)
-			
+
 			info.Criteria = append(info.Criteria, CriteriaMatch{
 				Key:     key,
 				Pattern: pattern,
 				Value:   value,
 				Matches: matches,
 			})
-			
+
 			if !matches {
 				info.Matches = false
 			}
 		}
-		
+
 		infos = append(infos, info)
 	}
-	
+
 	return infos, nil
 }
 
