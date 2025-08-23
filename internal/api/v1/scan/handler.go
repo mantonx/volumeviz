@@ -308,24 +308,113 @@ func (h *Handler) GetScanProgress(c *gin.Context) {
 		}
 	}
 
+	// Populate error messages in phases based on recent errors
+	phaseErrorMap := make(map[string]string)
+	for _, err := range errors {
+		if err.PhaseName != "" {
+			if existingMsg, exists := phaseErrorMap[err.PhaseName]; exists {
+				// Keep the first (most recent) error message for each phase
+				if existingMsg == "" {
+					phaseErrorMap[err.PhaseName] = err.ErrorMessage
+				}
+			} else {
+				phaseErrorMap[err.PhaseName] = err.ErrorMessage
+			}
+		}
+	}
+
+	// Update phases with error messages
+	for i := range phases {
+		if errorMsg, exists := phaseErrorMap[phases[i].PhaseName]; exists && errorMsg != "" {
+			phases[i].ErrorMessage = errorMsg
+		}
+	}
+
 	// Get the overall status from the scan_jobs table (single source of truth)
 	var overallStatus string = "unknown"
+	var volumeID string
 	if scansRepo := h.store.Scans(); scansRepo != nil {
 		if scanJob, err := scansRepo.GetScanJobByScanID(c.Request.Context(), scanID); err == nil {
 			overallStatus = scanJob.Status
+			volumeID = scanJob.VolumeID
+		}
+	}
+
+	// Calculate overall progress from phase data
+	var overallProgress float64 = 0.0
+	phaseWeights := map[string]float64{
+		"volume_scan":        0.15,  // 15%
+		"filesystem_indexing": 0.70,  // 70%
+		"media_enrichment":   0.15,  // 15%
+	}
+	
+	totalWeight := 0.0
+	weightedProgress := 0.0
+	
+	for _, phase := range phases {
+		if weight, exists := phaseWeights[phase.PhaseName]; exists {
+			totalWeight += weight
+			
+			// Calculate phase progress based on status and progress
+			var phaseProgress float64
+			switch phase.Status {
+			case "completed":
+				phaseProgress = 100.0
+			case "failed":
+				// Failed phases still contribute their partial progress
+				phaseProgress = float64(phase.Progress)
+			case "running":
+				phaseProgress = float64(phase.Progress)
+			case "pending", "skipped":
+				phaseProgress = 0.0
+			default:
+				phaseProgress = 0.0
+			}
+			
+			weightedProgress += weight * phaseProgress
+		}
+	}
+	
+	// Calculate final overall progress
+	if totalWeight > 0 {
+		overallProgress = weightedProgress / totalWeight
+	}
+	
+	// For completed scans, ensure 100% progress
+	if overallStatus == "completed" {
+		overallProgress = 100.0
+	}
+
+	// Get timing information
+	var startedAt, completedAt *time.Time
+	if len(phases) > 0 {
+		// Use earliest start time
+		for _, phase := range phases {
+			if phase.StartedAt != nil && (startedAt == nil || phase.StartedAt.Before(*startedAt)) {
+				startedAt = phase.StartedAt
+			}
+		}
+		// Use latest completion time
+		for _, phase := range phases {
+			if phase.CompletedAt != nil && (completedAt == nil || phase.CompletedAt.After(*completedAt)) {
+				completedAt = phase.CompletedAt
+			}
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"scan_id": scanID,
-		"phases":  phases,
-		"items":   items,
-		"errors":  errors,
-		"summary": gin.H{
-			"total_phases":  len(phases),
-			"total_items":   len(items),
-			"total_errors":  len(errors),
-			"overall_status": overallStatus,
+		"scan_id":           scanID,
+		"volume_id":         volumeID,
+		"overall_status":    overallStatus,
+		"overall_progress":  overallProgress,
+		"started_at":        startedAt,
+		"completed_at":      completedAt,
+		"phases":            phases,
+		"recent_errors":     errors,
+		"performance_stats": gin.H{
+			"total_phases":    len(phases),
+			"total_items":     len(items),
+			"total_errors":    len(errors),
 		},
 	})
 }
