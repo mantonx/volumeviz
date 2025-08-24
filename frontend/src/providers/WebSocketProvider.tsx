@@ -450,7 +450,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       mountedRef.current = false;
       disconnect();
     };
-  }, [WS_ENABLED, connect, disconnect]);
+  }, [WS_ENABLED]); // Only depend on WS_ENABLED to avoid reconnection loops
 
   // Prevent duplicate connections on hot reload in development
   useEffect(() => {
