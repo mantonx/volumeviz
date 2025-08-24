@@ -234,8 +234,10 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
     // Subscribe to scan progress for all volumes
     const subscribeMessage = {
       type: 'subscribe',
-      event: 'scan_progress',
-      filters: {}, // Subscribe to all scan progress
+      data: {
+        event: 'scan_progress',
+        filters: {}, // Subscribe to all scan progress
+      },
     };
     console.log('Sending WebSocket subscription:', subscribeMessage);
     

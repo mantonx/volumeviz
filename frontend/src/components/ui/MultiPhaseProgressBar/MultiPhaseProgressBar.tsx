@@ -211,12 +211,14 @@ export const MultiPhaseProgressBar: React.FC<MultiPhaseProgressBarProps> = ({
     // This is critical for receiving real-time updates
     const subscribeMessage = {
       type: 'subscribe',
-      event: 'scan_progress',
-      filters: scanId 
-        ? { scan_id: scanId }
-        : volumeId 
-        ? { volume_id: volumeId }
-        : {},
+      data: {
+        event: 'scan_progress',
+        filters: scanId 
+          ? { scan_id: scanId }
+          : volumeId 
+          ? { volume_id: volumeId }
+          : {},
+      },
     };
     
     console.log('MultiPhaseProgressBar subscribing to WebSocket:', subscribeMessage);
@@ -233,8 +235,10 @@ export const MultiPhaseProgressBar: React.FC<MultiPhaseProgressBarProps> = ({
     return () => {
       const unsubscribeMessage = {
         type: 'unsubscribe',
-        event: 'scan_progress',
-        filters: subscribeMessage.filters,
+        data: {
+          event: 'scan_progress',
+          filters: subscribeMessage.data.filters,
+        },
       };
       send(unsubscribeMessage);
     };
