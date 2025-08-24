@@ -238,7 +238,14 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
       filters: {}, // Subscribe to all scan progress
     };
     console.log('Sending WebSocket subscription:', subscribeMessage);
-    send(subscribeMessage);
+    
+    // Add a small delay to ensure WebSocket connection is fully ready
+    setTimeout(() => {
+      if (!send(subscribeMessage)) {
+        console.warn('Failed to send subscription, retrying in 100ms...');
+        setTimeout(() => send(subscribeMessage), 100);
+      }
+    }, 10);
   }, [isConnected, on, send, fetchData]);
 
   // Show error toasts

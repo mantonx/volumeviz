@@ -220,7 +220,14 @@ export const MultiPhaseProgressBar: React.FC<MultiPhaseProgressBarProps> = ({
     };
     
     console.log('MultiPhaseProgressBar subscribing to WebSocket:', subscribeMessage);
-    send(subscribeMessage);
+    
+    // Add a small delay to ensure WebSocket connection is fully ready
+    setTimeout(() => {
+      if (!send(subscribeMessage)) {
+        console.warn('MultiPhaseProgressBar: Failed to send subscription, retrying in 100ms...');
+        setTimeout(() => send(subscribeMessage), 100);
+      }
+    }, 10);
 
     // Cleanup: unsubscribe when component unmounts
     return () => {
