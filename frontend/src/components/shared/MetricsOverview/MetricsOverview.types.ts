@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import type { 
-  Metric, 
-  MetricStatus, 
-  MetricTrend, 
+import type {
+  Metric,
+  MetricStatus,
+  MetricTrend,
   MetricValueType,
   MetricCardSize,
 } from '../../ui/MetricCard/MetricCard.types';
@@ -126,7 +126,7 @@ export interface MetricsOverviewProps {
   categories?: MetricCategory[];
   alerts?: MetricAlert[];
   aggregations?: MetricsAggregation[];
-  
+
   // Layout and appearance
   layout?: MetricsLayout;
   grouping?: MetricsGrouping;
@@ -135,14 +135,14 @@ export interface MetricsOverviewProps {
   gap?: number;
   height?: number | string;
   maxHeight?: number | string;
-  
+
   // Behavior
   refreshConfig?: RefreshConfig;
   filter?: MetricsFilter;
   sorting?: MetricsSorting;
   searchable?: boolean;
   exportable?: boolean;
-  
+
   // Interactions
   onMetricClick?: (metric: OverviewMetric) => void;
   onMetricAction?: (action: MetricAction, metric: OverviewMetric) => void;
@@ -151,25 +151,28 @@ export interface MetricsOverviewProps {
   onSortChange?: (sorting: MetricsSorting) => void;
   onRefresh?: () => void | Promise<void>;
   onExport?: (format: string) => void;
-  
+
   // Customization
   renderMetric?: (metric: OverviewMetric) => ReactNode;
-  renderCategory?: (category: MetricCategory, metrics: OverviewMetric[]) => ReactNode;
+  renderCategory?: (
+    category: MetricCategory,
+    metrics: OverviewMetric[],
+  ) => ReactNode;
   renderAlert?: (alert: MetricAlert) => ReactNode;
   renderEmpty?: () => ReactNode;
   renderLoading?: () => ReactNode;
   renderError?: (error: string) => ReactNode;
-  
+
   // State
   loading?: boolean;
   error?: string;
-  
+
   // Styling
   className?: string;
   headerClassName?: string;
   contentClassName?: string;
   footerClassName?: string;
-  
+
   // Accessibility
   ariaLabel?: string;
   testId?: string;

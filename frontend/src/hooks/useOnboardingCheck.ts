@@ -19,7 +19,7 @@ export function useOnboardingCheck(): OnboardingStatus {
     hasRules: false,
     onboardingComplete: false,
   });
-  
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -38,8 +38,10 @@ export function useOnboardingCheck(): OnboardingStatus {
         }
 
         // Check if onboarding was already completed
-        const onboardingComplete = localStorage.getItem('volumeviz_onboarding_complete') === 'true';
-        const onboardingAttempted = localStorage.getItem('volumeviz_onboarding_attempted') === 'true';
+        const onboardingComplete =
+          localStorage.getItem('volumeviz_onboarding_complete') === 'true';
+        const onboardingAttempted =
+          localStorage.getItem('volumeviz_onboarding_attempted') === 'true';
 
         if (onboardingComplete || onboardingAttempted) {
           setStatus({
@@ -55,7 +57,7 @@ export function useOnboardingCheck(): OnboardingStatus {
         const response = await fetch('/api/v1/tracking/rules');
         if (!response.ok) {
           console.error('Failed to check tracking rules status');
-          setStatus(prev => ({ ...prev, isLoading: false }));
+          setStatus((prev) => ({ ...prev, isLoading: false }));
           return;
         }
 
@@ -83,7 +85,7 @@ export function useOnboardingCheck(): OnboardingStatus {
         }
       } catch (error) {
         console.error('Error checking onboarding status:', error);
-        setStatus(prev => ({ ...prev, isLoading: false }));
+        setStatus((prev) => ({ ...prev, isLoading: false }));
       }
     };
 

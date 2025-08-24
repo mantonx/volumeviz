@@ -7,11 +7,24 @@ import type { ScanOperation } from '../components/domain/ScanManagerDashboard';
 const scanOperationsAtom = atom<Record<string, ScanOperation>>({});
 const scanWebSocketAtom = atom<WebSocket | null>(null);
 
-type ScanWebSocketMessage = 
-  | { type: 'scan_progress', data: ScanOperation }
-  | { type: 'scan_started', data: { scanId: string; volumeId: string; volumeName: string } }
-  | { type: 'scan_completed', data: { scanId: string; volumeId: string; status: 'completed' | 'failed' } }
-  | { type: 'scan_error', data: { scanId: string; volumeId: string; error: string } };
+type ScanWebSocketMessage =
+  | { type: 'scan_progress'; data: ScanOperation }
+  | {
+      type: 'scan_started';
+      data: { scanId: string; volumeId: string; volumeName: string };
+    }
+  | {
+      type: 'scan_completed';
+      data: {
+        scanId: string;
+        volumeId: string;
+        status: 'completed' | 'failed';
+      };
+    }
+  | {
+      type: 'scan_error';
+      data: { scanId: string; volumeId: string; error: string };
+    };
 
 export interface UseScanProgressOptions {
   /** WebSocket URL for scan updates */
@@ -47,16 +60,20 @@ export interface UseScanProgressReturn {
   disconnect: () => void;
 }
 
-export const useScanProgress = (options: UseScanProgressOptions = {}): UseScanProgressReturn => {
+export const useScanProgress = (
+  options: UseScanProgressOptions = {},
+): UseScanProgressReturn => {
   const {
     wsUrl = `ws://${window.location.host}/api/v1/ws/scan`,
     autoConnect = true,
-    reconnect = { enabled: true, maxAttempts: 5, delay: 3000 }
+    reconnect = { enabled: true, maxAttempts: 5, delay: 3000 },
   } = options;
 
   const [scanOperations, setScanOperations] = useAtom(scanOperationsAtom);
   const [webSocket, setWebSocket] = useAtom(scanWebSocketAtom);
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
+  const [connectionStatus, setConnectionStatus] = useState<
+    'connecting' | 'connected' | 'disconnected' | 'error'
+  >('disconnected');
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
   const connect = useCallback(() => {
@@ -68,7 +85,7 @@ export const useScanProgress = (options: UseScanProgressOptions = {}): UseScanPr
 
     try {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.onopen = () => {
         console.log('[useScanProgress] WebSocket connected');
         setConnectionStatus('connected');
@@ -79,17 +96,17 @@ export const useScanProgress = (options: UseScanProgressOptions = {}): UseScanPr
       ws.onmessage = (event) => {
         try {
           const message: ScanWebSocketMessage = JSON.parse(event.data);
-          
+
           switch (message.type) {
             case 'scan_progress':
-              setScanOperations(prev => ({
+              setScanOperations((prev) => ({
                 ...prev,
-                [message.data.scanId]: message.data
+                [message.data.scanId]: message.data,
               }));
               break;
-              
+
             case 'scan_started':
-              setScanOperations(prev => ({
+              setScanOperations((prev) => ({
                 ...prev,
                 [message.data.scanId]: {
                   scanId: message.data.scanId,
@@ -98,12 +115,12 @@ export const useScanProgress = (options: UseScanProgressOptions = {}): UseScanPr
                   status: 'running',
                   progress: 0,
                   startedAt: new Date().toISOString(),
-                }
+                },
               }));
               break;
-              
+
             case 'scan_completed':
-              setScanOperations(prev => {
+              setScanOperations((prev) => {
                 const scan = prev[message.data.scanId];
                 if (scan) {
                   return {
@@ -111,17 +128,20 @@ export const useScanProgress = (options: UseScanProgressOptions = {}): UseScanPr
                     [message.data.scanId]: {
                       ...scan,
                       status: message.data.status,
-                      progress: message.data.status === 'completed' ? 100 : scan.progress,
+                      progress:
+                        message.data.status === 'completed'
+                          ? 100
+                          : scan.progress,
                       completedAt: new Date().toISOString(),
-                    }
+                    },
                   };
                 }
                 return prev;
               });
               break;
-              
+
             case 'scan_error':
-              setScanOperations(prev => {
+              setScanOperations((prev) => {
                 const scan = prev[message.data.scanId];
                 if (scan) {
                   return {
@@ -130,7 +150,7 @@ export const useScanProgress = (options: UseScanProgressOptions = {}): UseScanPr
                       ...scan,
                       status: 'failed',
                       errorsCount: (scan.errorsCount || 0) + 1,
-                    }
+                    },
                   };
                 }
                 return prev;
@@ -138,7 +158,10 @@ export const useScanProgress = (options: UseScanProgressOptions = {}): UseScanPr
               break;
           }
         } catch (error) {
-          console.error('[useScanProgress] Failed to parse WebSocket message:', error);
+          console.error(
+            '[useScanProgress] Failed to parse WebSocket message:',
+            error,
+          );
         }
       };
 
@@ -150,7 +173,7 @@ export const useScanProgress = (options: UseScanProgressOptions = {}): UseScanPr
         // Attempt reconnection if enabled
         if (reconnect.enabled && reconnectAttempts < reconnect.maxAttempts) {
           setTimeout(() => {
-            setReconnectAttempts(prev => prev + 1);
+            setReconnectAttempts((prev) => prev + 1);
             connect();
           }, reconnect.delay);
         }
@@ -160,7 +183,6 @@ export const useScanProgress = (options: UseScanProgressOptions = {}): UseScanPr
         console.error('[useScanProgress] WebSocket error:', error);
         setConnectionStatus('error');
       };
-
     } catch (error) {
       console.error('[useScanProgress] Failed to create WebSocket:', error);
       setConnectionStatus('error');
@@ -175,110 +197,127 @@ export const useScanProgress = (options: UseScanProgressOptions = {}): UseScanPr
     setConnectionStatus('disconnected');
   }, [webSocket, setWebSocket]);
 
-  const getScanProgress = useCallback((volumeId: string): ScanOperation | undefined => {
-    return Object.values(scanOperations).find(scan => scan.volumeId === volumeId);
-  }, [scanOperations]);
+  const getScanProgress = useCallback(
+    (volumeId: string): ScanOperation | undefined => {
+      return Object.values(scanOperations).find(
+        (scan) => scan.volumeId === volumeId,
+      );
+    },
+    [scanOperations],
+  );
 
-  const startScan = useCallback(async (volumeId: string, volumeName: string): Promise<string> => {
-    try {
-      // Make API call to start scan
-      const response = await fetch(`/api/v1/volumes/${volumeId}/scan`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          volumeId,
-          volumeName,
-        }),
-      });
+  const startScan = useCallback(
+    async (volumeId: string, volumeName: string): Promise<string> => {
+      try {
+        // Make API call to start scan
+        const response = await fetch(`/api/v1/volumes/${volumeId}/scan`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            volumeId,
+            volumeName,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to start scan: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      return result.scanId;
-    } catch (error) {
-      console.error('[useScanProgress] Failed to start scan:', error);
-      throw error;
-    }
-  }, []);
-
-  const pauseScan = useCallback(async (scanId: string): Promise<void> => {
-    try {
-      const response = await fetch(`/api/v1/scans/${scanId}/pause`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to pause scan: ${response.statusText}`);
-      }
-
-      // Update local state immediately for better UX
-      setScanOperations(prev => {
-        const scan = prev[scanId];
-        if (scan) {
-          return {
-            ...prev,
-            [scanId]: { ...scan, status: 'paused' }
-          };
+        if (!response.ok) {
+          throw new Error(`Failed to start scan: ${response.statusText}`);
         }
-        return prev;
-      });
-    } catch (error) {
-      console.error('[useScanProgress] Failed to pause scan:', error);
-      throw error;
-    }
-  }, [setScanOperations]);
 
-  const resumeScan = useCallback(async (scanId: string): Promise<void> => {
-    try {
-      const response = await fetch(`/api/v1/scans/${scanId}/resume`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to resume scan: ${response.statusText}`);
+        const result = await response.json();
+        return result.scanId;
+      } catch (error) {
+        console.error('[useScanProgress] Failed to start scan:', error);
+        throw error;
       }
+    },
+    [],
+  );
 
-      // Update local state immediately for better UX
-      setScanOperations(prev => {
-        const scan = prev[scanId];
-        if (scan) {
-          return {
-            ...prev,
-            [scanId]: { ...scan, status: 'running' }
-          };
+  const pauseScan = useCallback(
+    async (scanId: string): Promise<void> => {
+      try {
+        const response = await fetch(`/api/v1/scans/${scanId}/pause`, {
+          method: 'POST',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to pause scan: ${response.statusText}`);
         }
-        return prev;
-      });
-    } catch (error) {
-      console.error('[useScanProgress] Failed to resume scan:', error);
-      throw error;
-    }
-  }, [setScanOperations]);
 
-  const stopScan = useCallback(async (scanId: string): Promise<void> => {
-    try {
-      const response = await fetch(`/api/v1/scans/${scanId}/stop`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to stop scan: ${response.statusText}`);
+        // Update local state immediately for better UX
+        setScanOperations((prev) => {
+          const scan = prev[scanId];
+          if (scan) {
+            return {
+              ...prev,
+              [scanId]: { ...scan, status: 'paused' },
+            };
+          }
+          return prev;
+        });
+      } catch (error) {
+        console.error('[useScanProgress] Failed to pause scan:', error);
+        throw error;
       }
+    },
+    [setScanOperations],
+  );
 
-      // Remove from local state
-      setScanOperations(prev => {
-        const { [scanId]: removed, ...remaining } = prev;
-        return remaining;
-      });
-    } catch (error) {
-      console.error('[useScanProgress] Failed to stop scan:', error);
-      throw error;
-    }
-  }, [setScanOperations]);
+  const resumeScan = useCallback(
+    async (scanId: string): Promise<void> => {
+      try {
+        const response = await fetch(`/api/v1/scans/${scanId}/resume`, {
+          method: 'POST',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to resume scan: ${response.statusText}`);
+        }
+
+        // Update local state immediately for better UX
+        setScanOperations((prev) => {
+          const scan = prev[scanId];
+          if (scan) {
+            return {
+              ...prev,
+              [scanId]: { ...scan, status: 'running' },
+            };
+          }
+          return prev;
+        });
+      } catch (error) {
+        console.error('[useScanProgress] Failed to resume scan:', error);
+        throw error;
+      }
+    },
+    [setScanOperations],
+  );
+
+  const stopScan = useCallback(
+    async (scanId: string): Promise<void> => {
+      try {
+        const response = await fetch(`/api/v1/scans/${scanId}/stop`, {
+          method: 'POST',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to stop scan: ${response.statusText}`);
+        }
+
+        // Remove from local state
+        setScanOperations((prev) => {
+          const { [scanId]: removed, ...remaining } = prev;
+          return remaining;
+        });
+      } catch (error) {
+        console.error('[useScanProgress] Failed to stop scan:', error);
+        throw error;
+      }
+    },
+    [setScanOperations],
+  );
 
   // Auto-connect on mount
   useEffect(() => {

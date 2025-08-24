@@ -43,45 +43,51 @@ import type {
   MetricsLayout,
   MetricsGrouping,
 } from './MetricsOverview.types';
-import { 
-  defaultMetricsLayouts, 
-  scanMonitoringCategories 
+import {
+  defaultMetricsLayouts,
+  scanMonitoringCategories,
 } from './MetricsOverview.types';
 
 /**
  * Filter metrics based on filter configuration
  */
-const filterMetrics = (metrics: OverviewMetric[], filter: MetricsFilter): OverviewMetric[] => {
-  return metrics.filter(metric => {
+const filterMetrics = (
+  metrics: OverviewMetric[],
+  filter: MetricsFilter,
+): OverviewMetric[] => {
+  return metrics.filter((metric) => {
     // Category filter
     if (filter.categories && filter.categories.length > 0) {
       if (!filter.categories.includes(metric.category)) return false;
     }
-    
+
     // Status filter
     if (filter.status && filter.status.length > 0) {
       if (!filter.status.includes(metric.status)) return false;
     }
-    
+
     // Tags filter
     if (filter.tags && filter.tags.length > 0) {
-      if (!metric.tags || !filter.tags.some(tag => metric.tags!.includes(tag))) {
+      if (
+        !metric.tags ||
+        !filter.tags.some((tag) => metric.tags!.includes(tag))
+      ) {
         return false;
       }
     }
-    
+
     // Search query
     if (filter.searchQuery && filter.searchQuery.trim()) {
       const query = filter.searchQuery.toLowerCase();
       if (
         !metric.label.toLowerCase().includes(query) &&
         !metric.description?.toLowerCase().includes(query) &&
-        !metric.tags?.some(tag => tag.toLowerCase().includes(query))
+        !metric.tags?.some((tag) => tag.toLowerCase().includes(query))
       ) {
         return false;
       }
     }
-    
+
     return true;
   });
 };
@@ -89,10 +95,13 @@ const filterMetrics = (metrics: OverviewMetric[], filter: MetricsFilter): Overvi
 /**
  * Sort metrics based on sorting configuration
  */
-const sortMetrics = (metrics: OverviewMetric[], sorting: MetricsSorting): OverviewMetric[] => {
+const sortMetrics = (
+  metrics: OverviewMetric[],
+  sorting: MetricsSorting,
+): OverviewMetric[] => {
   return [...metrics].sort((a, b) => {
     let result = 0;
-    
+
     switch (sorting.field) {
       case 'name':
         result = a.label.localeCompare(b.label);
@@ -118,7 +127,7 @@ const sortMetrics = (metrics: OverviewMetric[], sorting: MetricsSorting): Overvi
       default:
         result = 0;
     }
-    
+
     return sorting.direction === 'desc' ? -result : result;
   });
 };
@@ -127,19 +136,19 @@ const sortMetrics = (metrics: OverviewMetric[], sorting: MetricsSorting): Overvi
  * Group metrics by specified grouping method
  */
 const groupMetrics = (
-  metrics: OverviewMetric[], 
+  metrics: OverviewMetric[],
   grouping: MetricsGrouping,
-  categories: MetricCategory[]
+  categories: MetricCategory[],
 ): Record<string, OverviewMetric[]> => {
   if (grouping === 'none') {
     return { all: metrics };
   }
-  
+
   const groups: Record<string, OverviewMetric[]> = {};
-  
-  metrics.forEach(metric => {
+
+  metrics.forEach((metric) => {
     let groupKey: string;
-    
+
     switch (grouping) {
       case 'category':
         groupKey = metric.category;
@@ -153,43 +162,51 @@ const groupMetrics = (
       default:
         groupKey = 'all';
     }
-    
+
     if (!groups[groupKey]) {
       groups[groupKey] = [];
     }
     groups[groupKey].push(metric);
   });
-  
+
   return groups;
 };
 
 /**
  * Alert badge component
  */
-const AlertBadge: React.FC<{ alert: MetricAlert; onClick?: () => void }> = ({ 
-  alert, 
-  onClick 
+const AlertBadge: React.FC<{ alert: MetricAlert; onClick?: () => void }> = ({
+  alert,
+  onClick,
 }) => {
   const getAlertIcon = () => {
     switch (alert.type) {
-      case 'critical': return AlertTriangle;
-      case 'warning': return AlertTriangle;
-      case 'info': return Info;
-      default: return Info;
+      case 'critical':
+        return AlertTriangle;
+      case 'warning':
+        return AlertTriangle;
+      case 'info':
+        return Info;
+      default:
+        return Info;
     }
   };
-  
+
   const getAlertColor = () => {
     switch (alert.type) {
-      case 'critical': return 'text-red-600 bg-red-100';
-      case 'warning': return 'text-yellow-600 bg-yellow-100';
-      case 'info': return 'text-blue-600 bg-blue-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'critical':
+        return 'text-red-600 bg-red-100';
+      case 'warning':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'info':
+        return 'text-blue-600 bg-blue-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
     }
   };
-  
+
   const Icon = getAlertIcon();
-  
+
   return (
     <button
       onClick={onClick}
@@ -197,7 +214,7 @@ const AlertBadge: React.FC<{ alert: MetricAlert; onClick?: () => void }> = ({
         'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
         'hover:opacity-80 transition-opacity',
         getAlertColor(),
-        alert.acknowledged && 'opacity-50'
+        alert.acknowledged && 'opacity-50',
       )}
       title={alert.message}
     >
@@ -221,9 +238,12 @@ const CategoryHeader: React.FC<{
     className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
   >
     <div className="flex items-center space-x-3">
-      {category.collapsible && (
-        expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
-      )}
+      {category.collapsible &&
+        (expanded ? (
+          <ChevronDown className="w-4 h-4" />
+        ) : (
+          <ChevronRight className="w-4 h-4" />
+        ))}
       {category.icon && <div className="text-gray-600">{category.icon}</div>}
       <div className="text-left">
         <h3 className="font-medium text-gray-900">{category.name}</h3>
@@ -238,12 +258,15 @@ const CategoryHeader: React.FC<{
 
 /**
  * Enhanced MetricsOverview component
- * 
+ *
  * A comprehensive metrics dashboard component that aggregates and displays
  * system metrics with advanced filtering, grouping, and real-time updates.
  * Designed specifically for scan monitoring and system health tracking.
  */
-export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewProps>(
+export const MetricsOverview = forwardRef<
+  MetricsOverviewRef,
+  MetricsOverviewProps
+>(
   (
     {
       metrics,
@@ -284,11 +307,11 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
       ariaLabel = 'Metrics overview',
       testId = 'metrics-overview',
     },
-    ref
+    ref,
   ) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const toast = useToast();
-    
+
     // Internal state
     const [internalFilter, setInternalFilter] = useState<MetricsFilter>({});
     const [internalSorting, setInternalSorting] = useState<MetricsSorting>({
@@ -296,7 +319,9 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
       direction: 'asc',
     });
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-      new Set(categories.filter(cat => cat.defaultExpanded).map(cat => cat.id))
+      new Set(
+        categories.filter((cat) => cat.defaultExpanded).map((cat) => cat.id),
+      ),
     );
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilters, setShowFilters] = useState(false);
@@ -309,9 +334,9 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
 
     // Filter and sort metrics
     const filteredMetrics = useMemo(() => {
-      const filtered = filterMetrics(metrics, { 
-        ...currentFilter, 
-        searchQuery: searchQuery || currentFilter.searchQuery 
+      const filtered = filterMetrics(metrics, {
+        ...currentFilter,
+        searchQuery: searchQuery || currentFilter.searchQuery,
       });
       return sortMetrics(filtered, currentSorting);
     }, [metrics, currentFilter, currentSorting, searchQuery]);
@@ -323,7 +348,7 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
 
     // Active alerts
     const activeAlerts = useMemo(() => {
-      return alerts.filter(alert => !alert.acknowledged);
+      return alerts.filter((alert) => !alert.acknowledged);
     }, [alerts]);
 
     // Auto-refresh handling
@@ -343,21 +368,27 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
     }, [refreshConfig, onRefresh]);
 
     // Event handlers
-    const handleFilterChange = useCallback((newFilter: MetricsFilter) => {
-      if (externalFilter) {
-        onFilterChange?.(newFilter);
-      } else {
-        setInternalFilter(newFilter);
-      }
-    }, [externalFilter, onFilterChange]);
+    const handleFilterChange = useCallback(
+      (newFilter: MetricsFilter) => {
+        if (externalFilter) {
+          onFilterChange?.(newFilter);
+        } else {
+          setInternalFilter(newFilter);
+        }
+      },
+      [externalFilter, onFilterChange],
+    );
 
-    const handleSortChange = useCallback((newSorting: MetricsSorting) => {
-      if (externalSorting) {
-        onSortChange?.(newSorting);
-      } else {
-        setInternalSorting(newSorting);
-      }
-    }, [externalSorting, onSortChange]);
+    const handleSortChange = useCallback(
+      (newSorting: MetricsSorting) => {
+        if (externalSorting) {
+          onSortChange?.(newSorting);
+        } else {
+          setInternalSorting(newSorting);
+        }
+      },
+      [externalSorting, onSortChange],
+    );
 
     const handleRefresh = useCallback(async () => {
       try {
@@ -373,17 +404,20 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
       }
     }, [refreshConfig, onRefresh, toast]);
 
-    const handleExport = useCallback((format: string) => {
-      try {
-        onExport?.(format);
-        toast.success(`Metrics exported as ${format.toUpperCase()}`);
-      } catch (error) {
-        toast.error('Failed to export metrics');
-      }
-    }, [onExport, toast]);
+    const handleExport = useCallback(
+      (format: string) => {
+        try {
+          onExport?.(format);
+          toast.success(`Metrics exported as ${format.toUpperCase()}`);
+        } catch (error) {
+          toast.error('Failed to export metrics');
+        }
+      },
+      [onExport, toast],
+    );
 
     const handleCategoryToggle = useCallback((categoryId: string) => {
-      setExpandedCategories(prev => {
+      setExpandedCategories((prev) => {
         const newSet = new Set(prev);
         if (newSet.has(categoryId)) {
           newSet.delete(categoryId);
@@ -395,29 +429,44 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
     }, []);
 
     // Imperative API
-    useImperativeHandle(ref, () => ({
-      refresh: handleRefresh,
-      exportData: handleExport,
-      scrollToMetric: (metricId: string) => {
-        const element = containerRef.current?.querySelector(`[data-metric-id="${metricId}"]`);
-        element?.scrollIntoView({ behavior: 'smooth' });
-      },
-      scrollToCategory: (categoryId: string) => {
-        const element = containerRef.current?.querySelector(`[data-category-id="${categoryId}"]`);
-        element?.scrollIntoView({ behavior: 'smooth' });
-      },
-      getFilteredMetrics: () => filteredMetrics,
-      getAlerts: () => activeAlerts,
-      acknowledgeAlert: (alertId: string) => {
-        // Implementation would update alert state
-        toast.info('Alert acknowledged');
-      },
-      clearFilters: () => {
-        setSearchQuery('');
-        handleFilterChange({});
-      },
-      getElement: () => containerRef.current,
-    }), [filteredMetrics, activeAlerts, handleRefresh, handleExport, handleFilterChange, toast]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        refresh: handleRefresh,
+        exportData: handleExport,
+        scrollToMetric: (metricId: string) => {
+          const element = containerRef.current?.querySelector(
+            `[data-metric-id="${metricId}"]`,
+          );
+          element?.scrollIntoView({ behavior: 'smooth' });
+        },
+        scrollToCategory: (categoryId: string) => {
+          const element = containerRef.current?.querySelector(
+            `[data-category-id="${categoryId}"]`,
+          );
+          element?.scrollIntoView({ behavior: 'smooth' });
+        },
+        getFilteredMetrics: () => filteredMetrics,
+        getAlerts: () => activeAlerts,
+        acknowledgeAlert: (alertId: string) => {
+          // Implementation would update alert state
+          toast.info('Alert acknowledged');
+        },
+        clearFilters: () => {
+          setSearchQuery('');
+          handleFilterChange({});
+        },
+        getElement: () => containerRef.current,
+      }),
+      [
+        filteredMetrics,
+        activeAlerts,
+        handleRefresh,
+        handleExport,
+        handleFilterChange,
+        toast,
+      ],
+    );
 
     // Render functions
     const renderMetricCard = (metric: OverviewMetric) => {
@@ -437,7 +486,7 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
           {/* Metric actions */}
           {metric.actions && metric.actions.length > 0 && (
             <div className="mt-2 flex space-x-1">
-              {metric.actions.map(action => (
+              {metric.actions.map((action) => (
                 <Button
                   key={action.id}
                   size="sm"
@@ -456,8 +505,11 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
       );
     };
 
-    const renderCategorySection = (categoryId: string, categoryMetrics: OverviewMetric[]) => {
-      const category = categories.find(cat => cat.id === categoryId);
+    const renderCategorySection = (
+      categoryId: string,
+      categoryMetrics: OverviewMetric[],
+    ) => {
+      const category = categories.find((cat) => cat.id === categoryId);
       if (!category) return null;
 
       const isExpanded = expandedCategories.has(categoryId);
@@ -468,14 +520,18 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
       }
 
       return (
-        <div key={categoryId} data-category-id={categoryId} className="space-y-4">
+        <div
+          key={categoryId}
+          data-category-id={categoryId}
+          className="space-y-4"
+        >
           <CategoryHeader
             category={category}
             metricsCount={categoryMetrics.length}
             expanded={isExpanded}
             onToggle={() => handleCategoryToggle(categoryId)}
           />
-          
+
           {shouldShowContent && (
             <div className={clsx(layoutConfig.container, getLayoutColumns())}>
               {categoryMetrics.map(renderMetricCard)}
@@ -492,20 +548,27 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
           columns >= 2 && 'sm:grid-cols-2',
           columns >= 3 && 'lg:grid-cols-3',
           columns >= 4 && 'xl:grid-cols-4',
-          columns >= 5 && '2xl:grid-cols-5'
+          columns >= 5 && '2xl:grid-cols-5',
         );
       }
       return '';
     };
 
     const renderHeader = () => (
-      <div className={clsx('flex items-center justify-between p-4 border-b', headerClassName)}>
+      <div
+        className={clsx(
+          'flex items-center justify-between p-4 border-b',
+          headerClassName,
+        )}
+      >
         <div className="flex items-center space-x-4">
-          <h2 className="text-lg font-semibold text-gray-900">Metrics Overview</h2>
-          
+          <h2 className="text-lg font-semibold text-gray-900">
+            Metrics Overview
+          </h2>
+
           {activeAlerts.length > 0 && (
             <div className="flex space-x-1">
-              {activeAlerts.slice(0, 3).map(alert => (
+              {activeAlerts.slice(0, 3).map((alert) => (
                 <AlertBadge
                   key={alert.id}
                   alert={alert}
@@ -513,7 +576,9 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
                 />
               ))}
               {activeAlerts.length > 3 && (
-                <Badge variant="secondary">+{activeAlerts.length - 3} more</Badge>
+                <Badge variant="secondary">
+                  +{activeAlerts.length - 3} more
+                </Badge>
               )}
             </div>
           )}
@@ -559,7 +624,9 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
             onClick={handleRefresh}
             disabled={loading}
           >
-            <RefreshCw className={clsx('w-4 h-4 mr-2', loading && 'animate-spin')} />
+            <RefreshCw
+              className={clsx('w-4 h-4 mr-2', loading && 'animate-spin')}
+            />
             Refresh
           </Button>
         </div>
@@ -628,14 +695,19 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
       return (
         <div className="space-y-6">
           {Object.entries(groupedMetrics).map(([groupKey, groupMetrics]) =>
-            renderCategorySection(groupKey, groupMetrics)
+            renderCategorySection(groupKey, groupMetrics),
           )}
         </div>
       );
     };
 
     const renderFooter = () => (
-      <div className={clsx('flex items-center justify-between p-4 border-t bg-gray-50', footerClassName)}>
+      <div
+        className={clsx(
+          'flex items-center justify-between p-4 border-t bg-gray-50',
+          footerClassName,
+        )}
+      >
         <div className="text-sm text-gray-600">
           Showing {filteredMetrics.length} of {metrics.length} metrics
           {lastRefresh && (
@@ -644,7 +716,7 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
             </span>
           )}
         </div>
-        
+
         {refreshConfig?.mode === 'auto' && (
           <div className="text-sm text-gray-600">
             Auto-refresh: {refreshConfig.interval}s
@@ -662,22 +734,25 @@ export const MetricsOverview = forwardRef<MetricsOverviewRef, MetricsOverviewPro
     return (
       <div
         ref={containerRef}
-        className={clsx('bg-white border border-gray-200 rounded-lg overflow-hidden', className)}
+        className={clsx(
+          'bg-white border border-gray-200 rounded-lg overflow-hidden',
+          className,
+        )}
         style={containerStyles}
         role="region"
         aria-label={ariaLabel}
         data-testid={testId}
       >
         {renderHeader()}
-        
+
         <div className={clsx('overflow-auto', contentClassName)}>
           {renderContent()}
         </div>
-        
+
         {renderFooter()}
       </div>
     );
-  }
+  },
 );
 
 MetricsOverview.displayName = 'MetricsOverview';

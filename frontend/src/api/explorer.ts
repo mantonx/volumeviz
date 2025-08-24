@@ -88,15 +88,13 @@ export const useTreeNavigation = () => {
         const responseData = response.data;
 
         // Transform API response to TreeNode format
-        const nodes: TreeNode[] = (responseData.children || []).map(
-          (item) => ({
-            id: `${path}/${item.name}`,
-            name: item.name || '',
-            path: `${path}/${item.name}`,
-            type: item.is_directory ? 'folder' : 'file',
-            hasChildren: item.is_directory && (item.has_children || false),
-          }),
-        );
+        const nodes: TreeNode[] = (responseData.children || []).map((item) => ({
+          id: `${path}/${item.name}`,
+          name: item.name || '',
+          path: `${path}/${item.name}`,
+          type: item.is_directory ? 'folder' : 'file',
+          hasChildren: item.is_directory && (item.has_children || false),
+        }));
 
         setTreeNodes((prev) => ({
           ...prev,
@@ -361,15 +359,17 @@ export const useVolumeInsights = () => {
         });
 
         const responseData = response.data;
-        const transformedStats = (responseData.daily_stats || []).map((stat) => ({
-          volume_id: stat.volume_id || currentVolume,
-          date: stat.date || '',
-          total_size: stat.size_bytes || 0,
-          file_count: stat.file_count || 0,
-          folder_count: stat.folder_count || 0,
-          growth_bytes: stat.growth || 0,
-          growth_files: 0, // Not provided by API
-        }));
+        const transformedStats = (responseData.daily_stats || []).map(
+          (stat) => ({
+            volume_id: stat.volume_id || currentVolume,
+            date: stat.date || '',
+            total_size: stat.size_bytes || 0,
+            file_count: stat.file_count || 0,
+            folder_count: stat.folder_count || 0,
+            growth_bytes: stat.growth || 0,
+            growth_files: 0, // Not provided by API
+          }),
+        );
         setVolumeStats(transformedStats);
         return response;
       } catch (err) {
@@ -398,14 +398,16 @@ export const useVolumeInsights = () => {
         });
 
         const responseData = response.data;
-        const transformedResponse = (responseData.folders || []).map((folder) => ({
-          path: folder.path || '',
-          name: folder.name || '',
-          size: folder.disk_usage_bytes_recursive || 0,
-          file_count: folder.file_count || 0,
-          growth_bytes: 0, // API doesn't provide this yet
-          growth_percentage: 0, // API doesn't provide this yet
-        }));
+        const transformedResponse = (responseData.folders || []).map(
+          (folder) => ({
+            path: folder.path || '',
+            name: folder.name || '',
+            size: folder.disk_usage_bytes_recursive || 0,
+            file_count: folder.file_count || 0,
+            growth_bytes: 0, // API doesn't provide this yet
+            growth_percentage: 0, // API doesn't provide this yet
+          }),
+        );
 
         setTopFolders(transformedResponse);
         return response;

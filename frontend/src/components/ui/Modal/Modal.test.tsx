@@ -79,7 +79,7 @@ describe('Modal', () => {
             title: 'Test Title',
             subtitle: 'Test Subtitle',
           }}
-        />
+        />,
       );
 
       expect(screen.getByText('Test Title')).toBeInTheDocument();
@@ -87,12 +87,7 @@ describe('Modal', () => {
     });
 
     it('renders close button by default', () => {
-      render(
-        <Modal
-          {...defaultProps}
-          header={{ title: 'Test Title' }}
-        />
-      );
+      render(<Modal {...defaultProps} header={{ title: 'Test Title' }} />);
 
       expect(screen.getByTestId('test-modal-close-button')).toBeInTheDocument();
       expect(screen.getByTestId('x-icon')).toBeInTheDocument();
@@ -106,10 +101,12 @@ describe('Modal', () => {
             title: 'Test Title',
             showClose: false,
           }}
-        />
+        />,
       );
 
-      expect(screen.queryByTestId('test-modal-close-button')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('test-modal-close-button'),
+      ).not.toBeInTheDocument();
     });
 
     it('renders header actions', () => {
@@ -120,7 +117,7 @@ describe('Modal', () => {
             title: 'Test Title',
             actions: <button data-testid="header-action">Action</button>,
           }}
-        />
+        />,
       );
 
       expect(screen.getByTestId('header-action')).toBeInTheDocument();
@@ -133,7 +130,7 @@ describe('Modal', () => {
           header={{
             custom: <div data-testid="custom-header">Custom Header</div>,
           }}
-        />
+        />,
       );
 
       expect(screen.getByTestId('custom-header')).toBeInTheDocument();
@@ -147,9 +144,11 @@ describe('Modal', () => {
           {...defaultProps}
           footer={{
             primaryAction: <button data-testid="primary-action">Save</button>,
-            secondaryAction: <button data-testid="secondary-action">Cancel</button>,
+            secondaryAction: (
+              <button data-testid="secondary-action">Cancel</button>
+            ),
           }}
-        />
+        />,
       );
 
       expect(screen.getByTestId('primary-action')).toBeInTheDocument();
@@ -163,7 +162,7 @@ describe('Modal', () => {
           footer={{
             content: <div data-testid="footer-content">Footer Content</div>,
           }}
-        />
+        />,
       );
 
       expect(screen.getByTestId('footer-content')).toBeInTheDocument();
@@ -175,11 +174,15 @@ describe('Modal', () => {
           {...defaultProps}
           footer={{
             actions: [
-              <button key="1" data-testid="action-1">Action 1</button>,
-              <button key="2" data-testid="action-2">Action 2</button>,
+              <button key="1" data-testid="action-1">
+                Action 1
+              </button>,
+              <button key="2" data-testid="action-2">
+                Action 2
+              </button>,
             ],
           }}
-        />
+        />,
       );
 
       expect(screen.getByTestId('action-1')).toBeInTheDocument();
@@ -196,7 +199,7 @@ describe('Modal', () => {
   describe('Sizes', () => {
     it('applies correct size classes for modal variant', () => {
       const { rerender } = render(
-        <Modal {...defaultProps} size="sm" variant="modal" />
+        <Modal {...defaultProps} size="sm" variant="modal" />,
       );
 
       const content = screen.getByTestId('test-modal-content');
@@ -208,7 +211,7 @@ describe('Modal', () => {
 
     it('applies correct size classes for drawer variant', () => {
       const { rerender } = render(
-        <Modal {...defaultProps} size="sm" variant="drawer" />
+        <Modal {...defaultProps} size="sm" variant="drawer" />,
       );
 
       const content = screen.getByTestId('test-modal-content');
@@ -238,7 +241,7 @@ describe('Modal', () => {
   describe('Drawer Positions', () => {
     it('applies correct position classes for drawer', () => {
       const { rerender } = render(
-        <Modal {...defaultProps} variant="drawer" position="left" />
+        <Modal {...defaultProps} variant="drawer" position="left" />,
       );
 
       const content = screen.getByTestId('test-modal-content');
@@ -263,23 +266,15 @@ describe('Modal', () => {
     });
 
     it('hides backdrop when show is false', () => {
-      render(
-        <Modal
-          {...defaultProps}
-          backdrop={{ show: false }}
-        />
-      );
+      render(<Modal {...defaultProps} backdrop={{ show: false }} />);
 
-      expect(screen.queryByTestId('test-modal-backdrop')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('test-modal-backdrop'),
+      ).not.toBeInTheDocument();
     });
 
     it('applies custom backdrop opacity', () => {
-      render(
-        <Modal
-          {...defaultProps}
-          backdrop={{ opacity: 75 }}
-        />
-      );
+      render(<Modal {...defaultProps} backdrop={{ opacity: 75 }} />);
 
       const backdrop = screen.getByTestId('test-modal-backdrop');
       expect(backdrop).toHaveClass('bg-opacity-75');
@@ -302,7 +297,7 @@ describe('Modal', () => {
           {...defaultProps}
           onClose={mockOnClose}
           backdrop={{ closable: false }}
-        />
+        />,
       );
 
       const backdrop = screen.getByTestId('test-modal-backdrop');
@@ -318,7 +313,7 @@ describe('Modal', () => {
           {...defaultProps}
           onClose={mockOnClose}
           closeOnOutsideClick={false}
-        />
+        />,
       );
 
       const backdrop = screen.getByTestId('test-modal-backdrop');
@@ -341,11 +336,7 @@ describe('Modal', () => {
     it('does not call onClose when closeOnEscape is false', async () => {
       const mockOnClose = vi.fn();
       render(
-        <Modal
-          {...defaultProps}
-          onClose={mockOnClose}
-          closeOnEscape={false}
-        />
+        <Modal {...defaultProps} onClose={mockOnClose} closeOnEscape={false} />,
       );
 
       await user.keyboard('{Escape}');
@@ -356,11 +347,7 @@ describe('Modal', () => {
     it('does not call onClose when not closable', async () => {
       const mockOnClose = vi.fn();
       render(
-        <Modal
-          {...defaultProps}
-          onClose={mockOnClose}
-          closable={false}
-        />
+        <Modal {...defaultProps} onClose={mockOnClose} closable={false} />,
       );
 
       await user.keyboard('{Escape}');
@@ -370,12 +357,7 @@ describe('Modal', () => {
 
     it('calls onEscapeKey handler when Escape is pressed', async () => {
       const mockOnEscapeKey = vi.fn();
-      render(
-        <Modal
-          {...defaultProps}
-          onEscapeKey={mockOnEscapeKey}
-        />
-      );
+      render(<Modal {...defaultProps} onEscapeKey={mockOnEscapeKey} />);
 
       await user.keyboard('{Escape}');
 
@@ -391,7 +373,7 @@ describe('Modal', () => {
           {...defaultProps}
           onClose={mockOnClose}
           header={{ title: 'Test' }}
-        />
+        />,
       );
 
       const closeButton = screen.getByTestId('test-modal-close-button');
@@ -408,11 +390,13 @@ describe('Modal', () => {
           onClose={mockOnClose}
           closable={false}
           header={{ title: 'Test' }}
-        />
+        />,
       );
 
       // Close button should not be rendered when not closable
-      expect(screen.queryByTestId('test-modal-close-button')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('test-modal-close-button'),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -434,12 +418,7 @@ describe('Modal', () => {
 
   describe('Error State', () => {
     it('shows error message when error is provided', () => {
-      render(
-        <Modal
-          {...defaultProps}
-          error="Something went wrong"
-        />
-      );
+      render(<Modal {...defaultProps} error="Something went wrong" />);
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
       expect(screen.queryByText('Modal content')).not.toBeInTheDocument();
@@ -466,7 +445,9 @@ describe('Modal', () => {
     });
 
     it('restores original body overflow when modal closes', () => {
-      const { rerender } = render(<Modal {...defaultProps} preventBodyScroll />);
+      const { rerender } = render(
+        <Modal {...defaultProps} preventBodyScroll />,
+      );
 
       expect(document.body.style.overflow).toBe('hidden');
 
@@ -479,28 +460,20 @@ describe('Modal', () => {
 
   describe('Max Height', () => {
     it('applies max height to content', () => {
-      render(
-        <Modal
-          {...defaultProps}
-          maxHeight="400px"
-        />
-      );
+      render(<Modal {...defaultProps} maxHeight="400px" />);
 
       const content = screen.getByTestId('test-modal-content');
-      const bodyElement = content.querySelector('[style*="max-height"]') as HTMLElement;
-      
+      const bodyElement = content.querySelector(
+        '[style*="max-height"]',
+      ) as HTMLElement;
+
       if (bodyElement) {
         expect(bodyElement.style.maxHeight).toBe('400px');
       }
     });
 
     it('applies numeric max height', () => {
-      render(
-        <Modal
-          {...defaultProps}
-          maxHeight={500}
-        />
-      );
+      render(<Modal {...defaultProps} maxHeight={500} />);
 
       const content = screen.getByTestId('test-modal-content');
       expect(content).toHaveClass('max-h-[500px]');
@@ -511,7 +484,7 @@ describe('Modal', () => {
     it('calls onOpen when modal opens', async () => {
       const mockOnOpen = vi.fn();
       const { rerender } = render(
-        <Modal {...defaultProps} open={false} onOpen={mockOnOpen} />
+        <Modal {...defaultProps} open={false} onOpen={mockOnOpen} />,
       );
 
       rerender(<Modal {...defaultProps} open={true} onOpen={mockOnOpen} />);
@@ -523,12 +496,7 @@ describe('Modal', () => {
 
     it('calls onOutsideClick when backdrop is clicked', async () => {
       const mockOnOutsideClick = vi.fn();
-      render(
-        <Modal
-          {...defaultProps}
-          onOutsideClick={mockOnOutsideClick}
-        />
-      );
+      render(<Modal {...defaultProps} onOutsideClick={mockOnOutsideClick} />);
 
       const backdrop = screen.getByTestId('test-modal-backdrop');
       await user.click(backdrop);
@@ -552,7 +520,7 @@ describe('Modal', () => {
     it('isOpen returns correct state', () => {
       const ref = React.createRef<any>();
       const { rerender } = render(
-        <Modal {...defaultProps} open={true} ref={ref} />
+        <Modal {...defaultProps} open={true} ref={ref} />,
       );
 
       expect(ref.current.isOpen()).toBe(true);
@@ -564,9 +532,7 @@ describe('Modal', () => {
     it('close calls onClose', () => {
       const mockOnClose = vi.fn();
       const ref = React.createRef<any>();
-      render(
-        <Modal {...defaultProps} onClose={mockOnClose} ref={ref} />
-      );
+      render(<Modal {...defaultProps} onClose={mockOnClose} ref={ref} />);
 
       ref.current.close();
       expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -575,12 +541,7 @@ describe('Modal', () => {
 
   describe('Custom Classes', () => {
     it('applies custom className', () => {
-      render(
-        <Modal
-          {...defaultProps}
-          className="custom-modal"
-        />
-      );
+      render(<Modal {...defaultProps} className="custom-modal" />);
 
       const content = screen.getByTestId('test-modal-content');
       expect(content).toHaveClass('custom-modal');
@@ -592,7 +553,7 @@ describe('Modal', () => {
           {...defaultProps}
           header={{ title: 'Test' }}
           headerClassName="custom-header"
-        />
+        />,
       );
 
       const header = screen.getByText('Test').closest('.custom-header');
@@ -605,7 +566,7 @@ describe('Modal', () => {
           {...defaultProps}
           footer={{ content: <div>Footer</div> }}
           footerClassName="custom-footer"
-        />
+        />,
       );
 
       const footer = screen.getByText('Footer').closest('.custom-footer');
@@ -613,12 +574,7 @@ describe('Modal', () => {
     });
 
     it('applies custom backdrop className', () => {
-      render(
-        <Modal
-          {...defaultProps}
-          backdropClassName="custom-backdrop"
-        />
-      );
+      render(<Modal {...defaultProps} backdropClassName="custom-backdrop" />);
 
       const backdrop = screen.getByTestId('test-modal-backdrop');
       expect(backdrop).toHaveClass('custom-backdrop');
@@ -628,10 +584,7 @@ describe('Modal', () => {
   describe('Accessibility', () => {
     it('has correct ARIA attributes with title', () => {
       render(
-        <Modal
-          {...defaultProps}
-          header={{ title: 'Test Modal Title' }}
-        />
+        <Modal {...defaultProps} header={{ title: 'Test Modal Title' }} />,
       );
 
       const modal = screen.getByTestId('test-modal');
@@ -640,12 +593,7 @@ describe('Modal', () => {
     });
 
     it('close button has correct aria-label', () => {
-      render(
-        <Modal
-          {...defaultProps}
-          header={{ title: 'Test' }}
-        />
-      );
+      render(<Modal {...defaultProps} header={{ title: 'Test' }} />);
 
       const closeButton = screen.getByTestId('test-modal-close-button');
       expect(closeButton).toHaveAttribute('aria-label', 'Close modal');

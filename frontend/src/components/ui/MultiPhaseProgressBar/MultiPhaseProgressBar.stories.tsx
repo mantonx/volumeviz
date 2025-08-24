@@ -183,7 +183,8 @@ export const FilesystemIndexing: Story = {
           bytes_total: 45000000000,
           items_per_second: 87.5,
           bytes_per_second: 45000000,
-          current_item: '/var/lib/docker/volumes/myvolume/_data/photos/IMG_2023_family_vacation.jpg',
+          current_item:
+            '/var/lib/docker/volumes/myvolume/_data/photos/IMG_2023_family_vacation.jpg',
           current_depth: 3,
           error_count: 30,
           started_at: new Date(Date.now() - 120000).toISOString(),
@@ -418,7 +419,8 @@ export const FailedScan: Story = {
           items_per_second: 0,
           bytes_per_second: 0,
           error_count: 30,
-          error_message: 'Permission denied: Unable to access /protected/sensitive-data/',
+          error_message:
+            'Permission denied: Unable to access /protected/sensitive-data/',
           started_at: new Date(Date.now() - 240000).toISOString(),
         },
         {
@@ -447,7 +449,8 @@ export const FailedScan: Story = {
           item_path: '/protected/sensitive-data/',
           item_name: 'sensitive-data',
           error_message: 'Permission denied: Unable to access directory',
-          technical_details: 'EACCES: permission denied, scandir \'/protected/sensitive-data/\'',
+          technical_details:
+            "EACCES: permission denied, scandir '/protected/sensitive-data/'",
           occurred_at: new Date(Date.now() - 120000).toISOString(),
           retry_count: 3,
         },

@@ -4,7 +4,14 @@
  */
 
 import React, { useState } from 'react';
-import { PlayCircle, PauseCircle, AlertTriangle, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  PlayCircle,
+  PauseCircle,
+  AlertTriangle,
+  Users,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { cn } from '@/utils';
 
 interface ContainerStatusProps {
@@ -25,10 +32,11 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
   className,
 }) => {
   // Use provided containerCount if available, otherwise fallback to containers array length
-  const actualContainerCount = containerCount !== undefined ? containerCount : containers.length;
+  const actualContainerCount =
+    containerCount !== undefined ? containerCount : containers.length;
   const hasContainers = actualContainerCount > 0;
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   // Only show expand/collapse if we have actual container names and more than 2
   const canExpand = containers.length > 2 && showDetails;
 
@@ -36,17 +44,25 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
     return (
       <div className={cn('flex items-center gap-1.5', className)}>
         {hasContainers ? (
-          <PlayCircle className="h-3.5 w-3.5 text-green-500" title="Active containers" />
+          <PlayCircle
+            className="h-3.5 w-3.5 text-green-500"
+            title="Active containers"
+          />
         ) : (
-          <PauseCircle className="h-3.5 w-3.5 text-gray-400" title="No active containers" />
+          <PauseCircle
+            className="h-3.5 w-3.5 text-gray-400"
+            title="No active containers"
+          />
         )}
         {showCount && (
-          <span className={cn(
-            'text-sm font-medium',
-            hasContainers 
-              ? 'text-gray-900 dark:text-white'
-              : 'text-gray-500 dark:text-gray-400'
-          )}>
+          <span
+            className={cn(
+              'text-sm font-medium',
+              hasContainers
+                ? 'text-gray-900 dark:text-white'
+                : 'text-gray-500 dark:text-gray-400',
+            )}
+          >
             {actualContainerCount}
           </span>
         )}
@@ -59,41 +75,55 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
       <div className="flex items-center gap-2">
         {hasContainers ? (
           <>
-            <PlayCircle className="h-4 w-4 text-green-500" title="Active containers" />
+            <PlayCircle
+              className="h-4 w-4 text-green-500"
+              title="Active containers"
+            />
             <span className="text-sm font-medium text-gray-900 dark:text-white">
-              {actualContainerCount === 1 ? '1 container' : `${actualContainerCount} containers`}
+              {actualContainerCount === 1
+                ? '1 container'
+                : `${actualContainerCount} containers`}
             </span>
           </>
         ) : (
           <>
-            <PauseCircle className="h-4 w-4 text-gray-400" title="No active containers" />
+            <PauseCircle
+              className="h-4 w-4 text-gray-400"
+              title="No active containers"
+            />
             <span className="text-sm text-gray-500 dark:text-gray-400">
               No containers
             </span>
           </>
         )}
       </div>
-      
+
       {showDetails && hasContainers && (
         <div className="text-xs text-gray-600 dark:text-gray-400">
           {/* Show first 2 containers or all if expanded */}
-          {(isExpanded ? containers : containers.slice(0, 2)).map((container, index) => (
-            <div key={container} className="truncate" title={container}>
-              {container}
-            </div>
-          ))}
-          
+          {(isExpanded ? containers : containers.slice(0, 2)).map(
+            (container, index) => (
+              <div key={container} className="truncate" title={container}>
+                {container}
+              </div>
+            ),
+          )}
+
           {/* Expandable "+X more" link */}
           {canExpand && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className={cn(
-                "flex items-center gap-1 text-gray-500 dark:text-gray-500 italic",
-                "hover:text-blue-600 dark:hover:text-blue-400 hover:underline",
-                "cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 rounded",
-                "text-left"
+                'flex items-center gap-1 text-gray-500 dark:text-gray-500 italic',
+                'hover:text-blue-600 dark:hover:text-blue-400 hover:underline',
+                'cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 rounded',
+                'text-left',
               )}
-              title={isExpanded ? "Show fewer containers" : `Show all ${actualContainerCount} containers`}
+              title={
+                isExpanded
+                  ? 'Show fewer containers'
+                  : `Show all ${actualContainerCount} containers`
+              }
             >
               {isExpanded ? (
                 <>
@@ -102,13 +132,13 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
                 </>
               ) : (
                 <>
-                  <ChevronDown className="h-3 w-3" />
-                  +{actualContainerCount - 2} more containers
+                  <ChevronDown className="h-3 w-3" />+{actualContainerCount - 2}{' '}
+                  more containers
                 </>
               )}
             </button>
           )}
-          
+
           {/* If we don't have container names but have a count > 2, show static text */}
           {!canExpand && actualContainerCount > 2 && containers.length <= 2 && (
             <div className="text-gray-500 dark:text-gray-500 italic">
@@ -137,14 +167,21 @@ export const ContainerHealth: React.FC<ContainerHealthProps> = ({
   compact = false,
   className,
 }) => {
-  const runningCount = containers.filter(c => c.status === 'running').length;
-  const stoppedCount = containers.filter(c => c.status === 'stopped').length;
-  const unhealthyCount = containers.filter(c => c.health === 'unhealthy').length;
+  const runningCount = containers.filter((c) => c.status === 'running').length;
+  const stoppedCount = containers.filter((c) => c.status === 'stopped').length;
+  const unhealthyCount = containers.filter(
+    (c) => c.health === 'unhealthy',
+  ).length;
   const totalCount = containers.length;
 
   if (totalCount === 0) {
     return (
-      <div className={cn('flex items-center gap-1.5 text-gray-500 dark:text-gray-400', className)}>
+      <div
+        className={cn(
+          'flex items-center gap-1.5 text-gray-500 dark:text-gray-400',
+          className,
+        )}
+      >
         <PauseCircle className="h-4 w-4" />
         <span className="text-sm">No containers</span>
       </div>
@@ -228,11 +265,13 @@ export const ContainerBadge: React.FC<ContainerBadgeProps> = ({
 }) => {
   if (count === 0) {
     return (
-      <div className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
-        'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
-        className
-      )}>
+      <div
+        className={cn(
+          'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
+          'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+          className,
+        )}
+      >
         <PauseCircle className="h-3 w-3" />
         <span>None</span>
       </div>
@@ -240,13 +279,15 @@ export const ContainerBadge: React.FC<ContainerBadgeProps> = ({
   }
 
   return (
-    <div className={cn(
-      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
-      active 
-        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
-      className
-    )}>
+    <div
+      className={cn(
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
+        active
+          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+        className,
+      )}
+    >
       {active ? (
         <PlayCircle className="h-3 w-3" />
       ) : (

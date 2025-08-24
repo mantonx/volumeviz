@@ -1,12 +1,10 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
-import { VolumeDriver } from '@/api/generated/volumeviz-api';
-import { formatBytes } from '../../../utils/formatters';
 
 export interface FilterChip {
   id: string;
-  type: 'driver' | 'size' | 'status' | 'custom';
+  type?: string;
   label: string;
   value: any;
 }
@@ -15,13 +13,14 @@ export interface FilterChipsProps {
   chips: FilterChip[];
   onRemove: (chipId: string) => void;
   onClearAll?: () => void;
+  formatLabel?: (chip: FilterChip) => string;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'outlined' | 'solid';
   className?: string;
 }
 
 /**
- * Component for displaying active filter chips in VolumeViz.
+ * Component for displaying active filter chips.
  *
  * Features:
  * - Visual representation of active filters
@@ -49,6 +48,7 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
   chips,
   onRemove,
   onClearAll,
+  formatLabel,
   size = 'md',
   variant = 'default',
   className,
@@ -71,19 +71,11 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
   };
 
   const formatChipLabel = (chip: FilterChip): string => {
-    switch (chip.type) {
-      case 'driver':
-        return `${chip.label}: ${chip.value}`;
-      case 'size':
-        if (typeof chip.value === 'number') {
-          return `${chip.label}: ${formatBytes(chip.value)}`;
-        }
-        return `${chip.label}: ${chip.value}`;
-      case 'status':
-        return `${chip.label}: ${chip.value}`;
-      default:
-        return chip.value ? `${chip.label}: ${chip.value}` : chip.label;
+    if (formatLabel) {
+      return formatLabel(chip);
     }
+    // Default formatting
+    return chip.value ? `${chip.label}: ${chip.value}` : chip.label;
   };
 
   return (

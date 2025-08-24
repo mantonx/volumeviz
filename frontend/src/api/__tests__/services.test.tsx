@@ -31,9 +31,7 @@ vi.mock('../generated/Api', () => {
 });
 
 // Get reference to mocked API for tests
-const { __mockApi: mockApi } = (await import(
-  '../generated/Api'
-)) as any;
+const { __mockApi: mockApi } = (await import('../generated/Api')) as any;
 
 // Mock error handling utilities
 vi.mock('@/utils/errorHandling', () => ({

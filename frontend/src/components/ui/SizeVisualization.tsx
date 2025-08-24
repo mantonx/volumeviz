@@ -51,10 +51,14 @@ export const SizeVisualization: React.FC<SizeVisualizationProps> = ({
   if (compact) {
     return (
       <div className={cn('flex items-center gap-2', className)}>
-        <span className={cn(
-          'text-sm font-medium',
-          hasComparison ? getSizeTextColor(percentage) : 'text-gray-900 dark:text-white'
-        )}>
+        <span
+          className={cn(
+            'text-sm font-medium',
+            hasComparison
+              ? getSizeTextColor(percentage)
+              : 'text-gray-900 dark:text-white',
+          )}
+        >
           {formatBytes(sizeBytes)}
         </span>
         {hasComparison && showPercentage && (
@@ -70,10 +74,14 @@ export const SizeVisualization: React.FC<SizeVisualizationProps> = ({
     <div className={cn('space-y-1', className)}>
       {showLabel && (
         <div className="flex items-center justify-between">
-          <span className={cn(
-            'text-sm font-medium',
-            hasComparison ? getSizeTextColor(percentage) : 'text-gray-900 dark:text-white'
-          )}>
+          <span
+            className={cn(
+              'text-sm font-medium',
+              hasComparison
+                ? getSizeTextColor(percentage)
+                : 'text-gray-900 dark:text-white',
+            )}
+          >
             {formatBytes(sizeBytes)}
           </span>
           {hasComparison && showPercentage && (
@@ -83,19 +91,19 @@ export const SizeVisualization: React.FC<SizeVisualizationProps> = ({
           )}
         </div>
       )}
-      
+
       {hasComparison && (
         <div className="relative">
           <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               className={cn(
                 'h-full transition-all duration-300 rounded-full',
-                getSizeColor(percentage)
+                getSizeColor(percentage),
               )}
               style={{ width: `${Math.min(percentage, 100)}%` }}
             />
           </div>
-          
+
           {/* Threshold indicators */}
           <div className="absolute inset-0 flex">
             <div className="w-[30%] border-r border-gray-300 dark:border-gray-600 h-2" />
@@ -127,12 +135,12 @@ export const SizeComparison: React.FC<SizeComparisonProps> = ({
   const sortedItems = [...items]
     .sort((a, b) => b.sizeBytes - a.sizeBytes)
     .slice(0, maxItems);
-  
+
   const maxSize = sortedItems[0]?.sizeBytes || 1;
 
   return (
     <div className={cn('space-y-2', className)}>
-      {sortedItems.map(item => {
+      {sortedItems.map((item) => {
         const percentage = (item.sizeBytes / maxSize) * 100;
         return (
           <div key={item.id} className="space-y-1">
@@ -140,10 +148,7 @@ export const SizeComparison: React.FC<SizeComparisonProps> = ({
               <span className="text-gray-600 dark:text-gray-400 truncate max-w-[150px]">
                 {item.name}
               </span>
-              <span className={cn(
-                'font-medium',
-                getSizeTextColor(percentage)
-              )}>
+              <span className={cn('font-medium', getSizeTextColor(percentage))}>
                 {formatBytes(item.sizeBytes)}
               </span>
             </div>
@@ -151,7 +156,7 @@ export const SizeComparison: React.FC<SizeComparisonProps> = ({
               <div
                 className={cn(
                   'h-full transition-all duration-300 rounded-full',
-                  getSizeColor(percentage)
+                  getSizeColor(percentage),
                 )}
                 style={{ width: `${percentage}%` }}
               />

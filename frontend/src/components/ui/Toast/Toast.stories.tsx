@@ -16,7 +16,12 @@ import {
 
 import { Toast, ToastProvider, useToast } from './';
 import { Button } from '../Button';
-import type { ToastProps, ToastVariant, ToastPosition, ToastSize } from './Toast.types';
+import type {
+  ToastProps,
+  ToastVariant,
+  ToastPosition,
+  ToastSize,
+} from './Toast.types';
 
 const meta: Meta<typeof Toast> = {
   title: 'UI/Toast',
@@ -25,7 +30,8 @@ const meta: Meta<typeof Toast> = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A comprehensive toast notification component with multiple variants, positioning, animations, and advanced features for scan monitoring systems.',
+        component:
+          'A comprehensive toast notification component with multiple variants, positioning, animations, and advanced features for scan monitoring systems.',
       },
     },
   },
@@ -40,7 +46,14 @@ const meta: Meta<typeof Toast> = {
     },
     position: {
       control: 'radio',
-      options: ['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'],
+      options: [
+        'top-left',
+        'top-center',
+        'top-right',
+        'bottom-left',
+        'bottom-center',
+        'bottom-right',
+      ],
     },
     persistent: {
       control: 'boolean',
@@ -58,11 +71,11 @@ export default meta;
 type Story = StoryObj<typeof Toast>;
 
 // Helper component for stories
-const ToastDemo = ({ 
-  children, 
+const ToastDemo = ({
+  children,
   buttonText = 'Show Toast',
-  ...toastProps 
-}: { 
+  ...toastProps
+}: {
   children?: React.ReactNode;
   buttonText?: string;
 } & Partial<ToastProps>) => {
@@ -92,12 +105,16 @@ const ToastDemo = ({
 };
 
 // Toast Provider demo component
-const ToastProviderDemo = ({ position = 'top-right' }: { position?: ToastPosition }) => {
+const ToastProviderDemo = ({
+  position = 'top-right',
+}: {
+  position?: ToastPosition;
+}) => {
   const toast = useToast();
 
   const showToasts = () => {
     toast.info('Scan started for volume /Users/Documents');
-    
+
     setTimeout(() => {
       toast.success('Volume scan completed successfully', {
         title: 'Scan Complete',
@@ -133,28 +150,31 @@ const ToastProviderDemo = ({ position = 'top-right' }: { position?: ToastPositio
   const testPromise = () => {
     const mockScan = new Promise((resolve, reject) => {
       setTimeout(() => {
-        Math.random() > 0.5 ? resolve({ files: 1247 }) : reject(new Error('Scan failed'));
+        Math.random() > 0.5
+          ? resolve({ files: 1247 })
+          : reject(new Error('Scan failed'));
       }, 2000);
     });
 
-    toast.promise(
-      mockScan,
-      {
-        loading: 'Scanning volume...',
-        success: (data: any) => `Scan completed! Found ${data.files} files`,
-        error: (err: Error) => `Scan failed: ${err.message}`,
-      }
-    );
+    toast.promise(mockScan, {
+      loading: 'Scanning volume...',
+      success: (data: any) => `Scan completed! Found ${data.files} files`,
+      error: (err: Error) => `Scan failed: ${err.message}`,
+    });
   };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <Button onClick={showToasts}>Show Sequence</Button>
-        <Button onClick={showError} variant="destructive">Show Error</Button>
+        <Button onClick={showError} variant="destructive">
+          Show Error
+        </Button>
         <Button onClick={showLoading}>Show Loading</Button>
         <Button onClick={testPromise}>Test Promise</Button>
-        <Button onClick={() => toast.clearAllToasts()} variant="outline">Clear All</Button>
+        <Button onClick={() => toast.clearAllToasts()} variant="outline">
+          Clear All
+        </Button>
       </div>
       <p className="text-sm text-gray-600">
         Toasts will appear in the {position} corner
@@ -184,21 +204,21 @@ export const Variants: Story = {
         message="Volume scan has been queued for processing"
         title="Scan Queued"
       />
-      
+
       <ToastDemo
         buttonText="Success Toast"
         variant="success"
         message="Volume scan completed successfully. Found 1,247 files."
         title="Scan Complete"
       />
-      
+
       <ToastDemo
         buttonText="Warning Toast"
         variant="warning"
         message="Some files were skipped due to insufficient permissions"
         title="Partial Scan"
       />
-      
+
       <ToastDemo
         buttonText="Error Toast"
         variant="error"
@@ -220,7 +240,7 @@ export const Sizes: Story = {
         message="Small notification"
         title="Small"
       />
-      
+
       <ToastDemo
         buttonText="Medium Toast"
         size="md"
@@ -228,7 +248,7 @@ export const Sizes: Story = {
         message="Medium notification with more content space"
         title="Medium"
       />
-      
+
       <ToastDemo
         buttonText="Large Toast"
         size="lg"
@@ -254,7 +274,7 @@ export const WithActions: Story = {
           onClick: () => action('View Results')(),
         }}
       />
-      
+
       <ToastDemo
         buttonText="Error with Retry"
         variant="error"
@@ -280,7 +300,7 @@ export const CustomIcons: Story = {
         title="Indexing"
         icon={<Database className="w-5 h-5" />}
       />
-      
+
       <ToastDemo
         buttonText="Activity Icon"
         variant="success"
@@ -288,7 +308,7 @@ export const CustomIcons: Story = {
         title="Monitoring"
         icon={<Activity className="w-5 h-5" />}
       />
-      
+
       <ToastDemo
         buttonText="Loading Icon"
         variant="warning"
@@ -296,7 +316,7 @@ export const CustomIcons: Story = {
         title="Processing"
         icon={<Loader2 className="w-5 h-5 animate-spin" />}
       />
-      
+
       <ToastDemo
         buttonText="No Icon"
         variant="error"
@@ -319,7 +339,7 @@ export const Persistent: Story = {
         title="Persistent"
         persistent
       />
-      
+
       <ToastDemo
         buttonText="Non-dismissible"
         variant="warning"
@@ -345,10 +365,21 @@ export const ToastProvider: Story = {
 export const Positions: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-4">
-      {(['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'] as ToastPosition[]).map(position => (
+      {(
+        [
+          'top-left',
+          'top-center',
+          'top-right',
+          'bottom-left',
+          'bottom-center',
+          'bottom-right',
+        ] as ToastPosition[]
+      ).map((position) => (
         <ToastProvider key={position} defaultPosition={position} maxToasts={2}>
           <div className="p-4 border rounded">
-            <h3 className="font-medium mb-2 capitalize">{position.replace('-', ' ')}</h3>
+            <h3 className="font-medium mb-2 capitalize">
+              {position.replace('-', ' ')}
+            </h3>
             <ToastProviderDemo position={position} />
           </div>
         </ToastProvider>
@@ -432,7 +463,7 @@ const ScanMonitoringDemo = () => {
 
   const showMultiple = () => {
     toast.info('Preparing scan environment...');
-    
+
     setTimeout(() => {
       toast.warning('Large volume detected - scan may take longer', {
         title: 'Performance Warning',
@@ -458,14 +489,12 @@ const ScanMonitoringDemo = () => {
         <Button onClick={showError} variant="destructive">
           Simulate Error
         </Button>
-        <Button onClick={showMultiple}>
-          Show Multiple
-        </Button>
+        <Button onClick={showMultiple}>Show Multiple</Button>
         <Button onClick={() => toast.clearAllToasts()} variant="outline">
           Clear All
         </Button>
       </div>
-      
+
       <div className="bg-gray-50 p-4 rounded text-sm">
         <h4 className="font-medium mb-2">Scan Monitoring Features:</h4>
         <ul className="space-y-1 text-gray-600">
@@ -504,7 +533,12 @@ export const Interactive: Story = {
               <label className="block text-sm font-medium mb-1">Variant</label>
               <select
                 value={config.variant}
-                onChange={(e) => setConfig(prev => ({ ...prev, variant: e.target.value as ToastVariant }))}
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    variant: e.target.value as ToastVariant,
+                  }))
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
               >
                 <option value="info">Info</option>
@@ -513,12 +547,17 @@ export const Interactive: Story = {
                 <option value="error">Error</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Size</label>
               <select
                 value={config.size}
-                onChange={(e) => setConfig(prev => ({ ...prev, size: e.target.value as ToastSize }))}
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    size: e.target.value as ToastSize,
+                  }))
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
               >
                 <option value="sm">Small</option>
@@ -526,12 +565,17 @@ export const Interactive: Story = {
                 <option value="lg">Large</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Position</label>
               <select
                 value={config.position}
-                onChange={(e) => setConfig(prev => ({ ...prev, position: e.target.value as ToastPosition }))}
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    position: e.target.value as ToastPosition,
+                  }))
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
               >
                 <option value="top-left">Top Left</option>
@@ -542,66 +586,90 @@ export const Interactive: Story = {
                 <option value="bottom-right">Bottom Right</option>
               </select>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <label className="flex items-center">
                 <input
                   type="checkbox"
                   checked={config.persistent}
-                  onChange={(e) => setConfig(prev => ({ ...prev, persistent: e.target.checked }))}
+                  onChange={(e) =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      persistent: e.target.checked,
+                    }))
+                  }
                   className="mr-2"
                 />
                 Persistent
               </label>
-              
+
               <label className="flex items-center">
                 <input
                   type="checkbox"
                   checked={config.dismissible}
-                  onChange={(e) => setConfig(prev => ({ ...prev, dismissible: e.target.checked }))}
+                  onChange={(e) =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      dismissible: e.target.checked,
+                    }))
+                  }
                   className="mr-2"
                 />
                 Dismissible
               </label>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <label className="flex items-center">
                 <input
                   type="checkbox"
                   checked={config.hasAction}
-                  onChange={(e) => setConfig(prev => ({ ...prev, hasAction: e.target.checked }))}
+                  onChange={(e) =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      hasAction: e.target.checked,
+                    }))
+                  }
                   className="mr-2"
                 />
                 Action Button
               </label>
-              
+
               <label className="flex items-center">
                 <input
                   type="checkbox"
                   checked={config.hasIcon}
-                  onChange={(e) => setConfig(prev => ({ ...prev, hasIcon: e.target.checked }))}
+                  onChange={(e) =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      hasIcon: e.target.checked,
+                    }))
+                  }
                   className="mr-2"
                 />
                 Show Icon
               </label>
             </div>
-            
+
             <div className="col-span-2">
               <label className="block text-sm font-medium mb-1">Title</label>
               <input
                 type="text"
                 value={config.title}
-                onChange={(e) => setConfig(prev => ({ ...prev, title: e.target.value }))}
+                onChange={(e) =>
+                  setConfig((prev) => ({ ...prev, title: e.target.value }))
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
               />
             </div>
-            
+
             <div className="col-span-2">
               <label className="block text-sm font-medium mb-1">Message</label>
               <textarea
                 value={config.message}
-                onChange={(e) => setConfig(prev => ({ ...prev, message: e.target.value }))}
+                onChange={(e) =>
+                  setConfig((prev) => ({ ...prev, message: e.target.value }))
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
                 rows={2}
               />
@@ -627,21 +695,30 @@ const InteractiveToastDemo = ({ config }: { config: any }) => {
       persistent: config.persistent,
       dismissible: config.dismissible,
       icon: config.hasIcon ? undefined : null,
-      action: config.hasAction ? {
-        label: 'Action',
-        onClick: () => action('Custom Action')(),
-      } : undefined,
+      action: config.hasAction
+        ? {
+            label: 'Action',
+            onClick: () => action('Custom Action')(),
+          }
+        : undefined,
     });
   };
 
   return (
     <div className="space-y-4">
       <Button onClick={showCustomToast}>Show Custom Toast</Button>
-      <Button onClick={() => toast.clearAllToasts()} variant="outline">Clear All</Button>
-      
+      <Button onClick={() => toast.clearAllToasts()} variant="outline">
+        Clear All
+      </Button>
+
       <div className="text-sm text-gray-600">
-        <p>Toast will appear in the <strong>{config.position}</strong> position</p>
-        <p>Configured as: {config.variant} • {config.size} • {config.persistent ? 'persistent' : 'auto-dismiss'}</p>
+        <p>
+          Toast will appear in the <strong>{config.position}</strong> position
+        </p>
+        <p>
+          Configured as: {config.variant} • {config.size} •{' '}
+          {config.persistent ? 'persistent' : 'auto-dismiss'}
+        </p>
       </div>
     </div>
   );

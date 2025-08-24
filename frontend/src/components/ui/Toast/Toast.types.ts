@@ -6,7 +6,13 @@ import type { ReactNode } from 'react';
 
 // Core types
 export type ToastVariant = 'info' | 'success' | 'warning' | 'error';
-export type ToastPosition = 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+export type ToastPosition =
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right';
 export type ToastSize = 'sm' | 'md' | 'lg';
 
 // Toast configuration
@@ -143,66 +149,75 @@ export const defaultToastSizes: Record<ToastSize, ToastSizeConfig> = {
   },
 };
 
-export const defaultToastPositions: Record<ToastPosition, ToastPositionConfig> = {
-  'top-left': {
-    container: 'fixed top-4 left-4 z-50',
-    item: 'mb-2',
-    spacing: 'space-y-2',
-  },
-  'top-center': {
-    container: 'fixed top-4 left-1/2 transform -translate-x-1/2 z-50',
-    item: 'mb-2',
-    spacing: 'space-y-2',
-  },
-  'top-right': {
-    container: 'fixed top-4 right-4 z-50',
-    item: 'mb-2',
-    spacing: 'space-y-2',
-  },
-  'bottom-left': {
-    container: 'fixed bottom-4 left-4 z-50',
-    item: 'mt-2',
-    spacing: 'space-y-2',
-  },
-  'bottom-center': {
-    container: 'fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50',
-    item: 'mt-2',
-    spacing: 'space-y-2',
-  },
-  'bottom-right': {
-    container: 'fixed bottom-4 right-4 z-50',
-    item: 'mt-2',
-    spacing: 'space-y-2',
-  },
-};
+export const defaultToastPositions: Record<ToastPosition, ToastPositionConfig> =
+  {
+    'top-left': {
+      container: 'fixed top-4 left-4 z-50',
+      item: 'mb-2',
+      spacing: 'space-y-2',
+    },
+    'top-center': {
+      container: 'fixed top-4 left-1/2 transform -translate-x-1/2 z-50',
+      item: 'mb-2',
+      spacing: 'space-y-2',
+    },
+    'top-right': {
+      container: 'fixed top-4 right-4 z-50',
+      item: 'mb-2',
+      spacing: 'space-y-2',
+    },
+    'bottom-left': {
+      container: 'fixed bottom-4 left-4 z-50',
+      item: 'mt-2',
+      spacing: 'space-y-2',
+    },
+    'bottom-center': {
+      container: 'fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50',
+      item: 'mt-2',
+      spacing: 'space-y-2',
+    },
+    'bottom-right': {
+      container: 'fixed bottom-4 right-4 z-50',
+      item: 'mt-2',
+      spacing: 'space-y-2',
+    },
+  };
 
 export const defaultToastAnimations: Record<string, ToastAnimationConfig> = {
   'slide-right': {
     enter: 'transform translate-x-full opacity-0',
-    enterActive: 'transform translate-x-0 opacity-100 transition-all duration-300',
+    enterActive:
+      'transform translate-x-0 opacity-100 transition-all duration-300',
     exit: 'transform translate-x-full opacity-100',
-    exitActive: 'transform translate-x-full opacity-0 transition-all duration-300',
+    exitActive:
+      'transform translate-x-full opacity-0 transition-all duration-300',
     duration: 300,
   },
   'slide-left': {
     enter: 'transform -translate-x-full opacity-0',
-    enterActive: 'transform translate-x-0 opacity-100 transition-all duration-300',
+    enterActive:
+      'transform translate-x-0 opacity-100 transition-all duration-300',
     exit: 'transform translate-x-0 opacity-100',
-    exitActive: 'transform -translate-x-full opacity-0 transition-all duration-300',
+    exitActive:
+      'transform -translate-x-full opacity-0 transition-all duration-300',
     duration: 300,
   },
   'slide-down': {
     enter: 'transform -translate-y-full opacity-0',
-    enterActive: 'transform translate-y-0 opacity-100 transition-all duration-300',
+    enterActive:
+      'transform translate-y-0 opacity-100 transition-all duration-300',
     exit: 'transform translate-y-0 opacity-100',
-    exitActive: 'transform -translate-y-full opacity-0 transition-all duration-300',
+    exitActive:
+      'transform -translate-y-full opacity-0 transition-all duration-300',
     duration: 300,
   },
   'slide-up': {
     enter: 'transform translate-y-full opacity-0',
-    enterActive: 'transform translate-y-0 opacity-100 transition-all duration-300',
+    enterActive:
+      'transform translate-y-0 opacity-100 transition-all duration-300',
     exit: 'transform translate-y-0 opacity-100',
-    exitActive: 'transform translate-y-full opacity-0 transition-all duration-300',
+    exitActive:
+      'transform translate-y-full opacity-0 transition-all duration-300',
     duration: 300,
   },
   fade: {
@@ -215,21 +230,25 @@ export const defaultToastAnimations: Record<string, ToastAnimationConfig> = {
 };
 
 // Variant styling
-export const toastVariantStyles: Record<ToastVariant, {
-  container: string;
-  icon: string;
-  title: string;
-  message: string;
-  closeButton: string;
-  action: string;
-}> = {
+export const toastVariantStyles: Record<
+  ToastVariant,
+  {
+    container: string;
+    icon: string;
+    title: string;
+    message: string;
+    closeButton: string;
+    action: string;
+  }
+> = {
   info: {
     container: 'bg-blue-50 border-blue-200 border',
     icon: 'text-blue-500',
     title: 'text-blue-900',
     message: 'text-blue-700',
     closeButton: 'text-blue-400 hover:text-blue-600',
-    action: 'text-blue-600 hover:text-blue-800 border-blue-300 hover:border-blue-400',
+    action:
+      'text-blue-600 hover:text-blue-800 border-blue-300 hover:border-blue-400',
   },
   success: {
     container: 'bg-green-50 border-green-200 border',
@@ -237,7 +256,8 @@ export const toastVariantStyles: Record<ToastVariant, {
     title: 'text-green-900',
     message: 'text-green-700',
     closeButton: 'text-green-400 hover:text-green-600',
-    action: 'text-green-600 hover:text-green-800 border-green-300 hover:border-green-400',
+    action:
+      'text-green-600 hover:text-green-800 border-green-300 hover:border-green-400',
   },
   warning: {
     container: 'bg-yellow-50 border-yellow-200 border',
@@ -245,7 +265,8 @@ export const toastVariantStyles: Record<ToastVariant, {
     title: 'text-yellow-900',
     message: 'text-yellow-700',
     closeButton: 'text-yellow-400 hover:text-yellow-600',
-    action: 'text-yellow-600 hover:text-yellow-800 border-yellow-300 hover:border-yellow-400',
+    action:
+      'text-yellow-600 hover:text-yellow-800 border-yellow-300 hover:border-yellow-400',
   },
   error: {
     container: 'bg-red-50 border-red-200 border',
@@ -253,7 +274,8 @@ export const toastVariantStyles: Record<ToastVariant, {
     title: 'text-red-900',
     message: 'text-red-700',
     closeButton: 'text-red-400 hover:text-red-600',
-    action: 'text-red-600 hover:text-red-800 border-red-300 hover:border-red-400',
+    action:
+      'text-red-600 hover:text-red-800 border-red-300 hover:border-red-400',
   },
 };
 
@@ -267,7 +289,10 @@ export const defaultToastIcons: Record<ToastVariant, string> = {
 
 // Helper types for convenience
 export type ToastOptions = Omit<ToastConfig, 'id' | 'variant'>;
-export type ToastShowFunction = (variant: ToastVariant, messageOrConfig: string | ToastOptions) => string;
+export type ToastShowFunction = (
+  variant: ToastVariant,
+  messageOrConfig: string | ToastOptions,
+) => string;
 
 /**
  * Toast queue management
@@ -319,13 +344,15 @@ export interface ToastHelpers {
       success: string | ((data: T) => string);
       error: string | ((error: Error) => string);
     },
-    options?: Partial<ToastOptions>
+    options?: Partial<ToastOptions>,
   ) => Promise<T>;
 }
 
 /**
  * Extended toast context with helpers
  */
-export interface ExtendedToastContextValue extends ToastContextValue, ToastHelpers {
+export interface ExtendedToastContextValue
+  extends ToastContextValue,
+    ToastHelpers {
   manager: ToastManager;
 }

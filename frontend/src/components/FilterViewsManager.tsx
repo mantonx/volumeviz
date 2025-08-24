@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Save,
-  Share,
-  Settings,
-  Trash2,
-  Star,
-  Check,
-  X,
-} from 'lucide-react';
+import { Save, Share, Settings, Trash2, Star, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
@@ -19,7 +11,10 @@ interface SavedViewsManagerProps {
   currentView?: SavedView | null;
   isModified: boolean;
   onSaveView: (name: string, makeDefault?: boolean) => Promise<SavedView>;
-  onUpdateView: (viewId: string, updates: Partial<Pick<SavedView, 'name' | 'config' | 'is_default'>>) => Promise<SavedView | null>;
+  onUpdateView: (
+    viewId: string,
+    updates: Partial<Pick<SavedView, 'name' | 'config' | 'is_default'>>,
+  ) => Promise<SavedView | null>;
   onDeleteView: (viewId: string) => Promise<void>;
   onLoadView: (view: SavedView) => Promise<void>;
   onCopyShareableUrl: () => Promise<boolean>;
@@ -48,7 +43,7 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
 
   const handleSaveView = async () => {
     if (!newViewName.trim()) return;
-    
+
     setSaving(true);
     try {
       await onSaveView(newViewName.trim(), makeDefault);
@@ -62,7 +57,10 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
     }
   };
 
-  const handleUpdateView = async (viewId: string, updates: Partial<Pick<SavedView, 'name' | 'is_default'>>) => {
+  const handleUpdateView = async (
+    viewId: string,
+    updates: Partial<Pick<SavedView, 'name' | 'is_default'>>,
+  ) => {
     try {
       await onUpdateView(viewId, updates);
       setEditingView(null);
@@ -107,7 +105,7 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
   };
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn('relative', className)}>
       <div className="flex items-center gap-2">
         {/* Save Current View */}
         <Button
@@ -138,19 +136,20 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
                   Saved Views
                 </h3>
               </div>
-              
+
               <div className="p-2 space-y-1">
                 {savedViews.length === 0 ? (
                   <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
                     No saved views yet
                   </div>
                 ) : (
-                  savedViews.map(view => (
+                  savedViews.map((view) => (
                     <div
                       key={view.id}
                       className={cn(
-                        "flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800",
-                        currentView?.id === view.id && "bg-blue-50 dark:bg-blue-900/20"
+                        'flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800',
+                        currentView?.id === view.id &&
+                          'bg-blue-50 dark:bg-blue-900/20',
                       )}
                     >
                       <div className="flex-1 min-w-0">
@@ -216,10 +215,14 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleUpdateView(view.id, { is_default: !view.is_default })}
+                            onClick={() =>
+                              handleUpdateView(view.id, {
+                                is_default: !view.is_default,
+                              })
+                            }
                             className={cn(
-                              "h-6 w-6 p-0",
-                              view.is_default && "text-yellow-500"
+                              'h-6 w-6 p-0',
+                              view.is_default && 'text-yellow-500',
                             )}
                           >
                             <Star className="h-3 w-3" />
@@ -247,7 +250,7 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
           variant="outline"
           size="sm"
           onClick={handleCopyUrl}
-          className={cn(copySuccess && "text-green-600")}
+          className={cn(copySuccess && 'text-green-600')}
         >
           {copySuccess ? (
             <Check className="h-4 w-4 mr-2" />
@@ -266,7 +269,7 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                 Save Current View
               </h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -280,7 +283,7 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
                     autoFocus
                   />
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -297,7 +300,7 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
                   </label>
                 </div>
               </div>
-              
+
               <div className="flex justify-end gap-2 mt-6">
                 <Button
                   variant="outline"

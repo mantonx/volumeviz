@@ -57,7 +57,9 @@ export const GrowthIndicator: React.FC<GrowthIndicatorProps> = ({
 }) => {
   if (growthRate === undefined || growthRate === null) {
     return (
-      <span className={cn('text-sm text-gray-500 dark:text-gray-400', className)}>
+      <span
+        className={cn('text-sm text-gray-500 dark:text-gray-400', className)}
+      >
         —
       </span>
     );
@@ -72,28 +74,28 @@ export const GrowthIndicator: React.FC<GrowthIndicatorProps> = ({
   if (compact) {
     return (
       <div className={cn('flex items-center gap-1', className)}>
-        {showIcon && (
-          <Icon className={cn('h-3 w-3', color)} />
-        )}
+        {showIcon && <Icon className={cn('h-3 w-3', color)} />}
         <span className={cn('text-xs font-medium', color)}>
-          {percentage > 0 ? '+' : ''}{percentage.toFixed(1)}%
+          {percentage > 0 ? '+' : ''}
+          {percentage.toFixed(1)}%
         </span>
       </div>
     );
   }
 
   return (
-    <div className={cn(
-      'inline-flex items-center gap-1.5 px-2 py-1 rounded-md',
-      bgColor,
-      className
-    )}>
-      {showIcon && (
-        <Icon className={cn('h-3.5 w-3.5', color)} />
+    <div
+      className={cn(
+        'inline-flex items-center gap-1.5 px-2 py-1 rounded-md',
+        bgColor,
+        className,
       )}
+    >
+      {showIcon && <Icon className={cn('h-3.5 w-3.5', color)} />}
       <div className="flex flex-col">
         <span className={cn('text-xs font-medium', color)}>
-          {percentage > 0 ? '+' : ''}{percentage.toFixed(1)}%
+          {percentage > 0 ? '+' : ''}
+          {percentage.toFixed(1)}%
         </span>
         {showLabel && (
           <span className="text-xs text-gray-600 dark:text-gray-400">
@@ -118,22 +120,25 @@ export const GrowthAlert: React.FC<GrowthAlertProps> = ({
   className,
 }) => {
   const percentage = growthRate * 100;
-  
+
   if (percentage < 10) return null;
 
   return (
-    <div className={cn(
-      'flex items-start gap-2 p-3 rounded-lg',
-      'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800',
-      className
-    )}>
+    <div
+      className={cn(
+        'flex items-start gap-2 p-3 rounded-lg',
+        'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800',
+        className,
+      )}
+    >
       <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
       <div className="flex-1">
         <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
           High Growth Rate Detected
         </p>
         <p className="text-xs text-orange-700 dark:text-orange-300 mt-0.5">
-          {volumeName} is growing at {percentage.toFixed(1)}% rate. Consider investigating disk usage.
+          {volumeName} is growing at {percentage.toFixed(1)}% rate. Consider
+          investigating disk usage.
         </p>
       </div>
     </div>

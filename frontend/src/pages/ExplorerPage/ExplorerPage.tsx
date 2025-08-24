@@ -14,7 +14,13 @@ import { Card } from '@/components/ui/Card';
 import { useWebSocket } from '@/providers/WebSocketProvider';
 import { currentPathAtom, searchQueryAtom } from '@/store/api-state';
 import { useAtom } from 'jotai';
-import { FileIcon, FolderIcon, SearchIcon, Database, HardDrive } from 'lucide-react';
+import {
+  FileIcon,
+  FolderIcon,
+  SearchIcon,
+  Database,
+  HardDrive,
+} from 'lucide-react';
 import React, { useCallback, useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import type { ExplorerPageProps, FileItem } from './ExplorerPage.types';
@@ -93,8 +99,8 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {volumes.map((volume) => (
-              <Card 
-                key={volume.name} 
+              <Card
+                key={volume.name}
                 className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => navigate(`/explorer/${volume.name}`)}
               >
@@ -127,7 +133,9 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Status:</span>
-                    <span className={`${volume.is_orphaned ? 'text-yellow-600' : 'text-green-600'}`}>
+                    <span
+                      className={`${volume.is_orphaned ? 'text-yellow-600' : 'text-green-600'}`}
+                    >
                       {volume.is_orphaned ? 'Orphaned' : 'In Use'}
                     </span>
                   </div>
@@ -141,8 +149,8 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
                   )}
                 </div>
 
-                <Button 
-                  className="w-full mt-4" 
+                <Button
+                  className="w-full mt-4"
                   variant="outline"
                   onClick={(e) => {
                     e.stopPropagation();

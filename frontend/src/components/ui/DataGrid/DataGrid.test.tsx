@@ -4,7 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { DataGrid } from './DataGrid';
-import type { DataGridProps, DataGridColumn, FileEntry, SelectionState } from './DataGrid.types';
+import type {
+  DataGridProps,
+  DataGridColumn,
+  FileEntry,
+  SelectionState,
+} from './DataGrid.types';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
@@ -122,7 +127,7 @@ describe('DataGrid', () => {
   describe('Rendering', () => {
     it('renders with data and columns', () => {
       render(<DataGrid {...defaultProps} />);
-      
+
       expect(screen.getByTestId('test-grid')).toBeInTheDocument();
       expect(screen.getByText('Name')).toBeInTheDocument();
       expect(screen.getByText('Size')).toBeInTheDocument();
@@ -132,7 +137,7 @@ describe('DataGrid', () => {
 
     it('renders data rows', () => {
       render(<DataGrid {...defaultProps} />);
-      
+
       expect(screen.getByText('document.pdf')).toBeInTheDocument();
       expect(screen.getByText('image.jpg')).toBeInTheDocument();
       expect(screen.getByText('Documents')).toBeInTheDocument();
@@ -140,13 +145,13 @@ describe('DataGrid', () => {
 
     it('applies custom test ID', () => {
       render(<DataGrid {...defaultProps} testId="custom-grid" />);
-      
+
       expect(screen.getByTestId('custom-grid')).toBeInTheDocument();
     });
 
     it('has correct ARIA attributes', () => {
       render(<DataGrid {...defaultProps} ariaLabel="File list" />);
-      
+
       const grid = screen.getByTestId('test-grid');
       expect(grid).toHaveAttribute('role', 'grid');
       expect(grid).toHaveAttribute('aria-label', 'File list');
@@ -156,21 +161,21 @@ describe('DataGrid', () => {
   describe('Sizes', () => {
     it('applies small size classes', () => {
       render(<DataGrid {...defaultProps} size="sm" />);
-      
+
       const grid = screen.getByTestId('test-grid');
       expect(grid).toHaveClass('text-xs');
     });
 
     it('applies medium size classes', () => {
       render(<DataGrid {...defaultProps} size="md" />);
-      
+
       const grid = screen.getByTestId('test-grid');
       expect(grid).toHaveClass('text-sm');
     });
 
     it('applies large size classes', () => {
       render(<DataGrid {...defaultProps} size="lg" />);
-      
+
       const grid = screen.getByTestId('test-grid');
       expect(grid).toHaveClass('text-base');
     });
@@ -179,14 +184,14 @@ describe('DataGrid', () => {
   describe('Variants', () => {
     it('applies default variant classes', () => {
       render(<DataGrid {...defaultProps} variant="default" />);
-      
+
       const grid = screen.getByTestId('test-grid');
       expect(grid).toHaveClass('bg-white', 'border', 'border-gray-200');
     });
 
     it('applies striped variant classes', () => {
       render(<DataGrid {...defaultProps} variant="striped" />);
-      
+
       // Check that striped styling is applied
       const grid = screen.getByTestId('test-grid');
       expect(grid).toBeInTheDocument();
@@ -194,14 +199,14 @@ describe('DataGrid', () => {
 
     it('applies bordered variant classes', () => {
       render(<DataGrid {...defaultProps} variant="bordered" />);
-      
+
       const grid = screen.getByTestId('test-grid');
       expect(grid).toHaveClass('border-2');
     });
 
     it('applies minimal variant classes', () => {
       render(<DataGrid {...defaultProps} variant="minimal" />);
-      
+
       const grid = screen.getByTestId('test-grid');
       expect(grid).toHaveClass('bg-white');
     });
@@ -210,13 +215,15 @@ describe('DataGrid', () => {
   describe('Selection', () => {
     it('does not show selection column when selectionMode is none', () => {
       render(<DataGrid {...defaultProps} selectionMode="none" />);
-      
-      expect(screen.queryByTestId('test-grid-select-all')).not.toBeInTheDocument();
+
+      expect(
+        screen.queryByTestId('test-grid-select-all'),
+      ).not.toBeInTheDocument();
     });
 
     it('shows checkboxes for multiple selection', () => {
       render(<DataGrid {...defaultProps} selectionMode="multiple" />);
-      
+
       expect(screen.getByTestId('test-grid-select-all')).toBeInTheDocument();
       expect(screen.getByTestId('test-grid-select-0')).toBeInTheDocument();
       expect(screen.getByTestId('test-grid-select-1')).toBeInTheDocument();
@@ -224,8 +231,10 @@ describe('DataGrid', () => {
 
     it('shows radio buttons for single selection', () => {
       render(<DataGrid {...defaultProps} selectionMode="single" />);
-      
-      expect(screen.queryByTestId('test-grid-select-all')).not.toBeInTheDocument();
+
+      expect(
+        screen.queryByTestId('test-grid-select-all'),
+      ).not.toBeInTheDocument();
       expect(screen.getByTestId('test-grid-select-0')).toBeInTheDocument();
       expect(screen.getByTestId('test-grid-select-1')).toBeInTheDocument();
     });
@@ -233,16 +242,16 @@ describe('DataGrid', () => {
     it('handles row selection', async () => {
       const onSelectionChange = vi.fn();
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           selectionMode="multiple"
           onSelectionChange={onSelectionChange}
-        />
+        />,
       );
-      
+
       const checkbox = screen.getByTestId('test-grid-select-0');
       await user.click(checkbox);
-      
+
       expect(onSelectionChange).toHaveBeenCalledWith({
         selectedRows: new Set(['file-1']),
         isAllSelected: false,
@@ -253,16 +262,16 @@ describe('DataGrid', () => {
     it('handles select all', async () => {
       const onSelectionChange = vi.fn();
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           selectionMode="multiple"
           onSelectionChange={onSelectionChange}
-        />
+        />,
       );
-      
+
       const selectAllCheckbox = screen.getByTestId('test-grid-select-all');
       await user.click(selectAllCheckbox);
-      
+
       expect(onSelectionChange).toHaveBeenCalledWith({
         selectedRows: new Set(['file-1', 'file-2', 'dir-1']),
         isAllSelected: true,
@@ -273,13 +282,13 @@ describe('DataGrid', () => {
     it('shows selected state correctly', () => {
       const selectedRows = new Set(['file-1']);
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           selectionMode="multiple"
           selectedRows={selectedRows}
-        />
+        />,
       );
-      
+
       const checkbox = screen.getByTestId('test-grid-select-0');
       expect(checkbox).toHaveClass('bg-blue-600');
     });
@@ -288,7 +297,7 @@ describe('DataGrid', () => {
   describe('Sorting', () => {
     it('shows sort indicators on sortable columns', () => {
       render(<DataGrid {...defaultProps} sortable />);
-      
+
       // Click on a sortable column header should show sort indicator
       const nameHeader = screen.getByTestId('test-grid-header-name');
       expect(nameHeader).toBeInTheDocument();
@@ -297,16 +306,12 @@ describe('DataGrid', () => {
     it('handles column sorting', async () => {
       const onSortChange = vi.fn();
       render(
-        <DataGrid 
-          {...defaultProps} 
-          sortable
-          onSortChange={onSortChange}
-        />
+        <DataGrid {...defaultProps} sortable onSortChange={onSortChange} />,
       );
-      
+
       const nameHeader = screen.getByTestId('test-grid-header-name');
       await user.click(nameHeader);
-      
+
       expect(onSortChange).toHaveBeenCalledWith({
         key: 'name',
         direction: 'asc',
@@ -316,17 +321,17 @@ describe('DataGrid', () => {
     it('cycles through sort directions', async () => {
       const onSortChange = vi.fn();
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           sortable
           onSortChange={onSortChange}
           sortConfig={{ key: 'name', direction: 'asc' }}
-        />
+        />,
       );
-      
+
       const nameHeader = screen.getByTestId('test-grid-header-name');
       await user.click(nameHeader);
-      
+
       expect(onSortChange).toHaveBeenCalledWith({
         key: 'name',
         direction: 'desc',
@@ -335,23 +340,23 @@ describe('DataGrid', () => {
 
     it('does not sort non-sortable columns', async () => {
       const onSortChange = vi.fn();
-      const nonSortableColumns = sampleColumns.map(col => ({
+      const nonSortableColumns = sampleColumns.map((col) => ({
         ...col,
         sortable: col.id === 'name' ? false : col.sortable,
       }));
-      
+
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           columns={nonSortableColumns}
           sortable
           onSortChange={onSortChange}
-        />
+        />,
       );
-      
+
       const nameHeader = screen.getByTestId('test-grid-header-name');
       await user.click(nameHeader);
-      
+
       expect(onSortChange).not.toHaveBeenCalled();
     });
   });
@@ -359,69 +364,66 @@ describe('DataGrid', () => {
   describe('Row Expansion', () => {
     it('shows expansion buttons when expandableRows is true', () => {
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           expandableRows
           rowExpansion={{
             render: (row) => <div>Expanded content for {row.name}</div>,
           }}
-        />
+        />,
       );
-      
+
       expect(screen.getByTestId('test-grid-expand-0')).toBeInTheDocument();
     });
 
     it('expands row when expansion button is clicked', async () => {
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           expandableRows
           rowExpansion={{
             render: (row) => <div>Expanded content for {row.name}</div>,
           }}
-        />
+        />,
       );
-      
+
       const expandButton = screen.getByTestId('test-grid-expand-0');
       await user.click(expandButton);
-      
-      expect(screen.getByText('Expanded content for document.pdf')).toBeInTheDocument();
+
+      expect(
+        screen.getByText('Expanded content for document.pdf'),
+      ).toBeInTheDocument();
     });
   });
 
   describe('Loading States', () => {
     it('shows loading spinner', () => {
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           loading={{ state: 'loading', message: 'Loading files...' }}
-        />
+        />,
       );
-      
+
       expect(screen.getByTestId('loader2')).toBeInTheDocument();
       expect(screen.getByText('Loading files...')).toBeInTheDocument();
     });
 
     it('shows error state', () => {
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           loading={{ state: 'error', message: 'Failed to load files' }}
-        />
+        />,
       );
-      
+
       expect(screen.getByText('Failed to load files')).toBeInTheDocument();
       expect(screen.getByText('Try again')).toBeInTheDocument();
     });
 
     it('shows default loading message', () => {
-      render(
-        <DataGrid 
-          {...defaultProps} 
-          loading={{ state: 'loading' }}
-        />
-      );
-      
+      render(<DataGrid {...defaultProps} loading={{ state: 'loading' }} />);
+
       expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
   });
@@ -429,8 +431,8 @@ describe('DataGrid', () => {
   describe('Empty State', () => {
     it('shows empty state when no data', () => {
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           data={[]}
           emptyState={{
             message: 'No files found',
@@ -440,9 +442,9 @@ describe('DataGrid', () => {
               onClick: vi.fn(),
             },
           }}
-        />
+        />,
       );
-      
+
       expect(screen.getByText('No files found')).toBeInTheDocument();
       expect(screen.getByText('Try uploading some files')).toBeInTheDocument();
       expect(screen.getByText('Upload Files')).toBeInTheDocument();
@@ -450,15 +452,15 @@ describe('DataGrid', () => {
 
     it('shows default empty message', () => {
       render(<DataGrid {...defaultProps} data={[]} />);
-      
+
       expect(screen.getByText('No data to display')).toBeInTheDocument();
     });
 
     it('calls empty state action', async () => {
       const mockAction = vi.fn();
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           data={[]}
           emptyState={{
             action: {
@@ -466,12 +468,12 @@ describe('DataGrid', () => {
               onClick: mockAction,
             },
           }}
-        />
+        />,
       );
-      
+
       const actionButton = screen.getByText('Upload Files');
       await user.click(actionButton);
-      
+
       expect(mockAction).toHaveBeenCalledTimes(1);
     });
   });
@@ -480,34 +482,38 @@ describe('DataGrid', () => {
     it('handles row click', async () => {
       const onRowClick = vi.fn();
       render(<DataGrid {...defaultProps} onRowClick={onRowClick} />);
-      
+
       const row = screen.getByTestId('test-grid-row-0');
       await user.click(row);
-      
+
       expect(onRowClick).toHaveBeenCalledWith(sampleFileData[0], 0);
     });
 
     it('handles row double click', async () => {
       const onRowDoubleClick = vi.fn();
-      render(<DataGrid {...defaultProps} onRowDoubleClick={onRowDoubleClick} />);
-      
+      render(
+        <DataGrid {...defaultProps} onRowDoubleClick={onRowDoubleClick} />,
+      );
+
       const row = screen.getByTestId('test-grid-row-0');
       await user.dblClick(row);
-      
+
       expect(onRowDoubleClick).toHaveBeenCalledWith(sampleFileData[0], 0);
     });
 
     it('handles row context menu', async () => {
       const onRowContextMenu = vi.fn();
-      render(<DataGrid {...defaultProps} onRowContextMenu={onRowContextMenu} />);
-      
+      render(
+        <DataGrid {...defaultProps} onRowContextMenu={onRowContextMenu} />,
+      );
+
       const row = screen.getByTestId('test-grid-row-0');
       fireEvent.contextMenu(row);
-      
+
       expect(onRowContextMenu).toHaveBeenCalledWith(
-        sampleFileData[0], 
-        0, 
-        expect.any(Object)
+        sampleFileData[0],
+        0,
+        expect.any(Object),
       );
     });
   });
@@ -515,14 +521,14 @@ describe('DataGrid', () => {
   describe('Column Types', () => {
     it('formats file size correctly', () => {
       render(<DataGrid {...defaultProps} />);
-      
+
       expect(screen.getByText('1.0 MB')).toBeInTheDocument(); // 1024000 bytes
       expect(screen.getByText('2.0 MB')).toBeInTheDocument(); // 2048000 bytes
     });
 
     it('formats dates correctly', () => {
       render(<DataGrid {...defaultProps} />);
-      
+
       // Check that dates are formatted (exact format may vary by locale)
       expect(screen.getByText(/2023/)).toBeInTheDocument();
     });
@@ -533,12 +539,14 @@ describe('DataGrid', () => {
           id: 'custom',
           key: 'name',
           title: 'Custom',
-          render: (value) => <span data-testid="custom-cell">Custom: {value}</span>,
+          render: (value) => (
+            <span data-testid="custom-cell">Custom: {value}</span>
+          ),
         },
       ];
-      
+
       render(<DataGrid {...defaultProps} columns={customColumns} />);
-      
+
       expect(screen.getByTestId('custom-cell')).toBeInTheDocument();
       expect(screen.getByText('Custom: document.pdf')).toBeInTheDocument();
     });
@@ -547,17 +555,17 @@ describe('DataGrid', () => {
   describe('Accessibility', () => {
     it('has proper ARIA roles', () => {
       render(<DataGrid {...defaultProps} />);
-      
+
       const grid = screen.getByRole('grid');
       expect(grid).toBeInTheDocument();
     });
 
     it('supports keyboard navigation', async () => {
       render(<DataGrid {...defaultProps} selectionMode="multiple" />);
-      
+
       const checkbox = screen.getByTestId('test-grid-select-0');
       checkbox.focus();
-      
+
       expect(checkbox).toHaveFocus();
     });
   });
@@ -566,7 +574,7 @@ describe('DataGrid', () => {
     it('exposes imperative API through ref', () => {
       const ref = React.createRef<any>();
       render(<DataGrid {...defaultProps} ref={ref} />);
-      
+
       expect(ref.current).toHaveProperty('selectRow');
       expect(ref.current).toHaveProperty('selectAll');
       expect(ref.current).toHaveProperty('deselectAll');
@@ -577,18 +585,18 @@ describe('DataGrid', () => {
     it('selectRow works correctly', () => {
       const ref = React.createRef<any>();
       const onSelectionChange = vi.fn();
-      
+
       render(
-        <DataGrid 
-          {...defaultProps} 
+        <DataGrid
+          {...defaultProps}
           ref={ref}
           selectionMode="multiple"
           onSelectionChange={onSelectionChange}
-        />
+        />,
       );
-      
+
       ref.current.selectRow('file-1');
-      
+
       expect(onSelectionChange).toHaveBeenCalledWith({
         selectedRows: new Set(['file-1']),
         isAllSelected: false,
@@ -604,11 +612,11 @@ describe('DataGrid', () => {
         id: `file-${i}`,
         name: `file-${i}.txt`,
       }));
-      
+
       const startTime = performance.now();
       render(<DataGrid {...defaultProps} data={largeData} />);
       const endTime = performance.now();
-      
+
       // Should render within reasonable time (adjust threshold as needed)
       expect(endTime - startTime).toBeLessThan(1000);
     });

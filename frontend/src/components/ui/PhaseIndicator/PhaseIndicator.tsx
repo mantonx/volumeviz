@@ -1,4 +1,9 @@
-import React, { forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useCallback,
+} from 'react';
 import { Check, X, Clock, ChevronRight, ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -19,7 +24,8 @@ import { defaultColorScheme } from './PhaseIndicator.types';
  * Get status icon for a phase
  */
 const getStatusIcon = (status: PhaseStatus, size: PhaseSize = 'md') => {
-  const iconSize = size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-6 h-6' : 'w-4 h-4';
+  const iconSize =
+    size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-6 h-6' : 'w-4 h-4';
 
   switch (status) {
     case 'completed':
@@ -58,7 +64,10 @@ const getStatusColors = (status: PhaseStatus): string => {
 /**
  * Get connector colors based on phase statuses
  */
-const getConnectorColors = (fromStatus: PhaseStatus, toStatus: PhaseStatus): string => {
+const getConnectorColors = (
+  fromStatus: PhaseStatus,
+  toStatus: PhaseStatus,
+): string => {
   if (fromStatus === 'completed') {
     return 'bg-green-500';
   }
@@ -73,11 +82,14 @@ const getConnectorColors = (fromStatus: PhaseStatus, toStatus: PhaseStatus): str
 
 /**
  * PhaseIndicator - Multi-step process visualization component
- * 
+ *
  * A flexible component for displaying multi-phase processes with progress,
  * status indicators, and interactive capabilities. Perfect for scan monitoring.
  */
-export const PhaseIndicator = forwardRef<PhaseIndicatorRef, PhaseIndicatorProps>(
+export const PhaseIndicator = forwardRef<
+  PhaseIndicatorRef,
+  PhaseIndicatorProps
+>(
   (
     {
       phases,
@@ -111,49 +123,64 @@ export const PhaseIndicator = forwardRef<PhaseIndicatorRef, PhaseIndicatorProps>
     };
 
     // Find active phase
-    const currentActivePhase = phases.find(phase => 
-      activePhase ? phase.id === activePhase : phase.status === 'active'
+    const currentActivePhase = phases.find((phase) =>
+      activePhase ? phase.id === activePhase : phase.status === 'active',
     );
 
     // Imperative API
-    useImperativeHandle(ref, () => ({
-      focusPhase: (phaseId: string) => {
-        const element = phaseRefs.current.get(phaseId);
-        element?.focus();
-      },
-      getActivePhase: () => currentActivePhase || null,
-      getPhase: (phaseId: string) => phases.find(p => p.id === phaseId) || null,
-      scrollToPhase: (phaseId: string) => {
-        const element = phaseRefs.current.get(phaseId);
-        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      },
-    }), [phases, currentActivePhase]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        focusPhase: (phaseId: string) => {
+          const element = phaseRefs.current.get(phaseId);
+          element?.focus();
+        },
+        getActivePhase: () => currentActivePhase || null,
+        getPhase: (phaseId: string) =>
+          phases.find((p) => p.id === phaseId) || null,
+        scrollToPhase: (phaseId: string) => {
+          const element = phaseRefs.current.get(phaseId);
+          element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        },
+      }),
+      [phases, currentActivePhase],
+    );
 
     // Event handlers
-    const handlePhaseClick = useCallback((phase: Phase) => {
-      if (!clickable || phase.disabled || !phase.clickable) return;
-      onPhaseClick?.(phase);
-    }, [clickable, onPhaseClick]);
+    const handlePhaseClick = useCallback(
+      (phase: Phase) => {
+        if (!clickable || phase.disabled || !phase.clickable) return;
+        onPhaseClick?.(phase);
+      },
+      [clickable, onPhaseClick],
+    );
 
-    const handlePhaseHover = useCallback((phase: Phase) => {
-      if (phase.disabled) return;
-      onPhaseHover?.(phase);
-    }, [onPhaseHover]);
+    const handlePhaseHover = useCallback(
+      (phase: Phase) => {
+        if (phase.disabled) return;
+        onPhaseHover?.(phase);
+      },
+      [onPhaseHover],
+    );
 
     // Register phase ref
-    const setPhaseRef = useCallback((phaseId: string, element: HTMLDivElement | null) => {
-      if (element) {
-        phaseRefs.current.set(phaseId, element);
-      } else {
-        phaseRefs.current.delete(phaseId);
-      }
-    }, []);
+    const setPhaseRef = useCallback(
+      (phaseId: string, element: HTMLDivElement | null) => {
+        if (element) {
+          phaseRefs.current.set(phaseId, element);
+        } else {
+          phaseRefs.current.delete(phaseId);
+        }
+      },
+      [],
+    );
 
     // Render individual phase
     const renderPhase = (phase: Phase, index: number) => {
       const isActive = phase.id === activePhase || phase.status === 'active';
-      const isClickable = clickable && phase.clickable !== false && !phase.disabled;
-      
+      const isClickable =
+        clickable && phase.clickable !== false && !phase.disabled;
+
       const phaseClasses = clsx(
         'relative flex items-center gap-2 transition-all duration-200',
         orientation === 'horizontal' ? 'flex-row' : 'flex-col',
@@ -199,47 +226,51 @@ export const PhaseIndicator = forwardRef<PhaseIndicatorRef, PhaseIndicatorProps>
 
           {/* Phase content */}
           <div className={contentClasses}>
-            <div className={clsx(
-              'font-medium',
-              isActive && 'text-blue-600',
-              phase.status === 'completed' && 'text-green-600',
-              phase.status === 'failed' && 'text-red-600',
-            )}>
+            <div
+              className={clsx(
+                'font-medium',
+                isActive && 'text-blue-600',
+                phase.status === 'completed' && 'text-green-600',
+                phase.status === 'failed' && 'text-red-600',
+              )}
+            >
               {phase.label}
             </div>
-            
+
             {showDescriptions && phase.description && (
-              <div className="text-gray-500 mt-1">
-                {phase.description}
-              </div>
+              <div className="text-gray-500 mt-1">{phase.description}</div>
             )}
 
             {/* Progress bar for active phase */}
-            {showProgress && 
-             phase.status === 'active' && 
-             typeof phase.progress === 'number' && (
-              <div className="mt-2 w-full">
-                <ProgressBar
-                  progress={phase.progress}
-                  size={size === 'lg' ? 'md' : 'sm'}
-                  showPercentage={size !== 'sm'}
-                  animated={config.animated}
-                />
-              </div>
-            )}
+            {showProgress &&
+              phase.status === 'active' &&
+              typeof phase.progress === 'number' && (
+                <div className="mt-2 w-full">
+                  <ProgressBar
+                    progress={phase.progress}
+                    size={size === 'lg' ? 'md' : 'sm'}
+                    showPercentage={size !== 'sm'}
+                    animated={config.animated}
+                  />
+                </div>
+              )}
           </div>
         </div>
       );
     };
 
     // Render connector between phases
-    const renderConnector = (fromPhase: Phase, toPhase: Phase, index: number) => {
+    const renderConnector = (
+      fromPhase: Phase,
+      toPhase: Phase,
+      index: number,
+    ) => {
       if (!showConnectors) return null;
 
       const connectorClasses = clsx(
         'flex-shrink-0',
-        orientation === 'horizontal' 
-          ? 'h-0.5 w-8 mx-2' 
+        orientation === 'horizontal'
+          ? 'h-0.5 w-8 mx-2'
           : 'w-0.5 h-8 my-2 mx-auto',
         getConnectorColors(fromPhase.status, toPhase.status),
         config.animated && 'transition-all duration-300',
@@ -265,14 +296,15 @@ export const PhaseIndicator = forwardRef<PhaseIndicatorRef, PhaseIndicatorProps>
         data-testid={testId}
         role="progressbar"
         aria-label="Process phases"
-        aria-valuenow={phases.findIndex(p => p.status === 'active') + 1}
+        aria-valuenow={phases.findIndex((p) => p.status === 'active') + 1}
         aria-valuemin={1}
         aria-valuemax={phases.length}
       >
         {phases.map((phase, index) => (
           <React.Fragment key={phase.id}>
             {renderPhase(phase, index)}
-            {index < phases.length - 1 && renderConnector(phase, phases[index + 1], index)}
+            {index < phases.length - 1 &&
+              renderConnector(phase, phases[index + 1], index)}
           </React.Fragment>
         ))}
       </div>

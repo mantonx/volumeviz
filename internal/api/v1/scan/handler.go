@@ -286,13 +286,6 @@ func (h *Handler) GetScanProgress(c *gin.Context) {
 		return
 	}
 
-	// Get progress items for detailed tracking
-	items, err := scanProgressRepo.GetScanProgressItems(c.Request.Context(), scanID)
-	if err != nil {
-		// Log error but don't fail - items are optional
-		items = []coremodels.ScanProgressItem{}
-	}
-
 	// Get scan errors
 	errorPointers, err := scanProgressRepo.GetScanErrors(c.Request.Context(), scanID, "", 100, 0)
 	if err != nil {
@@ -411,12 +404,88 @@ func (h *Handler) GetScanProgress(c *gin.Context) {
 		"completed_at":     completedAt,
 		"phases":           phases,
 		"recent_errors":    errors,
-		"performance_stats": gin.H{
-			"total_phases": len(phases),
-			"total_items":  len(items),
-			"total_errors": len(errors),
-		},
+		"performance_stats": h.calculatePerformanceStats(phases, overallStatus, startedAt),
 	})
+}
+
+// calculatePerformanceStats computes performance metrics for a scan
+func (h *Handler) calculatePerformanceStats(phases []coremodels.ScanPhase, status string, startedAt *time.Time) gin.H {
+	// Default values
+	stats := gin.H{
+		"total_phases":                len(phases),
+		"total_items":                 0,
+		"total_errors":                0,
+		"elapsed_seconds":             0,
+		"estimated_remaining_seconds": 0,
+		"overall_items_per_second":    0.0,
+		"overall_bytes_per_second":    0,
+		"error_rate":                  0.0,
+	}
+	
+	if len(phases) == 0 {
+		return stats
+	}
+	
+	// Calculate totals across all phases
+	totalItemsProcessed := int64(0)
+	totalItemsTotal := int64(0) 
+	totalBytesProcessed := int64(0)
+	totalErrors := int64(0)
+	var earliestStartTime *time.Time
+	
+	for _, phase := range phases {
+		totalItemsProcessed += phase.ItemsProcessed
+		totalItemsTotal += phase.ItemsTotal
+		totalBytesProcessed += phase.BytesProcessed
+		totalErrors += phase.ErrorCount
+		
+		// Find earliest start time
+		if phase.StartedAt != nil {
+			startTime := *phase.StartedAt
+			if earliestStartTime == nil || startTime.Before(*earliestStartTime) {
+				earliestStartTime = &startTime
+			}
+		}
+	}
+	
+	// Calculate elapsed time
+	var elapsedSeconds int
+	if earliestStartTime != nil {
+		elapsed := time.Since(*earliestStartTime)
+		elapsedSeconds = int(elapsed.Seconds())
+	}
+	
+	// Calculate rates (avoid division by zero)
+	var itemsPerSecond float64
+	var bytesPerSecond int64
+	if elapsedSeconds > 0 {
+		itemsPerSecond = float64(totalItemsProcessed) / float64(elapsedSeconds)
+		bytesPerSecond = totalBytesProcessed / int64(elapsedSeconds)
+	}
+	
+	// Estimate remaining time based on current progress
+	var estimatedRemainingSeconds int
+	if itemsPerSecond > 0 && totalItemsTotal > totalItemsProcessed {
+		remainingItems := totalItemsTotal - totalItemsProcessed
+		estimatedRemainingSeconds = int(float64(remainingItems) / itemsPerSecond)
+	}
+	
+	// Error rate (errors per minute)
+	var errorRate float64
+	if elapsedSeconds > 0 {
+		errorRate = float64(totalErrors) * 60.0 / float64(elapsedSeconds)
+	}
+	
+	// Update stats
+	stats["total_items"] = totalItemsProcessed
+	stats["total_errors"] = totalErrors
+	stats["elapsed_seconds"] = elapsedSeconds
+	stats["estimated_remaining_seconds"] = estimatedRemainingSeconds
+	stats["overall_items_per_second"] = itemsPerSecond
+	stats["overall_bytes_per_second"] = bytesPerSecond
+	stats["error_rate"] = errorRate
+	
+	return stats
 }
 
 // GetScanStatus returns the status of an async scan.

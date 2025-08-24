@@ -79,7 +79,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const containerStats = useAtomValue(containerStatsAtom);
   const apiStatus = useAtomValue(apiStatusAtom);
   const lastUpdated = useAtomValue(volumesLastUpdatedAtom);
-  
+
   // Real-time scan monitoring via WebSocket
   const {
     scanOperations,
@@ -98,7 +98,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     autoSubscribe: true,
     enableNotifications: true,
   });
-  
+
   // Scan history integration (disabled until backend implements endpoints)
   // const { history: scanHistory, loading: historyLoading, fetchHistory, exportHistory } = useScanHistory({
   //   autoFetch: true,
@@ -107,7 +107,9 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const scanHistory: any[] = [];
   const historyLoading = false;
   const exportHistory = (format: 'csv' | 'json') => {
-    console.warn(`Scan history export (${format}) not implemented in backend yet`);
+    console.warn(
+      `Scan history export (${format}) not implemented in backend yet`,
+    );
   };
   const fetchHistory = () => {
     console.warn('Scan history fetch not implemented in backend yet');
@@ -120,9 +122,9 @@ export const Dashboard: React.FC<DashboardProps> = () => {
       setOnboardingMessage({
         trackedCount: location.state.trackedCount || 0,
         rulesCreated: location.state.rulesCreated || 0,
-        presetUsed: location.state.presetUsed || 'Unknown'
+        presetUsed: location.state.presetUsed || 'Unknown',
       });
-      
+
       // Clear the location state to prevent showing the message on page refresh
       window.history.replaceState({}, document.title, location.pathname);
     }
@@ -246,7 +248,8 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   };
 
   // Show loading skeleton if essential data is not yet available
-  const isLoading = !volumes || volumes.length === 0 && apiStatus !== 'online';
+  const isLoading =
+    !volumes || (volumes.length === 0 && apiStatus !== 'online');
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -265,17 +268,24 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                   🎉 Setup Complete!
                 </h3>
                 <p className="mt-1 text-green-700 dark:text-green-200">
-                  VolumeViz has been configured successfully using the <strong>{onboardingMessage.presetUsed}</strong> preset.
+                  VolumeViz has been configured successfully using the{' '}
+                  <strong>{onboardingMessage.presetUsed}</strong> preset.
                 </p>
                 <div className="mt-3 space-y-1 text-sm text-green-600 dark:text-green-300">
                   <div className="flex items-center space-x-2">
-                    <span className="font-medium">✓ {onboardingMessage.rulesCreated} tracking rules created</span>
+                    <span className="font-medium">
+                      ✓ {onboardingMessage.rulesCreated} tracking rules created
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="font-medium">✓ {onboardingMessage.trackedCount} mounts will be tracked</span>
+                    <span className="font-medium">
+                      ✓ {onboardingMessage.trackedCount} mounts will be tracked
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="font-medium">✓ Real-time monitoring active</span>
+                    <span className="font-medium">
+                      ✓ Real-time monitoring active
+                    </span>
                   </div>
                 </div>
                 <div className="mt-4 flex space-x-3">
@@ -283,7 +293,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                     size="sm"
                     variant="outline"
                     className="border-green-300 text-green-700 hover:bg-green-100 dark:border-green-600 dark:text-green-300 dark:hover:bg-green-800"
-                    onClick={() => window.location.href = '/rules'}
+                    onClick={() => (window.location.href = '/rules')}
                   >
                     <Settings className="h-4 w-4 mr-1" />
                     View Rules
@@ -292,7 +302,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                     size="sm"
                     variant="outline"
                     className="border-green-300 text-green-700 hover:bg-green-100 dark:border-green-600 dark:text-green-300 dark:hover:bg-green-800"
-                    onClick={() => window.location.href = '/mounts'}
+                    onClick={() => (window.location.href = '/mounts')}
                   >
                     <HardDrive className="h-4 w-4 mr-1" />
                     View Mounts
@@ -410,7 +420,8 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                     : 'Scan volumes to see usage'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500">
-                {Object.keys(scanResults).length} of {volumeStats.total} volumes scanned
+                {Object.keys(scanResults).length} of {volumeStats.total} volumes
+                scanned
               </p>
             </div>
             <div className="h-12 w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -427,10 +438,11 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 Active Scans
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {scanOperations.filter(s => s.status === 'running').length}
+                {scanOperations.filter((s) => s.status === 'running').length}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500">
-                {scanOperations.filter(s => s.status === 'pending').length} queued
+                {scanOperations.filter((s) => s.status === 'pending').length}{' '}
+                queued
               </p>
             </div>
             <div className="h-12 w-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
@@ -480,24 +492,37 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button 
-            className="justify-start h-auto p-4" 
+          <Button
+            className="justify-start h-auto p-4"
             variant="outline"
             onClick={async () => {
               // Start scan for first 3 volumes as a quick action
               const volumesToScan = volumes.slice(0, 3);
-              console.log('[Dashboard] Starting scans for volumes:', volumesToScan.map(v => ({ id: v.id, name: v.name })));
+              console.log(
+                '[Dashboard] Starting scans for volumes:',
+                volumesToScan.map((v) => ({ id: v.id, name: v.name })),
+              );
               for (const volume of volumesToScan) {
                 const volumeIdentifier = volume.name || volume.id;
                 if (volumeIdentifier) {
-                  console.log('[Dashboard] Triggering scan for:', volumeIdentifier);
+                  console.log(
+                    '[Dashboard] Triggering scan for:',
+                    volumeIdentifier,
+                  );
                   try {
                     await startScan(volumeIdentifier);
-                    console.log('[Dashboard] Scan started successfully for:', volumeIdentifier);
+                    console.log(
+                      '[Dashboard] Scan started successfully for:',
+                      volumeIdentifier,
+                    );
                   } catch (error) {
-                    console.error('[Dashboard] Scan failed for:', volumeIdentifier, error);
+                    console.error(
+                      '[Dashboard] Scan failed for:',
+                      volumeIdentifier,
+                      error,
+                    );
                   }
-                  await new Promise(resolve => setTimeout(resolve, 300));
+                  await new Promise((resolve) => setTimeout(resolve, 300));
                 }
               }
             }}
@@ -510,10 +535,10 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               </span>
             </div>
           </Button>
-          <Button 
-            className="justify-start h-auto p-4" 
+          <Button
+            className="justify-start h-auto p-4"
             variant="outline"
-            onClick={() => window.location.href = '/volumes'}
+            onClick={() => (window.location.href = '/volumes')}
           >
             <div className="flex flex-col items-start space-y-1">
               <Database className="h-5 w-5" />
@@ -523,10 +548,10 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               </span>
             </div>
           </Button>
-          <Button 
-            className="justify-start h-auto p-4" 
+          <Button
+            className="justify-start h-auto p-4"
             variant="outline"
-            onClick={() => window.location.href = '/explorer'}
+            onClick={() => (window.location.href = '/explorer')}
           >
             <div className="flex flex-col items-start space-y-1">
               <Search className="h-5 w-5" />
@@ -536,10 +561,10 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               </span>
             </div>
           </Button>
-          <Button 
-            className="justify-start h-auto p-4" 
+          <Button
+            className="justify-start h-auto p-4"
             variant="outline"
-            onClick={() => window.location.href = '/search'}
+            onClick={() => (window.location.href = '/search')}
           >
             <div className="flex flex-col items-start space-y-1">
               <TrendingUp className="h-5 w-5" />
@@ -558,21 +583,37 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           scans={scanOperations}
           systemMetrics={{
             totalVolumes: volumeStats.total,
-            activeScans: scanOperations.filter(s => s.status === 'running').length,
-            queuedScans: scanOperations.filter(s => s.status === 'pending').length,
-            completedScans: scanOperations.filter(s => s.status === 'completed').length,
-            failedScans: scanOperations.filter(s => s.status === 'failed').length,
-            totalFilesScanned: scanOperations.reduce((sum, s) => sum + (s.filesScanned || 0), 0),
-            totalFoldersScanned: scanOperations.reduce((sum, s) => sum + (s.foldersScanned || 0), 0),
+            activeScans: scanOperations.filter((s) => s.status === 'running')
+              .length,
+            queuedScans: scanOperations.filter((s) => s.status === 'pending')
+              .length,
+            completedScans: scanOperations.filter(
+              (s) => s.status === 'completed',
+            ).length,
+            failedScans: scanOperations.filter((s) => s.status === 'failed')
+              .length,
+            totalFilesScanned: scanOperations.reduce(
+              (sum, s) => sum + (s.filesScanned || 0),
+              0,
+            ),
+            totalFoldersScanned: scanOperations.reduce(
+              (sum, s) => sum + (s.foldersScanned || 0),
+              0,
+            ),
             averageScanSpeed: scanOperations
-              .filter(s => s.filesPerSecond)
-              .reduce((sum, s, _, arr) => sum + (s.filesPerSecond || 0) / arr.length, 0),
+              .filter((s) => s.filesPerSecond)
+              .reduce(
+                (sum, s, _, arr) => sum + (s.filesPerSecond || 0) / arr.length,
+                0,
+              ),
           }}
           onScanPause={pauseScan}
           onScanResume={resumeScan}
           onScanStop={cancelScan}
           onScanRetry={retryScan}
-          onViewScanDetails={(scanId) => window.location.href = `/scans/${scanId}`}
+          onViewScanDetails={(scanId) =>
+            (window.location.href = `/scans/${scanId}`)
+          }
           onClearCompleted={clearCompleted}
         />
       )}
@@ -583,7 +624,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           notifications={scanNotifications}
           onMarkAsRead={markNotificationAsRead}
           onMarkAllAsRead={() => {
-            scanNotifications.forEach(n => markNotificationAsRead(n.id));
+            scanNotifications.forEach((n) => markNotificationAsRead(n.id));
           }}
           onDismiss={clearNotification}
           onClearAll={clearAllNotifications}
@@ -591,7 +632,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
       )}
 
       {/* Performance Metrics */}
-      {scanOperations.some(s => s.status === 'running') && (
+      {scanOperations.some((s) => s.status === 'running') && (
         <ScanPerformanceMetrics
           realTime={true}
           timeRange="15m"

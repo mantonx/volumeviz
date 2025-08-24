@@ -1,13 +1,19 @@
-import React, { forwardRef, useImperativeHandle, useState, useMemo, useCallback } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Minus, 
-  Clock, 
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+  useMemo,
+  useCallback,
+} from 'react';
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Clock,
   AlertTriangle,
   CheckCircle,
   Info,
-  HelpCircle
+  HelpCircle,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -47,8 +53,10 @@ const formatters: MetricFormatters = {
 
   formatDuration: (milliseconds: number): string => {
     if (milliseconds < 1000) return `${milliseconds}ms`;
-    if (milliseconds < 60000) return `${formatters.formatNumber(milliseconds / 1000, 1)}s`;
-    if (milliseconds < 3600000) return `${Math.floor(milliseconds / 60000)}m ${Math.floor((milliseconds % 60000) / 1000)}s`;
+    if (milliseconds < 60000)
+      return `${formatters.formatNumber(milliseconds / 1000, 1)}s`;
+    if (milliseconds < 3600000)
+      return `${Math.floor(milliseconds / 60000)}m ${Math.floor((milliseconds % 60000) / 1000)}s`;
     const hours = Math.floor(milliseconds / 3600000);
     const minutes = Math.floor((milliseconds % 3600000) / 60000);
     return `${hours}h ${minutes}m`;
@@ -125,7 +133,7 @@ const formatMetricValue = (
   value: number | string,
   type: MetricValueType,
   unit?: string,
-  customFormatter?: MetricCardProps['formatValue']
+  customFormatter?: MetricCardProps['formatValue'],
 ): string => {
   if (customFormatter) {
     return customFormatter(value, type, unit);
@@ -150,13 +158,15 @@ const formatMetricValue = (
       return formatters.formatNumber(value, 0);
     case 'number':
     default:
-      return formatters.formatNumber(value, unit ? 2 : 0) + (unit ? ` ${unit}` : '');
+      return (
+        formatters.formatNumber(value, unit ? 2 : 0) + (unit ? ` ${unit}` : '')
+      );
   }
 };
 
 /**
  * MetricCard - Data display component with trends and status indicators
- * 
+ *
  * A versatile component for displaying key performance metrics with visual
  * indicators, trend information, and status awareness. Perfect for dashboards
  * and monitoring interfaces.
@@ -189,15 +199,29 @@ export const MetricCard = forwardRef<MetricCardRef, MetricCardProps>(
     const formattedValue = useMemo(() => {
       if (loading || metric.loading) return '---';
       if (metric.error) return 'Error';
-      return formatMetricValue(metric.value, metric.type, metric.unit, formatValue);
-    }, [metric.value, metric.type, metric.unit, metric.loading, metric.error, loading, formatValue]);
+      return formatMetricValue(
+        metric.value,
+        metric.type,
+        metric.unit,
+        formatValue,
+      );
+    }, [
+      metric.value,
+      metric.type,
+      metric.unit,
+      metric.loading,
+      metric.error,
+      loading,
+      formatValue,
+    ]);
 
     // Memoized trend information
     const trendInfo = useMemo(() => {
       if (!showTrend || !metric.trend) return null;
 
-      const percentage = metric.trendPercentage ? 
-        formatters.formatNumber(Math.abs(metric.trendPercentage), 1) : '';
+      const percentage = metric.trendPercentage
+        ? formatters.formatNumber(Math.abs(metric.trendPercentage), 1)
+        : '';
 
       if (formatTrend) {
         return formatTrend(metric.trend, metric.trendPercentage);
@@ -216,20 +240,24 @@ export const MetricCard = forwardRef<MetricCardRef, MetricCardProps>(
     }, [showTrend, metric.trend, metric.trendPercentage, formatTrend]);
 
     // Imperative API
-    useImperativeHandle(ref, () => ({
-      getMetric: () => metric,
-      updateValue: (value: number | string) => {
-        // This would typically trigger a re-render with new data
-        // Implementation depends on parent state management
-      },
-      refresh: () => {
-        setIsRefreshing(true);
-        setTimeout(() => setIsRefreshing(false), 500);
-      },
-      focus: () => {
-        // Focus implementation for clickable cards
-      },
-    }), [metric]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        getMetric: () => metric,
+        updateValue: (value: number | string) => {
+          // This would typically trigger a re-render with new data
+          // Implementation depends on parent state management
+        },
+        refresh: () => {
+          setIsRefreshing(true);
+          setTimeout(() => setIsRefreshing(false), 500);
+        },
+        focus: () => {
+          // Focus implementation for clickable cards
+        },
+      }),
+      [metric],
+    );
 
     // Event handlers
     const handleClick = useCallback(() => {
@@ -285,8 +313,12 @@ export const MetricCard = forwardRef<MetricCardRef, MetricCardProps>(
       }
 
       const points = metric.trendData;
-      const maxValue = Math.max(...points.map(p => typeof p.value === 'number' ? p.value : 0));
-      const minValue = Math.min(...points.map(p => typeof p.value === 'number' ? p.value : 0));
+      const maxValue = Math.max(
+        ...points.map((p) => (typeof p.value === 'number' ? p.value : 0)),
+      );
+      const minValue = Math.min(
+        ...points.map((p) => (typeof p.value === 'number' ? p.value : 0)),
+      );
       const range = maxValue - minValue || 1;
 
       const width = 60;
@@ -294,7 +326,11 @@ export const MetricCard = forwardRef<MetricCardRef, MetricCardProps>(
       const pathData = points
         .map((point, index) => {
           const x = (index / (points.length - 1)) * width;
-          const y = height - (((typeof point.value === 'number' ? point.value : 0) - minValue) / range) * height;
+          const y =
+            height -
+            (((typeof point.value === 'number' ? point.value : 0) - minValue) /
+              range) *
+              height;
           return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
         })
         .join(' ');
@@ -332,9 +368,7 @@ export const MetricCard = forwardRef<MetricCardRef, MetricCardProps>(
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {metric.icon && (
-                <div className={iconSizeClasses[size]}>
-                  {metric.icon}
-                </div>
+                <div className={iconSizeClasses[size]}>{metric.icon}</div>
               )}
               <div>
                 <div className="text-sm font-medium text-gray-700">
@@ -361,9 +395,7 @@ export const MetricCard = forwardRef<MetricCardRef, MetricCardProps>(
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {metric.icon && (
-                  <div className={iconSizeClasses[size]}>
-                    {metric.icon}
-                  </div>
+                  <div className={iconSizeClasses[size]}>{metric.icon}</div>
                 )}
                 <h3 className="text-sm font-medium text-gray-700">
                   {metric.label}
@@ -374,13 +406,15 @@ export const MetricCard = forwardRef<MetricCardRef, MetricCardProps>(
 
             {/* Value */}
             <div className="flex items-baseline justify-between">
-              <div className={clsx(
-                'font-bold',
-                valueSizeClasses[size],
-                metric.status === 'critical' && 'text-red-600',
-                metric.status === 'warning' && 'text-yellow-600',
-                metric.status === 'good' && 'text-green-600',
-              )}>
+              <div
+                className={clsx(
+                  'font-bold',
+                  valueSizeClasses[size],
+                  metric.status === 'critical' && 'text-red-600',
+                  metric.status === 'warning' && 'text-yellow-600',
+                  metric.status === 'good' && 'text-green-600',
+                )}
+              >
                 {formattedValue}
               </div>
               {showTrendChart && renderSparkline()}
@@ -398,7 +432,13 @@ export const MetricCard = forwardRef<MetricCardRef, MetricCardProps>(
                   )}
                   {showComparison && metric.previousValue && (
                     <div className="text-xs">
-                      vs {formatMetricValue(metric.previousValue, metric.type, metric.unit, formatValue)}
+                      vs{' '}
+                      {formatMetricValue(
+                        metric.previousValue,
+                        metric.type,
+                        metric.unit,
+                        formatValue,
+                      )}
                     </div>
                   )}
                 </div>

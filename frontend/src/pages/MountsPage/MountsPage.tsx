@@ -18,7 +18,9 @@ export const MountsPage: React.FC = () => {
   const [composeProjectFilter, setComposeProjectFilter] = useState('');
   const [composeServiceFilter, setComposeServiceFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedMount, setSelectedMount] = useState<MountCatalogEntry | null>(null);
+  const [selectedMount, setSelectedMount] = useState<MountCatalogEntry | null>(
+    null,
+  );
 
   const fetchSummary = async () => {
     try {
@@ -40,8 +42,10 @@ export const MountsPage: React.FC = () => {
       });
       if (searchQuery) params.set('q', searchQuery);
       if (mountTypeFilter) params.set('type', mountTypeFilter);
-      if (composeProjectFilter) params.set('compose_project', composeProjectFilter);
-      if (composeServiceFilter) params.set('compose_service', composeServiceFilter);
+      if (composeProjectFilter)
+        params.set('compose_project', composeProjectFilter);
+      if (composeServiceFilter)
+        params.set('compose_service', composeServiceFilter);
       if (statusFilter) params.set('status', statusFilter);
 
       const response = await fetch(`/api/v1/mounts?${params}`);
@@ -67,21 +71,34 @@ export const MountsPage: React.FC = () => {
       await fetchSummary();
       await fetchMounts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to trigger discovery');
+      setError(
+        err instanceof Error ? err.message : 'Failed to trigger discovery',
+      );
     }
   };
 
   useEffect(() => {
     fetchSummary();
     fetchMounts();
-  }, [page, searchQuery, mountTypeFilter, composeProjectFilter, composeServiceFilter, statusFilter]);
+  }, [
+    page,
+    searchQuery,
+    mountTypeFilter,
+    composeProjectFilter,
+    composeServiceFilter,
+    statusFilter,
+  ]);
 
   const getMountTypeColor = (type: string) => {
     switch (type) {
-      case 'volume': return 'bg-blue-100 text-blue-800';
-      case 'bind': return 'bg-green-100 text-green-800';
-      case 'tmpfs': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'volume':
+        return 'bg-blue-100 text-blue-800';
+      case 'bind':
+        return 'bg-green-100 text-green-800';
+      case 'tmpfs':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -89,8 +106,12 @@ export const MountsPage: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Docker Mount Catalog</h1>
-          <p className="text-gray-600 mt-1">Comprehensive view of all Docker mounts and their metadata</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Docker Mount Catalog
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Comprehensive view of all Docker mounts and their metadata
+          </p>
         </div>
         <button
           onClick={triggerDiscovery}
@@ -104,28 +125,42 @@ export const MountsPage: React.FC = () => {
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-white p-4 rounded-lg shadow border">
-            <h3 className="text-sm font-semibold text-gray-600">Total Mounts</h3>
-            <p className="text-2xl font-bold text-blue-600">{summary.total_mounts || 0}</p>
+            <h3 className="text-sm font-semibold text-gray-600">
+              Total Mounts
+            </h3>
+            <p className="text-2xl font-bold text-blue-600">
+              {summary.total_mounts || 0}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow border">
             <h3 className="text-sm font-semibold text-gray-600">Volumes</h3>
-            <p className="text-2xl font-bold text-blue-500">{summary.volume_mounts || 0}</p>
+            <p className="text-2xl font-bold text-blue-500">
+              {summary.volume_mounts || 0}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow border">
             <h3 className="text-sm font-semibold text-gray-600">Bind Mounts</h3>
-            <p className="text-2xl font-bold text-green-500">{summary.bind_mounts || 0}</p>
+            <p className="text-2xl font-bold text-green-500">
+              {summary.bind_mounts || 0}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow border">
             <h3 className="text-sm font-semibold text-gray-600">Tmpfs</h3>
-            <p className="text-2xl font-bold text-purple-500">{summary.tmpfs_mounts || 0}</p>
+            <p className="text-2xl font-bold text-purple-500">
+              {summary.tmpfs_mounts || 0}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow border">
             <h3 className="text-sm font-semibold text-gray-600">Orphaned</h3>
-            <p className="text-2xl font-bold text-yellow-500">{summary.orphaned_mounts || 0}</p>
+            <p className="text-2xl font-bold text-yellow-500">
+              {summary.orphaned_mounts || 0}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow border">
             <h3 className="text-sm font-semibold text-gray-600">Projects</h3>
-            <p className="text-2xl font-bold text-indigo-500">{summary.compose_projects || 0}</p>
+            <p className="text-2xl font-bold text-indigo-500">
+              {summary.compose_projects || 0}
+            </p>
           </div>
         </div>
       )}
@@ -134,7 +169,9 @@ export const MountsPage: React.FC = () => {
       <div className="bg-white p-4 rounded-lg shadow border mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Search
+            </label>
             <input
               type="text"
               value={searchQuery}
@@ -144,7 +181,9 @@ export const MountsPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Type
+            </label>
             <select
               value={mountTypeFilter}
               onChange={(e) => setMountTypeFilter(e.target.value)}
@@ -157,7 +196,9 @@ export const MountsPage: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -169,7 +210,9 @@ export const MountsPage: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Project
+            </label>
             <input
               type="text"
               value={composeProjectFilter}
@@ -179,7 +222,9 @@ export const MountsPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Service</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Service
+            </label>
             <input
               type="text"
               value={composeServiceFilter}
@@ -239,7 +284,8 @@ export const MountsPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {mount.volume_name || mount.mount_id?.substring(0, 12)}
+                          {mount.volume_name ||
+                            mount.mount_id?.substring(0, 12)}
                         </div>
                         <div className="text-sm text-gray-500">
                           {mount.mount_id?.substring(0, 16)}...
@@ -247,12 +293,17 @@ export const MountsPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMountTypeColor(mount.mount_type || '')}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMountTypeColor(mount.mount_type || '')}`}
+                      >
                         {mount.mount_type}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="max-w-xs truncate" title={mount.source_path}>
+                      <div
+                        className="max-w-xs truncate"
+                        title={mount.source_path}
+                      >
                         {mount.source_path}
                       </div>
                     </td>
@@ -264,9 +315,13 @@ export const MountsPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       <div className="flex flex-wrap gap-1">
-                        {mount.compose_services && mount.compose_services.length > 0 ? (
+                        {mount.compose_services &&
+                        mount.compose_services.length > 0 ? (
                           mount.compose_services.map((service, idx) => (
-                            <span key={idx} className="inline-flex px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-700">
+                            <span
+                              key={idx}
+                              className="inline-flex px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-700"
+                            >
                               {service}
                             </span>
                           ))

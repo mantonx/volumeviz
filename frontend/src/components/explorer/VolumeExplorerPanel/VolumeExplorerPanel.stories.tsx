@@ -213,11 +213,15 @@ export const WithSidebar: Story = {
         <h3 className="text-lg font-semibold mb-4">File Details</h3>
         <div className="space-y-4">
           <div>
-            <div className="text-sm font-medium text-gray-700">Selected Items</div>
+            <div className="text-sm font-medium text-gray-700">
+              Selected Items
+            </div>
             <div className="text-sm text-gray-500">No items selected</div>
           </div>
           <div>
-            <div className="text-sm font-medium text-gray-700">Quick Actions</div>
+            <div className="text-sm font-medium text-gray-700">
+              Quick Actions
+            </div>
             <div className="space-y-2 mt-2">
               <button className="w-full text-left p-2 text-sm hover:bg-gray-100 rounded">
                 <Eye className="inline w-4 h-4 mr-2" />
@@ -265,7 +269,8 @@ export const Error: Story = {
   args: {
     items: [],
     isLoading: false,
-    error: 'Failed to load volume contents. Please check your connection and try again.',
+    error:
+      'Failed to load volume contents. Please check your connection and try again.',
     ...mockActions,
   },
 };
@@ -348,7 +353,8 @@ export const InteractiveSelection: Story = {
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-4">Selection</h3>
             <div className="text-sm text-gray-600">
-              {selection.items.size} item{selection.items.size !== 1 ? 's' : ''} selected
+              {selection.items.size} item{selection.items.size !== 1 ? 's' : ''}{' '}
+              selected
             </div>
             {selection.items.size > 0 && (
               <div className="mt-4">
@@ -414,7 +420,7 @@ export const FilteringExample: Story = {
 
     const handleFilterChange = (newFilter: ExplorerFilter) => {
       setFilter(newFilter);
-      
+
       let filtered = mockItems;
       if (newFilter.query) {
         filtered = filtered.filter((item) =>
@@ -426,7 +432,7 @@ export const FilteringExample: Story = {
           newFilter.types!.includes(item.type),
         );
       }
-      
+
       setFilteredItems(filtered);
       action('filter-change')(newFilter);
     };
@@ -475,7 +481,10 @@ export const FilteringExample: Story = {
                   type="checkbox"
                   checked={filter.showHidden || false}
                   onChange={(e) =>
-                    handleFilterChange({ ...filter, showHidden: e.target.checked })
+                    handleFilterChange({
+                      ...filter,
+                      showHidden: e.target.checked,
+                    })
                   }
                   className="rounded border-gray-300"
                 />

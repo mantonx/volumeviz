@@ -23,10 +23,10 @@ import {
 
 import { MetricsOverview } from './MetricsOverview';
 import { ToastProvider } from '../../ui/Toast';
-import type { 
-  MetricsOverviewProps, 
-  OverviewMetric, 
-  MetricCategory, 
+import type {
+  MetricsOverviewProps,
+  OverviewMetric,
+  MetricCategory,
   MetricAlert,
   MetricsFilter,
   MetricsSorting,
@@ -39,7 +39,8 @@ const meta: Meta<typeof MetricsOverview> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'A comprehensive metrics dashboard component for monitoring system performance, scan progress, and health indicators in real-time.',
+        component:
+          'A comprehensive metrics dashboard component for monitoring system performance, scan progress, and health indicators in real-time.',
       },
     },
   },
@@ -142,7 +143,7 @@ const generateScanMetrics = (): OverviewMetric[] => [
     tags: ['scanning', 'queue'],
     alertThreshold: { warning: 5, critical: 10 },
   },
-  
+
   // Capacity metrics
   {
     id: 'volume-count',
@@ -198,7 +199,7 @@ const generateScanMetrics = (): OverviewMetric[] => [
     tags: ['storage', 'utilization'],
     alertThreshold: { warning: 80, critical: 90 },
   },
-  
+
   // System health metrics
   {
     id: 'cpu-usage',
@@ -263,7 +264,7 @@ const generateScanMetrics = (): OverviewMetric[] => [
     lastUpdated: new Date(),
     tags: ['uptime', 'availability'],
   },
-  
+
   // Quality metrics
   {
     id: 'duplicate-files',
@@ -392,7 +393,7 @@ export const Default: Story = {
     const metrics = useMemo(() => generateScanMetrics(), []);
     const categories = useMemo(() => generateCategories(), []);
     const alerts = useMemo(() => generateAlerts(), []);
-    
+
     return (
       <div className="p-4">
         <MetricsOverview
@@ -418,7 +419,7 @@ export const Layouts: Story = {
   render: () => {
     const metrics = useMemo(() => generateScanMetrics().slice(0, 8), []);
     const categories = useMemo(() => generateCategories(), []);
-    
+
     return (
       <div className="p-4 space-y-8">
         <div>
@@ -431,7 +432,7 @@ export const Layouts: Story = {
             height="400px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-4">List Layout</h3>
           <MetricsOverview
@@ -441,7 +442,7 @@ export const Layouts: Story = {
             height="400px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-4">Compact Layout</h3>
           <MetricsOverview
@@ -461,7 +462,7 @@ export const Groupings: Story = {
   render: () => {
     const metrics = useMemo(() => generateScanMetrics(), []);
     const categories = useMemo(() => generateCategories(), []);
-    
+
     return (
       <div className="p-4 space-y-8">
         <div>
@@ -473,7 +474,7 @@ export const Groupings: Story = {
             height="400px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-4">Grouped by Status</h3>
           <MetricsOverview
@@ -483,7 +484,7 @@ export const Groupings: Story = {
             height="400px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-4">No Grouping</h3>
           <MetricsOverview
@@ -503,7 +504,7 @@ export const LoadingAndError: Story = {
   render: () => {
     const metrics = useMemo(() => generateScanMetrics(), []);
     const categories = useMemo(() => generateCategories(), []);
-    
+
     return (
       <div className="p-4 space-y-8">
         <div>
@@ -515,7 +516,7 @@ export const LoadingAndError: Story = {
             height="300px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-4">Error State</h3>
           <MetricsOverview
@@ -525,7 +526,7 @@ export const LoadingAndError: Story = {
             height="300px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-4">Empty State</h3>
           <MetricsOverview
@@ -545,7 +546,7 @@ export const WithAlerts: Story = {
     const metrics = useMemo(() => generateScanMetrics(), []);
     const categories = useMemo(() => generateCategories(), []);
     const alerts = useMemo(() => generateAlerts(), []);
-    
+
     return (
       <div className="p-4">
         <MetricsOverview
@@ -566,30 +567,38 @@ export const RealTimeSimulation: Story = {
     const [metrics, setMetrics] = useState(() => generateScanMetrics());
     const categories = useMemo(() => generateCategories(), []);
     const [alerts, setAlerts] = useState(() => generateAlerts());
-    
+
     // Simulate real-time updates
     const simulateUpdates = () => {
-      setMetrics(prev => prev.map(metric => {
-        // Randomly update some metrics
-        if (Math.random() < 0.3) {
-          let newValue = metric.value as number;
-          
-          if (metric.type === 'percentage') {
-            newValue = Math.max(0, Math.min(100, newValue + (Math.random() - 0.5) * 10));
-          } else if (metric.type === 'number') {
-            newValue = Math.max(0, newValue + (Math.random() - 0.5) * (newValue * 0.1));
+      setMetrics((prev) =>
+        prev.map((metric) => {
+          // Randomly update some metrics
+          if (Math.random() < 0.3) {
+            let newValue = metric.value as number;
+
+            if (metric.type === 'percentage') {
+              newValue = Math.max(
+                0,
+                Math.min(100, newValue + (Math.random() - 0.5) * 10),
+              );
+            } else if (metric.type === 'number') {
+              newValue = Math.max(
+                0,
+                newValue + (Math.random() - 0.5) * (newValue * 0.1),
+              );
+            }
+
+            return {
+              ...metric,
+              value: Math.round(newValue * 10) / 10,
+              lastUpdated: new Date(),
+            };
           }
-          
-          return {
-            ...metric,
-            value: Math.round(newValue * 10) / 10,
-            lastUpdated: new Date(),
-          };
-        }
-        return metric;
-      }));
+          return metric;
+        }),
+      );
     };
-    
+
     return (
       <div className="p-4">
         <div className="mb-4 flex space-x-2">
@@ -603,7 +612,7 @@ export const RealTimeSimulation: Story = {
             Click to simulate real-time metric updates
           </span>
         </div>
-        
+
         <MetricsOverview
           metrics={metrics}
           categories={categories}
@@ -631,19 +640,23 @@ export const FilteringAndSearching: Story = {
       field: 'priority',
       direction: 'asc',
     });
-    
+
     return (
       <div className="p-4">
         <div className="mb-4 space-y-2">
           <div className="flex space-x-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Filter by Status</label>
+              <label className="block text-sm font-medium mb-1">
+                Filter by Status
+              </label>
               <select
                 value={filter.status?.[0] || ''}
-                onChange={(e) => 
-                  setFilter(prev => ({
+                onChange={(e) =>
+                  setFilter((prev) => ({
                     ...prev,
-                    status: e.target.value ? [e.target.value as any] : undefined,
+                    status: e.target.value
+                      ? [e.target.value as any]
+                      : undefined,
                   }))
                 }
                 className="border border-gray-300 rounded px-2 py-1 text-sm"
@@ -655,13 +668,15 @@ export const FilteringAndSearching: Story = {
                 <option value="info">Info</option>
               </select>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-1">Filter by Category</label>
+              <label className="block text-sm font-medium mb-1">
+                Filter by Category
+              </label>
               <select
                 value={filter.categories?.[0] || ''}
-                onChange={(e) => 
-                  setFilter(prev => ({
+                onChange={(e) =>
+                  setFilter((prev) => ({
                     ...prev,
                     categories: e.target.value ? [e.target.value] : undefined,
                   }))
@@ -676,13 +691,13 @@ export const FilteringAndSearching: Story = {
                 <option value="quality">Quality</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Sort by</label>
               <select
                 value={sorting.field}
-                onChange={(e) => 
-                  setSorting(prev => ({
+                onChange={(e) =>
+                  setSorting((prev) => ({
                     ...prev,
                     field: e.target.value as any,
                   }))
@@ -698,7 +713,7 @@ export const FilteringAndSearching: Story = {
             </div>
           </div>
         </div>
-        
+
         <MetricsOverview
           metrics={metrics}
           categories={categories}
@@ -717,25 +732,33 @@ export const FilteringAndSearching: Story = {
 // Performance dashboard
 export const PerformanceDashboard: Story = {
   render: () => {
-    const performanceMetrics = useMemo(() => 
-      generateScanMetrics().filter(m => 
-        ['performance', 'health', 'activity'].includes(m.category)
-      ), []
+    const performanceMetrics = useMemo(
+      () =>
+        generateScanMetrics().filter((m) =>
+          ['performance', 'health', 'activity'].includes(m.category),
+        ),
+      [],
     );
-    const categories = useMemo(() => 
-      generateCategories().filter(c => 
-        ['performance', 'health', 'activity'].includes(c.id)
-      ), []
+    const categories = useMemo(
+      () =>
+        generateCategories().filter((c) =>
+          ['performance', 'health', 'activity'].includes(c.id),
+        ),
+      [],
     );
     const alerts = useMemo(() => generateAlerts().slice(0, 2), []);
-    
+
     return (
       <div className="p-4">
         <div className="mb-4">
-          <h2 className="text-xl font-bold text-gray-900">System Performance Dashboard</h2>
-          <p className="text-gray-600">Real-time monitoring of system performance and scan activity</p>
+          <h2 className="text-xl font-bold text-gray-900">
+            System Performance Dashboard
+          </h2>
+          <p className="text-gray-600">
+            Real-time monitoring of system performance and scan activity
+          </p>
         </div>
-        
+
         <MetricsOverview
           metrics={performanceMetrics}
           categories={categories}
@@ -768,11 +791,11 @@ export const Interactive: Story = {
       searchable: true,
       exportable: true,
     });
-    
+
     const metrics = useMemo(() => generateScanMetrics(), []);
     const categories = useMemo(() => generateCategories(), []);
     const alerts = useMemo(() => generateAlerts(), []);
-    
+
     return (
       <div className="p-4 space-y-6">
         {/* Controls */}
@@ -781,7 +804,12 @@ export const Interactive: Story = {
             <label className="block text-sm font-medium mb-1">Layout</label>
             <select
               value={config.layout}
-              onChange={(e) => setConfig(prev => ({ ...prev, layout: e.target.value as any }))}
+              onChange={(e) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  layout: e.target.value as any,
+                }))
+              }
               className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
             >
               <option value="grid">Grid</option>
@@ -789,12 +817,17 @@ export const Interactive: Story = {
               <option value="compact">Compact</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Grouping</label>
             <select
               value={config.grouping}
-              onChange={(e) => setConfig(prev => ({ ...prev, grouping: e.target.value as any }))}
+              onChange={(e) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  grouping: e.target.value as any,
+                }))
+              }
               className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
             >
               <option value="category">Category</option>
@@ -803,12 +836,17 @@ export const Interactive: Story = {
               <option value="none">None</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Card Size</label>
             <select
               value={config.cardSize}
-              onChange={(e) => setConfig(prev => ({ ...prev, cardSize: e.target.value as any }))}
+              onChange={(e) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  cardSize: e.target.value as any,
+                }))
+              }
               className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
             >
               <option value="sm">Small</option>
@@ -816,7 +854,7 @@ export const Interactive: Story = {
               <option value="lg">Large</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Columns</label>
             <input
@@ -824,28 +862,45 @@ export const Interactive: Story = {
               min="2"
               max="6"
               value={config.columns}
-              onChange={(e) => setConfig(prev => ({ ...prev, columns: Number(e.target.value) }))}
+              onChange={(e) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  columns: Number(e.target.value),
+                }))
+              }
               className="w-full"
             />
-            <span className="text-xs text-gray-600">{config.columns} columns</span>
+            <span className="text-xs text-gray-600">
+              {config.columns} columns
+            </span>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <label className="flex items-center">
               <input
                 type="checkbox"
                 checked={config.searchable}
-                onChange={(e) => setConfig(prev => ({ ...prev, searchable: e.target.checked }))}
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    searchable: e.target.checked,
+                  }))
+                }
                 className="mr-2"
               />
               Searchable
             </label>
-            
+
             <label className="flex items-center">
               <input
                 type="checkbox"
                 checked={config.exportable}
-                onChange={(e) => setConfig(prev => ({ ...prev, exportable: e.target.checked }))}
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    exportable: e.target.checked,
+                  }))
+                }
                 className="mr-2"
               />
               Exportable
@@ -870,9 +925,10 @@ export const Interactive: Story = {
           onRefresh={action('refresh')}
           onExport={action('export')}
         />
-        
+
         <div className="text-sm text-gray-600">
-          Configuration: {config.layout} layout • {config.grouping} grouping • {config.cardSize} cards • {config.columns} columns
+          Configuration: {config.layout} layout • {config.grouping} grouping •{' '}
+          {config.cardSize} cards • {config.columns} columns
         </div>
       </div>
     );

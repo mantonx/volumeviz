@@ -41,7 +41,7 @@ const RulesPage: React.FC = () => {
         body: JSON.stringify({
           include_rule_details: true,
           include_unmatched: false,
-          dry_run: true
+          dry_run: true,
         }),
       });
       if (!response.ok) throw new Error('Failed to preview rules');
@@ -79,21 +79,22 @@ const RulesPage: React.FC = () => {
 
   const toggleRuleEnabled = async (ruleId: number, enabled: boolean) => {
     if (!config) return;
-    
-    const updatedRules = config.rules?.map(rule => 
-      rule.id === ruleId ? { ...rule, is_enabled: enabled } : rule
-    ) || [];
-    
+
+    const updatedRules =
+      config.rules?.map((rule) =>
+        rule.id === ruleId ? { ...rule, is_enabled: enabled } : rule,
+      ) || [];
+
     await updateRulesConfig(updatedRules);
   };
 
   const reorderRules = (fromIndex: number, toIndex: number) => {
     if (!config || !config.rules) return;
-    
+
     const newRules = [...config.rules];
     const [moved] = newRules.splice(fromIndex, 1);
     newRules.splice(toIndex, 0, moved);
-    
+
     updateRulesConfig(newRules);
   };
 
@@ -106,7 +107,7 @@ const RulesPage: React.FC = () => {
       });
 
       if (!response.ok) throw new Error('Failed to apply rules');
-      
+
       // Refresh data after applying
       await fetchConfig();
       await previewRules();
@@ -140,9 +141,12 @@ const RulesPage: React.FC = () => {
 
   const getActionColor = (action: string) => {
     switch (action) {
-      case 'include': return 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-900/50 dark:border-green-700';
-      case 'exclude': return 'text-red-600 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-900/50 dark:border-red-700';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200 dark:text-gray-400 dark:bg-gray-700 dark:border-gray-600';
+      case 'include':
+        return 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-900/50 dark:border-green-700';
+      case 'exclude':
+        return 'text-red-600 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-900/50 dark:border-red-700';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200 dark:text-gray-400 dark:bg-gray-700 dark:border-gray-600';
     }
   };
 
@@ -151,7 +155,9 @@ const RulesPage: React.FC = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-700 dark:text-gray-300">Loading rules configuration...</span>
+          <span className="ml-2 text-gray-700 dark:text-gray-300">
+            Loading rules configuration...
+          </span>
         </div>
       </div>
     );
@@ -269,7 +275,8 @@ const RulesPage: React.FC = () => {
                     </dt>
                     <dd className="flex items-baseline">
                       <div className="text-2xl font-semibold text-gray-900 dark:text-white">
-                        {config.rules?.filter(r => r.action === 'include').length || 0}
+                        {config.rules?.filter((r) => r.action === 'include')
+                          .length || 0}
                       </div>
                     </dd>
                   </dl>
@@ -293,7 +300,8 @@ const RulesPage: React.FC = () => {
                     </dt>
                     <dd className="flex items-baseline">
                       <div className="text-2xl font-semibold text-gray-900 dark:text-white">
-                        {config.rules?.filter(r => r.action === 'exclude').length || 0}
+                        {config.rules?.filter((r) => r.action === 'exclude')
+                          .length || 0}
                       </div>
                     </dd>
                   </dl>
@@ -308,27 +316,49 @@ const RulesPage: React.FC = () => {
       {preview && (
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Preview Results</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Preview Results
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{preview.summary?.total_mounts || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Mounts</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {preview.summary?.total_mounts || 0}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Mounts
+                </p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{preview.summary?.mounts_included || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Will Include</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {preview.summary?.mounts_included || 0}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Will Include
+                </p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-red-600 dark:text-red-400">{preview.summary?.mounts_excluded || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Will Exclude</p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {preview.summary?.mounts_excluded || 0}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Will Exclude
+                </p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{preview.summary?.mounts_unmatched || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Unmatched</p>
+                <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                  {preview.summary?.mounts_unmatched || 0}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Unmatched
+                </p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{preview.execution_time_ms || 0}ms</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Execution Time</p>
+                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {preview.execution_time_ms || 0}ms
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Execution Time
+                </p>
               </div>
             </div>
           </div>
@@ -338,10 +368,14 @@ const RulesPage: React.FC = () => {
       {/* Rules List */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Rules (Ordered by Priority)</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Drag to reorder • Higher rules take precedence</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Rules (Ordered by Priority)
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Drag to reorder • Higher rules take precedence
+          </p>
         </div>
-        
+
         {config && config.rules && config.rules.length > 0 ? (
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {config.rules.map((rule, index) => (
@@ -359,16 +393,24 @@ const RulesPage: React.FC = () => {
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center">
                       <span className="text-2xl text-gray-400">⋮⋮</span>
-                      <span className="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
+                      <span className="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                        #{index + 1}
+                      </span>
                     </div>
-                    
+
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{rule.name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {rule.name}
+                      </h3>
                       {rule.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{rule.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {rule.description}
+                        </p>
                       )}
                       <div className="flex items-center space-x-2 mt-2">
-                        <span className={`px-2 py-1 text-xs font-medium rounded border ${getActionColor(rule.action || '')}`}>
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded border ${getActionColor(rule.action || '')}`}
+                        >
                           {(rule.action || '').toUpperCase()}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -380,30 +422,37 @@ const RulesPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={rule.is_enabled || false}
-                        onChange={(e) => toggleRuleEnabled(rule.id!, e.target.checked)}
+                        onChange={(e) =>
+                          toggleRuleEnabled(rule.id!, e.target.checked)
+                        }
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Enabled</span>
+                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                        Enabled
+                      </span>
                     </label>
                   </div>
                 </div>
-                
+
                 {/* Conditions */}
                 <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Conditions:</h4>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Conditions:
+                  </h4>
                   <div className="flex flex-wrap gap-2">
                     {rule.conditions?.map((condition, condIndex) => (
                       <span
                         key={condIndex}
                         className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                       >
-                        {condition.field_name} {condition.operator} {condition.value || condition.values?.join(', ')}
+                        {condition.field_name} {condition.operator}{' '}
+                        {condition.value || condition.values?.join(', ')}
                       </span>
                     ))}
                   </div>
@@ -428,8 +477,12 @@ const RulesPage: React.FC = () => {
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Create New Rule</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">Rule creation form would go here...</p>
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Create New Rule
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Rule creation form would go here...
+            </p>
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setShowCreateForm(false)}

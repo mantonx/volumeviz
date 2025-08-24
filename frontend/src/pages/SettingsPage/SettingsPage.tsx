@@ -160,7 +160,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
    */
   const handleRerunWizard = () => {
     if (
-      window.confirm('Are you sure you want to re-run the setup wizard? This will reset your onboarding state and redirect you to the wizard.')
+      window.confirm(
+        'Are you sure you want to re-run the setup wizard? This will reset your onboarding state and redirect you to the wizard.',
+      )
     ) {
       resetOnboarding();
       navigate('/onboarding');

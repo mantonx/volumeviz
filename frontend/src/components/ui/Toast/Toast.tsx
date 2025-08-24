@@ -60,7 +60,7 @@ const getDefaultIcon = (variant: ToastVariant) => {
 
 /**
  * Enhanced Toast component
- * 
+ *
  * A comprehensive toast notification component with:
  * - Multiple variants (info, success, warning, error)
  * - Customizable positioning and animations
@@ -111,7 +111,7 @@ export const Toast = forwardRef<ToastRef, ToastProps>(
       if (isVisible && !visible) {
         setVisible(true);
         setIsEntering(true);
-        
+
         if (animate) {
           const timer = setTimeout(() => {
             setIsEntering(false);
@@ -127,7 +127,7 @@ export const Toast = forwardRef<ToastRef, ToastProps>(
     useEffect(() => {
       if (!persistent && visible && !isExiting) {
         const dismissDuration = duration || defaultToastDurations[variant];
-        
+
         if (dismissDuration > 0) {
           timeoutRef.current = setTimeout(() => {
             handleDismiss();
@@ -143,19 +143,23 @@ export const Toast = forwardRef<ToastRef, ToastProps>(
     }, [persistent, visible, isExiting, duration, variant]);
 
     // Imperative API
-    useImperativeHandle(ref, () => ({
-      dismiss: handleDismiss,
-      show: () => setVisible(true),
-      getElement: () => toastRef.current,
-      isPersistent: () => persistent,
-    }), [persistent]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        dismiss: handleDismiss,
+        show: () => setVisible(true),
+        getElement: () => toastRef.current,
+        isPersistent: () => persistent,
+      }),
+      [persistent],
+    );
 
     // Event handlers
     const handleDismiss = useCallback(() => {
       if (!dismissible) return;
 
       setIsExiting(true);
-      
+
       if (animate) {
         setTimeout(() => {
           setVisible(false);
@@ -172,7 +176,7 @@ export const Toast = forwardRef<ToastRef, ToastProps>(
     const handleActionClick = useCallback(() => {
       action?.onClick();
       onAction?.();
-      
+
       // Auto-dismiss after action unless persistent
       if (!persistent) {
         handleDismiss();
@@ -182,28 +186,28 @@ export const Toast = forwardRef<ToastRef, ToastProps>(
     // Computed values
     const sizeConfig = useMemo(() => defaultToastSizes[size], [size]);
     const variantConfig = useMemo(() => toastVariantStyles[variant], [variant]);
-    
+
     const animationClass = useMemo(() => {
       if (!animate) return '';
-      
+
       const animationType = getAnimationForPosition(position);
       const config = defaultToastAnimations[animationType];
-      
+
       if (isExiting) {
         return clsx(config.exit, config.exitActive);
       }
-      
+
       if (isEntering) {
         return clsx(config.enter, config.enterActive);
       }
-      
+
       return config.enterActive.replace(/transition-\S+/g, '').trim();
     }, [animate, position, isExiting, isEntering]);
 
     // Icon rendering
     const renderIcon = () => {
       if (icon === null) return null;
-      
+
       if (icon) {
         return (
           <div className={clsx(sizeConfig.icon, variantConfig.icon)}>
@@ -211,10 +215,10 @@ export const Toast = forwardRef<ToastRef, ToastProps>(
           </div>
         );
       }
-      
+
       const DefaultIcon = getDefaultIcon(variant);
       return (
-        <DefaultIcon 
+        <DefaultIcon
           className={clsx(sizeConfig.icon, variantConfig.icon)}
           aria-hidden="true"
         />

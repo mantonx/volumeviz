@@ -5,11 +5,11 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { MetricsOverview } from './MetricsOverview';
 import { ToastProvider } from '../../ui/Toast';
-import type { 
-  MetricsOverviewProps, 
-  OverviewMetric, 
-  MetricCategory, 
-  MetricAlert 
+import type {
+  MetricsOverviewProps,
+  OverviewMetric,
+  MetricCategory,
+  MetricAlert,
 } from './MetricsOverview.types';
 
 // Mock lucide-react icons
@@ -144,9 +144,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByTestId('test-metrics-overview')).toBeInTheDocument();
       expect(screen.getByText('Metrics Overview')).toBeInTheDocument();
       expect(screen.getByText('CPU Usage')).toBeInTheDocument();
@@ -158,9 +158,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} grouping="category" />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('System Health')).toBeInTheDocument();
       expect(screen.getByText('Performance')).toBeInTheDocument();
     });
@@ -169,22 +169,28 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} testId="custom-metrics" />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByTestId('custom-metrics')).toBeInTheDocument();
     });
 
     it('has correct ARIA attributes', () => {
       render(
         <TestWrapper>
-          <MetricsOverview {...defaultProps} ariaLabel="System metrics dashboard" />
-        </TestWrapper>
+          <MetricsOverview
+            {...defaultProps}
+            ariaLabel="System metrics dashboard"
+          />
+        </TestWrapper>,
       );
-      
+
       const container = screen.getByTestId('test-metrics-overview');
       expect(container).toHaveAttribute('role', 'region');
-      expect(container).toHaveAttribute('aria-label', 'System metrics dashboard');
+      expect(container).toHaveAttribute(
+        'aria-label',
+        'System metrics dashboard',
+      );
     });
   });
 
@@ -193,9 +199,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} layout="grid" columns={3} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       // Check that grid layout is applied
       const container = screen.getByTestId('test-metrics-overview');
       expect(container).toBeInTheDocument();
@@ -205,9 +211,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} layout="list" />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       const container = screen.getByTestId('test-metrics-overview');
       expect(container).toBeInTheDocument();
     });
@@ -216,9 +222,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} layout="compact" />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       const container = screen.getByTestId('test-metrics-overview');
       expect(container).toBeInTheDocument();
     });
@@ -229,9 +235,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} grouping="category" />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('System Health')).toBeInTheDocument();
       expect(screen.getByText('Performance')).toBeInTheDocument();
     });
@@ -240,9 +246,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} grouping="status" />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       // Status grouping should work but exact text depends on implementation
       const container = screen.getByTestId('test-metrics-overview');
       expect(container).toBeInTheDocument();
@@ -252,9 +258,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} grouping="none" />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('CPU Usage')).toBeInTheDocument();
       expect(screen.getByText('Memory Usage')).toBeInTheDocument();
       expect(screen.getByText('Active Scans')).toBeInTheDocument();
@@ -266,9 +272,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       // Should show unacknowledged alerts
       expect(screen.getByText('warning')).toBeInTheDocument();
     });
@@ -278,12 +284,12 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} onAlertClick={onAlertClick} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       const alertBadge = screen.getByText('warning');
       await user.click(alertBadge);
-      
+
       expect(onAlertClick).toHaveBeenCalledWith(sampleAlerts[0]);
     });
   });
@@ -293,32 +299,36 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} searchable={true} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
-      expect(screen.getByPlaceholderText('Search metrics...')).toBeInTheDocument();
+
+      expect(
+        screen.getByPlaceholderText('Search metrics...'),
+      ).toBeInTheDocument();
     });
 
     it('hides search input when searchable is false', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} searchable={false} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
-      expect(screen.queryByPlaceholderText('Search metrics...')).not.toBeInTheDocument();
+
+      expect(
+        screen.queryByPlaceholderText('Search metrics...'),
+      ).not.toBeInTheDocument();
     });
 
     it('filters metrics based on search query', async () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} searchable={true} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       const searchInput = screen.getByPlaceholderText('Search metrics...');
       await user.type(searchInput, 'CPU');
-      
+
       expect(screen.getByText('CPU Usage')).toBeInTheDocument();
       // Memory Usage and Active Scans should still be visible since we're not implementing real filtering in this test
     });
@@ -329,9 +339,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('Refresh')).toBeInTheDocument();
       expect(screen.getByTestId('refresh-icon')).toBeInTheDocument();
     });
@@ -341,12 +351,12 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} onRefresh={onRefresh} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       const refreshButton = screen.getByText('Refresh');
       await user.click(refreshButton);
-      
+
       expect(onRefresh).toHaveBeenCalledTimes(1);
     });
 
@@ -354,9 +364,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} loading={true} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       const refreshButton = screen.getByText('Refresh');
       expect(refreshButton).toBeDisabled();
     });
@@ -367,9 +377,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} exportable={true} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('Export')).toBeInTheDocument();
       expect(screen.getByTestId('download-icon')).toBeInTheDocument();
     });
@@ -378,9 +388,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} exportable={false} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.queryByText('Export')).not.toBeInTheDocument();
     });
 
@@ -388,13 +398,17 @@ describe('MetricsOverview', () => {
       const onExport = vi.fn();
       render(
         <TestWrapper>
-          <MetricsOverview {...defaultProps} exportable={true} onExport={onExport} />
-        </TestWrapper>
+          <MetricsOverview
+            {...defaultProps}
+            exportable={true}
+            onExport={onExport}
+          />
+        </TestWrapper>,
       );
-      
+
       const exportButton = screen.getByText('Export');
       await user.click(exportButton);
-      
+
       expect(onExport).toHaveBeenCalledWith('csv');
     });
   });
@@ -404,12 +418,12 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} grouping="category" />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       const categoryHeader = screen.getByText('System Health');
       await user.click(categoryHeader);
-      
+
       // Category should toggle (exact behavior depends on implementation)
       expect(categoryHeader).toBeInTheDocument();
     });
@@ -418,9 +432,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} grouping="category" />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       // Should show count badges for categories
       expect(screen.getByText('2')).toBeInTheDocument(); // Health category has 2 metrics
       expect(screen.getByText('1')).toBeInTheDocument(); // Performance category has 1 metric
@@ -432,26 +446,26 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} loading={true} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('Loading metrics...')).toBeInTheDocument();
       expect(screen.getByTestId('refresh-icon')).toBeInTheDocument();
     });
 
     it('shows custom loading component', () => {
       const CustomLoading = () => <div>Custom loading...</div>;
-      
+
       render(
         <TestWrapper>
-          <MetricsOverview 
-            {...defaultProps} 
-            loading={true} 
+          <MetricsOverview
+            {...defaultProps}
+            loading={true}
             renderLoading={CustomLoading}
           />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('Custom loading...')).toBeInTheDocument();
     });
   });
@@ -461,26 +475,26 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} error="Failed to load metrics" />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('Failed to load metrics')).toBeInTheDocument();
       expect(screen.getByText('Try Again')).toBeInTheDocument();
     });
 
     it('shows custom error component', () => {
       const CustomError = (error: string) => <div>Custom error: {error}</div>;
-      
+
       render(
         <TestWrapper>
-          <MetricsOverview 
-            {...defaultProps} 
-            error="Test error" 
+          <MetricsOverview
+            {...defaultProps}
+            error="Test error"
             renderError={CustomError}
           />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('Custom error: Test error')).toBeInTheDocument();
     });
   });
@@ -490,25 +504,25 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} metrics={[]} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('No metrics found')).toBeInTheDocument();
     });
 
     it('shows custom empty component', () => {
       const CustomEmpty = () => <div>No data available</div>;
-      
+
       render(
         <TestWrapper>
-          <MetricsOverview 
-            {...defaultProps} 
-            metrics={[]} 
+          <MetricsOverview
+            {...defaultProps}
+            metrics={[]}
             renderEmpty={CustomEmpty}
           />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('No data available')).toBeInTheDocument();
     });
   });
@@ -519,13 +533,15 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} onMetricClick={onMetricClick} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       // Find and click a metric card
-      const metricCard = screen.getByTestId('test-metrics-overview-metric-metric-1');
+      const metricCard = screen.getByTestId(
+        'test-metrics-overview-metric-metric-1',
+      );
       await user.click(metricCard);
-      
+
       expect(onMetricClick).toHaveBeenCalledWith(sampleMetrics[0]);
     });
   });
@@ -535,9 +551,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText(/Showing 3 of 3 metrics/)).toBeInTheDocument();
     });
 
@@ -545,9 +561,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText(/Last updated:/)).toBeInTheDocument();
     });
   });
@@ -556,13 +572,13 @@ describe('MetricsOverview', () => {
     it('shows auto-refresh interval in footer', () => {
       render(
         <TestWrapper>
-          <MetricsOverview 
-            {...defaultProps} 
+          <MetricsOverview
+            {...defaultProps}
             refreshConfig={{ mode: 'auto', interval: 30 }}
           />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(screen.getByText('Auto-refresh: 30s')).toBeInTheDocument();
     });
   });
@@ -573,9 +589,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} ref={ref} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       expect(ref.current).toHaveProperty('refresh');
       expect(ref.current).toHaveProperty('exportData');
       expect(ref.current).toHaveProperty('getFilteredMetrics');
@@ -588,9 +604,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} ref={ref} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       const filteredMetrics = ref.current.getFilteredMetrics();
       expect(filteredMetrics).toHaveLength(3);
       expect(filteredMetrics[0]).toEqual(sampleMetrics[0]);
@@ -601,9 +617,9 @@ describe('MetricsOverview', () => {
       render(
         <TestWrapper>
           <MetricsOverview {...defaultProps} ref={ref} />
-        </TestWrapper>
+        </TestWrapper>,
       );
-      
+
       const alerts = ref.current.getAlerts();
       expect(alerts).toHaveLength(1); // Only unacknowledged alerts
       expect(alerts[0].acknowledged).toBe(false);

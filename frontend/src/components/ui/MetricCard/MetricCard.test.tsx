@@ -58,37 +58,55 @@ describe('MetricCard', () => {
 
     it('applies correct status colors', () => {
       const { rerender } = render(
-        <MetricCard {...defaultProps} metric={createTestMetric({ status: 'good' })} />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ status: 'good' })}
+        />,
       );
 
       const card = screen.getByTestId('test-metric-card');
       expect(card).toHaveClass('border-green-200', 'bg-green-50');
 
       rerender(
-        <MetricCard {...defaultProps} metric={createTestMetric({ status: 'critical' })} />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ status: 'critical' })}
+        />,
       );
       expect(card).toHaveClass('border-red-200', 'bg-red-50');
 
       rerender(
-        <MetricCard {...defaultProps} metric={createTestMetric({ status: 'warning' })} />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ status: 'warning' })}
+        />,
       );
       expect(card).toHaveClass('border-yellow-200', 'bg-yellow-50');
     });
 
     it('renders status icons correctly', () => {
       const { rerender } = render(
-        <MetricCard {...defaultProps} metric={createTestMetric({ status: 'good' })} />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ status: 'good' })}
+        />,
       );
 
       expect(screen.getByTestId('check-circle')).toBeInTheDocument();
 
       rerender(
-        <MetricCard {...defaultProps} metric={createTestMetric({ status: 'critical' })} />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ status: 'critical' })}
+        />,
       );
       expect(screen.getByTestId('alert-triangle')).toBeInTheDocument();
 
       rerender(
-        <MetricCard {...defaultProps} metric={createTestMetric({ status: 'info' })} />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ status: 'info' })}
+        />,
       );
       expect(screen.getByTestId('info')).toBeInTheDocument();
     });
@@ -96,10 +114,10 @@ describe('MetricCard', () => {
     it('renders custom icons when provided', () => {
       const customIcon = <div data-testid="custom-icon">🔧</div>;
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ icon: customIcon })} 
-        />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ icon: customIcon })}
+        />,
       );
 
       expect(screen.getByTestId('custom-icon')).toBeInTheDocument();
@@ -109,10 +127,10 @@ describe('MetricCard', () => {
   describe('Value Formatting', () => {
     it('formats percentage values correctly', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ value: 75.5, type: 'percentage' })} 
-        />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ value: 75.5, type: 'percentage' })}
+        />,
       );
 
       expect(screen.getByText('75.5%')).toBeInTheDocument();
@@ -120,10 +138,10 @@ describe('MetricCard', () => {
 
     it('formats byte values correctly', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ value: 1073741824, type: 'bytes' })} 
-        />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ value: 1073741824, type: 'bytes' })}
+        />,
       );
 
       expect(screen.getByText('1.0 GB')).toBeInTheDocument();
@@ -131,10 +149,10 @@ describe('MetricCard', () => {
 
     it('formats duration values correctly', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ value: 65000, type: 'duration' })} 
-        />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ value: 65000, type: 'duration' })}
+        />,
       );
 
       expect(screen.getByText('1m 5s')).toBeInTheDocument();
@@ -142,14 +160,14 @@ describe('MetricCard', () => {
 
     it('formats rate values correctly', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ 
-            value: 42.7, 
-            type: 'rate', 
-            unit: 'files' 
-          })} 
-        />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({
+            value: 42.7,
+            type: 'rate',
+            unit: 'files',
+          })}
+        />,
       );
 
       expect(screen.getByText('42.7 files/s')).toBeInTheDocument();
@@ -157,10 +175,10 @@ describe('MetricCard', () => {
 
     it('formats count values correctly', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ value: 1547, type: 'count' })} 
-        />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ value: 1547, type: 'count' })}
+        />,
       );
 
       expect(screen.getByText('1,547')).toBeInTheDocument();
@@ -168,10 +186,10 @@ describe('MetricCard', () => {
 
     it('handles string values', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ value: 'Online', type: 'custom' })} 
-        />
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({ value: 'Online', type: 'custom' })}
+        />,
       );
 
       expect(screen.getByText('Online')).toBeInTheDocument();
@@ -179,12 +197,7 @@ describe('MetricCard', () => {
 
     it('uses custom formatting function when provided', () => {
       const customFormatter = vi.fn(() => 'Custom: 100');
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          formatValue={customFormatter}
-        />
-      );
+      render(<MetricCard {...defaultProps} formatValue={customFormatter} />);
 
       expect(screen.getByText('Custom: 100')).toBeInTheDocument();
       expect(customFormatter).toHaveBeenCalledWith(100, 'count', undefined);
@@ -224,15 +237,15 @@ describe('MetricCard', () => {
   describe('Layouts', () => {
     it('renders compact layout correctly', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
+        <MetricCard
+          {...defaultProps}
           layout="compact"
-          metric={createTestMetric({ 
+          metric={createTestMetric({
             trend: 'up',
-            trendPercentage: 12.5 
+            trendPercentage: 12.5,
           })}
           showTrend
-        />
+        />,
       );
 
       expect(screen.getByText('Test Metric')).toBeInTheDocument();
@@ -243,30 +256,32 @@ describe('MetricCard', () => {
 
     it('renders detailed layout with description', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
+        <MetricCard
+          {...defaultProps}
           layout="detailed"
-          metric={createTestMetric({ 
-            description: 'This is a test metric description' 
+          metric={createTestMetric({
+            description: 'This is a test metric description',
           })}
-        />
+        />,
       );
 
-      expect(screen.getByText('This is a test metric description')).toBeInTheDocument();
+      expect(
+        screen.getByText('This is a test metric description'),
+      ).toBeInTheDocument();
     });
   });
 
   describe('Trend Display', () => {
     it('shows trend information when enabled', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ 
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({
             trend: 'up',
-            trendPercentage: 15.3 
+            trendPercentage: 15.3,
           })}
           showTrend
-        />
+        />,
       );
 
       expect(screen.getByTestId('trending-up')).toBeInTheDocument();
@@ -275,14 +290,14 @@ describe('MetricCard', () => {
 
     it('hides trend information when disabled', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ 
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({
             trend: 'up',
-            trendPercentage: 15.3 
+            trendPercentage: 15.3,
           })}
           showTrend={false}
-        />
+        />,
       );
 
       expect(screen.queryByTestId('trending-up')).not.toBeInTheDocument();
@@ -291,30 +306,30 @@ describe('MetricCard', () => {
 
     it('renders different trend directions correctly', () => {
       const { rerender } = render(
-        <MetricCard 
-          {...defaultProps} 
+        <MetricCard
+          {...defaultProps}
           metric={createTestMetric({ trend: 'up' })}
           showTrend
-        />
+        />,
       );
 
       expect(screen.getByTestId('trending-up')).toBeInTheDocument();
 
       rerender(
-        <MetricCard 
-          {...defaultProps} 
+        <MetricCard
+          {...defaultProps}
           metric={createTestMetric({ trend: 'down' })}
           showTrend
-        />
+        />,
       );
       expect(screen.getByTestId('trending-down')).toBeInTheDocument();
 
       rerender(
-        <MetricCard 
-          {...defaultProps} 
+        <MetricCard
+          {...defaultProps}
           metric={createTestMetric({ trend: 'stable' })}
           showTrend
-        />
+        />,
       );
       expect(screen.getByTestId('minus')).toBeInTheDocument();
     });
@@ -322,15 +337,15 @@ describe('MetricCard', () => {
     it('uses custom trend formatting when provided', () => {
       const customTrendFormatter = vi.fn(() => 'Custom trend: up');
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ 
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({
             trend: 'up',
-            trendPercentage: 12.5 
+            trendPercentage: 12.5,
           })}
           showTrend
           formatTrend={customTrendFormatter}
-        />
+        />,
       );
 
       expect(screen.getByText('Custom trend: up')).toBeInTheDocument();
@@ -340,12 +355,7 @@ describe('MetricCard', () => {
 
   describe('Last Updated Display', () => {
     it('shows last updated time when enabled', () => {
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          showLastUpdated
-        />
-      );
+      render(<MetricCard {...defaultProps} showLastUpdated />);
 
       expect(screen.getByTestId('clock')).toBeInTheDocument();
       // Check for time format (this will depend on locale)
@@ -353,12 +363,7 @@ describe('MetricCard', () => {
     });
 
     it('hides last updated time when disabled', () => {
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          showLastUpdated={false}
-        />
-      );
+      render(<MetricCard {...defaultProps} showLastUpdated={false} />);
 
       expect(screen.queryByTestId('clock')).not.toBeInTheDocument();
     });
@@ -367,14 +372,14 @@ describe('MetricCard', () => {
   describe('Comparison Display', () => {
     it('shows comparison with previous value when enabled', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ 
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({
             value: 150,
-            previousValue: 120 
+            previousValue: 120,
           })}
           showComparison
-        />
+        />,
       );
 
       expect(screen.getByText('vs 120')).toBeInTheDocument();
@@ -382,14 +387,14 @@ describe('MetricCard', () => {
 
     it('hides comparison when disabled', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ 
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({
             value: 150,
-            previousValue: 120 
+            previousValue: 120,
           })}
           showComparison={false}
-        />
+        />,
       );
 
       expect(screen.queryByText('vs 120')).not.toBeInTheDocument();
@@ -399,13 +404,7 @@ describe('MetricCard', () => {
   describe('Interactions', () => {
     it('calls onClick when card is clicked and clickable', async () => {
       const mockOnClick = vi.fn();
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          clickable
-          onClick={mockOnClick}
-        />
-      );
+      render(<MetricCard {...defaultProps} clickable onClick={mockOnClick} />);
 
       const card = screen.getByTestId('test-metric-card');
       await user.click(card);
@@ -414,18 +413,18 @@ describe('MetricCard', () => {
         expect.objectContaining({
           id: 'test-metric',
           label: 'Test Metric',
-        })
+        }),
       );
     });
 
     it('does not call onClick when not clickable', async () => {
       const mockOnClick = vi.fn();
       render(
-        <MetricCard 
-          {...defaultProps} 
+        <MetricCard
+          {...defaultProps}
           clickable={false}
           onClick={mockOnClick}
-        />
+        />,
       );
 
       const card = screen.getByTestId('test-metric-card');
@@ -436,12 +435,7 @@ describe('MetricCard', () => {
 
     it('calls onHover when card is hovered', async () => {
       const mockOnHover = vi.fn();
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          onHover={mockOnHover}
-        />
-      );
+      render(<MetricCard {...defaultProps} onHover={mockOnHover} />);
 
       const card = screen.getByTestId('test-metric-card');
       await user.hover(card);
@@ -450,17 +444,12 @@ describe('MetricCard', () => {
         expect.objectContaining({
           id: 'test-metric',
           label: 'Test Metric',
-        })
+        }),
       );
     });
 
     it('supports keyboard navigation when clickable', () => {
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          clickable
-        />
-      );
+      render(<MetricCard {...defaultProps} clickable />);
 
       const card = screen.getByTestId('test-metric-card');
       expect(card).toHaveAttribute('tabindex', '0');
@@ -468,12 +457,7 @@ describe('MetricCard', () => {
     });
 
     it('does not support keyboard navigation when not clickable', () => {
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          clickable={false}
-        />
-      );
+      render(<MetricCard {...defaultProps} clickable={false} />);
 
       const card = screen.getByTestId('test-metric-card');
       expect(card).toHaveAttribute('tabindex', '-1');
@@ -483,12 +467,7 @@ describe('MetricCard', () => {
 
   describe('Loading State', () => {
     it('shows loading state when loading prop is true', () => {
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          loading
-        />
-      );
+      render(<MetricCard {...defaultProps} loading />);
 
       expect(screen.getByText('---')).toBeInTheDocument();
       const card = screen.getByTestId('test-metric-card');
@@ -497,24 +476,21 @@ describe('MetricCard', () => {
 
     it('shows loading state when metric.loading is true', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
+        <MetricCard
+          {...defaultProps}
           metric={createTestMetric({ loading: true })}
-        />
+        />,
       );
 
       expect(screen.getByText('---')).toBeInTheDocument();
     });
 
     it('shows spinner in loading overlay', () => {
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          loading
-        />
-      );
+      render(<MetricCard {...defaultProps} loading />);
 
-      const spinner = screen.getByTestId('test-metric-card').querySelector('.animate-spin');
+      const spinner = screen
+        .getByTestId('test-metric-card')
+        .querySelector('.animate-spin');
       expect(spinner).toBeInTheDocument();
     });
   });
@@ -522,14 +498,14 @@ describe('MetricCard', () => {
   describe('Error State', () => {
     it('shows error message when metric has error', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ 
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({
             error: 'Failed to fetch data',
-            status: 'critical' 
+            status: 'critical',
           })}
           layout="detailed"
-        />
+        />,
       );
 
       expect(screen.getByText('Error')).toBeInTheDocument();
@@ -538,10 +514,10 @@ describe('MetricCard', () => {
 
     it('shows "Error" as value when metric has error', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
+        <MetricCard
+          {...defaultProps}
           metric={createTestMetric({ error: 'Network error' })}
-        />
+        />,
       );
 
       expect(screen.getByText('Error')).toBeInTheDocument();
@@ -581,14 +557,14 @@ describe('MetricCard', () => {
       ];
 
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ 
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({
             trendData,
-            trend: 'up' 
+            trend: 'up',
           })}
           showTrendChart
-        />
+        />,
       );
 
       const svg = screen.getByTestId('test-metric-card').querySelector('svg');
@@ -597,13 +573,13 @@ describe('MetricCard', () => {
 
     it('does not render sparkline when trend data is insufficient', () => {
       render(
-        <MetricCard 
-          {...defaultProps} 
-          metric={createTestMetric({ 
-            trendData: [{ timestamp: Date.now(), value: 100 }] // Only one point
+        <MetricCard
+          {...defaultProps}
+          metric={createTestMetric({
+            trendData: [{ timestamp: Date.now(), value: 100 }], // Only one point
           })}
           showTrendChart
-        />
+        />,
       );
 
       const svg = screen.getByTestId('test-metric-card').querySelector('svg');
@@ -613,24 +589,14 @@ describe('MetricCard', () => {
 
   describe('Animation', () => {
     it('applies animation classes when animated is true', () => {
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          animated
-        />
-      );
+      render(<MetricCard {...defaultProps} animated />);
 
       const card = screen.getByTestId('test-metric-card');
       expect(card).toHaveClass('transition-all', 'duration-300');
     });
 
     it('does not apply animation classes when animated is false', () => {
-      render(
-        <MetricCard 
-          {...defaultProps} 
-          animated={false}
-        />
-      );
+      render(<MetricCard {...defaultProps} animated={false} />);
 
       const card = screen.getByTestId('test-metric-card');
       expect(card).not.toHaveClass('transition-all', 'duration-300');

@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 
 import { useWebSocket } from '../../../providers/WebSocketProvider';
-import type { SubtleProgressIndicatorProps, ScanProgressState } from './SubtleProgressIndicator.types';
+import type {
+  SubtleProgressIndicatorProps,
+  ScanProgressState,
+} from './SubtleProgressIndicator.types';
 
 /**
  * SubtleProgressIndicator - A subtle bottom border progress bar for volume scan progress
@@ -22,7 +25,9 @@ import type { SubtleProgressIndicatorProps, ScanProgressState } from './SubtlePr
  * - Minimal UI footprint (just a border)
  * - Auto-hide when not scanning
  */
-export const SubtleProgressIndicator: React.FC<SubtleProgressIndicatorProps> = ({
+export const SubtleProgressIndicator: React.FC<
+  SubtleProgressIndicatorProps
+> = ({
   volumeId,
   show = true,
   progress: externalProgress,
@@ -55,7 +60,7 @@ export const SubtleProgressIndicator: React.FC<SubtleProgressIndicatorProps> = (
   // Use global WebSocket connection
   const { isConnected, on } = useWebSocket();
 
-  // Subscribe to scan progress updates for this volume  
+  // Subscribe to scan progress updates for this volume
   useEffect(() => {
     if (!isConnected || !show || externalProgress !== undefined) return;
 
@@ -80,7 +85,15 @@ export const SubtleProgressIndicator: React.FC<SubtleProgressIndicatorProps> = (
     on('scan_progress', handleProgressUpdate);
 
     // No cleanup needed - the global WebSocket provider handles this
-  }, [isConnected, volumeId, show, on, onProgressUpdate, onComplete, externalProgress]);
+  }, [
+    isConnected,
+    volumeId,
+    show,
+    on,
+    onProgressUpdate,
+    onComplete,
+    externalProgress,
+  ]);
 
   // Use external progress if provided, otherwise use WebSocket state
   const currentProgress = externalProgress ?? progressState.overall_progress;
@@ -121,25 +134,35 @@ export const SubtleProgressIndicator: React.FC<SubtleProgressIndicatorProps> = (
           const phase = phases[phaseIndex];
           const phaseProgress = phase ? phase.progress : 0;
           let phaseStatus = phase ? phase.status : 'pending';
-          
+
           // Handle overall scan status when no phase data
           if (!phase && currentStatus === 'completed') {
             phaseStatus = 'completed';
-          } else if (!phase && (currentStatus === 'idle' || currentProgress === 0)) {
+          } else if (
+            !phase &&
+            (currentStatus === 'idle' || currentProgress === 0)
+          ) {
             phaseStatus = 'idle';
           }
-          
+
           // Calculate this phase's contribution to overall progress
           const isActive = phaseStatus === 'running';
           const isCompleted = phaseStatus === 'completed';
-          let segmentProgress = isCompleted ? 100 : (isActive ? phaseProgress : 0);
-          
+          let segmentProgress = isCompleted
+            ? 100
+            : isActive
+              ? phaseProgress
+              : 0;
+
           // For completed overall scans, show full segment
           if (currentStatus === 'completed') {
             segmentProgress = 100;
           } else if (currentStatus === 'failed') {
-            segmentProgress = isCompleted ? 100 : (isActive ? phaseProgress : 0);
-          } else if (currentStatus === 'idle' || currentStatus === 'never_scanned') {
+            segmentProgress = isCompleted ? 100 : isActive ? phaseProgress : 0;
+          } else if (
+            currentStatus === 'idle' ||
+            currentStatus === 'never_scanned'
+          ) {
             segmentProgress = 2; // Show minimal progress for idle volumes
           }
 
@@ -153,7 +176,7 @@ export const SubtleProgressIndicator: React.FC<SubtleProgressIndicatorProps> = (
                 className={clsx(
                   'h-full transition-all ease-out',
                   getProgressColor(phaseStatus, isActive),
-                  isActive && 'animate-pulse'
+                  isActive && 'animate-pulse',
                 )}
                 style={{
                   width: `${segmentProgress}%`,
@@ -174,23 +197,27 @@ export const SubtleProgressIndicator: React.FC<SubtleProgressIndicatorProps> = (
   // Render single progress bar
   const renderSingleProgress = () => {
     const isActive = currentStatus === 'running';
-    
+
     // Show actual progress for running scans, 100% for completed, and minimal width for idle/never scanned
     let displayProgress = currentProgress;
     if (currentStatus === 'completed') {
       displayProgress = 100;
     } else if (currentStatus === 'failed') {
       displayProgress = currentProgress || 25; // Show some progress for failed scans
-    } else if (currentStatus === 'idle' || currentStatus === 'never_scanned' || currentProgress === 0) {
+    } else if (
+      currentStatus === 'idle' ||
+      currentStatus === 'never_scanned' ||
+      currentProgress === 0
+    ) {
       displayProgress = 2; // Show minimal progress for idle volumes (just a thin line)
     }
-    
+
     return (
       <div
         className={clsx(
           'h-full transition-all ease-out',
           getProgressColor(currentStatus, isActive),
-          isActive && 'animate-pulse'
+          isActive && 'animate-pulse',
         )}
         style={{
           width: `${displayProgress}%`,
@@ -204,20 +231,24 @@ export const SubtleProgressIndicator: React.FC<SubtleProgressIndicatorProps> = (
     // Render as table row for use inside tables
     return (
       <tr data-testid={`${testId}-table-row`} className="h-1">
-        <td 
-          colSpan={999} 
+        <td
+          colSpan={999}
           className="p-0 h-1"
           data-testid={testId}
           data-volume-id={volumeId}
           data-progress={currentProgress}
           data-status={currentStatus}
         >
-          <div className={clsx('h-1 bg-gray-100 dark:bg-gray-800 overflow-hidden', className)}>
-            {showPhases && progressState.phases?.length 
+          <div
+            className={clsx(
+              'h-1 bg-gray-100 dark:bg-gray-800 overflow-hidden',
+              className,
+            )}
+          >
+            {showPhases && progressState.phases?.length
               ? renderMultiPhaseProgress()
-              : renderSingleProgress()
-            }
-            
+              : renderSingleProgress()}
+
             {/* Scanning animation overlay - constrained to progress bar */}
             {currentStatus === 'running' && (
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -234,7 +265,7 @@ export const SubtleProgressIndicator: React.FC<SubtleProgressIndicatorProps> = (
     <div
       className={clsx(
         'absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-800 overflow-hidden',
-        className
+        className,
       )}
       data-testid={testId}
       data-volume-id={volumeId}
@@ -246,11 +277,10 @@ export const SubtleProgressIndicator: React.FC<SubtleProgressIndicatorProps> = (
       aria-valuemin={0}
       aria-valuemax={100}
     >
-      {showPhases && progressState.phases?.length 
+      {showPhases && progressState.phases?.length
         ? renderMultiPhaseProgress()
-        : renderSingleProgress()
-      }
-      
+        : renderSingleProgress()}
+
       {/* Scanning animation overlay - constrained to progress bar */}
       {currentStatus === 'running' && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { VolumesList } from './VolumesPage/VolumesList';
+import { VolumesList } from '@/components/domain/VolumesList';
 
 /**
  * VolumesPage - Main page component for displaying Docker volumes

@@ -47,7 +47,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Mock scan errors for stories
-const createMockScanError = (overrides: Partial<ScanError> = {}): ScanError => ({
+const createMockScanError = (
+  overrides: Partial<ScanError> = {},
+): ScanError => ({
   error_type: 'EnrichmentError',
   error_category: 'metadata_extraction',
   severity: 'warning',
@@ -76,7 +78,8 @@ export const FilePermissionError: Story = {
       item_path: '/media/restricted/private-video.mp4',
       item_name: 'private-video.mp4',
       error_message: 'Permission denied',
-      technical_details: 'EACCES: permission denied, open \'/media/restricted/private-video.mp4\'',
+      technical_details:
+        "EACCES: permission denied, open '/media/restricted/private-video.mp4'",
       retry_count: 0,
     }),
     context: {
@@ -135,7 +138,8 @@ export const CriticalFilesystemError: Story = {
       item_path: '/media/corrupted-directory',
       item_name: 'corrupted-directory',
       error_message: 'I/O error reading directory structure',
-      technical_details: 'Block device error: sector unreadable at LBA 2048576. Possible disk failure.',
+      technical_details:
+        'Block device error: sector unreadable at LBA 2048576. Possible disk failure.',
       retry_count: 3,
     }),
     context: {
@@ -163,7 +167,8 @@ export const ResourceError: Story = {
       item_path: '/media/movies/8K-Movie-Sample.mkv',
       item_name: '8K-Movie-Sample.mkv',
       error_message: 'Insufficient memory to process large media file',
-      technical_details: 'Out of memory: cannot allocate 16GB for 8K video frame buffer',
+      technical_details:
+        'Out of memory: cannot allocate 16GB for 8K video frame buffer',
       file_size: 17179869184, // 16GB
       retry_count: 2,
     }),
@@ -217,9 +222,12 @@ export const ApiError: Story = {
       error: {
         code: 'VOLUME_NOT_ACCESSIBLE',
         message: 'The specified volume could not be accessed',
-        details: { volume_path: '/mnt/external-drive', mount_status: 'unmounted' },
+        details: {
+          volume_path: '/mnt/external-drive',
+          mount_status: 'unmounted',
+        },
         request_id: 'req_1234567890',
-      }
+      },
     },
     context: {
       phase: 'volume_scan',
@@ -259,7 +267,8 @@ export const MultipleRetryAttempts: Story = {
       severity: 'error',
       retry_count: 3,
       error_message: 'Failed to extract metadata after multiple attempts',
-      technical_details: 'FFprobe returned exit code 1: Invalid data found when processing input',
+      technical_details:
+        'FFprobe returned exit code 1: Invalid data found when processing input',
     }),
     context: {
       phase: 'media_enrichment',

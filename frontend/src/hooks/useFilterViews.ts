@@ -25,7 +25,7 @@ export interface UseFilterViewsOptions {
 export function useFilterViews(options: UseFilterViewsOptions = {}) {
   const { storageKey = 'volumeviz_filter_views', defaultView = {} } = options;
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // State
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const [currentConfig, setCurrentConfig] = useState<FilterConfig>(defaultView);
@@ -45,22 +45,25 @@ export function useFilterViews(options: UseFilterViewsOptions = {}) {
   }, [storageKey]);
 
   // Save views to localStorage
-  const saveViewsToStorage = useCallback((views: SavedView[]) => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(views));
-      setSavedViews(views);
-    } catch (error) {
-      console.warn('Failed to save views to localStorage:', error);
-    }
-  }, [storageKey]);
+  const saveViewsToStorage = useCallback(
+    (views: SavedView[]) => {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(views));
+        setSavedViews(views);
+      } catch (error) {
+        console.warn('Failed to save views to localStorage:', error);
+      }
+    },
+    [storageKey],
+  );
 
   // Load config from URL params
   useEffect(() => {
     const config: FilterConfig = {};
-    
+
     const search = searchParams.get('search');
     if (search) config.search = search;
-    
+
     const filters = searchParams.get('filters');
     if (filters) {
       try {
@@ -69,7 +72,7 @@ export function useFilterViews(options: UseFilterViewsOptions = {}) {
         console.warn('Failed to parse filters from URL:', error);
       }
     }
-    
+
     const sort = searchParams.get('sort');
     if (sort) {
       try {
@@ -78,7 +81,7 @@ export function useFilterViews(options: UseFilterViewsOptions = {}) {
         console.warn('Failed to parse sort from URL:', error);
       }
     }
-    
+
     const columns = searchParams.get('columns');
     if (columns) {
       try {
@@ -87,137 +90,171 @@ export function useFilterViews(options: UseFilterViewsOptions = {}) {
         console.warn('Failed to parse columns from URL:', error);
       }
     }
-    
+
     setCurrentConfig({ ...defaultView, ...config });
   }, [searchParams, defaultView]);
 
   // Update URL params when config changes
-  const updateUrlParams = useCallback((config: FilterConfig) => {
-    const params = new URLSearchParams();
-    
-    if (config.search) params.set('search', config.search);
-    if (config.filters && Object.keys(config.filters).length > 0) {
-      params.set('filters', JSON.stringify(config.filters));
-    }
-    if (config.sort && config.sort.length > 0) {
-      params.set('sort', JSON.stringify(config.sort));
-    }
-    if (config.columns && config.columns.length > 0) {
-      params.set('columns', JSON.stringify(config.columns));
-    }
-    
-    setSearchParams(params, { replace: true });
-  }, [setSearchParams]);
+  const updateUrlParams = useCallback(
+    (config: FilterConfig) => {
+      const params = new URLSearchParams();
+
+      if (config.search) params.set('search', config.search);
+      if (config.filters && Object.keys(config.filters).length > 0) {
+        params.set('filters', JSON.stringify(config.filters));
+      }
+      if (config.sort && config.sort.length > 0) {
+        params.set('sort', JSON.stringify(config.sort));
+      }
+      if (config.columns && config.columns.length > 0) {
+        params.set('columns', JSON.stringify(config.columns));
+      }
+
+      setSearchParams(params, { replace: true });
+    },
+    [setSearchParams],
+  );
 
   // Update current config
-  const updateConfig = useCallback((updates: Partial<FilterConfig>) => {
-    const newConfig = { ...currentConfig, ...updates };
-    setCurrentConfig(newConfig);
-    updateUrlParams(newConfig);
-    setIsModified(true);
-  }, [currentConfig, updateUrlParams]);
+  const updateConfig = useCallback(
+    (updates: Partial<FilterConfig>) => {
+      const newConfig = { ...currentConfig, ...updates };
+      setCurrentConfig(newConfig);
+      updateUrlParams(newConfig);
+      setIsModified(true);
+    },
+    [currentConfig, updateUrlParams],
+  );
 
   // Save current config as a named view
-  const saveView = useCallback(async (name: string, makeDefault: boolean = false): Promise<SavedView> => {
-    const newView: SavedView = {
-      id: Date.now().toString(),
-      name,
-      config: { ...currentConfig },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_default: makeDefault,
-    };
+  const saveView = useCallback(
+    async (name: string, makeDefault: boolean = false): Promise<SavedView> => {
+      const newView: SavedView = {
+        id: Date.now().toString(),
+        name,
+        config: { ...currentConfig },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_default: makeDefault,
+      };
 
-    let updatedViews = [...savedViews];
-    
-    // If making this the default, remove default from others
-    if (makeDefault) {
-      updatedViews = updatedViews.map(view => ({ ...view, is_default: false }));
-    }
-    
-    updatedViews.push(newView);
-    saveViewsToStorage(updatedViews);
-    setIsModified(false);
-    
-    return newView;
-  }, [currentConfig, savedViews, saveViewsToStorage]);
+      let updatedViews = [...savedViews];
+
+      // If making this the default, remove default from others
+      if (makeDefault) {
+        updatedViews = updatedViews.map((view) => ({
+          ...view,
+          is_default: false,
+        }));
+      }
+
+      updatedViews.push(newView);
+      saveViewsToStorage(updatedViews);
+      setIsModified(false);
+
+      return newView;
+    },
+    [currentConfig, savedViews, saveViewsToStorage],
+  );
 
   // Update an existing view
-  const updateView = useCallback(async (viewId: string, updates: Partial<Pick<SavedView, 'name' | 'config' | 'is_default'>>): Promise<SavedView | null> => {
-    const viewIndex = savedViews.findIndex(view => view.id === viewId);
-    if (viewIndex === -1) return null;
+  const updateView = useCallback(
+    async (
+      viewId: string,
+      updates: Partial<Pick<SavedView, 'name' | 'config' | 'is_default'>>,
+    ): Promise<SavedView | null> => {
+      const viewIndex = savedViews.findIndex((view) => view.id === viewId);
+      if (viewIndex === -1) return null;
 
-    let updatedViews = [...savedViews];
-    
-    // If making this the default, remove default from others
-    if (updates.is_default) {
-      updatedViews = updatedViews.map(view => ({ ...view, is_default: false }));
-    }
-    
-    const updatedView: SavedView = {
-      ...savedViews[viewIndex],
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
-    
-    updatedViews[viewIndex] = updatedView;
-    saveViewsToStorage(updatedViews);
-    
-    return updatedView;
-  }, [savedViews, saveViewsToStorage]);
+      let updatedViews = [...savedViews];
+
+      // If making this the default, remove default from others
+      if (updates.is_default) {
+        updatedViews = updatedViews.map((view) => ({
+          ...view,
+          is_default: false,
+        }));
+      }
+
+      const updatedView: SavedView = {
+        ...savedViews[viewIndex],
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+
+      updatedViews[viewIndex] = updatedView;
+      saveViewsToStorage(updatedViews);
+
+      return updatedView;
+    },
+    [savedViews, saveViewsToStorage],
+  );
 
   // Delete a view
-  const deleteView = useCallback(async (viewId: string): Promise<void> => {
-    const updatedViews = savedViews.filter(view => view.id !== viewId);
-    saveViewsToStorage(updatedViews);
-  }, [savedViews, saveViewsToStorage]);
+  const deleteView = useCallback(
+    async (viewId: string): Promise<void> => {
+      const updatedViews = savedViews.filter((view) => view.id !== viewId);
+      saveViewsToStorage(updatedViews);
+    },
+    [savedViews, saveViewsToStorage],
+  );
 
   // Load a saved view
-  const loadView = useCallback(async (view: SavedView): Promise<void> => {
-    setCurrentConfig(view.config);
-    updateUrlParams(view.config);
-    setIsModified(false);
-  }, [updateUrlParams]);
+  const loadView = useCallback(
+    async (view: SavedView): Promise<void> => {
+      setCurrentConfig(view.config);
+      updateUrlParams(view.config);
+      setIsModified(false);
+    },
+    [updateUrlParams],
+  );
 
   // Reset to default view
   const resetToDefault = useCallback(() => {
-    const defaultViewConfig = savedViews.find(view => view.is_default)?.config || defaultView;
+    const defaultViewConfig =
+      savedViews.find((view) => view.is_default)?.config || defaultView;
     setCurrentConfig(defaultViewConfig);
     updateUrlParams(defaultViewConfig);
     setIsModified(false);
   }, [savedViews, defaultView, updateUrlParams]);
 
   // Generate shareable URL
-  const getShareableUrl = useCallback((config: FilterConfig = currentConfig): string => {
-    const url = new URL(window.location.href);
-    const params = new URLSearchParams();
-    
-    if (config.search) params.set('search', config.search);
-    if (config.filters && Object.keys(config.filters).length > 0) {
-      params.set('filters', JSON.stringify(config.filters));
-    }
-    if (config.sort && config.sort.length > 0) {
-      params.set('sort', JSON.stringify(config.sort));
-    }
-    if (config.columns && config.columns.length > 0) {
-      params.set('columns', JSON.stringify(config.columns));
-    }
-    
-    url.search = params.toString();
-    return url.toString();
-  }, [currentConfig]);
+  const getShareableUrl = useCallback(
+    (config: FilterConfig = currentConfig): string => {
+      const url = new URL(window.location.href);
+      const params = new URLSearchParams();
+
+      if (config.search) params.set('search', config.search);
+      if (config.filters && Object.keys(config.filters).length > 0) {
+        params.set('filters', JSON.stringify(config.filters));
+      }
+      if (config.sort && config.sort.length > 0) {
+        params.set('sort', JSON.stringify(config.sort));
+      }
+      if (config.columns && config.columns.length > 0) {
+        params.set('columns', JSON.stringify(config.columns));
+      }
+
+      url.search = params.toString();
+      return url.toString();
+    },
+    [currentConfig],
+  );
 
   // Copy shareable URL to clipboard
-  const copyShareableUrl = useCallback(async (config: FilterConfig = currentConfig): Promise<boolean> => {
-    try {
-      const url = getShareableUrl(config);
-      await navigator.clipboard.writeText(url);
-      return true;
-    } catch (error) {
-      console.warn('Failed to copy URL to clipboard:', error);
-      return false;
-    }
-  }, [getShareableUrl, currentConfig]);
+  const copyShareableUrl = useCallback(
+    async (config: FilterConfig = currentConfig): Promise<boolean> => {
+      try {
+        const url = getShareableUrl(config);
+        await navigator.clipboard.writeText(url);
+        return true;
+      } catch (error) {
+        console.warn('Failed to copy URL to clipboard:', error);
+        return false;
+      }
+    },
+    [getShareableUrl, currentConfig],
+  );
 
   // Clear all filters
   const clearFilters = useCallback(() => {
@@ -232,7 +269,7 @@ export function useFilterViews(options: UseFilterViewsOptions = {}) {
     savedViews,
     currentConfig,
     isModified,
-    
+
     // Actions
     updateConfig,
     saveView,
@@ -241,7 +278,7 @@ export function useFilterViews(options: UseFilterViewsOptions = {}) {
     loadView,
     resetToDefault,
     clearFilters,
-    
+
     // Sharing
     getShareableUrl,
     copyShareableUrl,

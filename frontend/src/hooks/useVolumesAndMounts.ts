@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Api } from '@/api/generated/Api';
-import type { 
-  VolumeV1, 
+import type {
+  VolumeV1,
   FilesystemCapacity,
-  InternalApiV1MountsMountCatalogResponse as MountCatalogEntry 
+  InternalApiV1MountsMountCatalogResponse as MountCatalogEntry,
 } from '@/api/generated/Api';
 import { getErrorMessage } from '@/utils/errorHandling';
 
@@ -37,11 +37,11 @@ export interface VolumeMount extends VolumeV1 {
   last_seen: string;
   growth_rate?: number;
   mount_point?: string;
-  
+
   // Additional metadata
   source_type: 'volume' | 'mount';
   volume_scope?: string;
-  
+
   // Explicitly include filesystem capacity (inherited from VolumeV1)
   filesystem_capacity?: FilesystemCapacity;
 }
@@ -51,13 +51,13 @@ export interface VolumesAndMountsParams {
   page_size?: number;
   sort?: string;
   q?: string;
-  
+
   // Volume filters
   driver?: 'local' | 'nfs' | 'cifs' | 'overlay2';
   orphaned?: boolean;
   system?: boolean;
-  
-  // Mount filters  
+
+  // Mount filters
   type?: 'volume' | 'bind' | 'tmpfs';
   compose_project?: string;
   compose_service?: string;
@@ -76,19 +76,22 @@ export function useVolumesAndMounts() {
   const [data, setData] = useState<VolumeMount[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paginationMeta, setPaginationMeta] = useState<VolumesAndMountsPaginationMeta>({
-    page: 1,
-    pageSize: 25,
-    total: 0,
-  });
+  const [paginationMeta, setPaginationMeta] =
+    useState<VolumesAndMountsPaginationMeta>({
+      page: 1,
+      pageSize: 25,
+      total: 0,
+    });
 
   // Transform volume data to VolumeMount format
   const transformVolume = useCallback((volume: VolumeV1): VolumeMount => {
     // Check localStorage for volume tracking status
-    const volumeTracking = JSON.parse(localStorage.getItem('volumeviz_volume_tracking') || '{}');
+    const volumeTracking = JSON.parse(
+      localStorage.getItem('volumeviz_volume_tracking') || '{}',
+    );
     const volumeId = volume.name || 'unknown';
     const isTrackedInStorage = volumeTracking[volumeId];
-    
+
     // Determine status: orphaned takes precedence, then localStorage, then default to tracked
     let status: 'tracked' | 'untracked' | 'orphaned' = 'tracked';
     if (volume.is_orphaned) {
@@ -96,7 +99,7 @@ export function useVolumesAndMounts() {
     } else if (isTrackedInStorage !== undefined) {
       status = isTrackedInStorage ? 'tracked' : 'untracked';
     }
-    
+
     return {
       id: volumeId,
       name: volume.name || 'unknown',
@@ -104,7 +107,7 @@ export function useVolumesAndMounts() {
       type: 'volume',
       driver: volume.driver,
       compose_project: volume.labels?.['com.docker.compose.project'],
-      compose_services: volume.labels?.['com.docker.compose.service'] 
+      compose_services: volume.labels?.['com.docker.compose.service']
         ? [volume.labels['com.docker.compose.service']]
         : [],
       containers: volume.container_names || [], // Use container names from API
@@ -130,270 +133,314 @@ export function useVolumesAndMounts() {
   }, []);
 
   // Transform mount data to VolumeMount format
-  const transformMount = useCallback((mount: MountCatalogEntry): VolumeMount => {
-    return {
-      id: mount.mount_id || mount.id?.toString() || 'unknown',
-      name: mount.volume_name || mount.mount_id || 'unknown',
-      path: mount.source_path || 'unknown',
-      type: mount.mount_type || 'volume',
-      driver: mount.volume_driver,
-      compose_project: mount.compose_project,
-      compose_services: mount.compose_services || [],
-      containers: [], // Container names not available from API  
-      container_count: mount.container_count || 0,
-      readonly: false, // TODO: Determine from mount options
-      status: mount.is_orphaned 
-        ? 'orphaned' 
-        : mount.is_tracked 
-          ? 'tracked' 
-          : 'untracked',
-      last_seen: mount.last_seen_at || mount.updated_at || new Date().toISOString(),
-      created_at: mount.created_at || mount.first_discovered_at || new Date().toISOString(),
-      mount_point: mount.source_path,
-      source_type: 'mount',
-      volume_scope: mount.volume_scope,
-    };
-  }, []);
+  const transformMount = useCallback(
+    (mount: MountCatalogEntry): VolumeMount => {
+      return {
+        id: mount.mount_id || mount.id?.toString() || 'unknown',
+        name: mount.volume_name || mount.mount_id || 'unknown',
+        path: mount.source_path || 'unknown',
+        type: mount.mount_type || 'volume',
+        driver: mount.volume_driver,
+        compose_project: mount.compose_project,
+        compose_services: mount.compose_services || [],
+        containers: [], // Container names not available from API
+        container_count: mount.container_count || 0,
+        readonly: false, // TODO: Determine from mount options
+        status: mount.is_orphaned
+          ? 'orphaned'
+          : mount.is_tracked
+            ? 'tracked'
+            : 'untracked',
+        last_seen:
+          mount.last_seen_at || mount.updated_at || new Date().toISOString(),
+        created_at:
+          mount.created_at ||
+          mount.first_discovered_at ||
+          new Date().toISOString(),
+        mount_point: mount.source_path,
+        source_type: 'mount',
+        volume_scope: mount.volume_scope,
+      };
+    },
+    [],
+  );
 
   // Fetch combined volumes and mounts data
-  const fetchData = useCallback(async (params?: VolumesAndMountsParams) => {
-    setLoading(true);
-    setError(null);
+  const fetchData = useCallback(
+    async (params?: VolumesAndMountsParams) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const page = params?.page || 1;
-      const pageSize = params?.page_size || 25;
+      try {
+        const page = params?.page || 1;
+        const pageSize = params?.page_size || 25;
 
-      // Special handling for untracked filter - only fetch mounts since volumes don't have tracking
-      let volumesResponse: any = { data: { data: [], total: 0 } };
-      let mountsResponse: any;
+        // Special handling for untracked filter - only fetch mounts since volumes don't have tracking
+        let volumesResponse: any = { data: { data: [], total: 0 } };
+        let mountsResponse: any;
 
-      if (params?.is_tracked === false) {
-        // Only fetch untracked mounts - volumes are always tracked
-        const mountsData = await api.api.v1MountsList({
-          page,
-          page_size: pageSize,
-          sort: params?.sort,
-          q: params?.q,
-          type: params?.type,
-          compose_project: params?.compose_project,
-          compose_service: params?.compose_service,
-          is_tracked: 'false',
-          is_orphaned: params?.orphaned?.toString() as 'true' | 'false',
-        });
-        mountsResponse = { data: mountsData };
-      } else if (params?.is_tracked === true) {
-        // Fetch tracked items - both volumes and tracked mounts
-        const [volData, mountData] = await Promise.all([
-          fetch(`${api.baseUrl}/api/v1/volumes?${new URLSearchParams({
-            page: page.toString(),
-            page_size: Math.max(1, Math.ceil(pageSize / 2)).toString(),
-            ...(params?.sort && { sort: params.sort }),
-            ...(params?.q && { q: params.q }),
-            ...(params?.driver && { driver: params.driver }),
-            ...(params?.orphaned && { orphaned: params.orphaned.toString() }),
-            ...(params?.system && { system: params.system.toString() }),
-          })}`)
-            .then(async res => {
-              if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
-              }
-              return res.json();
-            }),
-          
-          api.api.v1MountsList({
+        if (params?.is_tracked === false) {
+          // Only fetch untracked mounts - volumes are always tracked
+          const mountsData = await api.api.v1MountsList({
             page,
-            page_size: Math.max(1, Math.ceil(pageSize / 2)),
+            page_size: pageSize,
             sort: params?.sort,
             q: params?.q,
             type: params?.type,
             compose_project: params?.compose_project,
             compose_service: params?.compose_service,
-            is_tracked: 'true',
+            is_tracked: 'false',
             is_orphaned: params?.orphaned?.toString() as 'true' | 'false',
-          }),
-        ]);
-        volumesResponse = { data: volData };
-        mountsResponse = { data: mountData };
-      } else {
-        // No tracking filter - fetch both normally
-        const [volData, mountData] = await Promise.all([
-          fetch(`${api.baseUrl}/api/v1/volumes?${new URLSearchParams({
-            page: page.toString(),
-            page_size: Math.max(1, Math.ceil(pageSize / 2)).toString(),
-            ...(params?.sort && { sort: params.sort }),
-            ...(params?.q && { q: params.q }),
-            ...(params?.driver && { driver: params.driver }),
-            ...(params?.orphaned && { orphaned: params.orphaned.toString() }),
-            ...(params?.system && { system: params.system.toString() }),
-          })}`)
-            .then(async res => {
+          });
+          mountsResponse = { data: mountsData };
+        } else if (params?.is_tracked === true) {
+          // Fetch tracked items - both volumes and tracked mounts
+          const [volData, mountData] = await Promise.all([
+            fetch(
+              `${api.baseUrl}/api/v1/volumes?${new URLSearchParams({
+                page: page.toString(),
+                page_size: Math.max(1, Math.ceil(pageSize / 2)).toString(),
+                ...(params?.sort && { sort: params.sort }),
+                ...(params?.q && { q: params.q }),
+                ...(params?.driver && { driver: params.driver }),
+                ...(params?.orphaned && {
+                  orphaned: params.orphaned.toString(),
+                }),
+                ...(params?.system && { system: params.system.toString() }),
+              })}`,
+            ).then(async (res) => {
               if (!res.ok) {
                 const errorText = await res.text();
-                throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
+                throw new Error(
+                  `HTTP ${res.status}: ${errorText || res.statusText}`,
+                );
               }
               return res.json();
             }),
-          
-          api.api.v1MountsList({
-            page,
-            page_size: Math.max(1, Math.ceil(pageSize / 2)),
-            sort: params?.sort,
-            q: params?.q,
-            type: params?.type,
-            compose_project: params?.compose_project,
-            compose_service: params?.compose_service,
-            is_orphaned: params?.orphaned?.toString() as 'true' | 'false',
-          }),
-        ]);
-        volumesResponse = { data: volData };
-        mountsResponse = { data: mountData };
-      }
 
-      // Transform data
-      const volumeData = volumesResponse.data?.data || [];
-      const mountData = mountsResponse.data?.mounts || [];
+            api.api.v1MountsList({
+              page,
+              page_size: Math.max(1, Math.ceil(pageSize / 2)),
+              sort: params?.sort,
+              q: params?.q,
+              type: params?.type,
+              compose_project: params?.compose_project,
+              compose_service: params?.compose_service,
+              is_tracked: 'true',
+              is_orphaned: params?.orphaned?.toString() as 'true' | 'false',
+            }),
+          ]);
+          volumesResponse = { data: volData };
+          mountsResponse = { data: mountData };
+        } else {
+          // No tracking filter - fetch both normally
+          const [volData, mountData] = await Promise.all([
+            fetch(
+              `${api.baseUrl}/api/v1/volumes?${new URLSearchParams({
+                page: page.toString(),
+                page_size: Math.max(1, Math.ceil(pageSize / 2)).toString(),
+                ...(params?.sort && { sort: params.sort }),
+                ...(params?.q && { q: params.q }),
+                ...(params?.driver && { driver: params.driver }),
+                ...(params?.orphaned && {
+                  orphaned: params.orphaned.toString(),
+                }),
+                ...(params?.system && { system: params.system.toString() }),
+              })}`,
+            ).then(async (res) => {
+              if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(
+                  `HTTP ${res.status}: ${errorText || res.statusText}`,
+                );
+              }
+              return res.json();
+            }),
 
-      const transformedVolumes = volumeData.map(transformVolume);
-      const transformedMounts = mountData.map(transformMount);
-
-      // Combine and deduplicate data
-      const combined = [...transformedVolumes, ...transformedMounts];
-      const deduped = combined.reduce((acc, item) => {
-        const existing = acc.find(existing => 
-          existing.name === item.name && existing.type === item.type
-        );
-        if (!existing) {
-          acc.push(item);
+            api.api.v1MountsList({
+              page,
+              page_size: Math.max(1, Math.ceil(pageSize / 2)),
+              sort: params?.sort,
+              q: params?.q,
+              type: params?.type,
+              compose_project: params?.compose_project,
+              compose_service: params?.compose_service,
+              is_orphaned: params?.orphaned?.toString() as 'true' | 'false',
+            }),
+          ]);
+          volumesResponse = { data: volData };
+          mountsResponse = { data: mountData };
         }
-        return acc;
-      }, [] as VolumeMount[]);
 
-      // Apply sorting to combined data (since combining volumes + mounts destroys backend sort order)
-      if (params?.sort) {
-        const [field, direction] = params.sort.split(':');
-        deduped.sort((a, b) => {
-          const aValue = a[field as keyof VolumeMount];
-          const bValue = b[field as keyof VolumeMount];
-          
-          // Handle null/undefined values
-          if (aValue == null && bValue == null) return 0;
-          if (aValue == null) return direction === 'asc' ? -1 : 1;
-          if (bValue == null) return direction === 'asc' ? 1 : -1;
-          
-          // Handle string comparison
-          if (typeof aValue === 'string' && typeof bValue === 'string') {
-            const comparison = aValue.localeCompare(bValue);
-            return direction === 'desc' ? -comparison : comparison;
+        // Transform data
+        const volumeData = volumesResponse.data?.data || [];
+        const mountData = mountsResponse.data?.mounts || [];
+
+        const transformedVolumes = volumeData.map(transformVolume);
+        const transformedMounts = mountData.map(transformMount);
+
+        // Combine and deduplicate data
+        const combined = [...transformedVolumes, ...transformedMounts];
+        const deduped = combined.reduce((acc, item) => {
+          const existing = acc.find(
+            (existing) =>
+              existing.name === item.name && existing.type === item.type,
+          );
+          if (!existing) {
+            acc.push(item);
           }
-          
-          // Handle numeric comparison
-          if (typeof aValue === 'number' && typeof bValue === 'number') {
-            const comparison = aValue - bValue;
+          return acc;
+        }, [] as VolumeMount[]);
+
+        // Apply sorting to combined data (since combining volumes + mounts destroys backend sort order)
+        if (params?.sort) {
+          const [field, direction] = params.sort.split(':');
+          deduped.sort((a, b) => {
+            const aValue = a[field as keyof VolumeMount];
+            const bValue = b[field as keyof VolumeMount];
+
+            // Handle null/undefined values
+            if (aValue == null && bValue == null) return 0;
+            if (aValue == null) return direction === 'asc' ? -1 : 1;
+            if (bValue == null) return direction === 'asc' ? 1 : -1;
+
+            // Handle string comparison
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+              const comparison = aValue.localeCompare(bValue);
+              return direction === 'desc' ? -comparison : comparison;
+            }
+
+            // Handle numeric comparison
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+              const comparison = aValue - bValue;
+              return direction === 'desc' ? -comparison : comparison;
+            }
+
+            // Handle date comparison
+            if (aValue instanceof Date && bValue instanceof Date) {
+              const comparison = aValue.getTime() - bValue.getTime();
+              return direction === 'desc' ? -comparison : comparison;
+            }
+
+            // Fallback to string comparison
+            const comparison = String(aValue).localeCompare(String(bValue));
             return direction === 'desc' ? -comparison : comparison;
-          }
-          
-          // Handle date comparison
-          if (aValue instanceof Date && bValue instanceof Date) {
-            const comparison = aValue.getTime() - bValue.getTime();
-            return direction === 'desc' ? -comparison : comparison;
-          }
-          
-          // Fallback to string comparison
-          const comparison = String(aValue).localeCompare(String(bValue));
-          return direction === 'desc' ? -comparison : comparison;
+          });
+        }
+
+        setData(deduped);
+        setPaginationMeta({
+          page,
+          pageSize,
+          total:
+            (volumesResponse.data?.total || 0) +
+            (mountsResponse.data?.pagination?.total || 0),
+          sort: params?.sort,
+          filters: params,
         });
-      }
+      } catch (err) {
+        let errorMessage = getErrorMessage(err);
 
-      setData(deduped);
-      setPaginationMeta({
-        page,
-        pageSize,
-        total: (volumesResponse.data?.total || 0) + (mountsResponse.data?.pagination?.total || 0),
-        sort: params?.sort,
-        filters: params,
-      });
+        // Add more details for JSON parsing errors
+        if (err instanceof Error && err.message.includes('JSON.parse')) {
+          errorMessage = `API returned invalid JSON: ${err.message}. This may be due to special characters in the search query.`;
+          console.error('[useVolumesAndMounts] JSON parsing error details:', {
+            error: err.message,
+            params: params,
+            stack: err.stack,
+          });
+        }
 
-    } catch (err) {
-      let errorMessage = getErrorMessage(err);
-      
-      // Add more details for JSON parsing errors
-      if (err instanceof Error && err.message.includes('JSON.parse')) {
-        errorMessage = `API returned invalid JSON: ${err.message}. This may be due to special characters in the search query.`;
-        console.error('[useVolumesAndMounts] JSON parsing error details:', {
-          error: err.message,
-          params: params,
-          stack: err.stack
-        });
+        console.error(
+          'Failed to fetch volumes and mounts:',
+          err,
+          'with params:',
+          params,
+        );
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
       }
-      
-      console.error('Failed to fetch volumes and mounts:', err, 'with params:', params);
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, [transformVolume, transformMount]);
+    },
+    [transformVolume, transformMount],
+  );
 
   // Bulk operations
-  const updateTrackingStatus = useCallback(async (
-    items: VolumeMount[], 
-    tracked: boolean
-  ): Promise<void> => {
-    // For volumes, store tracking status in localStorage
-    const volumeItems = items.filter(item => item.source_type === 'volume');
-    if (volumeItems.length > 0) {
-      const existingVolumeTracking = JSON.parse(localStorage.getItem('volumeviz_volume_tracking') || '{}');
-      volumeItems.forEach(item => {
-        existingVolumeTracking[item.id] = tracked;
-      });
-      localStorage.setItem('volumeviz_volume_tracking', JSON.stringify(existingVolumeTracking));
-    }
-
-    // Update local state immediately for instant feedback
-    setData(prevData => 
-      prevData.map(item => {
-        const targetItem = items.find(i => i.id === item.id);
-        if (targetItem) {
-          return {
-            ...item,
-            status: tracked ? 'tracked' : 'untracked'
-          } as VolumeMount;
-        }
-        return item;
-      })
-    );
-
-    // Then make API calls for mounts only
-    const promises = items.map(async (item) => {
-      if (item.source_type === 'mount' && item.id) {
-        // Update mount tracking status via API
-        return api.api.v1MountsTrackingUpdate(
-          item.id,
-          { is_tracked: tracked }
+  const updateTrackingStatus = useCallback(
+    async (items: VolumeMount[], tracked: boolean): Promise<void> => {
+      // For volumes, store tracking status in localStorage
+      const volumeItems = items.filter((item) => item.source_type === 'volume');
+      if (volumeItems.length > 0) {
+        const existingVolumeTracking = JSON.parse(
+          localStorage.getItem('volumeviz_volume_tracking') || '{}',
+        );
+        volumeItems.forEach((item) => {
+          existingVolumeTracking[item.id] = tracked;
+        });
+        localStorage.setItem(
+          'volumeviz_volume_tracking',
+          JSON.stringify(existingVolumeTracking),
         );
       }
-      return Promise.resolve();
-    });
 
-    await Promise.all(promises);
-  }, []);
+      // Update local state immediately for instant feedback
+      setData((prevData) =>
+        prevData.map((item) => {
+          const targetItem = items.find((i) => i.id === item.id);
+          if (targetItem) {
+            return {
+              ...item,
+              status: tracked ? 'tracked' : 'untracked',
+            } as VolumeMount;
+          }
+          return item;
+        }),
+      );
 
-  const bulkTrack = useCallback(async (selectedIds: string[]): Promise<void> => {
-    const selectedItems = data.filter(item => selectedIds.includes(item.id));
-    await updateTrackingStatus(selectedItems, true);
-  }, [data, updateTrackingStatus]);
+      // Then make API calls for mounts only
+      const promises = items.map(async (item) => {
+        if (item.source_type === 'mount' && item.id) {
+          // Update mount tracking status via API
+          return api.api.v1MountsTrackingUpdate(item.id, {
+            is_tracked: tracked,
+          });
+        }
+        return Promise.resolve();
+      });
 
-  const bulkUntrack = useCallback(async (selectedIds: string[]): Promise<void> => {
-    const selectedItems = data.filter(item => selectedIds.includes(item.id));
-    await updateTrackingStatus(selectedItems, false);
-  }, [data, updateTrackingStatus]);
+      await Promise.all(promises);
+    },
+    [],
+  );
 
-  const bulkHide = useCallback(async (selectedIds: string[]): Promise<void> => {
-    // For now, hiding means untracking
-    // In the future this could involve a separate "hidden" status
-    await bulkUntrack(selectedIds);
-  }, [bulkUntrack]);
+  const bulkTrack = useCallback(
+    async (selectedIds: string[]): Promise<void> => {
+      const selectedItems = data.filter((item) =>
+        selectedIds.includes(item.id),
+      );
+      await updateTrackingStatus(selectedItems, true);
+    },
+    [data, updateTrackingStatus],
+  );
+
+  const bulkUntrack = useCallback(
+    async (selectedIds: string[]): Promise<void> => {
+      const selectedItems = data.filter((item) =>
+        selectedIds.includes(item.id),
+      );
+      await updateTrackingStatus(selectedItems, false);
+    },
+    [data, updateTrackingStatus],
+  );
+
+  const bulkHide = useCallback(
+    async (selectedIds: string[]): Promise<void> => {
+      // For now, hiding means untracking
+      // In the future this could involve a separate "hidden" status
+      await bulkUntrack(selectedIds);
+    },
+    [bulkUntrack],
+  );
 
   // Trigger mount discovery
   const triggerDiscovery = useCallback(async (): Promise<void> => {

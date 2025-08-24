@@ -32,7 +32,7 @@ interface UseEnhancedScanProgressReturn {
 
 /**
  * Enhanced hook for managing scan progress data with real-time WebSocket updates
- * 
+ *
  * Features:
  * - Real-time WebSocket progress updates
  * - Historical data fetching for completed scans
@@ -43,7 +43,7 @@ interface UseEnhancedScanProgressReturn {
 export const useEnhancedScanProgress = (
   volumeId?: string,
   scanId?: string,
-  options: UseEnhancedScanProgressOptions = {}
+  options: UseEnhancedScanProgressOptions = {},
 ): UseEnhancedScanProgressReturn => {
   const {
     pollInterval = 2000,
@@ -53,41 +53,45 @@ export const useEnhancedScanProgress = (
     onScanError,
   } = options;
 
-  const [progress, setProgress] = useState<ComprehensiveScanProgress | null>(null);
+  const [progress, setProgress] = useState<ComprehensiveScanProgress | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
-  
+
   const { isConnected, on, off } = useWebSocket();
 
   // Fetch historical progress data
   const fetchProgress = useCallback(async () => {
     if (!scanId) return;
-    
+
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await fetch(`/api/v1/scans/${scanId}/progress`);
       if (!response.ok) {
-        throw new Error(`Failed to fetch progress: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch progress: ${response.status} ${response.statusText}`,
+        );
       }
-      
+
       const data: ComprehensiveScanProgress = await response.json();
       setProgress(data);
       setLastFetchTime(Date.now());
-      
+
       onProgressUpdate?.(data);
-      
+
       // Handle completion callbacks
       if (data.overall_status === 'completed') {
         onScanComplete?.(scanId);
       } else if (data.overall_status === 'failed') {
         onScanError?.(scanId, 'Scan failed');
       }
-      
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch progress';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch progress';
       setError(errorMessage);
       console.error('Failed to fetch scan progress:', err);
     } finally {
@@ -101,16 +105,16 @@ export const useEnhancedScanProgress = (
 
     const handleProgressUpdate = (data: ComprehensiveScanProgress) => {
       // Filter by volume_id or scan_id
-      const isRelevantUpdate = 
+      const isRelevantUpdate =
         (volumeId && data.volume_id === volumeId) ||
         (scanId && data.scan_id === scanId);
-      
+
       if (isRelevantUpdate) {
         setProgress(data);
         setLastFetchTime(Date.now());
         setError(null); // Clear any existing errors
         onProgressUpdate?.(data);
-        
+
         // Handle completion callbacks
         if (data.overall_status === 'completed') {
           onScanComplete?.(data.scan_id);
@@ -120,11 +124,14 @@ export const useEnhancedScanProgress = (
       }
     };
 
-    const handleScanComplete = (data: { scan_id: string; volume_id: string }) => {
-      const isRelevantEvent = 
+    const handleScanComplete = (data: {
+      scan_id: string;
+      volume_id: string;
+    }) => {
+      const isRelevantEvent =
         (volumeId && data.volume_id === volumeId) ||
         (scanId && data.scan_id === scanId);
-      
+
       if (isRelevantEvent) {
         onScanComplete?.(data.scan_id);
         // Fetch final progress state
@@ -132,11 +139,15 @@ export const useEnhancedScanProgress = (
       }
     };
 
-    const handleScanError = (data: { scan_id: string; volume_id: string; error: string }) => {
-      const isRelevantEvent = 
+    const handleScanError = (data: {
+      scan_id: string;
+      volume_id: string;
+      error: string;
+    }) => {
+      const isRelevantEvent =
         (volumeId && data.volume_id === volumeId) ||
         (scanId && data.scan_id === scanId);
-      
+
       if (isRelevantEvent) {
         onScanError?.(data.scan_id, data.error);
         setError(data.error);
@@ -154,7 +165,17 @@ export const useEnhancedScanProgress = (
       off('scan_complete', handleScanComplete);
       off('scan_error', handleScanError);
     };
-  }, [isConnected, volumeId, scanId, onProgressUpdate, onScanComplete, onScanError, fetchProgress, on, off]);
+  }, [
+    isConnected,
+    volumeId,
+    scanId,
+    onProgressUpdate,
+    onScanComplete,
+    onScanError,
+    fetchProgress,
+    on,
+    off,
+  ]);
 
   // Initial data fetch
   useEffect(() => {
@@ -166,13 +187,12 @@ export const useEnhancedScanProgress = (
   // Polling fallback when WebSocket is disconnected
   useEffect(() => {
     if (!enablePolling || isConnected || !scanId) return;
-    
-    const shouldPoll = (
-      progress?.overall_status === 'running' || 
+
+    const shouldPoll =
+      progress?.overall_status === 'running' ||
       progress?.overall_status === 'pending' ||
-      !progress
-    );
-    
+      !progress;
+
     if (!shouldPoll) return;
 
     const pollTimer = setInterval(() => {
@@ -184,7 +204,15 @@ export const useEnhancedScanProgress = (
     }, pollInterval);
 
     return () => clearInterval(pollTimer);
-  }, [enablePolling, isConnected, scanId, pollInterval, lastFetchTime, progress, fetchProgress]);
+  }, [
+    enablePolling,
+    isConnected,
+    scanId,
+    pollInterval,
+    lastFetchTime,
+    progress,
+    fetchProgress,
+  ]);
 
   // Manual refresh function
   const refresh = useCallback(async () => {

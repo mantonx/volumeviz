@@ -37,12 +37,10 @@ import {
   containersLoadingAtom,
 } from '@/store/atoms/containers';
 
-// Import API client and types  
+// Import API client and types
 import { Api } from './generated/Api';
 // volumeApi is available for future use but not currently needed
-import type {
-  ScanResponse,
-} from './client';
+import type { ScanResponse } from './client';
 import type { VolumeV1 as Volume, RefreshRequest } from './generated/Api';
 
 // Create configured API client instance
@@ -312,24 +310,21 @@ export function useVolumeScanning() {
     [setScanLoading, setScanError, setScanResults],
   );
 
-  const getScanStatus = useCallback(
-    async (scanId?: string) => {
-      try {
-        if (!scanId) {
-          return { status: 'unknown', scan_id: scanId };
-        }
-        
-        // Use generated API client for scan status by scan ID
-        const response = await volumeVizApi.scans.statusList(scanId);
-        return response.data;
-      } catch (err) {
-        const errorMessage = getErrorMessage(err);
-        console.warn('Failed to get scan status:', errorMessage);
-        return { status: 'unknown', scan_id: scanId, error: errorMessage };
+  const getScanStatus = useCallback(async (scanId?: string) => {
+    try {
+      if (!scanId) {
+        return { status: 'unknown', scan_id: scanId };
       }
-    },
-    [],
-  );
+
+      // Use generated API client for scan status by scan ID
+      const response = await volumeVizApi.scans.statusList(scanId);
+      return response.data;
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
+      console.warn('Failed to get scan status:', errorMessage);
+      return { status: 'unknown', scan_id: scanId, error: errorMessage };
+    }
+  }, []);
 
   return {
     scanLoading,
@@ -470,7 +465,7 @@ export function useBulkOperations() {
           async: options?.async || false,
           method: options?.method || 'du',
         };
-        
+
         const response = await volumeVizApi.volumes.bulkScanCreate(bulkRequest);
 
         // Refresh volumes list after bulk operation
@@ -479,17 +474,22 @@ export function useBulkOperations() {
         return response.data;
       } catch (err) {
         const errorMessage = getErrorMessage(err);
-        console.warn('Bulk scan failed, falling back to individual scans:', errorMessage);
-        
+        console.warn(
+          'Bulk scan failed, falling back to individual scans:',
+          errorMessage,
+        );
+
         // Fallback to individual scans
         const results = await Promise.all(
-          volumeIds.map(id => volumeVizApi.volumes.sizeRefreshCreate(id, options || {}))
+          volumeIds.map((id) =>
+            volumeVizApi.volumes.sizeRefreshCreate(id, options || {}),
+          ),
         );
 
         // Refresh volumes list after bulk operation
         await refreshVolumes();
 
-        return { results: results.map(r => r.data) };
+        return { results: results.map((r) => r.data) };
       }
     },
     [refreshVolumes],

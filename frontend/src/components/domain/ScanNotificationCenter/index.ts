@@ -1,2 +1,5 @@
 export { ScanNotificationCenter } from './ScanNotificationCenter';
-export type { ScanNotificationCenterProps, ScanNotification } from './ScanNotificationCenter.types';
+export type {
+  ScanNotificationCenterProps,
+  ScanNotification,
+} from './ScanNotificationCenter.types';

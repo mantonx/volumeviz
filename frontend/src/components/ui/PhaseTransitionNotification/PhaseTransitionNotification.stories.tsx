@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { PhaseTransitionNotification } from './PhaseTransitionNotification';
-import { createPhaseTransition, type PhaseTransition } from '../../../utils/phaseTransitionNotifications';
+import {
+  createPhaseTransition,
+  type PhaseTransition,
+} from '../../../utils/phaseTransitionNotifications';
 
 const meta = {
   title: 'UI/PhaseTransitionNotification',
@@ -71,7 +74,7 @@ const createMockTransition = (
     errorsEncountered?: number;
     averageSpeed?: number;
     peakSpeed?: number;
-  } = {}
+  } = {},
 ): PhaseTransition => {
   return createPhaseTransition('scan-123', 'vol-456', fromPhase, toPhase, {
     volumeName: options.volumeName || 'Media Library',
@@ -80,10 +83,12 @@ const createMockTransition = (
       filesProcessed: options.filesProcessed,
       bytesProcessed: options.bytesProcessed,
       errorsEncountered: options.errorsEncountered,
-      performance: options.averageSpeed ? {
-        averageSpeed: options.averageSpeed,
-        peakSpeed: options.peakSpeed || options.averageSpeed * 1.5,
-      } : undefined,
+      performance: options.averageSpeed
+        ? {
+            averageSpeed: options.averageSpeed,
+            peakSpeed: options.peakSpeed || options.averageSpeed * 1.5,
+          }
+        : undefined,
     },
   });
 };
@@ -121,15 +126,19 @@ export const VolumeToFilesystemTransition: Story = {
 // Filesystem to media enrichment transition
 export const FilesystemToMediaTransition: Story = {
   args: {
-    transition: createMockTransition('filesystem_indexing', 'media_enrichment', {
-      volumeName: 'TV Shows Collection',
-      duration: 840000, // 14 minutes
-      filesProcessed: 125000,
-      bytesProcessed: 1843200000000, // 1.84TB
-      errorsEncountered: 23,
-      averageSpeed: 148.8,
-      peakSpeed: 220.5,
-    }),
+    transition: createMockTransition(
+      'filesystem_indexing',
+      'media_enrichment',
+      {
+        volumeName: 'TV Shows Collection',
+        duration: 840000, // 14 minutes
+        filesProcessed: 125000,
+        bytesProcessed: 1843200000000, // 1.84TB
+        errorsEncountered: 23,
+        averageSpeed: 148.8,
+        peakSpeed: 220.5,
+      },
+    ),
     showDetails: true,
     variant: 'toast',
     size: 'md',
@@ -156,15 +165,19 @@ export const FastVolumeCompletion: Story = {
 // Large media library transition
 export const LargeMediaLibraryTransition: Story = {
   args: {
-    transition: createMockTransition('filesystem_indexing', 'media_enrichment', {
-      volumeName: 'Movie Archive (8TB)',
-      duration: 1800000, // 30 minutes - large scan
-      filesProcessed: 500000,
-      bytesProcessed: 8796093022208, // 8TB
-      errorsEncountered: 145,
-      averageSpeed: 277.8,
-      peakSpeed: 420.2,
-    }),
+    transition: createMockTransition(
+      'filesystem_indexing',
+      'media_enrichment',
+      {
+        volumeName: 'Movie Archive (8TB)',
+        duration: 1800000, // 30 minutes - large scan
+        filesProcessed: 500000,
+        bytesProcessed: 8796093022208, // 8TB
+        errorsEncountered: 145,
+        averageSpeed: 277.8,
+        peakSpeed: 420.2,
+      },
+    ),
     showDetails: true,
     variant: 'inline',
     size: 'lg',
@@ -191,13 +204,17 @@ export const TransitionWithErrors: Story = {
 // Compact notification
 export const CompactNotification: Story = {
   args: {
-    transition: createMockTransition('filesystem_indexing', 'media_enrichment', {
-      volumeName: 'Photos',
-      duration: 120000, // 2 minutes
-      filesProcessed: 25000,
-      bytesProcessed: 104857600000, // 100GB
-      averageSpeed: 208.3,
-    }),
+    transition: createMockTransition(
+      'filesystem_indexing',
+      'media_enrichment',
+      {
+        volumeName: 'Photos',
+        duration: 120000, // 2 minutes
+        filesProcessed: 25000,
+        bytesProcessed: 104857600000, // 100GB
+        averageSpeed: 208.3,
+      },
+    ),
     showDetails: false,
     variant: 'inline',
     size: 'sm',
@@ -226,15 +243,19 @@ export const AutoDismissingToast: Story = {
 // Modal-style notification
 export const ModalStyleNotification: Story = {
   args: {
-    transition: createMockTransition('filesystem_indexing', 'media_enrichment', {
-      volumeName: 'Complete Media Collection',
-      duration: 900000, // 15 minutes
-      filesProcessed: 75000,
-      bytesProcessed: 3298534883328, // 3TB
-      errorsEncountered: 8,
-      averageSpeed: 83.3,
-      peakSpeed: 125.7,
-    }),
+    transition: createMockTransition(
+      'filesystem_indexing',
+      'media_enrichment',
+      {
+        volumeName: 'Complete Media Collection',
+        duration: 900000, // 15 minutes
+        filesProcessed: 75000,
+        bytesProcessed: 3298534883328, // 3TB
+        errorsEncountered: 8,
+        averageSpeed: 83.3,
+        peakSpeed: 125.7,
+      },
+    ),
     showDetails: true,
     variant: 'modal',
     size: 'lg',
@@ -248,15 +269,19 @@ export const ModalStyleNotification: Story = {
 // Perfect scan (no errors)
 export const PerfectScanTransition: Story = {
   args: {
-    transition: createMockTransition('filesystem_indexing', 'media_enrichment', {
-      volumeName: 'Curated Collection',
-      duration: 480000, // 8 minutes
-      filesProcessed: 50000,
-      bytesProcessed: 2147483648000, // 2TB
-      errorsEncountered: 0, // Perfect scan
-      averageSpeed: 104.2,
-      peakSpeed: 158.3,
-    }),
+    transition: createMockTransition(
+      'filesystem_indexing',
+      'media_enrichment',
+      {
+        volumeName: 'Curated Collection',
+        duration: 480000, // 8 minutes
+        filesProcessed: 50000,
+        bytesProcessed: 2147483648000, // 2TB
+        errorsEncountered: 0, // Perfect scan
+        averageSpeed: 104.2,
+        peakSpeed: 158.3,
+      },
+    ),
     showDetails: true,
     variant: 'toast',
     size: 'md',

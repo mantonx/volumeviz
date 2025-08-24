@@ -86,11 +86,11 @@ interface ApiFilesystemIndexingStatus {
 
 export function useMultiPhaseScanProgress(
   volumeId: string,
-  options: UseMultiPhaseScanProgressOptions = {}
+  options: UseMultiPhaseScanProgressOptions = {},
 ) {
   const { pollInterval = 2000, enableFilesystemTracking = true } = options;
   const { error: showError } = useToast();
-  
+
   const [progress, setProgress] = useState<MultiPhaseScanProgress>({
     volumeId,
     phases: [
@@ -126,14 +126,18 @@ export function useMultiPhaseScanProgress(
 
     try {
       const baseUrl = import.meta.env?.VITE_API_URL || 'http://localhost:8080';
-      
-      console.log(`[useMultiPhaseScanProgress] Fetching progress for volume: ${volumeId}`);
-      
+
+      console.log(
+        `[useMultiPhaseScanProgress] Fetching progress for volume: ${volumeId}`,
+      );
+
       const scanUrl = `${baseUrl}/volumes/${volumeId}/scan/status`;
       const filesystemUrl = `${baseUrl}/volumes/${volumeId}/filesystem/status`;
       console.log(`[useMultiPhaseScanProgress] Scan URL: ${scanUrl}`);
-      console.log(`[useMultiPhaseScanProgress] Filesystem URL: ${filesystemUrl}`);
-      
+      console.log(
+        `[useMultiPhaseScanProgress] Filesystem URL: ${filesystemUrl}`,
+      );
+
       // Fetch volume scan progress
       const scanResponse = await fetch(scanUrl, {
         signal: abortControllerRef.current.signal,
@@ -145,9 +149,15 @@ export function useMultiPhaseScanProgress(
         console.log(`[useMultiPhaseScanProgress] Volume scan data:`, scanData);
       } else if (scanResponse.status === 404) {
         // 404 means no active scan - this is normal when no scan is running
-        console.log(`[useMultiPhaseScanProgress] No active volume scan found (404 - normal when not scanning)`);
+        console.log(
+          `[useMultiPhaseScanProgress] No active volume scan found (404 - normal when not scanning)`,
+        );
       } else {
-        console.log(`[useMultiPhaseScanProgress] Volume scan API error:`, scanResponse.status, scanResponse.statusText);
+        console.log(
+          `[useMultiPhaseScanProgress] Volume scan API error:`,
+          scanResponse.status,
+          scanResponse.statusText,
+        );
       }
 
       // Fetch filesystem indexing progress if enabled
@@ -159,34 +169,52 @@ export function useMultiPhaseScanProgress(
 
         if (filesystemResponse.ok) {
           filesystemData = await filesystemResponse.json();
-          console.log(`[useMultiPhaseScanProgress] Filesystem indexing data:`, filesystemData);
+          console.log(
+            `[useMultiPhaseScanProgress] Filesystem indexing data:`,
+            filesystemData,
+          );
           console.log(`[useMultiPhaseScanProgress] Filesystem data details:`, {
             files_scanned: filesystemData?.files_scanned,
             bytes_processed: filesystemData?.bytes_processed,
             files_per_sec: filesystemData?.files_per_sec,
-            status: filesystemData?.status
+            status: filesystemData?.status,
           });
         } else {
-          console.log(`[useMultiPhaseScanProgress] Filesystem indexing API error:`, filesystemResponse.status, filesystemResponse.statusText);
+          console.log(
+            `[useMultiPhaseScanProgress] Filesystem indexing API error:`,
+            filesystemResponse.status,
+            filesystemResponse.statusText,
+          );
         }
       }
 
-      setProgress(prev => {
+      setProgress((prev) => {
         const newPhases = [...prev.phases];
         let overallProgress = 0;
         let status = prev.status;
 
         // Update volume scan phase
-        const volumeScanPhase = newPhases.find(p => p.id === 'volume_scan');
+        const volumeScanPhase = newPhases.find((p) => p.id === 'volume_scan');
         if (volumeScanPhase) {
           if (scanData) {
-            const isActive = scanData.phase === 'volume_scan' && scanData.status === 'running';
-            const isCompleted = scanData.status === 'completed' || 
-                               (scanData.phase !== 'volume_scan' && scanData.status === 'running');
-            
-            volumeScanPhase.status = isActive ? 'active' : isCompleted ? 'completed' : 'pending';
-            volumeScanPhase.progress = isActive ? scanData.phase_progress : isCompleted ? 100 : 0;
-            
+            const isActive =
+              scanData.phase === 'volume_scan' && scanData.status === 'running';
+            const isCompleted =
+              scanData.status === 'completed' ||
+              (scanData.phase !== 'volume_scan' &&
+                scanData.status === 'running');
+
+            volumeScanPhase.status = isActive
+              ? 'active'
+              : isCompleted
+                ? 'completed'
+                : 'pending';
+            volumeScanPhase.progress = isActive
+              ? scanData.phase_progress
+              : isCompleted
+                ? 100
+                : 0;
+
             if (isActive || isCompleted) {
               volumeScanPhase.details = {
                 filesProcessed: scanData.files_scanned,
@@ -194,8 +222,10 @@ export function useMultiPhaseScanProgress(
               };
             }
 
-            if (isCompleted) overallProgress += 10; // Volume scan is 10% of total
-            else if (isActive) overallProgress += (scanData.phase_progress / 100) * 10;
+            if (isCompleted)
+              overallProgress += 10; // Volume scan is 10% of total
+            else if (isActive)
+              overallProgress += (scanData.phase_progress / 100) * 10;
           } else {
             // No scan data (404) - check if filesystem is running to determine if volume scan completed
             const isFilesystemRunning = filesystemData?.status === 'running';
@@ -213,7 +243,9 @@ export function useMultiPhaseScanProgress(
         }
 
         // Update filesystem indexing phase
-        const filesystemPhase = newPhases.find(p => p.id === 'filesystem_indexing');
+        const filesystemPhase = newPhases.find(
+          (p) => p.id === 'filesystem_indexing',
+        );
         if (filesystemPhase && enableFilesystemTracking) {
           const isActive = filesystemData?.status === 'running';
           const isCompleted = filesystemData?.status === 'completed';
@@ -222,9 +254,15 @@ export function useMultiPhaseScanProgress(
           if (isActive) {
             filesystemPhase.status = 'active';
             // Calculate progress based on files processed (rough estimate)
-            const estimatedTotal = Math.max(filesystemData.files_scanned * 1.5, 1000);
-            filesystemPhase.progress = Math.min((filesystemData.files_scanned / estimatedTotal) * 100, 95);
-            
+            const estimatedTotal = Math.max(
+              filesystemData.files_scanned * 1.5,
+              1000,
+            );
+            filesystemPhase.progress = Math.min(
+              (filesystemData.files_scanned / estimatedTotal) * 100,
+              95,
+            );
+
             // Always update details when active
             filesystemPhase.details = {
               filesProcessed: filesystemData.files_scanned || 0,
@@ -232,12 +270,15 @@ export function useMultiPhaseScanProgress(
               filesPerSecond: filesystemData.files_per_sec || 0,
               bytesProcessed: filesystemData.bytes_processed || 0,
             };
-            
-            console.log(`[useMultiPhaseScanProgress] Filesystem phase details:`, filesystemPhase.details);
+
+            console.log(
+              `[useMultiPhaseScanProgress] Filesystem phase details:`,
+              filesystemPhase.details,
+            );
           } else if (isCompleted) {
             filesystemPhase.status = 'completed';
             filesystemPhase.progress = 100;
-            
+
             // Update details for completed state
             if (filesystemData) {
               filesystemPhase.details = {
@@ -251,12 +292,16 @@ export function useMultiPhaseScanProgress(
             filesystemPhase.status = 'failed';
           }
 
-          if (isCompleted) overallProgress += 80; // Filesystem indexing is 80% of total
-          else if (isActive && filesystemPhase.progress) overallProgress += (filesystemPhase.progress / 100) * 80;
+          if (isCompleted)
+            overallProgress += 80; // Filesystem indexing is 80% of total
+          else if (isActive && filesystemPhase.progress)
+            overallProgress += (filesystemPhase.progress / 100) * 80;
         }
 
         // Update media enrichment phase
-        const mediaEnrichmentPhase = newPhases.find(p => p.id === 'media_enrichment');
+        const mediaEnrichmentPhase = newPhases.find(
+          (p) => p.id === 'media_enrichment',
+        );
         if (mediaEnrichmentPhase) {
           // Check if media enrichment phase exists in scan data phases
           const enrichmentPhaseData = scanData?.phases?.media_enrichment;
@@ -264,10 +309,11 @@ export function useMultiPhaseScanProgress(
             const isActive = enrichmentPhaseData.status === 'running';
             const isCompleted = enrichmentPhaseData.status === 'completed';
             const isFailed = enrichmentPhaseData.status === 'failed';
-            
+
             if (isActive) {
               mediaEnrichmentPhase.status = 'active';
-              mediaEnrichmentPhase.progress = enrichmentPhaseData.progress * 100;
+              mediaEnrichmentPhase.progress =
+                enrichmentPhaseData.progress * 100;
               mediaEnrichmentPhase.details = {
                 filesProcessed: enrichmentPhaseData.items_processed || 0,
                 currentFile: 'Enriching media files...',
@@ -282,7 +328,7 @@ export function useMultiPhaseScanProgress(
                 mediaEnrichmentPhase.error = enrichmentPhaseData.error;
               }
             }
-            
+
             // Add error information if available from scan data
             if (scanData?.errors && scanData.errors.length > 0) {
               // Parse enrichment errors from the formatted error messages
@@ -290,7 +336,9 @@ export function useMultiPhaseScanProgress(
               for (const errorMsg of scanData.errors) {
                 // Try to parse the formatted error message
                 // Format: "enricher_name: error_type (file_name) - error_message [technical_details]"
-                const match = errorMsg.match(/^(\w+): (\w+) \(([^)]+)\) - ([^\[]+)(?:\s*\[([^\]]+)\])?/);
+                const match = errorMsg.match(
+                  /^(\w+): (\w+) \(([^)]+)\) - ([^\[]+)(?:\s*\[([^\]]+)\])?/,
+                );
                 if (match) {
                   enrichmentErrors.push({
                     timestamp: new Date().toISOString(), // API doesn't provide timestamp yet
@@ -308,13 +356,15 @@ export function useMultiPhaseScanProgress(
               }
             }
 
-            if (isCompleted) overallProgress += 10; // Media enrichment is 10% of total
-            else if (isActive && mediaEnrichmentPhase.progress) overallProgress += (mediaEnrichmentPhase.progress / 100) * 10;
+            if (isCompleted)
+              overallProgress += 10; // Media enrichment is 10% of total
+            else if (isActive && mediaEnrichmentPhase.progress)
+              overallProgress += (mediaEnrichmentPhase.progress / 100) * 10;
           } else {
             // No enrichment data available - check if it should be pending or completed based on other phases
             const volumeScanComplete = volumeScanPhase?.status === 'completed';
             const filesystemComplete = filesystemPhase?.status === 'completed';
-            
+
             if (volumeScanComplete && filesystemComplete) {
               // Previous phases completed, enrichment should be pending/active
               mediaEnrichmentPhase.status = 'pending';
@@ -323,14 +373,24 @@ export function useMultiPhaseScanProgress(
         }
 
         // Determine overall status (updated for 3 phases)
-        if (scanData?.status === 'failed' || filesystemData?.status === 'failed') {
+        if (
+          scanData?.status === 'failed' ||
+          filesystemData?.status === 'failed'
+        ) {
           status = 'failed';
-        } else if (scanData?.status === 'running' || filesystemData?.status === 'running' || 
-                  scanData?.phases?.media_enrichment?.status === 'running') {
+        } else if (
+          scanData?.status === 'running' ||
+          filesystemData?.status === 'running' ||
+          scanData?.phases?.media_enrichment?.status === 'running'
+        ) {
           status = 'scanning';
-        } else if (scanData?.status === 'completed' && 
-                  (!enableFilesystemTracking || filesystemData?.status === 'completed') &&
-                  (!scanData?.phases?.media_enrichment || scanData?.phases?.media_enrichment?.status === 'completed')) {
+        } else if (
+          scanData?.status === 'completed' &&
+          (!enableFilesystemTracking ||
+            filesystemData?.status === 'completed') &&
+          (!scanData?.phases?.media_enrichment ||
+            scanData?.phases?.media_enrichment?.status === 'completed')
+        ) {
           status = 'completed';
           overallProgress = 100;
         } else if (!scanData && !filesystemData) {
@@ -347,48 +407,61 @@ export function useMultiPhaseScanProgress(
           phases: newPhases,
           overallProgress: Math.round(overallProgress),
           status,
-          startTime: scanData?.started_at ? new Date(scanData.started_at) : prev.startTime,
+          startTime: scanData?.started_at
+            ? new Date(scanData.started_at)
+            : prev.startTime,
         };
-        
+
         console.log(`[useMultiPhaseScanProgress] Updated progress state:`, {
           status,
           overallProgress: Math.round(overallProgress),
-          phases: newPhases.map(p => ({
+          phases: newPhases.map((p) => ({
             id: p.id,
             status: p.status,
             progress: p.progress,
           })),
-          scanData: scanData ? { phase: scanData.phase, status: scanData.status } : null,
-          filesystemData: filesystemData ? { status: filesystemData.status } : null,
+          scanData: scanData
+            ? { phase: scanData.phase, status: scanData.status }
+            : null,
+          filesystemData: filesystemData
+            ? { status: filesystemData.status }
+            : null,
         });
-        
+
         return newProgress;
       });
-
     } catch (err) {
       if (err instanceof Error && err.name !== 'AbortError') {
         console.error('Failed to fetch scan progress:', err);
-        setProgress(prev => ({ ...prev, status: 'failed', error: err.message }));
+        setProgress((prev) => ({
+          ...prev,
+          status: 'failed',
+          error: err.message,
+        }));
       }
     }
   }, [volumeId, enableFilesystemTracking]);
 
   // Start polling for progress
   const startPolling = useCallback(() => {
-    console.log(`[useMultiPhaseScanProgress] Starting polling for volume: ${volumeId}`);
-    
+    console.log(
+      `[useMultiPhaseScanProgress] Starting polling for volume: ${volumeId}`,
+    );
+
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
     }
-    
+
     abortControllerRef.current = new AbortController();
-    
+
     // Initial fetch
     fetchScanProgress();
-    
+
     // Set up polling
     pollIntervalRef.current = setInterval(fetchScanProgress, pollInterval);
-    console.log(`[useMultiPhaseScanProgress] Polling started with ${pollInterval}ms interval`);
+    console.log(
+      `[useMultiPhaseScanProgress] Polling started with ${pollInterval}ms interval`,
+    );
   }, [fetchScanProgress, pollInterval, volumeId]);
 
   // Stop polling
@@ -397,7 +470,7 @@ export function useMultiPhaseScanProgress(
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = undefined;
     }
-    
+
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = undefined;
@@ -406,9 +479,9 @@ export function useMultiPhaseScanProgress(
 
   // Reset progress
   const resetProgress = useCallback(() => {
-    setProgress(prev => ({
+    setProgress((prev) => ({
       ...prev,
-      phases: prev.phases.map(phase => ({
+      phases: prev.phases.map((phase) => ({
         ...phase,
         status: 'pending',
         progress: 0,
@@ -444,7 +517,7 @@ export function useMultiPhaseScanProgress(
     isScanning: progress.status === 'scanning',
     isComplete: progress.status === 'completed',
     isFailed: progress.status === 'failed',
-    currentPhase: progress.phases.find(p => p.status === 'active'),
+    currentPhase: progress.phases.find((p) => p.status === 'active'),
     startPolling,
     stopPolling,
     resetProgress,

@@ -89,10 +89,10 @@ export const ScanButton: React.FC<ScanButtonProps> = ({
           className,
         )}
         title={
-          disabled 
+          disabled
             ? 'Volume is untracked - enable tracking to scan'
-            : isScanning 
-              ? 'Scanning...' 
+            : isScanning
+              ? 'Scanning...'
               : 'Scan volume'
         }
       >

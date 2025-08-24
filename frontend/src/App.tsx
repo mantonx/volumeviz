@@ -21,19 +21,29 @@ import {
 } from '@/pages';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
 import React, { useEffect, useState } from 'react';
-import { Route, BrowserRouter as Router, Routes, Navigate } from 'react-router-dom';
+import {
+  Route,
+  BrowserRouter as Router,
+  Routes,
+  Navigate,
+} from 'react-router-dom';
 
 const App: React.FC = () => {
-  const [shouldRedirectToOnboarding, setShouldRedirectToOnboarding] = useState(false);
+  const [shouldRedirectToOnboarding, setShouldRedirectToOnboarding] =
+    useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Check if onboarding has been completed
     const checkOnboardingStatus = async () => {
       try {
-        const onboardingComplete = localStorage.getItem('volumeviz_onboarding_complete');
-        const onboardingAttempted = localStorage.getItem('volumeviz_onboarding_attempted');
-        
+        const onboardingComplete = localStorage.getItem(
+          'volumeviz_onboarding_complete',
+        );
+        const onboardingAttempted = localStorage.getItem(
+          'volumeviz_onboarding_attempted',
+        );
+
         if (onboardingComplete === 'true' || onboardingAttempted === 'true') {
           setShouldRedirectToOnboarding(false);
         } else {
@@ -62,10 +72,15 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div data-testid="app-loading" className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div
+        data-testid="app-loading"
+        className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900"
+      >
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading VolumeViz...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading VolumeViz...
+          </p>
         </div>
       </div>
     );
@@ -81,11 +96,17 @@ const App: React.FC = () => {
               <Routes>
                 {/* Onboarding Route */}
                 <Route path="/onboarding" element={<OnboardingPage />} />
-                
+
                 {/* Main Routes - redirect to onboarding if needed */}
-                <Route 
-                  path="/" 
-                  element={shouldRedirectToOnboarding ? <Navigate to="/onboarding" replace /> : <Dashboard />} 
+                <Route
+                  path="/"
+                  element={
+                    shouldRedirectToOnboarding ? (
+                      <Navigate to="/onboarding" replace />
+                    ) : (
+                      <Dashboard />
+                    )
+                  }
                 />
                 <Route path="/volumes" element={<VolumesPage />} />
                 <Route path="/volumes/:name" element={<VolumeDetailsPage />} />

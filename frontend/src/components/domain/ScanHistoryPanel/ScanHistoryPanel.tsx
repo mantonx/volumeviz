@@ -1,23 +1,26 @@
 import React, { useMemo, useState } from 'react';
-import { 
-  Clock, 
-  AlertCircle, 
-  CheckCircle, 
-  XCircle, 
-  FileText, 
+import {
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  FileText,
   Download,
   Filter,
   RefreshCw,
   Trash2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { StatusBadge } from '../../ui/StatusBadge';
 import { formatBytes, formatNumber } from '../../../utils';
-import type { ScanHistoryPanelProps, ScanHistoryEntryCardProps } from './ScanHistoryPanel.types';
+import type {
+  ScanHistoryPanelProps,
+  ScanHistoryEntryCardProps,
+} from './ScanHistoryPanel.types';
 
 const ScanHistoryEntryCard: React.FC<ScanHistoryEntryCardProps> = ({
   entry,
@@ -69,7 +72,9 @@ const ScanHistoryEntryCard: React.FC<ScanHistoryEntryCardProps> = ({
   };
 
   return (
-    <Card className={`p-4 hover:shadow-md transition-shadow cursor-pointer ${className}`}>
+    <Card
+      className={`p-4 hover:shadow-md transition-shadow cursor-pointer ${className}`}
+    >
       <div onClick={() => onClick?.(entry)}>
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-3 flex-1">
@@ -90,17 +95,25 @@ const ScanHistoryEntryCard: React.FC<ScanHistoryEntryCardProps> = ({
               </div>
               <div className="mt-2 grid grid-cols-2 gap-4 text-xs">
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Duration</span>
-                  <div className="font-medium">{formatDuration(entry.duration)}</div>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Duration
+                  </span>
+                  <div className="font-medium">
+                    {formatDuration(entry.duration)}
+                  </div>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Files</span>
-                  <div className="font-medium">{formatNumber(entry.filesScanned)}</div>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Files
+                  </span>
+                  <div className="font-medium">
+                    {formatNumber(entry.filesScanned)}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {entry.errorCount > 0 && (
               <Badge variant="error" size="sm">
@@ -115,7 +128,11 @@ const ScanHistoryEntryCard: React.FC<ScanHistoryEntryCardProps> = ({
                 setExpanded(!expanded);
               }}
             >
-              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {expanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
             </Button>
             {onDelete && (
               <Button
@@ -136,16 +153,28 @@ const ScanHistoryEntryCard: React.FC<ScanHistoryEntryCardProps> = ({
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Folders</span>
-                <div className="font-medium">{formatNumber(entry.foldersScanned)}</div>
+                <span className="text-gray-500 dark:text-gray-400">
+                  Folders
+                </span>
+                <div className="font-medium">
+                  {formatNumber(entry.foldersScanned)}
+                </div>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Avg Speed</span>
-                <div className="font-medium">{formatNumber(entry.averageFilesPerSecond)} files/s</div>
+                <span className="text-gray-500 dark:text-gray-400">
+                  Avg Speed
+                </span>
+                <div className="font-medium">
+                  {formatNumber(entry.averageFilesPerSecond)} files/s
+                </div>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Peak Speed</span>
-                <div className="font-medium">{formatNumber(entry.peakFilesPerSecond)} files/s</div>
+                <span className="text-gray-500 dark:text-gray-400">
+                  Peak Speed
+                </span>
+                <div className="font-medium">
+                  {formatNumber(entry.peakFilesPerSecond)} files/s
+                </div>
               </div>
               <div>
                 <span className="text-gray-500 dark:text-gray-400">Method</span>
@@ -160,7 +189,10 @@ const ScanHistoryEntryCard: React.FC<ScanHistoryEntryCardProps> = ({
                 </h5>
                 <div className="space-y-2">
                   {entry.phases.map((phase, index) => (
-                    <div key={index} className="flex items-center justify-between text-xs">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between text-xs"
+                    >
                       <div className="flex items-center space-x-2">
                         <div className="capitalize font-medium">
                           {phase.phase.replace('_', ' ')}
@@ -187,8 +219,13 @@ const ScanHistoryEntryCard: React.FC<ScanHistoryEntryCardProps> = ({
                 </h5>
                 <div className="space-y-1">
                   {entry.errors.slice(0, 3).map((error, index) => (
-                    <div key={index} className="text-xs text-red-600 dark:text-red-400">
-                      <div className="font-medium">{error.errorType.replace('_', ' ')}</div>
+                    <div
+                      key={index}
+                      className="text-xs text-red-600 dark:text-red-400"
+                    >
+                      <div className="font-medium">
+                        {error.errorType.replace('_', ' ')}
+                      </div>
                       <div className="text-red-500 dark:text-red-500 truncate">
                         {error.path}: {error.errorMessage}
                       </div>
@@ -233,9 +270,9 @@ export const ScanHistoryPanel: React.FC<ScanHistoryPanelProps> = ({
   }, [entries, maxEntries, showingAll]);
 
   const stats = useMemo(() => {
-    const completed = entries.filter(e => e.status === 'completed').length;
-    const failed = entries.filter(e => e.status === 'failed').length;
-    const cancelled = entries.filter(e => e.status === 'cancelled').length;
+    const completed = entries.filter((e) => e.status === 'completed').length;
+    const failed = entries.filter((e) => e.status === 'failed').length;
+    const cancelled = entries.filter((e) => e.status === 'cancelled').length;
     const totalDuration = entries.reduce((sum, e) => sum + e.duration, 0);
     const avgDuration = entries.length > 0 ? totalDuration / entries.length : 0;
 
@@ -276,10 +313,11 @@ export const ScanHistoryPanel: React.FC<ScanHistoryPanelProps> = ({
               Scan History
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {stats.total} scans • {stats.completed} completed • {stats.failed} failed
+              {stats.total} scans • {stats.completed} completed • {stats.failed}{' '}
+              failed
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {showExport && onExport && (
               <div className="flex space-x-1">
@@ -301,7 +339,7 @@ export const ScanHistoryPanel: React.FC<ScanHistoryPanelProps> = ({
                 </Button>
               </div>
             )}
-            
+
             {onRefresh && (
               <Button
                 variant="ghost"
@@ -309,16 +347,14 @@ export const ScanHistoryPanel: React.FC<ScanHistoryPanelProps> = ({
                 onClick={onRefresh}
                 disabled={loading}
               >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+                />
               </Button>
             )}
-            
+
             {onClearHistory && entries.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClearHistory}
-              >
+              <Button variant="ghost" size="sm" onClick={onClearHistory}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
@@ -328,7 +364,9 @@ export const ScanHistoryPanel: React.FC<ScanHistoryPanelProps> = ({
         {loading && entries.length === 0 ? (
           <div className="text-center py-8">
             <RefreshCw className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 dark:text-gray-400">Loading scan history...</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading scan history...
+            </p>
           </div>
         ) : entries.length === 0 ? (
           <div className="text-center py-8">
@@ -350,13 +388,10 @@ export const ScanHistoryPanel: React.FC<ScanHistoryPanelProps> = ({
                 onDelete={onEntryDelete}
               />
             ))}
-            
+
             {entries.length > maxEntries && !showingAll && (
               <div className="text-center pt-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowingAll(true)}
-                >
+                <Button variant="ghost" onClick={() => setShowingAll(true)}>
                   Show {entries.length - maxEntries} more entries
                 </Button>
               </div>

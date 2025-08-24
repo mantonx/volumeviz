@@ -6,6 +6,8 @@
 
 **VolumeViz** is a comprehensive Docker volume analytics and filesystem monitoring platform that provides real-time insights into storage usage, file organization, and media content across your containerized infrastructure.
 
+> 🚧 **Active Development**: Working on scan reliability improvements. See [WORK_TRACKER.md](WORK_TRACKER.md) for current progress.
+
 ## 🚀 Core Features
 
 ### Docker Volume Analytics

@@ -3,7 +3,12 @@ import type { ReactNode } from 'react';
 /**
  * Phase status types
  */
-export type PhaseStatus = 'pending' | 'active' | 'completed' | 'failed' | 'skipped';
+export type PhaseStatus =
+  | 'pending'
+  | 'active'
+  | 'completed'
+  | 'failed'
+  | 'skipped';
 
 /**
  * Phase display orientation
@@ -130,12 +135,20 @@ export const defaultColorScheme = {
 /**
  * Phase indicator variants for different use cases
  */
-export type PhaseIndicatorVariant = 'default' | 'compact' | 'detailed' | 'minimal';
+export type PhaseIndicatorVariant =
+  | 'default'
+  | 'compact'
+  | 'detailed'
+  | 'minimal';
 
 /**
  * Extended props with variant support
  */
-export interface PhaseIndicatorVariantProps extends Omit<PhaseIndicatorProps, 'size' | 'showDescriptions' | 'showProgress'> {
+export interface PhaseIndicatorVariantProps
+  extends Omit<
+    PhaseIndicatorProps,
+    'size' | 'showDescriptions' | 'showProgress'
+  > {
   /** Predefined variant configuration */
   variant?: PhaseIndicatorVariant;
 }

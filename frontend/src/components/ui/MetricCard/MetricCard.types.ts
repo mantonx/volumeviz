@@ -3,12 +3,12 @@ import type { ReactNode } from 'react';
 /**
  * Metric value types
  */
-export type MetricValueType = 
-  | 'number' 
-  | 'percentage' 
-  | 'bytes' 
-  | 'duration' 
-  | 'rate' 
+export type MetricValueType =
+  | 'number'
+  | 'percentage'
+  | 'bytes'
+  | 'duration'
+  | 'rate'
   | 'count'
   | 'currency'
   | 'custom';
@@ -132,7 +132,11 @@ export interface MetricCardProps {
   loading?: boolean;
 
   /** Custom formatting function for values */
-  formatValue?: (value: number | string, type: MetricValueType, unit?: string) => string;
+  formatValue?: (
+    value: number | string,
+    type: MetricValueType,
+    unit?: string,
+  ) => string;
 
   /** Custom formatting function for trends */
   formatTrend?: (trend: MetricTrend, percentage?: number) => string;
@@ -215,7 +219,7 @@ export interface MetricPreset {
 /**
  * Common metric presets
  */
-export type MetricPresetType = 
+export type MetricPresetType =
   | 'cpu_usage'
   | 'memory_usage'
   | 'disk_usage'

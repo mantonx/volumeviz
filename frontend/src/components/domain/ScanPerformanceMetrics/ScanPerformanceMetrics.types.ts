@@ -10,21 +10,21 @@ export interface ScanPerformanceData {
   filesPerSecond: PerformanceMetric[];
   foldersPerSecond: PerformanceMetric[];
   bytesPerSecond: PerformanceMetric[];
-  
+
   // Resource usage
   cpuUsage: PerformanceMetric[];
   memoryUsage: PerformanceMetric[];
   diskIORead: PerformanceMetric[];
   diskIOWrite: PerformanceMetric[];
-  
+
   // Error rates
   errorRate: PerformanceMetric[];
   retryRate: PerformanceMetric[];
-  
+
   // System load
   systemLoad: PerformanceMetric[];
   queueDepth: PerformanceMetric[];
-  
+
   // Scan-specific metrics
   averageFileSize: PerformanceMetric[];
   largestFiles: Array<{
@@ -32,14 +32,14 @@ export interface ScanPerformanceData {
     size: number;
     processingTime: number;
   }>;
-  
+
   // Time-based breakdown
   phaseDistribution: Array<{
     phase: string;
     duration: number;
     percentage: number;
   }>;
-  
+
   // Comparative metrics
   historicalComparison: {
     currentScan: {

@@ -341,7 +341,6 @@ export interface VolumeExplorerPanelRef {
   setViewMode(mode: ExplorerViewMode): void;
 }
 
-
 /**
  * Create mock explorer data for testing
  */
@@ -360,9 +359,7 @@ export const createMockExplorerData = (
         ? extensions[Math.floor(Math.random() * extensions.length)]
         : undefined;
     const name =
-      type === 'folder'
-        ? `Folder ${i + 1}`
-        : `document${i + 1}.${extension}`;
+      type === 'folder' ? `Folder ${i + 1}` : `document${i + 1}.${extension}`;
 
     items.push({
       id: `item-${i}`,
@@ -370,13 +367,20 @@ export const createMockExplorerData = (
       path: `${path}${name}`,
       type,
       size: type === 'file' ? Math.floor(Math.random() * 10000000) : undefined,
-      modifiedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-      createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000),
+      modifiedAt: new Date(
+        Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
+      ),
+      createdAt: new Date(
+        Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000,
+      ),
       extension,
       mimeType:
-        type === 'file' ? `application/${extension || 'octet-stream'}` : undefined,
+        type === 'file'
+          ? `application/${extension || 'octet-stream'}`
+          : undefined,
       hasChildren: type === 'folder' ? Math.random() > 0.3 : false,
-      childCount: type === 'folder' ? Math.floor(Math.random() * 50) : undefined,
+      childCount:
+        type === 'folder' ? Math.floor(Math.random() * 50) : undefined,
       starred: Math.random() > 0.8,
       isHidden: Math.random() > 0.9,
       isSystem: Math.random() > 0.95,

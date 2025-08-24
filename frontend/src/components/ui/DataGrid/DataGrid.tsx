@@ -84,12 +84,12 @@ const getDefaultRenderer = (type: string) => {
       return (value: number) => value?.toLocaleString() || '0';
     case 'boolean':
       return (value: boolean) => (
-        <span className={clsx(
-          'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-          value
-            ? 'bg-green-100 text-green-800'
-            : 'bg-gray-100 text-gray-800'
-        )}>
+        <span
+          className={clsx(
+            'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+            value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800',
+          )}
+        >
           {value ? 'Yes' : 'No'}
         </span>
       );
@@ -104,11 +104,11 @@ const getDefaultRenderer = (type: string) => {
 const sortData = <T,>(
   data: T[],
   sortConfig: SortConfig | undefined,
-  columns: DataGridColumn<T>[]
+  columns: DataGridColumn<T>[],
 ): T[] => {
   if (!sortConfig || !sortConfig.direction) return data;
 
-  const column = columns.find(col => col.id === sortConfig.key);
+  const column = columns.find((col) => col.id === sortConfig.key);
   if (!column) return data;
 
   return [...data].sort((a, b) => {
@@ -145,7 +145,13 @@ const Checkbox: React.FC<{
   onChange: (checked: boolean) => void;
   disabled?: boolean;
   'data-testid'?: string;
-}> = ({ checked, indeterminate, onChange, disabled, 'data-testid': testId }) => {
+}> = ({
+  checked,
+  indeterminate,
+  onChange,
+  disabled,
+  'data-testid': testId,
+}) => {
   return (
     <button
       type="button"
@@ -157,8 +163,8 @@ const Checkbox: React.FC<{
         disabled
           ? 'bg-gray-100 border-gray-300 cursor-not-allowed'
           : checked || indeterminate
-          ? 'bg-blue-600 border-blue-600 text-white'
-          : 'bg-white border-gray-300 hover:border-gray-400'
+            ? 'bg-blue-600 border-blue-600 text-white'
+            : 'bg-white border-gray-300 hover:border-gray-400',
       )}
       data-testid={testId}
     >
@@ -173,7 +179,7 @@ const Checkbox: React.FC<{
 
 /**
  * Enhanced DataGrid component
- * 
+ *
  * A comprehensive data grid component with:
  * - Advanced sorting and filtering
  * - Row selection (single/multiple)
@@ -227,12 +233,12 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       ariaDescribedBy,
       testId = 'data-grid',
     },
-    ref
+    ref,
   ) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
     const bodyRef = useRef<HTMLDivElement>(null);
-    
+
     // Internal state
     const [internalSortConfig, setInternalSortConfig] = useState<SortConfig>({
       key: '',
@@ -243,186 +249,219 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       isAllSelected: false,
       isIndeterminate: false,
     });
-    const [expandedRows, setExpandedRows] = useState<Set<string | number>>(new Set());
+    const [expandedRows, setExpandedRows] = useState<Set<string | number>>(
+      new Set(),
+    );
 
     // Computed values
     const sizeConfig = useMemo(() => defaultDataGridSizes[size], [size]);
     const variantConfig = useMemo(() => {
       let config = defaultDataGridVariants[variant];
-      
+
       if (striped && variant !== 'striped') {
-        config = { ...config, row: config.row.replace('hover:bg-gray-50', 'even:bg-gray-50/50 hover:bg-gray-100') };
+        config = {
+          ...config,
+          row: config.row.replace(
+            'hover:bg-gray-50',
+            'even:bg-gray-50/50 hover:bg-gray-100',
+          ),
+        };
       }
-      
+
       if (bordered && variant !== 'bordered') {
         config = { ...config, border: 'border-gray-300' };
       }
-      
+
       return config;
     }, [variant, striped, bordered]);
 
     const sortConfig = externalSortConfig || internalSortConfig;
-    const selection = selectedRows ? { 
-      selectedRows, 
-      isAllSelected: selectedRows.size === data.length && data.length > 0,
-      isIndeterminate: selectedRows.size > 0 && selectedRows.size < data.length 
-    } : internalSelection;
+    const selection = selectedRows
+      ? {
+          selectedRows,
+          isAllSelected: selectedRows.size === data.length && data.length > 0,
+          isIndeterminate:
+            selectedRows.size > 0 && selectedRows.size < data.length,
+        }
+      : internalSelection;
 
     // Data processing
     const processedData = useMemo(() => {
       let result = data;
-      
+
       // Apply sorting
       if (sortable) {
         result = sortData(result, sortConfig, columns);
       }
-      
+
       return result;
     }, [data, sortConfig, columns, sortable]);
 
     // Selection handlers
-    const handleRowSelection = useCallback((rowId: string | number, selected: boolean) => {
-      const newSelection = new Set(selection.selectedRows);
-      
-      if (selected) {
-        newSelection.add(rowId);
-      } else {
-        newSelection.delete(rowId);
-      }
-      
-      const newSelectionState: SelectionState = {
-        selectedRows: newSelection,
-        isAllSelected: newSelection.size === data.length && data.length > 0,
-        isIndeterminate: newSelection.size > 0 && newSelection.size < data.length,
-      };
-      
-      if (selectedRows) {
-        onSelectionChange?.(newSelectionState);
-      } else {
-        setInternalSelection(newSelectionState);
-      }
-    }, [selection.selectedRows, data.length, selectedRows, onSelectionChange]);
+    const handleRowSelection = useCallback(
+      (rowId: string | number, selected: boolean) => {
+        const newSelection = new Set(selection.selectedRows);
 
-    const handleSelectAll = useCallback((selected: boolean) => {
-      const newSelection = selected ? new Set(data.map(row => (row as any)[keyField])) : new Set();
-      
-      const newSelectionState: SelectionState = {
-        selectedRows: newSelection,
-        isAllSelected: selected && data.length > 0,
-        isIndeterminate: false,
-      };
-      
-      if (selectedRows) {
-        onSelectionChange?.(newSelectionState);
-      } else {
-        setInternalSelection(newSelectionState);
-      }
-    }, [data, keyField, selectedRows, onSelectionChange]);
-
-    // Sort handlers
-    const handleSort = useCallback((columnId: string) => {
-      const column = columns.find(col => col.id === columnId);
-      if (!column?.sortable) return;
-
-      let newDirection: SortDirection = 'asc';
-      
-      if (sortConfig.key === columnId) {
-        if (sortConfig.direction === 'asc') {
-          newDirection = 'desc';
-        } else if (sortConfig.direction === 'desc') {
-          newDirection = null;
+        if (selected) {
+          newSelection.add(rowId);
+        } else {
+          newSelection.delete(rowId);
         }
-      }
 
-      const newSortConfig: SortConfig = {
-        key: columnId,
-        direction: newDirection,
-      };
-
-      if (externalSortConfig) {
-        onSortChange?.(newSortConfig);
-      } else {
-        setInternalSortConfig(newSortConfig);
-      }
-    }, [columns, sortConfig, externalSortConfig, onSortChange]);
-
-    // Row expansion handlers
-    const handleRowExpansion = useCallback((rowId: string | number) => {
-      const newExpanded = new Set(expandedRows);
-      
-      if (newExpanded.has(rowId)) {
-        newExpanded.delete(rowId);
-      } else {
-        newExpanded.add(rowId);
-      }
-      
-      setExpandedRows(newExpanded);
-      rowExpansion?.onExpansionChange?.(newExpanded);
-    }, [expandedRows, rowExpansion]);
-
-    // Imperative API
-    useImperativeHandle(ref, () => ({
-      scrollToRow: (rowIndex: number, align = 'auto') => {
-        // Implementation would depend on virtualization setup
-      },
-      scrollToColumn: (columnIndex: number) => {
-        // Implementation for horizontal scrolling
-      },
-      selectRow: (rowId: string | number) => {
-        handleRowSelection(rowId, true);
-      },
-      selectRows: (rowIds: (string | number)[]) => {
-        const newSelection = new Set([...selection.selectedRows, ...rowIds]);
         const newSelectionState: SelectionState = {
           selectedRows: newSelection,
           isAllSelected: newSelection.size === data.length && data.length > 0,
-          isIndeterminate: newSelection.size > 0 && newSelection.size < data.length,
+          isIndeterminate:
+            newSelection.size > 0 && newSelection.size < data.length,
         };
-        
+
         if (selectedRows) {
           onSelectionChange?.(newSelectionState);
         } else {
           setInternalSelection(newSelectionState);
         }
       },
-      deselectRow: (rowId: string | number) => {
-        handleRowSelection(rowId, false);
-      },
-      deselectAll: () => {
-        handleSelectAll(false);
-      },
-      selectAll: () => {
-        handleSelectAll(true);
-      },
-      getSelectedRows: () => {
-        return data.filter(row => selection.selectedRows.has((row as any)[keyField]));
-      },
-      expandRow: (rowId: string | number) => {
-        if (!expandedRows.has(rowId)) {
-          handleRowExpansion(rowId);
+      [selection.selectedRows, data.length, selectedRows, onSelectionChange],
+    );
+
+    const handleSelectAll = useCallback(
+      (selected: boolean) => {
+        const newSelection = selected
+          ? new Set(data.map((row) => (row as any)[keyField]))
+          : new Set();
+
+        const newSelectionState: SelectionState = {
+          selectedRows: newSelection,
+          isAllSelected: selected && data.length > 0,
+          isIndeterminate: false,
+        };
+
+        if (selectedRows) {
+          onSelectionChange?.(newSelectionState);
+        } else {
+          setInternalSelection(newSelectionState);
         }
       },
-      collapseRow: (rowId: string | number) => {
-        if (expandedRows.has(rowId)) {
-          handleRowExpansion(rowId);
+      [data, keyField, selectedRows, onSelectionChange],
+    );
+
+    // Sort handlers
+    const handleSort = useCallback(
+      (columnId: string) => {
+        const column = columns.find((col) => col.id === columnId);
+        if (!column?.sortable) return;
+
+        let newDirection: SortDirection = 'asc';
+
+        if (sortConfig.key === columnId) {
+          if (sortConfig.direction === 'asc') {
+            newDirection = 'desc';
+          } else if (sortConfig.direction === 'desc') {
+            newDirection = null;
+          }
+        }
+
+        const newSortConfig: SortConfig = {
+          key: columnId,
+          direction: newDirection,
+        };
+
+        if (externalSortConfig) {
+          onSortChange?.(newSortConfig);
+        } else {
+          setInternalSortConfig(newSortConfig);
         }
       },
-      toggleRowExpansion: handleRowExpansion,
-      getElement: () => containerRef.current,
-      refresh: () => {
-        // Trigger re-render or data refresh
+      [columns, sortConfig, externalSortConfig, onSortChange],
+    );
+
+    // Row expansion handlers
+    const handleRowExpansion = useCallback(
+      (rowId: string | number) => {
+        const newExpanded = new Set(expandedRows);
+
+        if (newExpanded.has(rowId)) {
+          newExpanded.delete(rowId);
+        } else {
+          newExpanded.add(rowId);
+        }
+
+        setExpandedRows(newExpanded);
+        rowExpansion?.onExpansionChange?.(newExpanded);
       },
-    }), [
-      handleRowSelection,
-      handleSelectAll,
-      handleRowExpansion,
-      selection.selectedRows,
-      data,
-      keyField,
-      expandedRows,
-      selectedRows,
-      onSelectionChange,
-    ]);
+      [expandedRows, rowExpansion],
+    );
+
+    // Imperative API
+    useImperativeHandle(
+      ref,
+      () => ({
+        scrollToRow: (rowIndex: number, align = 'auto') => {
+          // Implementation would depend on virtualization setup
+        },
+        scrollToColumn: (columnIndex: number) => {
+          // Implementation for horizontal scrolling
+        },
+        selectRow: (rowId: string | number) => {
+          handleRowSelection(rowId, true);
+        },
+        selectRows: (rowIds: (string | number)[]) => {
+          const newSelection = new Set([...selection.selectedRows, ...rowIds]);
+          const newSelectionState: SelectionState = {
+            selectedRows: newSelection,
+            isAllSelected: newSelection.size === data.length && data.length > 0,
+            isIndeterminate:
+              newSelection.size > 0 && newSelection.size < data.length,
+          };
+
+          if (selectedRows) {
+            onSelectionChange?.(newSelectionState);
+          } else {
+            setInternalSelection(newSelectionState);
+          }
+        },
+        deselectRow: (rowId: string | number) => {
+          handleRowSelection(rowId, false);
+        },
+        deselectAll: () => {
+          handleSelectAll(false);
+        },
+        selectAll: () => {
+          handleSelectAll(true);
+        },
+        getSelectedRows: () => {
+          return data.filter((row) =>
+            selection.selectedRows.has((row as any)[keyField]),
+          );
+        },
+        expandRow: (rowId: string | number) => {
+          if (!expandedRows.has(rowId)) {
+            handleRowExpansion(rowId);
+          }
+        },
+        collapseRow: (rowId: string | number) => {
+          if (expandedRows.has(rowId)) {
+            handleRowExpansion(rowId);
+          }
+        },
+        toggleRowExpansion: handleRowExpansion,
+        getElement: () => containerRef.current,
+        refresh: () => {
+          // Trigger re-render or data refresh
+        },
+      }),
+      [
+        handleRowSelection,
+        handleSelectAll,
+        handleRowExpansion,
+        selection.selectedRows,
+        data,
+        keyField,
+        expandedRows,
+        selectedRows,
+        onSelectionChange,
+      ],
+    );
 
     // Render header
     const renderHeader = () => (
@@ -431,17 +470,19 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
         className={clsx(
           'sticky top-0 z-10',
           variantConfig.header,
-          headerClassName
+          headerClassName,
         )}
       >
         <div className="flex">
           {/* Selection column */}
           {selectionMode === 'multiple' && (
-            <div className={clsx(
-              'flex items-center justify-center flex-shrink-0 w-12',
-              sizeConfig.header,
-              variantConfig.headerCell
-            )}>
+            <div
+              className={clsx(
+                'flex items-center justify-center flex-shrink-0 w-12',
+                sizeConfig.header,
+                variantConfig.headerCell,
+              )}
+            >
               <Checkbox
                 checked={selection.isAllSelected}
                 indeterminate={selection.isIndeterminate}
@@ -450,19 +491,21 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
               />
             </div>
           )}
-          
+
           {/* Expansion column */}
           {expandableRows && (
-            <div className={clsx(
-              'flex items-center justify-center flex-shrink-0 w-12',
-              sizeConfig.header,
-              variantConfig.headerCell
-            )} />
+            <div
+              className={clsx(
+                'flex items-center justify-center flex-shrink-0 w-12',
+                sizeConfig.header,
+                variantConfig.headerCell,
+              )}
+            />
           )}
-          
+
           {/* Data columns */}
           {columns
-            .filter(col => !col.hidden)
+            .filter((col) => !col.hidden)
             .map((column) => (
               <div
                 key={column.id}
@@ -473,7 +516,7 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
                   column.headerClassName,
                   column.sortable && 'cursor-pointer hover:bg-gray-100',
                   column.align === 'center' && 'justify-center',
-                  column.align === 'right' && 'justify-end'
+                  column.align === 'right' && 'justify-end',
                 )}
                 style={{
                   width: column.width,
@@ -483,7 +526,9 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
                 onClick={() => column.sortable && handleSort(column.id)}
                 data-testid={`${testId}-header-${column.id}`}
               >
-                {column.headerRender ? column.headerRender() : (
+                {column.headerRender ? (
+                  column.headerRender()
+                ) : (
                   <>
                     <span className="select-none">{column.title}</span>
                     {column.sortable && (
@@ -514,12 +559,14 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       const rowId = row[keyField];
       const isSelected = selection.selectedRows.has(rowId);
       const isExpanded = expandedRows.has(rowId);
-      
+
       const rowClasses = clsx(
         variantConfig.row,
         hoverable && 'cursor-pointer',
         isSelected && 'bg-blue-50 border-blue-200',
-        typeof rowClassName === 'function' ? rowClassName(row, rowIndex) : rowClassName
+        typeof rowClassName === 'function'
+          ? rowClassName(row, rowIndex)
+          : rowClassName,
       );
 
       return (
@@ -534,11 +581,13 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
             <div className="flex">
               {/* Selection column */}
               {selectionMode !== 'none' && (
-                <div className={clsx(
-                  'flex items-center justify-center flex-shrink-0 w-12',
-                  sizeConfig.cell,
-                  variantConfig.cell
-                )}>
+                <div
+                  className={clsx(
+                    'flex items-center justify-center flex-shrink-0 w-12',
+                    sizeConfig.cell,
+                    variantConfig.cell,
+                  )}
+                >
                   {selectionMode === 'multiple' ? (
                     <Checkbox
                       checked={isSelected}
@@ -556,14 +605,16 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
                   )}
                 </div>
               )}
-              
+
               {/* Expansion column */}
               {expandableRows && (
-                <div className={clsx(
-                  'flex items-center justify-center flex-shrink-0 w-12',
-                  sizeConfig.cell,
-                  variantConfig.cell
-                )}>
+                <div
+                  className={clsx(
+                    'flex items-center justify-center flex-shrink-0 w-12',
+                    sizeConfig.cell,
+                    variantConfig.cell,
+                  )}
+                >
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -580,10 +631,10 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
                   </button>
                 </div>
               )}
-              
+
               {/* Data columns */}
               {columns
-                .filter(col => !col.hidden)
+                .filter((col) => !col.hidden)
                 .map((column) => {
                   const value = row[column.key];
                   const cellClasses = clsx(
@@ -591,18 +642,18 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
                     sizeConfig.cell,
                     variantConfig.cell,
                     column.className,
-                    typeof column.cellClassName === 'function' 
+                    typeof column.cellClassName === 'function'
                       ? column.cellClassName(value, row, rowIndex)
                       : column.cellClassName,
                     column.align === 'center' && 'justify-center',
-                    column.align === 'right' && 'justify-end'
+                    column.align === 'right' && 'justify-end',
                   );
 
-                  const content = column.render 
+                  const content = column.render
                     ? column.render(value, row, rowIndex)
-                    : column.type 
-                    ? getDefaultRenderer(column.type)(value)
-                    : value;
+                    : column.type
+                      ? getDefaultRenderer(column.type)(value)
+                      : value;
 
                   return (
                     <div
@@ -621,7 +672,7 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
                 })}
             </div>
           </div>
-          
+
           {/* Expanded row content */}
           {expandableRows && isExpanded && rowExpansion?.render && (
             <div className="border-b border-gray-100">
@@ -671,9 +722,7 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               {emptyState?.icon && (
-                <div className="mb-4 text-gray-400">
-                  {emptyState.icon}
-                </div>
+                <div className="mb-4 text-gray-400">{emptyState.icon}</div>
               )}
               <div className="text-gray-600 mb-2">
                 {emptyState?.message || 'No data to display'}
@@ -716,7 +765,7 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           'relative',
           sizeConfig.container,
           variantConfig.container,
-          className
+          className,
         )}
         style={containerStyles}
         role="grid"
@@ -728,13 +777,15 @@ export const DataGrid = forwardRef<DataGridRef, DataGridProps>(
         <div
           ref={bodyRef}
           className="overflow-auto"
-          style={{ maxHeight: maxHeight ? `calc(${maxHeight} - 60px)` : undefined }}
+          style={{
+            maxHeight: maxHeight ? `calc(${maxHeight} - 60px)` : undefined,
+          }}
         >
           {renderBody()}
         </div>
       </div>
     );
-  }
+  },
 );
 
 DataGrid.displayName = 'DataGrid';

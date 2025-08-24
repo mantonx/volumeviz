@@ -1,4 +1,7 @@
-import type { ScanHistoryEntry, ScanHistoryFilter } from '../../../types/scanHistory';
+import type {
+  ScanHistoryEntry,
+  ScanHistoryFilter,
+} from '../../../types/scanHistory';
 
 export interface ScanHistoryPanelProps {
   /** History entries to display */

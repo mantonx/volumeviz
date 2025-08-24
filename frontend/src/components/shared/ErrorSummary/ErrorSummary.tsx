@@ -25,7 +25,10 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { StatusBadge } from '../../ui/StatusBadge';
-import { formatScanErrorForDisplay, type ScanError } from '../../../utils/scanErrorHandling';
+import {
+  formatScanErrorForDisplay,
+  type ScanError,
+} from '../../../utils/scanErrorHandling';
 import type {
   ErrorSummaryProps,
   ErrorSummaryRef,
@@ -304,8 +307,13 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
       const isClickable = !!onErrorClick;
 
       // Check if this is a scan error and format accordingly
-      const isScanError = error.rawError && typeof error.rawError === 'object' && 'error_type' in error.rawError;
-      const scanErrorDisplay = isScanError ? formatScanErrorForDisplay(error.rawError as ScanError) : null;
+      const isScanError =
+        error.rawError &&
+        typeof error.rawError === 'object' &&
+        'error_type' in error.rawError;
+      const scanErrorDisplay = isScanError
+        ? formatScanErrorForDisplay(error.rawError as ScanError)
+        : null;
 
       const itemClasses = clsx(
         'error-summary-item border rounded-lg transition-all duration-200',
@@ -429,11 +437,12 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
                 </div>
 
                 {/* Enhanced error message for scan errors */}
-                {scanErrorDisplay && scanErrorDisplay.message !== scanErrorDisplay.title && (
-                  <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
-                    {scanErrorDisplay.message}
-                  </div>
-                )}
+                {scanErrorDisplay &&
+                  scanErrorDisplay.message !== scanErrorDisplay.title && (
+                    <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                      {scanErrorDisplay.message}
+                    </div>
+                  )}
 
                 {/* Scan error suggestion */}
                 {scanErrorDisplay?.suggestion && (
@@ -451,7 +460,10 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
                 {(error.context || scanErrorDisplay?.context) && (
                   <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     {scanErrorDisplay?.context && (
-                      <div className="truncate mb-1" title={scanErrorDisplay.context}>
+                      <div
+                        className="truncate mb-1"
+                        title={scanErrorDisplay.context}
+                      >
                         {scanErrorDisplay.context}
                       </div>
                     )}

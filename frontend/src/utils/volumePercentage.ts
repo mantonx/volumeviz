@@ -23,14 +23,17 @@ export interface VolumePercentageResult {
 export function calculateVolumePercentage(
   volumeSize: number,
   filesystemCapacity?: FilesystemCapacity,
-  maxVolumeSize?: number
+  maxVolumeSize?: number,
 ): VolumePercentageResult {
   if (filesystemCapacity?.total_bytes) {
     // Calculate THIS VOLUME's percentage of the total filesystem capacity
-    const volumePercentOfTotal = (volumeSize / filesystemCapacity.total_bytes) * 100;
-    const totalFilesystemUsed = filesystemCapacity.total_bytes - (filesystemCapacity.available_bytes || 0);
+    const volumePercentOfTotal =
+      (volumeSize / filesystemCapacity.total_bytes) * 100;
+    const totalFilesystemUsed =
+      filesystemCapacity.total_bytes -
+      (filesystemCapacity.available_bytes || 0);
     const filesystemUsagePercent = filesystemCapacity.usage_percent || 0;
-    
+
     return {
       percentage: volumePercentOfTotal,
       displayText: `${volumePercentOfTotal.toFixed(1)}% of ${formatBytes(filesystemCapacity.total_bytes)} capacity`,
@@ -39,8 +42,8 @@ export function calculateVolumePercentage(
         usedBytes: volumeSize, // This volume's size
         totalBytes: filesystemCapacity.total_bytes, // Total filesystem capacity
         availableBytes: filesystemCapacity.available_bytes || 0,
-        usagePercent: volumePercentOfTotal // This volume as % of total
-      }
+        usagePercent: volumePercentOfTotal, // This volume as % of total
+      },
     };
   } else if (maxVolumeSize) {
     // Fallback to relative size among volumes
@@ -48,13 +51,13 @@ export function calculateVolumePercentage(
     return {
       percentage,
       displayText: `${percentage.toFixed(1)}% of max volume`,
-      tooltipText: `${formatBytes(volumeSize)} of ${formatBytes(maxVolumeSize)} (relative to largest volume)`
+      tooltipText: `${formatBytes(volumeSize)} of ${formatBytes(maxVolumeSize)} (relative to largest volume)`,
     };
   } else {
     return {
       percentage: 0,
       displayText: 'Size unknown',
-      tooltipText: 'Filesystem capacity information unavailable'
+      tooltipText: 'Filesystem capacity information unavailable',
     };
   }
 }

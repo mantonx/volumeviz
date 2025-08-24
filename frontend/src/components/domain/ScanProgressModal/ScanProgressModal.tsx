@@ -274,8 +274,9 @@ export const ScanProgressModal = forwardRef<
                     </p>
                     {currentPhase.details?.currentBatch && (
                       <p className="text-xs text-blue-600 mt-1">
-                        Batch {currentPhase.details.currentBatch.number} of {currentPhase.details.currentBatch.total} 
-                        ({currentPhase.details.currentBatch.filesInBatch} files)
+                        Batch {currentPhase.details.currentBatch.number} of{' '}
+                        {currentPhase.details.currentBatch.total}(
+                        {currentPhase.details.currentBatch.filesInBatch} files)
                       </p>
                     )}
                   </div>
@@ -295,30 +296,67 @@ export const ScanProgressModal = forwardRef<
                         </div>
                         <div>
                           <span className="font-medium">Rate:</span>{' '}
-                          {(currentPhase.details.filesProcessed / Math.max((Date.now() - new Date(currentPhase.startedAt || Date.now()).getTime()) / 1000, 1)).toFixed(1)} files/sec
+                          {(
+                            currentPhase.details.filesProcessed /
+                            Math.max(
+                              (Date.now() -
+                                new Date(
+                                  currentPhase.startedAt || Date.now(),
+                                ).getTime()) /
+                                1000,
+                              1,
+                            )
+                          ).toFixed(1)}{' '}
+                          files/sec
                         </div>
                       </div>
                       {currentPhase.details.currentFile && (
                         <div className="bg-blue-100 rounded p-2 text-xs">
-                          <div className="font-medium text-blue-900 mb-1">Currently Processing:</div>
+                          <div className="font-medium text-blue-900 mb-1">
+                            Currently Processing:
+                          </div>
                           <div className="font-mono text-blue-800 truncate">
-                            {currentPhase.details.currentFile.split('|')[0] || currentPhase.details.currentFile}
+                            {currentPhase.details.currentFile.split('|')[0] ||
+                              currentPhase.details.currentFile}
                           </div>
                           {currentPhase.details.currentFile.includes('|') && (
                             <div className="grid grid-cols-2 gap-2 mt-1 text-blue-700">
-                              {currentPhase.details.currentFile.split('|')[1] && (
+                              {currentPhase.details.currentFile.split(
+                                '|',
+                              )[1] && (
                                 <div>
-                                  <span className="font-medium">Size:</span> {scanDataUtils.formatFileSize(parseInt(currentPhase.details.currentFile.split('|')[1]))}
+                                  <span className="font-medium">Size:</span>{' '}
+                                  {scanDataUtils.formatFileSize(
+                                    parseInt(
+                                      currentPhase.details.currentFile.split(
+                                        '|',
+                                      )[1],
+                                    ),
+                                  )}
                                 </div>
                               )}
-                              {currentPhase.details.currentFile.split('|')[2] && (
+                              {currentPhase.details.currentFile.split(
+                                '|',
+                              )[2] && (
                                 <div>
-                                  <span className="font-medium">Type:</span> {currentPhase.details.currentFile.split('|')[2]}
+                                  <span className="font-medium">Type:</span>{' '}
+                                  {
+                                    currentPhase.details.currentFile.split(
+                                      '|',
+                                    )[2]
+                                  }
                                 </div>
                               )}
-                              {currentPhase.details.currentFile.split('|')[3] && (
+                              {currentPhase.details.currentFile.split(
+                                '|',
+                              )[3] && (
                                 <div className="col-span-2">
-                                  <span className="font-medium">Step:</span> {currentPhase.details.currentFile.split('|')[3]}
+                                  <span className="font-medium">Step:</span>{' '}
+                                  {
+                                    currentPhase.details.currentFile.split(
+                                      '|',
+                                    )[3]
+                                  }
                                 </div>
                               )}
                             </div>
@@ -697,7 +735,9 @@ export const ScanProgressModal = forwardRef<
               <div className="flex items-center gap-4">
                 <h2
                   id="scan-progress-title"
-                  className="text-xl font-semibold text-gray-900"
+                  className="text-xl font-semibold text-gray-900 dark:text-gray-100"
+                  role="heading"
+                  aria-level="2"
                 >
                   Scan Progress
                 </h2>

@@ -41,8 +41,7 @@ interface Volume {
 
 // Create configured API client
 const volumeVizApi = new Api({
-  baseUrl:
-    (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080',
+  baseUrl: (import.meta.env?.VITE_API_URL as string) || 'http://localhost:8080',
   baseApiParams: {
     headers: {
       'Content-Type': 'application/json',
@@ -141,12 +140,7 @@ export type {
 } from './generated/Api';
 
 // Export our temporary types
-export type {
-  PagedVolumes,
-  RefreshRequest,
-  ScanResponse,
-  Volume,
-};
+export type { PagedVolumes, RefreshRequest, ScanResponse, Volume };
 
 // Alert client methods (temporary stubs)
 export const alertApi = {

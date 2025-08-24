@@ -379,7 +379,6 @@ export interface SearchInterfaceRef {
   exportResults(format: 'csv' | 'json' | 'xlsx'): void;
 }
 
-
 /**
  * Create mock search data for testing
  */

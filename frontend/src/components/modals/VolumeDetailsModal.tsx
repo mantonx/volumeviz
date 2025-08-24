@@ -23,7 +23,10 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { SizeVisualization, formatBytes } from '@/components/ui/SizeVisualization';
+import {
+  SizeVisualization,
+  formatBytes,
+} from '@/components/ui/SizeVisualization';
 import { FreshnessIndicator } from '@/components/ui/FreshnessIndicator';
 import { ContainerBadge } from '@/components/ui/ContainerStatus';
 import { cn } from '@/utils';
@@ -75,17 +78,20 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
   // Fetch volume details
   const fetchVolumeDetails = async () => {
     if (!volumeName) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch(`/api/v1/volumes/${encodeURIComponent(volumeName)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/v1/volumes/${encodeURIComponent(volumeName)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         },
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -94,7 +100,8 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
       const volumeData: VolumeDetailV1 = await response.json();
       setVolume(volumeData);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch volume details';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch volume details';
       setError(errorMessage);
       showError(errorMessage);
     } finally {
@@ -193,7 +200,9 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     Failed to Load Details
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    {error}
+                  </p>
                   <Button onClick={fetchVolumeDetails}>
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Retry
@@ -221,13 +230,18 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                     </div>
                     {volume.size_bytes ? (
                       <div className="space-y-2">
-                        <SizeVisualization 
+                        <SizeVisualization
                           sizeBytes={volume.size_bytes}
                           className="text-lg font-semibold"
                         />
                         {volume.filesystem_capacity && (
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {((volume.size_bytes / volume.filesystem_capacity.total_bytes) * 100).toFixed(1)}% of capacity
+                            {(
+                              (volume.size_bytes /
+                                volume.filesystem_capacity.total_bytes) *
+                              100
+                            ).toFixed(1)}
+                            % of capacity
                           </div>
                         )}
                       </div>
@@ -253,12 +267,16 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                         {volume.is_orphaned ? (
                           <>
                             <AlertTriangle className="h-4 w-4 text-orange-500" />
-                            <span className="text-sm text-orange-600">Orphaned</span>
+                            <span className="text-sm text-orange-600">
+                              Orphaned
+                            </span>
                           </>
                         ) : (
                           <>
                             <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span className="text-sm text-green-600">Active</span>
+                            <span className="text-sm text-green-600">
+                              Active
+                            </span>
                           </>
                         )}
                       </div>
@@ -283,8 +301,8 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                         </span>
                       </div>
                     </div>
-                    <FreshnessIndicator 
-                      lastSeen={volume.last_scan_at} 
+                    <FreshnessIndicator
+                      lastSeen={volume.last_scan_at}
                       showIcon={true}
                       showLabel={true}
                       compact={false}
@@ -309,7 +327,9 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => copyToClipboard(volume.name, 'Volume name')}
+                          onClick={() =>
+                            copyToClipboard(volume.name, 'Volume name')
+                          }
                         >
                           <Copy className="h-3 w-3" />
                         </Button>
@@ -362,7 +382,9 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(volume.mountpoint, 'Mountpoint')}
+                        onClick={() =>
+                          copyToClipboard(volume.mountpoint, 'Mountpoint')
+                        }
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -377,33 +399,35 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                       Container Attachments ({volume.attachments.length})
                     </h3>
                     <div className="space-y-3">
-                      {volume.attachments.map((attachment: AttachmentV1, index: number) => (
-                        <div 
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <Database className="h-4 w-4 text-blue-600" />
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white">
-                                {attachment.container_name}
-                              </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {attachment.container_id}
+                      {volume.attachments.map(
+                        (attachment: AttachmentV1, index: number) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <Database className="h-4 w-4 text-blue-600" />
+                              <div>
+                                <div className="font-medium text-gray-900 dark:text-white">
+                                  {attachment.container_name}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  {attachment.container_id}
+                                </div>
                               </div>
                             </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant="outline" className="text-xs">
+                                {attachment.mount_path}
+                              </Badge>
+                              <ContainerBadge
+                                isReadonly={!attachment.rw}
+                                size="sm"
+                              />
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant="outline" className="text-xs">
-                              {attachment.mount_path}
-                            </Badge>
-                            <ContainerBadge 
-                              isReadonly={!attachment.rw}
-                              size="sm"
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        ),
+                      )}
                     </div>
                   </Card>
                 )}
@@ -416,10 +440,15 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                     </h3>
                     <div className="space-y-2">
                       {Object.entries(volume.labels).map(([key, value]) => (
-                        <div key={key} className="flex items-center justify-between">
+                        <div
+                          key={key}
+                          className="flex items-center justify-between"
+                        >
                           <div className="flex items-center space-x-2">
                             <Tag className="h-4 w-4 text-gray-400" />
-                            <code className="text-sm text-gray-900 dark:text-gray-100">{key}</code>
+                            <code className="text-sm text-gray-900 dark:text-gray-100">
+                              {key}
+                            </code>
                           </div>
                           <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm text-gray-900 dark:text-gray-100">
                             {value}
@@ -450,7 +479,9 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                           Available
                         </label>
                         <div className="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">
-                          {formatBytes(volume.filesystem_capacity.available_bytes)}
+                          {formatBytes(
+                            volume.filesystem_capacity.available_bytes,
+                          )}
                         </div>
                       </div>
                       <div>
@@ -459,12 +490,17 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                         </label>
                         <div className="mt-1">
                           <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                            {volume.filesystem_capacity.usage_percent.toFixed(1)}%
+                            {volume.filesystem_capacity.usage_percent.toFixed(
+                              1,
+                            )}
+                            %
                           </div>
                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
-                            <div 
+                            <div
                               className="bg-blue-600 h-2 rounded-full"
-                              style={{ width: `${volume.filesystem_capacity.usage_percent}%` }}
+                              style={{
+                                width: `${volume.filesystem_capacity.usage_percent}%`,
+                              }}
                             />
                           </div>
                         </div>
@@ -476,7 +512,9 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
             ) : (
               <div className="text-center py-12">
                 <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">No volume details available</p>
+                <p className="text-gray-600 dark:text-gray-400">
+                  No volume details available
+                </p>
               </div>
             )}
           </div>
@@ -487,7 +525,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
               Close
             </Button>
             {volume && (
-              <Button 
+              <Button
                 onClick={() => window.open(`/volumes/${volume.name}`, '_blank')}
                 className="bg-blue-600 hover:bg-blue-700"
               >

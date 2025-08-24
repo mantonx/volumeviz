@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { action } from '@storybook/addon-actions';
-import { 
-  Search, 
-  Database, 
-  Image, 
+import {
+  Search,
+  Database,
+  Image,
   CheckCircle,
   Settings,
-  Upload
+  Upload,
 } from 'lucide-react';
 
 import { PhaseIndicator } from './PhaseIndicator';
@@ -20,7 +20,8 @@ const meta: Meta<typeof PhaseIndicator> = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A flexible multi-step process visualization component for displaying scan phases and progress.',
+        component:
+          'A flexible multi-step process visualization component for displaying scan phases and progress.',
       },
     },
   },
@@ -60,7 +61,12 @@ const createScanPhases = (activePhaseIndex: number = 1): Phase[] => [
     id: 'prepare',
     label: 'Preparation',
     description: 'Preparing scan configuration',
-    status: activePhaseIndex > 0 ? 'completed' : activePhaseIndex === 0 ? 'active' : 'pending',
+    status:
+      activePhaseIndex > 0
+        ? 'completed'
+        : activePhaseIndex === 0
+          ? 'active'
+          : 'pending',
     icon: <Settings className="w-4 h-4" />,
     progress: activePhaseIndex === 0 ? 85 : undefined,
     clickable: true,
@@ -69,7 +75,12 @@ const createScanPhases = (activePhaseIndex: number = 1): Phase[] => [
     id: 'scan',
     label: 'Volume Scan',
     description: 'Scanning filesystem structure',
-    status: activePhaseIndex > 1 ? 'completed' : activePhaseIndex === 1 ? 'active' : 'pending',
+    status:
+      activePhaseIndex > 1
+        ? 'completed'
+        : activePhaseIndex === 1
+          ? 'active'
+          : 'pending',
     icon: <Search className="w-4 h-4" />,
     progress: activePhaseIndex === 1 ? 45 : undefined,
     clickable: true,
@@ -78,7 +89,12 @@ const createScanPhases = (activePhaseIndex: number = 1): Phase[] => [
     id: 'index',
     label: 'Indexing',
     description: 'Building file index database',
-    status: activePhaseIndex > 2 ? 'completed' : activePhaseIndex === 2 ? 'active' : 'pending',
+    status:
+      activePhaseIndex > 2
+        ? 'completed'
+        : activePhaseIndex === 2
+          ? 'active'
+          : 'pending',
     icon: <Database className="w-4 h-4" />,
     progress: activePhaseIndex === 2 ? 72 : undefined,
     clickable: true,
@@ -87,7 +103,12 @@ const createScanPhases = (activePhaseIndex: number = 1): Phase[] => [
     id: 'metadata',
     label: 'Metadata',
     description: 'Extracting file metadata',
-    status: activePhaseIndex > 3 ? 'completed' : activePhaseIndex === 3 ? 'active' : 'pending',
+    status:
+      activePhaseIndex > 3
+        ? 'completed'
+        : activePhaseIndex === 3
+          ? 'active'
+          : 'pending',
     icon: <Image className="w-4 h-4" />,
     progress: activePhaseIndex === 3 ? 28 : undefined,
     clickable: true,
@@ -96,7 +117,12 @@ const createScanPhases = (activePhaseIndex: number = 1): Phase[] => [
     id: 'complete',
     label: 'Complete',
     description: 'Scan completed successfully',
-    status: activePhaseIndex > 4 ? 'completed' : activePhaseIndex === 4 ? 'active' : 'pending',
+    status:
+      activePhaseIndex > 4
+        ? 'completed'
+        : activePhaseIndex === 4
+          ? 'active'
+          : 'pending',
     icon: <CheckCircle className="w-4 h-4" />,
     clickable: true,
   },
@@ -130,21 +156,15 @@ export const Sizes: Story = {
           showDescriptions={false}
         />
       </div>
-      
+
       <div>
         <h3 className="text-lg font-semibold mb-4">Medium</h3>
-        <PhaseIndicator
-          phases={createScanPhases(1)}
-          size="md"
-        />
+        <PhaseIndicator phases={createScanPhases(1)} size="md" />
       </div>
-      
+
       <div>
         <h3 className="text-lg font-semibold mb-4">Large</h3>
-        <PhaseIndicator
-          phases={createScanPhases(1)}
-          size="lg"
-        />
+        <PhaseIndicator phases={createScanPhases(1)} size="lg" />
       </div>
     </div>
   ),
@@ -156,18 +176,12 @@ export const Orientations: Story = {
     <div className="flex gap-12">
       <div>
         <h3 className="text-lg font-semibold mb-4">Horizontal</h3>
-        <PhaseIndicator
-          phases={createScanPhases(2)}
-          orientation="horizontal"
-        />
+        <PhaseIndicator phases={createScanPhases(2)} orientation="horizontal" />
       </div>
-      
+
       <div>
         <h3 className="text-lg font-semibold mb-4">Vertical</h3>
-        <PhaseIndicator
-          phases={createScanPhases(2)}
-          orientation="vertical"
-        />
+        <PhaseIndicator phases={createScanPhases(2)} orientation="vertical" />
       </div>
     </div>
   ),
@@ -230,25 +244,25 @@ export const Interactive: Story = {
   render: () => {
     const [activePhaseIndex, setActivePhaseIndex] = useState(1);
     const [isAnimating, setIsAnimating] = useState(false);
-    
+
     const phases = createScanPhases(activePhaseIndex);
 
     const handlePhaseClick = (phase: Phase) => {
-      const newIndex = phases.findIndex(p => p.id === phase.id);
+      const newIndex = phases.findIndex((p) => p.id === phase.id);
       setActivePhaseIndex(newIndex);
       action('Phase clicked')(phase);
     };
 
     const simulateProgress = () => {
       if (isAnimating) return;
-      
+
       setIsAnimating(true);
       let currentIndex = 0;
-      
+
       const interval = setInterval(() => {
         setActivePhaseIndex(currentIndex);
         currentIndex++;
-        
+
         if (currentIndex > phases.length) {
           clearInterval(interval);
           setIsAnimating(false);
@@ -266,24 +280,30 @@ export const Interactive: Story = {
           onPhaseClick={handlePhaseClick}
           onPhaseHover={action('Phase hovered')}
         />
-        
+
         <div className="flex gap-4 justify-center">
           <button
-            onClick={() => setActivePhaseIndex(Math.max(0, activePhaseIndex - 1))}
+            onClick={() =>
+              setActivePhaseIndex(Math.max(0, activePhaseIndex - 1))
+            }
             disabled={activePhaseIndex === 0 || isAnimating}
             className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
           >
             Previous
           </button>
-          
+
           <button
-            onClick={() => setActivePhaseIndex(Math.min(phases.length - 1, activePhaseIndex + 1))}
+            onClick={() =>
+              setActivePhaseIndex(
+                Math.min(phases.length - 1, activePhaseIndex + 1),
+              )
+            }
             disabled={activePhaseIndex === phases.length - 1 || isAnimating}
             className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
           >
             Next
           </button>
-          
+
           <button
             onClick={simulateProgress}
             disabled={isAnimating}
@@ -291,7 +311,7 @@ export const Interactive: Story = {
           >
             {isAnimating ? 'Simulating...' : 'Simulate Progress'}
           </button>
-          
+
           <button
             onClick={() => setActivePhaseIndex(0)}
             disabled={isAnimating}

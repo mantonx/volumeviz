@@ -44,7 +44,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         disabled
           ? 'opacity-50 cursor-not-allowed'
           : 'cursor-pointer hover:border-blue-500',
-        className
+        className,
       )}
     >
       {indeterminate ? (

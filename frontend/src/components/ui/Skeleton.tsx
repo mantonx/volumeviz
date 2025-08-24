@@ -11,12 +11,16 @@ interface SkeletonProps {
   children?: React.ReactNode;
 }
 
-export const Skeleton: React.FC<SkeletonProps> = ({ className, children, ...props }) => {
+export const Skeleton: React.FC<SkeletonProps> = ({
+  className,
+  children,
+  ...props
+}) => {
   return (
     <div
       className={cn(
         'animate-pulse rounded-md bg-gray-200 dark:bg-gray-700',
-        className
+        className,
       )}
       {...props}
     >
@@ -48,10 +52,18 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({
               </th>
               {[...Array(columns - 1)].map((_, i) => (
                 <th key={i} className="p-3 text-left">
-                  <Skeleton className={cn(
-                    'h-4',
-                    i === 0 ? 'w-24' : i === 1 ? 'w-16' : i === 2 ? 'w-20' : 'w-24'
-                  )} />
+                  <Skeleton
+                    className={cn(
+                      'h-4',
+                      i === 0
+                        ? 'w-24'
+                        : i === 1
+                          ? 'w-16'
+                          : i === 2
+                            ? 'w-20'
+                            : 'w-24',
+                    )}
+                  />
                 </th>
               ))}
             </tr>
@@ -104,9 +116,9 @@ interface CardSkeletonProps {
   className?: string;
 }
 
-export const CardSkeleton: React.FC<CardSkeletonProps> = ({ 
-  lines = 3, 
-  className 
+export const CardSkeleton: React.FC<CardSkeletonProps> = ({
+  lines = 3,
+  className,
 }) => {
   return (
     <div className={cn('space-y-3 p-4', className)}>
@@ -121,10 +133,7 @@ export const CardSkeleton: React.FC<CardSkeletonProps> = ({
         {[...Array(lines)].map((_, i) => (
           <Skeleton
             key={i}
-            className={cn(
-              'h-4',
-              i === lines - 1 ? 'w-3/4' : 'w-full'
-            )}
+            className={cn('h-4', i === lines - 1 ? 'w-3/4' : 'w-full')}
           />
         ))}
       </div>
@@ -149,9 +158,7 @@ export const ListSkeleton: React.FC<ListSkeletonProps> = ({
     <div className={cn('space-y-3', className)}>
       {[...Array(items)].map((_, i) => (
         <div key={i} className="flex items-center space-x-3">
-          {showAvatar && (
-            <Skeleton className="h-10 w-10 rounded-full" />
-          )}
+          {showAvatar && <Skeleton className="h-10 w-10 rounded-full" />}
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-3/4" />
             {showSubtitle && (
@@ -166,19 +173,20 @@ export const ListSkeleton: React.FC<ListSkeletonProps> = ({
 };
 
 // Pre-configured skeletons for specific components
-export const VolumeListSkeleton: React.FC<{ rows?: number }> = ({ rows = 8 }) => (
-  <TableSkeleton rows={rows} columns={6} />
-);
+export const VolumeListSkeleton: React.FC<{ rows?: number }> = ({
+  rows = 8,
+}) => <TableSkeleton rows={rows} columns={6} />;
 
-export const VolumeCardSkeleton: React.FC = () => (
-  <CardSkeleton lines={4} />
-);
+export const VolumeCardSkeleton: React.FC = () => <CardSkeleton lines={4} />;
 
 export const DashboardSkeleton: React.FC = () => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div
+          key={i}
+          className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+        >
           <div className="flex items-center justify-between">
             <Skeleton className="h-8 w-8 rounded" />
             <Skeleton className="h-4 w-12" />

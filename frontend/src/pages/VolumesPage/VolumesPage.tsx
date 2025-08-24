@@ -1,10 +1,10 @@
 import React from 'react';
-import { VolumesList } from './VolumesList';
+import { VolumesList } from '@/components/domain/VolumesList';
 import type { VolumesPageProps } from './VolumesPage.types';
 
 /**
  * Main Volumes page component.
- * 
+ *
  * Features:
  * - Table view with all required columns (name/path, type, driver, compose project/service, containers, RO/RW, status, last seen, size/growth)
  * - Filter chips and fuzzy search functionality

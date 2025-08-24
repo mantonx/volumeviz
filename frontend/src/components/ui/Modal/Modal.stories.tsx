@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { action } from '@storybook/addon-actions';
-import { 
-  Settings, 
-  User, 
-  Download, 
-  Trash2, 
+import {
+  Settings,
+  User,
+  Download,
+  Trash2,
   AlertTriangle,
   CheckCircle,
   Info,
@@ -24,7 +24,8 @@ const meta: Meta<typeof Modal> = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A versatile modal and drawer component with comprehensive features including focus trapping, animations, and accessibility.',
+        component:
+          'A versatile modal and drawer component with comprehensive features including focus trapping, animations, and accessibility.',
       },
     },
   },
@@ -67,11 +68,11 @@ export default meta;
 type Story = StoryObj<typeof Modal>;
 
 // Helper component for stories
-const ModalTrigger = ({ 
-  children, 
+const ModalTrigger = ({
+  children,
   buttonText = 'Open Modal',
-  ...modalProps 
-}: { 
+  ...modalProps
+}: {
   children: React.ReactNode;
   buttonText?: string;
 } & Omit<ModalProps, 'open' | 'onClose' | 'children'>) => {
@@ -79,14 +80,8 @@ const ModalTrigger = ({
 
   return (
     <>
-      <Button onClick={() => setIsOpen(true)}>
-        {buttonText}
-      </Button>
-      <Modal
-        {...modalProps}
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-      >
+      <Button onClick={() => setIsOpen(true)}>{buttonText}</Button>
+      <Modal {...modalProps} open={isOpen} onClose={() => setIsOpen(false)}>
         {children}
       </Modal>
     </>
@@ -107,8 +102,14 @@ export const Default: Story = {
       }}
     >
       <div className="space-y-4">
-        <p>This is the modal content. It can contain any React components or HTML elements.</p>
-        <p>The modal includes focus trapping, keyboard navigation, and accessibility features.</p>
+        <p>
+          This is the modal content. It can contain any React components or HTML
+          elements.
+        </p>
+        <p>
+          The modal includes focus trapping, keyboard navigation, and
+          accessibility features.
+        </p>
       </div>
     </ModalTrigger>
   ),
@@ -125,7 +126,7 @@ export const Sizes: Story = {
       >
         <p>This is an extra small modal.</p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Small"
         size="sm"
@@ -133,18 +134,21 @@ export const Sizes: Story = {
       >
         <p>This is a small modal with more content space.</p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Medium"
         size="md"
         header={{ title: 'Medium Modal' }}
       >
         <div className="space-y-4">
-          <p>This is a medium modal that provides a good balance between content space and screen usage.</p>
+          <p>
+            This is a medium modal that provides a good balance between content
+            space and screen usage.
+          </p>
           <p>Perfect for most use cases like forms and detailed information.</p>
         </div>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Large"
         size="lg"
@@ -152,11 +156,16 @@ export const Sizes: Story = {
       >
         <div className="space-y-4">
           <p>This is a large modal suitable for complex content.</p>
-          <p>It provides more space for detailed forms, tables, or rich content.</p>
-          <p>Use this size when you need to display substantial amounts of information.</p>
+          <p>
+            It provides more space for detailed forms, tables, or rich content.
+          </p>
+          <p>
+            Use this size when you need to display substantial amounts of
+            information.
+          </p>
         </div>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Full Screen"
         size="full"
@@ -164,8 +173,12 @@ export const Sizes: Story = {
       >
         <div className="space-y-4">
           <p>This is a full screen modal that takes up the entire viewport.</p>
-          <p>Perfect for immersive experiences or when you need maximum space.</p>
-          <p>Often used for detailed workflows, complex forms, or media viewers.</p>
+          <p>
+            Perfect for immersive experiences or when you need maximum space.
+          </p>
+          <p>
+            Often used for detailed workflows, complex forms, or media viewers.
+          </p>
         </div>
       </ModalTrigger>
     </div>
@@ -188,7 +201,7 @@ export const Drawers: Story = {
           <p>Great for navigation menus or side panels.</p>
         </div>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Right Drawer"
         variant="drawer"
@@ -201,7 +214,7 @@ export const Drawers: Story = {
           <p>Perfect for settings panels or additional information.</p>
         </div>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Top Drawer"
         variant="drawer"
@@ -209,9 +222,12 @@ export const Drawers: Story = {
         size="sm"
         header={{ title: 'Top Drawer' }}
       >
-        <p>This is a top-positioned drawer, useful for notifications or quick actions.</p>
+        <p>
+          This is a top-positioned drawer, useful for notifications or quick
+          actions.
+        </p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Bottom Drawer"
         variant="drawer"
@@ -221,7 +237,10 @@ export const Drawers: Story = {
       >
         <div className="space-y-4">
           <p>This is a bottom-positioned drawer.</p>
-          <p>Commonly used on mobile devices for action sheets or additional content.</p>
+          <p>
+            Commonly used on mobile devices for action sheets or additional
+            content.
+          </p>
         </div>
       </ModalTrigger>
     </div>
@@ -239,7 +258,7 @@ export const Animations: Story = {
       >
         <p>This modal uses a fade animation effect.</p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Slide Animation"
         animation="slide"
@@ -247,7 +266,7 @@ export const Animations: Story = {
       >
         <p>This modal uses a slide animation effect.</p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Scale Animation"
         animation="scale"
@@ -255,7 +274,7 @@ export const Animations: Story = {
       >
         <p>This modal uses a scale animation effect.</p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="No Animation"
         animation="none"
@@ -280,7 +299,7 @@ export const HeaderVariations: Story = {
       >
         <p>Modal with basic header configuration.</p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Header with Actions"
         header={{
@@ -299,7 +318,7 @@ export const HeaderVariations: Story = {
       >
         <p>Modal with action buttons in the header.</p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="No Close Button"
         header={{
@@ -310,7 +329,10 @@ export const HeaderVariations: Story = {
           primaryAction: <Button variant="primary">Done</Button>,
         }}
       >
-        <p>Modal without a close button in the header. Use the footer button to close.</p>
+        <p>
+          Modal without a close button in the header. Use the footer button to
+          close.
+        </p>
       </ModalTrigger>
     </div>
   ),
@@ -330,19 +352,23 @@ export const FooterVariations: Story = {
       >
         <p>Modal with standard footer buttons.</p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Left Aligned Footer"
         header={{ title: 'Left Aligned Footer' }}
         footer={{
           align: 'left',
-          content: <span className="text-sm text-gray-500">Last saved: 2 minutes ago</span>,
+          content: (
+            <span className="text-sm text-gray-500">
+              Last saved: 2 minutes ago
+            </span>
+          ),
           primaryAction: <Button variant="primary">Save</Button>,
         }}
       >
         <p>Modal with left-aligned footer content.</p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Multiple Actions"
         header={{ title: 'Multiple Actions' }}
@@ -375,7 +401,7 @@ export const ScrollableContent: Story = {
       size="md"
       maxHeight="400px"
       header={{ title: 'Scrollable Content', sticky: true }}
-      footer={{ 
+      footer={{
         primaryAction: <Button variant="primary">Save</Button>,
         sticky: true,
       }}
@@ -384,7 +410,10 @@ export const ScrollableContent: Story = {
         {Array.from({ length: 20 }, (_, i) => (
           <div key={i} className="p-4 border border-gray-200 rounded">
             <h3 className="font-semibold">Section {i + 1}</h3>
-            <p>This is content section {i + 1}. The modal has a maximum height and this content will be scrollable when it exceeds that height.</p>
+            <p>
+              This is content section {i + 1}. The modal has a maximum height
+              and this content will be scrollable when it exceeds that height.
+            </p>
           </div>
         ))}
       </div>
@@ -403,7 +432,7 @@ export const LoadingAndError: Story = {
       >
         <p>This content won't be visible due to loading state.</p>
       </ModalTrigger>
-      
+
       <ModalTrigger
         buttonText="Error Modal"
         header={{ title: 'Error State' }}
@@ -431,7 +460,9 @@ export const NonClosable: Story = {
       <div className="text-center py-8">
         <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <p>Please wait while we process your request...</p>
-        <p className="text-sm text-gray-500 mt-2">This modal cannot be closed until processing is complete.</p>
+        <p className="text-sm text-gray-500 mt-2">
+          This modal cannot be closed until processing is complete.
+        </p>
       </div>
     </ModalTrigger>
   ),
@@ -441,7 +472,7 @@ export const NonClosable: Story = {
 export const ScanProgressModal: Story = {
   render: () => {
     const [progress, setProgress] = useState(45);
-    
+
     return (
       <ModalTrigger
         buttonText="Scan Progress Modal"
@@ -481,7 +512,7 @@ export const ScanProgressModal: Story = {
               <span className="text-sm text-gray-600">{progress}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
+              <div
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
@@ -561,7 +592,12 @@ export const Interactive: Story = {
             <label className="block text-sm font-medium mb-1">Size</label>
             <select
               value={modalConfig.size}
-              onChange={(e) => setModalConfig(prev => ({ ...prev, size: e.target.value as any }))}
+              onChange={(e) =>
+                setModalConfig((prev) => ({
+                  ...prev,
+                  size: e.target.value as any,
+                }))
+              }
               className="border border-gray-300 rounded px-2 py-1 text-sm"
             >
               <option value="xs">Extra Small</option>
@@ -572,24 +608,34 @@ export const Interactive: Story = {
               <option value="2xl">2X Large</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Variant</label>
             <select
               value={modalConfig.variant}
-              onChange={(e) => setModalConfig(prev => ({ ...prev, variant: e.target.value as any }))}
+              onChange={(e) =>
+                setModalConfig((prev) => ({
+                  ...prev,
+                  variant: e.target.value as any,
+                }))
+              }
               className="border border-gray-300 rounded px-2 py-1 text-sm"
             >
               <option value="modal">Modal</option>
               <option value="drawer">Drawer</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Animation</label>
             <select
               value={modalConfig.animation}
-              onChange={(e) => setModalConfig(prev => ({ ...prev, animation: e.target.value as any }))}
+              onChange={(e) =>
+                setModalConfig((prev) => ({
+                  ...prev,
+                  animation: e.target.value as any,
+                }))
+              }
               className="border border-gray-300 rounded px-2 py-1 text-sm"
             >
               <option value="fade">Fade</option>
@@ -598,13 +644,18 @@ export const Interactive: Story = {
               <option value="none">None</option>
             </select>
           </div>
-          
+
           {modalConfig.variant === 'drawer' && (
             <div>
               <label className="block text-sm font-medium mb-1">Position</label>
               <select
                 value={modalConfig.position}
-                onChange={(e) => setModalConfig(prev => ({ ...prev, position: e.target.value as any }))}
+                onChange={(e) =>
+                  setModalConfig((prev) => ({
+                    ...prev,
+                    position: e.target.value as any,
+                  }))
+                }
                 className="border border-gray-300 rounded px-2 py-1 text-sm"
               >
                 <option value="left">Left</option>
@@ -634,11 +685,19 @@ export const Interactive: Story = {
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-medium mb-2">Current Configuration:</h4>
               <ul className="text-sm space-y-1">
-                <li><strong>Variant:</strong> {modalConfig.variant}</li>
-                <li><strong>Size:</strong> {modalConfig.size}</li>
-                <li><strong>Animation:</strong> {modalConfig.animation}</li>
+                <li>
+                  <strong>Variant:</strong> {modalConfig.variant}
+                </li>
+                <li>
+                  <strong>Size:</strong> {modalConfig.size}
+                </li>
+                <li>
+                  <strong>Animation:</strong> {modalConfig.animation}
+                </li>
                 {modalConfig.variant === 'drawer' && (
-                  <li><strong>Position:</strong> {modalConfig.position}</li>
+                  <li>
+                    <strong>Position:</strong> {modalConfig.position}
+                  </li>
                 )}
               </ul>
             </div>

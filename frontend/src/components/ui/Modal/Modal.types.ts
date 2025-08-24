@@ -273,9 +273,11 @@ export const defaultAnimations: Record<ModalAnimation, AnimationConfig> = {
   },
   slide: {
     enter: 'translate-y-4 opacity-0 sm:translate-y-0 sm:scale-95',
-    enterActive: 'translate-y-0 opacity-100 sm:scale-100 transition-all duration-300 ease-out',
+    enterActive:
+      'translate-y-0 opacity-100 sm:scale-100 transition-all duration-300 ease-out',
     exit: 'translate-y-0 opacity-100 sm:scale-100',
-    exitActive: 'translate-y-4 opacity-0 sm:translate-y-0 sm:scale-95 transition-all duration-200 ease-in',
+    exitActive:
+      'translate-y-4 opacity-0 sm:translate-y-0 sm:scale-95 transition-all duration-200 ease-in',
     duration: 300,
   },
   scale: {

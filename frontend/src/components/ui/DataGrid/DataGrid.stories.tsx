@@ -30,10 +30,10 @@ import {
 
 import { DataGrid } from './DataGrid';
 import { Button } from '../Button';
-import type { 
-  DataGridProps, 
-  DataGridColumn, 
-  FileEntry, 
+import type {
+  DataGridProps,
+  DataGridColumn,
+  FileEntry,
   ScanResult,
   SelectionState,
   SortConfig,
@@ -46,7 +46,8 @@ const meta: Meta<typeof DataGrid> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'A comprehensive data grid component with advanced features for displaying and managing tabular data, specifically optimized for scan monitoring and file management systems.',
+        component:
+          'A comprehensive data grid component with advanced features for displaying and managing tabular data, specifically optimized for scan monitoring and file management systems.',
       },
     },
   },
@@ -80,37 +81,85 @@ const generateFileData = (count: number): FileEntry[] => {
   const fileTypes = [
     { type: 'file', extension: 'jpg', mimeType: 'image/jpeg', icon: Image },
     { type: 'file', extension: 'png', mimeType: 'image/png', icon: Image },
-    { type: 'file', extension: 'pdf', mimeType: 'application/pdf', icon: FileText },
-    { type: 'file', extension: 'docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', icon: FileText },
+    {
+      type: 'file',
+      extension: 'pdf',
+      mimeType: 'application/pdf',
+      icon: FileText,
+    },
+    {
+      type: 'file',
+      extension: 'docx',
+      mimeType:
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      icon: FileText,
+    },
     { type: 'file', extension: 'mp3', mimeType: 'audio/mpeg', icon: Music },
     { type: 'file', extension: 'mp4', mimeType: 'video/mp4', icon: Video },
-    { type: 'file', extension: 'zip', mimeType: 'application/zip', icon: Archive },
-    { type: 'file', extension: 'js', mimeType: 'application/javascript', icon: Code },
-    { type: 'directory', extension: undefined, mimeType: undefined, icon: Folder },
+    {
+      type: 'file',
+      extension: 'zip',
+      mimeType: 'application/zip',
+      icon: Archive,
+    },
+    {
+      type: 'file',
+      extension: 'js',
+      mimeType: 'application/javascript',
+      icon: Code,
+    },
+    {
+      type: 'directory',
+      extension: undefined,
+      mimeType: undefined,
+      icon: Folder,
+    },
   ];
 
   const names = [
-    'Documents', 'Photos', 'Downloads', 'Desktop', 'Music', 'Videos',
-    'important_document', 'vacation_photos', 'project_files', 'backup',
-    'presentation', 'spreadsheet', 'notes', 'contracts', 'invoices',
-    'family_photos', 'work_files', 'personal', 'archive', 'temp'
+    'Documents',
+    'Photos',
+    'Downloads',
+    'Desktop',
+    'Music',
+    'Videos',
+    'important_document',
+    'vacation_photos',
+    'project_files',
+    'backup',
+    'presentation',
+    'spreadsheet',
+    'notes',
+    'contracts',
+    'invoices',
+    'family_photos',
+    'work_files',
+    'personal',
+    'archive',
+    'temp',
   ];
 
   return Array.from({ length: count }, (_, i) => {
     const fileType = fileTypes[Math.floor(Math.random() * fileTypes.length)];
     const baseName = names[Math.floor(Math.random() * names.length)];
-    const name = fileType.type === 'directory' 
-      ? baseName 
-      : `${baseName}.${fileType.extension}`;
-    
-    const size = fileType.type === 'directory' 
-      ? Math.floor(Math.random() * 1000000000) // Up to 1GB for directories
-      : Math.floor(Math.random() * 50000000); // Up to 50MB for files
+    const name =
+      fileType.type === 'directory'
+        ? baseName
+        : `${baseName}.${fileType.extension}`;
+
+    const size =
+      fileType.type === 'directory'
+        ? Math.floor(Math.random() * 1000000000) // Up to 1GB for directories
+        : Math.floor(Math.random() * 50000000); // Up to 50MB for files
 
     const baseDate = new Date(2023, 0, 1);
     const randomDays = Math.floor(Math.random() * 365);
-    const dateCreated = new Date(baseDate.getTime() + randomDays * 24 * 60 * 60 * 1000);
-    const dateModified = new Date(dateCreated.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000);
+    const dateCreated = new Date(
+      baseDate.getTime() + randomDays * 24 * 60 * 60 * 1000,
+    );
+    const dateModified = new Date(
+      dateCreated.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000,
+    );
 
     return {
       id: `file-${i}`,
@@ -128,26 +177,50 @@ const generateFileData = (count: number): FileEntry[] => {
       group: 'staff',
       isHidden: Math.random() < 0.1,
       isSymlink: Math.random() < 0.05,
-      checksum: fileType.type === 'file' ? `md5:${Math.random().toString(36).substr(2, 32)}` : undefined,
+      checksum:
+        fileType.type === 'file'
+          ? `md5:${Math.random().toString(36).substr(2, 32)}`
+          : undefined,
       scanId: `scan-${Math.floor(Math.random() * 10)}`,
     };
   });
 };
 
 const generateScanData = (count: number): ScanResult[] => {
-  const statuses = ['completed', 'running', 'failed', 'cancelled', 'pending'] as const;
-  const phases = ['volume_scan', 'filesystem_indexing', 'media_enrichment'] as const;
+  const statuses = [
+    'completed',
+    'running',
+    'failed',
+    'cancelled',
+    'pending',
+  ] as const;
+  const phases = [
+    'volume_scan',
+    'filesystem_indexing',
+    'media_enrichment',
+  ] as const;
 
   return Array.from({ length: count }, (_, i) => {
     const status = statuses[Math.floor(Math.random() * statuses.length)];
     const phase = phases[Math.floor(Math.random() * phases.length)];
-    const startTime = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
+    const startTime = new Date(
+      Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
+    );
     const duration = Math.random() * 2 * 60 * 60 * 1000; // Up to 2 hours
-    const endTime = status === 'completed' ? new Date(startTime.getTime() + duration) : undefined;
-    
+    const endTime =
+      status === 'completed'
+        ? new Date(startTime.getTime() + duration)
+        : undefined;
+
     const filesFound = Math.floor(Math.random() * 10000);
-    const filesProcessed = status === 'completed' ? filesFound : Math.floor(Math.random() * filesFound);
-    const progress = status === 'completed' ? 100 : Math.floor((filesProcessed / filesFound) * 100);
+    const filesProcessed =
+      status === 'completed'
+        ? filesFound
+        : Math.floor(Math.random() * filesFound);
+    const progress =
+      status === 'completed'
+        ? 100
+        : Math.floor((filesProcessed / filesFound) * 100);
 
     return {
       id: `scan-${i}`,
@@ -166,7 +239,10 @@ const generateScanData = (count: number): ScanResult[] => {
       totalSize: Math.floor(Math.random() * 1000000000000), // Up to 1TB
       processedSize: Math.floor(Math.random() * 1000000000000),
       speed: Math.floor(Math.random() * 1000), // Files per second
-      estimatedCompletion: status === 'running' ? new Date(Date.now() + Math.random() * 60 * 60 * 1000) : undefined,
+      estimatedCompletion:
+        status === 'running'
+          ? new Date(Date.now() + Math.random() * 60 * 60 * 1000)
+          : undefined,
     };
   });
 };
@@ -175,7 +251,7 @@ const generateScanData = (count: number): ScanResult[] => {
 const FileIcon: React.FC<{ file: FileEntry }> = ({ file }) => {
   const getIcon = () => {
     if (file.type === 'directory') return Folder;
-    
+
     switch (file.extension) {
       case 'jpg':
       case 'jpeg':
@@ -226,24 +302,50 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'completed':
-        return { icon: CheckCircle, color: 'text-green-600 bg-green-100', label: 'Completed' };
+        return {
+          icon: CheckCircle,
+          color: 'text-green-600 bg-green-100',
+          label: 'Completed',
+        };
       case 'running':
-        return { icon: Activity, color: 'text-blue-600 bg-blue-100', label: 'Running' };
+        return {
+          icon: Activity,
+          color: 'text-blue-600 bg-blue-100',
+          label: 'Running',
+        };
       case 'failed':
-        return { icon: AlertTriangle, color: 'text-red-600 bg-red-100', label: 'Failed' };
+        return {
+          icon: AlertTriangle,
+          color: 'text-red-600 bg-red-100',
+          label: 'Failed',
+        };
       case 'cancelled':
-        return { icon: Clock, color: 'text-gray-600 bg-gray-100', label: 'Cancelled' };
+        return {
+          icon: Clock,
+          color: 'text-gray-600 bg-gray-100',
+          label: 'Cancelled',
+        };
       case 'pending':
-        return { icon: Clock, color: 'text-yellow-600 bg-yellow-100', label: 'Pending' };
+        return {
+          icon: Clock,
+          color: 'text-yellow-600 bg-yellow-100',
+          label: 'Pending',
+        };
       default:
-        return { icon: Clock, color: 'text-gray-600 bg-gray-100', label: status };
+        return {
+          icon: Clock,
+          color: 'text-gray-600 bg-gray-100',
+          label: status,
+        };
     }
   };
 
   const { icon: Icon, color, label } = getStatusConfig(status);
 
   return (
-    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+    <span
+      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${color}`}
+    >
       <Icon className="w-3 h-3 mr-1" />
       {label}
     </span>
@@ -275,7 +377,9 @@ const fileColumns: DataGridColumn<FileEntry>[] = [
     render: (value, row) => (
       <div className="flex items-center space-x-2 min-w-0">
         <FileIcon file={row} />
-        <span className="truncate" title={value}>{value}</span>
+        <span className="truncate" title={value}>
+          {value}
+        </span>
         {row.isSymlink && <span className="text-xs text-blue-600">→</span>}
       </div>
     ),
@@ -295,7 +399,10 @@ const fileColumns: DataGridColumn<FileEntry>[] = [
     title: 'Type',
     sortable: true,
     width: '100px',
-    render: (value, row) => row.type === 'directory' ? 'Folder' : (row.extension?.toUpperCase() || 'File'),
+    render: (value, row) =>
+      row.type === 'directory'
+        ? 'Folder'
+        : row.extension?.toUpperCase() || 'File',
   },
   {
     id: 'dateModified',
@@ -311,7 +418,9 @@ const fileColumns: DataGridColumn<FileEntry>[] = [
     title: 'Permissions',
     sortable: true,
     width: '120px',
-    render: (value) => <code className="text-xs bg-gray-100 px-1 rounded">{value}</code>,
+    render: (value) => (
+      <code className="text-xs bg-gray-100 px-1 rounded">{value}</code>
+    ),
   },
   {
     id: 'actions',
@@ -362,7 +471,9 @@ const scanColumns: DataGridColumn<ScanResult>[] = [
     title: 'Scan ID',
     sortable: true,
     width: '120px',
-    render: (value) => <code className="text-xs bg-gray-100 px-1 rounded">{value}</code>,
+    render: (value) => (
+      <code className="text-xs bg-gray-100 px-1 rounded">{value}</code>
+    ),
   },
   {
     id: 'status',
@@ -439,7 +550,7 @@ const scanColumns: DataGridColumn<ScanResult>[] = [
 export const Default: Story = {
   render: () => {
     const data = useMemo(() => generateFileData(10), []);
-    
+
     return (
       <div className="p-4">
         <DataGrid
@@ -463,7 +574,7 @@ export const Default: Story = {
 export const Sizes: Story = {
   render: () => {
     const data = useMemo(() => generateFileData(5), []);
-    
+
     return (
       <div className="p-4 space-y-6">
         <div>
@@ -475,7 +586,7 @@ export const Sizes: Story = {
             height="200px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-2">Medium</h3>
           <DataGrid
@@ -485,7 +596,7 @@ export const Sizes: Story = {
             height="200px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-2">Large</h3>
           <DataGrid
@@ -504,7 +615,7 @@ export const Sizes: Story = {
 export const Variants: Story = {
   render: () => {
     const data = useMemo(() => generateFileData(8), []);
-    
+
     return (
       <div className="p-4 space-y-6">
         <div>
@@ -516,7 +627,7 @@ export const Variants: Story = {
             height="200px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-2">Striped</h3>
           <DataGrid
@@ -526,7 +637,7 @@ export const Variants: Story = {
             height="200px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-2">Bordered</h3>
           <DataGrid
@@ -536,7 +647,7 @@ export const Variants: Story = {
             height="200px"
           />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-semibold mb-2">Minimal</h3>
           <DataGrid
@@ -560,7 +671,7 @@ export const Selection: Story = {
       isAllSelected: false,
       isIndeterminate: false,
     });
-    
+
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -569,7 +680,7 @@ export const Selection: Story = {
             Selected: {selection.selectedRows.size} of {data.length}
           </div>
         </div>
-        
+
         <DataGrid
           data={data}
           columns={fileColumns}
@@ -579,17 +690,19 @@ export const Selection: Story = {
           onSelectionChange={setSelection}
           onRowClick={action('rowClick')}
         />
-        
+
         <div className="flex space-x-2">
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             variant="outline"
-            onClick={() => setSelection(prev => ({ ...prev, selectedRows: new Set() }))}
+            onClick={() =>
+              setSelection((prev) => ({ ...prev, selectedRows: new Set() }))
+            }
           >
             Clear Selection
           </Button>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             variant="outline"
             onClick={() => action('bulkAction')([...selection.selectedRows])}
             disabled={selection.selectedRows.size === 0}
@@ -606,19 +719,24 @@ export const Selection: Story = {
 export const SortingAndFiltering: Story = {
   render: () => {
     const data = useMemo(() => generateFileData(20), []);
-    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: '', direction: null });
-    
+    const [sortConfig, setSortConfig] = useState<SortConfig>({
+      key: '',
+      direction: null,
+    });
+
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Sorting Example</h3>
           <div className="text-sm text-gray-600">
             {sortConfig.direction && (
-              <>Sort: {sortConfig.key} ({sortConfig.direction})</>
+              <>
+                Sort: {sortConfig.key} ({sortConfig.direction})
+              </>
             )}
           </div>
         </div>
-        
+
         <DataGrid
           data={data}
           columns={fileColumns}
@@ -637,33 +755,42 @@ export const SortingAndFiltering: Story = {
 // Loading states
 export const LoadingStates: Story = {
   render: () => {
-    const [loadingState, setLoadingState] = useState<'idle' | 'loading' | 'error'>('idle');
+    const [loadingState, setLoadingState] = useState<
+      'idle' | 'loading' | 'error'
+    >('idle');
     const data = useMemo(() => generateFileData(10), []);
-    
+
     const simulateLoading = () => {
       setLoadingState('loading');
       setTimeout(() => setLoadingState('idle'), 2000);
     };
-    
+
     const simulateError = () => {
       setLoadingState('error');
     };
-    
+
     return (
       <div className="p-4 space-y-4">
         <div className="flex space-x-2">
           <Button onClick={simulateLoading}>Simulate Loading</Button>
-          <Button onClick={simulateError} variant="destructive">Simulate Error</Button>
-          <Button onClick={() => setLoadingState('idle')} variant="outline">Reset</Button>
+          <Button onClick={simulateError} variant="destructive">
+            Simulate Error
+          </Button>
+          <Button onClick={() => setLoadingState('idle')} variant="outline">
+            Reset
+          </Button>
         </div>
-        
+
         <DataGrid
           data={loadingState === 'idle' ? data : []}
           columns={fileColumns}
           height="400px"
           loading={{
             state: loadingState,
-            message: loadingState === 'loading' ? 'Loading files...' : 'Failed to load files',
+            message:
+              loadingState === 'loading'
+                ? 'Loading files...'
+                : 'Failed to load files',
           }}
           emptyState={{
             message: 'No files found',
@@ -683,8 +810,10 @@ export const LoadingStates: Story = {
 export const ScanMonitoring: Story = {
   render: () => {
     const scanData = useMemo(() => generateScanData(15), []);
-    const [selectedScans, setSelectedScans] = useState<Set<string | number>>(new Set());
-    
+    const [selectedScans, setSelectedScans] = useState<Set<string | number>>(
+      new Set(),
+    );
+
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -700,7 +829,7 @@ export const ScanMonitoring: Story = {
             </Button>
           </div>
         </div>
-        
+
         <DataGrid
           data={scanData}
           columns={scanColumns}
@@ -708,13 +837,15 @@ export const ScanMonitoring: Story = {
           variant="striped"
           selectionMode="multiple"
           selectedRows={selectedScans}
-          onSelectionChange={(selection) => setSelectedScans(selection.selectedRows)}
+          onSelectionChange={(selection) =>
+            setSelectedScans(selection.selectedRows)
+          }
           sortable
           hoverable
           onRowClick={action('viewScanDetails')}
           onRowDoubleClick={action('openScanDetails')}
         />
-        
+
         {selectedScans.size > 0 && (
           <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg">
             <span className="text-sm text-blue-700">
@@ -739,9 +870,13 @@ export const ScanMonitoring: Story = {
 export const FileExplorer: Story = {
   render: () => {
     const fileData = useMemo(() => generateFileData(50), []);
-    const [selectedFiles, setSelectedFiles] = useState<Set<string | number>>(new Set());
-    const [expandedRows, setExpandedRows] = useState<Set<string | number>>(new Set());
-    
+    const [selectedFiles, setSelectedFiles] = useState<Set<string | number>>(
+      new Set(),
+    );
+    const [expandedRows, setExpandedRows] = useState<Set<string | number>>(
+      new Set(),
+    );
+
     const expandableColumns: DataGridColumn<FileEntry>[] = [
       ...fileColumns.slice(0, -1), // Remove actions column
       {
@@ -801,7 +936,7 @@ export const FileExplorer: Story = {
         ),
       },
     ];
-    
+
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -824,7 +959,7 @@ export const FileExplorer: Story = {
             </Button>
           </div>
         </div>
-        
+
         <DataGrid
           data={fileData}
           columns={expandableColumns}
@@ -832,7 +967,9 @@ export const FileExplorer: Story = {
           variant="default"
           selectionMode="multiple"
           selectedRows={selectedFiles}
-          onSelectionChange={(selection) => setSelectedFiles(selection.selectedRows)}
+          onSelectionChange={(selection) =>
+            setSelectedFiles(selection.selectedRows)
+          }
           expandableRows
           rowExpansion={{
             render: (file) => (
@@ -851,10 +988,12 @@ export const FileExplorer: Story = {
                     <strong>Scan ID:</strong> {file.scanId}
                   </div>
                   <div>
-                    <strong>Created:</strong> {file.dateCreated.toLocaleString()}
+                    <strong>Created:</strong>{' '}
+                    {file.dateCreated.toLocaleString()}
                   </div>
                   <div>
-                    <strong>Accessed:</strong> {file.dateAccessed?.toLocaleString() || 'N/A'}
+                    <strong>Accessed:</strong>{' '}
+                    {file.dateAccessed?.toLocaleString() || 'N/A'}
                   </div>
                 </div>
               </div>
@@ -868,7 +1007,7 @@ export const FileExplorer: Story = {
           onRowDoubleClick={action('openFile')}
           onRowContextMenu={action('contextMenu')}
         />
-        
+
         {selectedFiles.size > 0 && (
           <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
             <span className="text-sm text-blue-700">
@@ -900,7 +1039,7 @@ export const LargeDataset: Story = {
   render: () => {
     const [dataSize, setDataSize] = useState(100);
     const data = useMemo(() => generateFileData(dataSize), [dataSize]);
-    
+
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -920,7 +1059,7 @@ export const LargeDataset: Story = {
             </select>
           </div>
         </div>
-        
+
         <DataGrid
           data={data}
           columns={fileColumns}
@@ -930,7 +1069,7 @@ export const LargeDataset: Story = {
           sortable
           hoverable
         />
-        
+
         <div className="text-sm text-gray-600">
           Rendering {data.length.toLocaleString()} rows
         </div>
@@ -952,9 +1091,12 @@ export const Interactive: Story = {
       bordered: false,
       dataSize: 20,
     });
-    
-    const data = useMemo(() => generateFileData(config.dataSize), [config.dataSize]);
-    
+
+    const data = useMemo(
+      () => generateFileData(config.dataSize),
+      [config.dataSize],
+    );
+
     return (
       <div className="p-4 space-y-6">
         {/* Controls */}
@@ -963,7 +1105,9 @@ export const Interactive: Story = {
             <label className="block text-sm font-medium mb-1">Size</label>
             <select
               value={config.size}
-              onChange={(e) => setConfig(prev => ({ ...prev, size: e.target.value as any }))}
+              onChange={(e) =>
+                setConfig((prev) => ({ ...prev, size: e.target.value as any }))
+              }
               className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
             >
               <option value="sm">Small</option>
@@ -971,12 +1115,17 @@ export const Interactive: Story = {
               <option value="lg">Large</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Variant</label>
             <select
               value={config.variant}
-              onChange={(e) => setConfig(prev => ({ ...prev, variant: e.target.value as any }))}
+              onChange={(e) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  variant: e.target.value as any,
+                }))
+              }
               className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
             >
               <option value="default">Default</option>
@@ -985,12 +1134,17 @@ export const Interactive: Story = {
               <option value="minimal">Minimal</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Selection</label>
             <select
               value={config.selectionMode}
-              onChange={(e) => setConfig(prev => ({ ...prev, selectionMode: e.target.value as any }))}
+              onChange={(e) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  selectionMode: e.target.value as any,
+                }))
+              }
               className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
             >
               <option value="none">None</option>
@@ -998,29 +1152,36 @@ export const Interactive: Story = {
               <option value="multiple">Multiple</option>
             </select>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <label className="flex items-center">
               <input
                 type="checkbox"
                 checked={config.sortable}
-                onChange={(e) => setConfig(prev => ({ ...prev, sortable: e.target.checked }))}
+                onChange={(e) =>
+                  setConfig((prev) => ({ ...prev, sortable: e.target.checked }))
+                }
                 className="mr-2"
               />
               Sortable
             </label>
-            
+
             <label className="flex items-center">
               <input
                 type="checkbox"
                 checked={config.hoverable}
-                onChange={(e) => setConfig(prev => ({ ...prev, hoverable: e.target.checked }))}
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    hoverable: e.target.checked,
+                  }))
+                }
                 className="mr-2"
               />
               Hoverable
             </label>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Data Size</label>
             <input
@@ -1028,7 +1189,12 @@ export const Interactive: Story = {
               min="5"
               max="100"
               value={config.dataSize}
-              onChange={(e) => setConfig(prev => ({ ...prev, dataSize: Number(e.target.value) }))}
+              onChange={(e) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  dataSize: Number(e.target.value),
+                }))
+              }
               className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
             />
           </div>
@@ -1050,9 +1216,10 @@ export const Interactive: Story = {
           onSelectionChange={action('selectionChange')}
           onSortChange={action('sortChange')}
         />
-        
+
         <div className="text-sm text-gray-600">
-          Configuration: {config.size} • {config.variant} • {config.selectionMode} selection • {data.length} rows
+          Configuration: {config.size} • {config.variant} •{' '}
+          {config.selectionMode} selection • {data.length} rows
         </div>
       </div>
     );

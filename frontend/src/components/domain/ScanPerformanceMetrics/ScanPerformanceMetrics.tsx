@@ -10,7 +10,7 @@ import {
   AreaChart,
   Area,
   BarChart,
-  Bar
+  Bar,
 } from 'recharts';
 import {
   Activity,
@@ -21,18 +21,18 @@ import {
   Clock,
   AlertTriangle,
   Download,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { MetricCard } from '../../ui/MetricCard';
 import { formatBytes, formatNumber } from '../../../utils';
-import type { 
-  ScanPerformanceMetricsProps, 
-  MetricChartProps, 
+import type {
+  ScanPerformanceMetricsProps,
+  MetricChartProps,
   PerformanceSummaryProps,
-  PerformanceComparisonProps 
+  PerformanceComparisonProps,
 } from './ScanPerformanceMetrics.types';
 
 const MetricChart: React.FC<MetricChartProps> = ({
@@ -48,7 +48,7 @@ const MetricChart: React.FC<MetricChartProps> = ({
   className = '',
 }) => {
   const chartData = useMemo(() => {
-    return data.map(point => ({
+    return data.map((point) => ({
       timestamp: new Date(point.timestamp).getTime(),
       value: point.value,
       formattedTime: new Date(point.timestamp).toLocaleTimeString(),
@@ -62,21 +62,31 @@ const MetricChart: React.FC<MetricChartProps> = ({
       </h4>
       <ResponsiveContainer width="100%" height={height}>
         <LineChart data={chartData}>
-          {showGrid && <CartesianGrid strokeDasharray="3 3" className="opacity-30" />}
+          {showGrid && (
+            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+          )}
           <XAxis
             dataKey="timestamp"
             type="number"
             scale="time"
             domain={['dataMin', 'dataMax']}
-            tickFormatter={xAxisFormatter || ((value) => new Date(value).toLocaleTimeString())}
+            tickFormatter={
+              xAxisFormatter ||
+              ((value) => new Date(value).toLocaleTimeString())
+            }
           />
           <YAxis
             tickFormatter={yAxisFormatter || ((value) => `${value} ${unit}`)}
           />
           {showTooltip && (
             <Tooltip
-              labelFormatter={(value) => new Date(value as number).toLocaleString()}
-              formatter={(value: number) => [`${yAxisFormatter ? yAxisFormatter(value) : `${value} ${unit}`}`, title]}
+              labelFormatter={(value) =>
+                new Date(value as number).toLocaleString()
+              }
+              formatter={(value: number) => [
+                `${yAxisFormatter ? yAxisFormatter(value) : `${value} ${unit}`}`,
+                title,
+              ]}
             />
           )}
           <Line
@@ -99,10 +109,16 @@ const PerformanceSummary: React.FC<PerformanceSummaryProps> = ({
   className = '',
 }) => {
   const summary = useMemo(() => {
-    const latestFiles = data.filesPerSecond[data.filesPerSecond.length - 1]?.value || 0;
-    const latestBytes = data.bytesPerSecond[data.bytesPerSecond.length - 1]?.value || 0;
-    const avgCpu = data.cpuUsage.reduce((sum, p) => sum + p.value, 0) / data.cpuUsage.length || 0;
-    const avgMemory = data.memoryUsage.reduce((sum, p) => sum + p.value, 0) / data.memoryUsage.length || 0;
+    const latestFiles =
+      data.filesPerSecond[data.filesPerSecond.length - 1]?.value || 0;
+    const latestBytes =
+      data.bytesPerSecond[data.bytesPerSecond.length - 1]?.value || 0;
+    const avgCpu =
+      data.cpuUsage.reduce((sum, p) => sum + p.value, 0) /
+        data.cpuUsage.length || 0;
+    const avgMemory =
+      data.memoryUsage.reduce((sum, p) => sum + p.value, 0) /
+        data.memoryUsage.length || 0;
     const currentErrors = data.errorRate[data.errorRate.length - 1]?.value || 0;
 
     return {
@@ -124,8 +140,20 @@ const PerformanceSummary: React.FC<PerformanceSummaryProps> = ({
           title="Files/sec"
           value={formatNumber(summary.throughputFiles)}
           icon={<Activity className="h-4 w-4" />}
-          trend={summary.throughputFiles > 100 ? 'up' : summary.throughputFiles < 50 ? 'down' : undefined}
-          variant={summary.throughputFiles > 100 ? 'success' : summary.throughputFiles < 50 ? 'warning' : 'default'}
+          trend={
+            summary.throughputFiles > 100
+              ? 'up'
+              : summary.throughputFiles < 50
+                ? 'down'
+                : undefined
+          }
+          variant={
+            summary.throughputFiles > 100
+              ? 'success'
+              : summary.throughputFiles < 50
+                ? 'warning'
+                : 'default'
+          }
         />
         <MetricCard
           title="Throughput"
@@ -137,19 +165,37 @@ const PerformanceSummary: React.FC<PerformanceSummaryProps> = ({
           title="CPU Usage"
           value={`${summary.cpuUsage.toFixed(1)}%`}
           icon={<Cpu className="h-4 w-4" />}
-          variant={summary.cpuUsage > 80 ? 'error' : summary.cpuUsage > 60 ? 'warning' : 'success'}
+          variant={
+            summary.cpuUsage > 80
+              ? 'error'
+              : summary.cpuUsage > 60
+                ? 'warning'
+                : 'success'
+          }
         />
         <MetricCard
           title="Memory"
           value={`${summary.memoryUsage.toFixed(1)}%`}
           icon={<HardDrive className="h-4 w-4" />}
-          variant={summary.memoryUsage > 80 ? 'error' : summary.memoryUsage > 60 ? 'warning' : 'success'}
+          variant={
+            summary.memoryUsage > 80
+              ? 'error'
+              : summary.memoryUsage > 60
+                ? 'warning'
+                : 'success'
+          }
         />
         <MetricCard
           title="Error Rate"
           value={`${summary.errorRate.toFixed(2)}%`}
           icon={<AlertTriangle className="h-4 w-4" />}
-          variant={summary.errorRate > 5 ? 'error' : summary.errorRate > 1 ? 'warning' : 'success'}
+          variant={
+            summary.errorRate > 5
+              ? 'error'
+              : summary.errorRate > 1
+                ? 'warning'
+                : 'success'
+          }
         />
       </div>
     </Card>
@@ -170,59 +216,82 @@ const PerformanceComparison: React.FC<PerformanceComparisonProps> = ({
           <div className="text-2xl font-bold text-gray-900 dark:text-white">
             {formatNumber(comparison.currentScan.avgFilesPerSecond)} files/s
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Current Scan</div>
-          <div className={`flex items-center justify-center mt-2 ${
-            comparison.improvement.throughput > 0 ? 'text-green-600' : 'text-red-600'
-          }`}>
-            {comparison.improvement.throughput > 0 ? 
-              <TrendingUp className="h-4 w-4 mr-1" /> : 
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Current Scan
+          </div>
+          <div
+            className={`flex items-center justify-center mt-2 ${
+              comparison.improvement.throughput > 0
+                ? 'text-green-600'
+                : 'text-red-600'
+            }`}
+          >
+            {comparison.improvement.throughput > 0 ? (
+              <TrendingUp className="h-4 w-4 mr-1" />
+            ) : (
               <TrendingDown className="h-4 w-4 mr-1" />
-            }
+            )}
             <span className="text-sm font-medium">
               {Math.abs(comparison.improvement.throughput).toFixed(1)}%
             </span>
           </div>
         </div>
-        
+
         <div className="text-center">
           <div className="text-2xl font-bold text-gray-900 dark:text-white">
             {(comparison.currentScan.avgDuration / 1000).toFixed(1)}s
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Avg Duration</div>
-          <div className={`flex items-center justify-center mt-2 ${
-            comparison.improvement.duration < 0 ? 'text-green-600' : 'text-red-600'
-          }`}>
-            {comparison.improvement.duration < 0 ? 
-              <TrendingUp className="h-4 w-4 mr-1" /> : 
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Avg Duration
+          </div>
+          <div
+            className={`flex items-center justify-center mt-2 ${
+              comparison.improvement.duration < 0
+                ? 'text-green-600'
+                : 'text-red-600'
+            }`}
+          >
+            {comparison.improvement.duration < 0 ? (
+              <TrendingUp className="h-4 w-4 mr-1" />
+            ) : (
               <TrendingDown className="h-4 w-4 mr-1" />
-            }
+            )}
             <span className="text-sm font-medium">
               {Math.abs(comparison.improvement.duration).toFixed(1)}%
             </span>
           </div>
         </div>
-        
+
         <div className="text-center">
           <div className="text-2xl font-bold text-gray-900 dark:text-white">
             {comparison.currentScan.errorRate.toFixed(2)}%
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Error Rate</div>
-          <div className={`flex items-center justify-center mt-2 ${
-            comparison.improvement.errorRate < 0 ? 'text-green-600' : 'text-red-600'
-          }`}>
-            {comparison.improvement.errorRate < 0 ? 
-              <TrendingUp className="h-4 w-4 mr-1" /> : 
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Error Rate
+          </div>
+          <div
+            className={`flex items-center justify-center mt-2 ${
+              comparison.improvement.errorRate < 0
+                ? 'text-green-600'
+                : 'text-red-600'
+            }`}
+          >
+            {comparison.improvement.errorRate < 0 ? (
+              <TrendingUp className="h-4 w-4 mr-1" />
+            ) : (
               <TrendingDown className="h-4 w-4 mr-1" />
-            }
+            )}
             <span className="text-sm font-medium">
               {Math.abs(comparison.improvement.errorRate).toFixed(1)}%
             </span>
           </div>
         </div>
       </div>
-      
+
       <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-        Compared to previous {formatNumber(comparison.previousScans.avgFilesPerSecond)} files/s average
+        Compared to previous{' '}
+        {formatNumber(comparison.previousScans.avgFilesPerSecond)} files/s
+        average
       </div>
     </Card>
   );
@@ -249,9 +318,13 @@ export const ScanPerformanceMetrics: React.FC<ScanPerformanceMetricsProps> = ({
   // Mock data for demonstration - in real app this would come from props or API
   const mockData = useMemo(() => {
     if (data) return data;
-    
+
     const now = Date.now();
-    const generateMetrics = (count: number, baseValue: number, variance: number) => {
+    const generateMetrics = (
+      count: number,
+      baseValue: number,
+      variance: number,
+    ) => {
       return Array.from({ length: count }, (_, i) => ({
         timestamp: new Date(now - (count - i) * 30000).toISOString(),
         value: baseValue + Math.random() * variance - variance / 2,
@@ -274,9 +347,21 @@ export const ScanPerformanceMetrics: React.FC<ScanPerformanceMetricsProps> = ({
       queueDepth: generateMetrics(20, 5, 3),
       averageFileSize: generateMetrics(20, 1024 * 512, 1024 * 256),
       largestFiles: [
-        { path: '/data/videos/large_video.mp4', size: 1024 * 1024 * 500, processingTime: 2500 },
-        { path: '/data/archives/backup.tar.gz', size: 1024 * 1024 * 300, processingTime: 1800 },
-        { path: '/data/images/high_res.psd', size: 1024 * 1024 * 150, processingTime: 900 },
+        {
+          path: '/data/videos/large_video.mp4',
+          size: 1024 * 1024 * 500,
+          processingTime: 2500,
+        },
+        {
+          path: '/data/archives/backup.tar.gz',
+          size: 1024 * 1024 * 300,
+          processingTime: 1800,
+        },
+        {
+          path: '/data/images/high_res.psd',
+          size: 1024 * 1024 * 150,
+          processingTime: 900,
+        },
       ],
       phaseDistribution: [
         { phase: 'Volume Scan', duration: 15000, percentage: 25 },
@@ -284,8 +369,16 @@ export const ScanPerformanceMetrics: React.FC<ScanPerformanceMetricsProps> = ({
         { phase: 'Media Enrichment', duration: 10000, percentage: 17 },
       ],
       historicalComparison: {
-        currentScan: { avgFilesPerSecond: 145, avgDuration: 60000, errorRate: 0.8 },
-        previousScans: { avgFilesPerSecond: 120, avgDuration: 75000, errorRate: 1.2 },
+        currentScan: {
+          avgFilesPerSecond: 145,
+          avgDuration: 60000,
+          errorRate: 0.8,
+        },
+        previousScans: {
+          avgFilesPerSecond: 120,
+          avgDuration: 75000,
+          errorRate: 1.2,
+        },
         improvement: { throughput: 20.8, duration: -20.0, errorRate: -33.3 },
       },
     };
@@ -319,7 +412,9 @@ export const ScanPerformanceMetrics: React.FC<ScanPerformanceMetricsProps> = ({
               Performance Metrics
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {scanId ? `Scan ID: ${scanId}` : 'Real-time scan performance monitoring'}
+              {scanId
+                ? `Scan ID: ${scanId}`
+                : 'Real-time scan performance monitoring'}
               {realTime && (
                 <Badge variant="primary" size="sm" className="ml-2">
                   Live
@@ -327,7 +422,7 @@ export const ScanPerformanceMetrics: React.FC<ScanPerformanceMetricsProps> = ({
               )}
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-3">
             {/* Time range selector */}
             <div className="flex space-x-1">
@@ -342,7 +437,7 @@ export const ScanPerformanceMetrics: React.FC<ScanPerformanceMetricsProps> = ({
                 </Button>
               ))}
             </div>
-            
+
             {/* Export options */}
             {onExportMetrics && (
               <div className="flex space-x-1">
@@ -364,14 +459,12 @@ export const ScanPerformanceMetrics: React.FC<ScanPerformanceMetricsProps> = ({
                 </Button>
               </div>
             )}
-            
+
             {realTime && (
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={isRefreshing}
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <Button variant="ghost" size="sm" disabled={isRefreshing}>
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
+                />
               </Button>
             )}
           </div>
@@ -379,15 +472,15 @@ export const ScanPerformanceMetrics: React.FC<ScanPerformanceMetricsProps> = ({
       </Card>
 
       {/* Performance Summary */}
-      <PerformanceSummary 
-        data={mockData} 
+      <PerformanceSummary
+        data={mockData}
         timeRange={selectedTimeRange}
         className="mb-6"
       />
 
       {/* Comparison */}
       {showComparison && (
-        <PerformanceComparison 
+        <PerformanceComparison
           comparison={mockData.historicalComparison}
           className="mb-6"
         />

@@ -6,11 +6,11 @@ export type { BadgeVariant } from './Badge';
 export { ErrorBoundary, withErrorBoundary } from './ErrorBoundary';
 export type { ErrorBoundaryProps, ErrorFallbackProps } from './ErrorBoundary';
 export { Toast, ToastProvider, useToast } from './Toast';
-export type { 
-  ToastProps, 
+export type {
+  ToastProps,
   ToastRef,
   ToastConfig,
-  ToastVariant, 
+  ToastVariant,
   ToastPosition,
   ToastSize,
   ToastContextValue,
@@ -23,13 +23,13 @@ export type { ErrorStateProps } from './ErrorState';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 export { PhaseIndicator } from './PhaseIndicator';
-export type { 
-  PhaseIndicatorProps, 
-  PhaseIndicatorRef, 
-  Phase, 
+export type {
+  PhaseIndicatorProps,
+  PhaseIndicatorRef,
+  Phase,
   PhaseStatus,
   PhaseOrientation,
-  PhaseSize 
+  PhaseSize,
 } from './PhaseIndicator';
 export { MetricCard } from './MetricCard';
 export type {
@@ -40,7 +40,7 @@ export type {
   MetricStatus,
   MetricTrend,
   MetricCardSize,
-  MetricCardLayout
+  MetricCardLayout,
 } from './MetricCard';
 export { MultiPhaseProgressBar } from './MultiPhaseProgressBar';
 export type {
@@ -64,7 +64,7 @@ export type {
   ModalSize,
   DrawerPosition,
   ModalHeader,
-  ModalFooter
+  ModalFooter,
 } from './Modal';
 export { DataGrid } from './DataGrid';
 export type {
@@ -84,3 +84,15 @@ export type {
 } from './DataGrid';
 export { Checkbox } from './Checkbox';
 export { Input } from './Input';
+
+// Newly added generic components
+export { Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';
+export { ColumnConfig } from './ColumnConfig';
+export type { ColumnConfigProps, ColumnDefinition } from './ColumnConfig';
+export { ViewToggle } from './ViewToggle';
+export type { ViewToggleProps, ViewOption, ViewType } from './ViewToggle';
+export { SortSelector } from './SortSelector';
+export type { SortSelectorProps, SortOption } from './SortSelector';
+export { FilterChips } from './FilterChips';
+export type { FilterChipsProps, FilterChip } from './FilterChips';

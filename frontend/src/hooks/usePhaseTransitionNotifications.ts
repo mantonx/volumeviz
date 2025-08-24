@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { globalPhaseTransitionDetector, type PhaseTransition } from '../utils/phaseTransitionNotifications';
+import {
+  globalPhaseTransitionDetector,
+  type PhaseTransition,
+} from '../utils/phaseTransitionNotifications';
 import type { ComprehensiveScanProgress } from '../components/ui/MultiPhaseProgressBar/MultiPhaseProgressBar.types';
 
 export interface UsePhaseTransitionNotificationsOptions {
@@ -25,7 +28,9 @@ export interface UsePhaseTransitionNotificationsReturn {
   /** Clear transition history */
   clearTransitions: (scanId?: string) => void;
   /** Manually trigger transition detection */
-  detectTransition: (progress: ComprehensiveScanProgress) => PhaseTransition | null;
+  detectTransition: (
+    progress: ComprehensiveScanProgress,
+  ) => PhaseTransition | null;
 }
 
 /**
@@ -33,7 +38,7 @@ export interface UsePhaseTransitionNotificationsReturn {
  * Integrates with the global phase transition detector to track and notify about phase changes
  */
 export const usePhaseTransitionNotifications = (
-  options: UsePhaseTransitionNotificationsOptions = {}
+  options: UsePhaseTransitionNotificationsOptions = {},
 ): UsePhaseTransitionNotificationsReturn => {
   const {
     enabled = true,
@@ -44,10 +49,13 @@ export const usePhaseTransitionNotifications = (
   } = options;
 
   const [transitions, setTransitions] = useState<PhaseTransition[]>([]);
-  const [latestTransition, setLatestTransition] = useState<PhaseTransition | null>(null);
+  const [latestTransition, setLatestTransition] =
+    useState<PhaseTransition | null>(null);
 
   // Get current scan transitions
-  const currentScanTransitions = scanId ? globalPhaseTransitionDetector.getTransitionHistory(scanId) : [];
+  const currentScanTransitions = scanId
+    ? globalPhaseTransitionDetector.getTransitionHistory(scanId)
+    : [];
 
   // Handle new transitions
   const handleTransition = useCallback(
@@ -57,31 +65,33 @@ export const usePhaseTransitionNotifications = (
       if (scanId && transition.scanId !== scanId) return;
 
       setLatestTransition(transition);
-      
-      setTransitions(prev => {
+
+      setTransitions((prev) => {
         const updated = [transition, ...prev];
         return updated.slice(0, maxHistory); // Keep only recent transitions
       });
 
       onTransition?.(transition);
     },
-    [volumeId, scanId, maxHistory, onTransition]
+    [volumeId, scanId, maxHistory, onTransition],
   );
 
   // Subscribe to phase transitions
   useEffect(() => {
     if (!enabled) return;
 
-    const unsubscribe = globalPhaseTransitionDetector.onTransition(handleTransition);
-    
+    const unsubscribe =
+      globalPhaseTransitionDetector.onTransition(handleTransition);
+
     // Load initial recent transitions
-    const recent = globalPhaseTransitionDetector.getRecentTransitions(maxHistory);
-    const filtered = recent.filter(t => {
+    const recent =
+      globalPhaseTransitionDetector.getRecentTransitions(maxHistory);
+    const filtered = recent.filter((t) => {
       if (volumeId && t.volumeId !== volumeId) return false;
       if (scanId && t.scanId !== scanId) return false;
       return true;
     });
-    
+
     setTransitions(filtered);
     if (filtered.length > 0) {
       setLatestTransition(filtered[0]);
@@ -94,7 +104,7 @@ export const usePhaseTransitionNotifications = (
   const clearTransitions = useCallback((targetScanId?: string) => {
     if (targetScanId) {
       globalPhaseTransitionDetector.clearScanData(targetScanId);
-      setTransitions(prev => prev.filter(t => t.scanId !== targetScanId));
+      setTransitions((prev) => prev.filter((t) => t.scanId !== targetScanId));
     } else {
       setTransitions([]);
       setLatestTransition(null);
@@ -102,39 +112,45 @@ export const usePhaseTransitionNotifications = (
   }, []);
 
   // Manually detect transitions from progress data
-  const detectTransition = useCallback((progress: ComprehensiveScanProgress) => {
-    if (!enabled) return null;
+  const detectTransition = useCallback(
+    (progress: ComprehensiveScanProgress) => {
+      if (!enabled) return null;
 
-    // Find the currently running phase
-    const runningPhase = progress.phases?.find(p => p.status === 'running');
-    if (!runningPhase) return null;
+      // Find the currently running phase
+      const runningPhase = progress.phases?.find((p) => p.status === 'running');
+      if (!runningPhase) return null;
 
-    // Calculate metadata
-    const metadata = {
-      filesProcessed: runningPhase.items_processed,
-      bytesProcessed: runningPhase.bytes_processed,
-      errorsEncountered: runningPhase.error_count,
-      performance: runningPhase.items_per_second > 0 ? {
-        averageSpeed: runningPhase.items_per_second,
-        peakSpeed: runningPhase.items_per_second * 1.2, // Estimate peak
-      } : undefined,
-    };
+      // Calculate metadata
+      const metadata = {
+        filesProcessed: runningPhase.items_processed,
+        bytesProcessed: runningPhase.bytes_processed,
+        errorsEncountered: runningPhase.error_count,
+        performance:
+          runningPhase.items_per_second > 0
+            ? {
+                averageSpeed: runningPhase.items_per_second,
+                peakSpeed: runningPhase.items_per_second * 1.2, // Estimate peak
+              }
+            : undefined,
+      };
 
-    const transition = globalPhaseTransitionDetector.updateProgress(
-      progress.scan_id,
-      progress.volume_id,
-      runningPhase.phase_name,
-      runningPhase.status,
-      {
-        filesProcessed: metadata.filesProcessed,
-        bytesProcessed: metadata.bytesProcessed,
-        errorsEncountered: metadata.errorsEncountered,
-        performance: metadata.performance,
-      }
-    );
+      const transition = globalPhaseTransitionDetector.updateProgress(
+        progress.scan_id,
+        progress.volume_id,
+        runningPhase.phase_name,
+        runningPhase.status,
+        {
+          filesProcessed: metadata.filesProcessed,
+          bytesProcessed: metadata.bytesProcessed,
+          errorsEncountered: metadata.errorsEncountered,
+          performance: metadata.performance,
+        },
+      );
 
-    return transition;
-  }, [enabled]);
+      return transition;
+    },
+    [enabled],
+  );
 
   return {
     transitions,

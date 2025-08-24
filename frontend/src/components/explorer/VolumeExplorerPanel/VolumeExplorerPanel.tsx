@@ -234,7 +234,11 @@ export const VolumeExplorerPanel = forwardRef<
               focusedItem: item.id,
             };
           });
-        } else if (multiSelect && event.shiftKey && state.selection.lastSelected) {
+        } else if (
+          multiSelect &&
+          event.shiftKey &&
+          state.selection.lastSelected
+        ) {
           // Range selection
           const startIndex = processedItems.findIndex(
             (i) => i.id === state.selection.lastSelected,
@@ -326,7 +330,9 @@ export const VolumeExplorerPanel = forwardRef<
       (newSortBy: ExplorerSortBy) => {
         setState((prev) => {
           const newSortOrder =
-            prev.sortBy === newSortBy && prev.sortOrder === 'asc' ? 'desc' : 'asc';
+            prev.sortBy === newSortBy && prev.sortOrder === 'asc'
+              ? 'desc'
+              : 'asc';
           onSortChange?.(newSortBy, newSortOrder);
           return {
             ...prev,
@@ -437,7 +443,8 @@ export const VolumeExplorerPanel = forwardRef<
               onClick={() => onPathChange?.(item.path)}
               className={clsx(
                 'hover:text-blue-600 hover:underline',
-                index === breadcrumbItems.length - 1 && 'font-medium text-gray-900',
+                index === breadcrumbItems.length - 1 &&
+                  'font-medium text-gray-900',
               )}
             >
               {item.label}
@@ -507,7 +514,9 @@ export const VolumeExplorerPanel = forwardRef<
           <div className="flex items-center space-x-2">
             <select
               value={sortBy}
-              onChange={(e) => handleSortChange(e.target.value as ExplorerSortBy)}
+              onChange={(e) =>
+                handleSortChange(e.target.value as ExplorerSortBy)
+              }
               className="text-sm border-gray-300 rounded-md"
             >
               <option value="name">Name</option>
@@ -549,7 +558,9 @@ export const VolumeExplorerPanel = forwardRef<
                 input.type = 'file';
                 input.multiple = true;
                 input.onchange = (e) => {
-                  const files = Array.from((e.target as HTMLInputElement).files || []);
+                  const files = Array.from(
+                    (e.target as HTMLInputElement).files || [],
+                  );
                   if (files.length > 0) {
                     onUpload?.(files, currentPath);
                   }

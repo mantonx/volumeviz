@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  render,
-  screen,
-  waitFor,
-  within,
-  act,
-} from '@testing-library/react';
+import { render, screen, waitFor, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
@@ -377,18 +371,24 @@ describe('ScanProgressModal', () => {
       const { rerender } = render(
         <ScanProgressModal {...defaultProps} size="sm" />,
       );
-      const modalContent = screen.getByRole('dialog').querySelector('.relative.bg-white');
+      const modalContent = screen
+        .getByRole('dialog')
+        .querySelector('.relative.bg-white');
       expect(modalContent).toHaveClass('max-w-md');
 
       rerender(<ScanProgressModal {...defaultProps} size="xl" />);
-      const modalContentXL = screen.getByRole('dialog').querySelector('.relative.bg-white');
+      const modalContentXL = screen
+        .getByRole('dialog')
+        .querySelector('.relative.bg-white');
       expect(modalContentXL).toHaveClass('max-w-6xl');
     });
 
     it('applies custom className', () => {
       render(<ScanProgressModal {...defaultProps} className="custom-class" />);
 
-      const modalContent = screen.getByRole('dialog').querySelector('.relative.bg-white');
+      const modalContent = screen
+        .getByRole('dialog')
+        .querySelector('.relative.bg-white');
       expect(modalContent).toHaveClass('custom-class');
     });
   });
@@ -418,9 +418,12 @@ describe('ScanProgressModal', () => {
       vi.advanceTimersByTime(100);
 
       // Wait for the effect to trigger
-      await waitFor(() => {
-        expect(mockActions.onClose).toHaveBeenCalled();
-      }, { timeout: 1000 });
+      await waitFor(
+        () => {
+          expect(mockActions.onClose).toHaveBeenCalled();
+        },
+        { timeout: 1000 },
+      );
     });
 
     it('does not auto-close when autoCloseOnComplete is false', () => {

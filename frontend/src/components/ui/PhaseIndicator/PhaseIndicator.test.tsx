@@ -73,9 +73,15 @@ describe('PhaseIndicator', () => {
     it('hides phase descriptions when disabled', () => {
       render(<PhaseIndicator {...defaultProps} showDescriptions={false} />);
 
-      expect(screen.queryByText('First phase description')).not.toBeInTheDocument();
-      expect(screen.queryByText('Second phase description')).not.toBeInTheDocument();
-      expect(screen.queryByText('Third phase description')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('First phase description'),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Second phase description'),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Third phase description'),
+      ).not.toBeInTheDocument();
     });
 
     it('renders correct status icons', () => {
@@ -89,7 +95,9 @@ describe('PhaseIndicator', () => {
       render(<PhaseIndicator {...defaultProps} />);
 
       expect(screen.getByTestId('test-phase-indicator')).toBeInTheDocument();
-      expect(screen.getByTestId('test-phase-indicator-phase-phase1')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('test-phase-indicator-phase-phase1'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -137,7 +145,9 @@ describe('PhaseIndicator', () => {
       render(<PhaseIndicator {...defaultProps} showProgress />);
 
       // Should find a progress bar in the active phase
-      const activePhase = screen.getByTestId('test-phase-indicator-phase-phase2');
+      const activePhase = screen.getByTestId(
+        'test-phase-indicator-phase-phase2',
+      );
       expect(activePhase).toBeInTheDocument();
     });
 
@@ -153,15 +163,23 @@ describe('PhaseIndicator', () => {
     it('renders connectors between phases', () => {
       render(<PhaseIndicator {...defaultProps} showConnectors />);
 
-      expect(screen.getByTestId('test-phase-indicator-connector-0')).toBeInTheDocument();
-      expect(screen.getByTestId('test-phase-indicator-connector-1')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('test-phase-indicator-connector-0'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId('test-phase-indicator-connector-1'),
+      ).toBeInTheDocument();
     });
 
     it('hides connectors when disabled', () => {
       render(<PhaseIndicator {...defaultProps} showConnectors={false} />);
 
-      expect(screen.queryByTestId('test-phase-indicator-connector-0')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('test-phase-indicator-connector-1')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('test-phase-indicator-connector-0'),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('test-phase-indicator-connector-1'),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -173,7 +191,7 @@ describe('PhaseIndicator', () => {
           {...defaultProps}
           clickable
           onPhaseClick={mockOnPhaseClick}
-        />
+        />,
       );
 
       const phase1 = screen.getByTestId('test-phase-indicator-phase-phase1');
@@ -183,7 +201,7 @@ describe('PhaseIndicator', () => {
         expect.objectContaining({
           id: 'phase1',
           label: 'Phase 1',
-        })
+        }),
       );
     });
 
@@ -194,7 +212,7 @@ describe('PhaseIndicator', () => {
           {...defaultProps}
           clickable={false}
           onPhaseClick={mockOnPhaseClick}
-        />
+        />,
       );
 
       const phase1 = screen.getByTestId('test-phase-indicator-phase-phase1');
@@ -222,10 +240,12 @@ describe('PhaseIndicator', () => {
           clickable
           onPhaseClick={mockOnPhaseClick}
           testId="test-phase-indicator"
-        />
+        />,
       );
 
-      const disabledPhase = screen.getByTestId('test-phase-indicator-phase-disabled-phase');
+      const disabledPhase = screen.getByTestId(
+        'test-phase-indicator-phase-disabled-phase',
+      );
       await user.click(disabledPhase);
 
       expect(mockOnPhaseClick).not.toHaveBeenCalled();
@@ -234,10 +254,7 @@ describe('PhaseIndicator', () => {
     it('calls onPhaseHover when phase is hovered', async () => {
       const mockOnPhaseHover = vi.fn();
       render(
-        <PhaseIndicator
-          {...defaultProps}
-          onPhaseHover={mockOnPhaseHover}
-        />
+        <PhaseIndicator {...defaultProps} onPhaseHover={mockOnPhaseHover} />,
       );
 
       const phase1 = screen.getByTestId('test-phase-indicator-phase-phase1');
@@ -247,7 +264,7 @@ describe('PhaseIndicator', () => {
         expect.objectContaining({
           id: 'phase1',
           label: 'Phase 1',
-        })
+        }),
       );
     });
 
@@ -258,12 +275,12 @@ describe('PhaseIndicator', () => {
           {...defaultProps}
           clickable
           onPhaseClick={mockOnPhaseClick}
-        />
+        />,
       );
 
       const phase1 = screen.getByTestId('test-phase-indicator-phase-phase1');
       phase1.focus();
-      
+
       expect(phase1).toHaveFocus();
       expect(phase1).toHaveAttribute('tabindex', '0');
     });
@@ -273,14 +290,18 @@ describe('PhaseIndicator', () => {
     it('identifies active phase from status', () => {
       render(<PhaseIndicator {...defaultProps} />);
 
-      const activePhase = screen.getByTestId('test-phase-indicator-phase-phase2');
+      const activePhase = screen.getByTestId(
+        'test-phase-indicator-phase-phase2',
+      );
       expect(activePhase).toHaveAttribute('aria-current', 'step');
     });
 
     it('identifies active phase from activePhase prop', () => {
       render(<PhaseIndicator {...defaultProps} activePhase="phase3" />);
 
-      const activePhase = screen.getByTestId('test-phase-indicator-phase-phase3');
+      const activePhase = screen.getByTestId(
+        'test-phase-indicator-phase-phase3',
+      );
       expect(activePhase).toHaveAttribute('aria-current', 'step');
     });
   });
@@ -301,7 +322,10 @@ describe('PhaseIndicator', () => {
       render(<PhaseIndicator {...defaultProps} />);
 
       const phase1 = screen.getByTestId('test-phase-indicator-phase-phase1');
-      expect(phase1).toHaveAttribute('aria-label', 'Phase: Phase 1 - First phase description');
+      expect(phase1).toHaveAttribute(
+        'aria-label',
+        'Phase: Phase 1 - First phase description',
+      );
     });
 
     it('sets correct tabindex for clickable phases', () => {
@@ -336,7 +360,7 @@ describe('PhaseIndicator', () => {
         <PhaseIndicator
           phases={phasesWithCustomIcons}
           testId="test-phase-indicator"
-        />
+        />,
       );
 
       expect(screen.getByTestId('custom-icon')).toBeInTheDocument();
@@ -354,10 +378,7 @@ describe('PhaseIndicator', () => {
       ];
 
       render(
-        <PhaseIndicator
-          phases={failedPhases}
-          testId="test-phase-indicator"
-        />
+        <PhaseIndicator phases={failedPhases} testId="test-phase-indicator" />,
       );
 
       expect(screen.getByTestId('x-icon')).toBeInTheDocument();
@@ -373,10 +394,7 @@ describe('PhaseIndicator', () => {
       ];
 
       render(
-        <PhaseIndicator
-          phases={skippedPhases}
-          testId="test-phase-indicator"
-        />
+        <PhaseIndicator phases={skippedPhases} testId="test-phase-indicator" />,
       );
 
       expect(screen.getByTestId('chevron-right-icon')).toBeInTheDocument();
@@ -403,7 +421,7 @@ describe('PhaseIndicator', () => {
         expect.objectContaining({
           id: 'phase2',
           status: 'active',
-        })
+        }),
       );
     });
 
@@ -416,7 +434,7 @@ describe('PhaseIndicator', () => {
         expect.objectContaining({
           id: 'phase1',
           label: 'Phase 1',
-        })
+        }),
       );
     });
   });

@@ -23,7 +23,11 @@ import { clsx } from 'clsx';
 import { Button } from '../Button';
 import { Card } from '../Card';
 import { StatusBadge } from '../StatusBadge';
-import { formatScanErrorForDisplay, formatApiErrorForScan, type ScanError } from '../../../utils/scanErrorHandling';
+import {
+  formatScanErrorForDisplay,
+  formatApiErrorForScan,
+  type ScanError,
+} from '../../../utils/scanErrorHandling';
 
 export interface ScanErrorStateProps {
   /** The scan error to display */
@@ -76,8 +80,9 @@ export const ScanErrorState: React.FC<ScanErrorStateProps> = ({
   const [copied, setCopied] = useState(false);
 
   // Format error based on type
-  const isScanError = error && typeof error === 'object' && 'error_type' in error;
-  const errorDisplay = isScanError 
+  const isScanError =
+    error && typeof error === 'object' && 'error_type' in error;
+  const errorDisplay = isScanError
     ? formatScanErrorForDisplay(error as ScanError)
     : formatApiErrorForScan(error, context);
 
@@ -196,20 +201,22 @@ export const ScanErrorState: React.FC<ScanErrorStateProps> = ({
 
   // Copy error details
   const handleCopyError = async () => {
-    const errorInfo = isScanError ? {
-      type: error.error_type,
-      category: error.error_category,
-      message: error.error_message,
-      file: error.item_path,
-      technical: error.technical_details,
-      context: context,
-      occurred: error.occurred_at,
-      retries: error.retry_count,
-    } : {
-      message: errorDisplay.message,
-      context: context,
-      technical: error,
-    };
+    const errorInfo = isScanError
+      ? {
+          type: error.error_type,
+          category: error.error_category,
+          message: error.error_message,
+          file: error.item_path,
+          technical: error.technical_details,
+          context: context,
+          occurred: error.occurred_at,
+          retries: error.retry_count,
+        }
+      : {
+          message: errorDisplay.message,
+          context: context,
+          technical: error,
+        };
 
     try {
       await navigator.clipboard.writeText(JSON.stringify(errorInfo, null, 2));
@@ -221,28 +228,42 @@ export const ScanErrorState: React.FC<ScanErrorStateProps> = ({
   };
 
   return (
-    <Card className={clsx(
-      colors.bg,
-      colors.border,
-      'border',
-      currentSize.padding,
-      className
-    )}>
+    <Card
+      className={clsx(
+        colors.bg,
+        colors.border,
+        'border',
+        currentSize.padding,
+        className,
+      )}
+    >
       {/* Error Header */}
       <div className="flex items-start gap-4">
-        <div className={clsx(colors.icon, currentSize.iconSize, 'flex-shrink-0')}>
+        <div
+          className={clsx(colors.icon, currentSize.iconSize, 'flex-shrink-0')}
+        >
           <ErrorIcon className="w-full h-full" />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className={clsx(colors.title, currentSize.titleSize, 'font-semibold')}>
+            <h3
+              className={clsx(
+                colors.title,
+                currentSize.titleSize,
+                'font-semibold',
+              )}
+            >
               {errorDisplay.title}
             </h3>
-            
+
             {isScanError && (
-              <StatusBadge 
-                variant={errorDisplay.severity === 'critical' ? 'error' : errorDisplay.severity as any}
+              <StatusBadge
+                variant={
+                  errorDisplay.severity === 'critical'
+                    ? 'error'
+                    : (errorDisplay.severity as any)
+                }
                 size={size === 'sm' ? 'sm' : 'md'}
               >
                 {errorDisplay.severity}
@@ -256,12 +277,20 @@ export const ScanErrorState: React.FC<ScanErrorStateProps> = ({
 
           {/* Context Information */}
           {errorDisplay.context && (
-            <div className={clsx(colors.text, 'text-sm mb-4 p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg')}>
-              <span className="font-medium">Context:</span> {errorDisplay.context}
+            <div
+              className={clsx(
+                colors.text,
+                'text-sm mb-4 p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg',
+              )}
+            >
+              <span className="font-medium">Context:</span>{' '}
+              {errorDisplay.context}
               {context?.batchInfo && (
                 <div className="text-xs mt-1">
-                  Batch {context.batchInfo.currentBatch} of {context.batchInfo.totalBatches} 
-                  ({context.batchInfo.filesInBatch} files, {context.batchInfo.batchProgress}% complete)
+                  Batch {context.batchInfo.currentBatch} of{' '}
+                  {context.batchInfo.totalBatches}(
+                  {context.batchInfo.filesInBatch} files,{' '}
+                  {context.batchInfo.batchProgress}% complete)
                 </div>
               )}
             </div>
@@ -285,64 +314,70 @@ export const ScanErrorState: React.FC<ScanErrorStateProps> = ({
           )}
 
           {/* Actions */}
-          {showActions && actions && (errorDisplay.retryable || errorDisplay.actionable) && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {actions.onRetry && errorDisplay.retryable && (
-                <Button 
-                  variant="default" 
-                  size={size}
-                  onClick={actions.onRetry}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Retry
-                </Button>
-              )}
-              
-              {actions.onSkip && (
-                <Button 
-                  variant="outline" 
-                  size={size}
-                  onClick={actions.onSkip}
-                >
-                  <SkipForward className="w-4 h-4 mr-2" />
-                  Skip File
-                </Button>
-              )}
-              
-              {actions.onPause && (
-                <Button 
-                  variant="outline" 
-                  size={size}
-                  onClick={actions.onPause}
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Pause Scan
-                </Button>
-              )}
-              
-              {actions.onAbort && (
-                <Button 
-                  variant="outline" 
-                  size={size}
-                  onClick={actions.onAbort}
-                  className="text-red-600 border-red-300 hover:bg-red-50"
-                >
-                  <Square className="w-4 h-4 mr-2" />
-                  Stop Scan
-                </Button>
-              )}
-            </div>
-          )}
+          {showActions &&
+            actions &&
+            (errorDisplay.retryable || errorDisplay.actionable) && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {actions.onRetry && errorDisplay.retryable && (
+                  <Button
+                    variant="default"
+                    size={size}
+                    onClick={actions.onRetry}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Retry
+                  </Button>
+                )}
+
+                {actions.onSkip && (
+                  <Button
+                    variant="outline"
+                    size={size}
+                    onClick={actions.onSkip}
+                  >
+                    <SkipForward className="w-4 h-4 mr-2" />
+                    Skip File
+                  </Button>
+                )}
+
+                {actions.onPause && (
+                  <Button
+                    variant="outline"
+                    size={size}
+                    onClick={actions.onPause}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Pause Scan
+                  </Button>
+                )}
+
+                {actions.onAbort && (
+                  <Button
+                    variant="outline"
+                    size={size}
+                    onClick={actions.onAbort}
+                    className="text-red-600 border-red-300 hover:bg-red-50"
+                  >
+                    <Square className="w-4 h-4 mr-2" />
+                    Stop Scan
+                  </Button>
+                )}
+              </div>
+            )}
 
           {/* Technical Details Toggle */}
-          {(errorDisplay.technical || (isScanError && error.technical_details)) && (
+          {(errorDisplay.technical ||
+            (isScanError && error.technical_details)) && (
             <div className="space-y-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowDetails(!showDetails)}
-                className={clsx(colors.text, 'hover:bg-white/20 dark:hover:bg-gray-800/20')}
+                className={clsx(
+                  colors.text,
+                  'hover:bg-white/20 dark:hover:bg-gray-800/20',
+                )}
               >
                 {showDetails ? (
                   <ChevronUp className="w-4 h-4 mr-2" />
@@ -358,41 +393,64 @@ export const ScanErrorState: React.FC<ScanErrorStateProps> = ({
                     {isScanError && (
                       <>
                         <div>
-                          <span className="text-gray-400 text-xs">Error Type:</span>
-                          <code className="ml-2 text-xs">{error.error_type}</code>
+                          <span className="text-gray-400 text-xs">
+                            Error Type:
+                          </span>
+                          <code className="ml-2 text-xs">
+                            {error.error_type}
+                          </code>
                         </div>
                         <div>
-                          <span className="text-gray-400 text-xs">Category:</span>
-                          <code className="ml-2 text-xs">{error.error_category}</code>
+                          <span className="text-gray-400 text-xs">
+                            Category:
+                          </span>
+                          <code className="ml-2 text-xs">
+                            {error.error_category}
+                          </code>
                         </div>
                         <div>
-                          <span className="text-gray-400 text-xs">Component:</span>
-                          <code className="ml-2 text-xs">{error.component}</code>
+                          <span className="text-gray-400 text-xs">
+                            Component:
+                          </span>
+                          <code className="ml-2 text-xs">
+                            {error.component}
+                          </code>
                         </div>
                         <div>
-                          <span className="text-gray-400 text-xs">Operation:</span>
-                          <code className="ml-2 text-xs">{error.operation}</code>
+                          <span className="text-gray-400 text-xs">
+                            Operation:
+                          </span>
+                          <code className="ml-2 text-xs">
+                            {error.operation}
+                          </code>
                         </div>
                         {error.item_path && (
                           <div>
-                            <span className="text-gray-400 text-xs">File Path:</span>
-                            <code className="ml-2 text-xs break-all">{error.item_path}</code>
+                            <span className="text-gray-400 text-xs">
+                              File Path:
+                            </span>
+                            <code className="ml-2 text-xs break-all">
+                              {error.item_path}
+                            </code>
                           </div>
                         )}
                         <div>
-                          <span className="text-gray-400 text-xs">Retry Count:</span>
-                          <code className="ml-2 text-xs">{error.retry_count}</code>
+                          <span className="text-gray-400 text-xs">
+                            Retry Count:
+                          </span>
+                          <code className="ml-2 text-xs">
+                            {error.retry_count}
+                          </code>
                         </div>
                       </>
                     )}
-                    
+
                     <div>
                       <span className="text-gray-400 text-xs">Raw Error:</span>
                       <pre className="mt-1 text-xs text-gray-300 bg-gray-800 p-2 rounded overflow-auto">
-                        {isScanError && error.technical_details ? 
-                          error.technical_details : 
-                          JSON.stringify(error, null, 2)
-                        }
+                        {isScanError && error.technical_details
+                          ? error.technical_details
+                          : JSON.stringify(error, null, 2)}
                       </pre>
                     </div>
 

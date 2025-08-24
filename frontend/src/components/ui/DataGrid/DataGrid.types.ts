@@ -8,7 +8,14 @@ import type { ReactNode, HTMLAttributes, CSSProperties } from 'react';
 export type DataGridSize = 'sm' | 'md' | 'lg';
 export type DataGridVariant = 'default' | 'striped' | 'bordered' | 'minimal';
 export type SortDirection = 'asc' | 'desc' | null;
-export type ColumnType = 'text' | 'number' | 'boolean' | 'date' | 'fileSize' | 'duration' | 'custom';
+export type ColumnType =
+  | 'text'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'fileSize'
+  | 'duration'
+  | 'custom';
 export type SelectionMode = 'none' | 'single' | 'multiple';
 export type LoadingState = 'idle' | 'loading' | 'error' | 'success';
 
@@ -114,7 +121,7 @@ export interface DataGridProps<T = any> {
   data: T[];
   columns: DataGridColumn<T>[];
   keyField?: keyof T | string;
-  
+
   // Appearance
   size?: DataGridSize;
   variant?: DataGridVariant;
@@ -123,33 +130,33 @@ export interface DataGridProps<T = any> {
   bordered?: boolean;
   striped?: boolean;
   hoverable?: boolean;
-  
+
   // Selection
   selectionMode?: SelectionMode;
   selectedRows?: Set<string | number>;
   onSelectionChange?: (selection: SelectionState) => void;
-  
+
   // Sorting
   sortable?: boolean;
   sortConfig?: SortConfig;
   onSortChange?: (sortConfig: SortConfig) => void;
-  
+
   // Filtering
   filterable?: boolean;
   filterConfig?: FilterConfig;
   onFilterChange?: (filters: FilterConfig) => void;
-  
+
   // Pagination
   pagination?: PaginationConfig;
   onPaginationChange?: (pagination: PaginationConfig) => void;
-  
+
   // Virtualization
   virtualization?: VirtualizationConfig;
-  
+
   // Loading and empty states
   loading?: LoadingConfig;
   emptyState?: EmptyStateConfig;
-  
+
   // Row configuration
   rowHeight?: number;
   expandableRows?: boolean;
@@ -158,21 +165,25 @@ export interface DataGridProps<T = any> {
     expandedRowKeys?: Set<string | number>;
     onExpansionChange?: (expandedKeys: Set<string | number>) => void;
   };
-  
+
   // Events
   onRowClick?: (row: T, rowIndex: number) => void;
   onRowDoubleClick?: (row: T, rowIndex: number) => void;
-  onRowContextMenu?: (row: T, rowIndex: number, event: React.MouseEvent) => void;
+  onRowContextMenu?: (
+    row: T,
+    rowIndex: number,
+    event: React.MouseEvent,
+  ) => void;
   onColumnResize?: (columnId: string, width: number) => void;
   onColumnReorder?: (sourceIndex: number, targetIndex: number) => void;
-  
+
   // Styling
   className?: string;
   headerClassName?: string;
   bodyClassName?: string;
   footerClassName?: string;
   rowClassName?: string | ((row: T, rowIndex: number) => string);
-  
+
   // Accessibility
   ariaLabel?: string;
   ariaDescribedBy?: string;
@@ -181,7 +192,10 @@ export interface DataGridProps<T = any> {
 
 // DataGrid ref API
 export interface DataGridRef<T = any> {
-  scrollToRow: (rowIndex: number, align?: 'auto' | 'start' | 'center' | 'end') => void;
+  scrollToRow: (
+    rowIndex: number,
+    align?: 'auto' | 'start' | 'center' | 'end',
+  ) => void;
   scrollToColumn: (columnIndex: number) => void;
   selectRow: (rowId: string | number) => void;
   selectRows: (rowIds: (string | number)[]) => void;
@@ -243,11 +257,15 @@ export interface DataGridVariantConfig {
   border: string;
 }
 
-export const defaultDataGridVariants: Record<DataGridVariant, DataGridVariantConfig> = {
+export const defaultDataGridVariants: Record<
+  DataGridVariant,
+  DataGridVariantConfig
+> = {
   default: {
     container: 'bg-white border border-gray-200 rounded-lg overflow-hidden',
     header: 'bg-gray-50 border-b border-gray-200',
-    headerCell: 'font-medium text-gray-900 border-r border-gray-200 last:border-r-0',
+    headerCell:
+      'font-medium text-gray-900 border-r border-gray-200 last:border-r-0',
     row: 'border-b border-gray-100 hover:bg-gray-50 last:border-b-0',
     cell: 'text-gray-900 border-r border-gray-100 last:border-r-0',
     border: 'border-gray-200',
@@ -255,7 +273,8 @@ export const defaultDataGridVariants: Record<DataGridVariant, DataGridVariantCon
   striped: {
     container: 'bg-white border border-gray-200 rounded-lg overflow-hidden',
     header: 'bg-gray-50 border-b border-gray-200',
-    headerCell: 'font-medium text-gray-900 border-r border-gray-200 last:border-r-0',
+    headerCell:
+      'font-medium text-gray-900 border-r border-gray-200 last:border-r-0',
     row: 'border-b border-gray-100 even:bg-gray-50/50 hover:bg-gray-100 last:border-b-0',
     cell: 'text-gray-900 border-r border-gray-100 last:border-r-0',
     border: 'border-gray-200',
@@ -263,7 +282,8 @@ export const defaultDataGridVariants: Record<DataGridVariant, DataGridVariantCon
   bordered: {
     container: 'bg-white border-2 border-gray-300 rounded-lg overflow-hidden',
     header: 'bg-gray-100 border-b-2 border-gray-300',
-    headerCell: 'font-semibold text-gray-900 border-r-2 border-gray-300 last:border-r-0',
+    headerCell:
+      'font-semibold text-gray-900 border-r-2 border-gray-300 last:border-r-0',
     row: 'border-b border-gray-200 hover:bg-gray-50 last:border-b-0',
     cell: 'text-gray-900 border-r border-gray-200 last:border-r-0',
     border: 'border-gray-300',
@@ -423,26 +443,30 @@ export interface AdvancedDataGridFeatures<T = any> {
     groupBy?: keyof T | string;
     expandedGroups?: Set<string>;
     onGroupToggle?: (groupKey: string, expanded: boolean) => void;
-    groupRenderer?: (groupKey: string, groupData: T[], isExpanded: boolean) => ReactNode;
+    groupRenderer?: (
+      groupKey: string,
+      groupData: T[],
+      isExpanded: boolean,
+    ) => ReactNode;
   };
-  
+
   aggregation?: {
     enabled: boolean;
     aggregators: Record<string, (values: any[]) => any>;
     showInFooter?: boolean;
     showInGroups?: boolean;
   };
-  
+
   columnReordering?: {
     enabled: boolean;
     onReorder?: (sourceIndex: number, targetIndex: number) => void;
   };
-  
+
   columnResizing?: {
     enabled: boolean;
     onResize?: (columnId: string, width: number) => void;
   };
-  
+
   rowReordering?: {
     enabled: boolean;
     onReorder?: (sourceIndex: number, targetIndex: number) => void;

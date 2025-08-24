@@ -12,7 +12,13 @@ export interface PhaseTransitionToastProps {
   /** Default auto-dismiss timeout */
   autoDismissTimeout?: number;
   /** Position of toast container */
-  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
+  position?:
+    | 'top-right'
+    | 'top-left'
+    | 'bottom-right'
+    | 'bottom-left'
+    | 'top-center'
+    | 'bottom-center';
   /** Filter by volume ID */
   volumeId?: string;
   /** Filter by scan ID */
@@ -57,7 +63,7 @@ export const PhaseTransitionToast: React.FC<PhaseTransitionToastProps> = ({
         timestamp: Date.now(),
       };
 
-      setToasts(prev => {
+      setToasts((prev) => {
         // Add new toast and limit to maxToasts
         const updated = [toastInstance, ...prev].slice(0, maxToasts);
         return updated;
@@ -67,7 +73,7 @@ export const PhaseTransitionToast: React.FC<PhaseTransitionToastProps> = ({
 
   // Remove toast
   const removeToast = (toastId: string) => {
-    setToasts(prev => prev.filter(t => t.id !== toastId));
+    setToasts((prev) => prev.filter((t) => t.id !== toastId));
   };
 
   // Handle toast click
@@ -94,7 +100,7 @@ export const PhaseTransitionToast: React.FC<PhaseTransitionToastProps> = ({
       className={clsx(
         'fixed z-50 flex flex-col gap-3 pointer-events-none',
         positionClasses[position],
-        className
+        className,
       )}
       style={{ maxWidth: '400px' }}
     >
@@ -117,7 +123,11 @@ export const PhaseTransitionToast: React.FC<PhaseTransitionToastProps> = ({
             dismissTimeout={autoDismissTimeout}
             dismissible={true}
             onDismiss={() => removeToast(toast.id)}
-            onClick={onToastClick ? () => handleToastClick(toast.transition) : undefined}
+            onClick={
+              onToastClick
+                ? () => handleToastClick(toast.transition)
+                : undefined
+            }
           />
         </div>
       ))}

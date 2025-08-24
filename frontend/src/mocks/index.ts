@@ -26,7 +26,7 @@ export const mocks = {
       return Promise.resolve();
     },
     server: () => {
-      // Only import server in Node.js/test environments  
+      // Only import server in Node.js/test environments
       if (typeof window === 'undefined') {
         return import('./server').then((m) => m.server);
       }

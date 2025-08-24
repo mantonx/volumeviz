@@ -29,23 +29,27 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const enabledGroups = shortcutGroups.filter(group => group.shortcuts.length > 0);
+  const enabledGroups = shortcutGroups.filter(
+    (group) => group.shortcuts.length > 0,
+  );
   const totalShortcuts = getAllShortcuts(enabledGroups).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
-      
+
       {/* Modal */}
-      <Card className={cn(
-        "relative w-full max-w-4xl max-h-[90vh] m-4 overflow-hidden",
-        className
-      )}>
+      <Card
+        className={cn(
+          'relative w-full max-w-4xl max-h-[90vh] m-4 overflow-hidden',
+          className,
+        )}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
@@ -111,8 +115,12 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
           {/* Footer note */}
           <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>Tip:</strong> Shortcuts work when not focused on input fields. 
-              Press <Badge variant="secondary" className="mx-1 font-mono">?</Badge> anytime to show this help.
+              <strong>Tip:</strong> Shortcuts work when not focused on input
+              fields. Press{' '}
+              <Badge variant="secondary" className="mx-1 font-mono">
+                ?
+              </Badge>{' '}
+              anytime to show this help.
             </p>
           </div>
         </div>
@@ -136,11 +144,18 @@ export const InlineShortcuts: React.FC<InlineShortcutsProps> = ({
   if (shortcuts.length === 0) return null;
 
   return (
-    <div className={cn("flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400", className)}>
+    <div
+      className={cn(
+        'flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400',
+        className,
+      )}
+    >
       <span className="hidden lg:inline">Shortcuts:</span>
       {shortcuts.map((shortcut, index) => (
         <React.Fragment key={shortcut}>
-          {index > 0 && <span className="text-gray-300 dark:text-gray-600">•</span>}
+          {index > 0 && (
+            <span className="text-gray-300 dark:text-gray-600">•</span>
+          )}
           <Badge variant="secondary" className="font-mono text-xs px-1 py-0">
             {shortcut}
           </Badge>

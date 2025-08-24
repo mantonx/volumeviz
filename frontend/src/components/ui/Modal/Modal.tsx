@@ -63,10 +63,12 @@ const useFocusTrap = (
       if (event.key !== 'Tab' || !containerRef.current) return;
 
       const focusableElements = containerRef.current.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
       const firstElement = focusableElements[0] as HTMLElement;
-      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+      const lastElement = focusableElements[
+        focusableElements.length - 1
+      ] as HTMLElement;
 
       if (event.shiftKey) {
         if (document.activeElement === firstElement) {
@@ -82,12 +84,12 @@ const useFocusTrap = (
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    
+
     // Focus first focusable element
     const firstFocusable = containerRef.current?.querySelector(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     ) as HTMLElement;
-    
+
     if (firstFocusable) {
       firstFocusable.focus();
     }
@@ -121,7 +123,10 @@ const useBodyScrollLock = (isOpen: boolean, enabled: boolean = true) => {
 /**
  * Get modal size classes
  */
-const getModalSizeClasses = (size: ModalSize, variant: ModalVariant): string => {
+const getModalSizeClasses = (
+  size: ModalSize,
+  variant: ModalVariant,
+): string => {
   const sizeMap = variant === 'drawer' ? defaultDrawerSizes : defaultModalSizes;
   return sizeMap[size];
 };
@@ -154,25 +159,25 @@ const getAnimationClasses = (
   isExiting: boolean,
 ): string => {
   const config = defaultAnimations[animation];
-  
+
   if (isExiting) {
     return clsx(config.exit, config.exitActive);
   }
-  
+
   if (isEntering && isOpen) {
     return clsx(config.enter, config.enterActive);
   }
-  
+
   if (isOpen) {
     return config.enterActive.replace(/transition-\S+/g, '').trim();
   }
-  
+
   return config.enter;
 };
 
 /**
  * Enhanced Modal/Drawer component
- * 
+ *
  * A versatile modal and drawer component with comprehensive features:
  * - Modal and drawer variants
  * - Multiple sizes and positions
@@ -224,7 +229,9 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
     const [isEntering, setIsEntering] = useState(false);
     const [isExiting, setIsExiting] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const modalId = useRef(`modal-${Math.random().toString(36).substr(2, 9)}`).current;
+    const modalId = useRef(
+      `modal-${Math.random().toString(36).substr(2, 9)}`,
+    ).current;
 
     // Hooks
     useFocusTrap(open && mounted, modalRef, focusTrap.enabled);
@@ -243,7 +250,7 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
       if (open) {
         setIsEntering(true);
         onOpen?.();
-        
+
         const timer = setTimeout(() => {
           setIsEntering(false);
           onAnimationEnd?.();
@@ -252,7 +259,7 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
         return () => clearTimeout(timer);
       } else {
         setIsExiting(true);
-        
+
         const timer = setTimeout(() => {
           setIsExiting(false);
           onAnimationEnd?.();
@@ -263,42 +270,58 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
     }, [open, mounted, animation, animationDuration, onOpen, onAnimationEnd]);
 
     // Imperative API
-    useImperativeHandle(ref, () => ({
-      focus: () => {
-        modalRef.current?.focus();
-      },
-      close: () => {
-        onClose?.();
-      },
-      getElement: () => modalRef.current,
-      scrollToTop: () => {
-        if (contentRef.current) {
-          contentRef.current.scrollTop = 0;
-        }
-      },
-      isOpen: () => open,
-    }), [open, onClose]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        focus: () => {
+          modalRef.current?.focus();
+        },
+        close: () => {
+          onClose?.();
+        },
+        getElement: () => modalRef.current,
+        scrollToTop: () => {
+          if (contentRef.current) {
+            contentRef.current.scrollTop = 0;
+          }
+        },
+        isOpen: () => open,
+      }),
+      [open, onClose],
+    );
 
     // Event handlers
-    const handleEscapeKey = useCallback((event: KeyboardEvent) => {
-      if (event.key === 'Escape' && closeOnEscape && closable) {
-        event.preventDefault();
-        onEscapeKey?.();
-        onClose?.();
-      }
-    }, [closeOnEscape, closable, onClose, onEscapeKey]);
+    const handleEscapeKey = useCallback(
+      (event: KeyboardEvent) => {
+        if (event.key === 'Escape' && closeOnEscape && closable) {
+          event.preventDefault();
+          onEscapeKey?.();
+          onClose?.();
+        }
+      },
+      [closeOnEscape, closable, onClose, onEscapeKey],
+    );
 
-    const handleBackdropClick = useCallback((event: React.MouseEvent) => {
-      if (
-        event.target === event.currentTarget &&
-        closeOnOutsideClick &&
-        backdrop.closable !== false &&
-        closable
-      ) {
-        onOutsideClick?.();
-        onClose?.();
-      }
-    }, [closeOnOutsideClick, backdrop.closable, closable, onClose, onOutsideClick]);
+    const handleBackdropClick = useCallback(
+      (event: React.MouseEvent) => {
+        if (
+          event.target === event.currentTarget &&
+          closeOnOutsideClick &&
+          backdrop.closable !== false &&
+          closable
+        ) {
+          onOutsideClick?.();
+          onClose?.();
+        }
+      },
+      [
+        closeOnOutsideClick,
+        backdrop.closable,
+        closable,
+        onClose,
+        onOutsideClick,
+      ],
+    );
 
     const handleCloseClick = useCallback(() => {
       if (closable) {
@@ -356,7 +379,9 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
         'fixed',
         getDrawerPositionClasses(position),
         getModalSizeClasses(size, variant),
-        position === 'left' || position === 'right' ? 'max-h-full' : 'max-w-full',
+        position === 'left' || position === 'right'
+          ? 'max-h-full'
+          : 'max-w-full',
       ],
       getAnimationClasses(animation, open, isEntering, isExiting),
       scrollable && 'overflow-hidden',
@@ -367,7 +392,8 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
     const contentClasses = clsx(
       'flex flex-col',
       scrollable ? 'overflow-hidden' : 'overflow-visible',
-      maxHeight && `max-h-[${typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight}]`,
+      maxHeight &&
+        `max-h-[${typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight}]`,
     );
 
     // Header component
@@ -377,11 +403,13 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
       }
 
       return (
-        <div className={clsx(
-          'flex items-center justify-between p-6 border-b border-gray-200',
-          header.sticky && 'sticky top-0 bg-white z-10',
-          headerClassName,
-        )}>
+        <div
+          className={clsx(
+            'flex items-center justify-between p-6 border-b border-gray-200',
+            header.sticky && 'sticky top-0 bg-white z-10',
+            headerClassName,
+          )}
+        >
           <div className="flex-1">
             {header.title && (
               <h2 className="text-lg font-semibold text-gray-900">
@@ -389,16 +417,15 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
               </h2>
             )}
             {header.subtitle && (
-              <p className="text-sm text-gray-600 mt-1">
-                {header.subtitle}
-              </p>
+              <p className="text-sm text-gray-600 mt-1">{header.subtitle}</p>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2">
             {header.actions}
-            {(header.showClose !== false && closable) && (
-              header.closeButton || (
+            {header.showClose !== false &&
+              closable &&
+              (header.closeButton || (
                 <button
                   onClick={handleCloseClick}
                   className="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
@@ -407,8 +434,7 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
                 >
                   <X className="w-5 h-5" />
                 </button>
-              )
-            )}
+              ))}
           </div>
         </div>
       );
@@ -426,12 +452,14 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
       };
 
       return (
-        <div className={clsx(
-          'flex items-center gap-3 p-6 border-t border-gray-200',
-          alignmentClasses[footer.align || 'right'],
-          footer.sticky && 'sticky bottom-0 bg-white',
-          footerClassName,
-        )}>
+        <div
+          className={clsx(
+            'flex items-center gap-3 p-6 border-t border-gray-200',
+            alignmentClasses[footer.align || 'right'],
+            footer.sticky && 'sticky bottom-0 bg-white',
+            footerClassName,
+          )}
+        >
           {footer.content}
           {footer.secondaryAction}
           {footer.actions?.map((action, index) => (
@@ -444,7 +472,7 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
 
     // Body component
     const renderBody = () => (
-      <div 
+      <div
         ref={contentRef}
         className={clsx(
           'flex-1 p-6',
@@ -458,13 +486,13 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
             <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
-        
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
-        
+
         {!loading && !error && children}
       </div>
     );
@@ -472,7 +500,7 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
     // Portal content
     const modalContent = (
       <ModalContext.Provider value={contextValue}>
-        <div 
+        <div
           className={containerClasses}
           data-testid={testId}
           aria-modal="true"

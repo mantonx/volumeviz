@@ -1,9 +1,9 @@
 export { ScanPerformanceMetrics } from './ScanPerformanceMetrics';
-export type { 
-  ScanPerformanceMetricsProps, 
+export type {
+  ScanPerformanceMetricsProps,
   ScanPerformanceData,
   PerformanceMetric,
   MetricChartProps,
   PerformanceSummaryProps,
-  PerformanceComparisonProps 
+  PerformanceComparisonProps,
 } from './ScanPerformanceMetrics.types';

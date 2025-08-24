@@ -232,9 +232,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         console.error('Failed to parse WebSocket message:', error);
         console.error('Raw message data:', event.data);
         // Log first 200 characters to help debug malformed JSON
-        const preview = typeof event.data === 'string' 
-          ? event.data.substring(0, 200) + (event.data.length > 200 ? '...' : '')
-          : event.data;
+        const preview =
+          typeof event.data === 'string'
+            ? event.data.substring(0, 200) +
+              (event.data.length > 200 ? '...' : '')
+            : event.data;
         console.error('Message preview:', preview);
         emit('error', { type: 'parse_error', error, rawData: event.data });
       }

@@ -16,13 +16,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           error
             ? 'border-red-500 focus-visible:ring-red-500'
             : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
-          className
+          className,
         )}
         ref={ref}
         {...props}
       />
     );
-  }
+  },
 );
 
 Input.displayName = 'Input';

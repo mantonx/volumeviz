@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
 
 export interface ScanPhaseProgress {
+  id?: number;
+  scan_id?: string;
   phase_name: string;
   phase_order: number;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
@@ -9,6 +11,7 @@ export interface ScanPhaseProgress {
   items_total: number;
   items_successful: number;
   items_failed: number;
+  items_skipped?: number;
   bytes_processed: number;
   bytes_total: number;
   items_per_second: number;
@@ -20,6 +23,10 @@ export interface ScanPhaseProgress {
   estimated_end_time?: string;
   error_message?: string;
   error_count: number;
+  duration_ms?: number;
+  metadata?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ScanProgressError {
@@ -60,72 +67,79 @@ export interface ComprehensiveScanProgress {
 export interface MultiPhaseProgressBarProps {
   /** Unique identifier for the volume being scanned */
   volumeId: string;
-  
+
   /** Optional scan ID if known */
   scanId?: string;
-  
+
   /** Display size variant */
   size?: 'sm' | 'md' | 'lg';
-  
+
   /** Whether to show phase descriptions */
   showPhaseDescriptions?: boolean;
-  
+
   /** Whether to show detailed progress metrics */
   showDetailedMetrics?: boolean;
-  
+
   /** Whether to show recent errors */
   showErrors?: boolean;
-  
+
   /** Whether to animate progress changes */
   animated?: boolean;
-  
+
   /** Whether to show estimated completion time */
   showEstimatedTime?: boolean;
-  
+
   /** Compact mode - show only essential information */
   compact?: boolean;
-  
+
   /** Custom phase labels override */
   phaseLabels?: {
     volume_scan?: string;
     filesystem_indexing?: string;
     media_enrichment?: string;
   };
-  
+
   /** Custom phase descriptions override */
   phaseDescriptions?: {
     volume_scan?: string;
     filesystem_indexing?: string;
     media_enrichment?: string;
   };
-  
+
   /** Callback when scan starts */
   onScanStart?: (scanId: string) => void;
-  
+
   /** Callback when scan completes */
   onScanComplete?: (scanId: string, totalDuration: number) => void;
-  
+
   /** Callback when scan fails */
   onScanError?: (scanId: string, error: string) => void;
-  
+
   /** Callback when progress updates */
   onProgressUpdate?: (progress: ComprehensiveScanProgress) => void;
-  
+
   /** Callback when phase transitions occur */
-  onPhaseTransition?: (transition: import('../../../utils/phaseTransitionNotifications').PhaseTransition) => void;
-  
+  onPhaseTransition?: (
+    transition: import('../../../utils/phaseTransitionNotifications').PhaseTransition,
+  ) => void;
+
   /** Additional CSS classes */
   className?: string;
-  
+
   /** Test ID for testing */
   testId?: string;
-  
+
   /** Custom header content */
   headerContent?: ReactNode;
-  
+
   /** Custom footer content */
   footerContent?: ReactNode;
 }
 
 export type MultiPhaseProgressBarSize = 'sm' | 'md' | 'lg';
-export type ScanStatus = 'idle' | 'pending' | 'running' | 'completed' | 'failed';
+export type ScanStatus =
+  | 'idle'
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed';

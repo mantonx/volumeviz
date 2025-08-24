@@ -242,7 +242,6 @@ export interface UseScanProgressReturn {
   retry: () => void;
 }
 
-
 /**
  * Default scan data for testing and development
  */

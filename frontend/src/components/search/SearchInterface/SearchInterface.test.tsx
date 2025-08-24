@@ -195,7 +195,7 @@ describe('SearchInterface', () => {
       render(<SearchInterface {...props} />);
 
       const input = screen.getByRole('textbox');
-      
+
       // Type text
       await user.type(input, 'test');
 
@@ -204,9 +204,9 @@ describe('SearchInterface', () => {
 
       // Fast-forward timer
       vi.advanceTimersByTime(100);
-      
+
       // Give it a moment to process
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       expect(onSearchChange).toHaveBeenCalled();
     });
@@ -224,9 +224,9 @@ describe('SearchInterface', () => {
 
       // Fast-forward timers
       vi.advanceTimersByTime(1000);
-      
-      // Give it a moment to process  
-      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // Give it a moment to process
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       expect(onSearchChange).not.toHaveBeenCalled();
     });

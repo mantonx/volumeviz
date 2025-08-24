@@ -10,7 +10,10 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
-import { formatPhaseTransition, type PhaseTransition } from '../../../utils/phaseTransitionNotifications';
+import {
+  formatPhaseTransition,
+  type PhaseTransition,
+} from '../../../utils/phaseTransitionNotifications';
 import { formatDuration } from '../../../utils/format';
 
 export interface PhaseTransitionNotificationProps {
@@ -40,7 +43,9 @@ export interface PhaseTransitionNotificationProps {
  * PhaseTransitionNotification displays beautiful, informative notifications
  * when scan phases transition, providing context and progress information.
  */
-export const PhaseTransitionNotification: React.FC<PhaseTransitionNotificationProps> = ({
+export const PhaseTransitionNotification: React.FC<
+  PhaseTransitionNotificationProps
+> = ({
   transition,
   showDetails = false,
   autoDismiss = false,
@@ -88,7 +93,7 @@ export const PhaseTransitionNotification: React.FC<PhaseTransitionNotificationPr
         setIsVisible(false);
         setTimeout(() => onDismiss?.(), 300); // Allow fade out animation
       }, dismissTimeout);
-      
+
       return () => clearTimeout(timer);
     }
   }, [autoDismiss, dismissTimeout, dismissible, onDismiss]);
@@ -201,16 +206,23 @@ export const PhaseTransitionNotification: React.FC<PhaseTransitionNotificationPr
           'opacity-0 scale-95': !isVisible,
           'cursor-pointer hover:shadow-md': !!onClick,
         },
-        className
+        className,
       )}
       onClick={onClick ? handleClick : undefined}
     >
       {/* Accent bar */}
-      <div className={clsx(colors.accent, 'absolute left-0 top-0 bottom-0 w-1 rounded-l-lg')} />
+      <div
+        className={clsx(
+          colors.accent,
+          'absolute left-0 top-0 bottom-0 w-1 rounded-l-lg',
+        )}
+      />
 
       <div className="flex items-start gap-3">
         {/* Icon */}
-        <div className={clsx(colors.icon, sizes.iconSize, 'flex-shrink-0 mt-0.5')}>
+        <div
+          className={clsx(colors.icon, sizes.iconSize, 'flex-shrink-0 mt-0.5')}
+        >
           {transition.fromPhase ? (
             <ArrowRight className="w-full h-full" />
           ) : (
@@ -225,11 +237,17 @@ export const PhaseTransitionNotification: React.FC<PhaseTransitionNotificationPr
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <div className="text-lg">{display.icon}</div>
-                <h4 className={clsx(colors.title, sizes.titleSize, 'font-semibold truncate')}>
+                <h4
+                  className={clsx(
+                    colors.title,
+                    sizes.titleSize,
+                    'font-semibold truncate',
+                  )}
+                >
                   {display.title}
                 </h4>
               </div>
-              
+
               {transition.volumeName && (
                 <div className={clsx(colors.text, 'text-xs mt-0.5 truncate')}>
                   Volume: {transition.volumeName}
@@ -239,16 +257,14 @@ export const PhaseTransitionNotification: React.FC<PhaseTransitionNotificationPr
 
             {/* Actions */}
             <div className="flex items-center gap-1 flex-shrink-0">
-              <div className={clsx(colors.text, 'text-xs')}>
-                {timeAgo}
-              </div>
-              
+              <div className={clsx(colors.text, 'text-xs')}>{timeAgo}</div>
+
               {(display.stats || display.duration) && (
                 <button
                   onClick={handleToggleDetails}
                   className={clsx(
                     colors.icon,
-                    'hover:bg-white/20 dark:hover:bg-gray-800/20 p-1 rounded'
+                    'hover:bg-white/20 dark:hover:bg-gray-800/20 p-1 rounded',
                   )}
                   title={isExpanded ? 'Hide details' : 'Show details'}
                 >
@@ -265,7 +281,7 @@ export const PhaseTransitionNotification: React.FC<PhaseTransitionNotificationPr
                   onClick={handleDismiss}
                   className={clsx(
                     colors.icon,
-                    'hover:bg-white/20 dark:hover:bg-gray-800/20 p-1 rounded'
+                    'hover:bg-white/20 dark:hover:bg-gray-800/20 p-1 rounded',
                   )}
                   title="Dismiss"
                 >
@@ -316,7 +332,10 @@ export const PhaseTransitionNotification: React.FC<PhaseTransitionNotificationPr
                     Previous phase summary:
                   </div>
                   {display.stats.map((stat, index) => (
-                    <div key={index} className="flex items-center gap-2 text-xs">
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 text-xs"
+                    >
                       <CheckCircle className={clsx(colors.icon, 'w-3 h-3')} />
                       <span className={colors.text}>{stat}</span>
                     </div>
@@ -327,7 +346,8 @@ export const PhaseTransitionNotification: React.FC<PhaseTransitionNotificationPr
               {transition.duration && (
                 <div className="text-xs">
                   <span className={colors.text}>
-                    Previous phase completed in {formatDuration(transition.duration)}
+                    Previous phase completed in{' '}
+                    {formatDuration(transition.duration)}
                   </span>
                 </div>
               )}

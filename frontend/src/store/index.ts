@@ -35,6 +35,33 @@ export {
   volumeLoadingByIdAtom,
 } from './atoms/volumes';
 
+// Volume UI atoms
+export {
+  volumesViewModeAtom,
+  volumesShowFiltersAtom,
+  volumesShowColumnConfigAtom,
+  volumesShowKeyboardHelpAtom,
+  volumesSelectedIdsAtom,
+  volumesSelectAllModeAtom,
+  volumesSelectedForDetailsAtom,
+  volumesShowDetailsModalAtom,
+  volumesShowSelectDropdownAtom,
+  volumesWithDetailedProgressAtom,
+  volumesSearchQueryAtom,
+  volumesVisibleColumnsAtom,
+  volumesBulkActionsVisibleAtom,
+  volumesSelectedCountAtom,
+  volumesHasSelectionAtom,
+  volumesToggleSelectionAtom,
+  volumesClearSelectionAtom,
+  volumesSelectAllAtom,
+  volumesSelectPageAtom,
+  volumesToggleColumnAtom,
+  volumesAddDetailedProgressAtom,
+  volumesRemoveDetailedProgressAtom,
+  volumesUIStateAtom,
+} from './atoms/volumesUI';
+
 // API atoms
 export {
   apiConfigAtom,

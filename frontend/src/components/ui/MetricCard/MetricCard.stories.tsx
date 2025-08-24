@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState, useEffect } from 'react';
 import { action } from '@storybook/addon-actions';
-import { 
+import {
   Activity,
   Clock,
   Database,
@@ -24,7 +24,8 @@ const meta: Meta<typeof MetricCard> = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A versatile metric display component with status indicators, trends, and formatting options.',
+        component:
+          'A versatile metric display component with status indicators, trends, and formatting options.',
       },
     },
   },
@@ -81,7 +82,7 @@ const createMetric = (overrides: Partial<Metric> = {}): Metric => ({
 const generateTrendData = (points = 10, baseValue = 100, variance = 20) => {
   return Array.from({ length: points }, (_, i) => ({
     timestamp: Date.now() - (points - i) * 60000, // 1 minute intervals
-    value: baseValue + (Math.random() - 0.5) * variance + (i * 2), // Slight upward trend
+    value: baseValue + (Math.random() - 0.5) * variance + i * 2, // Slight upward trend
   }));
 };
 
@@ -107,19 +108,31 @@ export const Sizes: Story = {
   render: () => (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <MetricCard
-        metric={createMetric({ label: 'Small', icon: <Activity className="w-4 h-4" /> })}
+        metric={createMetric({
+          label: 'Small',
+          icon: <Activity className="w-4 h-4" />,
+        })}
         size="sm"
       />
       <MetricCard
-        metric={createMetric({ label: 'Medium', icon: <Activity className="w-5 h-5" /> })}
+        metric={createMetric({
+          label: 'Medium',
+          icon: <Activity className="w-5 h-5" />,
+        })}
         size="md"
       />
       <MetricCard
-        metric={createMetric({ label: 'Large', icon: <Activity className="w-6 h-6" /> })}
+        metric={createMetric({
+          label: 'Large',
+          icon: <Activity className="w-6 h-6" />,
+        })}
         size="lg"
       />
       <MetricCard
-        metric={createMetric({ label: 'Extra Large', icon: <Activity className="w-8 h-8" /> })}
+        metric={createMetric({
+          label: 'Extra Large',
+          icon: <Activity className="w-8 h-8" />,
+        })}
         size="xl"
       />
     </div>
@@ -209,7 +222,7 @@ export const MetricTypes: Story = {
           icon: <CheckCircle className="w-5 h-5" />,
         })}
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Data Processed',
@@ -219,7 +232,7 @@ export const MetricTypes: Story = {
           icon: <Download className="w-5 h-5" />,
         })}
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Scan Duration',
@@ -229,7 +242,7 @@ export const MetricTypes: Story = {
           icon: <Clock className="w-5 h-5" />,
         })}
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Files/Second',
@@ -240,7 +253,7 @@ export const MetricTypes: Story = {
           icon: <Zap className="w-5 h-5" />,
         })}
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Total Files',
@@ -250,7 +263,7 @@ export const MetricTypes: Story = {
           icon: <Database className="w-5 h-5" />,
         })}
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Custom Value',
@@ -277,7 +290,7 @@ export const Statuses: Story = {
           icon: <CheckCircle className="w-5 h-5" />,
         })}
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Warning Status',
@@ -287,7 +300,7 @@ export const Statuses: Story = {
           icon: <AlertTriangle className="w-5 h-5" />,
         })}
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Critical Status',
@@ -297,7 +310,7 @@ export const Statuses: Story = {
           icon: <AlertTriangle className="w-5 h-5" />,
         })}
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Info Status',
@@ -307,7 +320,7 @@ export const Statuses: Story = {
           icon: <Activity className="w-5 h-5" />,
         })}
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Neutral Status',
@@ -337,7 +350,7 @@ export const Trends: Story = {
         })}
         showTrend
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Trending Down',
@@ -350,7 +363,7 @@ export const Trends: Story = {
         })}
         showTrend
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Stable',
@@ -385,7 +398,7 @@ export const WithTrendCharts: Story = {
         showTrendChart
         showLastUpdated
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Throughput',
@@ -446,17 +459,18 @@ export const Interactive: Story = {
 
     const simulateRealTime = () => {
       if (isSimulating) return;
-      
+
       setIsSimulating(true);
       const interval = setInterval(() => {
-        setMetrics(prevMetrics => 
-          prevMetrics.map(metric => ({
+        setMetrics((prevMetrics) =>
+          prevMetrics.map((metric) => ({
             ...metric,
-            value: typeof metric.value === 'number' 
-              ? metric.value + Math.floor(Math.random() * 10) - 5
-              : metric.value,
+            value:
+              typeof metric.value === 'number'
+                ? metric.value + Math.floor(Math.random() * 10) - 5
+                : metric.value,
             lastUpdated: new Date(),
-          }))
+          })),
         );
       }, 1000);
 
@@ -469,7 +483,7 @@ export const Interactive: Story = {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {metrics.map(metric => (
+          {metrics.map((metric) => (
             <MetricCard
               key={metric.id}
               metric={metric}
@@ -482,7 +496,7 @@ export const Interactive: Story = {
             />
           ))}
         </div>
-        
+
         <div className="flex justify-center">
           <button
             onClick={simulateRealTime}
@@ -511,7 +525,7 @@ export const LoadingAndErrors: Story = {
           icon: <Activity className="w-5 h-5" />,
         })}
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Error Metric',
@@ -523,7 +537,7 @@ export const LoadingAndErrors: Story = {
         })}
         layout="detailed"
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Normal Metric',
@@ -555,7 +569,7 @@ export const ScanMonitoring: Story = {
         layout="detailed"
         showTrend
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Files/Second',
@@ -568,7 +582,7 @@ export const ScanMonitoring: Story = {
         })}
         showTrend
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Data Processed',
@@ -581,7 +595,7 @@ export const ScanMonitoring: Story = {
         })}
         showTrend
       />
-      
+
       <MetricCard
         metric={createMetric({
           label: 'Errors',

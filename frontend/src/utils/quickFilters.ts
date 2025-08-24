@@ -3,16 +3,16 @@
  * Provides reusable filter configurations and utilities for consistent UI
  */
 
-import { 
-  AlertTriangle, 
-  Eye, 
-  EyeOff, 
-  Database, 
-  Folder, 
+import {
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Database,
+  Folder,
   HardDrive,
   Clock,
   TrendingUp,
-  type LucideIcon
+  type LucideIcon,
 } from 'lucide-react';
 
 /**
@@ -148,30 +148,34 @@ export const QUICK_FILTER_CONFIGS = {
  * Get all available quick filters as a flat array
  */
 export function getAllQuickFilters(): QuickFilterConfig[] {
-  return Object.values(QUICK_FILTER_CONFIGS).flatMap(category => 
-    Object.values(category)
+  return Object.values(QUICK_FILTER_CONFIGS).flatMap((category) =>
+    Object.values(category),
   );
 }
 
 /**
  * Get quick filters by category
  */
-export function getQuickFiltersByCategory(category: QuickFilterConfig['category']): QuickFilterConfig[] {
-  return getAllQuickFilters().filter(filter => filter.category === category);
+export function getQuickFiltersByCategory(
+  category: QuickFilterConfig['category'],
+): QuickFilterConfig[] {
+  return getAllQuickFilters().filter((filter) => filter.category === category);
 }
 
 /**
  * Get a specific quick filter by ID
  */
 export function getQuickFilterById(id: string): QuickFilterConfig | undefined {
-  return getAllQuickFilters().find(filter => filter.id === id);
+  return getAllQuickFilters().find((filter) => filter.id === id);
 }
 
 /**
  * Create a custom quick filter configuration
  */
 export function createQuickFilter(
-  config: Omit<QuickFilterConfig, 'category'> & { category?: QuickFilterConfig['category'] }
+  config: Omit<QuickFilterConfig, 'category'> & {
+    category?: QuickFilterConfig['category'];
+  },
 ): QuickFilterConfig {
   return {
     category: 'custom',

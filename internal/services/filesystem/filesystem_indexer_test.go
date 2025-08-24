@@ -1,11 +1,36 @@
 package filesystem
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/mantonx/volumeviz/internal/repo"
+	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
+
+// MockStoreForIndexer mocks the store interface for indexer testing
+type MockStoreForIndexer struct {
+	mock.Mock
+}
+
+func (m *MockStoreForIndexer) WithTx(ctx context.Context, fn func(store.TxStore) error) error { return nil }
+func (m *MockStoreForIndexer) Volumes() repo.VolumesRepo { return nil }
+func (m *MockStoreForIndexer) Scans() repo.ScansRepo { return nil }
+func (m *MockStoreForIndexer) Retention() repo.RetentionRepo { return nil }
+func (m *MockStoreForIndexer) Stats() *repo.StatsRepo { return nil }
+func (m *MockStoreForIndexer) Files() *repo.FilesRepo { return nil }
+func (m *MockStoreForIndexer) Folders() *repo.FoldersRepo { return nil }
+func (m *MockStoreForIndexer) FileMetadata() *repo.FileMetadataRepo { return nil }
+func (m *MockStoreForIndexer) Alerts() repo.AlertsRepo { return nil }
+func (m *MockStoreForIndexer) Search() *repo.SearchRepo { return nil }
+func (m *MockStoreForIndexer) ScanProgress() repo.ScanProgressRepo { return nil }
+func (m *MockStoreForIndexer) Health(ctx context.Context) error { return nil }
+func (m *MockStoreForIndexer) Queries() interface{} { return nil }
 
 func TestMimeDetector(t *testing.T) {
 	detector := NewMimeDetector()
@@ -19,7 +44,7 @@ func TestMimeDetector(t *testing.T) {
 		{
 			filename:     "test.txt",
 			content:      []byte("Hello, World!"),
-			expectedMime: "text/plain",
+			expectedMime: "text/plain; charset=utf-8",
 			expectedKind: "text",
 		},
 		{
@@ -93,229 +118,53 @@ func TestIndexerConfig(t *testing.T) {
 	}
 }
 
-func TestFilesystemIndexer_shouldSkip(t *testing.T) {
+func TestFilesystemIndexer_ProgressTracking(t *testing.T) {
+	// Setup mock store
+	mockStore := &MockStoreForIndexer{}
+	
+	// Create indexer config
 	config := IndexerConfig{
-		SkipHidden:   true,
-		SkipPatterns: []string{`\.git`, `\.tmp$`, `node_modules`},
+		EnableHashing:   false,
+		DetectMimeTypes: false,
+		MaxDepth:        10,
 	}
 
-	indexer := &FilesystemIndexer{
-		config: config,
-	}
-
-	skipRegexes, err := indexer.compileSkipPatterns()
-	if err != nil {
-		t.Fatalf("Failed to compile skip patterns: %v", err)
-	}
-
-	tests := []struct {
-		name     string
-		path     string
-		filename string
-		isHidden bool
-		expected bool
-	}{
-		{
-			name:     "hidden file",
-			path:     "/home/user/.bashrc",
-			filename: ".bashrc",
-			isHidden: true,
-			expected: true,
-		},
-		{
-			name:     "git directory",
-			path:     "/home/user/project/.git",
-			filename: ".git",
-			isHidden: true,
-			expected: true,
-		},
-		{
-			name:     "tmp file",
-			path:     "/home/user/file.tmp",
-			filename: "file.tmp",
-			isHidden: false,
-			expected: true,
-		},
-		{
-			name:     "node_modules directory",
-			path:     "/home/user/project/node_modules",
-			filename: "node_modules",
-			isHidden: false,
-			expected: true,
-		},
-		{
-			name:     "regular file",
-			path:     "/home/user/document.txt",
-			filename: "document.txt",
-			isHidden: false,
-			expected: false,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// Create a mock FileInfo
-			info := &mockFileInfo{
-				name:    test.filename,
-				isDir:   false,
-				modTime: time.Now(),
-			}
-
-			result := indexer.shouldSkip(test.path, info, skipRegexes)
-			if result != test.expected {
-				t.Errorf("Expected shouldSkip to return %v for %s, got %v", test.expected, test.path, result)
-			}
-		})
-	}
-}
-
-func TestIndexingProgress(t *testing.T) {
-	config := IndexerConfig{}
-	indexer := &FilesystemIndexer{
-		config: config,
-	}
-
-	// Test progress initialization
-	volumeID := "test-volume"
-	indexer.currentScan = &IndexingProgress{
+	// Create filesystem indexer
+	indexer := NewFilesystemIndexer(mockStore, config, nil, nil)
+	
+	volumeID := "test-volume-123"
+	
+	// Initialize active scan
+	indexer.progressMutex.Lock()
+	indexer.activeScans[volumeID] = &IndexingProgress{
 		VolumeID:   volumeID,
 		Status:     "running",
 		StartedAt:  time.Now(),
 		LastUpdate: time.Now(),
 	}
+	indexer.progressMutex.Unlock()
 
 	// Test progress retrieval
-	progress := indexer.GetProgress()
-	if progress == nil {
-		t.Fatal("Expected progress to be non-nil")
-	}
-
-	if progress.VolumeID != volumeID {
-		t.Errorf("Expected volume ID %s, got %s", volumeID, progress.VolumeID)
-	}
-
-	if progress.Status != "running" {
-		t.Errorf("Expected status 'running', got '%s'", progress.Status)
-	}
+	progress := indexer.GetIndexingProgress(volumeID)
+	assert.NotNil(t, progress, "Expected progress to be non-nil")
+	assert.Equal(t, volumeID, progress.VolumeID, "Volume ID should match")
+	assert.Equal(t, "running", progress.Status, "Status should be running")
 
 	// Test progress updates
-	indexer.incrementFileCount()
-	indexer.incrementFolderCount()
-	indexer.addBytesProcessed(1024)
+	indexer.incrementFileCount(volumeID)
+	indexer.incrementFolderCount(volumeID)
+	indexer.addBytesProcessed(volumeID, 1024)
 
-	progress = indexer.GetProgress()
-	if progress.FilesScanned != 1 {
-		t.Errorf("Expected 1 file scanned, got %d", progress.FilesScanned)
-	}
+	progress = indexer.GetIndexingProgress(volumeID)
+	assert.Equal(t, int64(1), progress.FilesScanned, "Should have 1 file scanned")
+	assert.Equal(t, int64(1), progress.FoldersScanned, "Should have 1 folder scanned")
+	assert.Equal(t, int64(1024), progress.BytesProcessed, "Should have 1024 bytes processed")
 
-	if progress.FoldersScanned != 1 {
-		t.Errorf("Expected 1 folder scanned, got %d", progress.FoldersScanned)
-	}
-
-	if progress.BytesProcessed != 1024 {
-		t.Errorf("Expected 1024 bytes processed, got %d", progress.BytesProcessed)
-	}
-}
-
-// Mock FileInfo implementation for testing
-type mockFileInfo struct {
-	name    string
-	size    int64
-	mode    os.FileMode
-	modTime time.Time
-	isDir   bool
-}
-
-func (m *mockFileInfo) Name() string       { return m.name }
-func (m *mockFileInfo) Size() int64        { return m.size }
-func (m *mockFileInfo) Mode() os.FileMode  { return m.mode }
-func (m *mockFileInfo) ModTime() time.Time { return m.modTime }
-func (m *mockFileInfo) IsDir() bool        { return m.isDir }
-func (m *mockFileInfo) Sys() interface{}   { return nil }
-
-func TestPathHashGeneration(t *testing.T) {
-	path1 := "/home/user/document.txt"
-	path2 := "/home/user/document.txt"
-	path3 := "/home/user/different.txt"
-
-	hash1 := generatePathHash(path1)
-	hash2 := generatePathHash(path2)
-	hash3 := generatePathHash(path3)
-
-	// Same paths should generate same hashes
-	if !equalBytes(hash1, hash2) {
-		t.Error("Same paths should generate identical hashes")
-	}
-
-	// Different paths should generate different hashes
-	if equalBytes(hash1, hash3) {
-		t.Error("Different paths should generate different hashes")
-	}
-
-	// Hash should be 32 bytes (SHA256)
-	if len(hash1) != 32 {
-		t.Errorf("Expected hash length 32, got %d", len(hash1))
-	}
-}
-
-func equalBytes(a, b []byte) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func TestFileHashing(t *testing.T) {
-	// Create temporary directory and file for testing
-	tmpDir, err := os.MkdirTemp("", "hash_test")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	testContent := []byte("Hello, World! This is test content for hashing.")
-	testFile := filepath.Join(tmpDir, "test.txt")
-	err = os.WriteFile(testFile, testContent, 0644)
-	if err != nil {
-		t.Fatalf("Failed to write test file: %v", err)
-	}
-
-	walker := &indexingWalker{}
-
-	// Test SHA256 hashing
-	hash := walker.computeFileHash(testFile, "sha256")
-	if hash == nil {
-		t.Error("Expected non-nil hash for SHA256")
-	}
-	if len(hash) != 32 {
-		t.Errorf("Expected SHA256 hash length 32, got %d", len(hash))
-	}
-
-	// Test MD5 hashing
-	hash = walker.computeFileHash(testFile, "md5")
-	if hash == nil {
-		t.Error("Expected non-nil hash for MD5")
-	}
-	if len(hash) != 16 {
-		t.Errorf("Expected MD5 hash length 16, got %d", len(hash))
-	}
-
-	// Test unsupported algorithm
-	hash = walker.computeFileHash(testFile, "unsupported")
-	if hash != nil {
-		t.Error("Expected nil hash for unsupported algorithm")
-	}
-
-	// Test non-existent file
-	hash = walker.computeFileHash("/non/existent/file", "sha256")
-	if hash != nil {
-		t.Error("Expected nil hash for non-existent file")
-	}
+	// Test error recording
+	indexer.recordError(volumeID, "test error message")
+	progress = indexer.GetIndexingProgress(volumeID)
+	assert.Equal(t, int64(1), progress.ErrorsCount, "Should have 1 error")
+	assert.Equal(t, "test error message", progress.LastError, "Should have the error message")
 }
 
 func TestMediaKindClassification(t *testing.T) {

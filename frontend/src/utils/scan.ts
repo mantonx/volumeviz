@@ -175,7 +175,9 @@ export const scanDataUtils: ScanDataUtils = {
       status: phase.status === 'active' ? 'active' : phase.status,
       progress: phase.progress,
       duration: {
-        estimated: phase.estimatedDuration ? phase.estimatedDuration / 1000 : undefined,
+        estimated: phase.estimatedDuration
+          ? phase.estimatedDuration / 1000
+          : undefined,
         actual: phase.actualDuration ? phase.actualDuration / 1000 : undefined,
       },
       timestamps: {

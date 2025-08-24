@@ -2,7 +2,10 @@ import React, { useMemo } from 'react';
 import { Card } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
-import type { ScanNotificationCenterProps, ScanNotification } from './ScanNotificationCenter.types';
+import type {
+  ScanNotificationCenterProps,
+  ScanNotification,
+} from './ScanNotificationCenter.types';
 
 export const ScanNotificationCenter: React.FC<ScanNotificationCenterProps> = ({
   notifications,
@@ -15,13 +18,13 @@ export const ScanNotificationCenter: React.FC<ScanNotificationCenterProps> = ({
   testId = 'scan-notification-center',
 }) => {
   const unreadCount = useMemo(
-    () => notifications.filter(n => !n.read).length,
-    [notifications]
+    () => notifications.filter((n) => !n.read).length,
+    [notifications],
   );
 
   const visibleNotifications = useMemo(
     () => notifications.slice(0, maxVisible),
-    [notifications, maxVisible]
+    [notifications, maxVisible],
   );
 
   const getIconForType = (type: ScanNotification['type']) => {
@@ -92,20 +95,12 @@ export const ScanNotificationCenter: React.FC<ScanNotificationCenterProps> = ({
         </div>
         <div className="flex items-center space-x-2">
           {unreadCount > 0 && onMarkAllAsRead && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onMarkAllAsRead}
-            >
+            <Button variant="ghost" size="sm" onClick={onMarkAllAsRead}>
               Mark all read
             </Button>
           )}
           {onClearAll && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClearAll}
-            >
+            <Button variant="ghost" size="sm" onClick={onClearAll}>
               Clear all
             </Button>
           )}
@@ -128,13 +123,11 @@ export const ScanNotificationCenter: React.FC<ScanNotificationCenterProps> = ({
                   {getIconForType(notification.type)}
                 </span>
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <p className="font-medium">
-                      {notification.title}
-                    </p>
+                    <p className="font-medium">{notification.title}</p>
                     <p className="text-sm mt-1 opacity-90">
                       {notification.message}
                     </p>
@@ -143,28 +136,29 @@ export const ScanNotificationCenter: React.FC<ScanNotificationCenterProps> = ({
                         Volume: {notification.volumeName}
                       </p>
                     )}
-                    
-                    {notification.actions && notification.actions.length > 0 && (
-                      <div className="flex items-center space-x-2 mt-2">
-                        {notification.actions.map((action, index) => (
-                          <Button
-                            key={index}
-                            variant="ghost"
-                            size="sm"
-                            onClick={action.action}
-                          >
-                            {action.label}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
+
+                    {notification.actions &&
+                      notification.actions.length > 0 && (
+                        <div className="flex items-center space-x-2 mt-2">
+                          {notification.actions.map((action, index) => (
+                            <Button
+                              key={index}
+                              variant="ghost"
+                              size="sm"
+                              onClick={action.action}
+                            >
+                              {action.label}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
                   </div>
-                  
+
                   <div className="flex items-center space-x-2 ml-4">
                     <span className="text-xs opacity-75">
                       {formatTimestamp(notification.timestamp)}
                     </span>
-                    
+
                     {!notification.persistent && onDismiss && (
                       <button
                         onClick={() => onDismiss(notification.id)}
@@ -178,7 +172,7 @@ export const ScanNotificationCenter: React.FC<ScanNotificationCenterProps> = ({
                 </div>
               </div>
             </div>
-            
+
             {!notification.read && onMarkAsRead && (
               <button
                 onClick={() => onMarkAsRead(notification.id)}

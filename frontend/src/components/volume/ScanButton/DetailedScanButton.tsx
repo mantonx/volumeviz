@@ -59,7 +59,9 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
   className,
 }) => {
   // Immediate logging to verify component is rendering
-  console.log(`[DetailedScanButton] Component rendered for volume: ${volumeId}, variant: ${variant}, autoStartPolling: ${autoStartPolling}`);
+  console.log(
+    `[DetailedScanButton] Component rendered for volume: ${volumeId}, variant: ${variant}, autoStartPolling: ${autoStartPolling}`,
+  );
   const { scanVolume, scanLoading } = useVolumeScanning();
   const { success, error: showError, info } = useToast();
   const {
@@ -82,7 +84,7 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
       console.log(`[DetailedScanButton] Progress update for ${volumeId}:`, {
         status: progress.status,
         overallProgress: progress.overallProgress,
-        phases: progress.phases.map(p => ({
+        phases: progress.phases.map((p) => ({
           id: p.id,
           label: p.label,
           status: p.status,
@@ -99,7 +101,9 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
   // Auto-start polling if requested (scan already initiated elsewhere) or in view-only mode
   useEffect(() => {
     if (autoStartPolling || viewOnly) {
-      console.log(`[DetailedScanButton] Auto-starting polling for volume: ${volumeId} (viewOnly: ${viewOnly})`);
+      console.log(
+        `[DetailedScanButton] Auto-starting polling for volume: ${volumeId} (viewOnly: ${viewOnly})`,
+      );
       setShowDetails(true);
       startPolling();
     }
@@ -114,7 +118,9 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
   }, [isComplete, isFailed]);
 
   const handleScan = useCallback(async () => {
-    console.log(`[DetailedScanButton] handleScan called for volume: ${volumeId}, disabled: ${isDisabled}`);
+    console.log(
+      `[DetailedScanButton] handleScan called for volume: ${volumeId}, disabled: ${isDisabled}`,
+    );
     if (isDisabled) return;
 
     try {
@@ -127,7 +133,7 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
 
       const result = await scanVolume(volumeId);
       console.log(`[DetailedScanButton] Scan completed:`, result);
-      
+
       success('Volume scan initiated successfully');
       onScanComplete?.(result);
     } catch (err) {
@@ -154,36 +160,62 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
   ]);
 
   const toggleDetails = useCallback(() => {
-    setShowDetails(prev => !prev);
+    setShowDetails((prev) => !prev);
   }, []);
 
   // View-only variant - just shows progress without scan button
   if (variant === 'view-only' || viewOnly) {
     if (!isScanning && progress.status === 'idle') {
       return (
-        <div className={clsx('text-sm text-gray-500 dark:text-gray-400', className)}>
+        <div
+          className={clsx(
+            'text-sm text-gray-700 dark:text-gray-300',
+            className,
+          )}
+          role="status"
+          aria-live="polite"
+        >
           No active scan
         </div>
       );
     }
 
     return (
-      <div className={clsx('space-y-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border', className)}>
+      <div
+        className={clsx(
+          'space-y-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700',
+          className,
+        )}
+        role="region"
+        aria-label={`Scan progress for volume ${volumeId}`}
+        aria-live="polite"
+      >
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100" id={`scan-progress-${volumeId}`}>
             Scan Progress
           </h4>
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300"
             {isScanning && <Loader2 className="w-3 h-3 animate-spin" />}
-            <span className={clsx(
-              'px-2 py-1 rounded text-xs font-medium',
-              isScanning ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300' : 
-              isComplete ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300' :
-              isFailed ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300' : 
-              'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-            )}>
-              {isScanning ? 'Active' : isComplete ? 'Complete' : isFailed ? 'Failed' : 'Idle'}
+            <span
+              className={clsx(
+                'px-2 py-1 rounded text-xs font-medium',
+                isScanning
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                  : isComplete
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+                    : isFailed
+                      ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+              )}
+            >
+              {isScanning
+                ? 'Active'
+                : isComplete
+                  ? 'Complete'
+                  : isFailed
+                    ? 'Failed'
+                    : 'Idle'}
             </span>
           </div>
         </div>
@@ -191,10 +223,10 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
         {/* Overall progress */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-gray-700 dark:text-gray-300">
+            <span className="font-medium text-gray-900 dark:text-gray-100">
               Overall Progress
             </span>
-            <span className="text-gray-500 dark:text-gray-400">
+            <span className="text-gray-700 dark:text-gray-300" aria-label={`${progress.overallProgress} percent complete`}>
               {progress.overallProgress}%
             </span>
           </div>
@@ -208,11 +240,11 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
 
         {/* Phase indicators */}
         <div className="space-y-2">
-          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="text-sm font-medium text-gray-900 dark:text-gray-100" id={`scan-phases-${volumeId}`}>
             Scan Phases
           </div>
           <PhaseIndicator
-            phases={progress.phases.map(phase => ({
+            phases={progress.phases.map((phase) => ({
               id: phase.id,
               label: phase.label,
               description: phase.description,
@@ -231,83 +263,94 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
         {/* Current phase details */}
         {currentPhase && currentPhase.details && (
           <div className="space-y-2 text-sm">
-            <div className="font-medium text-gray-700 dark:text-gray-300">
+            <div className="font-medium text-gray-900 dark:text-gray-100">
               {currentPhase.label}
             </div>
-            
-            <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-400">
+
+            <div className="grid grid-cols-2 gap-3 text-xs text-gray-800 dark:text-gray-200" role="group" aria-labelledby={`scan-phases-${volumeId}`}>
               {currentPhase.details.filesProcessed !== undefined && (
-                <div>
+                <div aria-label={`Files processed: ${currentPhase.details.filesProcessed.toLocaleString()}`}>
                   <span className="font-medium">Files:</span>{' '}
-                  {currentPhase.details.filesProcessed.toLocaleString()}
+                  <span className="tabular-nums">{currentPhase.details.filesProcessed.toLocaleString()}</span>
                 </div>
               )}
-              
+
               {currentPhase.details.filesPerSecond !== undefined && (
-                <div>
+                <div aria-label={`Processing speed: ${currentPhase.details.filesPerSecond.toFixed(1)} files per second`}>
                   <span className="font-medium">Speed:</span>{' '}
-                  {currentPhase.details.filesPerSecond.toFixed(1)} files/sec
+                  <span className="tabular-nums">{currentPhase.details.filesPerSecond.toFixed(1)} files/sec</span>
                 </div>
               )}
-              
+
               {currentPhase.details.bytesProcessed !== undefined && (
-                <div className="col-span-2">
+                <div className="col-span-2" aria-label={`Data processed: ${((currentPhase.details.bytesProcessed) / (1024 * 1024 * 1024)).toFixed(2)} gigabytes`}>
                   <span className="font-medium">Processed:</span>{' '}
-                  {(currentPhase.details.bytesProcessed / (1024 * 1024 * 1024)).toFixed(2)} GB
+                  <span className="tabular-nums">{(
+                    currentPhase.details.bytesProcessed /
+                    (1024 * 1024 * 1024)
+                  ).toFixed(2)} GB</span>
                 </div>
               )}
             </div>
 
             {currentPhase.details.currentFile && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                <span className="font-medium">Current:</span> {currentPhase.details.currentFile}
+              <div className="text-xs text-gray-700 dark:text-gray-300 truncate" aria-label={`Currently processing: ${currentPhase.details.currentFile}`}>
+                <span className="font-medium">Current:</span>{' '}
+                <span className="font-mono text-xs break-all">{currentPhase.details.currentFile}</span>
               </div>
             )}
           </div>
         )}
-        
+
         {/* Enrichment Errors */}
-        {progress.phases.some(phase => phase.recentErrors && phase.recentErrors.length > 0) && (
+        {progress.phases.some(
+          (phase) => phase.recentErrors && phase.recentErrors.length > 0,
+        ) && (
           <div className="space-y-2 text-sm">
-            <div className="font-medium text-red-700 dark:text-red-300">
+            <div className="font-medium text-red-900 dark:text-red-100" id={`enrichment-errors-${volumeId}`}>
               Enrichment Errors
             </div>
-            
+
             <div className="max-h-32 overflow-y-auto space-y-1">
               {progress.phases
-                .filter(phase => phase.recentErrors && phase.recentErrors.length > 0)
-                .map(phase => 
+                .filter(
+                  (phase) =>
+                    phase.recentErrors && phase.recentErrors.length > 0,
+                )
+                .map((phase) =>
                   phase.recentErrors!.map((error, idx) => (
-                    <div 
-                      key={`${phase.id}-${idx}`} 
+                    <div
+                      key={`${phase.id}-${idx}`}
                       className="text-xs p-2 bg-red-50 dark:bg-red-900/20 rounded border-l-2 border-red-300 dark:border-red-700"
+                      role="alert"
+                      aria-labelledby={`enrichment-errors-${volumeId}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-red-700 dark:text-red-300">
+                        <span className="font-medium text-red-900 dark:text-red-100">
                           {error.enricher_name}
                         </span>
-                        <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded text-xs">
+                        <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100 rounded text-xs font-medium">
                           {error.error_type.replace('_', ' ')}
                         </span>
                       </div>
-                      
-                      <div className="text-gray-600 dark:text-gray-400 mb-1">
-                        <span className="font-medium">File:</span> {error.file_name}
+
+                      <div className="text-gray-800 dark:text-gray-200 mb-1">
+                        <span className="font-medium">File:</span>{' '}
+                        <span className="font-mono break-all">{error.file_name}</span>
                       </div>
-                      
-                      <div className="text-red-600 dark:text-red-400">
+
+                      <div className="text-red-800 dark:text-red-200 font-medium">
                         {error.error_message}
                       </div>
-                      
+
                       {error.technical_details && (
-                        <div className="text-xs text-gray-500 dark:text-gray-500 mt-1 font-mono">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded">
                           {error.technical_details}
                         </div>
                       )}
                     </div>
-                  ))
-                )
-              }
+                  )),
+                )}
             </div>
           </div>
         )}
@@ -330,10 +373,10 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
           className,
         )}
         title={
-          disabled 
+          disabled
             ? 'Volume is untracked - enable tracking to scan'
-            : isScanning 
-              ? `Scanning ${currentPhase?.label || 'volume'}...` 
+            : isScanning
+              ? `Scanning ${currentPhase?.label || 'volume'}...`
               : 'Scan volume'
         }
       >
@@ -366,7 +409,7 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
           )}
           <span>{isScanning ? 'Scanning...' : 'Scan'}</span>
         </button>
-        
+
         {isScanning && showProgress && (
           <div className="flex-1 min-w-[100px]">
             <ProgressBar
@@ -377,7 +420,8 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
               className="h-2"
             />
             <div className="text-xs text-gray-500 mt-1">
-              {progress.overallProgress}% • {currentPhase?.label || 'Processing...'}
+              {progress.overallProgress}% •{' '}
+              {currentPhase?.label || 'Processing...'}
             </div>
           </div>
         )}
@@ -401,12 +445,27 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
         )}
       >
         {isScanning ? (
-          <Loader2 className={clsx('animate-spin', size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5')} />
+          <Loader2
+            className={clsx(
+              'animate-spin',
+              size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5',
+            )}
+          />
         ) : (
-          <Scan className={clsx(size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5')} />
+          <Scan
+            className={clsx(
+              size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5',
+            )}
+          />
         )}
         <span>
-          {isScanning ? 'Scanning...' : isComplete ? 'Scan Complete' : isFailed ? 'Scan Failed' : 'Scan Volume'}
+          {isScanning
+            ? 'Scanning...'
+            : isComplete
+              ? 'Scan Complete'
+              : isFailed
+                ? 'Scan Failed'
+                : 'Scan Volume'}
         </span>
         {isScanning && (
           <span className="text-blue-200 text-sm">
@@ -416,154 +475,165 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
       </button>
 
       {/* Progress details */}
-      {(isScanning || showDetails) && (variant === 'detailed' || showProgress) && (
-        <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          {/* Overall progress */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-700 dark:text-gray-300">
-                Overall Progress
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                {progress.overallProgress}%
-              </span>
-            </div>
-            <ProgressBar
-              progress={progress.overallProgress}
-              size="md"
-              showPercentage={false}
-              animated={isScanning}
-            />
-          </div>
-
-          {/* Phase indicators */}
-          {(showPhases || variant === 'detailed') && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Scan Phases
+      {(isScanning || showDetails) &&
+        (variant === 'detailed' || showProgress) && (
+          <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            {/* Overall progress */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  Overall Progress
+                </span>
+                <span className="text-gray-500 dark:text-gray-400">
+                  {progress.overallProgress}%
+                </span>
               </div>
-              <PhaseIndicator
-                phases={progress.phases.map(phase => ({
-                  id: phase.id,
-                  label: phase.label,
-                  description: phase.description,
-                  status: phase.status,
-                  progress: phase.progress,
-                  clickable: false,
-                }))}
-                orientation="vertical"
-                size="sm"
-                showDescriptions={true}
-                showProgress={true}
-                animated={true}
+              <ProgressBar
+                progress={progress.overallProgress}
+                size="md"
+                showPercentage={false}
+                animated={isScanning}
               />
             </div>
-          )}
 
-          {/* Current phase details */}
-          {currentPhase && currentPhase.details && (
-            <div className="space-y-2 text-sm">
-              <div className="font-medium text-gray-700 dark:text-gray-300">
-                {currentPhase.label}
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-400">
-                {currentPhase.details.filesProcessed !== undefined && (
-                  <div>
-                    <span className="font-medium">Files:</span>{' '}
-                    {currentPhase.details.filesProcessed.toLocaleString()}
-                  </div>
-                )}
-                
-                {currentPhase.details.filesPerSecond !== undefined && (
-                  <div>
-                    <span className="font-medium">Speed:</span>{' '}
-                    {currentPhase.details.filesPerSecond.toFixed(1)} files/sec
-                  </div>
-                )}
-                
-                {currentPhase.details.bytesProcessed !== undefined && (
-                  <div className="col-span-2">
-                    <span className="font-medium">Processed:</span>{' '}
-                    {(currentPhase.details.bytesProcessed / (1024 * 1024 * 1024)).toFixed(2)} GB
-                  </div>
-                )}
-              </div>
-
-              {currentPhase.details.currentFile && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  <span className="font-medium">Current:</span> {currentPhase.details.currentFile}
+            {/* Phase indicators */}
+            {(showPhases || variant === 'detailed') && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Scan Phases
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Enrichment Errors */}
-          {progress.phases.some(phase => phase.recentErrors && phase.recentErrors.length > 0) && (
-            <div className="space-y-2 text-sm">
-              <div className="font-medium text-red-700 dark:text-red-300">
-                Enrichment Errors
+                <PhaseIndicator
+                  phases={progress.phases.map((phase) => ({
+                    id: phase.id,
+                    label: phase.label,
+                    description: phase.description,
+                    status: phase.status,
+                    progress: phase.progress,
+                    clickable: false,
+                  }))}
+                  orientation="vertical"
+                  size="sm"
+                  showDescriptions={true}
+                  showProgress={true}
+                  animated={true}
+                />
               </div>
-              
-              <div className="max-h-32 overflow-y-auto space-y-1">
-                {progress.phases
-                  .filter(phase => phase.recentErrors && phase.recentErrors.length > 0)
-                  .map(phase => 
-                    phase.recentErrors!.map((error, idx) => (
-                      <div 
-                        key={`${phase.id}-${idx}`} 
-                        className="text-xs p-2 bg-red-50 dark:bg-red-900/20 rounded border-l-2 border-red-300 dark:border-red-700"
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-red-700 dark:text-red-300">
-                            {error.enricher_name}
-                          </span>
-                          <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded text-xs">
-                            {error.error_type.replace('_', ' ')}
-                          </span>
-                        </div>
-                        
-                        <div className="text-gray-600 dark:text-gray-400 mb-1">
-                          <span className="font-medium">File:</span> {error.file_name}
-                        </div>
-                        
-                        <div className="text-red-600 dark:text-red-400">
-                          {error.error_message}
-                        </div>
-                        
-                        {error.technical_details && (
-                          <div className="text-xs text-gray-500 dark:text-gray-500 mt-1 font-mono">
-                            {error.technical_details}
+            )}
+
+            {/* Current phase details */}
+            {currentPhase && currentPhase.details && (
+              <div className="space-y-2 text-sm">
+                <div className="font-medium text-gray-700 dark:text-gray-300">
+                  {currentPhase.label}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-400">
+                  {currentPhase.details.filesProcessed !== undefined && (
+                    <div>
+                      <span className="font-medium">Files:</span>{' '}
+                      {currentPhase.details.filesProcessed.toLocaleString()}
+                    </div>
+                  )}
+
+                  {currentPhase.details.filesPerSecond !== undefined && (
+                    <div>
+                      <span className="font-medium">Speed:</span>{' '}
+                      {currentPhase.details.filesPerSecond.toFixed(1)} files/sec
+                    </div>
+                  )}
+
+                  {currentPhase.details.bytesProcessed !== undefined && (
+                    <div className="col-span-2">
+                      <span className="font-medium">Processed:</span>{' '}
+                      {(
+                        currentPhase.details.bytesProcessed /
+                        (1024 * 1024 * 1024)
+                      ).toFixed(2)}{' '}
+                      GB
+                    </div>
+                  )}
+                </div>
+
+                {currentPhase.details.currentFile && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    <span className="font-medium">Current:</span>{' '}
+                    {currentPhase.details.currentFile}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Enrichment Errors */}
+            {progress.phases.some(
+              (phase) => phase.recentErrors && phase.recentErrors.length > 0,
+            ) && (
+              <div className="space-y-2 text-sm">
+                <div className="font-medium text-red-700 dark:text-red-300">
+                  Enrichment Errors
+                </div>
+
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {progress.phases
+                    .filter(
+                      (phase) =>
+                        phase.recentErrors && phase.recentErrors.length > 0,
+                    )
+                    .map((phase) =>
+                      phase.recentErrors!.map((error, idx) => (
+                        <div
+                          key={`${phase.id}-${idx}`}
+                          className="text-xs p-2 bg-red-50 dark:bg-red-900/20 rounded border-l-2 border-red-300 dark:border-red-700"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-red-700 dark:text-red-300">
+                              {error.enricher_name}
+                            </span>
+                            <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded text-xs">
+                              {error.error_type.replace('_', ' ')}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    ))
-                  )
-                }
+
+                          <div className="text-gray-600 dark:text-gray-400 mb-1">
+                            <span className="font-medium">File:</span>{' '}
+                            {error.file_name}
+                          </div>
+
+                          <div className="text-red-600 dark:text-red-400">
+                            {error.error_message}
+                          </div>
+
+                          {error.technical_details && (
+                            <div className="text-xs text-gray-500 dark:text-gray-500 mt-1 font-mono">
+                              {error.technical_details}
+                            </div>
+                          )}
+                        </div>
+                      )),
+                    )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Debug info - temporary */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-gray-400 border-t pt-2">
-              <div>Status: {progress.status}</div>
-              <div>Current Phase: {currentPhase?.id || 'none'}</div>
-              <div>API Responses: Check browser console</div>
-            </div>
-          )}
+            {/* Debug info - temporary */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-gray-400 border-t pt-2">
+                <div>Status: {progress.status}</div>
+                <div>Current Phase: {currentPhase?.id || 'none'}</div>
+                <div>API Responses: Check browser console</div>
+              </div>
+            )}
 
-          {/* Toggle details button for default variant */}
-          {variant === 'default' && (
-            <button
-              onClick={toggleDetails}
-              className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              {showDetails ? 'Hide Details' : 'Show Details'}
-            </button>
-          )}
-        </div>
-      )}
+            {/* Toggle details button for default variant */}
+            {variant === 'default' && (
+              <button
+                onClick={toggleDetails}
+                className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                {showDetails ? 'Hide Details' : 'Show Details'}
+              </button>
+            )}
+          </div>
+        )}
     </div>
   );
 };
