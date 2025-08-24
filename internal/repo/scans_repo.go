@@ -27,6 +27,7 @@ type ScansRepo interface {
 	UpdateScanJobHeartbeat(ctx context.Context, scanID string, progress int32) error
 	MarkStaleScanJobsAsFailed(ctx context.Context, timeoutSeconds int) ([]string, error)
 	MarkInFlightJobsAsFailed(ctx context.Context, reason string) ([]string, error)
+	MarkInFlightJobsAsPaused(ctx context.Context, reason string) ([]string, error)
 
 	// Metrics and monitoring
 	GetQueueDepth(ctx context.Context) (int64, error)
@@ -226,6 +227,12 @@ func (r *scansRepo) MarkInFlightJobsAsFailed(ctx context.Context, reason string)
 	// Convert string to pgtype.Text for the reason parameter
 	reasonParam := pgtype.Text{String: reason, Valid: true}
 	return r.queries.MarkInFlightJobsAsFailed(ctx, reasonParam)
+}
+
+func (r *scansRepo) MarkInFlightJobsAsPaused(ctx context.Context, reason string) ([]string, error) {
+	// Convert string to pgtype.Text for the reason parameter
+	reasonParam := pgtype.Text{String: reason, Valid: true}
+	return r.queries.MarkInFlightJobsAsPaused(ctx, reasonParam)
 }
 
 // =============================================================================

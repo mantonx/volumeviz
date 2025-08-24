@@ -343,6 +343,26 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 	if vs.store != nil {
 		// Use background context to avoid cancellation when HTTP request completes
 		go vs.initializeDatabaseProgress(context.Background(), scanID, volumeID)
+		
+		// Create scan job record so it appears in volume API status
+		go func() {
+			ctx := context.Background()
+			scansRepo := vs.store.Scans()
+			if scansRepo != nil {
+				scanJob := coreModels.CreateScanJobParams{
+					ScanID:   scanID,
+					VolumeID: volumeID,
+					Status:   "running",
+					Method:   "async",
+				}
+				_, err := scansRepo.CreateScanJob(ctx, scanJob)
+				if err != nil && vs.logger != nil {
+					vs.logger.Printf("Failed to create scan job record for scan %s: %v", scanID, err)
+				} else if vs.logger != nil {
+					vs.logger.Printf("Created scan job record for scan %s", scanID)
+				}
+			}
+		}()
 	}
 
 	// Start the scan in background
@@ -366,6 +386,17 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 			// Update database - mark volume scan phase as failed
 			if vs.store != nil {
 				go vs.updateVolumePhaseStatus(context.Background(), scanID, "failed", err.Error())
+				
+				// Also update scan job status
+				go func() {
+					ctx := context.Background()
+					scansRepo := vs.store.Scans()
+					if scansRepo != nil {
+						if updateErr := scansRepo.FailScanJob(ctx, scanID, err.Error()); updateErr != nil && vs.logger != nil {
+							vs.logger.Printf("Failed to update scan job status for scan %s: %v", scanID, updateErr)
+						}
+					}
+				}()
 			}
 		} else {
 			progress.Status = coreModels.ScanStatusCompleted
@@ -375,6 +406,17 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 			// Update database - mark volume scan phase as completed
 			if vs.store != nil {
 				go vs.updateVolumePhaseStatus(context.Background(), scanID, "completed", "")
+				
+				// Also update scan job status
+				go func() {
+					ctx := context.Background()
+					scansRepo := vs.store.Scans()
+					if scansRepo != nil {
+						if updateErr := scansRepo.CompletesScanJob(ctx, scanID); updateErr != nil && vs.logger != nil {
+							vs.logger.Printf("Failed to update scan job status for scan %s: %v", scanID, updateErr)
+						}
+					}
+				}()
 			}
 
 			// Trigger daily stats computation if stats service is available (async)

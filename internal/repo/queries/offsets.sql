@@ -168,6 +168,27 @@ failed_phases AS (
 )
 SELECT scan_id FROM failed_jobs;
 
+-- name: MarkInFlightJobsAsPaused :many
+-- Mark all running scan jobs as paused (used during graceful restart/shutdown)
+WITH paused_jobs AS (
+    UPDATE scan_jobs 
+    SET status = 'paused',
+        error_message = $1,
+        updated_at = CURRENT_TIMESTAMP  
+    WHERE status = 'running'
+    RETURNING scan_id
+),
+paused_phases AS (
+    UPDATE scan_phases
+    SET status = 'paused',
+        pause_reason = $1,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE scan_id IN (SELECT scan_id FROM paused_jobs)
+    AND status IN ('running', 'pending')
+    RETURNING scan_id
+)
+SELECT scan_id FROM paused_jobs;
+
 -- name: GetQueueDepth :one
 -- Get current queue depth for metrics
 SELECT COUNT(*) as queue_depth 

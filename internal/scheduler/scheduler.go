@@ -161,11 +161,23 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	log.Printf("[INFO] Starting scan scheduler (interval: %v, concurrency: %d, queue size: %d, hardened: %v)",
 		s.config.Interval, s.config.Concurrency, s.config.QueueSize, s.store != nil)
 
-	// Mark any existing in-flight jobs as failed (from previous instance)
+	// Handle existing in-flight jobs from previous instance
 	if s.store != nil && s.watchdog != nil {
-		err := s.watchdog.MarkInFlightJobsAsFailed("Scheduler restart - previous instance terminated")
+		// Mark in-flight jobs as paused (instead of failed) for graceful restart
+		err := s.watchdog.MarkInFlightJobsAsPaused("Scheduler restart - previous instance terminated")
 		if err != nil {
-			log.Printf("[WARN] Failed to mark in-flight jobs as failed during startup: %v", err)
+			log.Printf("[WARN] Failed to mark in-flight jobs as paused during startup: %v", err)
+		} else {
+			// Attempt to resume paused scans using resume manager
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+				defer cancel()
+				
+				resumeManager := NewResumeManager(s.store, s.scanner, s.progressBroadcaster)
+				if err := resumeManager.ResumePausedScans(ctx); err != nil {
+					log.Printf("[ERROR] Failed to resume paused scans: %v", err)
+				}
+			}()
 		}
 	}
 
@@ -529,7 +541,11 @@ func (s *Scheduler) runPeriodicScheduler() {
 	ticker := time.NewTicker(s.config.Interval)
 	defer ticker.Stop()
 
-	log.Printf("[INFO] Periodic scheduler started (interval: %v)", s.config.Interval)
+	// Create a separate ticker for resume operations (check every 2 minutes)
+	resumeTicker := time.NewTicker(2 * time.Minute)
+	defer resumeTicker.Stop()
+
+	log.Printf("[INFO] Periodic scheduler started (interval: %v, resume check: 2m)", s.config.Interval)
 
 	// Run initial scan after a short delay
 	initialDelay := time.Duration(rand.Intn(30)) * time.Second
@@ -544,6 +560,8 @@ func (s *Scheduler) runPeriodicScheduler() {
 		select {
 		case <-ticker.C:
 			s.runScheduledScan()
+		case <-resumeTicker.C:
+			s.runPeriodicResumeCheck()
 		case <-s.ctx.Done():
 			return
 		}
@@ -568,6 +586,29 @@ func (s *Scheduler) runScheduledScan() {
 		s.metrics.ErrorCounts["enqueue"]++
 		s.statusMutex.Unlock()
 	}
+}
+
+// runPeriodicResumeCheck checks for and resumes failed/paused scans
+func (s *Scheduler) runPeriodicResumeCheck() {
+	if s.store == nil {
+		return
+	}
+	
+	log.Printf("[INFO] Checking for failed/paused scans to resume")
+	
+	// Create resume manager and check for paused scans
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		
+		resumeManager := NewResumeManager(s.store, s.scanner, s.progressBroadcaster)
+		if err := resumeManager.ResumePausedScans(ctx); err != nil {
+			log.Printf("[ERROR] Periodic resume check failed: %v", err)
+			s.statusMutex.Lock()
+			s.metrics.ErrorCounts["resume"]++
+			s.statusMutex.Unlock()
+		}
+	}()
 }
 
 // Helper methods

@@ -451,6 +451,8 @@ type Querier interface {
 	MarkDeliveryFailed(ctx context.Context, arg MarkDeliveryFailedParams) error
 	// Mark all running scan jobs as failed (used during graceful restart)
 	MarkInFlightJobsAsFailed(ctx context.Context, errorMessage pgtype.Text) ([]string, error)
+	// Mark all running scan jobs as paused (used during graceful restart/shutdown)
+	MarkInFlightJobsAsPaused(ctx context.Context, errorMessage pgtype.Text) ([]string, error)
 	// Mark scan jobs as failed if they haven't been updated within the timeout period
 	// This is the watchdog functionality
 	MarkStaleScanJobsAsFailed(ctx context.Context, dollar_1 pgtype.Text) ([]string, error)

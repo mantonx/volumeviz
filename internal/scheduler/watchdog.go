@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -108,8 +109,35 @@ func (w *Watchdog) checkStaleScanJobs() {
 	}
 }
 
-// MarkInFlightJobsAsFailed marks all running scan jobs as failed (for graceful restart)
+// MarkInFlightJobsAsPaused marks all running scan jobs as paused (for graceful restart)
+func (w *Watchdog) MarkInFlightJobsAsPaused(reason string) error {
+	log.Printf("[INFO] Marking all in-flight scan jobs as paused: %s", reason)
+
+	pausedScanIDs, err := w.store.Scans().MarkInFlightJobsAsPaused(w.ctx, reason)
+	if err != nil {
+		log.Printf("[ERROR] Failed to mark in-flight scan jobs as paused: %v", err)
+		w.incrementErrorCount()
+		return err
+	}
+
+	if len(pausedScanIDs) > 0 {
+		log.Printf("[INFO] Marked %d in-flight scan jobs as paused: %v", len(pausedScanIDs), pausedScanIDs)
+		w.addMarkedCount(int64(len(pausedScanIDs)))
+	}
+
+	return nil
+}
+
+// MarkInFlightJobsAsFailed marks all running scan jobs as failed (for actual failures)
 func (w *Watchdog) MarkInFlightJobsAsFailed(reason string) error {
+	// Check if this is a graceful restart/shutdown - mark as paused instead
+	lowerReason := strings.ToLower(reason)
+	if strings.Contains(lowerReason, "restart") || 
+	   strings.Contains(lowerReason, "shutdown") ||
+	   strings.Contains(lowerReason, "graceful") {
+		return w.MarkInFlightJobsAsPaused(reason)
+	}
+
 	log.Printf("[INFO] Marking all in-flight scan jobs as failed: %s", reason)
 
 	failedScanIDs, err := w.store.Scans().MarkInFlightJobsAsFailed(w.ctx, reason)

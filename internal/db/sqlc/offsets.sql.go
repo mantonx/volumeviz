@@ -600,6 +600,48 @@ func (q *Queries) MarkInFlightJobsAsFailed(ctx context.Context, errorMessage pgt
 	return items, nil
 }
 
+const markInFlightJobsAsPaused = `-- name: MarkInFlightJobsAsPaused :many
+WITH paused_jobs AS (
+    UPDATE scan_jobs 
+    SET status = 'paused',
+        error_message = $1,
+        updated_at = CURRENT_TIMESTAMP  
+    WHERE status = 'running'
+    RETURNING scan_id
+),
+paused_phases AS (
+    UPDATE scan_phases
+    SET status = 'paused',
+        pause_reason = $1,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE scan_id IN (SELECT scan_id FROM paused_jobs)
+    AND status IN ('running', 'pending')
+    RETURNING scan_id
+)
+SELECT scan_id FROM paused_jobs
+`
+
+// Mark all running scan jobs as paused (used during graceful restart/shutdown)
+func (q *Queries) MarkInFlightJobsAsPaused(ctx context.Context, errorMessage pgtype.Text) ([]string, error) {
+	rows, err := q.db.Query(ctx, markInFlightJobsAsPaused, errorMessage)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var scan_id string
+		if err := rows.Scan(&scan_id); err != nil {
+			return nil, err
+		}
+		items = append(items, scan_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markStaleScanJobsAsFailed = `-- name: MarkStaleScanJobsAsFailed :many
 WITH stale_jobs AS (
     UPDATE scan_jobs 
