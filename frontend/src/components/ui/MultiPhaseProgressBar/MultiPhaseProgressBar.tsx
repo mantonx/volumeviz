@@ -90,7 +90,7 @@ export const MultiPhaseProgressBar: React.FC<MultiPhaseProgressBarProps> = ({
     null,
   );
 
-  const { isConnected, on } = useWebSocket();
+  const { isConnected, on, send } = useWebSocket();
 
   // Phase transition detection
   const { detectTransition } = usePhaseTransitionNotifications({
@@ -207,12 +207,36 @@ export const MultiPhaseProgressBar: React.FC<MultiPhaseProgressBarProps> = ({
     on('scan_complete', handleScanComplete);
     on('scan_error', handleScanError);
 
-    // No cleanup needed - global provider handles this
+    // Subscribe to scan progress updates for this specific scan or volume
+    // This is critical for receiving real-time updates
+    const subscribeMessage = {
+      type: 'subscribe',
+      event: 'scan_progress',
+      filters: scanId 
+        ? { scan_id: scanId }
+        : volumeId 
+        ? { volume_id: volumeId }
+        : {},
+    };
+    
+    console.log('MultiPhaseProgressBar subscribing to WebSocket:', subscribeMessage);
+    send(subscribeMessage);
+
+    // Cleanup: unsubscribe when component unmounts
+    return () => {
+      const unsubscribeMessage = {
+        type: 'unsubscribe',
+        event: 'scan_progress',
+        filters: subscribeMessage.filters,
+      };
+      send(unsubscribeMessage);
+    };
   }, [
     isConnected,
     volumeId,
     scanId,
     on,
+    send,
     onScanStart,
     onScanComplete,
     onScanError,
