@@ -447,7 +447,60 @@ Interested in becoming a maintainer?
 
 ---
 
-## 📝 License
+## � Preventing Large File Commits
+
+### ⚠️ Important: No Large Files in Git
+
+To keep the repository lean and fast, **never commit large binary files**. This includes:
+
+**Build Artifacts to Never Commit:**
+- **Go binaries**: `volumeviz`, `main`, `*.test` files
+- **Node modules**: Large `.node`, `.wasm` files  
+- **Archives**: `*.gz`, `*.tar`, `*.zip`, etc.
+- **Database files**: `*.db`, `*.sqlite`
+- **Temporary files**: Anything in `tmp/` directory
+
+### Pre-Commit Checks
+Always run these commands before committing:
+
+```bash
+# Check for files larger than 10MB
+find . -type f -size +10M -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./vendor/*"
+
+# Review what you're about to commit
+git diff --cached --stat
+git status
+```
+
+### Good Practices
+1. **Always run** `git status` before `git add .`
+2. **Review** `git diff --cached` before committing  
+3. **Use** `git add <specific-files>` instead of `git add .` when in doubt
+4. **Test builds** work after adding gitignore rules
+
+### If You Accidentally Stage Large Files
+```bash
+# Remove from staging (before commit)
+git reset HEAD <large-file>
+
+# Remove from last commit (if not pushed yet)
+git reset --soft HEAD~1
+git reset HEAD <large-file>
+```
+
+### Build Commands
+```bash
+# Build without committing the binary
+make build
+
+# Clean build artifacts  
+make clean
+
+# Run tests without committing test binaries
+go test ./... -v
+```
+
+## �📝 License
 
 By contributing to VolumeViz, you agree that your contributions will be licensed under the MIT License.
 
