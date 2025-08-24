@@ -200,6 +200,21 @@ func (pt *ProgressThrottler) sendUpdateLocked(ctx context.Context, tracker *scan
 		return fmt.Errorf("failed to update scan phase progress: %w", err)
 	}
 
+	// CRITICAL: Update scan job heartbeat to prevent watchdog timeout
+	// This is essential for long-running scans on large volumes (e.g., network mounts)
+	// The watchdog checks scan_jobs.updated_at and will mark the scan as failed
+	// if no heartbeat is received within the timeout period (default 300 seconds)
+	if scansRepo := pt.store.Scans(); scansRepo != nil {
+		progress := int32(0)
+		if tracker.pendingUpdate.Progress != nil {
+			progress = int32(*tracker.pendingUpdate.Progress)
+		}
+		if heartbeatErr := scansRepo.UpdateScanJobHeartbeat(ctx, tracker.pendingUpdate.ScanID, progress); heartbeatErr != nil {
+			// Log but don't fail - the phase update succeeded
+			fmt.Printf("[WARN] Failed to update scan job heartbeat for %s: %v\n", tracker.pendingUpdate.ScanID, heartbeatErr)
+		}
+	}
+
 	// Broadcast progress update via WebSocket after successful database update
 	if pt.wsBroadcaster != nil {
 		// Get updated phase data to broadcast
