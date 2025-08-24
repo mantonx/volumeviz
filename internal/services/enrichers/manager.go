@@ -134,6 +134,12 @@ func (m *Manager) EnrichVolume(ctx context.Context, volumeID string) error {
 
 // EnrichVolumeWithScanID enriches all eligible files in a volume with scan ID for database tracking
 func (m *Manager) EnrichVolumeWithScanID(ctx context.Context, volumeID string, scanID string) error {
+	// Use streaming enrichment approach for memory efficiency
+	return m.EnrichVolumeStreaming(ctx, volumeID, scanID)
+}
+
+// EnrichVolumeWithScanIDLegacy provides the legacy implementation for comparison/fallback
+func (m *Manager) EnrichVolumeWithScanIDLegacy(ctx context.Context, volumeID string, scanID string) error {
 	if !m.IsEnabled() {
 		return fmt.Errorf("enrichment is disabled")
 	}

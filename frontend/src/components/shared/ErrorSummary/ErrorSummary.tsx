@@ -22,8 +22,10 @@ import {
   ChevronDown,
   ChevronRight,
   Trash2,
+  Lightbulb,
 } from 'lucide-react';
 import { StatusBadge } from '../../ui/StatusBadge';
+import { formatScanErrorForDisplay, type ScanError } from '../../../utils/scanErrorHandling';
 import type {
   ErrorSummaryProps,
   ErrorSummaryRef,
@@ -301,6 +303,10 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
       const isCollapsed = collapsedErrors.has(error.id);
       const isClickable = !!onErrorClick;
 
+      // Check if this is a scan error and format accordingly
+      const isScanError = error.rawError && typeof error.rawError === 'object' && 'error_type' in error.rawError;
+      const scanErrorDisplay = isScanError ? formatScanErrorForDisplay(error.rawError as ScanError) : null;
+
       const itemClasses = clsx(
         'error-summary-item border rounded-lg transition-all duration-200',
         currentSize.padding,
@@ -408,7 +414,7 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
                       currentSize.fontSize,
                     )}
                   >
-                    {error.message}
+                    {scanErrorDisplay?.title || error.message}
                   </h4>
                   {error.code && (
                     <code className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1 py-0.5 rounded">
@@ -422,19 +428,43 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
                   )}
                 </div>
 
+                {/* Enhanced error message for scan errors */}
+                {scanErrorDisplay && scanErrorDisplay.message !== scanErrorDisplay.title && (
+                  <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                    {scanErrorDisplay.message}
+                  </div>
+                )}
+
+                {/* Scan error suggestion */}
+                {scanErrorDisplay?.suggestion && (
+                  <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+                    <div className="flex items-start gap-1">
+                      <Lightbulb className="w-3 h-3 text-blue-500 flex-shrink-0 mt-0.5" />
+                      <div className="text-xs text-blue-700 dark:text-blue-200">
+                        {scanErrorDisplay.suggestion}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Context Information */}
-                {error.context && (
+                {(error.context || scanErrorDisplay?.context) && (
                   <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    {error.context.phase && (
+                    {scanErrorDisplay?.context && (
+                      <div className="truncate mb-1" title={scanErrorDisplay.context}>
+                        {scanErrorDisplay.context}
+                      </div>
+                    )}
+                    {error.context?.phase && (
                       <span>Phase: {error.context.phase}</span>
                     )}
-                    {error.context.volume && (
+                    {error.context?.volume && (
                       <span>
                         {error.context.phase ? ' • ' : ''}Volume:{' '}
                         {error.context.volume}
                       </span>
                     )}
-                    {error.context.path && (
+                    {error.context?.path && (
                       <div className="truncate mt-1" title={error.context.path}>
                         Path: {error.context.path}
                       </div>

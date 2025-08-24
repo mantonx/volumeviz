@@ -28,13 +28,21 @@ type Hub struct {
 	messageQueue []Message
 	maxQueueSize int
 
+	// Message throttling for optimization
+	throttler *MessageThrottler
+
 	// Done channel for graceful shutdown
 	done chan struct{}
 }
 
 // NewHub creates a new WebSocket hub
 func NewHub() *Hub {
-	return &Hub{
+	return NewHubWithThrottling(DefaultThrottleConfig())
+}
+
+// NewHubWithThrottling creates a new WebSocket hub with custom throttling configuration
+func NewHubWithThrottling(throttleConfig ThrottleConfig) *Hub {
+	hub := &Hub{
 		broadcast:    make(chan []byte, 1024), // Increased buffer for O(1) broadcast
 		register:     make(chan *Client, 256),
 		unregister:   make(chan *Client, 256),
@@ -43,6 +51,11 @@ func NewHub() *Hub {
 		maxQueueSize: 100,
 		done:         make(chan struct{}),
 	}
+	
+	// Initialize message throttler
+	hub.throttler = NewMessageThrottler(hub, throttleConfig)
+	
+	return hub
 }
 
 // Run starts the hub and handles client connections and messages
@@ -232,6 +245,11 @@ func (h *Hub) GetClientsMetrics() []ClientMetrics {
 func (h *Hub) Stop() {
 	close(h.done)
 
+	// Stop message throttler
+	if h.throttler != nil {
+		h.throttler.Stop()
+	}
+
 	// Close all client connections
 	h.mu.Lock()
 	for client := range h.clients {
@@ -284,4 +302,69 @@ func (h *Hub) GetSubscribedClients(event string) []string {
 		}
 	}
 	return clientIDs
+}
+
+// =======================================
+// Throttled Broadcast Methods
+// =======================================
+
+// ThrottledBroadcastMessage broadcasts a message with throttling optimization
+func (h *Hub) ThrottledBroadcastMessage(message Message) {
+	if h.throttler != nil {
+		h.throttler.ThrottledBroadcastMessage(message)
+	} else {
+		// Fallback to direct broadcast if no throttler
+		h.BroadcastMessage(message)
+	}
+}
+
+// ThrottledBroadcastToSubscribed sends throttled messages only to subscribed clients
+func (h *Hub) ThrottledBroadcastToSubscribed(event string, filters map[string]string, message Message) {
+	if h.throttler != nil {
+		h.throttler.ThrottledBroadcastToSubscribed(event, filters, message)
+	} else {
+		// Fallback to direct broadcast if no throttler
+		h.BroadcastToSubscribed(event, filters, message)
+	}
+}
+
+// ThrottledBroadcastComprehensiveScanProgress broadcasts comprehensive scan progress with throttling
+func (h *Hub) ThrottledBroadcastComprehensiveScanProgress(progress ComprehensiveScanProgress) {
+	message := Message{
+		Type:      MessageTypeScanProgress,
+		VolumeID:  progress.VolumeID,
+		Data:      progress,
+		Timestamp: time.Now(),
+	}
+
+	filters := map[string]string{
+		"volume_id": progress.VolumeID,
+		"scan_id":   progress.ScanID,
+	}
+	h.ThrottledBroadcastToSubscribed("scan_progress", filters, message)
+}
+
+// ThrottledBroadcastScanPhaseUpdate broadcasts scan phase updates with throttling
+func (h *Hub) ThrottledBroadcastScanPhaseUpdate(scanID, volumeID string, phase ScanPhaseProgress) {
+	message := Message{
+		Type:      MessageTypeScanPhaseUpdate,
+		VolumeID:  volumeID,
+		Data:      phase,
+		Timestamp: time.Now(),
+	}
+
+	filters := map[string]string{
+		"volume_id": volumeID,
+		"scan_id":   scanID,
+	}
+	h.ThrottledBroadcastToSubscribed("scan_progress", filters, message)
+}
+
+// GetThrottleStats returns statistics about message throttling
+func (h *Hub) GetThrottleStats() *ThrottleStats {
+	if h.throttler != nil {
+		stats := h.throttler.GetThrottleStats()
+		return &stats
+	}
+	return nil
 }

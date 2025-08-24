@@ -111,6 +111,9 @@ export interface MultiPhaseProgressBarProps {
   /** Callback when progress updates */
   onProgressUpdate?: (progress: ComprehensiveScanProgress) => void;
   
+  /** Callback when phase transitions occur */
+  onPhaseTransition?: (transition: import('../../../utils/phaseTransitionNotifications').PhaseTransition) => void;
+  
   /** Additional CSS classes */
   className?: string;
   

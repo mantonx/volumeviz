@@ -178,6 +178,43 @@ func (r *FileMetadataRepo) GetUnenrichedFiles(ctx context.Context, volumeID stri
 	return fileInfos, nil
 }
 
+// GetUnenrichedFilesPaginated returns files that need enrichment with pagination
+func (r *FileMetadataRepo) GetUnenrichedFilesPaginated(ctx context.Context, volumeID string, limit int, offset int64) ([]models.FileInfo, error) {
+	files, err := r.queries.GetUnenrichedFilesPaginated(ctx, sqlc.GetUnenrichedFilesPaginatedParams{
+		VolumeID: volumeID,
+		Limit:    int32(limit),
+		Offset:   int32(offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get unenriched files paginated: %w", err)
+	}
+
+	// Convert to enricher FileInfo
+	fileInfos := make([]models.FileInfo, len(files))
+	for i, file := range files {
+		fileInfos[i] = models.FileInfo{
+			ID:       file.ID,
+			Path:     file.Path,
+			Name:     file.Name,
+			MimeType: pgTextToString(file.Mime),
+			Size:     file.SizeBytes,
+			VolumeID: file.VolumeID,
+		}
+	}
+
+	return fileInfos, nil
+}
+
+// GetUnenrichedFileCount returns total count of files that need enrichment
+func (r *FileMetadataRepo) GetUnenrichedFileCount(ctx context.Context, volumeID string) (int64, error) {
+	count, err := r.queries.CountUnenrichedFiles(ctx, volumeID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count unenriched files: %w", err)
+	}
+
+	return count, nil
+}
+
 // GetEnrichmentProgress returns enrichment progress for a volume
 func (r *FileMetadataRepo) GetEnrichmentProgress(ctx context.Context, volumeID string) (*models.EnrichmentProgress, error) {
 	stats, err := r.queries.GetEnrichmentProgress(ctx, volumeID)

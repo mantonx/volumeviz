@@ -45,6 +45,9 @@ type Message struct {
 	Data      any         `json:"data,omitempty"`
 	VolumeID  string      `json:"volume_id,omitempty"`
 	Timestamp time.Time   `json:"timestamp"`
+
+	// Internal fields for throttling (not serialized)
+	targetedBroadcast *targetedBroadcastInfo `json:"-"`
 }
 
 // VolumeData represents volume information for updates
@@ -213,3 +216,10 @@ type SystemStats struct {
 	CPUUsagePercent  float64   `json:"cpu_usage_percent"`
 	Timestamp        time.Time `json:"timestamp"`
 }
+
+// targetedBroadcastInfo stores information for targeted broadcasts  
+type targetedBroadcastInfo struct {
+	event   string
+	filters map[string]string
+}
+

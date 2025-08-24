@@ -147,6 +147,30 @@ func (m *MockRepository) DeleteMetadata(ctx context.Context, fileID *int64, volu
 	return nil
 }
 
+// GetUnenrichedFilesPaginated returns files that need enrichment with pagination
+func (m *MockRepository) GetUnenrichedFilesPaginated(ctx context.Context, volumeID string, limit int, offset int64) ([]FileInfo, error) {
+	if m.getError != nil {
+		return nil, m.getError
+	}
+	start := int(offset)
+	end := start + limit
+	if start >= len(m.unenrichedFiles) {
+		return []FileInfo{}, nil
+	}
+	if end > len(m.unenrichedFiles) {
+		end = len(m.unenrichedFiles)
+	}
+	return m.unenrichedFiles[start:end], nil
+}
+
+// GetUnenrichedFileCount returns total count of files that need enrichment
+func (m *MockRepository) GetUnenrichedFileCount(ctx context.Context, volumeID string) (int64, error) {
+	if m.getError != nil {
+		return 0, m.getError
+	}
+	return int64(len(m.unenrichedFiles)), nil
+}
+
 func TestManager_EnrichFile(t *testing.T) {
 	tests := []struct {
 		name          string

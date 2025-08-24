@@ -24,6 +24,8 @@ import { PerformanceDashboard } from '../../shared/PerformanceDashboard';
 import { ProcessTimeline } from '../../shared/ProcessTimeline';
 import { ProgressBar } from '../../ui/ProgressBar';
 import { StatusBadge } from '../../ui/StatusBadge';
+import { PhaseTransitionNotification } from '../../ui/PhaseTransitionNotification';
+import { usePhaseTransitionNotifications } from '../../../hooks/usePhaseTransitionNotifications';
 
 import type {
   ScanData,
@@ -92,6 +94,13 @@ export const ScanProgressModal = forwardRef<
       expandedPhases: new Set(),
       selectedErrors: new Set(),
       performanceTimeRange: '5m',
+    });
+
+    // Phase transition tracking
+    const { transitions } = usePhaseTransitionNotifications({
+      enabled: true,
+      scanId: scanData.context.id,
+      maxHistory: 10,
     });
 
     // Update state when props change
@@ -259,9 +268,17 @@ export const ScanProgressModal = forwardRef<
                       {currentPhase.progress || 0}%
                     </span>
                   </div>
-                  <p className="text-sm text-blue-700 mb-3">
-                    {currentPhase.description}
-                  </p>
+                  <div className="mb-3">
+                    <p className="text-sm text-blue-700">
+                      {currentPhase.description}
+                    </p>
+                    {currentPhase.details?.currentBatch && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        Batch {currentPhase.details.currentBatch.number} of {currentPhase.details.currentBatch.total} 
+                        ({currentPhase.details.currentBatch.filesInBatch} files)
+                      </p>
+                    )}
+                  </div>
                   <ProgressBar
                     progress={currentPhase.progress || 0}
                     size="sm"
@@ -269,16 +286,45 @@ export const ScanProgressModal = forwardRef<
                     animated={true}
                   />
                   {currentPhase.details && (
-                    <div className="mt-3 grid grid-cols-2 gap-4 text-xs text-blue-600">
-                      <div>
-                        <span className="font-medium">Files:</span>{' '}
-                        {currentPhase.details.filesProcessed?.toLocaleString()}{' '}
-                        / {currentPhase.details.totalFiles?.toLocaleString()}
+                    <div className="mt-3 space-y-2">
+                      <div className="grid grid-cols-2 gap-4 text-xs text-blue-600">
+                        <div>
+                          <span className="font-medium">Files:</span>{' '}
+                          {currentPhase.details.filesProcessed?.toLocaleString()}{' '}
+                          / {currentPhase.details.totalFiles?.toLocaleString()}
+                        </div>
+                        <div>
+                          <span className="font-medium">Rate:</span>{' '}
+                          {(currentPhase.details.filesProcessed / Math.max((Date.now() - new Date(currentPhase.startedAt || Date.now()).getTime()) / 1000, 1)).toFixed(1)} files/sec
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-medium">Current:</span>{' '}
-                        {currentPhase.details.currentFile}
-                      </div>
+                      {currentPhase.details.currentFile && (
+                        <div className="bg-blue-100 rounded p-2 text-xs">
+                          <div className="font-medium text-blue-900 mb-1">Currently Processing:</div>
+                          <div className="font-mono text-blue-800 truncate">
+                            {currentPhase.details.currentFile.split('|')[0] || currentPhase.details.currentFile}
+                          </div>
+                          {currentPhase.details.currentFile.includes('|') && (
+                            <div className="grid grid-cols-2 gap-2 mt-1 text-blue-700">
+                              {currentPhase.details.currentFile.split('|')[1] && (
+                                <div>
+                                  <span className="font-medium">Size:</span> {scanDataUtils.formatFileSize(parseInt(currentPhase.details.currentFile.split('|')[1]))}
+                                </div>
+                              )}
+                              {currentPhase.details.currentFile.split('|')[2] && (
+                                <div>
+                                  <span className="font-medium">Type:</span> {currentPhase.details.currentFile.split('|')[2]}
+                                </div>
+                              )}
+                              {currentPhase.details.currentFile.split('|')[3] && (
+                                <div className="col-span-2">
+                                  <span className="font-medium">Step:</span> {currentPhase.details.currentFile.split('|')[3]}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -162,8 +162,8 @@ func (pb *ProgressBroadcaster) BroadcastComprehensiveScanProgress(ctx context.Co
 		}
 	}
 
-	// Broadcast the comprehensive progress
-	pb.hub.BroadcastComprehensiveScanProgress(progress)
+	// Broadcast the comprehensive progress with throttling
+	pb.hub.ThrottledBroadcastComprehensiveScanProgress(progress)
 	return nil
 }
 
@@ -207,7 +207,7 @@ func (pb *ProgressBroadcaster) BroadcastScanPhaseUpdate(ctx context.Context, sca
 				ErrorCount:       phase.ErrorCount,
 			}
 
-			pb.hub.BroadcastScanPhaseUpdate(scanID, volumeID, wsPhase)
+			pb.hub.ThrottledBroadcastScanPhaseUpdate(scanID, volumeID, wsPhase)
 			return nil
 		}
 	}

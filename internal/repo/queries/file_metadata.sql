@@ -150,6 +150,56 @@ AND (
 ORDER BY size_bytes DESC
 LIMIT $2;
 
+-- name: GetUnenrichedFilesPaginated :many
+SELECT * FROM files
+WHERE volume_id = $1
+AND mime IN (
+    -- Video types that should be enriched
+    'video/mp4', 'video/x-msvideo', 'video/x-matroska', 'video/quicktime', 'video/x-ms-wmv', 'video/x-flv', 'video/webm',
+    -- Audio types that should be enriched
+    'audio/mpeg', 'audio/flac', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/mp4',
+    -- Image types that should be enriched
+    'image/jpeg', 'image/png', 'image/tiff', 'image/bmp', 'image/webp', 'image/heic',
+    -- Subtitle types that should be enriched
+    'text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass'
+)
+AND (
+    -- Video/audio files missing duration or codec info
+    (mime LIKE 'video/%' OR mime LIKE 'audio/%') AND (duration_ms IS NULL OR video_codec IS NULL OR audio_codec IS NULL)
+    OR
+    -- Image files missing dimensions or EXIF data
+    mime LIKE 'image/%' AND (width IS NULL OR height IS NULL OR capture_datetime IS NULL)
+    OR
+    -- Subtitle files missing subtitle info
+    mime IN ('text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass') AND subtitle_language IS NULL
+)
+ORDER BY size_bytes DESC
+LIMIT $2 OFFSET $3;
+
+-- name: CountUnenrichedFiles :one
+SELECT COUNT(*) FROM files
+WHERE volume_id = $1
+AND mime IN (
+    -- Video types that should be enriched
+    'video/mp4', 'video/x-msvideo', 'video/x-matroska', 'video/quicktime', 'video/x-ms-wmv', 'video/x-flv', 'video/webm',
+    -- Audio types that should be enriched
+    'audio/mpeg', 'audio/flac', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/mp4',
+    -- Image types that should be enriched
+    'image/jpeg', 'image/png', 'image/tiff', 'image/bmp', 'image/webp', 'image/heic',
+    -- Subtitle types that should be enriched
+    'text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass'
+)
+AND (
+    -- Video/audio files missing duration or codec info
+    (mime LIKE 'video/%' OR mime LIKE 'audio/%') AND (duration_ms IS NULL OR video_codec IS NULL OR audio_codec IS NULL)
+    OR
+    -- Image files missing dimensions or EXIF data
+    mime LIKE 'image/%' AND (width IS NULL OR height IS NULL OR capture_datetime IS NULL)
+    OR
+    -- Subtitle files missing subtitle info
+    mime IN ('text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass') AND subtitle_language IS NULL
+);
+
 -- name: GetEnrichmentProgress :one
 SELECT
     COUNT(*) as total_enrichable,

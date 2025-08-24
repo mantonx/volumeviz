@@ -72,6 +72,9 @@ type VolumeScanner struct {
 
 	// Database store for progress tracking
 	store store.Store
+
+	// Progress throttling to prevent database flooding during scans
+	progressThrottler *filesystem.ProgressThrottler
 }
 
 // NewVolumeScanner creates a new volume scanner instance
@@ -165,6 +168,15 @@ func (vs *VolumeScanner) SetFilesystemIndexing(
 	vs.filesRepo = filesRepo
 	vs.previewService = previewService
 	vs.store = store // Set store for scan progress tracking
+	
+	// Initialize progress throttler with 2-second interval
+	if store != nil {
+		vs.progressThrottler = filesystem.NewProgressThrottler(store, 2*time.Second)
+		// Start periodic flush to ensure pending updates are sent
+		ctx := context.Background()
+		vs.progressThrottler.StartPeriodicFlush(ctx)
+	}
+	
 	// Initialize volume mapping if not already set
 	if vs.volumeMapping == nil {
 		vs.volumeMapping = volumeConfig.NewVolumeMappingConfig()
@@ -601,6 +613,11 @@ func (vs *VolumeScanner) updateVolumePhaseStatus(ctx context.Context, scanID, st
 		return
 	}
 
+	// Flush any pending throttled updates before status change
+	if vs.progressThrottler != nil {
+		vs.progressThrottler.FlushPending(ctx, scanID)
+	}
+
 	scanProgressRepo := vs.store.ScanProgress()
 
 	if status == "completed" {
@@ -608,10 +625,26 @@ func (vs *VolumeScanner) updateVolumePhaseStatus(ctx context.Context, scanID, st
 		if err != nil && vs.logger != nil {
 			vs.logger.Printf("Failed to complete volume_scan phase for scan %s: %v", scanID, err)
 		}
+		
+		// Cleanup throttler tracking for completed scan
+		if vs.progressThrottler != nil {
+			updates, throttled := vs.progressThrottler.GetStats(scanID)
+			if throttled > 0 && vs.logger != nil {
+				reductionRate := float64(throttled) / float64(updates) * 100
+				vs.logger.Printf("Scan %s throttling stats - Updates: %d, Throttled: %d (%.1f%% DB write reduction)",
+					scanID, updates, throttled, reductionRate)
+			}
+			vs.progressThrottler.Cleanup(scanID)
+		}
 	} else if status == "failed" {
 		err := scanProgressRepo.FailScanPhase(ctx, scanID, "volume_scan", errorMessage)
 		if err != nil && vs.logger != nil {
 			vs.logger.Printf("Failed to mark volume_scan phase as failed for scan %s: %v", scanID, err)
+		}
+		
+		// Cleanup throttler tracking for failed scan
+		if vs.progressThrottler != nil {
+			vs.progressThrottler.Cleanup(scanID)
 		}
 	}
 }

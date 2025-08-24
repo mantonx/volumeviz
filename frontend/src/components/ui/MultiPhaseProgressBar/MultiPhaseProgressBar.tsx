@@ -6,6 +6,7 @@ import { ProgressBar } from '../ProgressBar';
 import { Badge } from '../Badge';
 import { useWebSocket } from '../../../providers/WebSocketProvider';
 import { formatBytes, formatDuration } from '../../../utils/format';
+import { usePhaseTransitionNotifications } from '../../../hooks/usePhaseTransitionNotifications';
 
 import type {
   MultiPhaseProgressBarProps,
@@ -68,6 +69,7 @@ export const MultiPhaseProgressBar: React.FC<MultiPhaseProgressBarProps> = ({
   onScanComplete,
   onScanError,
   onProgressUpdate,
+  onPhaseTransition,
   className,
   testId = 'multi-phase-progress-bar',
   headerContent,
@@ -79,6 +81,14 @@ export const MultiPhaseProgressBar: React.FC<MultiPhaseProgressBarProps> = ({
   const [historicalLoadError, setHistoricalLoadError] = useState<string | null>(null);
   
   const { isConnected, on } = useWebSocket();
+  
+  // Phase transition detection
+  const { detectTransition } = usePhaseTransitionNotifications({
+    enabled: !!onPhaseTransition,
+    volumeId,
+    scanId,
+    onTransition: onPhaseTransition,
+  });
 
   // Fetch historical scan data for completed/failed scans
   useEffect(() => {
@@ -133,6 +143,11 @@ export const MultiPhaseProgressBar: React.FC<MultiPhaseProgressBarProps> = ({
         setProgress(data);
         setLastUpdateTime(new Date());
         onProgressUpdate?.(data);
+        
+        // Detect phase transitions
+        if (onPhaseTransition) {
+          detectTransition(data);
+        }
       }
     };
 
@@ -332,8 +347,29 @@ export const MultiPhaseProgressBar: React.FC<MultiPhaseProgressBarProps> = ({
               </div>
             )}
             {phase.current_item && (
-              <div className="col-span-2 truncate">
-                <span className="font-medium">Current:</span> {phase.current_item}
+              <div className="col-span-2 space-y-1">
+                <div className="truncate">
+                  <span className="font-medium">Current File:</span> {phase.current_item.split('|')[0] || phase.current_item}
+                </div>
+                {phase.current_item.includes('|') && (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {phase.current_item.split('|')[1] && (
+                      <div>
+                        <span className="font-medium">Size:</span> {formatBytes(parseInt(phase.current_item.split('|')[1]))}
+                      </div>
+                    )}
+                    {phase.current_item.split('|')[2] && (
+                      <div>
+                        <span className="font-medium">Type:</span> {phase.current_item.split('|')[2]}
+                      </div>
+                    )}
+                    {phase.current_item.split('|')[3] && (
+                      <div className="col-span-2">
+                        <span className="font-medium">Step:</span> {phase.current_item.split('|')[3]}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

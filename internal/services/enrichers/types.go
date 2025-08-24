@@ -100,6 +100,12 @@ type MediaMetadataRepository interface {
 	// GetUnenrichedFiles returns files that need enrichment
 	GetUnenrichedFiles(ctx context.Context, volumeID string, limit int) ([]FileInfo, error)
 
+	// GetUnenrichedFilesPaginated returns files that need enrichment with pagination
+	GetUnenrichedFilesPaginated(ctx context.Context, volumeID string, limit int, offset int64) ([]FileInfo, error)
+
+	// GetUnenrichedFileCount returns total count of files that need enrichment
+	GetUnenrichedFileCount(ctx context.Context, volumeID string) (int64, error)
+
 	// GetEnrichmentProgress returns enrichment progress for a volume
 	GetEnrichmentProgress(ctx context.Context, volumeID string) (*EnrichmentProgress, error)
 

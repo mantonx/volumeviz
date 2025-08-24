@@ -46,6 +46,8 @@ export interface ErrorSummaryItem {
   acknowledged?: boolean;
   /** Resolution status */
   resolved?: boolean;
+  /** Raw error object for enhanced formatting (scan errors) */
+  rawError?: any;
 }
 
 export interface ErrorSummaryProps {

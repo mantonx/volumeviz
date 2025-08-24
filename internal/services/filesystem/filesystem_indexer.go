@@ -34,6 +34,9 @@ type FilesystemIndexer struct {
 	// Progress tracking - map by volume ID to support multiple concurrent scans
 	progressMutex sync.RWMutex
 	activeScans   map[string]*IndexingProgress
+	
+	// Progress throttling to prevent database flooding
+	progressThrottler *ProgressThrottler
 }
 
 // IndexerConfig holds configuration for filesystem indexing
@@ -89,6 +92,13 @@ type IndexingProgress struct {
 
 // NewFilesystemIndexer creates a new filesystem indexer
 func NewFilesystemIndexer(store store.Store, config IndexerConfig, previewService *previews.Service, enrichmentManager interfaces.EnrichmentManager) *FilesystemIndexer {
+	// Create progress throttler with 2-second update interval
+	progressThrottler := NewProgressThrottler(store, 2*time.Second)
+	
+	// Start periodic flush to ensure pending updates are sent
+	ctx := context.Background()
+	progressThrottler.StartPeriodicFlush(ctx)
+	
 	return &FilesystemIndexer{
 		store:             store,
 		config:            config,
@@ -96,6 +106,7 @@ func NewFilesystemIndexer(store store.Store, config IndexerConfig, previewServic
 		previewService:    previewService,
 		enrichmentManager: enrichmentManager,
 		activeScans:       make(map[string]*IndexingProgress),
+		progressThrottler: progressThrottler,
 	}
 }
 
@@ -148,6 +159,22 @@ func (fi *FilesystemIndexer) IndexVolumeWithScanID(ctx context.Context, volumeID
 	}
 
 	defer func() {
+		// Flush any pending throttled updates before completion
+		if scanID != "" && fi.progressThrottler != nil {
+			fi.progressThrottler.FlushPending(context.Background(), scanID)
+			
+			// Log throttling statistics
+			updates, throttled := fi.progressThrottler.GetStats(scanID)
+			if throttled > 0 {
+				reductionRate := float64(throttled) / float64(updates) * 100
+				fmt.Printf("[FilesystemIndexer] Scan %s throttling stats - Updates: %d, Throttled: %d (%.1f%% reduction in DB writes)\n",
+					scanID, updates, throttled, reductionRate)
+			}
+			
+			// Clean up throttler tracking
+			fi.progressThrottler.Cleanup(scanID)
+		}
+		
 		fi.progressMutex.Lock()
 		var finalStatus string
 		var errorMessage string
@@ -548,9 +575,9 @@ func (fi *FilesystemIndexer) incrementFolderCount(volumeID string) {
 	if scan, exists := fi.activeScans[volumeID]; exists && scan != nil {
 		scan.FoldersScanned++
 
-		// Update database progress every 50 folders to show real-time progress
-		if scan.ScanID != "" && scan.FoldersScanned%50 == 0 {
-			go fi.updateDatabaseProgress(context.Background(), scan.ScanID, "filesystem_indexing", scan)
+		// Use throttled update instead of direct database update
+		if scan.ScanID != "" && fi.progressThrottler != nil {
+			fi.queueThrottledUpdate(scan.ScanID, scan)
 		}
 	}
 }
@@ -561,9 +588,9 @@ func (fi *FilesystemIndexer) incrementFileCount(volumeID string) {
 	if scan, exists := fi.activeScans[volumeID]; exists && scan != nil {
 		scan.FilesScanned++
 
-		// Update database progress every 100 files to show real-time progress
-		if scan.ScanID != "" && scan.FilesScanned%100 == 0 {
-			go fi.updateDatabaseProgress(context.Background(), scan.ScanID, "filesystem_indexing", scan)
+		// Use throttled update instead of direct database update
+		if scan.ScanID != "" && fi.progressThrottler != nil {
+			fi.queueThrottledUpdate(scan.ScanID, scan)
 		}
 
 		// Trigger media enrichment every batch of files (every 500 files)
@@ -599,7 +626,82 @@ func (fi *FilesystemIndexer) triggerBatchEnrichment(ctx context.Context, volumeI
 	}
 }
 
+// queueThrottledUpdate queues a throttled progress update to prevent database flooding
+func (fi *FilesystemIndexer) queueThrottledUpdate(scanID string, scan *IndexingProgress) {
+	if fi.progressThrottler == nil {
+		return
+	}
+
+	itemsProcessed := scan.FilesScanned + scan.FoldersScanned
+	itemsTotal := scan.TotalFiles + scan.TotalFolders
+
+	// Calculate progress percentage
+	progressPercent := 0
+	previousProgress := 0
+	
+	if itemsTotal > 0 {
+		// Calculate previous progress for milestone detection
+		previousProcessed := itemsProcessed - 1
+		if previousProcessed > 0 {
+			previousProgress = int((previousProcessed * 100) / itemsTotal)
+		}
+		
+		progressPercent = int((itemsProcessed * 100) / itemsTotal)
+		if progressPercent > 100 {
+			progressPercent = 100
+		}
+	} else if itemsProcessed > 0 {
+		// No total counts yet but processing files - show minimal progress
+		if itemsProcessed >= 100 {
+			progressPercent = int(1 + (itemsProcessed-100)/1000)
+			if progressPercent > 10 {
+				progressPercent = 10
+			}
+		}
+	}
+
+	// Queue throttled update
+	update := models.UpdateScanPhaseParams{
+		ScanID:         scanID,
+		PhaseName:      "filesystem_indexing",
+		Progress:       &progressPercent,
+		ItemsProcessed: &itemsProcessed,
+		ItemsTotal:     &itemsTotal,
+		CurrentItem:    &scan.CurrentPath,
+	}
+
+	// Force update at important milestones (every 10% or at specific file counts)
+	forceUpdate := false
+	if progressPercent > 0 && previousProgress > 0 {
+		// Force update at every 10% milestone
+		if progressPercent/10 > previousProgress/10 {
+			forceUpdate = true
+			fmt.Printf("[FilesystemIndexer] Milestone reached: %d%% complete (Files: %d, Folders: %d)\n",
+				progressPercent, scan.FilesScanned, scan.FoldersScanned)
+		}
+	}
+	
+	// Also force update at specific file count milestones for user feedback
+	if scan.FilesScanned == 100 || scan.FilesScanned == 1000 || scan.FilesScanned == 10000 || 
+	   scan.FilesScanned == 100000 || (scan.FilesScanned > 0 && scan.FilesScanned%500000 == 0) {
+		forceUpdate = true
+	}
+
+	// Send the update (forced or throttled)
+	var err error
+	if forceUpdate {
+		err = fi.progressThrottler.ForceUpdate(context.Background(), scanID, update)
+	} else {
+		err = fi.progressThrottler.QueueUpdate(context.Background(), scanID, update)
+	}
+	
+	if err != nil {
+		fmt.Printf("[FilesystemIndexer] Failed to queue progress update: %v\n", err)
+	}
+}
+
 // updateDatabaseProgress updates the database with current filesystem indexing progress
+// DEPRECATED: Use queueThrottledUpdate instead to prevent database flooding
 func (fi *FilesystemIndexer) updateDatabaseProgress(ctx context.Context, scanID, phaseName string, scan *IndexingProgress) {
 	scanProgressRepo := fi.store.ScanProgress()
 

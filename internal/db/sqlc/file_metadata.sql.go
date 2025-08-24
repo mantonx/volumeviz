@@ -43,6 +43,38 @@ func (q *Queries) BulkInsertFileMetadata(ctx context.Context, arg BulkInsertFile
 	return err
 }
 
+const countUnenrichedFiles = `-- name: CountUnenrichedFiles :one
+SELECT COUNT(*) FROM files
+WHERE volume_id = $1
+AND mime IN (
+    -- Video types that should be enriched
+    'video/mp4', 'video/x-msvideo', 'video/x-matroska', 'video/quicktime', 'video/x-ms-wmv', 'video/x-flv', 'video/webm',
+    -- Audio types that should be enriched
+    'audio/mpeg', 'audio/flac', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/mp4',
+    -- Image types that should be enriched
+    'image/jpeg', 'image/png', 'image/tiff', 'image/bmp', 'image/webp', 'image/heic',
+    -- Subtitle types that should be enriched
+    'text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass'
+)
+AND (
+    -- Video/audio files missing duration or codec info
+    (mime LIKE 'video/%' OR mime LIKE 'audio/%') AND (duration_ms IS NULL OR video_codec IS NULL OR audio_codec IS NULL)
+    OR
+    -- Image files missing dimensions or EXIF data
+    mime LIKE 'image/%' AND (width IS NULL OR height IS NULL OR capture_datetime IS NULL)
+    OR
+    -- Subtitle files missing subtitle info
+    mime IN ('text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass') AND subtitle_language IS NULL
+)
+`
+
+func (q *Queries) CountUnenrichedFiles(ctx context.Context, volumeID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countUnenrichedFiles, volumeID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createFileMetadata = `-- name: CreateFileMetadata :one
 INSERT INTO file_metadata (
     file_id,
@@ -1222,6 +1254,111 @@ type GetUnenrichedFilesParams struct {
 
 func (q *Queries) GetUnenrichedFiles(ctx context.Context, arg GetUnenrichedFilesParams) ([]Files, error) {
 	rows, err := q.db.Query(ctx, getUnenrichedFiles, arg.VolumeID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Files{}
+	for rows.Next() {
+		var i Files
+		if err := rows.Scan(
+			&i.ID,
+			&i.FolderID,
+			&i.VolumeID,
+			&i.Name,
+			&i.Path,
+			&i.Extension,
+			&i.SizeBytes,
+			&i.DiskUsageBytes,
+			&i.Mtime,
+			&i.Ctime,
+			&i.Birthtime,
+			&i.Uid,
+			&i.Gid,
+			&i.Mode,
+			&i.Inode,
+			&i.Device,
+			&i.IsSymlink,
+			&i.SymlinkTarget,
+			&i.Mime,
+			&i.MediaKind,
+			&i.Encoding,
+			&i.HashAlgo,
+			&i.Hash,
+			&i.PathHash,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUnenrichedFilesPaginated = `-- name: GetUnenrichedFilesPaginated :many
+SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes, mtime, ctime, birthtime, uid, gid, mode, inode, device, is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, created_at, updated_at FROM files
+WHERE volume_id = $1
+AND mime IN (
+    -- Video types that should be enriched
+    'video/mp4', 'video/x-msvideo', 'video/x-matroska', 'video/quicktime', 'video/x-ms-wmv', 'video/x-flv', 'video/webm',
+    -- Audio types that should be enriched
+    'audio/mpeg', 'audio/flac', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/mp4',
+    -- Image types that should be enriched
+    'image/jpeg', 'image/png', 'image/tiff', 'image/bmp', 'image/webp', 'image/heic',
+    -- Subtitle types that should be enriched
+    'text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass'
+)
+AND (
+    -- Video/audio files missing duration or codec info
+    (mime LIKE 'video/%' OR mime LIKE 'audio/%') AND (duration_ms IS NULL OR video_codec IS NULL OR audio_codec IS NULL)
+    OR
+    -- Image files missing dimensions or EXIF data
+    mime LIKE 'image/%' AND (width IS NULL OR height IS NULL OR capture_datetime IS NULL)
+    OR
+    -- Subtitle files missing subtitle info
+    mime IN ('text/vtt', 'application/x-subrip', 'text/x-ssa', 'text/x-ass') AND subtitle_language IS NULL
+)
+ORDER BY size_bytes DESC
+LIMIT $2 OFFSET $3
+`
+
+type GetUnenrichedFilesPaginatedParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+func (q *Queries) GetUnenrichedFilesPaginated(ctx context.Context, arg GetUnenrichedFilesPaginatedParams) ([]Files, error) {
+	rows, err := q.db.Query(ctx, getUnenrichedFilesPaginated, arg.VolumeID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
