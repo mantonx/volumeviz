@@ -25,12 +25,18 @@ vendor/**/*.dylib
 # Go build cache
 /cmd/server/server
 /volumeviz
+volumeviz-test
+store.test
 
 # Binary files and executables (prevent accidental commits)
 *.bin
 main
 !*/main.go
 !cmd/*/main.go
+
+# Large binary files and build artifacts
+*.node
+*.wasm
 
 # IDE specific files
 .idea/
@@ -87,11 +93,22 @@ coverage/
 *.temp
 .cache/
 tmp/
+tmp/**/*
 
 # Build artifacts
 build/
 out/
 target/
+
+# Large files (prevent accidental commits of big binaries)
+*.gz
+*.tar
+*.zip
+*.rar
+*.7z
+*.iso
+*.img
+*.dmg
 
 # Database
 *.db
