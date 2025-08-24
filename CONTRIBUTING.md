@@ -500,6 +500,20 @@ make clean
 go test ./... -v
 ```
 
+### Optional: Install Pre-Commit Hook
+To automatically check for large files before commits:
+
+```bash
+# Copy the pre-commit hook
+cp scripts/pre-commit-hook.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+This hook will:
+- Block commits containing files larger than 10MB
+- Warn about common build artifacts
+- Allow bypass with `git commit --no-verify` if needed
+
 ## �📝 License
 
 By contributing to VolumeViz, you agree that your contributions will be licensed under the MIT License.
