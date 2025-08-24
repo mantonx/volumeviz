@@ -14,7 +14,7 @@
 # Go workspace file
 go.work
 
-# Dependency directories 
+# Dependency directories
 # Vendor binaries (migrate tool now in vendor/bin)
 vendor/bin/migrate
 vendor/**/*.exe

@@ -396,14 +396,14 @@ func (h *Handler) GetScanProgress(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"scan_id":          scanID,
-		"volume_id":        volumeID,
-		"overall_status":   overallStatus,
-		"overall_progress": overallProgress,
-		"started_at":       startedAt,
-		"completed_at":     completedAt,
-		"phases":           phases,
-		"recent_errors":    errors,
+		"scan_id":           scanID,
+		"volume_id":         volumeID,
+		"overall_status":    overallStatus,
+		"overall_progress":  overallProgress,
+		"started_at":        startedAt,
+		"completed_at":      completedAt,
+		"phases":            phases,
+		"recent_errors":     errors,
 		"performance_stats": h.calculatePerformanceStats(phases, overallStatus, startedAt),
 	})
 }
@@ -421,24 +421,24 @@ func (h *Handler) calculatePerformanceStats(phases []coremodels.ScanPhase, statu
 		"overall_bytes_per_second":    0,
 		"error_rate":                  0.0,
 	}
-	
+
 	if len(phases) == 0 {
 		return stats
 	}
-	
+
 	// Calculate totals across all phases
 	totalItemsProcessed := int64(0)
-	totalItemsTotal := int64(0) 
+	totalItemsTotal := int64(0)
 	totalBytesProcessed := int64(0)
 	totalErrors := int64(0)
 	var earliestStartTime *time.Time
-	
+
 	for _, phase := range phases {
 		totalItemsProcessed += phase.ItemsProcessed
 		totalItemsTotal += phase.ItemsTotal
 		totalBytesProcessed += phase.BytesProcessed
 		totalErrors += phase.ErrorCount
-		
+
 		// Find earliest start time
 		if phase.StartedAt != nil {
 			startTime := *phase.StartedAt
@@ -447,14 +447,14 @@ func (h *Handler) calculatePerformanceStats(phases []coremodels.ScanPhase, statu
 			}
 		}
 	}
-	
+
 	// Calculate elapsed time
 	var elapsedSeconds int
 	if earliestStartTime != nil {
 		elapsed := time.Since(*earliestStartTime)
 		elapsedSeconds = int(elapsed.Seconds())
 	}
-	
+
 	// Calculate rates (avoid division by zero)
 	var itemsPerSecond float64
 	var bytesPerSecond int64
@@ -462,20 +462,20 @@ func (h *Handler) calculatePerformanceStats(phases []coremodels.ScanPhase, statu
 		itemsPerSecond = float64(totalItemsProcessed) / float64(elapsedSeconds)
 		bytesPerSecond = totalBytesProcessed / int64(elapsedSeconds)
 	}
-	
+
 	// Estimate remaining time based on current progress
 	var estimatedRemainingSeconds int
 	if itemsPerSecond > 0 && totalItemsTotal > totalItemsProcessed {
 		remainingItems := totalItemsTotal - totalItemsProcessed
 		estimatedRemainingSeconds = int(float64(remainingItems) / itemsPerSecond)
 	}
-	
+
 	// Error rate (errors per minute)
 	var errorRate float64
 	if elapsedSeconds > 0 {
 		errorRate = float64(totalErrors) * 60.0 / float64(elapsedSeconds)
 	}
-	
+
 	// Update stats
 	stats["total_items"] = totalItemsProcessed
 	stats["total_errors"] = totalErrors
@@ -484,7 +484,7 @@ func (h *Handler) calculatePerformanceStats(phases []coremodels.ScanPhase, statu
 	stats["overall_items_per_second"] = itemsPerSecond
 	stats["overall_bytes_per_second"] = bytesPerSecond
 	stats["error_rate"] = errorRate
-	
+
 	return stats
 }
 

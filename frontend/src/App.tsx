@@ -22,10 +22,10 @@ import {
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
 import React, { useEffect, useState } from 'react';
 import {
+  Navigate,
   Route,
   BrowserRouter as Router,
   Routes,
-  Navigate,
 } from 'react-router-dom';
 
 const App: React.FC = () => {

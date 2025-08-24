@@ -62,7 +62,7 @@ services:
       SERVER_HOST: 0.0.0.0
       GIN_MODE: debug
       DOCKER_HOST: unix:///var/run/docker.sock
-      ALLOW_ORIGINS: "http://localhost:5173,http://localhost:3000"
+      ALLOW_ORIGINS: "http://localhost:5173,http://localhost:5177,http://localhost:3000"
       SCAN_ENABLED: "true"
       VV_FILESYSTEM_INDEXING_ENABLED: "true"
       GOCACHE: "/tmp/gocache"
@@ -143,6 +143,8 @@ services:
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     environment:
       VITE_API_URL: http://localhost:8080/api/v1
+      VITE_WS_URL: ws://localhost:8080/api/v1/ws
+      VITE_ENABLE_WEBSOCKET: "true"
     volumes:
       - ./frontend:/app
     ports:
@@ -160,11 +162,13 @@ services:
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5174"
     environment:
       VITE_API_URL: http://localhost:8081/api/v1
+      VITE_WS_URL: ws://localhost:8081/api/v1/ws
+      VITE_ENABLE_WEBSOCKET: "true"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     ports:
-      - "5174:5174"
+      - "5177:5174"
     depends_on:
       - backend-sqlite
     networks:

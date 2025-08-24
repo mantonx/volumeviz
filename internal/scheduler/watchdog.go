@@ -132,9 +132,9 @@ func (w *Watchdog) MarkInFlightJobsAsPaused(reason string) error {
 func (w *Watchdog) MarkInFlightJobsAsFailed(reason string) error {
 	// Check if this is a graceful restart/shutdown - mark as paused instead
 	lowerReason := strings.ToLower(reason)
-	if strings.Contains(lowerReason, "restart") || 
-	   strings.Contains(lowerReason, "shutdown") ||
-	   strings.Contains(lowerReason, "graceful") {
+	if strings.Contains(lowerReason, "restart") ||
+		strings.Contains(lowerReason, "shutdown") ||
+		strings.Contains(lowerReason, "graceful") {
 		return w.MarkInFlightJobsAsPaused(reason)
 	}
 

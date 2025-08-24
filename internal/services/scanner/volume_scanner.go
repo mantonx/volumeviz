@@ -21,6 +21,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/services/previews"
 	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/utils"
+	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // Repository interfaces for filesystem indexing
@@ -168,15 +169,15 @@ func (vs *VolumeScanner) SetFilesystemIndexing(
 	vs.filesRepo = filesRepo
 	vs.previewService = previewService
 	vs.store = store // Set store for scan progress tracking
-	
+
 	// Initialize progress throttler with 2-second interval
 	if store != nil {
-		vs.progressThrottler = filesystem.NewProgressThrottler(store, 2*time.Second)
+		vs.progressThrottler = filesystem.NewProgressThrottler(store, 2*time.Second, nil)
 		// Start periodic flush to ensure pending updates are sent
 		ctx := context.Background()
 		vs.progressThrottler.StartPeriodicFlush(ctx)
 	}
-	
+
 	// Initialize volume mapping if not already set
 	if vs.volumeMapping == nil {
 		vs.volumeMapping = volumeConfig.NewVolumeMappingConfig()
@@ -187,6 +188,28 @@ func (vs *VolumeScanner) SetFilesystemIndexing(
 		previewService,
 		vs.enrichmentManager, // Use the volume scanner's enrichment manager
 	)
+}
+
+// SetWebSocketBroadcaster sets the WebSocket broadcaster for real-time progress updates
+func (vs *VolumeScanner) SetWebSocketBroadcaster(broadcaster *websocket.ProgressBroadcaster) {
+	// Set on filesystem indexer
+	if vs.filesystemIndexer != nil {
+		vs.filesystemIndexer.SetWebSocketBroadcaster(broadcaster)
+	}
+
+	// Set on progress throttler
+	if vs.progressThrottler != nil {
+		vs.progressThrottler.SetWebSocketBroadcaster(broadcaster)
+	}
+
+	// Set on enrichment manager
+	if vs.enrichmentManager != nil {
+		if enrichmentMgr, ok := vs.enrichmentManager.(interface {
+			SetWebSocketBroadcaster(*websocket.ProgressBroadcaster)
+		}); ok {
+			enrichmentMgr.SetWebSocketBroadcaster(broadcaster)
+		}
+	}
 }
 
 // ScanVolume scans a volume and returns size information
@@ -343,7 +366,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 	if vs.store != nil {
 		// Use background context to avoid cancellation when HTTP request completes
 		go vs.initializeDatabaseProgress(context.Background(), scanID, volumeID)
-		
+
 		// Create scan job record so it appears in volume API status
 		go func() {
 			ctx := context.Background()
@@ -386,7 +409,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 			// Update database - mark volume scan phase as failed
 			if vs.store != nil {
 				go vs.updateVolumePhaseStatus(context.Background(), scanID, "failed", err.Error())
-				
+
 				// Also update scan job status
 				go func() {
 					ctx := context.Background()
@@ -406,7 +429,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 			// Update database - mark volume scan phase as completed
 			if vs.store != nil {
 				go vs.updateVolumePhaseStatus(context.Background(), scanID, "completed", "")
-				
+
 				// Also update scan job status
 				go func() {
 					ctx := context.Background()
@@ -667,7 +690,7 @@ func (vs *VolumeScanner) updateVolumePhaseStatus(ctx context.Context, scanID, st
 		if err != nil && vs.logger != nil {
 			vs.logger.Printf("Failed to complete volume_scan phase for scan %s: %v", scanID, err)
 		}
-		
+
 		// Cleanup throttler tracking for completed scan
 		if vs.progressThrottler != nil {
 			updates, throttled := vs.progressThrottler.GetStats(scanID)
@@ -683,7 +706,7 @@ func (vs *VolumeScanner) updateVolumePhaseStatus(ctx context.Context, scanID, st
 		if err != nil && vs.logger != nil {
 			vs.logger.Printf("Failed to mark volume_scan phase as failed for scan %s: %v", scanID, err)
 		}
-		
+
 		// Cleanup throttler tracking for failed scan
 		if vs.progressThrottler != nil {
 			vs.progressThrottler.Cleanup(scanID)

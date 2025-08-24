@@ -172,7 +172,7 @@ func (s *Scheduler) Start(ctx context.Context) error {
 			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 				defer cancel()
-				
+
 				resumeManager := NewResumeManager(s.store, s.scanner, s.progressBroadcaster)
 				if err := resumeManager.ResumePausedScans(ctx); err != nil {
 					log.Printf("[ERROR] Failed to resume paused scans: %v", err)
@@ -593,14 +593,14 @@ func (s *Scheduler) runPeriodicResumeCheck() {
 	if s.store == nil {
 		return
 	}
-	
+
 	log.Printf("[INFO] Checking for failed/paused scans to resume")
-	
+
 	// Create resume manager and check for paused scans
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
-		
+
 		resumeManager := NewResumeManager(s.store, s.scanner, s.progressBroadcaster)
 		if err := resumeManager.ResumePausedScans(ctx); err != nil {
 			log.Printf("[ERROR] Periodic resume check failed: %v", err)

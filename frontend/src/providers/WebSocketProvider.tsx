@@ -8,28 +8,37 @@
  * - Dev panel support for testing
  */
 
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-} from 'react';
 import { useSetAtom } from 'jotai';
-import {
-  websocketStateAtom,
-  websocketEnabledAtom,
-} from '../store/atoms/websocket';
-import type { WebSocketStatus, WebSocketState } from '../store/atoms/websocket';
+import React, {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import { useDebounce } from '../hooks/useDebounce';
+import type { WebSocketState, WebSocketStatus } from '../store/atoms/websocket';
+import {
+    websocketEnabledAtom,
+    websocketStateAtom,
+} from '../store/atoms/websocket';
 
 // Environment configuration
 const WS_ENABLED = import.meta.env.VITE_ENABLE_WEBSOCKET === 'true';
-const WS_URL =
-  import.meta.env.VITE_WS_URL ||
-  `ws://${window.location.hostname}:8080/api/v1/ws`;
+const WS_URL = import.meta.env.VITE_WS_URL;
 const DEV_MODE = import.meta.env.DEV;
+
+if (!WS_URL) {
+  throw new Error('VITE_WS_URL environment variable is required but not set');
+}
+
+// Debug logging
+console.log('WebSocket configuration:', {
+  WS_ENABLED,
+  WS_URL,
+  DEV_MODE,
+});
 
 interface WebSocketMessage {
   type: string;
@@ -161,18 +170,21 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
   // Send message through WebSocket
   const send = useCallback((message: WebSocketMessage): boolean => {
+    console.log('WebSocket send called with message:', message);
+
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.warn('WebSocket not connected, cannot send message:', message);
+      console.log('WebSocket state:', wsRef.current?.readyState);
       return false;
     }
 
     try {
-      wsRef.current.send(
-        JSON.stringify({
-          ...message,
-          timestamp: message.timestamp || new Date().toISOString(),
-        }),
-      );
+      const messageToSend = {
+        ...message,
+        timestamp: message.timestamp || new Date().toISOString(),
+      };
+      console.log('Sending WebSocket message:', messageToSend);
+      wsRef.current.send(JSON.stringify(messageToSend));
       return true;
     } catch (error) {
       console.error('Failed to send WebSocket message:', error);
@@ -283,6 +295,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       return;
     }
 
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      console.warn('WebSocket already connected');
+      return;
+    }
+
     setState((prev) => ({
       ...prev,
       status: prev.reconnectAttempts > 0 ? 'reconnecting' : 'connecting',
@@ -290,6 +307,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }));
 
     try {
+      console.log('Attempting WebSocket connection to:', WS_URL);
       const ws = new WebSocket(WS_URL);
       wsRef.current = ws;
 
@@ -423,7 +441,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   useEffect(() => {
     mountedRef.current = true;
 
-    if (WS_ENABLED) {
+    if (WS_ENABLED && !wsRef.current) {
+      console.log('Initializing WebSocket connection...');
       connect();
     }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/services/previews"
 	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // FilesystemIndexer provides streaming filesystem indexing with rich metadata
@@ -78,13 +79,13 @@ type IndexingProgress struct {
 
 // NewFilesystemIndexer creates a new filesystem indexer
 func NewFilesystemIndexer(store store.Store, config IndexerConfig, previewService *previews.Service, enrichmentManager interfaces.EnrichmentManager) *FilesystemIndexer {
-	// Create progress tracker with 2-second update interval
-	progressTracker := NewProgressTracker(store, 2*time.Second)
-	
+	// Create progress tracker with 2-second update interval (WebSocket broadcaster will be set later)
+	progressTracker := NewProgressTracker(store, 2*time.Second, nil)
+
 	// Start periodic flush to ensure pending updates are sent
 	ctx := context.Background()
 	progressTracker.StartPeriodicFlush(ctx)
-	
+
 	return &FilesystemIndexer{
 		store:             store,
 		config:            config,
@@ -94,6 +95,17 @@ func NewFilesystemIndexer(store store.Store, config IndexerConfig, previewServic
 		previewService:    previewService,
 		enrichmentManager: enrichmentManager,
 		activeScans:       make(map[string]*IndexingProgress),
+	}
+}
+
+// SetWebSocketBroadcaster sets the WebSocket broadcaster for real-time progress updates
+func (fi *FilesystemIndexer) SetWebSocketBroadcaster(broadcaster *websocket.ProgressBroadcaster) {
+	if fi.progressTracker != nil {
+		fi.progressTracker.wsBroadcaster = broadcaster
+		// Also update the throttler's broadcaster
+		if fi.progressTracker.throttler != nil {
+			fi.progressTracker.throttler.wsBroadcaster = broadcaster
+		}
 	}
 }
 

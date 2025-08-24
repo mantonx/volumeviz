@@ -7,21 +7,24 @@ import (
 
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // ProgressTracker handles throttled progress updates to prevent database flooding
 type ProgressTracker struct {
-	store             store.Store
-	throttler         *ProgressThrottler
-	updateInterval    time.Duration
+	store          store.Store
+	throttler      *ProgressThrottler
+	updateInterval time.Duration
+	wsBroadcaster  *websocket.ProgressBroadcaster
 }
 
 // NewProgressTracker creates a new progress tracker
-func NewProgressTracker(store store.Store, updateInterval time.Duration) *ProgressTracker {
+func NewProgressTracker(store store.Store, updateInterval time.Duration, wsBroadcaster *websocket.ProgressBroadcaster) *ProgressTracker {
 	return &ProgressTracker{
 		store:          store,
-		throttler:      NewProgressThrottler(store, updateInterval),
+		throttler:      NewProgressThrottler(store, updateInterval, wsBroadcaster),
 		updateInterval: updateInterval,
+		wsBroadcaster:  wsBroadcaster,
 	}
 }
 
@@ -38,14 +41,14 @@ func (pt *ProgressTracker) QueueProgressUpdate(scanID string, progress *Indexing
 	// Calculate progress percentage
 	progressPercent := 0
 	previousProgress := 0
-	
+
 	if itemsTotal > 0 {
 		// Calculate previous progress for milestone detection
 		previousProcessed := itemsProcessed - 1
 		if previousProcessed > 0 {
 			previousProgress = int((previousProcessed * 100) / itemsTotal)
 		}
-		
+
 		progressPercent = int((itemsProcessed * 100) / itemsTotal)
 		if progressPercent > 100 {
 			progressPercent = 100
@@ -80,10 +83,10 @@ func (pt *ProgressTracker) QueueProgressUpdate(scanID string, progress *Indexing
 				progressPercent, progress.FilesScanned, progress.FoldersScanned)
 		}
 	}
-	
+
 	// Also force update at specific file count milestones for user feedback
-	if progress.FilesScanned == 100 || progress.FilesScanned == 1000 || progress.FilesScanned == 10000 || 
-	   progress.FilesScanned == 100000 || (progress.FilesScanned > 0 && progress.FilesScanned%500000 == 0) {
+	if progress.FilesScanned == 100 || progress.FilesScanned == 1000 || progress.FilesScanned == 10000 ||
+		progress.FilesScanned == 100000 || (progress.FilesScanned > 0 && progress.FilesScanned%500000 == 0) {
 		forceUpdate = true
 	}
 
@@ -94,7 +97,7 @@ func (pt *ProgressTracker) QueueProgressUpdate(scanID string, progress *Indexing
 	} else {
 		err = pt.throttler.QueueUpdate(context.Background(), scanID, update)
 	}
-	
+
 	if err != nil {
 		fmt.Printf("[ProgressTracker] Failed to queue progress update: %v\n", err)
 	}
@@ -130,6 +133,15 @@ func (pt *ProgressTracker) UpdatePhaseStatus(ctx context.Context, scanID, phaseN
 			fmt.Printf("Failed to update %s phase status for scan %s: %v\n", phaseName, scanID, err)
 		} else {
 			fmt.Printf("Started %s phase for scan %s\n", phaseName, scanID)
+		}
+	}
+
+	// Broadcast progress update via WebSocket after database update
+	if pt.wsBroadcaster != nil {
+		// Get updated phase data to broadcast
+		phase, err := scanProgressRepo.GetScanPhase(ctx, scanID, phaseName)
+		if err == nil && phase != nil {
+			pt.wsBroadcaster.BroadcastProgress(ctx, scanID, phase)
 		}
 	}
 }

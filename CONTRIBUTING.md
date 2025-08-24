@@ -455,7 +455,7 @@ To keep the repository lean and fast, **never commit large binary files**. This 
 
 **Build Artifacts to Never Commit:**
 - **Go binaries**: `volumeviz`, `main`, `*.test` files
-- **Node modules**: Large `.node`, `.wasm` files  
+- **Node modules**: Large `.node`, `.wasm` files
 - **Archives**: `*.gz`, `*.tar`, `*.zip`, etc.
 - **Database files**: `*.db`, `*.sqlite`
 - **Temporary files**: Anything in `tmp/` directory
@@ -474,7 +474,7 @@ git status
 
 ### Good Practices
 1. **Always run** `git status` before `git add .`
-2. **Review** `git diff --cached` before committing  
+2. **Review** `git diff --cached` before committing
 3. **Use** `git add <specific-files>` instead of `git add .` when in doubt
 4. **Test builds** work after adding gitignore rules
 
@@ -493,7 +493,7 @@ git reset HEAD <large-file>
 # Build without committing the binary
 make build
 
-# Clean build artifacts  
+# Clean build artifacts
 make clean
 
 # Run tests without committing test binaries

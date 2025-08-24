@@ -95,6 +95,9 @@ func (c *Client) readPump() {
 			continue
 		}
 
+		// Debug: Log all received messages
+		log.Printf("ws %s: received message type: %s, data: %+v", c.id, msg.Type, msg.Data)
+
 		// Handle incoming messages
 		switch msg.Type {
 		case MessageTypePing:
@@ -107,8 +110,10 @@ func (c *Client) readPump() {
 			c.lastPongTime = time.Now()
 			c.missedPongs = 0
 		case MessageTypeSubscribe:
+			log.Printf("ws %s: handling subscribe message", c.id)
 			c.handleSubscribe(msg)
 		case MessageTypeUnsubscribe:
+			log.Printf("ws %s: handling unsubscribe message", c.id)
 			c.handleUnsubscribe(msg)
 		}
 	}
@@ -193,18 +198,23 @@ func (c *Client) sendMessage(message Message) {
 
 // handleSubscribe processes subscription requests from client
 func (c *Client) handleSubscribe(msg Message) {
+	log.Printf("ws %s: handleSubscribe called with data: %+v", c.id, msg.Data)
+
 	if msg.Data == nil {
+		log.Printf("ws %s: subscription data is nil", c.id)
 		return
 	}
 
 	// Extract subscription data
 	subData, ok := msg.Data.(map[string]interface{})
 	if !ok {
+		log.Printf("ws %s: subscription data is not a map, got: %T", c.id, msg.Data)
 		return
 	}
 
 	event, ok := subData["event"].(string)
 	if !ok {
+		log.Printf("ws %s: no event field in subscription data or not a string, data: %+v", c.id, subData)
 		return
 	}
 
@@ -224,6 +234,8 @@ func (c *Client) handleSubscribe(msg Message) {
 		Filters: filters,
 	}
 	c.subscMutex.Unlock()
+
+	log.Printf("ws %s: successfully subscribed to event: %s with filters: %+v", c.id, event, filters)
 }
 
 // handleUnsubscribe processes unsubscription requests from client

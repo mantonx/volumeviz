@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { atom, useAtom } from 'jotai';
-import { useWebSocket } from '@/providers/WebSocketProvider';
 import type { ScanOperation } from '@/components/domain/ScanManagerDashboard';
 import type { ScanNotification } from '@/components/domain/ScanNotificationCenter';
 import type { ScanData } from '@/components/domain/ScanProgressModal';
+import { useWebSocket } from '@/providers/WebSocketProvider';
+import { atom, useAtom } from 'jotai';
+import { useCallback, useEffect, useRef } from 'react';
 
 // Atoms for global scan state
 export const activeScanOperationsAtom = atom<ScanOperation[]>([]);
@@ -404,10 +404,13 @@ export const useScanMonitoring = (
       on(event, handleScanProgress);
     });
 
-    // Subscribe to global scan updates
+    // Subscribe to scan_progress events via WebSocket
     send({
       type: 'subscribe',
-      data: { channel: 'scans', volume_id: volumeId },
+      data: {
+        event: 'scan_progress',
+        filters: volumeId ? { volume_id: volumeId } : {},
+      },
     });
 
     return () => {
@@ -415,10 +418,13 @@ export const useScanMonitoring = (
         off(event, handleScanProgress);
       });
 
-      // Unsubscribe from global scan updates
+      // Unsubscribe from scan_progress events
       send({
         type: 'unsubscribe',
-        data: { channel: 'scans', volume_id: volumeId },
+        data: {
+          event: 'scan_progress',
+          filters: volumeId ? { volume_id: volumeId } : {},
+        },
       });
     };
   }, [autoSubscribe, isConnected, volumeId, on, off, send, handleScanProgress]);

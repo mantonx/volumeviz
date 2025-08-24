@@ -78,6 +78,9 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 	hub := websocket.NewHub()
 	go hub.Run()
 
+	// Create WebSocket progress broadcaster
+	wsBroadcaster := websocket.NewProgressBroadcaster(hub)
+
 	// Initialize real-time publisher
 	publisher := realtime.NewPublisher(hub)
 
@@ -148,6 +151,11 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		storeInstance,
 		previewService,
 	)
+
+	// Set WebSocket broadcaster for real-time progress updates
+	if volumeScannerImpl, ok := volumeScannerConcrete.(*scanner.VolumeScanner); ok {
+		volumeScannerImpl.SetWebSocketBroadcaster(wsBroadcaster)
+	}
 
 	// Initialize media enrichment manager if enabled
 	var enrichmentManager oldInterfaces.EnrichmentManager

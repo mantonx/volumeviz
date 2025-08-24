@@ -11,6 +11,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // Manager implements the EnrichmentManager interface
@@ -19,8 +20,9 @@ type Manager struct {
 	enrichers     []Enricher
 	repository    MediaMetadataRepository
 	logger        *log.Logger
-	store         store.Store                 // Database store for progress tracking
-	volumeMapping *config.VolumeMappingConfig // Volume path mapping configuration
+	store         store.Store                    // Database store for progress tracking
+	volumeMapping *config.VolumeMappingConfig    // Volume path mapping configuration
+	wsBroadcaster *websocket.ProgressBroadcaster // WebSocket broadcaster for real-time updates
 
 	// Progress tracking
 	progressMutex sync.RWMutex
@@ -111,6 +113,11 @@ func (m *Manager) RegisterEnricher(enricher Enricher) {
 // GetEnrichers returns all registered enrichers
 func (m *Manager) GetEnrichers() []Enricher {
 	return m.enrichers
+}
+
+// SetWebSocketBroadcaster sets the WebSocket broadcaster for real-time progress updates
+func (m *Manager) SetWebSocketBroadcaster(broadcaster *websocket.ProgressBroadcaster) {
+	m.wsBroadcaster = broadcaster
 }
 
 // IsEnabled returns true if enrichment is enabled
@@ -619,6 +626,11 @@ func (m *Manager) updateProgressWithResult(volumeID string, result EnrichmentRes
 			err := scanProgressRepo.UpdateScanPhaseProgress(ctx, updateParams)
 			if err != nil && m.logger != nil {
 				m.logger.Printf("Failed to update media enrichment progress for scan %s: %v", scanID, err)
+			} else if m.wsBroadcaster != nil {
+				// Broadcast progress update via WebSocket after successful database update
+				if phase, wsErr := scanProgressRepo.GetScanPhase(ctx, scanID, "media_enrichment"); wsErr == nil && phase != nil {
+					m.wsBroadcaster.BroadcastProgress(ctx, scanID, phase)
+				}
 			}
 		}(progress.ScanID, progress.ProcessedFiles, progress.TotalFiles, progress.CurrentFile)
 	}
@@ -800,6 +812,13 @@ func (m *Manager) updateDatabasePhaseStatus(ctx context.Context, scanID, phaseNa
 				m.logger.Printf("Completed %s phase for scan %s (processed %d files)", phaseName, scanID, itemsProcessed)
 			}
 
+			// Broadcast completion via WebSocket
+			if m.wsBroadcaster != nil {
+				if phase, wsErr := scanProgressRepo.GetScanPhase(ctx, scanID, phaseName); wsErr == nil && phase != nil {
+					m.wsBroadcaster.BroadcastProgress(ctx, scanID, phase)
+				}
+			}
+
 			// Check if all phases are complete and mark scan as completed if so
 			go m.checkAndCompleteScan(context.Background(), scanID)
 		}
@@ -820,6 +839,11 @@ func (m *Manager) updateDatabasePhaseStatus(ctx context.Context, scanID, phaseNa
 		if err != nil {
 			if m.logger != nil {
 				m.logger.Printf("Failed to update %s phase status for scan %s: %v", phaseName, scanID, err)
+			}
+		} else if m.wsBroadcaster != nil {
+			// Broadcast phase start via WebSocket
+			if phase, wsErr := scanProgressRepo.GetScanPhase(ctx, scanID, phaseName); wsErr == nil && phase != nil {
+				m.wsBroadcaster.BroadcastProgress(ctx, scanID, phase)
 			}
 		}
 	}

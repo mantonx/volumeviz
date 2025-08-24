@@ -105,7 +105,7 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
   const { success, error: showError, info } = useToast();
 
   // WebSocket connection
-  const { isConnected, on } = useWebSocket();
+  const { isConnected, on, send } = useWebSocket();
 
   // Scanning functionality
   const { scanVolume, scanLoading } = useVolumeScanning();
@@ -219,9 +219,27 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
       }
     };
 
+    const handleScanProgress = (data: any) => {
+      console.log('Received scan progress update:', data);
+      // Refresh data when scan completes to update volume sizes
+      if (data.phase === 'complete' || data.phase === 'completed') {
+        setTimeout(() => fetchData({}), 1000);
+      }
+    };
+
     on('volume_updates', handleVolumeListUpdate);
     on('container_updates', handleContainerUpdate);
-  }, [isConnected, on, fetchData]);
+    on('scan_progress', handleScanProgress);
+
+    // Subscribe to scan progress for all volumes
+    const subscribeMessage = {
+      type: 'subscribe',
+      event: 'scan_progress',
+      filters: {}, // Subscribe to all scan progress
+    };
+    console.log('Sending WebSocket subscription:', subscribeMessage);
+    send(subscribeMessage);
+  }, [isConnected, on, send, fetchData]);
 
   // Show error toasts
   useEffect(() => {
@@ -344,11 +362,18 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
   const handleScanVolume = useCallback(
     async (volumeId: string) => {
       const wasAlreadyOpen = volumesWithDetailedProgress.has(volumeId);
-      
+
       try {
+        // Always show progress when starting a scan
         addDetailedProgress(volumeId);
-        info('Starting volume scan with progress tracking...');
+
+        // Show toast notification that scan is starting
+        info('Starting volume scan...');
+
+        // Start the actual scan
         await scanVolume(volumeId);
+
+        // Show success toast
         success('Volume scan completed successfully');
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Scan failed');
@@ -357,9 +382,8 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
         // Auto-close progress panel only if it wasn't manually opened before the scan
         if (!wasAlreadyOpen) {
           setTimeout(() => {
-            // Double-check that user hasn't manually opened it in the meantime
             removeDetailedProgress(volumeId);
-          }, 3000); // Auto-close after scan starts and shows some progress
+          }, 5000); // Auto-close after 5 seconds to show final results
         }
       }
     },
@@ -372,6 +396,20 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
       removeDetailedProgress,
       volumesWithDetailedProgress,
     ],
+  );
+
+  // Just toggle progress view without triggering scan or toasts
+  const handleToggleProgressView = useCallback(
+    (volumeId: string) => {
+      const hasDetailedProgress = volumesWithDetailedProgress.has(volumeId);
+
+      if (hasDetailedProgress) {
+        removeDetailedProgress(volumeId);
+      } else {
+        addDetailedProgress(volumeId);
+      }
+    },
+    [volumesWithDetailedProgress, addDetailedProgress, removeDetailedProgress],
   );
 
   // Get volume actions
@@ -390,15 +428,9 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
         },
         {
           id: 'view-progress',
-          label: hasDetailedProgress ? 'Hide Progress' : 'View Progress',
+          label: hasDetailedProgress ? 'Hide Progress' : 'Show Progress',
           icon: hasDetailedProgress ? EyeOff : Eye,
-          onClick: () => {
-            if (hasDetailedProgress) {
-              removeDetailedProgress(item.id);
-            } else {
-              addDetailedProgress(item.id);
-            }
-          },
+          onClick: () => handleToggleProgressView(item.id),
           disabled: item.status === 'untracked',
         },
         {
@@ -420,11 +452,10 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
     [
       scanLoading,
       handleScanVolume,
+      handleToggleProgressView,
       bulkTrack,
       bulkUntrack,
       volumesWithDetailedProgress,
-      addDetailedProgress,
-      removeDetailedProgress,
     ],
   );
 

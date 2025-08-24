@@ -8,6 +8,7 @@ import (
 
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // ProgressThrottler manages throttled progress updates to prevent database flooding
@@ -16,6 +17,7 @@ type ProgressThrottler struct {
 	store          store.Store
 	updateInterval time.Duration
 	mu             sync.Mutex
+	wsBroadcaster  *websocket.ProgressBroadcaster
 
 	// Tracking for each scan
 	scanTrackers map[string]*scanProgressTracker
@@ -23,24 +25,25 @@ type ProgressThrottler struct {
 
 // scanProgressTracker tracks progress for a single scan
 type scanProgressTracker struct {
-	scanID         string
-	lastUpdate     time.Time
-	pendingUpdate  *models.UpdateScanPhaseParams
+	scanID          string
+	lastUpdate      time.Time
+	pendingUpdate   *models.UpdateScanPhaseParams
 	forceNextUpdate bool
-	updateCount    int64
-	throttledCount int64
+	updateCount     int64
+	throttledCount  int64
 }
 
 // NewProgressThrottler creates a new progress throttler
-func NewProgressThrottler(store store.Store, updateInterval time.Duration) *ProgressThrottler {
+func NewProgressThrottler(store store.Store, updateInterval time.Duration, wsBroadcaster *websocket.ProgressBroadcaster) *ProgressThrottler {
 	if updateInterval < 100*time.Millisecond {
 		updateInterval = 2 * time.Second // Default to 2 seconds
 	}
-	
+
 	return &ProgressThrottler{
 		store:          store,
 		updateInterval: updateInterval,
 		scanTrackers:   make(map[string]*scanProgressTracker),
+		wsBroadcaster:  wsBroadcaster,
 	}
 }
 
@@ -89,7 +92,7 @@ func (pt *ProgressThrottler) ForceUpdate(ctx context.Context, scanID string, upd
 
 	tracker.pendingUpdate = &update
 	tracker.forceNextUpdate = true
-	
+
 	return pt.sendUpdateLocked(ctx, tracker)
 }
 
@@ -119,7 +122,7 @@ func (pt *ProgressThrottler) FlushAll(ctx context.Context) error {
 			}
 		}
 	}
-	
+
 	return lastErr
 }
 
@@ -197,6 +200,15 @@ func (pt *ProgressThrottler) sendUpdateLocked(ctx context.Context, tracker *scan
 		return fmt.Errorf("failed to update scan phase progress: %w", err)
 	}
 
+	// Broadcast progress update via WebSocket after successful database update
+	if pt.wsBroadcaster != nil {
+		// Get updated phase data to broadcast
+		phase, wsErr := scanProgressRepo.GetScanPhase(ctx, tracker.pendingUpdate.ScanID, tracker.pendingUpdate.PhaseName)
+		if wsErr == nil && phase != nil {
+			pt.wsBroadcaster.BroadcastProgress(ctx, tracker.pendingUpdate.ScanID, phase)
+		}
+	}
+
 	// Clear pending update and update tracking
 	tracker.pendingUpdate = nil
 	tracker.lastUpdate = time.Now()
@@ -223,3 +235,9 @@ func (pt *ProgressThrottler) flushStaleUpdates(ctx context.Context) {
 	}
 }
 
+// SetWebSocketBroadcaster sets the WebSocket broadcaster for progress updates
+func (pt *ProgressThrottler) SetWebSocketBroadcaster(broadcaster *websocket.ProgressBroadcaster) {
+	pt.mu.Lock()
+	defer pt.mu.Unlock()
+	pt.wsBroadcaster = broadcaster
+}
