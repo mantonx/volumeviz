@@ -360,17 +360,8 @@ export const VolumeTableView: React.FC<VolumeTableViewProps> = ({
                                 scanId,
                                 duration,
                               );
-                              success(
-                                `Scan completed for ${item.name} in ${Math.round(duration / 1000)}s`,
-                              );
-                              // Auto-hide progress after completion
-                              setTimeout(() => {
-                                setVolumesWithDetailedProgress((prev) => {
-                                  const newSet = new Set(prev);
-                                  newSet.delete(item.id);
-                                  return newSet;
-                                });
-                              }, 5000);
+                              // Don't show toasts or auto-hide when just viewing progress
+                              // These actions are handled by the scan initiation logic
                             }}
                             onScanError={(scanId, error) => {
                               console.log(
