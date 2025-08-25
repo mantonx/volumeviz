@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Dropdown } from '@/components/ui/Dropdown';
-import { MultiPhaseProgressBar } from '@/components/ui/MultiPhaseProgressBar';
+import { ScanProgressDisplay } from '@/components/ui/ScanProgressDisplay';
 import { ContainerStatus } from '@/components/ui/ContainerStatus';
 import { FreshnessIndicator } from '@/components/ui/FreshnessIndicator';
 import { SizeVisualization } from '@/components/ui/SizeVisualization';
@@ -333,30 +333,30 @@ export const VolumeTableView: React.FC<VolumeTableViewProps> = ({
                     </td>
                   </tr>
 
-                  {/* Unified detailed progress row using MultiPhaseProgressBar for both scan and view */}
+                  {/* Unified detailed progress row using ScanProgressDisplay for both scan and view */}
                   {volumesWithDetailedProgress.has(item.id) && (
                     <tr key={`${item.id}-progress`} className="border-t-0">
                       <td className="p-0" colSpan={visibleColumnsCount + 2}>
                         <div className="bg-blue-50 dark:bg-blue-900/10 border-l-4 border-blue-500 p-4">
-                          <MultiPhaseProgressBar
+                          <ScanProgressDisplay
                             volumeId={item.id}
                             scanId={item.last_scan_id}
+                            variant="panel"
                             size="md"
-                            showPhaseDescriptions={true}
-                            showDetailedMetrics={true}
+                            showPerformanceStats={true}
                             showErrors={true}
                             animated={true}
                             showEstimatedTime={true}
                             compact={false}
                             onScanStart={(scanId) => {
                               console.log(
-                                `MultiPhaseProgressBar: Scan started for volume ${item.id}:`,
+                                `ScanProgressDisplay: Scan started for volume ${item.id}:`,
                                 scanId,
                               );
                             }}
                             onScanComplete={(scanId, duration) => {
                               console.log(
-                                `MultiPhaseProgressBar: Scan completed for volume ${item.id}:`,
+                                `ScanProgressDisplay: Scan completed for volume ${item.id}:`,
                                 scanId,
                                 duration,
                               );
@@ -365,7 +365,7 @@ export const VolumeTableView: React.FC<VolumeTableViewProps> = ({
                             }}
                             onScanError={(scanId, error) => {
                               console.log(
-                                `MultiPhaseProgressBar: Scan error for volume ${item.id}:`,
+                                `ScanProgressDisplay: Scan error for volume ${item.id}:`,
                                 scanId,
                                 error,
                               );

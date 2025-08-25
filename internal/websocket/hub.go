@@ -274,12 +274,16 @@ func (h *Hub) BroadcastToSubscribed(event string, filters map[string]string, mes
 
 	sentCount := 0
 	for client := range h.clients {
-		if client.isSubscribedTo(event, filters) {
+		isSubscribed := client.isSubscribedTo(event, filters)
+		log.Printf("[DEBUG] Client %s subscribed to event %s with filters %v: %v", client.id, event, filters, isSubscribed)
+		if isSubscribed {
 			select {
 			case client.send <- data:
 				sentCount++
+				log.Printf("[DEBUG] Successfully sent message to client %s", client.id)
 			default:
 				// Client's send buffer is full, remove client
+				log.Printf("[DEBUG] Client %s send buffer full, removing", client.id)
 				close(client.send)
 				delete(h.clients, client)
 			}

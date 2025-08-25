@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/interfaces"
+	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/services/previews"
 	"github.com/mantonx/volumeviz/internal/store"
-	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // FilesystemIndexer provides streaming filesystem indexing with rich metadata
@@ -79,8 +79,8 @@ type IndexingProgress struct {
 
 // NewFilesystemIndexer creates a new filesystem indexer
 func NewFilesystemIndexer(store store.Store, config IndexerConfig, previewService *previews.Service, enrichmentManager interfaces.EnrichmentManager) *FilesystemIndexer {
-	// Create progress tracker with 2-second update interval (WebSocket broadcaster will be set later)
-	progressTracker := NewProgressTracker(store, 2*time.Second, nil)
+	// Create progress tracker with 2-second update interval
+	progressTracker := NewProgressTracker(store, 2*time.Second)
 
 	// Start periodic flush to ensure pending updates are sent
 	ctx := context.Background()
@@ -98,16 +98,7 @@ func NewFilesystemIndexer(store store.Store, config IndexerConfig, previewServic
 	}
 }
 
-// SetWebSocketBroadcaster sets the WebSocket broadcaster for real-time progress updates
-func (fi *FilesystemIndexer) SetWebSocketBroadcaster(broadcaster *websocket.ProgressBroadcaster) {
-	if fi.progressTracker != nil {
-		fi.progressTracker.wsBroadcaster = broadcaster
-		// Also update the throttler's broadcaster
-		if fi.progressTracker.throttler != nil {
-			fi.progressTracker.throttler.wsBroadcaster = broadcaster
-		}
-	}
-}
+// Legacy method removed - progress broadcasting is now handled by comprehensive progress broadcaster
 
 // IndexVolume performs complete filesystem indexing for a volume
 func (fi *FilesystemIndexer) IndexVolume(ctx context.Context, volumeID, mountpoint string, deltaMode bool) error {
@@ -170,6 +161,13 @@ func (fi *FilesystemIndexer) GetIndexingProgress(volumeID string) *IndexingProgr
 // SetEnrichmentManager updates the enrichment manager for the filesystem indexer
 func (fi *FilesystemIndexer) SetEnrichmentManager(manager interfaces.EnrichmentManager) {
 	fi.enrichmentManager = manager
+}
+
+// SetProgressBroadcaster sets the progress broadcaster on the progress tracker
+func (fi *FilesystemIndexer) SetProgressBroadcaster(broadcaster *realtime.ProgressBroadcaster) {
+	if fi.progressTracker != nil {
+		fi.progressTracker.SetProgressBroadcaster(broadcaster)
+	}
 }
 
 // Internal methods for progress tracking - these will be called by walkers

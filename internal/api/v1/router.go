@@ -78,11 +78,11 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 	hub := websocket.NewHub()
 	go hub.Run()
 
-	// Create WebSocket progress broadcaster
-	wsBroadcaster := websocket.NewProgressBroadcaster(hub)
-
 	// Initialize real-time publisher
 	publisher := realtime.NewPublisher(hub)
+
+	// Create comprehensive progress broadcaster for real-time updates
+	progressBroadcaster := realtime.NewProgressBroadcaster(hub, storeInstance)
 
 	// Initialize the scanner with all dependencies
 	logger := log.New(os.Stdout, "[SCANNER] ", log.LstdFlags)
@@ -152,9 +152,9 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		previewService,
 	)
 
-	// Set WebSocket broadcaster for real-time progress updates
+	// Set comprehensive progress broadcaster for real-time updates
 	if volumeScannerImpl, ok := volumeScannerConcrete.(*scanner.VolumeScanner); ok {
-		volumeScannerImpl.SetWebSocketBroadcaster(wsBroadcaster)
+		volumeScannerImpl.SetProgressBroadcaster(progressBroadcaster)
 	}
 
 	// Initialize media enrichment manager if enabled
@@ -189,6 +189,12 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 			log.Printf("[INFO] Media enrichment manager integrated with volume scanner")
 		} else {
 			log.Printf("[WARNING] Could not cast volume scanner to concrete type for enrichment integration")
+		}
+
+		// Set progress broadcaster on enrichment manager for real-time updates
+		if enrichmentManagerImpl, ok := enrichmentManager.(*enrichers.Manager); ok {
+			enrichmentManagerImpl.SetProgressBroadcaster(progressBroadcaster)
+			log.Printf("[INFO] Progress broadcaster set on enrichment manager")
 		}
 
 		log.Printf("[INFO] Media enrichment manager initialized successfully")

@@ -19,7 +19,7 @@ func TestDiskusPerformanceRequirements(t *testing.T) {
 	config := models.ScanConfig{
 		DefaultTimeout: 5 * time.Minute,
 	}
-	method := NewDiskusMethod(config)
+	method := NewDiskusMethod(config, nil)
 
 	// Skip if diskus is not available
 	if !method.Available() {
@@ -79,7 +79,7 @@ func TestMemoryUsageDuringLargeScan(t *testing.T) {
 	config := models.ScanConfig{
 		DefaultTimeout: 5 * time.Minute,
 	}
-	method := NewDiskusMethod(config)
+	method := NewDiskusMethod(config, nil)
 
 	if !method.Available() {
 		t.Skip("diskus not available, skipping memory test")
@@ -140,7 +140,7 @@ func BenchmarkDiskusMethod(b *testing.B) {
 	config := models.ScanConfig{
 		DefaultTimeout: 5 * time.Minute,
 	}
-	method := NewDiskusMethod(config)
+	method := NewDiskusMethod(config, nil)
 
 	if !method.Available() {
 		b.Skip("diskus not available, skipping benchmark")

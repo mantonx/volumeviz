@@ -327,12 +327,16 @@ func (c *Client) isSubscribedTo(event string, filters map[string]string) bool {
 		return false
 	}
 
-	// Check filters if provided
-	for key, value := range filters {
-		if subValue, ok := subscription.Filters[key]; ok {
-			if subValue != value {
+	// Check if subscription filters match the broadcast filters
+	// The subscription's requirements must be satisfied by the broadcast
+	for subKey, subValue := range subscription.Filters {
+		if broadcastValue, ok := filters[subKey]; ok {
+			if broadcastValue != subValue {
 				return false
 			}
+		} else {
+			// Subscription requires a filter that the broadcast doesn't have
+			return false
 		}
 	}
 

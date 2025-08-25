@@ -3,7 +3,7 @@ import {
   globalPhaseTransitionDetector,
   type PhaseTransition,
 } from '../utils/phaseTransitionNotifications';
-import type { ComprehensiveScanProgress } from '../components/ui/MultiPhaseProgressBar/MultiPhaseProgressBar.types';
+import type { ScanProgressData } from '../components/ui/ScanProgressDisplay/ScanProgressDisplay.types';
 
 export interface UsePhaseTransitionNotificationsOptions {
   /** Whether to enable phase transition detection */
@@ -29,7 +29,7 @@ export interface UsePhaseTransitionNotificationsReturn {
   clearTransitions: (scanId?: string) => void;
   /** Manually trigger transition detection */
   detectTransition: (
-    progress: ComprehensiveScanProgress,
+    progress: ScanProgressData,
   ) => PhaseTransition | null;
 }
 
@@ -113,7 +113,7 @@ export const usePhaseTransitionNotifications = (
 
   // Manually detect transitions from progress data
   const detectTransition = useCallback(
-    (progress: ComprehensiveScanProgress) => {
+    (progress: ScanProgressData) => {
       if (!enabled) return null;
 
       // Find the currently running phase
@@ -122,22 +122,22 @@ export const usePhaseTransitionNotifications = (
 
       // Calculate metadata
       const metadata = {
-        filesProcessed: runningPhase.items_processed,
-        bytesProcessed: runningPhase.bytes_processed,
-        errorsEncountered: runningPhase.error_count,
+        filesProcessed: runningPhase.itemsProcessed,
+        bytesProcessed: runningPhase.bytesProcessed,
+        errorsEncountered: runningPhase.errorCount,
         performance:
-          runningPhase.items_per_second > 0
+          runningPhase.itemsPerSecond > 0
             ? {
-                averageSpeed: runningPhase.items_per_second,
-                peakSpeed: runningPhase.items_per_second * 1.2, // Estimate peak
+                averageSpeed: runningPhase.itemsPerSecond,
+                peakSpeed: runningPhase.itemsPerSecond * 1.2, // Estimate peak
               }
             : undefined,
       };
 
       const transition = globalPhaseTransitionDetector.updateProgress(
-        progress.scan_id,
-        progress.volume_id,
-        runningPhase.phase_name,
+        progress.scanId,
+        progress.volumeId,
+        runningPhase.name,
         runningPhase.status,
         {
           filesProcessed: metadata.filesProcessed,

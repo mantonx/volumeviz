@@ -545,7 +545,11 @@ func (s *Scheduler) runPeriodicScheduler() {
 	resumeTicker := time.NewTicker(2 * time.Minute)
 	defer resumeTicker.Stop()
 
-	log.Printf("[INFO] Periodic scheduler started (interval: %v, resume check: 2m)", s.config.Interval)
+	// Create a ticker for real-time WebSocket broadcasts (every second)
+	broadcastTicker := time.NewTicker(1 * time.Second)
+	defer broadcastTicker.Stop()
+
+	log.Printf("[INFO] Periodic scheduler started (interval: %v, resume check: 2m, broadcast: 1s)", s.config.Interval)
 
 	// Run initial scan after a short delay
 	initialDelay := time.Duration(rand.Intn(30)) * time.Second
@@ -562,8 +566,49 @@ func (s *Scheduler) runPeriodicScheduler() {
 			s.runScheduledScan()
 		case <-resumeTicker.C:
 			s.runPeriodicResumeCheck()
+		case <-broadcastTicker.C:
+			s.broadcastActiveScansProgress()
 		case <-s.ctx.Done():
 			return
+		}
+	}
+}
+
+// broadcastActiveScansProgress broadcasts progress updates for all running scans
+func (s *Scheduler) broadcastActiveScansProgress() {
+	if s.progressBroadcaster == nil || s.store == nil {
+		return
+	}
+
+	// Get all running scans
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	scansRepo := s.store.Scans()
+	if scansRepo == nil {
+		return
+	}
+
+	// Get recent scan jobs that might be running
+	activeScanJobs, err := scansRepo.ListScanJobs(ctx, 20, 0)
+	if err != nil {
+		return
+	}
+
+	// Broadcast progress for each running scan
+	for _, scanJob := range activeScanJobs {
+		if scanJob.Status == "running" {
+			// Use goroutine to avoid blocking the periodic scheduler
+			go func(scanID, volumeID string) {
+				if err := s.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, volumeID); err != nil {
+					// Log error but don't disrupt the scheduler
+					if strings.Contains(err.Error(), "no rows") {
+						// Scan might have completed between checks - this is normal
+						return
+					}
+					log.Printf("[DEBUG] Failed to broadcast progress for scan %s: %v", scanID, err)
+				}
+			}(scanJob.ScanID, scanJob.VolumeID)
 		}
 	}
 }

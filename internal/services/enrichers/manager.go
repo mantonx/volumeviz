@@ -10,19 +10,19 @@ import (
 
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/store"
-	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // Manager implements the EnrichmentManager interface
 type Manager struct {
-	config        EnricherConfig
-	enrichers     []Enricher
-	repository    MediaMetadataRepository
-	logger        *log.Logger
-	store         store.Store                    // Database store for progress tracking
-	volumeMapping *config.VolumeMappingConfig    // Volume path mapping configuration
-	wsBroadcaster *websocket.ProgressBroadcaster // WebSocket broadcaster for real-time updates
+	config              EnricherConfig
+	enrichers           []Enricher
+	repository          MediaMetadataRepository
+	logger              *log.Logger
+	store               store.Store                    // Database store for progress tracking
+	volumeMapping       *config.VolumeMappingConfig    // Volume path mapping configuration
+	progressBroadcaster *realtime.ProgressBroadcaster  // Progress broadcaster for real-time updates
 
 	// Progress tracking
 	progressMutex sync.RWMutex
@@ -115,10 +115,7 @@ func (m *Manager) GetEnrichers() []Enricher {
 	return m.enrichers
 }
 
-// SetWebSocketBroadcaster sets the WebSocket broadcaster for real-time progress updates
-func (m *Manager) SetWebSocketBroadcaster(broadcaster *websocket.ProgressBroadcaster) {
-	m.wsBroadcaster = broadcaster
-}
+// Legacy method removed - progress broadcasting is now handled by comprehensive progress broadcaster
 
 // IsEnabled returns true if enrichment is enabled
 func (m *Manager) IsEnabled() bool {
@@ -132,6 +129,11 @@ func (m *Manager) GetCapabilities() []EnricherCapabilities {
 		capabilities[i] = enricher.GetCapabilities()
 	}
 	return capabilities
+}
+
+// SetProgressBroadcaster sets the progress broadcaster for real-time updates
+func (m *Manager) SetProgressBroadcaster(broadcaster *realtime.ProgressBroadcaster) {
+	m.progressBroadcaster = broadcaster
 }
 
 // EnrichVolume enriches all eligible files in a volume
@@ -626,11 +628,6 @@ func (m *Manager) updateProgressWithResult(volumeID string, result EnrichmentRes
 			err := scanProgressRepo.UpdateScanPhaseProgress(ctx, updateParams)
 			if err != nil && m.logger != nil {
 				m.logger.Printf("Failed to update media enrichment progress for scan %s: %v", scanID, err)
-			} else if m.wsBroadcaster != nil {
-				// Broadcast progress update via WebSocket after successful database update
-				if phase, wsErr := scanProgressRepo.GetScanPhase(ctx, scanID, "media_enrichment"); wsErr == nil && phase != nil {
-					m.wsBroadcaster.BroadcastProgress(ctx, scanID, phase)
-				}
 			}
 		}(progress.ScanID, progress.ProcessedFiles, progress.TotalFiles, progress.CurrentFile)
 	}
@@ -812,10 +809,13 @@ func (m *Manager) updateDatabasePhaseStatus(ctx context.Context, scanID, phaseNa
 				m.logger.Printf("Completed %s phase for scan %s (processed %d files)", phaseName, scanID, itemsProcessed)
 			}
 
-			// Broadcast completion via WebSocket
-			if m.wsBroadcaster != nil {
-				if phase, wsErr := scanProgressRepo.GetScanPhase(ctx, scanID, phaseName); wsErr == nil && phase != nil {
-					m.wsBroadcaster.BroadcastProgress(ctx, scanID, phase)
+			// Trigger WebSocket broadcast when phase completes
+			if m.progressBroadcaster != nil {
+				// Get volume ID from scan job
+				if scansRepo := m.store.Scans(); scansRepo != nil {
+					if scanJob, err := scansRepo.GetScanJobByScanID(ctx, scanID); err == nil && scanJob != nil {
+						go m.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, scanJob.VolumeID)
+					}
 				}
 			}
 
@@ -839,11 +839,6 @@ func (m *Manager) updateDatabasePhaseStatus(ctx context.Context, scanID, phaseNa
 		if err != nil {
 			if m.logger != nil {
 				m.logger.Printf("Failed to update %s phase status for scan %s: %v", phaseName, scanID, err)
-			}
-		} else if m.wsBroadcaster != nil {
-			// Broadcast phase start via WebSocket
-			if phase, wsErr := scanProgressRepo.GetScanPhase(ctx, scanID, phaseName); wsErr == nil && phase != nil {
-				m.wsBroadcaster.BroadcastProgress(ctx, scanID, phase)
 			}
 		}
 	}

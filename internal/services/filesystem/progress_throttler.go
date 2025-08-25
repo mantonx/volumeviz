@@ -8,7 +8,6 @@ import (
 
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/store"
-	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // ProgressThrottler manages throttled progress updates to prevent database flooding
@@ -17,7 +16,6 @@ type ProgressThrottler struct {
 	store          store.Store
 	updateInterval time.Duration
 	mu             sync.Mutex
-	wsBroadcaster  *websocket.ProgressBroadcaster
 
 	// Tracking for each scan
 	scanTrackers map[string]*scanProgressTracker
@@ -34,7 +32,7 @@ type scanProgressTracker struct {
 }
 
 // NewProgressThrottler creates a new progress throttler
-func NewProgressThrottler(store store.Store, updateInterval time.Duration, wsBroadcaster *websocket.ProgressBroadcaster) *ProgressThrottler {
+func NewProgressThrottler(store store.Store, updateInterval time.Duration) *ProgressThrottler {
 	if updateInterval < 100*time.Millisecond {
 		updateInterval = 2 * time.Second // Default to 2 seconds
 	}
@@ -43,7 +41,6 @@ func NewProgressThrottler(store store.Store, updateInterval time.Duration, wsBro
 		store:          store,
 		updateInterval: updateInterval,
 		scanTrackers:   make(map[string]*scanProgressTracker),
-		wsBroadcaster:  wsBroadcaster,
 	}
 }
 
@@ -215,14 +212,8 @@ func (pt *ProgressThrottler) sendUpdateLocked(ctx context.Context, tracker *scan
 		}
 	}
 
-	// Broadcast progress update via WebSocket after successful database update
-	if pt.wsBroadcaster != nil {
-		// Get updated phase data to broadcast
-		phase, wsErr := scanProgressRepo.GetScanPhase(ctx, tracker.pendingUpdate.ScanID, tracker.pendingUpdate.PhaseName)
-		if wsErr == nil && phase != nil {
-			pt.wsBroadcaster.BroadcastProgress(ctx, tracker.pendingUpdate.ScanID, phase)
-		}
-	}
+	// Progress broadcast is now handled by the scheduler's comprehensive broadcaster
+	// which gets all phases from the database and sends complete progress updates
 
 	// Clear pending update and update tracking
 	tracker.pendingUpdate = nil
@@ -250,9 +241,4 @@ func (pt *ProgressThrottler) flushStaleUpdates(ctx context.Context) {
 	}
 }
 
-// SetWebSocketBroadcaster sets the WebSocket broadcaster for progress updates
-func (pt *ProgressThrottler) SetWebSocketBroadcaster(broadcaster *websocket.ProgressBroadcaster) {
-	pt.mu.Lock()
-	defer pt.mu.Unlock()
-	pt.wsBroadcaster = broadcaster
-}
+// Legacy method removed - progress broadcasting is now handled by comprehensive progress broadcaster

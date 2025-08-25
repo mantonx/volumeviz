@@ -6,26 +6,30 @@ import (
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/store"
-	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // ProgressTracker handles throttled progress updates to prevent database flooding
 type ProgressTracker struct {
-	store          store.Store
-	throttler      *ProgressThrottler
-	updateInterval time.Duration
-	wsBroadcaster  *websocket.ProgressBroadcaster
+	store               store.Store
+	throttler           *ProgressThrottler
+	updateInterval      time.Duration
+	progressBroadcaster *realtime.ProgressBroadcaster
 }
 
 // NewProgressTracker creates a new progress tracker
-func NewProgressTracker(store store.Store, updateInterval time.Duration, wsBroadcaster *websocket.ProgressBroadcaster) *ProgressTracker {
+func NewProgressTracker(store store.Store, updateInterval time.Duration) *ProgressTracker {
 	return &ProgressTracker{
 		store:          store,
-		throttler:      NewProgressThrottler(store, updateInterval, wsBroadcaster),
+		throttler:      NewProgressThrottler(store, updateInterval),
 		updateInterval: updateInterval,
-		wsBroadcaster:  wsBroadcaster,
 	}
+}
+
+// SetProgressBroadcaster sets the progress broadcaster for real-time updates
+func (pt *ProgressTracker) SetProgressBroadcaster(broadcaster *realtime.ProgressBroadcaster) {
+	pt.progressBroadcaster = broadcaster
 }
 
 // StartPeriodicFlush starts periodic flushing of pending updates
@@ -94,6 +98,15 @@ func (pt *ProgressTracker) QueueProgressUpdate(scanID string, progress *Indexing
 	var err error
 	if forceUpdate {
 		err = pt.throttler.ForceUpdate(context.Background(), scanID, update)
+		
+		// Trigger real-time WebSocket broadcast for force updates (milestones)
+		if err == nil && pt.progressBroadcaster != nil {
+			if scansRepo := pt.store.Scans(); scansRepo != nil {
+				if scanJob, err := scansRepo.GetScanJobByScanID(context.Background(), scanID); err == nil && scanJob != nil {
+					go pt.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, scanJob.VolumeID)
+				}
+			}
+		}
 	} else {
 		err = pt.throttler.QueueUpdate(context.Background(), scanID, update)
 	}
@@ -114,6 +127,16 @@ func (pt *ProgressTracker) UpdatePhaseStatus(ctx context.Context, scanID, phaseN
 			fmt.Printf("Failed to complete %s phase for scan %s: %v\n", phaseName, scanID, err)
 		} else {
 			fmt.Printf("Completed %s phase for scan %s\n", phaseName, scanID)
+			
+			// Trigger WebSocket broadcast when phase completes
+			if pt.progressBroadcaster != nil {
+				// Get volume ID from scan job
+				if scansRepo := pt.store.Scans(); scansRepo != nil {
+					if scanJob, err := scansRepo.GetScanJobByScanID(ctx, scanID); err == nil && scanJob != nil {
+						go pt.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, scanJob.VolumeID)
+					}
+				}
+			}
 		}
 	} else if status == "failed" {
 		err := scanProgressRepo.FailScanPhase(ctx, scanID, phaseName, errorMessage)
@@ -136,12 +159,13 @@ func (pt *ProgressTracker) UpdatePhaseStatus(ctx context.Context, scanID, phaseN
 		}
 	}
 
-	// Broadcast progress update via WebSocket after database update
-	if pt.wsBroadcaster != nil {
-		// Get updated phase data to broadcast
-		phase, err := scanProgressRepo.GetScanPhase(ctx, scanID, phaseName)
-		if err == nil && phase != nil {
-			pt.wsBroadcaster.BroadcastProgress(ctx, scanID, phase)
+	// Additional WebSocket broadcast for real-time updates
+	if pt.progressBroadcaster != nil && (status == "failed" || status == "running") {
+		// Get volume ID from scan job for broadcasts
+		if scansRepo := pt.store.Scans(); scansRepo != nil {
+			if scanJob, err := scansRepo.GetScanJobByScanID(ctx, scanID); err == nil && scanJob != nil {
+				go pt.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, scanJob.VolumeID)
+			}
 		}
 	}
 }

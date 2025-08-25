@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useWebSocket } from '../providers/WebSocketProvider';
-import type { ComprehensiveScanProgress } from '../components/ui/MultiPhaseProgressBar/MultiPhaseProgressBar.types';
+import type { ScanProgressData } from '../components/ui/ScanProgressDisplay/ScanProgressDisplay.types';
 
 interface UseEnhancedScanProgressOptions {
   /** Polling interval for historical data (in ms) */
@@ -8,7 +8,7 @@ interface UseEnhancedScanProgressOptions {
   /** Enable automatic refresh of historical data */
   enablePolling?: boolean;
   /** Callback when progress updates */
-  onProgressUpdate?: (progress: ComprehensiveScanProgress) => void;
+  onProgressUpdate?: (progress: ScanProgressData) => void;
   /** Callback when scan completes */
   onScanComplete?: (scanId: string) => void;
   /** Callback when scan fails */
@@ -17,7 +17,7 @@ interface UseEnhancedScanProgressOptions {
 
 interface UseEnhancedScanProgressReturn {
   /** Current progress data */
-  progress: ComprehensiveScanProgress | null;
+  progress: ScanProgressData | null;
   /** Loading state */
   isLoading: boolean;
   /** Error state */
@@ -53,7 +53,7 @@ export const useEnhancedScanProgress = (
     onScanError,
   } = options;
 
-  const [progress, setProgress] = useState<ComprehensiveScanProgress | null>(
+  const [progress, setProgress] = useState<ScanProgressData | null>(
     null,
   );
   const [isLoading, setIsLoading] = useState(false);
@@ -77,7 +77,7 @@ export const useEnhancedScanProgress = (
         );
       }
 
-      const data: ComprehensiveScanProgress = await response.json();
+      const data: ScanProgressData = await response.json();
       setProgress(data);
       setLastFetchTime(Date.now());
 
@@ -103,7 +103,7 @@ export const useEnhancedScanProgress = (
   useEffect(() => {
     if (!isConnected || (!volumeId && !scanId)) return;
 
-    const handleProgressUpdate = (data: ComprehensiveScanProgress) => {
+    const handleProgressUpdate = (data: ScanProgressData) => {
       // Filter by volume_id or scan_id
       const isRelevantUpdate =
         (volumeId && data.volume_id === volumeId) ||

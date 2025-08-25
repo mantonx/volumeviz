@@ -52,7 +52,7 @@ services:
     command: air
     environment:
       DB_TYPE: postgres
-      DB_HOST: postgres
+      DB_HOST: localhost
       DB_PORT: 5432
       DB_USER: volumeviz
       DB_PASSWORD: volumeviz
@@ -70,6 +70,7 @@ services:
       # Volume mount path mappings for custom scanning paths
       VV_VOLUME_MAPPING_VOLUMEVIZ_MOVIES_DEV: "/cifs/movies"
       VV_VOLUME_MAPPING_VOLUMEVIZ_TV_SHOWS_DEV: "/cifs/tv"
+    network_mode: "host"
     volumes:
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -77,13 +78,9 @@ services:
       - movies_dev:/cifs/movies:ro
       - tv_shows_dev:/cifs/tv:ro
       # Removed go_modules volume to disable module caching for dev
-    ports:
-      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - volumeviz-network-dev
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.volumeviz-postgres.loadbalancer.server.port=8080"
@@ -105,6 +102,7 @@ services:
       DOCKER_HOST: unix:///var/run/docker.sock
       GOCACHE: "/tmp/gocache"
       GOMODCACHE: "/tmp/gomodcache"
+    network_mode: "host"
     volumes:
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -113,10 +111,6 @@ services:
       - sqlite_data_dev:/data
       - movies_dev:/cifs/movies:ro
       - tv_shows_dev:/cifs/tv:ro
-    ports:
-      - "8081:8081"
-    networks:
-      - volumeviz-network-dev
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.volumeviz-sqlite.loadbalancer.server.port=8081"
@@ -145,14 +139,11 @@ services:
       VITE_API_URL: http://localhost:8080/api/v1
       VITE_WS_URL: ws://localhost:8080/api/v1/ws
       VITE_ENABLE_WEBSOCKET: "true"
+    network_mode: "host"
     volumes:
       - ./frontend:/app
-    ports:
-      - "5173:5173"
     depends_on:
       - backend-postgres
-    networks:
-      - volumeviz-network-dev
 
   # Frontend pointing to SQLite backend
   frontend-sqlite:
@@ -164,15 +155,12 @@ services:
       VITE_API_URL: http://localhost:8081/api/v1
       VITE_WS_URL: ws://localhost:8081/api/v1/ws
       VITE_ENABLE_WEBSOCKET: "true"
+    network_mode: "host"
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    ports:
-      - "5177:5174"
     depends_on:
       - backend-sqlite
-    networks:
-      - volumeviz-network-dev
 
   # Prometheus for metrics collection
   prometheus:

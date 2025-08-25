@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => ({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://backend-postgres:8080',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
       },

@@ -207,20 +207,23 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
   useEffect(() => {
     if (!isConnected) return;
 
-    const handleVolumeListUpdate = (data: any) => {
+    const handleVolumeListUpdate = (message: any) => {
+      const data = message.data || message;
       if (['created', 'updated', 'removed'].includes(data.action)) {
         setTimeout(() => fetchData({}), 500);
       }
     };
 
-    const handleContainerUpdate = (data: any) => {
+    const handleContainerUpdate = (message: any) => {
+      const data = message.data || message;
       if (['attached', 'detached'].includes(data.action)) {
         setTimeout(() => fetchData({}), 500);
       }
     };
 
-    const handleScanProgress = (data: any) => {
-      console.log('Received scan progress update:', data);
+    const handleScanProgress = (message: any) => {
+      console.log('Received scan progress update:', message);
+      const data = message.data || message;
       // Refresh data when scan completes to update volume sizes
       if (data.phase === 'complete' || data.phase === 'completed') {
         setTimeout(() => fetchData({}), 1000);
@@ -229,7 +232,7 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
 
     on('volume_updates', handleVolumeListUpdate);
     on('container_updates', handleContainerUpdate);
-    on('scan_progress', handleScanProgress);
+    on('scan_progress_update', handleScanProgress); // Backend sends 'scan_progress_update', not 'scan_progress'
 
     // Subscribe to scan progress for all volumes
     const subscribeMessage = {

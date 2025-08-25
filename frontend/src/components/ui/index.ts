@@ -42,15 +42,16 @@ export type {
   MetricCardSize,
   MetricCardLayout,
 } from './MetricCard';
-export { MultiPhaseProgressBar } from './MultiPhaseProgressBar';
+export { ScanProgressDisplay } from './ScanProgressDisplay';
 export type {
-  MultiPhaseProgressBarProps,
-  ComprehensiveScanProgress,
-  ScanPhaseProgress,
-  ScanProgressError,
-  MultiPhaseProgressBarSize,
-  ScanStatus,
-} from './MultiPhaseProgressBar';
+  ScanProgressDisplayProps,
+  ScanProgressData,
+  ScanPhase,
+  ScanPerformanceStats,
+  PhaseConfig,
+  ScanInteractionMode,
+  ScanProgressAction,
+} from './ScanProgressDisplay';
 export { SubtleProgressIndicator } from './SubtleProgressIndicator';
 export type {
   SubtleProgressIndicatorProps,

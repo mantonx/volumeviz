@@ -233,6 +233,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             break;
 
           default:
+            // Debug log all messages to see what we're receiving
+            console.log('WebSocketProvider: Received message type:', message.type, 'data:', message.data);
+            
             // Emit to custom handlers
             emit(message.type, message);
 
