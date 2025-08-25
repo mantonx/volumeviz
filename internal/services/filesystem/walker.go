@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -18,7 +17,7 @@ type Walker struct {
 	indexer         *FilesystemIndexer
 	volumeID        string
 	deltaMode       bool
-	skipRegexes     []*regexp.Regexp
+	skipMatcher     *SkipPatternMatcher
 	folderCache     map[string]*models.Folder
 	previewGen      *PreviewGenerator
 }
@@ -71,10 +70,10 @@ func (w *Walker) Walk(ctx context.Context, mountpoint string, scanID string) err
 		}
 	}
 
-	// Compile skip patterns
-	w.skipRegexes, err = w.compileSkipPatterns()
+	// Create skip pattern matcher
+	w.skipMatcher, err = NewSkipPatternMatcher(w.indexer.config.SkipPatterns, w.indexer.config.SkipHidden)
 	if err != nil {
-		return fmt.Errorf("failed to compile skip patterns: %w", err)
+		return fmt.Errorf("failed to create skip pattern matcher: %w", err)
 	}
 
 	// Start the indexing walk
@@ -160,7 +159,7 @@ func (w *Walker) walkPath(ctx context.Context, rootPath string) error {
 		}
 
 		// Check skip rules
-		if w.shouldSkip(path, info) {
+		if w.skipMatcher != nil && w.skipMatcher.ShouldSkip(path, info) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
@@ -291,39 +290,6 @@ func (w *Walker) processFile(ctx context.Context, path string, info os.FileInfo,
 	return nil
 }
 
-// shouldSkip determines if a path should be skipped based on rules
-func (w *Walker) shouldSkip(path string, info os.FileInfo) bool {
-	name := info.Name()
-
-	// Skip hidden files/directories if configured
-	if w.indexer.config.SkipHidden && strings.HasPrefix(name, ".") {
-		return true
-	}
-
-	// Check skip patterns
-	for _, regex := range w.skipRegexes {
-		if regex.MatchString(path) || regex.MatchString(name) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// compileSkipPatterns compiles skip patterns into regex
-func (w *Walker) compileSkipPatterns() ([]*regexp.Regexp, error) {
-	var regexes []*regexp.Regexp
-
-	for _, pattern := range w.indexer.config.SkipPatterns {
-		regex, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("invalid skip pattern '%s': %w", pattern, err)
-		}
-		regexes = append(regexes, regex)
-	}
-
-	return regexes, nil
-}
 
 // countFilesAndFolders does a quick count of total files and folders for progress tracking
 func (w *Walker) countFilesAndFolders(ctx context.Context, mountpoint string) (int64, int64, error) {
@@ -333,10 +299,10 @@ func (w *Walker) countFilesAndFolders(ctx context.Context, mountpoint string) (i
 
 	var totalFiles, totalFolders int64
 
-	// Compile skip patterns for consistency with actual indexing
-	skipRegexes, err := w.compileSkipPatterns()
+	// Create skip pattern matcher for consistency with actual indexing
+	skipMatcher, err := NewSkipPatternMatcher(w.indexer.config.SkipPatterns, w.indexer.config.SkipHidden)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to compile skip patterns: %w", err)
+		return 0, 0, fmt.Errorf("failed to create skip pattern matcher: %w", err)
 	}
 
 	err = filepath.Walk(mountpoint, func(path string, info os.FileInfo, err error) error {
@@ -353,7 +319,7 @@ func (w *Walker) countFilesAndFolders(ctx context.Context, mountpoint string) (i
 		}
 
 		// Skip files based on patterns (same logic as actual indexing)
-		if w.shouldSkipForCount(path, info, skipRegexes) {
+		if skipMatcher.ShouldSkip(path, info) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
@@ -372,21 +338,3 @@ func (w *Walker) countFilesAndFolders(ctx context.Context, mountpoint string) (i
 	return totalFiles, totalFolders, err
 }
 
-// shouldSkipForCount applies skip rules during file counting
-func (w *Walker) shouldSkipForCount(path string, info os.FileInfo, skipRegexes []*regexp.Regexp) bool {
-	name := info.Name()
-
-	// Skip hidden files/directories if configured
-	if w.indexer.config.SkipHidden && strings.HasPrefix(name, ".") {
-		return true
-	}
-
-	// Check skip patterns
-	for _, regex := range skipRegexes {
-		if regex.MatchString(path) || regex.MatchString(name) {
-			return true
-		}
-	}
-
-	return false
-}

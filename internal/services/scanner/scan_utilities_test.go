@@ -18,11 +18,11 @@ func TestScanUtilitiesGetVolumePath(t *testing.T) {
 
 func TestScanUtilitiesDetectFilesystemType(t *testing.T) {
 	vs := &VolumeScanner{}
-	
+
 	// Test filesystem type detection on a non-existent path
 	fsType := vs.detectFilesystemType("/non/existent/path")
 	assert.Equal(t, "unknown", fsType) // Should return unknown for non-existent paths
-	
+
 	// Test with a path that should exist (root)
 	fsType = vs.detectFilesystemType("/")
 	assert.NotEmpty(t, fsType) // Should detect some filesystem type
@@ -30,7 +30,7 @@ func TestScanUtilitiesDetectFilesystemType(t *testing.T) {
 
 func TestScanUtilitiesClassifyError(t *testing.T) {
 	vs := &VolumeScanner{}
-	
+
 	// Test error classification
 	tests := []struct {
 		name     string
@@ -103,11 +103,11 @@ func TestScanUtilitiesCoverage(t *testing.T) {
 	assert.NotNil(t, wrappedErr)
 	assert.Contains(t, wrappedErr.Error(), "test-method")
 
-	// Test calculateCacheTTL with different result sizes  
+	// Test calculateCacheTTL with different result sizes
 	smallResult := &interfaces.ScanResult{TotalSize: 1000} // 1KB
 	ttl := vs.calculateCacheTTL(smallResult)
 	assert.Greater(t, ttl, time.Duration(0))
-	
+
 	largeResult := &interfaces.ScanResult{TotalSize: 1000000000} // 1GB
 	ttl2 := vs.calculateCacheTTL(largeResult)
 	assert.Greater(t, ttl2, time.Duration(0))

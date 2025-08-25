@@ -49,9 +49,9 @@ func TestUpdateVolumePhaseStatus_NilStore(t *testing.T) {
 func TestDatabaseIntegrationCoverage(t *testing.T) {
 	// Test that the database integration functions exist and can be called
 	// This ensures we hit the code paths for coverage
-	
+
 	logger := log.New(os.Stderr, "[TEST] ", log.LstdFlags)
-	
+
 	// Test case 1: Both functions with minimal viable setup
 	vs := &VolumeScanner{
 		store:  nil, // Will cause early returns but exercises the code paths
@@ -61,21 +61,21 @@ func TestDatabaseIntegrationCoverage(t *testing.T) {
 	// Test initializeDatabaseProgress
 	ctx := context.Background()
 	vs.initializeDatabaseProgress(ctx, "scan-id-1", "volume-id-1")
-	
+
 	// Test updateVolumePhaseStatus with different statuses
 	vs.updateVolumePhaseStatus(ctx, "scan-id-1", "completed", "")
 	vs.updateVolumePhaseStatus(ctx, "scan-id-1", "failed", "test error message")
 	vs.updateVolumePhaseStatus(ctx, "scan-id-1", "running", "")
-	
+
 	// Test case 2: Without logger
 	vs2 := &VolumeScanner{
 		store:  nil,
 		logger: nil, // Test nil logger path
 	}
-	
+
 	vs2.initializeDatabaseProgress(ctx, "scan-id-2", "volume-id-2")
 	vs2.updateVolumePhaseStatus(ctx, "scan-id-2", "completed", "")
-	
+
 	// Verify objects still exist (basic smoke test)
 	assert.NotNil(t, vs)
 	assert.NotNil(t, vs2)

@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/mantonx/volumeviz/internal/utils"
 )
 
 // FFprobeEnricher extracts metadata from audio and video files using ffprobe
@@ -46,8 +47,8 @@ func (f *FFprobeEnricher) IsAvailable() bool {
 		return false
 	}
 
-	_, err := exec.LookPath(f.ffprobePath)
-	return err == nil
+	runner := utils.NewCommandRunner("ffprobe", f.config.FFprobeTimeout)
+	return runner.IsAvailable()
 }
 
 // GetCapabilities returns what this enricher can extract
@@ -139,33 +140,29 @@ type FFprobeSideData struct {
 
 // runFFprobe executes ffprobe and returns the JSON output
 func (f *FFprobeEnricher) runFFprobe(ctx context.Context, filePath string) (*FFprobeOutput, error) {
-	// Construct ffprobe command
-	args := []string{
+	// Use command runner for consistent command execution
+	runner := utils.NewCommandRunner("ffprobe", f.config.FFprobeTimeout)
+	runner.ToolPath = f.ffprobePath
+	runner.SetDefaultArgs([]string{
 		"-v", "quiet",
 		"-print_format", "json",
 		"-show_format",
 		"-show_streams",
 		"-hide_banner",
-		filePath,
-	}
+	})
 
-	cmd := exec.CommandContext(ctx, f.ffprobePath, args...)
-
-	output, err := cmd.Output()
+	result, err := runner.Run(ctx, filePath)
 	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			return nil, fmt.Errorf("ffprobe timeout for file %s", filepath.Base(filePath))
-		}
-		// Get stderr for more detailed error information
-		if exitError, ok := err.(*exec.ExitError); ok {
-			return nil, fmt.Errorf("ffprobe execution failed for file %s: %s (stderr: %s)",
-				filepath.Base(filePath), err.Error(), string(exitError.Stderr))
-		}
 		return nil, fmt.Errorf("ffprobe execution failed for file %s: %w", filepath.Base(filePath), err)
 	}
 
+	if result.ExitCode != 0 {
+		return nil, fmt.Errorf("ffprobe execution failed for file %s: exit code %d (stderr: %s)",
+			filepath.Base(filePath), result.ExitCode, string(result.Stderr))
+	}
+
 	var probeData FFprobeOutput
-	if err := json.Unmarshal(output, &probeData); err != nil {
+	if err := json.Unmarshal(result.Stdout, &probeData); err != nil {
 		return nil, fmt.Errorf("failed to parse ffprobe JSON: %w", err)
 	}
 

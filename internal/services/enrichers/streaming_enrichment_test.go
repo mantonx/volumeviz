@@ -10,14 +10,14 @@ import (
 // MockStreamingRepository implements the pagination methods for testing
 type MockStreamingRepository struct {
 	*MockRepository
-	files []FileInfo
+	files             []FileInfo
 	bulkSaveCallCount int
 }
 
 func NewMockStreamingRepository(totalFiles int) *MockStreamingRepository {
 	mock := &MockStreamingRepository{
-		MockRepository: &MockRepository{},
-		files: make([]FileInfo, totalFiles),
+		MockRepository:    &MockRepository{},
+		files:             make([]FileInfo, totalFiles),
 		bulkSaveCallCount: 0,
 	}
 

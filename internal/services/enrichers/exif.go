@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mantonx/volumeviz/internal/utils"
 )
 
 // EXIFEnricher extracts metadata from image files using exiftool
@@ -48,8 +49,8 @@ func (e *EXIFEnricher) IsAvailable() bool {
 		return false
 	}
 
-	_, err := exec.LookPath(e.exiftoolPath)
-	return err == nil
+	runner := utils.NewCommandRunner(e.exiftoolPath, e.config.TimeoutPerFile)
+	return runner.IsAvailable()
 }
 
 // GetCapabilities returns what this enricher can extract
@@ -135,18 +136,15 @@ type EXIFOutput struct {
 
 // runExiftool executes exiftool and returns the JSON output
 func (e *EXIFEnricher) runExiftool(ctx context.Context, filePath string) (*EXIFOutput, error) {
-	// Construct exiftool command
-	args := []string{
+	// Use command runner for consistent command execution
+	runner := utils.NewCommandRunner(e.exiftoolPath, e.config.TimeoutPerFile)
+	runner.SetDefaultArgs([]string{
 		"-json",
 		"-coordFormat", "%.8f", // High precision for GPS coordinates
 		"-dateFormat", "%Y:%m:%d %H:%M:%S",
 		"-ignoreMinorErrors",
-		filePath,
-	}
-
-	cmd := exec.CommandContext(ctx, e.exiftoolPath, args...)
-
-	output, err := cmd.Output()
+	})
+	result, err := runner.Run(ctx, filePath)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			return nil, fmt.Errorf("exiftool timeout for file %s", filepath.Base(filePath))
@@ -156,7 +154,7 @@ func (e *EXIFEnricher) runExiftool(ctx context.Context, filePath string) (*EXIFO
 
 	// exiftool returns an array, we want the first element
 	var exifArray []EXIFOutput
-	if err := json.Unmarshal(output, &exifArray); err != nil {
+	if err := json.Unmarshal(result.Stdout, &exifArray); err != nil {
 		return nil, fmt.Errorf("failed to parse exiftool JSON: %w", err)
 	}
 

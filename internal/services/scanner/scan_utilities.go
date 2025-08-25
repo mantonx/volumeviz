@@ -267,17 +267,14 @@ func (vs *VolumeScanner) getFilesystemCapacity(path string) *interfaces.Filesyst
 	availableBytes := int64(stat.Bavail) * blockSize // Available to non-superuser
 	usedBytes := totalBytes - availableBytes
 
-	// Calculate usage percentage
-	var usagePercent float64
-	if totalBytes > 0 {
-		usagePercent = float64(usedBytes) / float64(totalBytes) * 100
-	}
+	// Calculate usage percentage using safe utility
+	usagePercent := utils.SafePercentage(int64(usedBytes), int64(totalBytes))
 
 	return &interfaces.FilesystemInfo{
 		TotalBytes:     totalBytes,
 		AvailableBytes: availableBytes,
 		UsedBytes:      usedBytes,
-		UsagePercent:   usagePercent,
+		UsagePercent:   float64(usagePercent),
 		BlockSize:      blockSize,
 		TotalBlocks:    stat.Blocks,
 		FreeBlocks:     stat.Bavail,

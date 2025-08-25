@@ -145,6 +145,14 @@ type ScanPhaseProgress struct {
 	EstimatedEndTime *time.Time `json:"estimated_end_time,omitempty"`
 	ErrorMessage     string     `json:"error_message,omitempty"`
 	ErrorCount       int64      `json:"error_count"`
+	
+	// Sub-phase progress fields
+	SubPhase         string `json:"sub_phase,omitempty"`          // "preparation", "database_reconciliation", "filesystem_walking"
+	SubPhaseProgress int    `json:"sub_phase_progress,omitempty"` // 0-100 progress within sub-phase
+	CurrentOperation string `json:"current_operation,omitempty"`  // "Checking existing files (2,451/28,308)"
+	
+	// Time estimation confidence
+	EstimationConfidence string `json:"estimation_confidence,omitempty"` // "low", "medium", "high"
 }
 
 // ScanProgressError represents a detailed scan error

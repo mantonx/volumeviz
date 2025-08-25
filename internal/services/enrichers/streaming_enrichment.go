@@ -34,7 +34,7 @@ func (m *Manager) EnrichVolumeStreaming(ctx context.Context, volumeID string, sc
 	}
 
 	config := DefaultStreamingConfig()
-	
+
 	// Initialize progress tracking
 	progress := &EnrichmentProgress{
 		VolumeID:         volumeID,
@@ -114,7 +114,7 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 			progress.Status = "canceled"
 			progress.LastError = "Context canceled"
 			m.setProgress(volumeID, progress)
-			
+
 			if scanID != "" && m.store != nil {
 				go m.updateDatabasePhaseStatus(context.Background(), scanID, "media_enrichment", "failed", "Context canceled")
 			}
@@ -146,7 +146,7 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 
 		// Process batch
 		batchResults, batchErrors := m.processBatch(ctx, files, progress, config)
-		
+
 		// Release semaphore
 		<-batchSemaphore
 
@@ -167,7 +167,7 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 		if len(batchErrors) > 0 {
 			progress.ErrorsCount += int64(len(batchErrors))
 			progress.FailedFiles += int64(len(batchErrors))
-			
+
 			// Log first few errors for debugging
 			for i, err := range batchErrors {
 				if i < 3 { // Log first 3 errors
@@ -177,7 +177,7 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 				}
 				lastError = err
 			}
-			
+
 			progress.LastError = lastError.Error()
 		}
 
@@ -187,7 +187,7 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 		// Update progress
 		progress.ProcessedFiles = filesProcessed
 		progress.LastUpdate = time.Now()
-		
+
 		// Calculate progress percentage (using processed files vs total)
 		var progressPercent float64
 		if progress.TotalFiles > 0 {
@@ -199,7 +199,7 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 		// Update database progress periodically
 		if scanID != "" && m.store != nil && filesProcessed%int64(config.ProgressUpdateEvery) == 0 {
 			progressPercentInt := int(progressPercent * 100)
-			go m.updateDatabaseProgressDetailed(context.Background(), scanID, "media_enrichment", 
+			go m.updateDatabaseProgressDetailed(context.Background(), scanID, "media_enrichment",
 				progressPercentInt, int(filesProcessed), int(progress.TotalFiles))
 		}
 
@@ -212,7 +212,7 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 	// Final status update
 	if lastError != nil {
 		progress.Status = "completed_with_errors"
-		progress.LastError = fmt.Sprintf("Completed with %d errors. Last error: %s", 
+		progress.LastError = fmt.Sprintf("Completed with %d errors. Last error: %s",
 			progress.ErrorsCount, lastError.Error())
 	} else {
 		progress.Status = "completed"
@@ -391,7 +391,7 @@ func (m *Manager) updateDatabaseProgressDetailed(ctx context.Context, scanID, ph
 	status := "running"
 	itemsProcessed64 := int64(itemsProcessed)
 	itemsTotal64 := int64(itemsTotal)
-	
+
 	updateParams := models.UpdateScanPhaseParams{
 		ScanID:         scanID,
 		PhaseName:      phaseName,

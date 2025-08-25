@@ -1,16 +1,16 @@
 package scanner
 
 import (
-	"bytes"
 	"context"
+	"fmt"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/utils"
 )
 
 // ProgressiveDiskus implements progressive diskus scanning with smart directory batching
@@ -34,8 +34,8 @@ func (p *ProgressiveDiskus) Name() string {
 }
 
 func (p *ProgressiveDiskus) Available() bool {
-	_, err := exec.LookPath("diskus")
-	return err == nil
+	runner := utils.NewCommandRunner("diskus", p.timeout)
+	return runner.IsAvailable()
 }
 
 func (p *ProgressiveDiskus) EstimatedDuration(path string) time.Duration {
@@ -66,6 +66,19 @@ func (p *ProgressiveDiskus) Scan(ctx context.Context, path string) (*interfaces.
 	defer cancel()
 
 	// Step 1: Analyze directory structure and create batches
+	// Report preparation phase
+	if p.progressManager != nil {
+		if scanID, ok := ctx.Value("scan_id").(string); ok {
+			p.progressManager.UpdateProgress(scanID, ProgressUpdate{
+				Type:             "volume_scan",
+				Progress:         0.0,
+				CurrentOperation: "Analyzing directory structure",
+				SubPhase:         "preparation",
+				SubPhaseProgress: 0,
+			})
+		}
+	}
+
 	batches, err := p.analyzer.AnalyzeAndBatch(scanCtx, path)
 	if err != nil {
 		return nil, &models.ScanError{
@@ -127,11 +140,24 @@ func (p *ProgressiveDiskus) Scan(ctx context.Context, path string) (*interfaces.
 				currentPath = batch.Directories[0]
 			}
 
+			// Calculate confidence based on progress
+			confidence := "low"
+			if processedBatches > 3 {
+				confidence = "medium"
+			}
+			if processedBatches > len(batches)/4 {
+				confidence = "high"
+			}
+
 			update := ProgressUpdate{
-				Type:           "volume_scan",
-				Progress:       progress,
-				ItemsProcessed: int64(processedBatches),
-				CurrentPath:    currentPath,
+				Type:                 "volume_scan",
+				Progress:             progress,
+				ItemsProcessed:       int64(processedBatches),
+				CurrentPath:          currentPath,
+				CurrentOperation:     fmt.Sprintf("Processing batch %d/%d", processedBatches, len(batches)),
+				SubPhase:             "batch_processing",
+				SubPhaseProgress:     int(progress * 100),
+				EstimationConfidence: confidence,
 			}
 
 			// Get scan ID from context if available
@@ -165,15 +191,12 @@ func (p *ProgressiveDiskus) processBatch(ctx context.Context, batch *DirectoryBa
 
 	// Process each directory in the batch individually
 	// Diskus doesn't support multiple paths in one command like du does
-	for _, dir := range batch.Directories {
-		cmd := exec.CommandContext(ctx, "diskus", dir)
-		var stdout, stderr bytes.Buffer
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
+	runner := utils.NewCommandRunner("diskus", p.timeout)
 
-		err := cmd.Run()
+	for _, dir := range batch.Directories {
+		result, err := runner.Run(ctx, dir)
 		if err != nil {
-			stderrStr := stderr.String()
+			stderrStr := string(result.Stderr)
 			// Handle permission errors gracefully
 			if strings.Contains(stderrStr, "Permission denied") {
 				continue // Skip this directory
@@ -183,7 +206,7 @@ func (p *ProgressiveDiskus) processBatch(ctx context.Context, batch *DirectoryBa
 		}
 
 		// Parse diskus output
-		output := strings.TrimSpace(stdout.String())
+		output := strings.TrimSpace(string(result.Stdout))
 		if output == "" {
 			continue
 		}

@@ -107,8 +107,9 @@ func (fi *FilesystemIndexer) IndexVolume(ctx context.Context, volumeID, mountpoi
 
 // IndexVolumeWithScanID performs complete filesystem indexing for a volume with scan ID for database progress tracking
 func (fi *FilesystemIndexer) IndexVolumeWithScanID(ctx context.Context, volumeID, mountpoint string, deltaMode bool, scanID string) error {
-	walker := NewWalker(fi, volumeID, deltaMode)
-	return walker.Walk(ctx, mountpoint, scanID)
+	// Use incremental walker to avoid bulk deletion hangs
+	incrementalWalker := NewIncrementalWalker(fi, volumeID)
+	return incrementalWalker.Walk(ctx, mountpoint, scanID)
 }
 
 // ResumePausedScan attempts to resume a paused filesystem indexing scan

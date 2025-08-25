@@ -9,6 +9,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/realtime"
+	"github.com/mantonx/volumeviz/internal/utils"
 )
 
 // ProgressManager handles centralized progress tracking and broadcasting for volume scans
@@ -50,7 +51,7 @@ func (pm *ProgressManager) StartScan(scanID, volumeID string) {
 		Phases: map[string]*interfaces.PhaseInfo{
 			"volume_scan": {
 				Status:    "running",
-				StartedAt: &now,
+				StartedAt: utils.Ptr(now),
 				Progress:  0.0,
 			},
 			"filesystem_indexing": {
@@ -120,7 +121,7 @@ func (pm *ProgressManager) FinishPhase(scanID, phase string, success bool, error
 	}
 
 	now := time.Now()
-	phaseInfo.CompletedAt = &now
+	phaseInfo.CompletedAt = utils.Ptr(now)
 	if phaseInfo.StartedAt != nil {
 		phaseInfo.Duration = now.Sub(*phaseInfo.StartedAt)
 	}
@@ -223,7 +224,7 @@ func (pm *ProgressManager) updateFilesystemIndexingProgress(progress *interfaces
 		if phase.Status == "pending" {
 			now := time.Now()
 			phase.Status = "running"
-			phase.StartedAt = &now
+			phase.StartedAt = utils.Ptr(now)
 		}
 		phase.Progress = update.Progress
 		phase.ItemsProcessed = update.ItemsProcessed
@@ -240,7 +241,7 @@ func (pm *ProgressManager) updateMediaEnrichmentProgress(progress *interfaces.Sc
 		if phase.Status == "pending" {
 			now := time.Now()
 			phase.Status = "running"
-			phase.StartedAt = &now
+			phase.StartedAt = utils.Ptr(now)
 		}
 		phase.Progress = update.Progress
 		phase.ItemsProcessed = update.ItemsProcessed
@@ -275,9 +276,12 @@ func (pm *ProgressManager) calculateOverallProgress(phases map[string]*interface
 
 // ProgressUpdate represents a progress update from a scan method
 type ProgressUpdate struct {
-	Type             string  // "volume_scan", "filesystem_indexing", "media_enrichment"
-	Progress         float64 // 0.0 to 1.0
-	ItemsProcessed   int64
-	CurrentPath      string
-	CurrentOperation string
+	Type                 string  // "volume_scan", "filesystem_indexing", "media_enrichment"
+	Progress             float64 // 0.0 to 1.0
+	ItemsProcessed       int64
+	CurrentPath          string
+	CurrentOperation     string
+	SubPhase             string // "preparation", "directory_analysis", "batch_processing"
+	SubPhaseProgress     int    // 0-100 progress within sub-phase
+	EstimationConfidence string // "low", "medium", "high"
 }

@@ -20,9 +20,9 @@ type Manager struct {
 	enrichers           []Enricher
 	repository          MediaMetadataRepository
 	logger              *log.Logger
-	store               store.Store                    // Database store for progress tracking
-	volumeMapping       *config.VolumeMappingConfig    // Volume path mapping configuration
-	progressBroadcaster *realtime.ProgressBroadcaster  // Progress broadcaster for real-time updates
+	store               store.Store                   // Database store for progress tracking
+	volumeMapping       *config.VolumeMappingConfig   // Volume path mapping configuration
+	progressBroadcaster *realtime.ProgressBroadcaster // Progress broadcaster for real-time updates
 
 	// Progress tracking
 	progressMutex sync.RWMutex
@@ -145,6 +145,68 @@ func (m *Manager) EnrichVolume(ctx context.Context, volumeID string) error {
 func (m *Manager) EnrichVolumeWithScanID(ctx context.Context, volumeID string, scanID string) error {
 	// Use streaming enrichment approach for memory efficiency
 	return m.EnrichVolumeStreaming(ctx, volumeID, scanID)
+}
+
+// EnrichSingleFile enriches a single file immediately for streaming enrichment
+func (m *Manager) EnrichSingleFile(ctx context.Context, fileInfo *models.FileInfo, scanID string) error {
+	if !m.IsEnabled() {
+		return nil // Silently skip if enrichment is disabled
+	}
+
+	// Acquire worker slot to respect concurrency limits
+	select {
+	case m.workerSemaphore <- struct{}{}:
+		defer func() { <-m.workerSemaphore }()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+
+	// Get volume path mapping
+	volumePath, err := m.getVolumePathForFile(fileInfo.VolumeID, fileInfo.Path)
+	if err != nil {
+		return fmt.Errorf("failed to get volume path: %w", err)
+	}
+
+	// Create FileInfo for enrichment
+	enrichFileInfo := FileInfo{
+		ID:       fileInfo.ID,
+		Path:     volumePath,
+		Name:     fileInfo.Name,
+		MimeType: fileInfo.MimeType,
+		Size:     fileInfo.Size,
+		VolumeID: fileInfo.VolumeID,
+	}
+
+	// Process file with all applicable enrichers
+	for _, enricher := range m.enrichers {
+		if !enricher.CanEnrich(enrichFileInfo) {
+			continue
+		}
+
+		// Process the file
+		result, err := enricher.Enrich(ctx, enrichFileInfo)
+		if err != nil {
+			if m.logger != nil {
+				m.logger.Printf("[%s] Failed to enrich file %s: %v", enricher.Name(), fileInfo.Path, err)
+			}
+			continue
+		}
+
+		// Store metadata if we have a result
+		if result != nil && len(result.RawMetadata) > 0 {
+			err = m.repository.SaveMetadata(ctx, fileInfo.ID, result.Kind, result)
+			if err != nil {
+				if m.logger != nil {
+					m.logger.Printf("[%s] Failed to store metadata for file %s: %v", enricher.Name(), fileInfo.Path, err)
+				}
+			}
+		}
+	}
+
+	// Update progress tracking for media enrichment phase
+	m.updateSingleFileProgress(fileInfo.VolumeID, scanID)
+
+	return nil
 }
 
 // EnrichVolumeWithScanIDLegacy provides the legacy implementation for comparison/fallback
@@ -883,5 +945,79 @@ func (m *Manager) checkAndCompleteScan(ctx context.Context, scanID string) {
 				m.logger.Printf("Successfully marked scan %s as completed", scanID)
 			}
 		}
+	}
+}
+
+// getVolumePathForFile gets the correct file path for enrichment
+func (m *Manager) getVolumePathForFile(volumeID, filePath string) (string, error) {
+	// For now, just return the original file path
+	// Volume mapping can be added later if needed
+	return filePath, nil
+}
+
+// updateSingleFileProgress updates enrichment progress for a single file
+func (m *Manager) updateSingleFileProgress(volumeID, scanID string) {
+	m.progressMutex.Lock()
+	defer m.progressMutex.Unlock()
+
+	// Get or create progress tracking
+	progress, exists := m.progressMap[volumeID]
+	if !exists {
+		progress = &EnrichmentProgress{
+			VolumeID:         volumeID,
+			ScanID:           scanID,
+			Status:           "running",
+			StartedAt:        time.Now(),
+			LastUpdate:       time.Now(),
+			EnricherProgress: make(map[string]*EnricherProgress),
+		}
+		m.progressMap[volumeID] = progress
+	}
+
+	// Update counters
+	progress.ProcessedFiles++
+	progress.SuccessfulFiles++
+	progress.LastUpdate = time.Now()
+
+	// Update database progress if we have store access
+	if scanID != "" && m.store != nil {
+		go m.updateDatabaseProgress(context.Background(), scanID, progress)
+	}
+
+	// Broadcast progress update
+	if m.progressBroadcaster != nil {
+		go m.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, volumeID)
+	}
+}
+
+// updateDatabaseProgress updates scan progress in database
+func (m *Manager) updateDatabaseProgress(ctx context.Context, scanID string, progress *EnrichmentProgress) {
+	if m.store == nil {
+		return
+	}
+
+	scanProgressRepo := m.store.ScanProgress()
+	if scanProgressRepo == nil {
+		return
+	}
+
+	// Calculate progress percentage
+	progressPercent := 0
+	if progress.TotalFiles > 0 {
+		progressPercent = int((progress.ProcessedFiles * 100) / progress.TotalFiles)
+	}
+
+	// Update database
+	updateParams := models.UpdateScanPhaseParams{
+		ScanID:         scanID,
+		PhaseName:      "media_enrichment",
+		Progress:       &progressPercent,
+		ItemsProcessed: &progress.ProcessedFiles,
+		ItemsTotal:     &progress.TotalFiles,
+	}
+
+	err := scanProgressRepo.UpdateScanPhaseProgress(ctx, updateParams)
+	if err != nil && m.logger != nil {
+		m.logger.Printf("Failed to update enrichment progress in database: %v", err)
 	}
 }

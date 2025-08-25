@@ -371,6 +371,44 @@ func (r *FilesRepo) DeleteFilesByVolume(ctx context.Context, volumeID string) er
 	return r.queries.DeleteFilesByVolume(ctx, volumeID)
 }
 
+// DeleteFilesByIDs deletes files by their IDs in batches
+func (r *FilesRepo) DeleteFilesByIDs(ctx context.Context, fileIDs []int64) error {
+	// Process in batches to avoid query size limits
+	batchSize := 1000
+	for i := 0; i < len(fileIDs); i += batchSize {
+		end := i + batchSize
+		if end > len(fileIDs) {
+			end = len(fileIDs)
+		}
+		
+		batch := fileIDs[i:end]
+		for _, id := range batch {
+			if err := r.queries.DeleteFile(ctx, id); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// GetFilesByVolume gets all files for a volume (used for reconciliation)
+func (r *FilesRepo) GetFilesByVolume(ctx context.Context, volumeID string) ([]*models.File, error) {
+	files, err := r.queries.ListFilesByVolume(ctx, sqlc.ListFilesByVolumeParams{
+		VolumeID: volumeID,
+		Limit:    1000000, // Large limit to get all files
+		Offset:   0,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*models.File, len(files))
+	for i, file := range files {
+		result[i] = r.convertAnyFileRowToFile(file)
+	}
+	return result, nil
+}
+
 // CountFilesByVolume counts files in a volume
 func (r *FilesRepo) CountFilesByVolume(ctx context.Context, volumeID string) (int64, error) {
 	return r.queries.CountFilesByVolume(ctx, volumeID)

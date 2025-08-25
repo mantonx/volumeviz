@@ -34,7 +34,7 @@ func TestDirectoryAnalyzer(t *testing.T) {
 
 	ctx := context.Background()
 	batches, err := analyzer.AnalyzeAndBatch(ctx, tempDir)
-	
+
 	assert.NoError(t, err)
 	assert.NotEmpty(t, batches)
 
@@ -76,7 +76,7 @@ func TestDirectoryAnalyzerEdgeCases(t *testing.T) {
 
 func TestSetBatchingStrategy(t *testing.T) {
 	analyzer := NewDirectoryAnalyzer()
-	
+
 	// Test all batching strategies
 	strategies := []BatchingStrategy{
 		StrategyBalanced,
@@ -84,7 +84,7 @@ func TestSetBatchingStrategy(t *testing.T) {
 		StrategyByCount,
 		StrategyByDepth,
 	}
-	
+
 	for _, strategy := range strategies {
 		analyzer.SetBatchingStrategy(strategy)
 		// Verify strategy was applied by checking internal state changes
@@ -95,22 +95,22 @@ func TestSetBatchingStrategy(t *testing.T) {
 func TestDirectoryAnalyzerCoverage(t *testing.T) {
 	// Test context cancellation during enumeration
 	analyzer := NewDirectoryAnalyzer()
-	
+
 	// Create a context that's already cancelled
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
-	
+
 	_, err := analyzer.AnalyzeAndBatch(ctx, "/tmp")
 	// Should handle cancellation gracefully
 	if err != nil {
 		assert.Contains(t, err.Error(), "context canceled")
 	}
-	
+
 	// Test with deeper directory structure
 	tempDir, err := os.MkdirTemp("", "deep-test")
 	require.NoError(t, err)
 	defer os.RemoveAll(tempDir)
-	
+
 	// Create a deep directory structure
 	deepPath := tempDir
 	for i := 0; i < 5; i++ {
@@ -119,11 +119,11 @@ func TestDirectoryAnalyzerCoverage(t *testing.T) {
 		// Add a file at each level
 		require.NoError(t, os.WriteFile(filepath.Join(deepPath, fmt.Sprintf("file%d.txt", i)), []byte("test"), 0644))
 	}
-	
+
 	batches, err := analyzer.AnalyzeAndBatch(context.Background(), tempDir)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, batches)
-	
+
 	// Test stats with actual data
 	stats := analyzer.GetAnalysisStats(batches)
 	assert.NotNil(t, stats)

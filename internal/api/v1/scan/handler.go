@@ -234,13 +234,13 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 
 // GetScanProgress returns comprehensive progress information for a scan
 // GET /api/v1/scans/{scanId}/progress
-// @Summary Get detailed scan progress
-// @Description Get comprehensive progress information including phases, items, and errors
+// @Summary Get detailed scan progress with sub-phase information
+// @Description Get comprehensive progress information including phases, sub-phases, items, errors, and confidence indicators
 // @Tags scan
 // @Accept json
 // @Produce json
 // @Param scanId path string true "Scan ID"
-// @Success 200 {object} map[string]interface{} "Comprehensive scan progress"
+// @Success 200 {object} map[string]interface{} "Comprehensive scan progress with sub-phase details"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Router /scans/{scanId}/progress [get]

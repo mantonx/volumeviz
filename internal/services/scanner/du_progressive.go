@@ -1,17 +1,16 @@
 package scanner
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/utils"
 )
 
 // ProgressiveDu implements progressive du scanning with smart directory batching
@@ -35,8 +34,8 @@ func (p *ProgressiveDu) Name() string {
 }
 
 func (p *ProgressiveDu) Available() bool {
-	_, err := exec.LookPath("du")
-	return err == nil
+	runner := utils.NewCommandRunner("du", p.timeout)
+	return runner.IsAvailable()
 }
 
 func (p *ProgressiveDu) EstimatedDuration(path string) time.Duration {
@@ -67,6 +66,19 @@ func (p *ProgressiveDu) Scan(ctx context.Context, path string) (*interfaces.Scan
 	defer cancel()
 
 	// Step 1: Analyze directory structure and create batches
+	// Report preparation phase
+	if p.progressManager != nil {
+		if scanID, ok := ctx.Value("scan_id").(string); ok {
+			p.progressManager.UpdateProgress(scanID, ProgressUpdate{
+				Type:             "volume_scan",
+				Progress:         0.0,
+				CurrentOperation: "Analyzing directory structure",
+				SubPhase:         "preparation",
+				SubPhaseProgress: 0,
+			})
+		}
+	}
+
 	batches, err := p.analyzer.AnalyzeAndBatch(scanCtx, path)
 	if err != nil {
 		return nil, &models.ScanError{
@@ -128,11 +140,24 @@ func (p *ProgressiveDu) Scan(ctx context.Context, path string) (*interfaces.Scan
 				currentPath = batch.Directories[0]
 			}
 
+			// Calculate confidence based on progress
+			confidence := "low"
+			if processedBatches > 3 {
+				confidence = "medium"
+			}
+			if processedBatches > len(batches)/4 {
+				confidence = "high"
+			}
+
 			update := ProgressUpdate{
-				Type:           "volume_scan",
-				Progress:       progress,
-				ItemsProcessed: int64(processedBatches),
-				CurrentPath:    currentPath,
+				Type:                 "volume_scan",
+				Progress:             progress,
+				ItemsProcessed:       int64(processedBatches),
+				CurrentPath:          currentPath,
+				CurrentOperation:     fmt.Sprintf("Processing batch %d/%d", processedBatches, len(batches)),
+				SubPhase:             "batch_processing",
+				SubPhaseProgress:     int(progress * 100),
+				EstimationConfidence: confidence,
 			}
 
 			// Get scan ID from context if available
@@ -162,18 +187,17 @@ func (p *ProgressiveDu) processBatch(ctx context.Context, batch *DirectoryBatch)
 		return 0, nil
 	}
 
-	// Build du command args for this batch
-	args := []string{"-s", "-B1"}
-	args = append(args, batch.Directories...)
+	// Use command runner for consistent command execution
+	runner := utils.NewCommandRunner("du", p.timeout)
+	runner.SetDefaultArgs([]string{"-s", "-B1"})
 
-	cmd := exec.CommandContext(ctx, "du", args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
+	// For du, we need to run all directories in one command
+	// Use first directory as filePath and rest as args
+	firstDir := batch.Directories[0]
+	remainingDirs := batch.Directories[1:]
+	result, err := runner.Run(ctx, firstDir, remainingDirs...)
 	if err != nil {
-		stderrStr := stderr.String()
+		stderrStr := string(result.Stderr)
 		// Handle permission errors gracefully - log but don't fail the whole batch
 		if strings.Contains(stderrStr, "Permission denied") {
 			return 0, nil // Skip this batch, continue with others
@@ -182,7 +206,7 @@ func (p *ProgressiveDu) processBatch(ctx context.Context, batch *DirectoryBatch)
 	}
 
 	// Parse du output - multiple lines for batch mode
-	output := strings.TrimSpace(stdout.String())
+	output := strings.TrimSpace(string(result.Stdout))
 	if output == "" {
 		return 0, nil
 	}

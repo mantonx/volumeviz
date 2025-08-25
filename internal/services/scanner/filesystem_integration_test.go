@@ -95,3 +95,50 @@ func TestFilesystemIntegrationCoverage(t *testing.T) {
 	// Verify vs still exists
 	assert.NotNil(t, vs)
 }
+
+func TestPerformFilesystemIndexing(t *testing.T) {
+	// Test with a VolumeScanner that has no filesystem indexer
+	logger := log.New(os.Stderr, "[TEST] ", log.LstdFlags)
+	vs := &VolumeScanner{
+		logger:            logger,
+		filesystemIndexer: nil, // No indexer set
+	}
+
+	// Should handle gracefully when called with nil indexer
+	vs.performFilesystemIndexing(context.Background(), "test-volume", "/test/path", "scan-id")
+	assert.NotNil(t, vs) // Should not panic
+}
+
+func TestPerformFilesystemIndexingAsync(t *testing.T) {
+	// Test with a VolumeScanner that has no filesystem indexer
+	logger := log.New(os.Stderr, "[TEST] ", log.LstdFlags)
+	vs := &VolumeScanner{
+		logger:            logger,
+		filesystemIndexer: nil, // No indexer set
+	}
+
+	// Should handle gracefully when called with nil indexer
+	vs.performFilesystemIndexingAsync(context.Background(), "test-volume", "/test/path", false, "test-scan-id")
+	assert.NotNil(t, vs) // Should not panic
+}
+
+func TestTriggerFilesystemIndexingWithScanID(t *testing.T) {
+	// Test enhanced coverage
+	logger := log.New(os.Stderr, "[TEST] ", log.LstdFlags)
+	vs := &VolumeScanner{
+		logger:            logger,
+		filesystemIndexer: nil,
+	}
+
+	// Test different parameter combinations
+	ctx := context.Background()
+
+	// Test with async=true
+	vs.TriggerFilesystemIndexingWithScanID(ctx, "test-volume", true, "scan-id-1")
+
+	// Test with async=false
+	vs.TriggerFilesystemIndexingWithScanID(ctx, "test-volume", false, "scan-id-2")
+
+	// Should not panic in either case
+	assert.NotNil(t, vs)
+}

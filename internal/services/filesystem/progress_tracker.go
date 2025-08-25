@@ -8,6 +8,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/utils"
 )
 
 // ProgressTracker handles throttled progress updates to prevent database flooding
@@ -42,21 +43,17 @@ func (pt *ProgressTracker) QueueProgressUpdate(scanID string, progress *Indexing
 	itemsProcessed := progress.FilesScanned + progress.FoldersScanned
 	itemsTotal := progress.TotalFiles + progress.TotalFolders
 
-	// Calculate progress percentage
-	progressPercent := 0
-	previousProgress := 0
+	// Calculate progress percentage using safe utility
+	var progressPercent, previousProgress int
 
 	if itemsTotal > 0 {
 		// Calculate previous progress for milestone detection
 		previousProcessed := itemsProcessed - 1
 		if previousProcessed > 0 {
-			previousProgress = int((previousProcessed * 100) / itemsTotal)
+			previousProgress = utils.SafePercentage(previousProcessed, itemsTotal)
 		}
 
-		progressPercent = int((itemsProcessed * 100) / itemsTotal)
-		if progressPercent > 100 {
-			progressPercent = 100
-		}
+		progressPercent = utils.SafePercentage(itemsProcessed, itemsTotal)
 	} else if itemsProcessed > 0 {
 		// No total counts yet but processing files - show minimal progress
 		if itemsProcessed >= 100 {
@@ -184,6 +181,48 @@ func (pt *ProgressTracker) GetStats(scanID string) (int, int) {
 		return int(updates), int(throttled)
 	}
 	return 0, 0
+}
+
+// UpdateSubPhaseProgress updates sub-phase progress with operation details
+func (pt *ProgressTracker) UpdateSubPhaseProgress(ctx context.Context, scanID, phaseName, subPhase string, progress int, operation string) {
+	// Update the database with sub-phase information
+	updateParams := models.UpdateScanPhaseParams{
+		ScanID:    scanID,
+		PhaseName: phaseName,
+		Progress:  &progress,
+	}
+
+	// Use the new dedicated sub-phase fields
+	updateParams.SubPhase = &subPhase
+	updateParams.SubPhaseProgress = &progress
+	updateParams.CurrentOperation = &operation
+	
+	// Also update current_item for backward compatibility
+	currentItem := fmt.Sprintf("[%s] %s", subPhase, operation)
+	updateParams.CurrentItem = &currentItem
+
+	var err error
+	// Force update for sub-phase changes to ensure real-time feedback
+	if pt.throttler != nil {
+		err = pt.throttler.ForceUpdate(ctx, scanID, updateParams)
+	} else {
+		scanProgressRepo := pt.store.ScanProgress()
+		err = scanProgressRepo.UpdateScanPhaseProgress(ctx, updateParams)
+	}
+
+	if err != nil {
+		fmt.Printf("[ProgressTracker] Failed to update sub-phase progress: %v\n", err)
+		return
+	}
+
+	// Trigger real-time WebSocket broadcast
+	if pt.progressBroadcaster != nil {
+		if scansRepo := pt.store.Scans(); scansRepo != nil {
+			if scanJob, err := scansRepo.GetScanJobByScanID(ctx, scanID); err == nil && scanJob != nil {
+				go pt.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, scanJob.VolumeID)
+			}
+		}
+	}
 }
 
 // Cleanup cleans up tracking data for a scan

@@ -13,6 +13,9 @@ type EnrichmentManager interface {
 	// EnrichVolumeWithScanID enriches all eligible files in a volume with scan ID for database tracking
 	EnrichVolumeWithScanID(ctx context.Context, volumeID string, scanID string) error
 
+	// EnrichSingleFile enriches a single file immediately for streaming enrichment
+	EnrichSingleFile(ctx context.Context, fileInfo *models.FileInfo, scanID string) error
+
 	// IsEnabled returns true if enrichment is enabled
 	IsEnabled() bool
 

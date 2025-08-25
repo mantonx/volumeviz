@@ -3,6 +3,8 @@ package utils
 import (
 	"errors"
 	"fmt"
+
+	"github.com/mantonx/volumeviz/internal/models"
 )
 
 // WrapError wraps an error with additional context
@@ -90,4 +92,43 @@ func (el *ErrorList) First() error {
 		return el.Errors[0]
 	}
 	return nil
+}
+
+// NewScanError creates a new ScanError with the given parameters
+func NewScanError(volumeID, method, path, code, message string, err error) *models.ScanError {
+	return &models.ScanError{
+		VolumeID: volumeID,
+		Method:   method,
+		Path:     path,
+		Code:     code,
+		Message:  message,
+		Err:      err,
+		Context:  make(map[string]any),
+	}
+}
+
+// NewScanErrorWithContext creates a new ScanError with additional context
+func NewScanErrorWithContext(volumeID, method, path, code, message string, err error, context map[string]any) *models.ScanError {
+	if context == nil {
+		context = make(map[string]any)
+	}
+	return &models.ScanError{
+		VolumeID: volumeID,
+		Method:   method,
+		Path:     path,
+		Code:     code,
+		Message:  message,
+		Err:      err,
+		Context:  context,
+	}
+}
+
+// WrapScanError wraps an existing error as a ScanError, or returns it unchanged if already a ScanError
+func WrapScanError(err error, volumeID, method, path, code, message string) error {
+	// If it's already a ScanError, return it as-is
+	if scanErr, ok := err.(*models.ScanError); ok {
+		return scanErr
+	}
+
+	return NewScanError(volumeID, method, path, code, message, err)
 }

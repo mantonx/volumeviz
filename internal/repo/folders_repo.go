@@ -196,6 +196,44 @@ func (r *FoldersRepo) DeleteFoldersByVolume(ctx context.Context, volumeID string
 	return r.queries.DeleteFoldersByVolume(ctx, volumeID)
 }
 
+// DeleteFoldersByIDs deletes folders by their IDs in batches
+func (r *FoldersRepo) DeleteFoldersByIDs(ctx context.Context, folderIDs []int64) error {
+	// Process in batches to avoid query size limits
+	batchSize := 1000
+	for i := 0; i < len(folderIDs); i += batchSize {
+		end := i + batchSize
+		if end > len(folderIDs) {
+			end = len(folderIDs)
+		}
+		
+		batch := folderIDs[i:end]
+		for _, id := range batch {
+			if err := r.queries.DeleteFolder(ctx, id); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// GetFoldersByVolume gets all folders for a volume (used for reconciliation)
+func (r *FoldersRepo) GetFoldersByVolume(ctx context.Context, volumeID string) ([]*models.Folder, error) {
+	folders, err := r.queries.ListFoldersByVolume(ctx, sqlc.ListFoldersByVolumeParams{
+		VolumeID: volumeID,
+		Limit:    1000000, // Large limit to get all folders
+		Offset:   0,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*models.Folder, len(folders))
+	for i, folder := range folders {
+		result[i] = r.convertToFolder(folder)
+	}
+	return result, nil
+}
+
 // CountFoldersByVolume counts folders in a volume
 func (r *FoldersRepo) CountFoldersByVolume(ctx context.Context, volumeID string) (int64, error) {
 	return r.queries.CountFoldersByVolume(ctx, volumeID)

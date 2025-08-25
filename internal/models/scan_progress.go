@@ -41,6 +41,14 @@ type ScanPhase struct {
 	// Current processing info
 	CurrentItem  string `json:"current_item"`
 	CurrentDepth int    `json:"current_depth"`
+	
+	// Sub-phase progress fields
+	SubPhase         string `json:"sub_phase,omitempty"`          // "preparation", "database_reconciliation", "filesystem_walking"
+	SubPhaseProgress int    `json:"sub_phase_progress,omitempty"` // 0-100 progress within sub-phase
+	CurrentOperation string `json:"current_operation,omitempty"`  // "Checking existing files (2,451/28,308)"
+	
+	// Time estimation confidence
+	EstimationConfidence string `json:"estimation_confidence,omitempty"` // "low", "medium", "high"
 
 	// Error tracking
 	ErrorMessage string     `json:"error_message"`
@@ -80,6 +88,12 @@ type UpdateScanPhaseParams struct {
 	ItemsPerSecond        *float64   `json:"items_per_second,omitempty"`
 	BytesPerSecond        *int64     `json:"bytes_per_second,omitempty"`
 	EstimatedCompletionAt *time.Time `json:"estimated_completion_at,omitempty"`
+	
+	// Sub-phase progress fields
+	SubPhase             *string `json:"sub_phase,omitempty"`
+	SubPhaseProgress     *int    `json:"sub_phase_progress,omitempty"`
+	CurrentOperation     *string `json:"current_operation,omitempty"`
+	EstimationConfidence *string `json:"estimation_confidence,omitempty"`
 }
 
 // =============================================================================

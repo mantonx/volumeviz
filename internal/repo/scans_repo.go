@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/utils"
 )
 
 // ScansRepo handles scan job, file entry, and directory operations
@@ -296,22 +297,22 @@ func (r *scansRepo) convertScanJobToModel(job sqlc.ScanJobs) *models.ScanJob {
 	}
 
 	if job.Progress.Valid {
-		result.Progress = &job.Progress.Int32
+		result.Progress = utils.Ptr(job.Progress.Int32)
 	}
 	if job.StartedAt.Valid {
-		result.StartedAt = &job.StartedAt.Time
+		result.StartedAt = utils.Ptr(job.StartedAt.Time)
 	}
 	if job.CompletedAt.Valid {
-		result.CompletedAt = &job.CompletedAt.Time
+		result.CompletedAt = utils.Ptr(job.CompletedAt.Time)
 	}
 	if job.ErrorMessage.Valid {
-		result.ErrorMessage = &job.ErrorMessage.String
+		result.ErrorMessage = utils.Ptr(job.ErrorMessage.String)
 	}
 	if job.ResultID.Valid {
-		result.ResultID = &job.ResultID.Int64
+		result.ResultID = utils.Ptr(job.ResultID.Int64)
 	}
 	if job.EstimatedDuration.Valid {
-		result.EstimatedDuration = &job.EstimatedDuration.Int64
+		result.EstimatedDuration = utils.Ptr(job.EstimatedDuration.Int64)
 	}
 
 	return result

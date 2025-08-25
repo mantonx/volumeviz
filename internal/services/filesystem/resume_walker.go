@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 type ResumeWalker struct {
 	indexer     *FilesystemIndexer
 	volumeID    string
-	skipRegexes []*regexp.Regexp
+	skipMatcher *SkipPatternMatcher
 	folderCache map[string]*models.Folder
 	previewGen  *PreviewGenerator
 }
@@ -59,9 +58,9 @@ func (rw *ResumeWalker) ResumeFromCheckpoint(ctx context.Context, mountpoint, sc
 	defer rw.cleanup(scanID)
 
 	// Compile skip patterns
-	rw.skipRegexes, err = rw.compileSkipPatterns()
+	rw.skipMatcher, err = NewSkipPatternMatcher(rw.indexer.config.SkipPatterns, rw.indexer.config.SkipHidden)
 	if err != nil {
-		return fmt.Errorf("failed to compile skip patterns: %w", err)
+		return fmt.Errorf("failed to create skip pattern matcher: %w", err)
 	}
 
 	// Load existing folder cache
@@ -187,7 +186,7 @@ func (rw *ResumeWalker) walkFromCheckpoint(ctx context.Context, rootPath, checkp
 		}
 
 		// Check skip rules
-		if rw.shouldSkip(path, info) {
+		if rw.skipMatcher != nil && rw.skipMatcher.ShouldSkip(path, info) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
@@ -302,36 +301,3 @@ func (rw *ResumeWalker) processFile(ctx context.Context, path string, info os.Fi
 	return nil
 }
 
-// shouldSkip determines if a path should be skipped based on rules
-func (rw *ResumeWalker) shouldSkip(path string, info os.FileInfo) bool {
-	name := info.Name()
-
-	// Skip hidden files/directories if configured
-	if rw.indexer.config.SkipHidden && strings.HasPrefix(name, ".") {
-		return true
-	}
-
-	// Check skip patterns
-	for _, regex := range rw.skipRegexes {
-		if regex.MatchString(path) || regex.MatchString(name) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// compileSkipPatterns compiles skip patterns into regex
-func (rw *ResumeWalker) compileSkipPatterns() ([]*regexp.Regexp, error) {
-	var regexes []*regexp.Regexp
-
-	for _, pattern := range rw.indexer.config.SkipPatterns {
-		regex, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("invalid skip pattern '%s': %w", pattern, err)
-		}
-		regexes = append(regexes, regex)
-	}
-
-	return regexes, nil
-}
