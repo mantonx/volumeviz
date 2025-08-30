@@ -14,7 +14,8 @@ import { ViewToggle, type ViewMode } from './ViewToggle/ViewToggle';
 import { FileDrawer } from './FileDrawer';
 import { VolumeCharts } from './Charts';
 import { AlertCenter } from './AlertCenter';
-import { useWebSocket } from '@/providers/WebSocketProvider';
+import { useRealtime } from '@/providers/realtime';
+import { ReadyState } from 'react-use-websocket';
 
 interface ExplorerViewProps {
   volumeId: string;
@@ -120,7 +121,21 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
   >('explorer');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
 
-  const { status: wsStatus } = useWebSocket();
+  const { isConnected, connectionStatus } = useRealtime();
+  const wsStatus = React.useMemo(() => {
+    switch (connectionStatus) {
+      case ReadyState.CONNECTING:
+        return 'connecting';
+      case ReadyState.OPEN:
+        return 'connected';
+      case ReadyState.CLOSING:
+        return 'disconnecting';
+      case ReadyState.CLOSED:
+        return 'disconnected';
+      default:
+        return 'error';
+    }
+  }, [connectionStatus]);
 
   const handleTreeNodeSelect = useCallback((node: any) => {
     setCurrentPath(node.path);

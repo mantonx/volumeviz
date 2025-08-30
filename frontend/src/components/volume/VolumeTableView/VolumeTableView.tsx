@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Dropdown } from '@/components/ui/Dropdown';
-import { ScanProgressDisplay } from '@/components/ui/ScanProgressDisplay';
+import { ScanProgressPanel, ScanProgressBar } from '@/components/scan';
 import { ContainerStatus } from '@/components/ui/ContainerStatus';
 import { FreshnessIndicator } from '@/components/ui/FreshnessIndicator';
 import { SizeVisualization } from '@/components/ui/SizeVisualization';
@@ -195,12 +195,19 @@ export const VolumeTableView: React.FC<VolumeTableViewProps> = ({
                 <React.Fragment key={`${item.id}-${index}`}>
                   <tr
                     className={cn(
-                      'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-200 relative',
-                      item.status === 'untracked' &&
-                        'opacity-60 bg-gray-25 dark:bg-gray-800/20',
+                      'transition-all duration-200 relative',
+                      item.status === 'untracked' ? 
+                        'opacity-40 bg-gray-100 dark:bg-gray-800/40 cursor-not-allowed' :
+                        'hover:bg-gray-50 dark:hover:bg-gray-800/50',
                     )}
+                    style={item.status === 'untracked' ? {
+                      backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 12px)',
+                    } : undefined}
                   >
-                    <td className="p-3">
+                    {/* Progress bar spans the entire row */}
+                    <ScanProgressBar volumeId={item.id} volumeStatus={item.status} />
+                    
+                    <td className={cn("p-3 relative", item.status === 'untracked' && "cursor-pointer")}>
                       <Checkbox
                         checked={selectedIds.has(item.id)}
                         onChange={() => onSelectItem(item.id)}
@@ -329,56 +336,22 @@ export const VolumeTableView: React.FC<VolumeTableViewProps> = ({
                     )}
 
                     <td className="p-3">
-                      <Dropdown items={getVolumeActions(item)} />
+                      {item.status !== 'untracked' && (
+                        <Dropdown items={getVolumeActions(item)} />
+                      )}
                     </td>
                   </tr>
 
-                  {/* Unified detailed progress row using ScanProgressDisplay for both scan and view */}
+                  {/* Clean detailed progress row using ScanProgressPanel */}
                   {volumesWithDetailedProgress.has(item.id) && (
                     <tr key={`${item.id}-progress`} className="border-t-0">
                       <td className="p-0" colSpan={visibleColumnsCount + 2}>
                         <div className="bg-blue-50 dark:bg-blue-900/10 border-l-4 border-blue-500 p-4">
-                          <ScanProgressDisplay
-                            volumeId={item.id}
-                            scanId={item.last_scan_id}
-                            variant="panel"
-                            size="md"
-                            showPerformanceStats={true}
-                            showErrors={true}
-                            animated={true}
-                            showEstimatedTime={true}
-                            compact={false}
-                            onScanStart={(scanId) => {
-                              console.log(
-                                `ScanProgressDisplay: Scan started for volume ${item.id}:`,
-                                scanId,
-                              );
-                            }}
-                            onScanComplete={(scanId, duration) => {
-                              console.log(
-                                `ScanProgressDisplay: Scan completed for volume ${item.id}:`,
-                                scanId,
-                                duration,
-                              );
-                              // Don't show toasts or auto-hide when just viewing progress
-                              // These actions are handled by the scan initiation logic
-                            }}
-                            onScanError={(scanId, error) => {
-                              console.log(
-                                `ScanProgressDisplay: Scan error for volume ${item.id}:`,
-                                scanId,
-                                error,
-                              );
-                              // Only show error toasts for actively running scans, not for viewing historical data
-                              // This prevents error toasts when just viewing progress of completed/failed scans
-                            }}
-                            className="w-full"
-                          />
+                          <ScanProgressPanel volumeId={item.id} />
                         </div>
                       </td>
                     </tr>
                   )}
-
                 </React.Fragment>
               );
             })}

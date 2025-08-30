@@ -6,7 +6,6 @@ import (
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/store"
-	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // Router handles scan-related routes
@@ -15,9 +14,9 @@ type Router struct {
 }
 
 // NewRouter creates a new scan router
-func NewRouter(scanner interfaces.VolumeScanner, hub *websocket.Hub, store store.Store, scanScheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Router {
+func NewRouter(scanner interfaces.VolumeScanner, store store.Store, scanScheduler scheduler.ScanScheduler, publisher *realtime.Broadcaster) *Router {
 	return &Router{
-		handler: NewHandlerWithStore(scanner, hub, store, scanScheduler, publisher),
+		handler: NewHandlerWithStore(scanner, store, scanScheduler, publisher),
 	}
 }
 

@@ -3,7 +3,6 @@ module github.com/mantonx/volumeviz
 go 1.24.3
 
 require (
-	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/docker/docker v28.3.3+incompatible
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
@@ -16,6 +15,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.6
 	modernc.org/sqlite v1.38.2
+	nhooyr.io/websocket v1.8.17
 )
 
 require (
@@ -24,6 +24,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect

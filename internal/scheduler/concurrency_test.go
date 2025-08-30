@@ -28,7 +28,7 @@ func TestConcurrencyControl(t *testing.T) {
 	mockVolumeProvider := &MockVolumeProvider{}
 	mockMetrics := &MockMetricsCollector{}
 
-	scheduler, err := NewScheduler(config, mockScanner, mockRepo, mockVolumeProvider, mockMetrics, nil)
+	scheduler, err := NewScheduler(config, mockScanner, mockRepo, mockVolumeProvider, mockMetrics, nil, nil)
 	assert.NoError(t, err)
 
 	ctx := context.Background()
@@ -83,7 +83,7 @@ func TestHeartbeatFunctionality(t *testing.T) {
 		QueueSize: 10,
 	}
 
-	scheduler, err := NewScheduler(config, nil, nil, nil, nil, nil)
+	scheduler, err := NewScheduler(config, nil, nil, nil, nil, nil, nil)
 	assert.NoError(t, err)
 
 	// Verify heartbeat config is set correctly (7s default interval)

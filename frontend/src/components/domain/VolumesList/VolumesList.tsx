@@ -18,7 +18,7 @@ import { VolumeTableView } from '@/components/volume/VolumeTableView';
 import { useFilterViews } from '@/hooks/useFilterViews';
 import type { VolumeMount } from '@/hooks/useVolumesAndMounts';
 import { useVolumesAndMounts } from '@/hooks/useVolumesAndMounts';
-import { useWebSocket } from '@/providers/WebSocketProvider';
+import { useRealtime } from '@/providers/realtime';
 import {
   volumesAddDetailedProgressAtom,
   volumesClearSelectionAtom,
@@ -104,8 +104,9 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
   // Toast notifications
   const { success, error: showError, info } = useToast();
 
-  // WebSocket connection
-  const { isConnected, on, send } = useWebSocket();
+  // Realtime connection
+  const { isConnected, onScanProgress, onVolumeUpdate, onVolumeState, onScanStatus, sendMessage } =
+    useRealtime();
 
   // Scanning functionality
   const { scanVolume, scanLoading } = useVolumeScanning();
@@ -207,51 +208,64 @@ export const VolumesList: React.FC<VolumesListProps> = ({ className }) => {
   useEffect(() => {
     if (!isConnected) return;
 
-    const handleVolumeListUpdate = (message: any) => {
-      const data = message.data || message;
-      if (['created', 'updated', 'removed'].includes(data.action)) {
-        setTimeout(() => fetchData({}), 500);
-      }
-    };
-
-    const handleContainerUpdate = (message: any) => {
-      const data = message.data || message;
-      if (['attached', 'detached'].includes(data.action)) {
-        setTimeout(() => fetchData({}), 500);
-      }
-    };
-
-    const handleScanProgress = (message: any) => {
-      console.log('Received scan progress update:', message);
-      const data = message.data || message;
+    // Subscribe to scan progress updates - refresh data when scans complete
+    const unsubscribeScanProgress = onScanProgress((data: any) => {
       // Refresh data when scan completes to update volume sizes
-      if (data.phase === 'complete' || data.phase === 'completed') {
+      if (
+        data.overall_status === 'completed' ||
+        data.phase === 'complete' ||
+        data.phase === 'completed'
+      ) {
         setTimeout(() => fetchData({}), 1000);
       }
-    };
+    });
 
-    on('volume_updates', handleVolumeListUpdate);
-    on('container_updates', handleContainerUpdate);
-    on('scan_progress_update', handleScanProgress); // Backend sends 'scan_progress_update', not 'scan_progress'
-
-    // Subscribe to scan progress for all volumes
-    const subscribeMessage = {
-      type: 'subscribe',
-      data: {
-        event: 'scan_progress',
-        filters: {}, // Subscribe to all scan progress
-      },
-    };
-    console.log('Sending WebSocket subscription:', subscribeMessage);
-    
-    // Add a small delay to ensure WebSocket connection is fully ready
-    setTimeout(() => {
-      if (!send(subscribeMessage)) {
-        console.warn('Failed to send subscription, retrying in 100ms...');
-        setTimeout(() => send(subscribeMessage), 100);
+    // Subscribe to volume updates - refresh when volumes change
+    const unsubscribeVolumeUpdate = onVolumeUpdate((data: any) => {
+      if (
+        ['created', 'updated', 'removed', 'attached', 'detached'].includes(
+          data.action,
+        )
+      ) {
+        setTimeout(() => fetchData({}), 500);
       }
-    }, 10);
-  }, [isConnected, on, send, fetchData]);
+    });
+
+    // Subscribe to continuous volume state updates (every 10 seconds)
+    const unsubscribeVolumeState = onVolumeState((data: any) => {
+      // These are continuous periodic updates showing current volume state
+      // No need to refresh entire dataset - this is already real-time data
+    });
+
+    const unsubscribeScanStatus = onScanStatus((data: any) => {
+      // These show current volume scan status without active scans
+    });
+
+    // Send subscription messages for continuous updates
+    if (sendMessage) {
+      // Subscribe to volume.updates for live state
+      sendMessage({
+        action: 'subscribe',
+        event: 'volume.updates',
+        filters: {}
+      });
+
+      // Subscribe to scan.progress for live status
+      sendMessage({
+        action: 'subscribe', 
+        event: 'scan.progress',
+        filters: {}
+      });
+    }
+
+    // Cleanup function
+    return () => {
+      unsubscribeScanProgress();
+      unsubscribeVolumeUpdate();
+      unsubscribeVolumeState();
+      unsubscribeScanStatus();
+    };
+  }, [isConnected, onScanProgress, onVolumeUpdate, onVolumeState, onScanStatus, fetchData, sendMessage]);
 
   // Show error toasts
   useEffect(() => {

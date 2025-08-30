@@ -11,7 +11,7 @@
 import { useVolumes } from '@/api/services';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { useWebSocket } from '@/providers/WebSocketProvider';
+import { useRealtime } from '@/providers/realtime';
 import { currentPathAtom, searchQueryAtom } from '@/store/api-state';
 import { useAtom } from 'jotai';
 import {
@@ -42,7 +42,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
   const [files] = useState<FileItem[]>([]);
 
   // WebSocket connection for real-time updates
-  const { status: wsStatus } = useWebSocket();
+  const { isConnected } = useRealtime();
 
   // Load volumes when component mounts
   useEffect(() => {
@@ -199,7 +199,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            {wsStatus === 'connected' && (
+            {isConnected && (
               <div className="flex items-center text-green-600 text-sm">
                 <div className="w-2 h-2 bg-green-600 rounded-full mr-2" />
                 Live Updates
@@ -321,7 +321,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
           <span>Path: {currentPath}</span>
         </div>
         <div className="flex items-center gap-4">
-          {wsStatus === 'connected' && <span>🔄 Live updates active</span>}
+          {isConnected && <span>🔄 Live updates active</span>}
         </div>
       </div>
     </div>

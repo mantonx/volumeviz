@@ -8,18 +8,20 @@ import {
 import {
   AlertsPage,
   Dashboard,
-  // ExplorerPage,
+  ExplorerPage,
   HealthPage,
   MountsPage,
   NotFoundPage,
   OnboardingPage,
+  RealtimeTestPage,
   RulesPage,
   SearchPage,
   SettingsPage,
   VolumeDetailsPage,
   VolumesPage,
+  WebSocketTestPage,
 } from '@/pages';
-import { WebSocketProvider } from '@/providers/WebSocketProvider';
+import { RealtimeProvider } from '@/providers/realtime';
 import React, { useEffect, useState } from 'react';
 import {
   Navigate,
@@ -89,7 +91,7 @@ const App: React.FC = () => {
   return (
     <div data-testid="app-root">
       <ToastProvider>
-        <WebSocketProvider>
+        <RealtimeProvider>
           <ApiHealthChecker />
           <Router>
             <Layout>
@@ -114,8 +116,8 @@ const App: React.FC = () => {
                 <Route path="/rules" element={<RulesPage />} />
 
                 {/* Explorer Routes */}
-                {/* <Route path="/explorer" element={<ExplorerPage />} />
-                <Route path="/explorer/:volumeId" element={<ExplorerPage />} /> */}
+                <Route path="/explorer" element={<ExplorerPage />} />
+                <Route path="/explorer/:volumeId" element={<ExplorerPage />} />
 
                 {/* Search Routes */}
                 <Route path="/search" element={<SearchPage />} />
@@ -134,12 +136,16 @@ const App: React.FC = () => {
                 <Route path="/health" element={<HealthPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
 
+                {/* Debug Routes */}
+                <Route path="/realtime-test" element={<RealtimeTestPage />} />
+                <Route path="/websocket-test" element={<WebSocketTestPage />} />
+
                 {/* 404 Route */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>
           </Router>
-        </WebSocketProvider>
+        </RealtimeProvider>
       </ToastProvider>
     </div>
   );

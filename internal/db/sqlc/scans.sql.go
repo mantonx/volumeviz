@@ -32,17 +32,6 @@ func (q *Queries) CountDirNodesByVolume(ctx context.Context, volumeID string) (i
 	return count, err
 }
 
-const countDirRollupsByVolume = `-- name: CountDirRollupsByVolume :one
-SELECT COUNT(*) FROM folders WHERE volume_id = $1
-`
-
-func (q *Queries) CountDirRollupsByVolume(ctx context.Context, volumeID string) (int64, error) {
-	row := q.db.QueryRow(ctx, countDirRollupsByVolume, volumeID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const createDirNode = `-- name: CreateDirNode :one
 INSERT INTO folders (
     volume_id, parent_id, name, path, path_hash, depth
@@ -97,56 +86,12 @@ func (q *Queries) CreateDirNode(ctx context.Context, arg CreateDirNodeParams) (C
 	return i, err
 }
 
-const createDirRollup = `-- name: CreateDirRollup :one
-SELECT 
-    $1::bigint as id,
-    $1::bigint as dir_id,
-    0::bigint as size_bytes,
-    0::bigint as file_count,
-    CURRENT_TIMESTAMP as computed_at,
-    CURRENT_TIMESTAMP as created_at
-`
-
-type CreateDirRollupRow struct {
-	ID         int64       `json:"id"`
-	DirID      int64       `json:"dir_id"`
-	SizeBytes  int64       `json:"size_bytes"`
-	FileCount  int64       `json:"file_count"`
-	ComputedAt interface{} `json:"computed_at"`
-	CreatedAt  interface{} `json:"created_at"`
-}
-
-// This is a no-op in the new schema since rollups are maintained by triggers
-func (q *Queries) CreateDirRollup(ctx context.Context, dollar_1 int64) (CreateDirRollupRow, error) {
-	row := q.db.QueryRow(ctx, createDirRollup, dollar_1)
-	var i CreateDirRollupRow
-	err := row.Scan(
-		&i.ID,
-		&i.DirID,
-		&i.SizeBytes,
-		&i.FileCount,
-		&i.ComputedAt,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
 const deleteDirNodesByVolume = `-- name: DeleteDirNodesByVolume :exec
 DELETE FROM folders WHERE volume_id = $1
 `
 
 func (q *Queries) DeleteDirNodesByVolume(ctx context.Context, volumeID string) error {
 	_, err := q.db.Exec(ctx, deleteDirNodesByVolume, volumeID)
-	return err
-}
-
-const deleteDirRollupsByVolume = `-- name: DeleteDirRollupsByVolume :exec
-SELECT 1 WHERE false
-`
-
-// This is a no-op in the new schema
-func (q *Queries) DeleteDirRollupsByVolume(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, deleteDirRollupsByVolume)
 	return err
 }
 
@@ -347,48 +292,6 @@ func (q *Queries) GetDirNodesByVolumeAndParent(ctx context.Context, arg GetDirNo
 		return nil, err
 	}
 	return items, nil
-}
-
-const getDirRollup = `-- name: GetDirRollup :one
-
-
-SELECT 
-    f.id as id,
-    f.id as dir_id,
-    f.size_bytes_recursive as size_bytes,
-    f.file_count as file_count,
-    f.updated_at as computed_at,
-    f.created_at as created_at
-FROM folders f
-WHERE f.id = $1
-`
-
-type GetDirRollupRow struct {
-	ID         int64     `json:"id"`
-	DirID      int64     `json:"dir_id"`
-	SizeBytes  int64     `json:"size_bytes"`
-	FileCount  int64     `json:"file_count"`
-	ComputedAt time.Time `json:"computed_at"`
-	CreatedAt  time.Time `json:"created_at"`
-}
-
-// =============================================================================
-// DIRECTORY ROLLUPS QUERIES (legacy compatibility - not implemented in new schema)
-// =============================================================================
-// Note: Directory rollups are now handled by triggers in the new schema
-// These queries are kept for compatibility but may return empty results
-func (q *Queries) GetDirRollup(ctx context.Context, id int64) (GetDirRollupRow, error) {
-	row := q.db.QueryRow(ctx, getDirRollup, id)
-	var i GetDirRollupRow
-	err := row.Scan(
-		&i.ID,
-		&i.DirID,
-		&i.SizeBytes,
-		&i.FileCount,
-		&i.ComputedAt,
-		&i.CreatedAt,
-	)
-	return i, err
 }
 
 const getExplorerEntry = `-- name: GetExplorerEntry :one
@@ -644,61 +547,6 @@ func (q *Queries) GetLargestFilesLegacy(ctx context.Context, arg GetLargestFiles
 			&i.PathHash,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLatestDirRollups = `-- name: GetLatestDirRollups :many
-SELECT 
-    f.id as id,
-    f.id as dir_id,
-    f.size_bytes_recursive as size_bytes,
-    f.file_count as file_count,
-    f.updated_at as computed_at,
-    f.created_at as created_at
-FROM folders f
-WHERE f.volume_id = $1
-ORDER BY f.updated_at DESC
-LIMIT $2
-`
-
-type GetLatestDirRollupsParams struct {
-	VolumeID string `json:"volume_id"`
-	Limit    int32  `json:"limit"`
-}
-
-type GetLatestDirRollupsRow struct {
-	ID         int64     `json:"id"`
-	DirID      int64     `json:"dir_id"`
-	SizeBytes  int64     `json:"size_bytes"`
-	FileCount  int64     `json:"file_count"`
-	ComputedAt time.Time `json:"computed_at"`
-	CreatedAt  time.Time `json:"created_at"`
-}
-
-func (q *Queries) GetLatestDirRollups(ctx context.Context, arg GetLatestDirRollupsParams) ([]GetLatestDirRollupsRow, error) {
-	rows, err := q.db.Query(ctx, getLatestDirRollups, arg.VolumeID, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetLatestDirRollupsRow{}
-	for rows.Next() {
-		var i GetLatestDirRollupsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.DirID,
-			&i.SizeBytes,
-			&i.FileCount,
-			&i.ComputedAt,
-			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

@@ -18,7 +18,8 @@ func TestHandler_ListVolumes(t *testing.T) {
 
 	mockVolumes := []models.Volume{
 		{
-			ID:         "vol1",
+			ID:         1,
+			VolumeID:   "vol1",
 			Name:       "vol1",
 			Driver:     "local",
 			Mountpoint: "/var/lib/docker/volumes/vol1/_data",
@@ -26,7 +27,8 @@ func TestHandler_ListVolumes(t *testing.T) {
 			Labels:     map[string]string{"env": "test"},
 		},
 		{
-			ID:         "vol2",
+			ID:         2,
+			VolumeID:   "vol2",
 			Name:       "vol2",
 			Driver:     "nfs",
 			Mountpoint: "/mnt/nfs/vol2",
@@ -134,7 +136,8 @@ func TestHandler_GetVolume(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockVolume := &models.Volume{
-		ID:         "test-vol",
+		ID:         1,
+		VolumeID:   "test-vol",
 		Name:       "test-vol",
 		Driver:     "local",
 		Mountpoint: "/var/lib/docker/volumes/test-vol/_data",
@@ -226,28 +229,31 @@ func TestHandler_GetVolumeAttachments(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockVolume := &models.Volume{
-		ID:   "test-vol",
-		Name: "test-vol",
+		ID:       1,
+		VolumeID: "test-vol",
+		Name:     "test-vol",
 	}
 
 	mockContainers := []models.VolumeContainer{
 		{
-			ID:         "container1",
-			Name:       "/test-container-1",
-			State:      "running",
-			Status:     "Up 2 hours",
-			MountPath:  "/data",
-			MountType:  "volume",
-			AccessMode: "rw",
+			ID:          1,
+			ContainerID: "container1",
+			VolumeID:    "test-vol",
+			Name:        "/test-container-1",
+			State:       "running",
+			Status:      "Up 2 hours",
+			MountPath:   "/data",
+			AccessMode:  "rw",
 		},
 		{
-			ID:         "container2",
-			Name:       "/test-container-2",
-			State:      "exited",
-			Status:     "Exited (0) 1 hour ago",
-			MountPath:  "/backup",
-			MountType:  "volume",
-			AccessMode: "ro",
+			ID:          2,
+			ContainerID: "container2",
+			VolumeID:    "test-vol",
+			Name:        "/test-container-2",
+			State:       "exited",
+			Status:      "Exited (0) 1 hour ago",
+			MountPath:   "/backup",
+			AccessMode:  "ro",
 		},
 	}
 

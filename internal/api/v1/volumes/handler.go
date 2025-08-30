@@ -21,29 +21,27 @@ import (
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/utils"
-	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // Handler handles volume-related HTTP requests
 // Provides REST endpoints for Docker volume operations
 type Handler struct {
 	dockerService     interfaces.DockerService
-	hub               *websocket.Hub
 	store             store.Store // Modern store interface using sqlc
-	realtimePublisher *realtime.Publisher
+	realtimePublisher *realtime.Broadcaster
 	systemVolumeRegex *regexp.Regexp
 	volumeScanner     interfaces.VolumeScanner // VolumeViz scanner for size calculation
 	volumeMapping     *config.VolumeMappingConfig
 }
 
 // NewHandler creates a new volume handler with store interface
-// Pass in your Docker service, WebSocket hub, store, realtime publisher, and optional volume scanner
-func NewHandler(dockerService interfaces.DockerService, hub *websocket.Hub, store store.Store, publisher *realtime.Publisher) *Handler {
-	return NewHandlerWithScanner(dockerService, hub, store, publisher, nil)
+// Pass in your Docker service, store, realtime publisher, and optional volume scanner
+func NewHandler(dockerService interfaces.DockerService, store store.Store, publisher *realtime.Broadcaster) *Handler {
+	return NewHandlerWithScanner(dockerService, store, publisher, nil)
 }
 
 // NewHandlerWithScanner creates a new volume handler with volume scanner for size calculation
-func NewHandlerWithScanner(dockerService interfaces.DockerService, hub *websocket.Hub, store store.Store, publisher *realtime.Publisher, scanner interfaces.VolumeScanner) *Handler {
+func NewHandlerWithScanner(dockerService interfaces.DockerService, store store.Store, publisher *realtime.Broadcaster, scanner interfaces.VolumeScanner) *Handler {
 	// Default system volume regex pattern
 	pattern := `^(docker_|builder_|containerd|_data$)`
 	regex, err := regexp.Compile(pattern)
@@ -54,7 +52,6 @@ func NewHandlerWithScanner(dockerService interfaces.DockerService, hub *websocke
 
 	return &Handler{
 		dockerService:     dockerService,
-		hub:               hub,
 		store:             store,
 		realtimePublisher: publisher,
 		systemVolumeRegex: regex,

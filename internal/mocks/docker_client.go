@@ -134,3 +134,8 @@ func (m *MockDockerClient) Events(ctx context.Context, options events.ListOption
 	close(errCh)
 	return eventCh, errCh
 }
+
+// DiskUsage mocks the DiskUsage method
+func (m *MockDockerClient) DiskUsage(ctx context.Context, options types.DiskUsageOptions) (types.DiskUsage, error) {
+	return types.DiskUsage{}, nil
+}

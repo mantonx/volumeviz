@@ -1,7 +1,6 @@
 package scanner
 
 import (
-	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -20,14 +19,14 @@ type ProgressManager struct {
 	mutex        sync.RWMutex
 
 	// Broadcasting
-	broadcaster *realtime.ProgressBroadcaster
+	broadcaster realtime.BroadcasterInterface
 
 	// Configuration
 	updateInterval time.Duration
 }
 
 // NewProgressManager creates a new progress manager
-func NewProgressManager(broadcaster *realtime.ProgressBroadcaster) *ProgressManager {
+func NewProgressManager(broadcaster realtime.BroadcasterInterface) *ProgressManager {
 	return &ProgressManager{
 		activeScans:    make(map[string]*interfaces.ScanProgress),
 		volumeToScan:   make(map[string]string),
@@ -198,12 +197,60 @@ func (pm *ProgressManager) broadcastProgress(scanID string) {
 		return
 	}
 
-	// Broadcast using the existing comprehensive method
-	if err := pm.broadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, progress.VolumeID); err != nil {
-		// Log error but don't fail the operation - broadcasting is non-critical
-		// Note: ProgressManager doesn't currently have a logger, could be added if needed
-		fmt.Printf("Failed to broadcast scan progress for scan %s: %v\n", scanID, err)
+	// Convert in-memory progress to broadcast format
+	// Calculate overall progress and prepare phase data
+	phases := []map[string]interface{}{}
+	overallProgress := 0.0
+	totalPhases := len(progress.Phases)
+	
+	for phaseName, phaseInfo := range progress.Phases {
+		phaseData := map[string]interface{}{
+			"phase_name":      phaseName,
+			"status":         phaseInfo.Status,
+			"progress":       int(phaseInfo.Progress * 100), // Convert to percentage
+			"items_processed": phaseInfo.ItemsProcessed,
+			"items_total":    0, // ItemsTotal not available in PhaseInfo
+		}
+		
+		if phaseInfo.StartedAt != nil {
+			phaseData["started_at"] = phaseInfo.StartedAt.Format(time.RFC3339)
+		}
+		if phaseInfo.CompletedAt != nil {
+			phaseData["completed_at"] = phaseInfo.CompletedAt.Format(time.RFC3339)
+		}
+		
+		phases = append(phases, phaseData)
+		overallProgress += phaseInfo.Progress
 	}
+	
+	if totalPhases > 0 {
+		overallProgress = (overallProgress / float64(totalPhases)) * 100
+	}
+
+	// Prepare broadcast data with actual in-memory progress
+	broadcastData := map[string]interface{}{
+		"scan_id":          scanID,
+		"volume_id":        progress.VolumeID,
+		"overall_status":   string(progress.Status),
+		"overall_progress": int(overallProgress),
+		"phases":          phases,
+		"started_at":      progress.StartedAt.Format(time.RFC3339),
+		"current_path":    progress.CurrentPath,
+		"files_scanned":   progress.FilesScanned,
+		"folders_scanned": progress.FoldersScanned,
+		"bytes_processed": progress.BytesProcessed,
+		"total_bytes":     progress.TotalBytes,
+	}
+	
+	// Add performance stats if available
+	if progress.ElapsedSeconds > 0 {
+		broadcastData["performance_stats"] = map[string]interface{}{
+			"elapsed_seconds": progress.ElapsedSeconds,
+		}
+	}
+
+	// Use the direct broadcast method with in-memory data
+	pm.broadcaster.BroadcastScanProgress(progress.VolumeID, scanID, broadcastData)
 }
 
 // Helper methods for updating different types of progress

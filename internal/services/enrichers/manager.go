@@ -22,7 +22,7 @@ type Manager struct {
 	logger              *log.Logger
 	store               store.Store                   // Database store for progress tracking
 	volumeMapping       *config.VolumeMappingConfig   // Volume path mapping configuration
-	progressBroadcaster *realtime.ProgressBroadcaster // Progress broadcaster for real-time updates
+	progressBroadcaster realtime.BroadcasterInterface // Progress broadcaster for real-time updates
 
 	// Progress tracking
 	progressMutex sync.RWMutex
@@ -132,7 +132,7 @@ func (m *Manager) GetCapabilities() []EnricherCapabilities {
 }
 
 // SetProgressBroadcaster sets the progress broadcaster for real-time updates
-func (m *Manager) SetProgressBroadcaster(broadcaster *realtime.ProgressBroadcaster) {
+func (m *Manager) SetProgressBroadcaster(broadcaster realtime.BroadcasterInterface) {
 	m.progressBroadcaster = broadcaster
 }
 

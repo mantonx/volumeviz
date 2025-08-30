@@ -1,11 +1,17 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-import type { ViewMode, SelectionMode } from '@/components/domain/VolumesList/VolumesList.types';
+import type {
+  ViewMode,
+  SelectionMode,
+} from '@/components/domain/VolumesList/VolumesList.types';
 
 // UI State for VolumesList component
 
 // View and display preferences
-export const volumesViewModeAtom = atomWithStorage<ViewMode>('volumeviz-volumes-view-mode', 'table');
+export const volumesViewModeAtom = atomWithStorage<ViewMode>(
+  'volumeviz-volumes-view-mode',
+  'table',
+);
 export const volumesShowFiltersAtom = atom<boolean>(false);
 export const volumesShowColumnConfigAtom = atom<boolean>(false);
 export const volumesShowKeyboardHelpAtom = atom<boolean>(false);
@@ -36,7 +42,7 @@ export const volumesVisibleColumnsAtom = atomWithStorage<string[]>(
     'status',
     'size_bytes',
     'last_seen',
-  ]
+  ],
 );
 
 // Bulk actions UI state
@@ -54,35 +60,29 @@ export const volumesHasSelectionAtom = atom<boolean>((get) => {
 });
 
 // Selection actions (write-only atoms)
-export const volumesToggleSelectionAtom = atom(
-  null,
-  (get, set, id: string) => {
-    const currentSelected = get(volumesSelectedIdsAtom);
-    const newSelected = new Set(currentSelected);
-    
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    
-    set(volumesSelectedIdsAtom, newSelected);
-    
-    // Reset select all mode if manually toggling
-    if (newSelected.size === 0) {
-      set(volumesSelectAllModeAtom, 'none');
-    }
-  }
-);
+export const volumesToggleSelectionAtom = atom(null, (get, set, id: string) => {
+  const currentSelected = get(volumesSelectedIdsAtom);
+  const newSelected = new Set(currentSelected);
 
-export const volumesClearSelectionAtom = atom(
-  null,
-  (get, set) => {
-    set(volumesSelectedIdsAtom, new Set());
-    set(volumesSelectAllModeAtom, 'none');
-    set(volumesShowSelectDropdownAtom, false);
+  if (newSelected.has(id)) {
+    newSelected.delete(id);
+  } else {
+    newSelected.add(id);
   }
-);
+
+  set(volumesSelectedIdsAtom, newSelected);
+
+  // Reset select all mode if manually toggling
+  if (newSelected.size === 0) {
+    set(volumesSelectAllModeAtom, 'none');
+  }
+});
+
+export const volumesClearSelectionAtom = atom(null, (get, set) => {
+  set(volumesSelectedIdsAtom, new Set());
+  set(volumesSelectAllModeAtom, 'none');
+  set(volumesShowSelectDropdownAtom, false);
+});
 
 export const volumesSelectAllAtom = atom(
   null,
@@ -90,7 +90,7 @@ export const volumesSelectAllAtom = atom(
     const newSelected = new Set(volumeIds);
     set(volumesSelectedIdsAtom, newSelected);
     set(volumesSelectAllModeAtom, 'all');
-  }
+  },
 );
 
 export const volumesSelectPageAtom = atom(
@@ -99,7 +99,7 @@ export const volumesSelectPageAtom = atom(
     const newSelected = new Set(volumeIds);
     set(volumesSelectedIdsAtom, newSelected);
     set(volumesSelectAllModeAtom, 'page');
-  }
+  },
 );
 
 // Column visibility actions
@@ -110,9 +110,9 @@ export const volumesToggleColumnAtom = atom(
     const newColumns = currentColumns.includes(columnKey)
       ? currentColumns.filter((col) => col !== columnKey)
       : [...currentColumns, columnKey];
-    
+
     set(volumesVisibleColumnsAtom, newColumns);
-  }
+  },
 );
 
 // Progress tracking actions
@@ -123,7 +123,7 @@ export const volumesAddDetailedProgressAtom = atom(
     const newSet = new Set(current);
     newSet.add(volumeId);
     set(volumesWithDetailedProgressAtom, newSet);
-  }
+  },
 );
 
 export const volumesRemoveDetailedProgressAtom = atom(
@@ -133,7 +133,7 @@ export const volumesRemoveDetailedProgressAtom = atom(
     const newSet = new Set(current);
     newSet.delete(volumeId);
     set(volumesWithDetailedProgressAtom, newSet);
-  }
+  },
 );
 
 // Combined UI state atom for easier consumption
@@ -143,21 +143,21 @@ export const volumesUIStateAtom = atom((get) => ({
   showFilters: get(volumesShowFiltersAtom),
   showColumnConfig: get(volumesShowColumnConfigAtom),
   showKeyboardHelp: get(volumesShowKeyboardHelpAtom),
-  
+
   // Selection state
   selectedIds: get(volumesSelectedIdsAtom),
   selectAllMode: get(volumesSelectAllModeAtom),
   selectedCount: get(volumesSelectedCountAtom),
   hasSelection: get(volumesHasSelectionAtom),
-  
+
   // Modal and detail state
   selectedForDetails: get(volumesSelectedForDetailsAtom),
   showDetailsModal: get(volumesShowDetailsModalAtom),
   showSelectDropdown: get(volumesShowSelectDropdownAtom),
-  
+
   // Progress tracking
   volumesWithDetailedProgress: get(volumesWithDetailedProgressAtom),
-  
+
   // Search and columns
   searchQuery: get(volumesSearchQueryAtom),
   visibleColumns: get(volumesVisibleColumnsAtom),

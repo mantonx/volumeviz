@@ -5,7 +5,6 @@ import (
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/store"
-	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // Router handles volume-related routes
@@ -14,16 +13,16 @@ type Router struct {
 }
 
 // NewRouter creates a new volume router
-func NewRouter(dockerService interfaces.DockerService, hub *websocket.Hub, store store.Store, publisher *realtime.Publisher) *Router {
+func NewRouter(dockerService interfaces.DockerService, store store.Store, publisher *realtime.Broadcaster) *Router {
 	return &Router{
-		handler: NewHandler(dockerService, hub, store, publisher),
+		handler: NewHandler(dockerService, store, publisher),
 	}
 }
 
 // NewRouterWithScanner creates a new volume router with volume scanner integration
-func NewRouterWithScanner(dockerService interfaces.DockerService, hub *websocket.Hub, store store.Store, publisher *realtime.Publisher, scanner interfaces.VolumeScanner) *Router {
+func NewRouterWithScanner(dockerService interfaces.DockerService, store store.Store, publisher *realtime.Broadcaster, scanner interfaces.VolumeScanner) *Router {
 	return &Router{
-		handler: NewHandlerWithScanner(dockerService, hub, store, publisher, scanner),
+		handler: NewHandlerWithScanner(dockerService, store, publisher, scanner),
 	}
 }
 

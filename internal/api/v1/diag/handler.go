@@ -5,19 +5,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/config"
-	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // Handler handles diagnostic endpoints
 type Handler struct {
-	hub    *websocket.Hub
 	config *config.Config
 }
 
 // NewHandler creates a new diagnostics handler
-func NewHandler(hub *websocket.Hub, cfg *config.Config) *Handler {
+func NewHandler(cfg *config.Config) *Handler {
 	return &Handler{
-		hub:    hub,
 		config: cfg,
 	}
 }
@@ -62,9 +59,9 @@ func (h *Handler) GetRealtimeDiagnostics(c *gin.Context) {
 	}
 
 	// Determine primary mode based on configuration
-	if h.config.Events.Enabled && h.hub != nil {
+	if h.config.Events.Enabled {
 		diag.Mode = ModeWebSocket
-		diag.ActiveConnections = h.hub.GetClientCount()
+		diag.ActiveConnections = 0 // TODO: Add connection tracking to new realtime system
 		diag.Features = append(diag.Features,
 			"volume_updates",
 			"scan_progress",
@@ -80,7 +77,7 @@ func (h *Handler) GetRealtimeDiagnostics(c *gin.Context) {
 			scheme = "wss"
 		}
 		host := c.Request.Host
-		diag.WebSocketURL = scheme + "://" + host + "/api/v1/ws"
+		diag.WebSocketURL = scheme + "://" + host + "/api/v1/realtime/ws"
 	} else {
 		diag.Mode = ModePolling
 		diag.Features = append(diag.Features, "polling_fallback")

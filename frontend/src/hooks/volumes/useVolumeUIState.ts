@@ -19,30 +19,30 @@ import {
 export const useVolumeUIState = () => {
   // Get the combined UI state
   const uiState = useAtomValue(volumesUIStateAtom);
-  
+
   // Get action setters
   const toggleSelection = useSetAtom(volumesToggleSelectionAtom);
   const clearSelection = useSetAtom(volumesClearSelectionAtom);
   const selectAll = useSetAtom(volumesSelectAllAtom);
   const selectPage = useSetAtom(volumesSelectPageAtom);
   const toggleColumn = useSetAtom(volumesToggleColumnAtom);
-  
+
   // Get individual state setters for direct updates
   const setViewMode = useSetAtom(volumesViewModeAtom);
   const setShowFilters = useSetAtom(volumesShowFiltersAtom);
   const setShowColumnConfig = useSetAtom(volumesShowColumnConfigAtom);
   const setShowKeyboardHelp = useSetAtom(volumesShowKeyboardHelpAtom);
-  
+
   return {
     // Current state
     ...uiState,
-    
+
     // Selection actions
     toggleSelection,
     clearSelection,
     selectAll,
     selectPage,
-    
+
     // UI actions
     setViewMode,
     setShowFilters,

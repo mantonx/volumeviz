@@ -44,7 +44,6 @@ import (
 	"github.com/mantonx/volumeviz/internal/services/scanner"
 	statsService "github.com/mantonx/volumeviz/internal/services/stats"
 	"github.com/mantonx/volumeviz/internal/store"
-	"github.com/mantonx/volumeviz/internal/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
@@ -58,8 +57,7 @@ type Router struct {
 	mountCatalogService *dockerService.MountCatalogService // Docker mount catalog service
 	scanner             oldInterfaces.VolumeScanner
 	store               store.Store // Modern store interface using sqlc
-	websocketHub        *websocket.Hub
-	realtimePublisher   *realtime.Publisher
+	realtimeService     *realtime.RealtimeService
 	scheduler           scheduler.ScanScheduler                // Optional scan scheduler - using store façade
 	eventsService       events.EventService                    // Optional events service - using store façade
 	alertsEngine        interfaces.AlertEngine                 // Alerts engine for alert management
@@ -74,15 +72,11 @@ type Router struct {
 
 // NewRouter creates a new v1 API router
 func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store, config *config.Config) *Router {
-	// Initialize WebSocket hub
-	hub := websocket.NewHub()
-	go hub.Run()
-
-	// Initialize real-time publisher
-	publisher := realtime.NewPublisher(hub)
-
-	// Create comprehensive progress broadcaster for real-time updates
-	progressBroadcaster := realtime.NewProgressBroadcaster(hub, storeInstance)
+	// Create realtime service
+	realtimeService := realtime.NewRealtimeService(storeInstance)
+	
+	// Create progress broadcaster for real-time updates
+	progressBroadcaster := realtime.NewBroadcaster(realtimeService, storeInstance)
 
 	// Initialize the scanner with all dependencies
 	logger := log.New(os.Stdout, "[SCANNER] ", log.LstdFlags)
@@ -220,8 +214,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 			// Create volume provider
 			volumeProvider := scheduler.NewDockerVolumeProvider(dockerSvc)
 
-			// Create progress broadcaster for WebSocket integration
-			progressBroadcaster := realtime.NewProgressBroadcaster(hub, storeInstance)
+			// Use the main progress broadcaster created earlier
 
 			// Create scheduler
 			sch, err := scheduler.NewScheduler(
@@ -270,7 +263,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 			dockerClient,
 			eventsRepo,
 			eventsMetrics,
-			publisher,
+			nil, // Legacy publisher removed
 		)
 
 		// Create reconciler service
@@ -350,8 +343,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		mountCatalogService: mountCatalogService,
 		scanner:             volumeScanner,
 		store:               storeInstance,
-		websocketHub:        hub,
-		realtimePublisher:   publisher,
+		realtimeService:     realtimeService,
 		scheduler:           scanScheduler,
 		eventsService:       eventsService,
 		alertsEngine:        alertsEngine,
@@ -374,15 +366,11 @@ func (r *Router) Engine() *gin.Engine {
 	return r.engine
 }
 
-// GetWebSocketHub returns the WebSocket hub for broadcasting messages
-func (r *Router) GetWebSocketHub() *websocket.Hub {
-	return r.websocketHub
+// GetRealtimeService returns the realtime service for broadcasting messages
+func (r *Router) GetRealtimeService() *realtime.RealtimeService {
+	return r.realtimeService
 }
 
-// GetRealtimePublisher returns the real-time event publisher
-func (r *Router) GetRealtimePublisher() *realtime.Publisher {
-	return r.realtimePublisher
-}
 
 // EventsService returns the events service if configured
 func (r *Router) EventsService() events.EventService {
@@ -499,18 +487,20 @@ func (r *Router) setupRoutes(config *config.Config) {
 	v1 := r.engine.Group("/api/v1")
 	{
 		// WebSocket endpoint
-		websocketHandler := websocket.NewHandler(r.websocketHub)
-		websocketHandler.RegisterRoutes(v1)
+		if r.realtimeService != nil {
+			realtimeHandler := realtime.NewAPIHandler(r.realtimeService)
+			realtimeHandler.RegisterRoutes(v1)
+		}
 
 		// Diagnostics endpoint
-		diagHandler := diag.NewHandler(r.websocketHub, config)
+		diagHandler := diag.NewHandler(config)
 		diagHandler.RegisterRoutes(v1)
 
 		// Register sub-routers with store interface
 		r.healthRouter = health.NewRouter(r.dockerService, r.store, r.eventsService, r.scheduler)
 		r.healthRouter.RegisterRoutes(v1)
 
-		volumesRouter := volumes.NewRouterWithScanner(r.dockerService, r.websocketHub, r.store, r.realtimePublisher, r.scanner)
+		volumesRouter := volumes.NewRouterWithScanner(r.dockerService, r.store, nil, r.scanner)
 		volumesRouter.RegisterRoutes(v1)
 
 		// Explorer router for directory browsing and file operations
@@ -522,7 +512,7 @@ func (r *Router) setupRoutes(config *config.Config) {
 		systemRouter := system.NewRouter(r.dockerService)
 		systemRouter.RegisterRoutes(v1)
 
-		scanRouter := scan.NewRouter(r.scanner, r.websocketHub, r.store, r.scheduler, r.realtimePublisher)
+		scanRouter := scan.NewRouter(r.scanner, r.store, r.scheduler, nil)
 
 		// Set enrichment manager on scan router if available
 		if r.enrichmentManager != nil {

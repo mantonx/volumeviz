@@ -79,12 +79,14 @@ func TestDockerService_ListVolumes(t *testing.T) {
 	ctx := context.Background()
 	expectedVolumes := []models.Volume{
 		{
-			ID:   "vol1",
-			Name: "test-volume-1",
+			ID:       1,
+			VolumeID: "vol1",
+			Name:     "test-volume-1",
 		},
 		{
-			ID:   "vol2",
-			Name: "test-volume-2",
+			ID:       2,
+			VolumeID: "vol2",
+			Name:     "test-volume-2",
 		},
 	}
 
@@ -106,7 +108,8 @@ func TestDockerService_GetVolume(t *testing.T) {
 	ctx := context.Background()
 	volumeID := "test-vol"
 	expectedVolume := &models.Volume{
-		ID:         "test-vol",
+		ID:         1,
+		VolumeID:   "test-vol",
 		Name:       "test-volume",
 		Driver:     "local",
 		Mountpoint: "/var/lib/docker/volumes/test-volume/_data",

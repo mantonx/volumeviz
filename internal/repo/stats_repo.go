@@ -66,6 +66,13 @@ func (r *StatsRepo) InsertVolumeStats(ctx context.Context, stats *models.DirRoll
 
 // InsertScanResult inserts complete scan result including filesystem capacity
 func (r *StatsRepo) InsertScanResult(ctx context.Context, scanResult *interfaces.ScanResult) error {
+	// First, invalidate all previous volume sizes for this volume to prevent accumulation
+	if err := r.queries.InvalidatePreviousVolumeSizes(ctx, scanResult.VolumeID); err != nil {
+		// Log but don't fail - this is a cleanup operation
+		// Old entries will be ignored anyway due to is_valid=false check
+		fmt.Printf("[WARN] Failed to invalidate previous volume sizes for %s: %v\n", scanResult.VolumeID, err)
+	}
+
 	// Convert ScanResult to InsertVolumeSizeParams
 	params := sqlc.InsertVolumeSizeParams{
 		VolumeID:       scanResult.VolumeID,

@@ -10,7 +10,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/models"
-	"github.com/mantonx/volumeviz/internal/websocket"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -68,7 +67,8 @@ func generateMockVolumes(count int) []models.Volume {
 	volumes := make([]models.Volume, count)
 	for i := 0; i < count; i++ {
 		volumes[i] = models.Volume{
-			ID:         "test-volume-" + string(rune(i)),
+			ID:         int64(i + 1),
+			VolumeID:   "test-volume-" + string(rune(i)),
 			Name:       "test-volume-" + string(rune(i)),
 			Driver:     "local",
 			Mountpoint: "/var/lib/docker/volumes/test-volume-" + string(rune(i)) + "/_data",
@@ -85,7 +85,7 @@ func generateMockVolumes(count int) []models.Volume {
 func BenchmarkListVolumes_Small(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{}, nil, nil)
+	handler := NewHandler(mockService, nil, nil)
 
 	volumes := generateMockVolumes(10)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
@@ -111,7 +111,7 @@ func BenchmarkListVolumes_Small(b *testing.B) {
 func BenchmarkListVolumes_Large(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{}, nil, nil)
+	handler := NewHandler(mockService, nil, nil)
 
 	// Generate 1000+ volumes as per enhanced requirements
 	volumes := generateMockVolumes(1000)
@@ -145,7 +145,7 @@ func BenchmarkListVolumes_Large(b *testing.B) {
 func BenchmarkListVolumes_Concurrent(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{}, nil, nil)
+	handler := NewHandler(mockService, nil, nil)
 
 	volumes := generateMockVolumes(500)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
@@ -180,10 +180,11 @@ func BenchmarkListVolumes_Concurrent(b *testing.B) {
 func BenchmarkGetVolume(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{}, nil, nil)
+	handler := NewHandler(mockService, nil, nil)
 
 	volume := &models.Volume{
-		ID:         "test-volume",
+		ID:         1,
+		VolumeID:   "test-volume",
 		Name:       "test-volume",
 		Driver:     "local",
 		Mountpoint: "/var/lib/docker/volumes/test-volume/_data",
@@ -219,7 +220,7 @@ func BenchmarkGetVolume(b *testing.B) {
 func TestSLOCompliance(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockDockerServiceBench{}
-	handler := NewHandler(mockService, &websocket.Hub{}, nil, nil)
+	handler := NewHandler(mockService, nil, nil)
 
 	volumes := generateMockVolumes(1000)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)

@@ -43,7 +43,6 @@ type Querier interface {
 	CountContainers(ctx context.Context) (int64, error)
 	CountDeliveriesByStatus(ctx context.Context, status string) (int64, error)
 	CountDirNodesByVolume(ctx context.Context, volumeID string) (int64, error)
-	CountDirRollupsByVolume(ctx context.Context, volumeID string) (int64, error)
 	CountFilesByFolder(ctx context.Context, folderID int64) (int64, error)
 	CountFilesByVolume(ctx context.Context, volumeID string) (int64, error)
 	CountFoldersByVolume(ctx context.Context, volumeID string) (int64, error)
@@ -87,8 +86,6 @@ type Querier interface {
 	// Purpose: Analytics and trend tracking for volumes, folders, and media kinds
 	CreateDailyStat(ctx context.Context, arg CreateDailyStatParams) (CreateDailyStatRow, error)
 	CreateDirNode(ctx context.Context, arg CreateDirNodeParams) (CreateDirNodeRow, error)
-	// This is a no-op in the new schema since rollups are maintained by triggers
-	CreateDirRollup(ctx context.Context, dollar_1 int64) (CreateDirRollupRow, error)
 	// files.sql: File record operations
 	// This file contains all SQLC queries for file management
 	// =======================
@@ -159,8 +156,6 @@ type Querier interface {
 	DeleteAlertRoute(ctx context.Context, id int64) error
 	DeleteAlertRule(ctx context.Context, id int64) error
 	DeleteDirNodesByVolume(ctx context.Context, volumeID string) error
-	// This is a no-op in the new schema
-	DeleteDirRollupsByVolume(ctx context.Context) error
 	DeleteExpiredMountTrackingAssignments(ctx context.Context) error
 	DeleteFile(ctx context.Context, id int64) error
 	DeleteFileMetadataByFileID(ctx context.Context, fileID int64) error
@@ -236,12 +231,6 @@ type Querier interface {
 	GetDirNode(ctx context.Context, arg GetDirNodeParams) (GetDirNodeRow, error)
 	GetDirNodeStats(ctx context.Context, volumeID string) (GetDirNodeStatsRow, error)
 	GetDirNodesByVolumeAndParent(ctx context.Context, arg GetDirNodesByVolumeAndParentParams) ([]GetDirNodesByVolumeAndParentRow, error)
-	// =============================================================================
-	// DIRECTORY ROLLUPS QUERIES (legacy compatibility - not implemented in new schema)
-	// =============================================================================
-	// Note: Directory rollups are now handled by triggers in the new schema
-	// These queries are kept for compatibility but may return empty results
-	GetDirRollup(ctx context.Context, id int64) (GetDirRollupRow, error)
 	GetDistinctExtensions(ctx context.Context) ([]GetDistinctExtensionsRow, error)
 	GetDistinctMediaKinds(ctx context.Context) ([]GetDistinctMediaKindsRow, error)
 	// Metadata Queries
@@ -296,7 +285,6 @@ type Querier interface {
 	GetLargestFiles(ctx context.Context, arg GetLargestFilesParams) ([]GetLargestFilesRow, error)
 	GetLargestFilesLegacy(ctx context.Context, arg GetLargestFilesLegacyParams) ([]GetLargestFilesLegacyRow, error)
 	GetLargestFolders(ctx context.Context, arg GetLargestFoldersParams) ([]GetLargestFoldersRow, error)
-	GetLatestDirRollups(ctx context.Context, arg GetLatestDirRollupsParams) ([]GetLatestDirRollupsRow, error)
 	GetLatestScanJobByVolumeID(ctx context.Context, volumeID string) (ScanJobs, error)
 	GetLatestSnapshot(ctx context.Context, arg GetLatestSnapshotParams) (UsageSnapshots, error)
 	GetLatestVolumeMetric(ctx context.Context, volumeID string) (GetLatestVolumeMetricRow, error)
@@ -398,11 +386,12 @@ type Querier interface {
 	IncrementConditionMatchCount(ctx context.Context, id int64) error
 	IncrementRuleMatchCount(ctx context.Context, id int64) error
 	IncrementTemplateUsageCount(ctx context.Context, id int64) error
+	InsertVolumeSize(ctx context.Context, arg InsertVolumeSizeParams) (InsertVolumeSizeRow, error)
 	// =============================================================================
 	// VOLUME SIZES (SCAN STATS) OPERATIONS
 	// =============================================================================
 	// Handles volume size tracking from scan operations with validation
-	InsertVolumeSize(ctx context.Context, arg InsertVolumeSizeParams) (InsertVolumeSizeRow, error)
+	InvalidatePreviousVolumeSizes(ctx context.Context, volumeID string) error
 	ListActiveAlerts(ctx context.Context, arg ListActiveAlertsParams) ([]Alerts, error)
 	ListActiveMountTrackingAssignments(ctx context.Context) ([]ListActiveMountTrackingAssignmentsRow, error)
 	ListAlertDeliveries(ctx context.Context, arg ListAlertDeliveriesParams) ([]AlertDeliveries, error)

@@ -17,11 +17,11 @@ type EventHandlerService struct {
 	dockerClient      interfaces.DockerClient
 	repository        Repository
 	promMetrics       *EventMetricsCollector
-	realtimePublisher *realtime.Publisher
+	realtimePublisher *realtime.Broadcaster
 }
 
 // NewEventHandlerService creates a new event handler service
-func NewEventHandlerService(dockerClient interfaces.DockerClient, repository Repository, promMetrics *EventMetricsCollector, realtimePublisher *realtime.Publisher) *EventHandlerService {
+func NewEventHandlerService(dockerClient interfaces.DockerClient, repository Repository, promMetrics *EventMetricsCollector, realtimePublisher *realtime.Broadcaster) *EventHandlerService {
 	return &EventHandlerService{
 		dockerClient:      dockerClient,
 		repository:        repository,

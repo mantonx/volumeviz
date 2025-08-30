@@ -379,8 +379,8 @@ func (db *DB) optimizePostgreSQL() error {
 	// Get list of tables in the volumeviz schema
 	tables := []string{
 		"volumes", "volume_sizes", "containers", "volume_mounts",
-		"scan_jobs", "volume_metrics", "system_health", "scan_cache",
-		"migration_history",
+		"scan_jobs", "volume_metrics", "migration_history",
+		// Note: Removed system_health, scan_cache - dropped in migration 017
 	}
 
 	// Run table-specific ANALYZE for better statistics

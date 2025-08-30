@@ -16,7 +16,7 @@ type ProgressTracker struct {
 	store               store.Store
 	throttler           *ProgressThrottler
 	updateInterval      time.Duration
-	progressBroadcaster *realtime.ProgressBroadcaster
+	progressBroadcaster realtime.BroadcasterInterface
 }
 
 // NewProgressTracker creates a new progress tracker
@@ -29,7 +29,7 @@ func NewProgressTracker(store store.Store, updateInterval time.Duration) *Progre
 }
 
 // SetProgressBroadcaster sets the progress broadcaster for real-time updates
-func (pt *ProgressTracker) SetProgressBroadcaster(broadcaster *realtime.ProgressBroadcaster) {
+func (pt *ProgressTracker) SetProgressBroadcaster(broadcaster realtime.BroadcasterInterface) {
 	pt.progressBroadcaster = broadcaster
 }
 

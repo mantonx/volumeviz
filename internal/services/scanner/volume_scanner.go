@@ -61,7 +61,7 @@ type VolumeScanner struct {
 	statsService        interfaces.StatsService
 	store               store.Store
 	progressThrottler   *filesystem.ProgressThrottler
-	progressBroadcaster *realtime.ProgressBroadcaster
+	progressBroadcaster realtime.BroadcasterInterface
 }
 
 // NewVolumeScanner creates a new volume scanner instance
@@ -150,7 +150,7 @@ func NewVolumeScannerWithIndexing(
 }
 
 // SetProgressBroadcaster sets the progress broadcaster for comprehensive real-time updates
-func (vs *VolumeScanner) SetProgressBroadcaster(broadcaster *realtime.ProgressBroadcaster) {
+func (vs *VolumeScanner) SetProgressBroadcaster(broadcaster realtime.BroadcasterInterface) {
 	vs.progressBroadcaster = broadcaster
 
 	// Set it on the progress manager for new progressive methods

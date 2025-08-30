@@ -1,10 +1,10 @@
 export { VolumesList } from './VolumesList';
-export type { 
-  VolumesListProps, 
+export type {
+  VolumesListProps,
   FilterChip,
   BulkAction,
   ColumnConfig,
   SortConfig,
   ViewMode,
-  SelectionMode
+  SelectionMode,
 } from './VolumesList.types';

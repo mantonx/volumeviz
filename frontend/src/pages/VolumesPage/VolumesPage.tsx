@@ -1,18 +1,19 @@
-import React from 'react';
 import { VolumesList } from '@/components/domain/VolumesList';
-import type { VolumesPageProps } from './VolumesPage.types';
+import React from 'react';
 
 /**
- * Main Volumes page component.
+ * VolumesPage - Main page component for displaying Docker volumes
  *
- * Features:
- * - Table view with all required columns (name/path, type, driver, compose project/service, containers, RO/RW, status, last seen, size/growth)
- * - Filter chips and fuzzy search functionality
- * - Multi-column sorting with saved configurations
- * - Named views with shareable URLs
- * - Bulk actions (track/untrack/hide)
- * - Proper loading states, error handling, and empty states
+ * This page provides a comprehensive view of all Docker volumes with:
+ * - Volume listing and filtering
+ * - Real-time scan progress
+ * - Volume management actions
+ * - Search and sorting capabilities
  */
-export const VolumesPage: React.FC<VolumesPageProps> = () => {
-  return <VolumesList />;
+export const VolumesPage: React.FC = () => {
+  return (
+    <div className="volumes-page">
+      <VolumesList />
+    </div>
+  );
 };

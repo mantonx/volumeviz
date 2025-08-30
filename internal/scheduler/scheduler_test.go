@@ -14,41 +14,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockVolumeScanner implements interfaces.VolumeScanner for testing
-type MockVolumeScanner struct {
-	mock.Mock
-}
-
-func (m *MockVolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*interfaces.ScanResult, error) {
-	args := m.Called(ctx, volumeID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*interfaces.ScanResult), args.Error(1)
-}
-
-func (m *MockVolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (string, error) {
-	args := m.Called(ctx, volumeID)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockVolumeScanner) GetScanProgress(scanID string) (*interfaces.ScanProgress, error) {
-	args := m.Called(scanID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*interfaces.ScanProgress), args.Error(1)
-}
-
-func (m *MockVolumeScanner) GetAvailableMethods() []interfaces.MethodInfo {
-	args := m.Called()
-	return args.Get(0).([]interfaces.MethodInfo)
-}
-
-func (m *MockVolumeScanner) ClearCache(volumeID string) error {
-	args := m.Called(volumeID)
-	return args.Error(0)
-}
 
 // MockScanRepository implements ScanRepository for testing
 type MockScanRepository struct {
@@ -103,6 +68,11 @@ func (m *MockScanRepository) ListVolumes(ctx context.Context) ([]*models.Volume,
 
 func (m *MockScanRepository) UpsertVolume(ctx context.Context, volume *models.Volume) error {
 	args := m.Called(ctx, volume)
+	return args.Error(0)
+}
+
+func (m *MockScanRepository) InsertScanResult(ctx context.Context, scanResult *interfaces.ScanResult) error {
+	args := m.Called(ctx, scanResult)
 	return args.Error(0)
 }
 
@@ -170,6 +140,72 @@ func (m *MockStore) GetTrendSlope(ctx context.Context, params store.GetTrendSlop
 func (m *MockStore) GetGrowthDeltas(ctx context.Context, params store.GetGrowthDeltasParams) (*store.GrowthDeltas, error) {
 	args := m.Called(ctx, params)
 	return args.Get(0).(*store.GrowthDeltas), args.Error(1)
+}
+
+func (m *MockStore) Alerts() repo.AlertsRepo {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(repo.AlertsRepo)
+}
+
+func (m *MockStore) FileMetadata() *repo.FileMetadataRepo {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(*repo.FileMetadataRepo)
+}
+
+func (m *MockStore) Files() *repo.FilesRepo {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(*repo.FilesRepo)
+}
+
+func (m *MockStore) Folders() *repo.FoldersRepo {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(*repo.FoldersRepo)
+}
+
+func (m *MockStore) Health(ctx context.Context) error {
+	args := m.Called(ctx)
+	return args.Error(0)
+}
+
+func (m *MockStore) Queries() interface{} {
+	args := m.Called()
+	return args.Get(0)
+}
+
+func (m *MockStore) ScanProgress() repo.ScanProgressRepo {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(repo.ScanProgressRepo)
+}
+
+func (m *MockStore) Search() *repo.SearchRepo {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(*repo.SearchRepo)
+}
+
+func (m *MockStore) Stats() *repo.StatsRepo {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(*repo.StatsRepo)
 }
 
 func (m *MockVolumeProvider) ListVolumes(ctx context.Context) ([]*models.Volume, error) {
@@ -249,6 +285,21 @@ func (m *MockMetricsCollector) UpdateSchedulerQueueDepth(depth int) {
 func (m *MockMetricsCollector) UpdateSchedulerWorkerUtilization(utilization float64) {
 	m.Called(utilization)
 }
+func (m *MockMetricsCollector) SetStatsServiceStatus(enabled bool) {
+	m.Called(enabled)
+}
+func (m *MockMetricsCollector) StatsJobCompleted(volumeID, method string, duration time.Duration, recordsProcessed int) {
+	m.Called(volumeID, method, duration, recordsProcessed)
+}
+func (m *MockMetricsCollector) StatsJobFailed(volumeID, method string, duration time.Duration, errorMessage string) {
+	m.Called(volumeID, method, duration, errorMessage)
+}
+func (m *MockMetricsCollector) StatsJobStarted(volumeID, method string) {
+	m.Called(volumeID, method)
+}
+func (m *MockMetricsCollector) UpdateStatsJobQueueDepth(depth int) {
+	m.Called(depth)
+}
 
 // Helper function to create a test scheduler
 func createTestScheduler() (*Scheduler, *MockVolumeScanner, *MockScanRepository, *MockVolumeProvider, *MockMetricsCollector) {
@@ -271,7 +322,7 @@ func createTestScheduler() (*Scheduler, *MockVolumeScanner, *MockScanRepository,
 		QueueSize: 10,
 	}
 
-	scheduler, _ := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil)
+	scheduler, _ := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil, nil)
 	return scheduler, mockScanner, mockRepo, mockProvider, mockMetrics
 }
 
@@ -295,7 +346,7 @@ func TestNewScheduler(t *testing.T) {
 	mockProvider := &MockVolumeProvider{}
 	mockMetrics := &MockMetricsCollector{}
 
-	scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil)
+	scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil, nil)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, scheduler)
@@ -327,7 +378,7 @@ func TestNewSchedulerWithInvalidSkipPattern(t *testing.T) {
 	mockProvider := &MockVolumeProvider{}
 	mockMetrics := &MockMetricsCollector{}
 
-	scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil)
+	scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil, nil)
 
 	assert.Error(t, err)
 	assert.Nil(t, scheduler)
@@ -731,7 +782,7 @@ func TestEnhancedFeatures(t *testing.T) {
 		mockProvider := &MockVolumeProvider{}
 		mockMetrics := &MockMetricsCollector{}
 
-		scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil)
+		scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, nil, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, scheduler)
 
@@ -766,7 +817,7 @@ func TestEnhancedFeatures(t *testing.T) {
 		mockMetrics := &MockMetricsCollector{}
 		mockStore := &MockStore{}
 
-		scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, mockStore)
+		scheduler, err := NewScheduler(schedulerConfig, mockScanner, mockRepo, mockProvider, mockMetrics, mockStore, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, scheduler)
 

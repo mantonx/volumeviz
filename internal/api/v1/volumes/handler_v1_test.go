@@ -33,7 +33,8 @@ func TestListVolumes_V1API(t *testing.T) {
 			setupMock: func(m *mocks.DockerService) {
 				volumes := []coremodels.Volume{
 					{
-						ID:         "vol1",
+						ID:         1,
+					VolumeID:   "vol1",
 						Name:       "test-volume-1",
 						Driver:     "local",
 						CreatedAt:  time.Now().Add(-24 * time.Hour),
@@ -42,7 +43,8 @@ func TestListVolumes_V1API(t *testing.T) {
 						Labels:     map[string]string{"env": "test"},
 					},
 					{
-						ID:         "vol2",
+						ID:         2,
+					VolumeID:   "vol2",
 						Name:       "test-volume-2",
 						Driver:     "local",
 						CreatedAt:  time.Now().Add(-12 * time.Hour),
@@ -72,13 +74,15 @@ func TestListVolumes_V1API(t *testing.T) {
 			setupMock: func(m *mocks.DockerService) {
 				volumes := []coremodels.Volume{
 					{
-						ID:        "vol1",
+						ID:        1,
+					VolumeID:  "vol1",
 						Name:      "test-volume-1",
 						Driver:    "local",
 						CreatedAt: time.Now().Add(-24 * time.Hour),
 					},
 					{
-						ID:        "vol2",
+						ID:        2,
+					VolumeID:  "vol2",
 						Name:      "test-volume-2",
 						Driver:    "local",
 						CreatedAt: time.Now().Add(-12 * time.Hour),
@@ -104,7 +108,8 @@ func TestListVolumes_V1API(t *testing.T) {
 			setupMock: func(m *mocks.DockerService) {
 				volumes := []coremodels.Volume{
 					{
-						ID:     "vol1",
+						ID:       1,
+						VolumeID: "vol1",
 						Name:   "local-volume",
 						Driver: "local",
 					},
@@ -171,7 +176,8 @@ func TestGetVolume_V1API(t *testing.T) {
 			volumeName: "test-volume",
 			setupMock: func(m *mocks.DockerService) {
 				volume := &coremodels.Volume{
-					ID:         "vol1",
+					ID:         1,
+					VolumeID:   "vol1",
 					Name:       "test-volume",
 					Driver:     "local",
 					CreatedAt:  time.Now(),
@@ -181,7 +187,8 @@ func TestGetVolume_V1API(t *testing.T) {
 				}
 				containers := []coremodels.VolumeContainer{
 					{
-						ID:         "container1",
+						ID:          1,
+					ContainerID: "container1",
 						Name:       "test-container",
 						MountPath:  "/data",
 						AccessMode: "rw",
@@ -255,16 +262,18 @@ func TestGetVolumeAttachments_V1API(t *testing.T) {
 			name:       "volume with attachments",
 			volumeName: "test-volume",
 			setupMock: func(m *mocks.DockerService) {
-				volume := &coremodels.Volume{ID: "vol1", Name: "test-volume"}
+				volume := &coremodels.Volume{ID: 1, VolumeID: "vol1", Name: "test-volume"}
 				containers := []coremodels.VolumeContainer{
 					{
-						ID:         "container1",
+						ID:          1,
+					ContainerID: "container1",
 						Name:       "test-container-1",
 						MountPath:  "/data",
 						AccessMode: "rw",
 					},
 					{
-						ID:         "container2",
+						ID:          2,
+					ContainerID: "container2",
 						Name:       "test-container-2",
 						MountPath:  "/app",
 						AccessMode: "ro",
@@ -346,14 +355,16 @@ func TestGetOrphanedVolumes(t *testing.T) {
 			setupMock: func(m *mocks.DockerService) {
 				volumes := []coremodels.Volume{
 					{
-						ID:        "vol1",
+						ID:        1,
+					VolumeID:  "vol1",
 						Name:      "orphaned-volume",
 						Driver:    "local",
 						CreatedAt: time.Now().Add(-24 * time.Hour),
 						UsageData: &coremodels.VolumeUsage{Size: 1024 * 1024 * 100}, // 100MB
 					},
 					{
-						ID:        "vol2",
+						ID:        2,
+					VolumeID:  "vol2",
 						Name:      "used-volume",
 						Driver:    "local",
 						CreatedAt: time.Now().Add(-12 * time.Hour),
@@ -363,7 +374,7 @@ func TestGetOrphanedVolumes(t *testing.T) {
 				// vol1 has no containers (orphaned)
 				m.On("GetVolumeContainers", mock.Anything, "vol1").Return([]coremodels.VolumeContainer{}, nil)
 				// vol2 has containers (not orphaned)
-				m.On("GetVolumeContainers", mock.Anything, "vol2").Return([]coremodels.VolumeContainer{{ID: "container1"}}, nil)
+				m.On("GetVolumeContainers", mock.Anything, "vol2").Return([]coremodels.VolumeContainer{{ID: 1, ContainerID: "container1", VolumeID: "vol2"}}, nil)
 			},
 			expectedStatus: 200,
 			checkResponse: func(t *testing.T, body []byte) {
@@ -386,12 +397,14 @@ func TestGetOrphanedVolumes(t *testing.T) {
 			setupMock: func(m *mocks.DockerService) {
 				volumes := []coremodels.Volume{
 					{
-						ID:     "vol1",
+						ID:       1,
+						VolumeID: "vol1",
 						Name:   "docker_system_volume", // Should be filtered as system volume
 						Driver: "local",
 					},
 					{
-						ID:     "vol2",
+						ID:       2,
+				VolumeID: "vol2",
 						Name:   "user-volume",
 						Driver: "local",
 					},

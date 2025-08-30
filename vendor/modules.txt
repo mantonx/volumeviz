@@ -526,3 +526,12 @@ modernc.org/memory
 ## explicit; go 1.23.0
 modernc.org/sqlite
 modernc.org/sqlite/lib
+# nhooyr.io/websocket v1.8.17
+## explicit; go 1.19
+nhooyr.io/websocket
+nhooyr.io/websocket/internal/bpool
+nhooyr.io/websocket/internal/errd
+nhooyr.io/websocket/internal/util
+nhooyr.io/websocket/internal/wsjs
+nhooyr.io/websocket/internal/xsync
+nhooyr.io/websocket/wsjson

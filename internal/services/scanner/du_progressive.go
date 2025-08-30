@@ -3,6 +3,7 @@ package scanner
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -140,14 +141,19 @@ func (p *ProgressiveDu) Scan(ctx context.Context, path string) (*interfaces.Scan
 				currentPath = batch.Directories[0]
 			}
 
-			// Calculate confidence based on progress
-			confidence := "low"
-			if processedBatches > 3 {
-				confidence = "medium"
-			}
-			if processedBatches > len(batches)/4 {
-				confidence = "high"
-			}
+			// Calculate enhanced confidence based on multiple factors
+			elapsedSeconds := time.Since(start).Seconds()
+			// Simple variance calculation (in a real implementation, you'd track processing rates)
+			expectedRate := float64(len(batches)) / 60.0 // Assume 60 seconds for full completion
+			actualRate := float64(processedBatches) / elapsedSeconds
+			variance := math.Abs(actualRate - expectedRate) / expectedRate
+			
+			confidence := CalculateEstimationConfidence(
+				processedBatches,
+				len(batches),
+				elapsedSeconds,
+				variance,
+			)
 
 			update := ProgressUpdate{
 				Type:                 "volume_scan",

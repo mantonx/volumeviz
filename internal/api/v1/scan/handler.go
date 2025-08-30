@@ -19,31 +19,28 @@ import (
 	"github.com/mantonx/volumeviz/internal/services/filesystem"
 	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/utils"
-	"github.com/mantonx/volumeviz/internal/websocket"
 )
 
 // Handler handles scan-related HTTP requests
 // Provides endpoints for volume size scanning and metrics
 type Handler struct {
 	scanner           interfaces.VolumeScanner
-	hub               *websocket.Hub
 	store             store.Store             // New sqlc-based store
 	scheduler         scheduler.ScanScheduler // Optional scheduler for manual scan triggers
-	realtimePublisher *realtime.Publisher
+	realtimePublisher *realtime.Broadcaster
 	enrichmentManager interfaces.EnrichmentManager // Media enrichment manager
 }
 
 // NewHandler creates a new scan handler
 // Pass in your volume scanner implementation, WebSocket hub, optional scheduler, and realtime publisher
-func NewHandler(scanner interfaces.VolumeScanner, hub *websocket.Hub, scheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Handler {
-	return NewHandlerWithStore(scanner, hub, nil, scheduler, publisher)
+func NewHandler(scanner interfaces.VolumeScanner, scheduler scheduler.ScanScheduler, publisher *realtime.Broadcaster) *Handler {
+	return NewHandlerWithStore(scanner, nil, scheduler, publisher)
 }
 
 // NewHandlerWithStore creates a new scan handler with optional store integration
-func NewHandlerWithStore(scanner interfaces.VolumeScanner, hub *websocket.Hub, storeInstance store.Store, scheduler scheduler.ScanScheduler, publisher *realtime.Publisher) *Handler {
+func NewHandlerWithStore(scanner interfaces.VolumeScanner, storeInstance store.Store, scheduler scheduler.ScanScheduler, publisher *realtime.Broadcaster) *Handler {
 	return &Handler{
 		scanner:           scanner,
-		hub:               hub,
 		store:             storeInstance,
 		scheduler:         scheduler,
 		realtimePublisher: publisher,
@@ -82,10 +79,7 @@ func (h *Handler) GetSizeAnalysisStatus(c *gin.Context) {
 	result, err := h.scanner.ScanVolume(c.Request.Context(), volumeID)
 	if err != nil {
 		h.handleScanError(c, err)
-		// Broadcast scan error via WebSocket
-		if h.hub != nil {
-			h.hub.BroadcastScanError(volumeID, err.Error(), "SCAN_ERROR")
-		}
+		// Scan error broadcasting is now handled by the scheduler's realtime broadcaster
 		return
 	}
 
@@ -99,18 +93,7 @@ func (h *Handler) GetSizeAnalysisStatus(c *gin.Context) {
 	// Legacy DirRollup analytics are being phased out
 	_ = h.store // Suppress unused warning
 
-	// Broadcast scan completion via WebSocket
-	if h.hub != nil {
-		wsResult := websocket.ScanResult{
-			TotalSize:      result.TotalSize,
-			FileCount:      result.FileCount,
-			DirectoryCount: result.DirectoryCount,
-			ScannedAt:      result.ScannedAt,
-			Method:         result.Method,
-			Duration:       result.Duration,
-		}
-		h.hub.BroadcastScanComplete(volumeID, wsResult)
-	}
+	// Scan completion broadcasting is now handled by the scheduler's realtime broadcaster
 
 	c.JSON(http.StatusOK, response)
 }
@@ -476,11 +459,37 @@ func (h *Handler) calculatePerformanceStats(phases []coremodels.ScanPhase, statu
 		errorRate = float64(totalErrors) * 60.0 / float64(elapsedSeconds)
 	}
 
+	// Calculate confidence based on progress and time stability
+	confidence := "low"
+	if totalItemsProcessed > 0 && elapsedSeconds > 30 {
+		// Calculate progress percentage
+		progressPercent := 0.0
+		if totalItemsTotal > 0 {
+			progressPercent = (float64(totalItemsProcessed) / float64(totalItemsTotal)) * 100.0
+		}
+		
+		// Use a simple confidence calculation similar to the one in scan utilities
+		timeStability := 1.0 // We don't have variance data here, so assume stable
+		if elapsedSeconds > 300 { // 5 minutes
+			timeStability = 0.8
+		}
+		
+		progressFactor := progressPercent / 100.0
+		confidenceScore := progressFactor * timeStability
+		
+		if confidenceScore > 0.7 {
+			confidence = "high"
+		} else if confidenceScore > 0.3 {
+			confidence = "medium"
+		}
+	}
+
 	// Update stats
 	stats["total_items"] = totalItemsProcessed
 	stats["total_errors"] = totalErrors
 	stats["elapsed_seconds"] = elapsedSeconds
 	stats["estimated_remaining_seconds"] = estimatedRemainingSeconds
+	stats["estimation_confidence"] = confidence
 	stats["overall_items_per_second"] = itemsPerSecond
 	stats["overall_bytes_per_second"] = bytesPerSecond
 	stats["error_rate"] = errorRate

@@ -255,7 +255,7 @@ func TestDockerService_GetVolume(t *testing.T) {
 					t.Errorf("GetVolume() name = %v, want %v", vol.Name, tt.wantName)
 				}
 				if vol.UsageData != nil && tt.volume.UsageData != nil {
-					if vol.UsageData.RefCount != tt.volume.UsageData.RefCount {
+					if int64(vol.UsageData.RefCount) != tt.volume.UsageData.RefCount {
 						t.Errorf("GetVolume() RefCount = %v, want %v", vol.UsageData.RefCount, tt.volume.UsageData.RefCount)
 					}
 				}
@@ -381,8 +381,8 @@ func TestDockerService_GetVolumeContainers(t *testing.T) {
 			// Verify container details
 			if tt.wantCount > 0 && !tt.wantErr {
 				for i, container := range containers {
-					if container.ID == "" {
-						t.Errorf("Container[%d] has empty ID", i)
+					if container.ContainerID == "" {
+						t.Errorf("Container[%d] has empty ContainerID", i)
 					}
 					if container.MountPath == "" {
 						t.Errorf("Container[%d] has empty MountPath", i)
@@ -532,17 +532,15 @@ func TestDockerService_convertToVolumeModel(t *testing.T) {
 				},
 			},
 			expected: models.Volume{
-				ID:         "test-volume",
+				ID:         1,
+				VolumeID:   "test-volume",
 				Name:       "test-volume",
 				Driver:     "local",
 				Mountpoint: "/var/lib/docker/volumes/test-volume/_data",
 				Labels:     map[string]string{"env": "test"},
 				Options:    map[string]string{"type": "none"},
 				Scope:      "local",
-				Status: map[string]string{
-					"key1": "value1",
-					"key2": "42",
-				},
+				Status: "active",
 				UsageData: &models.VolumeUsage{
 					RefCount: 3,
 					Size:     2048,
@@ -558,7 +556,8 @@ func TestDockerService_convertToVolumeModel(t *testing.T) {
 				CreatedAt:  "2021-01-01T12:00:00Z",
 			},
 			expected: models.Volume{
-				ID:         "simple-volume",
+				ID:         2,
+				VolumeID:   "simple-volume",
 				Name:       "simple-volume",
 				Driver:     "local",
 				Mountpoint: "/var/lib/docker/volumes/simple-volume/_data",
@@ -583,13 +582,8 @@ func TestDockerService_convertToVolumeModel(t *testing.T) {
 
 			// Check status conversion
 			if tt.input.Status != nil {
-				if len(result.Status) != len(tt.expected.Status) {
-					t.Errorf("convertToVolumeModel() Status length = %v, want %v", len(result.Status), len(tt.expected.Status))
-				}
-				for k, v := range tt.expected.Status {
-					if result.Status[k] != v {
-						t.Errorf("convertToVolumeModel() Status[%s] = %v, want %v", k, result.Status[k], v)
-					}
+				if result.Status != tt.expected.Status {
+					t.Errorf("convertToVolumeModel() Status = %v, want %v", result.Status, tt.expected.Status)
 				}
 			}
 

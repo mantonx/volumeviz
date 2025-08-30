@@ -165,7 +165,7 @@ func (fi *FilesystemIndexer) SetEnrichmentManager(manager interfaces.EnrichmentM
 }
 
 // SetProgressBroadcaster sets the progress broadcaster on the progress tracker
-func (fi *FilesystemIndexer) SetProgressBroadcaster(broadcaster *realtime.ProgressBroadcaster) {
+func (fi *FilesystemIndexer) SetProgressBroadcaster(broadcaster realtime.BroadcasterInterface) {
 	if fi.progressTracker != nil {
 		fi.progressTracker.SetProgressBroadcaster(broadcaster)
 	}

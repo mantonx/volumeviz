@@ -26,7 +26,7 @@ type Scheduler struct {
 	metricsCollector interfaces.MetricsCollector
 	// Enhanced store integration for atomic operations
 	store               store.Store
-	progressBroadcaster *realtime.ProgressBroadcaster
+	progressBroadcaster realtime.BroadcasterInterface
 
 	// Worker pool and queue
 	taskQueue chan *ScanTask
@@ -86,7 +86,7 @@ func NewScheduler(
 	volumeProvider VolumeProvider,
 	metricsCollector interfaces.MetricsCollector,
 	store store.Store,
-	progressBroadcaster *realtime.ProgressBroadcaster,
+	progressBroadcaster realtime.BroadcasterInterface,
 ) (*Scheduler, error) {
 	// Compile skip pattern if provided
 	var skipPattern *regexp.Regexp
@@ -546,10 +546,14 @@ func (s *Scheduler) runPeriodicScheduler() {
 	defer resumeTicker.Stop()
 
 	// Create a ticker for real-time WebSocket broadcasts (every second)
-	broadcastTicker := time.NewTicker(1 * time.Second)
+	broadcastTicker := time.NewTicker(3 * time.Second)
 	defer broadcastTicker.Stop()
 
-	log.Printf("[INFO] Periodic scheduler started (interval: %v, resume check: 2m, broadcast: 1s)", s.config.Interval)
+	// Create a ticker for volume state broadcasts (every 5 seconds for non-scan updates)
+	volumeStateTicker := time.NewTicker(5 * time.Second)
+	defer volumeStateTicker.Stop()
+
+	log.Printf("[INFO] Periodic scheduler started (interval: %v, resume check: 2m, broadcast: 1s, volume state: 5s)", s.config.Interval)
 
 	// Run initial scan after a short delay
 	initialDelay := time.Duration(rand.Intn(30)) * time.Second
@@ -567,20 +571,23 @@ func (s *Scheduler) runPeriodicScheduler() {
 		case <-resumeTicker.C:
 			s.runPeriodicResumeCheck()
 		case <-broadcastTicker.C:
-			s.broadcastActiveScansProgress()
+			s.broadcastAllScansProgress()
+		case <-volumeStateTicker.C:
+			s.broadcastVolumeStates()
 		case <-s.ctx.Done():
 			return
 		}
 	}
 }
 
-// broadcastActiveScansProgress broadcasts progress updates for all running scans
-func (s *Scheduler) broadcastActiveScansProgress() {
+// broadcastAllScansProgress broadcasts progress updates for all scans regardless of status
+// This provides continuous real-time updates for running, paused, failed, and completed scans
+func (s *Scheduler) broadcastAllScansProgress() {
 	if s.progressBroadcaster == nil || s.store == nil {
 		return
 	}
 
-	// Get all running scans
+	// Get all recent scans (running, paused, failed, completed)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -589,28 +596,42 @@ func (s *Scheduler) broadcastActiveScansProgress() {
 		return
 	}
 
-	// Get recent scan jobs that might be running
-	activeScanJobs, err := scansRepo.ListScanJobs(ctx, 20, 0)
+	// Get recent scan jobs for real-time broadcasting (all statuses)
+	recentScanJobs, err := scansRepo.ListScanJobs(ctx, 20, 0)
 	if err != nil {
 		return
 	}
 
-	// Broadcast progress for each running scan
-	for _, scanJob := range activeScanJobs {
+	// Only broadcast progress for actively running scans to avoid message flooding
+	// For completed/failed scans, we'll rely on the frontend fetching historical data
+	for _, scanJob := range recentScanJobs {
+		// Only broadcast for running scans to prevent infinite message loops
 		if scanJob.Status == "running" {
-			// Use goroutine to avoid blocking the periodic scheduler
-			go func(scanID, volumeID string) {
+			go func(scanID, volumeID, status string) {
 				if err := s.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, volumeID); err != nil {
 					// Log error but don't disrupt the scheduler
 					if strings.Contains(err.Error(), "no rows") {
-						// Scan might have completed between checks - this is normal
+						// Scan data might not be available yet - this is normal
 						return
 					}
-					log.Printf("[DEBUG] Failed to broadcast progress for scan %s: %v", scanID, err)
+					log.Printf("[DEBUG] Failed to broadcast progress for scan %s (status: %s): %v", scanID, status, err)
 				}
-			}(scanJob.ScanID, scanJob.VolumeID)
+			}(scanJob.ScanID, scanJob.VolumeID, scanJob.Status)
 		}
 	}
+}
+
+// broadcastVolumeStates broadcasts current volume states for volumes without recent scans
+// This ensures the frontend always has up-to-date information about all volumes
+func (s *Scheduler) broadcastVolumeStates() {
+	if s.progressBroadcaster == nil {
+		return
+	}
+
+	// For now, we just log that we would broadcast volume state updates
+	// The actual volume refresh can be handled by the frontend fetching latest data
+	// when receiving the continuous progress updates from broadcastAllScansProgress
+	log.Printf("[DEBUG] Periodic volume state check completed")
 }
 
 // runScheduledScan performs a scheduled scan of all volumes

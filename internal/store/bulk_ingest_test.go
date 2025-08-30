@@ -145,39 +145,47 @@ func ensureTablesExist(t *testing.T, pool *pgxpool.Pool) {
 	require.NoError(t, err)
 	defer conn.Release()
 
-	// Create tables if they don't exist (simplified for testing)
+	// Create current schema tables for testing
 	queries := []string{
-		`CREATE TABLE IF NOT EXISTS file_entries (
+		`CREATE TABLE IF NOT EXISTS files (
 			id BIGSERIAL PRIMARY KEY,
-			volume_id VARCHAR(255) NOT NULL,
-			parent_dir_id BIGINT,
-			name VARCHAR(512) NOT NULL,
+			volume_id TEXT NOT NULL,
+			folder_id BIGINT,
+			name TEXT NOT NULL,
+			path TEXT NOT NULL,
+			path_hash BYTEA NOT NULL,
 			size_bytes BIGINT NOT NULL DEFAULT 0,
-			mtime TIMESTAMP WITH TIME ZONE NOT NULL,
-			ctime TIMESTAMP WITH TIME ZONE NOT NULL,
+			mtime TIMESTAMPTZ NOT NULL,
+			ctime TIMESTAMPTZ NOT NULL,
 			inode BIGINT,
 			uid INTEGER,
 			gid INTEGER,
-			type VARCHAR(10) NOT NULL,
-			hidden BOOLEAN NOT NULL DEFAULT FALSE,
-			path_hash BYTEA NOT NULL,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+			extension TEXT,
+			mime TEXT,
+			media_kind TEXT,
+			is_symlink BOOLEAN DEFAULT FALSE,
+			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 		)`,
-		`CREATE TABLE IF NOT EXISTS dir_nodes (
+		`CREATE TABLE IF NOT EXISTS folders (
 			id BIGSERIAL PRIMARY KEY,
-			volume_id VARCHAR(255) NOT NULL,
-			parent_dir_id BIGINT,
-			name VARCHAR(512) NOT NULL,
-			full_path VARCHAR(4096) NOT NULL,
+			volume_id TEXT NOT NULL,
+			parent_id BIGINT,
+			name TEXT NOT NULL,
+			path TEXT NOT NULL,
+			path_hash BYTEA NOT NULL,
 			depth INTEGER NOT NULL DEFAULT 0,
-			latest_size_bytes BIGINT NOT NULL DEFAULT 0,
-			latest_file_count BIGINT NOT NULL DEFAULT 0,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+			size_bytes_recursive BIGINT NOT NULL DEFAULT 0,
+			file_count BIGINT NOT NULL DEFAULT 0,
+			dir_count BIGINT NOT NULL DEFAULT 0,
+			mtime TIMESTAMPTZ,
+			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 		)`,
-		`CREATE UNIQUE INDEX IF NOT EXISTS idx_file_entries_volume_path_hash ON file_entries(volume_id, path_hash)`,
-		`CREATE UNIQUE INDEX IF NOT EXISTS idx_dir_nodes_volume_path ON dir_nodes(volume_id, full_path)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_files_volume_path_hash ON files(volume_id, path_hash)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_folders_volume_path ON folders(volume_id, path)`,
+		`ALTER TABLE files ADD CONSTRAINT fk_files_folder_id FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE CASCADE`,
+		`ALTER TABLE folders ADD CONSTRAINT fk_folders_parent_id FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE`,
 	}
 
 	for _, query := range queries {
@@ -190,37 +198,43 @@ func createSQLiteTables(t *testing.T, db *sql.DB) {
 	t.Helper()
 
 	queries := []string{
-		`CREATE TABLE IF NOT EXISTS file_entries (
+		`CREATE TABLE IF NOT EXISTS files (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			volume_id TEXT NOT NULL,
-			parent_dir_id INTEGER,
+			folder_id INTEGER,
 			name TEXT NOT NULL,
+			path TEXT NOT NULL,
+			path_hash BLOB NOT NULL,
 			size_bytes INTEGER NOT NULL DEFAULT 0,
 			mtime TEXT NOT NULL,
 			ctime TEXT NOT NULL,
 			inode INTEGER,
 			uid INTEGER,
 			gid INTEGER,
-			type TEXT NOT NULL,
-			hidden INTEGER NOT NULL DEFAULT 0,
-			path_hash BLOB NOT NULL,
+			extension TEXT,
+			mime TEXT,
+			media_kind TEXT,
+			is_symlink INTEGER DEFAULT 0,
 			created_at TEXT DEFAULT (datetime('now')),
 			updated_at TEXT DEFAULT (datetime('now'))
 		)`,
-		`CREATE TABLE IF NOT EXISTS dir_nodes (
+		`CREATE TABLE IF NOT EXISTS folders (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			volume_id TEXT NOT NULL,
-			parent_dir_id INTEGER,
+			parent_id INTEGER,
 			name TEXT NOT NULL,
-			full_path TEXT NOT NULL,
+			path TEXT NOT NULL,
+			path_hash BLOB NOT NULL,
 			depth INTEGER NOT NULL DEFAULT 0,
-			latest_size_bytes INTEGER NOT NULL DEFAULT 0,
-			latest_file_count INTEGER NOT NULL DEFAULT 0,
+			size_bytes_recursive INTEGER NOT NULL DEFAULT 0,
+			file_count INTEGER NOT NULL DEFAULT 0,
+			dir_count INTEGER NOT NULL DEFAULT 0,
+			mtime TEXT,
 			created_at TEXT DEFAULT (datetime('now')),
 			updated_at TEXT DEFAULT (datetime('now'))
 		)`,
-		`CREATE UNIQUE INDEX IF NOT EXISTS idx_file_entries_volume_path_hash ON file_entries(volume_id, path_hash)`,
-		`CREATE UNIQUE INDEX IF NOT EXISTS idx_dir_nodes_volume_path ON dir_nodes(volume_id, full_path)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_files_volume_path_hash ON files(volume_id, path_hash)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_folders_volume_path ON folders(volume_id, path)`,
 	}
 
 	for _, query := range queries {

@@ -195,7 +195,7 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
           <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100" id={`scan-progress-${volumeId}`}>
             Scan Progress
           </h4>
-          <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300"
+          <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
             {isScanning && <Loader2 className="w-3 h-3 animate-spin" />}
             <span
               className={clsx(

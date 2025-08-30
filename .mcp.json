@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "volumeviz-postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "enhanced-postgres-mcp-server",
+        "postgresql://volumeviz:volumeviz@localhost:5432/volumeviz?sslmode=disable"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@modelcontextprotocol/server-filesystem",
+        "/home/fictional/Projects/volumeviz"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@brave/brave-search-mcp-server"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    }
+  }
+}

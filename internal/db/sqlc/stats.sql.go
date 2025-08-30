@@ -930,7 +930,6 @@ func (q *Queries) GetVolumeStepSeries(ctx context.Context, arg GetVolumeStepSeri
 }
 
 const insertVolumeSize = `-- name: InsertVolumeSize :one
-
 INSERT INTO volume_sizes (
     volume_id, total_size, file_count, directory_count, 
     largest_file, scan_method, scan_duration, filesystem_type,
@@ -969,10 +968,6 @@ type InsertVolumeSizeRow struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// =============================================================================
-// VOLUME SIZES (SCAN STATS) OPERATIONS
-// =============================================================================
-// Handles volume size tracking from scan operations with validation
 func (q *Queries) InsertVolumeSize(ctx context.Context, arg InsertVolumeSizeParams) (InsertVolumeSizeRow, error) {
 	row := q.db.QueryRow(ctx, insertVolumeSize,
 		arg.VolumeID,
@@ -997,6 +992,22 @@ func (q *Queries) InsertVolumeSize(ctx context.Context, arg InsertVolumeSizePara
 	var i InsertVolumeSizeRow
 	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
 	return i, err
+}
+
+const invalidatePreviousVolumeSizes = `-- name: InvalidatePreviousVolumeSizes :exec
+
+UPDATE volume_sizes 
+SET is_valid = false 
+WHERE volume_id = $1 AND is_valid = true
+`
+
+// =============================================================================
+// VOLUME SIZES (SCAN STATS) OPERATIONS
+// =============================================================================
+// Handles volume size tracking from scan operations with validation
+func (q *Queries) InvalidatePreviousVolumeSizes(ctx context.Context, volumeID string) error {
+	_, err := q.db.Exec(ctx, invalidatePreviousVolumeSizes, volumeID)
+	return err
 }
 
 const saveVolumeMetrics = `-- name: SaveVolumeMetrics :exec

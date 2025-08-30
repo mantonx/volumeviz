@@ -5,41 +5,52 @@
  * Provides real-time data synchronization and notifications.
  */
 
-import { useWebSocket as useWSConnection } from '@/providers/WebSocketProvider';
+import { useRealtime } from '@/providers/realtime';
 
 export const useWebSocketAPI = () => {
-  const ws = useWSConnection();
+  const { isConnected, sendMessage, onScanProgress, onScanEvent } = useRealtime();
 
   // WebSocket integration for live updates
   const subscribeToVolumeUpdates = (
     volumeId: string,
     callback: (data: any) => void,
   ) => {
-    if (ws.status === 'connected') {
+    if (isConnected) {
       // WebSocket live updates integration
-      ws.send({
+      sendMessage({
         type: 'subscribe',
         event: 'volume-update',
         data: { volumeId },
       });
+      return onScanProgress(callback);
     }
+    return () => {}; // Return cleanup function
   };
 
   const subscribeToFileChanges = (callback: (data: any) => void) => {
-    if (ws.status === 'connected') {
+    if (isConnected) {
       // WebSocket for file changes
-      ws.send({
+      sendMessage({
         type: 'subscribe',
         event: 'file-change',
         data: {},
       });
+      return onScanEvent((type: string, data: any) => {
+        if (type === 'file-change') {
+          callback(data);
+        }
+      });
     }
+    return () => {}; // Return cleanup function
   };
 
   return {
-    ws,
+    isConnected,
+    sendMessage,
     subscribeToVolumeUpdates,
     subscribeToFileChanges,
+    onScanProgress,
+    onScanEvent,
   };
 };
 

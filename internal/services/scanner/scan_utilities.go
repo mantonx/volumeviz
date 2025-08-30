@@ -316,3 +316,71 @@ func (vs *VolumeScanner) classifyError(err error) string {
 		return models.ErrorCodeUnknown
 	}
 }
+
+// CalculateEstimationConfidence provides a more sophisticated confidence calculation
+// based on multiple factors including progress, data stability, and processing patterns
+func CalculateEstimationConfidence(
+	processedItems int,
+	totalItems int,
+	elapsedSeconds float64,
+	varianceInProcessingRate float64,
+) string {
+	if totalItems <= 0 || processedItems <= 0 {
+		return "low"
+	}
+
+	progress := float64(processedItems) / float64(totalItems)
+	
+	// Factor 1: Progress-based confidence (more data = higher confidence)
+	progressConfidence := 0.0
+	switch {
+	case progress >= 0.75: // 75%+ complete
+		progressConfidence = 1.0
+	case progress >= 0.50: // 50-75% complete  
+		progressConfidence = 0.8
+	case progress >= 0.25: // 25-50% complete
+		progressConfidence = 0.6
+	case progress >= 0.10: // 10-25% complete
+		progressConfidence = 0.4
+	default: // < 10% complete
+		progressConfidence = 0.2
+	}
+
+	// Factor 2: Processing time stability (longer runtime = more stable estimate)
+	timeConfidence := 0.0
+	switch {
+	case elapsedSeconds >= 30: // 30+ seconds of data
+		timeConfidence = 1.0
+	case elapsedSeconds >= 15: // 15-30 seconds 
+		timeConfidence = 0.8
+	case elapsedSeconds >= 5: // 5-15 seconds
+		timeConfidence = 0.6
+	default: // < 5 seconds
+		timeConfidence = 0.3
+	}
+
+	// Factor 3: Processing rate stability (low variance = higher confidence)
+	stabilityConfidence := 0.0
+	if varianceInProcessingRate <= 0.1 { // Very stable rate
+		stabilityConfidence = 1.0
+	} else if varianceInProcessingRate <= 0.25 { // Moderately stable
+		stabilityConfidence = 0.7
+	} else if varianceInProcessingRate <= 0.5 { // Somewhat unstable
+		stabilityConfidence = 0.5
+	} else { // Highly variable
+		stabilityConfidence = 0.3
+	}
+
+	// Combined confidence score (weighted average)
+	combinedScore := (progressConfidence*0.4 + timeConfidence*0.3 + stabilityConfidence*0.3)
+
+	// Convert to categorical confidence
+	switch {
+	case combinedScore >= 0.8:
+		return "high"
+	case combinedScore >= 0.6:
+		return "medium"
+	default:
+		return "low"
+	}
+}

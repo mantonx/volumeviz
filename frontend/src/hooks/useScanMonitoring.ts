@@ -1,7 +1,7 @@
 import type { ScanOperation } from '@/components/domain/ScanManagerDashboard';
 import type { ScanNotification } from '@/components/domain/ScanNotificationCenter';
 import type { ScanData } from '@/components/domain/ScanProgressModal';
-import { useWebSocket } from '@/providers/WebSocketProvider';
+import { useRealtime } from '@/providers/realtime';
 import { atom, useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
 
@@ -60,7 +60,7 @@ export const useScanMonitoring = (
     maxNotifications = 50,
   } = options;
 
-  const { on, off, send, isConnected } = useWebSocket();
+  const { isConnected, sendMessage, onScanProgress, onScanEvent } = useRealtime();
   const [scanOperations, setScanOperations] = useAtom(activeScanOperationsAtom);
   const [notifications, setNotifications] = useAtom(scanNotificationsAtom);
   const [scanProgressData, setScanProgressData] = useAtom(scanProgressDataAtom);
@@ -292,7 +292,7 @@ export const useScanMonitoring = (
 
         // Subscribe to this scan's events
         if (data.scan_id && !subscribedScansRef.current.has(data.scan_id)) {
-          send({
+          sendMessage({
             type: 'subscribe',
             data: { scan_id: data.scan_id },
           });
@@ -303,7 +303,7 @@ export const useScanMonitoring = (
         throw error;
       }
     },
-    [send],
+    [sendMessage],
   );
 
   // Pause a scan (not implemented in backend yet)
@@ -382,52 +382,25 @@ export const useScanMonitoring = (
     [scanProgressData],
   );
 
-  // Subscribe to WebSocket events
+  // Subscribe to realtime scan events
   useEffect(() => {
     if (!autoSubscribe || !isConnected) {
       return;
     }
 
-    // Subscribe to scan events
-    const events = [
-      'scan_started',
-      'scan_progress',
-      'scan_completed',
-      'scan_failed',
-      'scan_paused',
-      'scan_resumed',
-      'scan_cancelled',
-      'scan_error',
-    ];
-
-    events.forEach((event) => {
-      on(event, handleScanProgress);
-    });
-
-    // Subscribe to scan_progress events via WebSocket
-    send({
-      type: 'subscribe',
-      data: {
-        event: 'scan_progress',
-        filters: volumeId ? { volume_id: volumeId } : {},
-      },
+    // Subscribe to scan progress events
+    const cleanupProgress = onScanProgress(handleScanProgress);
+    
+    // Subscribe to scan events (started, completed, failed, etc.)
+    const cleanupEvents = onScanEvent((type: string, data: any) => {
+      handleScanProgress({ ...data, type });
     });
 
     return () => {
-      events.forEach((event) => {
-        off(event, handleScanProgress);
-      });
-
-      // Unsubscribe from scan_progress events
-      send({
-        type: 'unsubscribe',
-        data: {
-          event: 'scan_progress',
-          filters: volumeId ? { volume_id: volumeId } : {},
-        },
-      });
+      cleanupProgress();
+      cleanupEvents();
     };
-  }, [autoSubscribe, isConnected, volumeId, on, off, send, handleScanProgress]);
+  }, [autoSubscribe, isConnected, onScanProgress, onScanEvent, handleScanProgress]);
 
   return {
     scanOperations,

@@ -6,13 +6,13 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useWebSocket } from '@/providers/WebSocketProvider';
+import { useRealtime } from '@/providers/realtime';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/utils';
 
 export const WebSocketConnectionTest: React.FC = () => {
-  const ws = useWebSocket();
+  const { isConnected, connectionStatus } = useRealtime();
   const [connectionHistory, setConnectionHistory] = useState<
     Array<{
       timestamp: Date;

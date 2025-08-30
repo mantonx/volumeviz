@@ -56,6 +56,14 @@ Thumbs.db
 .env.test.local
 .env.production.local
 
+# API Keys and Secrets (additional protection)
+*.api
+*.secret
+*_api_key*
+*_secret*
+api_keys.txt
+secrets.txt
+
 # Logs
 logs
 *.log

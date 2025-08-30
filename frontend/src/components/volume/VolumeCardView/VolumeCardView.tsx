@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Dropdown } from '@/components/ui/Dropdown';
-import { SubtleProgressIndicator } from '@/components/ui/SubtleProgressIndicator';
+import { ScanProgressBar } from '@/components/scan';
 import { ContainerBadge } from '@/components/ui/ContainerStatus';
 import { FreshnessIndicator } from '@/components/ui/FreshnessIndicator';
 import { SizeVisualization } from '@/components/ui/SizeVisualization';
@@ -40,38 +40,29 @@ export const VolumeCardView: React.FC<VolumeCardViewProps> = ({
           <Card
             key={`${item.id}-${index}`}
             className={cn(
-              'p-4 hover:shadow-md transition-all duration-200 relative',
-              item.status === 'untracked' &&
-                'opacity-60 bg-gray-50/50 dark:bg-gray-800/30',
+              'p-4 transition-all duration-200 relative',
+              item.status === 'untracked' ? 
+                'opacity-40 bg-gray-100 dark:bg-gray-800/40 cursor-not-allowed' :
+                'hover:shadow-md',
             )}
+            style={item.status === 'untracked' ? {
+              backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 12px)',
+            } : undefined}
             role="article"
             aria-label={`Volume ${item.name}`}
           >
-            {/* Subtle Progress Indicator as bottom border */}
-            <SubtleProgressIndicator
-              volumeId={item.id}
-              show={item.status === 'tracked'}
-              showPhases={true}
-              animationDuration={300}
-              testId={`progress-indicator-card-${item.id}`}
-              status={
-                (item.scan_status as
-                  | 'completed'
-                  | 'idle'
-                  | 'pending'
-                  | 'running'
-                  | 'failed') || (item.last_scan_at ? 'completed' : 'idle')
-              }
-              progress={item.scan_progress ?? (item.last_scan_at ? 100 : 0)}
-            />
+            {/* Scan Progress Bar as bottom border */}
+            <ScanProgressBar volumeId={item.id} volumeStatus={item.status} />
             <div className="space-y-3">
               {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <Checkbox
-                    checked={selectedIds.has(item.id)}
-                    onChange={() => onSelectItem(item.id)}
-                  />
+                  <div className={cn(item.status === 'untracked' && "cursor-pointer")}>
+                    <Checkbox
+                      checked={selectedIds.has(item.id)}
+                      onChange={() => onSelectItem(item.id)}
+                    />
+                  </div>
                   <TypeIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <h3 className="font-medium text-gray-900 dark:text-white truncate">
@@ -82,10 +73,12 @@ export const VolumeCardView: React.FC<VolumeCardViewProps> = ({
                     </p>
                   </div>
                 </div>
-                <Dropdown
-                  items={getVolumeActions(item)}
-                  className="flex-shrink-0"
-                />
+                {item.status !== 'untracked' && (
+                  <Dropdown
+                    items={getVolumeActions(item)}
+                    className="flex-shrink-0"
+                  />
+                )}
               </div>
 
               {/* Status and Type */}

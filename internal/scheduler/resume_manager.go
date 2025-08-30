@@ -16,7 +16,7 @@ import (
 type ResumeManager struct {
 	store               store.Store
 	scanner             interfaces.VolumeScanner
-	progressBroadcaster *realtime.ProgressBroadcaster
+	progressBroadcaster realtime.BroadcasterInterface
 	
 	// Resume statistics
 	resumeAttempts    int
@@ -25,7 +25,7 @@ type ResumeManager struct {
 }
 
 // NewResumeManager creates a new resume manager
-func NewResumeManager(store store.Store, scanner interfaces.VolumeScanner, progressBroadcaster *realtime.ProgressBroadcaster) *ResumeManager {
+func NewResumeManager(store store.Store, scanner interfaces.VolumeScanner, progressBroadcaster realtime.BroadcasterInterface) *ResumeManager {
 	return &ResumeManager{
 		store:               store,
 		scanner:             scanner,

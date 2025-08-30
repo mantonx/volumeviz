@@ -42,21 +42,6 @@ export type {
   MetricCardSize,
   MetricCardLayout,
 } from './MetricCard';
-export { ScanProgressDisplay } from './ScanProgressDisplay';
-export type {
-  ScanProgressDisplayProps,
-  ScanProgressData,
-  ScanPhase,
-  ScanPerformanceStats,
-  PhaseConfig,
-  ScanInteractionMode,
-  ScanProgressAction,
-} from './ScanProgressDisplay';
-export { SubtleProgressIndicator } from './SubtleProgressIndicator';
-export type {
-  SubtleProgressIndicatorProps,
-  ScanProgressState,
-} from './SubtleProgressIndicator';
 export { Modal, useModal } from './Modal';
 export type {
   ModalProps,

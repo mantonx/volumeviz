@@ -14,7 +14,6 @@ import (
 	"github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	coremodels "github.com/mantonx/volumeviz/internal/models"
-	"github.com/mantonx/volumeviz/internal/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -67,7 +66,7 @@ func (m *MockVolumeScanner) GetScanProgressByVolume(volumeID string) (*interface
 func setupTestRouter(scanner interfaces.VolumeScanner) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	handler := NewHandler(scanner, &websocket.Hub{}, nil, nil)
+	handler := NewHandler(scanner, nil, nil, nil)
 
 	r.GET("/volumes/:id/size", handler.GetVolumeSize)
 	r.POST("/volumes/:id/size/refresh", handler.RefreshVolumeSize)
@@ -729,13 +728,11 @@ func TestHandler_ValidateVolumeID(t *testing.T) {
 // Test NewHandler constructor
 func TestNewHandler(t *testing.T) {
 	mockScanner := &MockVolumeScanner{}
-	hub := &websocket.Hub{}
 
-	handler := NewHandler(mockScanner, hub, nil, nil)
+	handler := NewHandler(mockScanner, nil, nil, nil)
 
 	assert.NotNil(t, handler)
 	assert.Equal(t, mockScanner, handler.scanner)
-	assert.Equal(t, hub, handler.hub)
 	assert.Nil(t, handler.scheduler)
 	assert.Nil(t, handler.realtimePublisher)
 }

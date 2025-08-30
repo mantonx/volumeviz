@@ -19,7 +19,8 @@ import type {
   ChartTooltipData,
 } from './LiveVolumeChart.types';
 import { formatBytes } from '../../../utils/formatters';
-import { useWebSocket } from '../../../providers/WebSocketProvider';
+import { useRealtime } from '@/providers/realtime';
+import { ReadyState } from 'react-use-websocket';
 import type { VolumeResponseType } from '../../../api/generated/volumeviz-api';
 
 // Predefined color palette for volume segments
@@ -77,8 +78,21 @@ export const LiveVolumeChart: React.FC<LiveVolumeChartProps> = ({
   );
 
   // WebSocket connection for real-time updates
-  const { isConnected, state } = useWebSocket();
-  const connectionStatus = state.status;
+  const { isConnected, connectionStatus: wsReadyState } = useRealtime();
+  const connectionStatus = useMemo(() => {
+    switch (wsReadyState) {
+      case ReadyState.CONNECTING:
+        return 'connecting';
+      case ReadyState.OPEN:
+        return 'connected';
+      case ReadyState.CLOSING:
+        return 'disconnecting';
+      case ReadyState.CLOSED:
+        return 'disconnected';
+      default:
+        return 'unknown';
+    }
+  }, [wsReadyState]);
 
   // Handle WebSocket events
   useEffect(() => {

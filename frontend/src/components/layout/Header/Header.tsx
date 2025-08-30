@@ -16,19 +16,17 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { useWebSocket } from '@/providers/WebSocketProvider';
+import { useRealtime } from '@/providers/realtime';
+import { ReadyState } from 'react-use-websocket';
 import {
   themeAtom,
   apiStatusAtom,
   requestCountAtom,
-  connectionStatusAtom,
+  websocketEnabledAtom,
 } from '@/store';
 import { cn } from '@/utils';
 import type { HeaderProps, ThemeOption, ApiStatus } from './Header.types';
-import type {
-  ConnectionStatus,
-  WebSocketStatus,
-} from '@/store/atoms/websocket';
+import type { WebSocketStatus } from '@/store/atoms/websocket';
 
 /**
  * Theme icon component mapping theme names to appropriate icons
@@ -140,8 +138,29 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [theme, setTheme] = useAtom(themeAtom);
   const requestCount = useAtomValue(requestCountAtom);
-  const connectionStatus = useAtomValue(connectionStatusAtom);
-  const ws = useWebSocket();
+  const apiStatus = useAtomValue(apiStatusAtom);
+  const websocketEnabled = useAtomValue(websocketEnabledAtom);
+  const {
+    connectionStatus: wsReadyState,
+    latency,
+    reconnectAttempts,
+  } = useRealtime();
+
+  // Convert ReadyState to display format (no legacy compatibility in provider)
+  const wsStatus = React.useMemo(() => {
+    switch (wsReadyState) {
+      case ReadyState.CONNECTING:
+        return 'connecting';
+      case ReadyState.OPEN:
+        return 'connected';
+      case ReadyState.CLOSING:
+        return 'disconnected';
+      case ReadyState.CLOSED:
+        return 'disconnected';
+      default:
+        return 'error';
+    }
+  }, [wsReadyState]);
 
   /**
    * Cycle through available themes: system -> light -> dark -> system
@@ -194,15 +213,15 @@ export const Header: React.FC<HeaderProps> = ({
   /**
    * Get combined status text for tooltip
    */
-  const getCombinedStatusText = (conn: ConnectionStatus): string => {
-    let text = getStatusText(conn.api);
-    if (conn.websocketEnabled) {
-      text += ` | ${getWebSocketStatusText(ws.status)}`;
-      if (ws.latency) {
-        text += ` (${ws.latency}ms)`;
+  const getCombinedStatusText = (): string => {
+    let text = getStatusText(apiStatus);
+    if (websocketEnabled) {
+      text += ` | ${getWebSocketStatusText(wsStatus)}`;
+      if (latency) {
+        text += ` (${latency}ms)`;
       }
-      if (ws.reconnectAttempts > 0) {
-        text += ` - Attempt ${ws.reconnectAttempts}`;
+      if (reconnectAttempts > 0) {
+        text += ` - Attempt ${reconnectAttempts}`;
       }
     }
     return text;
@@ -259,16 +278,16 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-4">
           {/* Combined API and WebSocket Status */}
           <div className="flex items-center space-x-2">
-            {!connectionStatus.websocketEnabled ? (
+            {!websocketEnabled ? (
               /* REST-only status */
               <div
                 data-testid="status-pill"
                 className="flex items-center space-x-2 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700"
-                title={getStatusText(connectionStatus.api)}
+                title={getStatusText(apiStatus)}
               >
-                <StatusIcon status={connectionStatus.api} />
+                <StatusIcon status={apiStatus} />
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                  API: {connectionStatus.api === 'online' ? 'OK' : 'Error'}
+                  API: {apiStatus === 'online' ? 'OK' : 'Error'}
                 </span>
                 {requestCount > 0 && (
                   <span className="text-xs text-gray-500 dark:text-gray-400 animate-pulse">
@@ -281,13 +300,13 @@ export const Header: React.FC<HeaderProps> = ({
               <div
                 data-testid="status-pill"
                 className="flex items-center space-x-3 px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700"
-                title={getCombinedStatusText(connectionStatus)}
+                title={getCombinedStatusText()}
               >
                 {/* API Status */}
                 <div className="flex items-center space-x-1">
-                  <StatusIcon status={connectionStatus.api} />
+                  <StatusIcon status={apiStatus} />
                   <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                    API: {connectionStatus.api === 'online' ? 'OK' : 'Error'}
+                    API: {apiStatus === 'online' ? 'OK' : 'Error'}
                   </span>
                 </div>
 
@@ -297,10 +316,10 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* WebSocket Status */}
                 <div className="flex items-center space-x-1">
                   <div data-testid="ws-status-icon">
-                    <WebSocketIcon status={ws.status} latency={ws.latency} />
+                    <WebSocketIcon status={wsStatus} latency={latency} />
                   </div>
                   <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                    RT: {getWebSocketDisplayText(ws.status)}
+                    RT: {getWebSocketDisplayText(wsStatus)}
                   </span>
                 </div>
 

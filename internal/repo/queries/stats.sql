@@ -275,6 +275,11 @@ WHERE metric_timestamp < $1;
 -- =============================================================================
 -- Handles volume size tracking from scan operations with validation
 
+-- name: InvalidatePreviousVolumeSizes :exec
+UPDATE volume_sizes 
+SET is_valid = false 
+WHERE volume_id = $1 AND is_valid = true;
+
 -- name: InsertVolumeSize :one
 INSERT INTO volume_sizes (
     volume_id, total_size, file_count, directory_count, 

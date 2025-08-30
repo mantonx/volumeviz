@@ -31,7 +31,8 @@ func TestGetVolumeStats(t *testing.T) {
 			volumeID: "test-volume",
 			setupMock: func(m *mocks.DockerService) {
 				volume := &coremodels.Volume{
-					ID:         "test-volume",
+					ID:         1,
+				VolumeID:   "test-volume",
 					Name:       "test-volume",
 					Driver:     "local",
 					Mountpoint: "/var/lib/docker/volumes/test-volume/_data",
@@ -42,8 +43,8 @@ func TestGetVolumeStats(t *testing.T) {
 					},
 				}
 				containers := []coremodels.VolumeContainer{
-					{ID: "container1", Name: "web-server"},
-					{ID: "container2", Name: "database"},
+					{ID: 1, ContainerID: "container1", VolumeID: "test-volume", Name: "web-server"},
+					{ID: 2, ContainerID: "container2", VolumeID: "test-volume", Name: "database"},
 				}
 				m.On("GetVolume", mock.Anything, "test-volume").Return(volume, nil)
 				m.On("GetVolumeContainers", mock.Anything, "test-volume").Return(containers, nil)
@@ -75,7 +76,8 @@ func TestGetVolumeStats(t *testing.T) {
 			volumeID: "simple-volume",
 			setupMock: func(m *mocks.DockerService) {
 				volume := &coremodels.Volume{
-					ID:         "simple-volume",
+					ID:         1,
+					VolumeID:   "simple-volume",
 					Name:       "simple-volume",
 					Driver:     "local",
 					Mountpoint: "/var/lib/docker/volumes/simple-volume/_data",
@@ -104,7 +106,8 @@ func TestGetVolumeStats(t *testing.T) {
 			volumeID: "test-volume",
 			setupMock: func(m *mocks.DockerService) {
 				volume := &coremodels.Volume{
-					ID:         "test-volume",
+					ID:         1,
+				VolumeID:   "test-volume",
 					Name:       "test-volume",
 					Driver:     "local",
 					Mountpoint: "/var/lib/docker/volumes/test-volume/_data",
@@ -335,36 +338,41 @@ func TestIsSystemVolume(t *testing.T) {
 func TestFilterUserVolumes(t *testing.T) {
 	volumes := []coremodels.Volume{
 		{
-			ID:   "vol1",
-			Name: "user-data",
+			ID:       1,
+			VolumeID: "vol1",
+			Name:     "user-data",
 			Options: map[string]string{
 				"device": "/home/user/data",
 				"type":   "bind",
 			},
 		},
 		{
-			ID:   "vol2",
-			Name: "system-vol",
+			ID:       2,
+			VolumeID: "vol2",
+			Name:     "system-vol",
 			Options: map[string]string{
 				"device": "/var/lib/docker/volumes/system-vol",
 			},
 		},
 		{
-			ID:   "vol3",
-			Name: "cifs-mount",
+			ID:       3,
+			VolumeID: "vol3",
+			Name:     "cifs-mount",
 			Options: map[string]string{
 				"device": "/cifs/fileserver/media",
 				"type":   "cifs",
 			},
 		},
 		{
-			ID:      "vol4",
-			Name:    "regular-volume",
+			ID:       4,
+			VolumeID: "vol4",
+			Name:     "regular-volume",
 			Options: map[string]string{},
 		},
 		{
-			ID:   "vol5",
-			Name: "named-volume-with-external-device",
+			ID:       5,
+			VolumeID: "vol5",
+			Name:     "named-volume-with-external-device",
 			Options: map[string]string{
 				"device": "/mnt/external-drive",
 			},

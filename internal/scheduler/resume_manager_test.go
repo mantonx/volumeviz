@@ -110,19 +110,29 @@ func (m *MockVolumeScanner) TriggerFilesystemIndexingWithScanID(ctx context.Cont
 
 // Additional methods to satisfy VolumeScanner interface
 func (m *MockVolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*interfaces.ScanResult, error) {
-	return nil, nil
+	args := m.Called(ctx, volumeID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*interfaces.ScanResult), args.Error(1)
 }
 
 func (m *MockVolumeScanner) GetScanProgress(scanID string) (*interfaces.ScanProgress, error) {
-	return nil, nil
+	args := m.Called(scanID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*interfaces.ScanProgress), args.Error(1)
 }
 
 func (m *MockVolumeScanner) GetAvailableMethods() []interfaces.MethodInfo {
-	return nil
+	args := m.Called()
+	return args.Get(0).([]interfaces.MethodInfo)
 }
 
 func (m *MockVolumeScanner) ClearCache(volumeID string) error {
-	return nil
+	args := m.Called(volumeID)
+	return args.Error(0)
 }
 
 func TestResumeManager_FindPausedScans(t *testing.T) {

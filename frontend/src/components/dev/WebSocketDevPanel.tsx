@@ -25,7 +25,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { useWebSocket } from '@/providers/WebSocketProvider';
+import { useRealtime } from '@/providers/realtime';
+import { ReadyState } from 'react-use-websocket';
 import { cn } from '@/utils';
 
 interface DevMessage {
@@ -51,7 +52,14 @@ export const WebSocketDevPanel: React.FC<WebSocketDevPanelProps> = ({
   const [autoScroll, setAutoScroll] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const ws = useWebSocket();
+  const {
+    connectionStatus,
+    isConnected,
+    latency,
+    reconnectAttempts,
+    lastMessage,
+    sendMessage,
+  } = useRealtime();
 
   // Scroll to bottom when new messages arrive (if auto-scroll enabled)
   const scrollToBottom = useCallback(() => {
@@ -78,11 +86,29 @@ export const WebSocketDevPanel: React.FC<WebSocketDevPanelProps> = ({
     [],
   );
 
-  // Listen for WebSocket events
+  // Listen for connection status changes
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleMessage = (data: any) => {
+    switch (connectionStatus) {
+      case ReadyState.OPEN:
+        addSystemMessage('WebSocket connected', 'success');
+        break;
+      case ReadyState.CLOSED:
+        addSystemMessage('WebSocket disconnected', 'error');
+        break;
+      case ReadyState.CONNECTING:
+        addSystemMessage('WebSocket connecting...', 'info');
+        break;
+    }
+  }, [connectionStatus, isOpen, addSystemMessage]);
+
+  // Listen for new messages
+  useEffect(() => {
+    if (!isOpen || !lastMessage) return;
+
+    try {
+      const data = JSON.parse(lastMessage.data);
       const message: DevMessage = {
         id: Math.random().toString(36).substr(2, 9),
         timestamp: new Date(),
@@ -90,70 +116,52 @@ export const WebSocketDevPanel: React.FC<WebSocketDevPanelProps> = ({
         data,
       };
       setMessages((prev) => [...prev.slice(-99), message]);
-    };
-
-    const handleConnect = () => {
-      addSystemMessage('WebSocket connected', 'success');
-    };
-
-    const handleDisconnect = (data: any) => {
-      addSystemMessage(
-        `WebSocket disconnected (${data?.code || 'unknown'})`,
-        'error',
-      );
-    };
-
-    const handleError = (data: any) => {
-      addSystemMessage(`WebSocket error: ${data?.error || 'unknown'}`, 'error');
-    };
-
-    // Register event handlers
-    ws.on('message', handleMessage);
-    ws.on('connect', handleConnect);
-    ws.on('disconnect', handleDisconnect);
-    ws.on('error', handleError);
-
-    return () => {
-      ws.off('message', handleMessage);
-      ws.off('connect', handleConnect);
-      ws.off('disconnect', handleDisconnect);
-      ws.off('error', handleError);
-    };
-  }, [isOpen, ws, addSystemMessage]);
+    } catch (error) {
+      console.warn('Failed to parse WebSocket message:', error);
+    }
+  }, [lastMessage, isOpen]);
 
   const handleSendTest = () => {
-    const success = ws.sendTest();
-    if (success) {
+    if (!isConnected) {
+      addSystemMessage('Cannot send - not connected', 'error');
+      return;
+    }
+
+    try {
+      const testData = { type: 'ping', data: { test: true } };
+      sendMessage(testData);
+
       const message: DevMessage = {
         id: Math.random().toString(36).substr(2, 9),
         timestamp: new Date(),
         type: 'sent',
-        data: { type: 'ping', data: { test: true } },
+        data: testData,
       };
       setMessages((prev) => [...prev.slice(-99), message]);
       addSystemMessage('Test message sent', 'success');
-    } else {
+    } catch (error) {
       addSystemMessage('Failed to send test message', 'error');
     }
   };
 
   const handleSendCustom = () => {
+    if (!isConnected) {
+      addSystemMessage('Cannot send - not connected', 'error');
+      return;
+    }
+
     try {
       const data = JSON.parse(testMessage);
-      const success = ws.send(data);
+      sendMessage(data);
 
-      if (success) {
-        const message: DevMessage = {
-          id: Math.random().toString(36).substr(2, 9),
-          timestamp: new Date(),
-          type: 'sent',
-          data,
-        };
-        setMessages((prev) => [...prev.slice(-99), message]);
-        addSystemMessage('Custom message sent', 'success');
-      } else {
-        addSystemMessage('Failed to send custom message', 'error');
-      }
+      const message: DevMessage = {
+        id: Math.random().toString(36).substr(2, 9),
+        timestamp: new Date(),
+        type: 'sent',
+        data,
+      };
+      setMessages((prev) => [...prev.slice(-99), message]);
+      addSystemMessage('Custom message sent', 'success');
     } catch (error) {
       addSystemMessage(`Invalid JSON: ${error}`, 'error');
     }
@@ -164,28 +172,40 @@ export const WebSocketDevPanel: React.FC<WebSocketDevPanelProps> = ({
     addSystemMessage('Messages cleared', 'info');
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusText = (status: ReadyState) => {
     switch (status) {
-      case 'connected':
-        return 'text-green-500';
-      case 'connecting':
-      case 'reconnecting':
-        return 'text-yellow-500';
-      case 'disconnected':
-        return 'text-gray-400';
-      case 'error':
-        return 'text-red-500';
+      case ReadyState.CONNECTING:
+        return 'connecting';
+      case ReadyState.OPEN:
+        return 'connected';
+      case ReadyState.CLOSING:
+        return 'disconnecting';
+      case ReadyState.CLOSED:
+        return 'disconnected';
       default:
-        return 'text-gray-400';
+        return 'unknown';
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusColor = (status: ReadyState) => {
     switch (status) {
-      case 'connected':
+      case ReadyState.OPEN:
+        return 'text-green-500';
+      case ReadyState.CONNECTING:
+        return 'text-yellow-500';
+      case ReadyState.CLOSING:
+      case ReadyState.CLOSED:
+        return 'text-gray-400';
+      default:
+        return 'text-red-500';
+    }
+  };
+
+  const getStatusIcon = (status: ReadyState) => {
+    switch (status) {
+      case ReadyState.OPEN:
         return <Wifi className="h-4 w-4" />;
-      case 'connecting':
-      case 'reconnecting':
+      case ReadyState.CONNECTING:
         return <RefreshCw className="h-4 w-4 animate-spin" />;
       default:
         return <WifiOff className="h-4 w-4" />;
@@ -262,28 +282,24 @@ export const WebSocketDevPanel: React.FC<WebSocketDevPanelProps> = ({
             <div
               className={cn(
                 'flex items-center space-x-2',
-                getStatusColor(ws.status),
+                getStatusColor(connectionStatus),
               )}
             >
-              {getStatusIcon(ws.status)}
+              {getStatusIcon(connectionStatus)}
               <span className="text-sm font-medium capitalize">
-                {ws.status}
+                {getStatusText(connectionStatus)}
               </span>
-              {ws.latency && (
-                <span className="text-xs text-gray-500">({ws.latency}ms)</span>
+              {latency && (
+                <span className="text-xs text-gray-500">({latency}ms)</span>
               )}
             </div>
-            {ws.reconnectAttempts > 0 && (
+            {reconnectAttempts > 0 && (
               <span className="text-xs text-yellow-600">
-                Attempt {ws.reconnectAttempts}
+                Attempt {reconnectAttempts}
               </span>
             )}
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={ws.reconnect}>
-              <RefreshCw className="h-3 w-3 mr-1" />
-              Reconnect
-            </Button>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
@@ -297,7 +313,7 @@ export const WebSocketDevPanel: React.FC<WebSocketDevPanelProps> = ({
               data-testid="send-test-btn"
               size="sm"
               onClick={handleSendTest}
-              disabled={!ws.isConnected}
+              disabled={!isConnected}
             >
               Send Test Ping
             </Button>
@@ -327,12 +343,12 @@ export const WebSocketDevPanel: React.FC<WebSocketDevPanelProps> = ({
               onChange={(e) => setTestMessage(e.target.value)}
               placeholder="Custom JSON message"
               className="flex-1 px-3 py-2 text-xs font-mono border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={!ws.isConnected}
+              disabled={!isConnected}
             />
             <Button
               size="sm"
               onClick={handleSendCustom}
-              disabled={!ws.isConnected}
+              disabled={!isConnected}
             >
               Send
             </Button>
@@ -358,7 +374,10 @@ export const WebSocketDevPanel: React.FC<WebSocketDevPanelProps> = ({
           {/* Connection Info */}
           <div className="text-xs text-gray-500 space-y-1">
             <div>
-              Last Event: {ws.lastEventAt?.toLocaleTimeString() || 'None'}
+              Last Message:{' '}
+              {lastMessage?.timeStamp
+                ? new Date(lastMessage.timeStamp).toLocaleTimeString()
+                : 'None'}
             </div>
             <div>
               Environment: {import.meta.env.DEV ? 'Development' : 'Production'}
