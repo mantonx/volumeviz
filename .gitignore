@@ -27,6 +27,8 @@ vendor/**/*.dylib
 /volumeviz
 volumeviz-test
 store.test
+server
+/server
 
 # Binary files and executables (prevent accidental commits)
 *.bin
