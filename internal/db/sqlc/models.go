@@ -7,10 +7,111 @@ package sqlc
 import (
 	"database/sql/driver"
 	"fmt"
+	"net/netip"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type MountAccessMode string
+
+const (
+	MountAccessModeRw MountAccessMode = "rw"
+	MountAccessModeRo MountAccessMode = "ro"
+)
+
+func (e *MountAccessMode) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = MountAccessMode(s)
+	case string:
+		*e = MountAccessMode(s)
+	default:
+		return fmt.Errorf("unsupported scan type for MountAccessMode: %T", src)
+	}
+	return nil
+}
+
+type NullMountAccessMode struct {
+	MountAccessMode MountAccessMode `json:"mount_access_mode"`
+	Valid           bool            `json:"valid"` // Valid is true if MountAccessMode is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullMountAccessMode) Scan(value interface{}) error {
+	if value == nil {
+		ns.MountAccessMode, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.MountAccessMode.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullMountAccessMode) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.MountAccessMode), nil
+}
+
+func AllMountAccessModeValues() []MountAccessMode {
+	return []MountAccessMode{
+		MountAccessModeRw,
+		MountAccessModeRo,
+	}
+}
+
+type MountType string
+
+const (
+	MountTypeVolume MountType = "volume"
+	MountTypeBind   MountType = "bind"
+	MountTypeTmpfs  MountType = "tmpfs"
+)
+
+func (e *MountType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = MountType(s)
+	case string:
+		*e = MountType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for MountType: %T", src)
+	}
+	return nil
+}
+
+type NullMountType struct {
+	MountType MountType `json:"mount_type"`
+	Valid     bool      `json:"valid"` // Valid is true if MountType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullMountType) Scan(value interface{}) error {
+	if value == nil {
+		ns.MountType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.MountType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullMountType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.MountType), nil
+}
+
+func AllMountTypeValues() []MountType {
+	return []MountType{
+		MountTypeVolume,
+		MountTypeBind,
+		MountTypeTmpfs,
+	}
+}
 
 type RuleAction string
 
@@ -181,191 +282,342 @@ func AllRuleOperatorValues() []RuleOperator {
 	}
 }
 
+type UserRole string
+
+const (
+	UserRoleViewer   UserRole = "viewer"
+	UserRoleOperator UserRole = "operator"
+	UserRoleAdmin    UserRole = "admin"
+)
+
+func (e *UserRole) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UserRole(s)
+	case string:
+		*e = UserRole(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UserRole: %T", src)
+	}
+	return nil
+}
+
+type NullUserRole struct {
+	UserRole UserRole `json:"user_role"`
+	Valid    bool     `json:"valid"` // Valid is true if UserRole is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullUserRole) Scan(value interface{}) error {
+	if value == nil {
+		ns.UserRole, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.UserRole.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullUserRole) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.UserRole), nil
+}
+
+func AllUserRoleValues() []UserRole {
+	return []UserRole{
+		UserRoleViewer,
+		UserRoleOperator,
+		UserRoleAdmin,
+	}
+}
+
+type UserStatus string
+
+const (
+	UserStatusActive   UserStatus = "active"
+	UserStatusInactive UserStatus = "inactive"
+	UserStatusPending  UserStatus = "pending"
+	UserStatusLocked   UserStatus = "locked"
+)
+
+func (e *UserStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UserStatus(s)
+	case string:
+		*e = UserStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UserStatus: %T", src)
+	}
+	return nil
+}
+
+type NullUserStatus struct {
+	UserStatus UserStatus `json:"user_status"`
+	Valid      bool       `json:"valid"` // Valid is true if UserStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullUserStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.UserStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.UserStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullUserStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.UserStatus), nil
+}
+
+func AllUserStatusValues() []UserStatus {
+	return []UserStatus{
+		UserStatusActive,
+		UserStatusInactive,
+		UserStatusPending,
+		UserStatusLocked,
+	}
+}
+
 type AlertDeliveries struct {
-	ID              int64              `json:"id"`
-	AlertID         int64              `json:"alert_id"`
-	DestinationID   int64              `json:"destination_id"`
-	RouteID         int64              `json:"route_id"`
-	Status          string             `json:"status"`
-	AttemptCount    pgtype.Int4        `json:"attempt_count"`
-	MaxAttempts     pgtype.Int4        `json:"max_attempts"`
-	NextAttemptAt   pgtype.Timestamptz `json:"next_attempt_at"`
-	LastAttemptAt   pgtype.Timestamptz `json:"last_attempt_at"`
-	ErrorMessage    pgtype.Text        `json:"error_message"`
-	DeliveredAt     pgtype.Timestamptz `json:"delivered_at"`
-	RequestPayload  pgtype.Text        `json:"request_payload"`
-	ResponsePayload pgtype.Text        `json:"response_payload"`
-	ResponseStatus  pgtype.Int4        `json:"response_status"`
-	CreatedAt       time.Time          `json:"created_at"`
-	UpdatedAt       time.Time          `json:"updated_at"`
+	ID            int64              `json:"id"`
+	AlertID       int64              `json:"alert_id"`
+	DestinationID int64              `json:"destination_id"`
+	Status        string             `json:"status"`
+	AttemptCount  pgtype.Int4        `json:"attempt_count"`
+	LastAttemptAt pgtype.Timestamptz `json:"last_attempt_at"`
+	DeliveredAt   pgtype.Timestamptz `json:"delivered_at"`
+	ErrorMessage  pgtype.Text        `json:"error_message"`
+	ResponseData  []byte             `json:"response_data"`
+	CreatedAt     time.Time          `json:"created_at"`
 }
 
 type AlertDestinations struct {
-	ID        int64       `json:"id"`
-	Name      string      `json:"name"`
-	Type      string      `json:"type"`
-	Config    []byte      `json:"config"`
-	IsEnabled pgtype.Bool `json:"is_enabled"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	ID            int64              `json:"id"`
+	Name          string             `json:"name"`
+	Type          string             `json:"type"`
+	Configuration []byte             `json:"configuration"`
+	IsEnabled     pgtype.Bool        `json:"is_enabled"`
+	LastUsedAt    pgtype.Timestamptz `json:"last_used_at"`
+	CreatedAt     time.Time          `json:"created_at"`
+	UpdatedAt     time.Time          `json:"updated_at"`
 }
 
 type AlertRoutes struct {
-	ID            int64       `json:"id"`
-	Name          string      `json:"name"`
-	Matchers      []byte      `json:"matchers"`
-	DestinationID int64       `json:"destination_id"`
-	Priority      pgtype.Int4 `json:"priority"`
-	IsEnabled     pgtype.Bool `json:"is_enabled"`
-	CreatedAt     time.Time   `json:"created_at"`
-	UpdatedAt     time.Time   `json:"updated_at"`
+	ID             int64       `json:"id"`
+	RuleID         int64       `json:"rule_id"`
+	DestinationID  int64       `json:"destination_id"`
+	SeverityFilter pgtype.Text `json:"severity_filter"`
+	CreatedAt      time.Time   `json:"created_at"`
 }
 
 type AlertRules struct {
-	ID              int64       `json:"id"`
-	Name            string      `json:"name"`
-	Description     pgtype.Text `json:"description"`
-	Query           string      `json:"query"`
-	Condition       string      `json:"condition"`
-	Threshold       float64     `json:"threshold"`
-	IntervalSeconds int32       `json:"interval_seconds"`
-	ForSeconds      pgtype.Int4 `json:"for_seconds"`
-	Labels          []byte      `json:"labels"`
-	IsEnabled       pgtype.Bool `json:"is_enabled"`
-	CreatedAt       time.Time   `json:"created_at"`
-	UpdatedAt       time.Time   `json:"updated_at"`
+	ID                int64              `json:"id"`
+	Name              string             `json:"name"`
+	Description       pgtype.Text        `json:"description"`
+	RuleType          string             `json:"rule_type"`
+	MetricName        string             `json:"metric_name"`
+	ConditionOperator string             `json:"condition_operator"`
+	ThresholdValue    pgtype.Numeric     `json:"threshold_value"`
+	TimeWindowMinutes pgtype.Int4        `json:"time_window_minutes"`
+	MinOccurrences    pgtype.Int4        `json:"min_occurrences"`
+	IsEnabled         pgtype.Bool        `json:"is_enabled"`
+	Severity          string             `json:"severity"`
+	CooldownMinutes   pgtype.Int4        `json:"cooldown_minutes"`
+	LastTriggeredAt   pgtype.Timestamptz `json:"last_triggered_at"`
+	TriggerCount      pgtype.Int4        `json:"trigger_count"`
+	CreatedAt         time.Time          `json:"created_at"`
+	UpdatedAt         time.Time          `json:"updated_at"`
+	OrganizationID    pgtype.Int8        `json:"organization_id"`
 }
 
 type Alerts struct {
 	ID          int64              `json:"id"`
 	RuleID      int64              `json:"rule_id"`
-	EntityID    string             `json:"entity_id"`
-	EntityType  string             `json:"entity_type"`
-	DedupeKey   string             `json:"dedupe_key"`
-	Status      string             `json:"status"`
-	Value       pgtype.Float8      `json:"value"`
-	Labels      []byte             `json:"labels"`
-	Annotations []byte             `json:"annotations"`
-	StartsAt    pgtype.Timestamptz `json:"starts_at"`
-	EndsAt      pgtype.Timestamptz `json:"ends_at"`
+	VolumeID    pgtype.Text        `json:"volume_id"`
+	Severity    string             `json:"severity"`
+	Title       string             `json:"title"`
+	Message     string             `json:"message"`
+	ContextData []byte             `json:"context_data"`
+	IsResolved  pgtype.Bool        `json:"is_resolved"`
+	ResolvedAt  pgtype.Timestamptz `json:"resolved_at"`
 	CreatedAt   time.Time          `json:"created_at"`
-	UpdatedAt   time.Time          `json:"updated_at"`
 }
 
-type Containers struct {
-	ID          int64            `json:"id"`
-	ContainerID string           `json:"container_id"`
-	Name        string           `json:"name"`
-	Image       string           `json:"image"`
-	State       string           `json:"state"`
-	Status      string           `json:"status"`
-	Labels      pgtype.Text      `json:"labels"`
-	StartedAt   pgtype.Timestamp `json:"started_at"`
-	FinishedAt  pgtype.Timestamp `json:"finished_at"`
-	IsActive    pgtype.Bool      `json:"is_active"`
-	CreatedAt   time.Time        `json:"created_at"`
-	UpdatedAt   time.Time        `json:"updated_at"`
+type AuditLogs struct {
+	ID             int64       `json:"id"`
+	UserID         pgtype.Int8 `json:"user_id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	SessionID      pgtype.Text `json:"session_id"`
+	Action         string      `json:"action"`
+	ResourceType   string      `json:"resource_type"`
+	ResourceID     pgtype.Text `json:"resource_id"`
+	Description    string      `json:"description"`
+	Details        []byte      `json:"details"`
+	OldValues      []byte      `json:"old_values"`
+	NewValues      []byte      `json:"new_values"`
+	IpAddress      *netip.Addr `json:"ip_address"`
+	UserAgent      pgtype.Text `json:"user_agent"`
+	RequestID      pgtype.Text `json:"request_id"`
+	Success        bool        `json:"success"`
+	ErrorMessage   pgtype.Text `json:"error_message"`
+	DurationMs     pgtype.Int4 `json:"duration_ms"`
+	CreatedAt      time.Time   `json:"created_at"`
+}
+
+type DailyStats struct {
+	ID              int64          `json:"id"`
+	VolumeID        string         `json:"volume_id"`
+	Date            pgtype.Date    `json:"date"`
+	TotalSizeBytes  pgtype.Int8    `json:"total_size_bytes"`
+	SizeChangeBytes pgtype.Int8    `json:"size_change_bytes"`
+	GrowthPercent   pgtype.Numeric `json:"growth_percent"`
+	TotalFiles      pgtype.Int8    `json:"total_files"`
+	NewFiles        pgtype.Int8    `json:"new_files"`
+	DeletedFiles    pgtype.Int8    `json:"deleted_files"`
+	ModifiedFiles   pgtype.Int8    `json:"modified_files"`
+	MediaFiles      pgtype.Int8    `json:"media_files"`
+	DocumentFiles   pgtype.Int8    `json:"document_files"`
+	CodeFiles       pgtype.Int8    `json:"code_files"`
+	ArchiveFiles    pgtype.Int8    `json:"archive_files"`
+	OtherFiles      pgtype.Int8    `json:"other_files"`
+	ScanDurationMs  pgtype.Int8    `json:"scan_duration_ms"`
+	CreatedAt       time.Time      `json:"created_at"`
 }
 
 type DockerMountAttachments struct {
-	ID                              int64            `json:"id"`
-	MountCatalogID                  int64            `json:"mount_catalog_id"`
-	ContainerID                     string           `json:"container_id"`
-	ContainerName                   pgtype.Text      `json:"container_name"`
-	DestinationPath                 string           `json:"destination_path"`
-	AccessMode                      string           `json:"access_mode"`
-	Propagation                     pgtype.Text      `json:"propagation"`
-	ContainerState                  pgtype.Text      `json:"container_state"`
-	ContainerImage                  pgtype.Text      `json:"container_image"`
-	ContainerLabels                 []byte           `json:"container_labels"`
-	ContainerComposeProject         pgtype.Text      `json:"container_compose_project"`
-	ContainerComposeService         pgtype.Text      `json:"container_compose_service"`
-	ContainerComposeContainerNumber pgtype.Int4      `json:"container_compose_container_number"`
-	ContainerComposeConfigHash      pgtype.Text      `json:"container_compose_config_hash"`
-	AttachedAt                      pgtype.Timestamp `json:"attached_at"`
-	DetachedAt                      pgtype.Timestamp `json:"detached_at"`
-	IsActive                        bool             `json:"is_active"`
-	CreatedAt                       time.Time        `json:"created_at"`
-	UpdatedAt                       time.Time        `json:"updated_at"`
+	ID                              int64              `json:"id"`
+	MountCatalogID                  int64              `json:"mount_catalog_id"`
+	ContainerID                     string             `json:"container_id"`
+	ContainerName                   pgtype.Text        `json:"container_name"`
+	DestinationPath                 string             `json:"destination_path"`
+	AccessMode                      string             `json:"access_mode"`
+	Propagation                     pgtype.Text        `json:"propagation"`
+	ContainerState                  pgtype.Text        `json:"container_state"`
+	ContainerImage                  pgtype.Text        `json:"container_image"`
+	ContainerLabels                 []byte             `json:"container_labels"`
+	ContainerComposeProject         pgtype.Text        `json:"container_compose_project"`
+	ContainerComposeService         pgtype.Text        `json:"container_compose_service"`
+	ContainerComposeContainerNumber pgtype.Int4        `json:"container_compose_container_number"`
+	ContainerComposeConfigHash      pgtype.Text        `json:"container_compose_config_hash"`
+	AttachedAt                      pgtype.Timestamptz `json:"attached_at"`
+	DetachedAt                      pgtype.Timestamptz `json:"detached_at"`
+	IsActive                        bool               `json:"is_active"`
+	CreatedAt                       time.Time          `json:"created_at"`
+	UpdatedAt                       time.Time          `json:"updated_at"`
 }
 
 type DockerMountCatalog struct {
-	ID                 int64            `json:"id"`
-	MountID            string           `json:"mount_id"`
-	MountType          string           `json:"mount_type"`
-	VolumeName         pgtype.Text      `json:"volume_name"`
-	VolumeDriver       pgtype.Text      `json:"volume_driver"`
-	VolumeOptions      []byte           `json:"volume_options"`
-	VolumeLabels       []byte           `json:"volume_labels"`
-	VolumeScope        pgtype.Text      `json:"volume_scope"`
-	SourcePath         string           `json:"source_path"`
-	ContainerCount     int32            `json:"container_count"`
-	IsOrphaned         bool             `json:"is_orphaned"`
-	ComposeProject     pgtype.Text      `json:"compose_project"`
-	ComposeServices    []string         `json:"compose_services"`
-	ComposeVersion     pgtype.Text      `json:"compose_version"`
-	ComposeConfigFiles []string         `json:"compose_config_files"`
-	FirstDiscoveredAt  pgtype.Timestamp `json:"first_discovered_at"`
-	LastSeenAt         pgtype.Timestamp `json:"last_seen_at"`
-	DiscoverySource    string           `json:"discovery_source"`
-	IsTracked          bool             `json:"is_tracked"`
-	TrackingEnabledAt  pgtype.Timestamp `json:"tracking_enabled_at"`
-	TrackingDisabledAt pgtype.Timestamp `json:"tracking_disabled_at"`
-	CreatedAt          time.Time        `json:"created_at"`
-	UpdatedAt          time.Time        `json:"updated_at"`
+	ID                 int64              `json:"id"`
+	MountID            string             `json:"mount_id"`
+	MountType          string             `json:"mount_type"`
+	VolumeName         pgtype.Text        `json:"volume_name"`
+	VolumeDriver       pgtype.Text        `json:"volume_driver"`
+	VolumeOptions      []byte             `json:"volume_options"`
+	VolumeLabels       []byte             `json:"volume_labels"`
+	VolumeScope        pgtype.Text        `json:"volume_scope"`
+	SourcePath         string             `json:"source_path"`
+	ContainerCount     int32              `json:"container_count"`
+	IsOrphaned         bool               `json:"is_orphaned"`
+	ComposeProject     pgtype.Text        `json:"compose_project"`
+	ComposeServices    []string           `json:"compose_services"`
+	ComposeVersion     pgtype.Text        `json:"compose_version"`
+	ComposeConfigFiles []string           `json:"compose_config_files"`
+	FirstDiscoveredAt  pgtype.Timestamptz `json:"first_discovered_at"`
+	LastSeenAt         pgtype.Timestamptz `json:"last_seen_at"`
+	DiscoverySource    string             `json:"discovery_source"`
+	IsTracked          bool               `json:"is_tracked"`
+	TrackingEnabledAt  pgtype.Timestamptz `json:"tracking_enabled_at"`
+	TrackingDisabledAt pgtype.Timestamptz `json:"tracking_disabled_at"`
+	CreatedAt          time.Time          `json:"created_at"`
+	UpdatedAt          time.Time          `json:"updated_at"`
+	OrganizationID     pgtype.Int8        `json:"organization_id"`
 }
 
 type DockerMountStatistics struct {
-	ID                       int64            `json:"id"`
-	MountCatalogID           int64            `json:"mount_catalog_id"`
-	PeakContainerCount       int32            `json:"peak_container_count"`
-	TotalAttachments         int32            `json:"total_attachments"`
-	ComposeProjectsCount     int32            `json:"compose_projects_count"`
-	ComposeServicesCount     int32            `json:"compose_services_count"`
-	DaysSinceCreation        pgtype.Int4      `json:"days_since_creation"`
-	DaysSinceLastUse         pgtype.Int4      `json:"days_since_last_use"`
-	AttachmentFrequencyScore pgtype.Float4    `json:"attachment_frequency_score"`
-	LastKnownSizeBytes       pgtype.Int8      `json:"last_known_size_bytes"`
-	LastScannedAt            pgtype.Timestamp `json:"last_scanned_at"`
-	CalculatedAt             pgtype.Timestamp `json:"calculated_at"`
-	CreatedAt                time.Time        `json:"created_at"`
-	UpdatedAt                time.Time        `json:"updated_at"`
+	ID                       int64              `json:"id"`
+	MountCatalogID           int64              `json:"mount_catalog_id"`
+	PeakContainerCount       int32              `json:"peak_container_count"`
+	TotalAttachments         int32              `json:"total_attachments"`
+	ComposeProjectsCount     int32              `json:"compose_projects_count"`
+	ComposeServicesCount     int32              `json:"compose_services_count"`
+	DaysSinceCreation        pgtype.Int4        `json:"days_since_creation"`
+	DaysSinceLastUse         pgtype.Int4        `json:"days_since_last_use"`
+	AttachmentFrequencyScore pgtype.Float4      `json:"attachment_frequency_score"`
+	LastKnownSizeBytes       pgtype.Int8        `json:"last_known_size_bytes"`
+	LastScannedAt            pgtype.Timestamptz `json:"last_scanned_at"`
+	CalculatedAt             pgtype.Timestamptz `json:"calculated_at"`
+	CreatedAt                time.Time          `json:"created_at"`
+	UpdatedAt                time.Time          `json:"updated_at"`
+}
+
+type DockerProjects struct {
+	ID               int64              `json:"id"`
+	ProjectName      string             `json:"project_name"`
+	ComposeFilePath  pgtype.Text        `json:"compose_file_path"`
+	ComposeFileHash  pgtype.Text        `json:"compose_file_hash"`
+	WorkingDirectory pgtype.Text        `json:"working_directory"`
+	Services         []string           `json:"services"`
+	Networks         []string           `json:"networks"`
+	Volumes          []string           `json:"volumes"`
+	ConfigData       []byte             `json:"config_data"`
+	LastSeenAt       pgtype.Timestamptz `json:"last_seen_at"`
+	CreatedAt        time.Time          `json:"created_at"`
 }
 
 type FileMetadata struct {
-	ID         int64              `json:"id"`
-	FileID     int64              `json:"file_id"`
-	Kind       string             `json:"kind"`
-	DataJson   []byte             `json:"data_json"`
-	EnrichedAt pgtype.Timestamptz `json:"enriched_at"`
-	CreatedAt  time.Time          `json:"created_at"`
+	ID                   int64              `json:"id"`
+	FileID               int64              `json:"file_id"`
+	RawMetadata          []byte             `json:"raw_metadata"`
+	ExtractedAt          pgtype.Timestamptz `json:"extracted_at"`
+	ExtractorVersion     pgtype.Text        `json:"extractor_version"`
+	ExtractionDurationMs pgtype.Int4        `json:"extraction_duration_ms"`
+	ErrorMessage         pgtype.Text        `json:"error_message"`
+}
+
+type FilePreviews struct {
+	ID                   int64              `json:"id"`
+	FileID               int64              `json:"file_id"`
+	PreviewType          string             `json:"preview_type"`
+	FilePath             string             `json:"file_path"`
+	FileSize             pgtype.Int8        `json:"file_size"`
+	Width                pgtype.Int4        `json:"width"`
+	Height               pgtype.Int4        `json:"height"`
+	Format               pgtype.Text        `json:"format"`
+	Status               string             `json:"status"`
+	GeneratedAt          pgtype.Timestamptz `json:"generated_at"`
+	ErrorMessage         pgtype.Text        `json:"error_message"`
+	ProcessingDurationMs pgtype.Int4        `json:"processing_duration_ms"`
+	CreatedAt            time.Time          `json:"created_at"`
 }
 
 type Files struct {
 	ID                     int64              `json:"id"`
-	FolderID               int64              `json:"folder_id"`
 	VolumeID               string             `json:"volume_id"`
-	Name                   string             `json:"name"`
+	FolderID               pgtype.Int8        `json:"folder_id"`
 	Path                   string             `json:"path"`
-	Extension              pgtype.Text        `json:"extension"`
-	SizeBytes              int64              `json:"size_bytes"`
-	DiskUsageBytes         int64              `json:"disk_usage_bytes"`
-	Mtime                  time.Time          `json:"mtime"`
-	Ctime                  time.Time          `json:"ctime"`
-	Birthtime              pgtype.Timestamp   `json:"birthtime"`
-	Uid                    pgtype.Int4        `json:"uid"`
-	Gid                    pgtype.Int4        `json:"gid"`
-	Mode                   pgtype.Int4        `json:"mode"`
-	Inode                  pgtype.Int8        `json:"inode"`
-	Device                 pgtype.Text        `json:"device"`
-	IsSymlink              pgtype.Bool        `json:"is_symlink"`
-	SymlinkTarget          pgtype.Text        `json:"symlink_target"`
-	Mime                   pgtype.Text        `json:"mime"`
-	MediaKind              pgtype.Text        `json:"media_kind"`
-	Encoding               pgtype.Text        `json:"encoding"`
-	HashAlgo               pgtype.Text        `json:"hash_algo"`
-	Hash                   []byte             `json:"hash"`
 	PathHash               []byte             `json:"path_hash"`
+	Name                   string             `json:"name"`
+	Extension              pgtype.Text        `json:"extension"`
+	Mime                   pgtype.Text        `json:"mime"`
+	SizeBytes              int64              `json:"size_bytes"`
+	CreatedAt              time.Time          `json:"created_at"`
+	ModifiedAt             pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt             pgtype.Timestamptz `json:"accessed_at"`
+	Mode                   pgtype.Int4        `json:"mode"`
+	OwnerUid               pgtype.Int4        `json:"owner_uid"`
+	OwnerGid               pgtype.Int4        `json:"owner_gid"`
+	ContentHash            pgtype.Text        `json:"content_hash"`
+	IsText                 pgtype.Bool        `json:"is_text"`
+	IsBinary               pgtype.Bool        `json:"is_binary"`
+	MediaKind              pgtype.Text        `json:"media_kind"`
 	DurationMs             pgtype.Int8        `json:"duration_ms"`
 	BitrateKbps            pgtype.Int4        `json:"bitrate_kbps"`
 	Width                  pgtype.Int4        `json:"width"`
@@ -391,32 +643,27 @@ type Files struct {
 	VideoCodec             pgtype.Text        `json:"video_codec"`
 	VideoProfile           pgtype.Text        `json:"video_profile"`
 	VideoLevel             pgtype.Text        `json:"video_level"`
-	CreatedAt              time.Time          `json:"created_at"`
-	UpdatedAt              time.Time          `json:"updated_at"`
+	FirstSeenAt            pgtype.Timestamptz `json:"first_seen_at"`
+	LastScanAt             pgtype.Timestamptz `json:"last_scan_at"`
 }
 
 type Folders struct {
-	ID                      int64       `json:"id"`
-	ParentID                pgtype.Int8 `json:"parent_id"`
-	VolumeID                string      `json:"volume_id"`
-	Name                    string      `json:"name"`
-	Path                    string      `json:"path"`
-	PathHash                []byte      `json:"path_hash"`
-	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
-	FileCount               int64       `json:"file_count"`
-	DirCount                int64       `json:"dir_count"`
-	Depth                   int32       `json:"depth"`
-	MediaKind               pgtype.Text `json:"media_kind"`
-	Mtime                   time.Time   `json:"mtime"`
-	Ctime                   time.Time   `json:"ctime"`
-	Uid                     pgtype.Int4 `json:"uid"`
-	Gid                     pgtype.Int4 `json:"gid"`
-	Mode                    pgtype.Int4 `json:"mode"`
-	IsSymlink               pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget           pgtype.Text `json:"symlink_target"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
+	ID                 int64              `json:"id"`
+	VolumeID           string             `json:"volume_id"`
+	ParentID           pgtype.Int8        `json:"parent_id"`
+	Path               string             `json:"path"`
+	Name               string             `json:"name"`
+	PathHash           []byte             `json:"path_hash"`
+	SizeBytes          pgtype.Int8        `json:"size_bytes"`
+	SizeBytesRecursive pgtype.Int8        `json:"size_bytes_recursive"`
+	FileCount          pgtype.Int4        `json:"file_count"`
+	FileCountRecursive pgtype.Int4        `json:"file_count_recursive"`
+	SubfolderCount     pgtype.Int4        `json:"subfolder_count"`
+	MediaFileCount     pgtype.Int4        `json:"media_file_count"`
+	HasMediaFiles      pgtype.Bool        `json:"has_media_files"`
+	CreatedAt          time.Time          `json:"created_at"`
+	ModifiedAt         pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt         pgtype.Timestamptz `json:"accessed_at"`
 }
 
 type MountTrackingAssignments struct {
@@ -435,155 +682,138 @@ type MountTrackingAssignments struct {
 	UpdatedAt         time.Time          `json:"updated_at"`
 }
 
-type PreviewStats struct {
+type OrganizationInvitations struct {
 	ID             int64              `json:"id"`
-	TotalGenerated pgtype.Int8        `json:"total_generated"`
-	TotalSizeBytes pgtype.Int8        `json:"total_size_bytes"`
-	CacheHits      pgtype.Int8        `json:"cache_hits"`
-	CacheMisses    pgtype.Int8        `json:"cache_misses"`
-	LastCleanup    pgtype.Timestamptz `json:"last_cleanup"`
-	RecordedAt     pgtype.Timestamptz `json:"recorded_at"`
+	OrganizationID int64              `json:"organization_id"`
+	Email          string             `json:"email"`
+	Role           interface{}        `json:"role"`
+	Token          string             `json:"token"`
+	InvitedBy      pgtype.Int8        `json:"invited_by"`
+	Message        pgtype.Text        `json:"message"`
+	Status         string             `json:"status"`
+	AcceptedAt     pgtype.Timestamptz `json:"accepted_at"`
+	AcceptedBy     pgtype.Int8        `json:"accepted_by"`
+	ExpiresAt      pgtype.Timestamptz `json:"expires_at"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
 }
 
-type Previews struct {
-	ID           int64              `json:"id"`
-	FileID       int64              `json:"file_id"`
-	Type         string             `json:"type"`
-	Size         string             `json:"size"`
-	Format       string             `json:"format"`
-	Width        pgtype.Int4        `json:"width"`
-	Height       pgtype.Int4        `json:"height"`
-	FileSize     int64              `json:"file_size"`
-	ContentHash  string             `json:"content_hash"`
-	StoragePath  string             `json:"storage_path"`
-	TimeOffset   pgtype.Float8      `json:"time_offset"`
-	ProcessingMs pgtype.Int8        `json:"processing_ms"`
-	CreatedAt    time.Time          `json:"created_at"`
-	AccessedAt   pgtype.Timestamptz `json:"accessed_at"`
+type Organizations struct {
+	ID           int64       `json:"id"`
+	Name         string      `json:"name"`
+	DisplayName  string      `json:"display_name"`
+	Description  pgtype.Text `json:"description"`
+	Subdomain    pgtype.Text `json:"subdomain"`
+	Settings     []byte      `json:"settings"`
+	IsActive     pgtype.Bool `json:"is_active"`
+	MaxUsers     pgtype.Int4 `json:"max_users"`
+	MaxVolumes   pgtype.Int4 `json:"max_volumes"`
+	MaxStorageGb pgtype.Int8 `json:"max_storage_gb"`
+	PlanType     pgtype.Text `json:"plan_type"`
+	CreatedAt    time.Time   `json:"created_at"`
+	UpdatedAt    time.Time   `json:"updated_at"`
+}
+
+type Permissions struct {
+	ID          int64       `json:"id"`
+	Name        string      `json:"name"`
+	Resource    string      `json:"resource"`
+	Action      string      `json:"action"`
+	Description pgtype.Text `json:"description"`
+	CreatedAt   time.Time   `json:"created_at"`
+}
+
+type RolePermissions struct {
+	ID           int64       `json:"id"`
+	Role         interface{} `json:"role"`
+	PermissionID int64       `json:"permission_id"`
+	CreatedAt    time.Time   `json:"created_at"`
 }
 
 type SavedSearches struct {
-	ID          int64              `json:"id"`
-	Name        string             `json:"name"`
-	Description pgtype.Text        `json:"description"`
-	Query       []byte             `json:"query"`
-	Tags        []string           `json:"tags"`
-	IsPublic    pgtype.Bool        `json:"is_public"`
-	Metadata    []byte             `json:"metadata"`
-	CreatedAt   time.Time          `json:"created_at"`
-	UpdatedAt   time.Time          `json:"updated_at"`
-	LastRunAt   pgtype.Timestamptz `json:"last_run_at"`
-	RunCount    pgtype.Int4        `json:"run_count"`
+	ID             int64              `json:"id"`
+	Name           string             `json:"name"`
+	Description    pgtype.Text        `json:"description"`
+	Query          []byte             `json:"query"`
+	Tags           []string           `json:"tags"`
+	IsPublic       pgtype.Bool        `json:"is_public"`
+	Metadata       []byte             `json:"metadata"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
+	LastRunAt      pgtype.Timestamptz `json:"last_run_at"`
+	RunCount       pgtype.Int4        `json:"run_count"`
+	OrganizationID pgtype.Int8        `json:"organization_id"`
 }
 
 type ScanJobs struct {
-	ID                int64            `json:"id"`
-	ScanID            string           `json:"scan_id"`
-	VolumeID          string           `json:"volume_id"`
-	Status            string           `json:"status"`
-	Progress          pgtype.Int4      `json:"progress"`
-	Method            string           `json:"method"`
-	StartedAt         pgtype.Timestamp `json:"started_at"`
-	CompletedAt       pgtype.Timestamp `json:"completed_at"`
-	ErrorMessage      pgtype.Text      `json:"error_message"`
-	ResultID          pgtype.Int8      `json:"result_id"`
-	EstimatedDuration pgtype.Int8      `json:"estimated_duration"`
-	CreatedAt         time.Time        `json:"created_at"`
-	UpdatedAt         time.Time        `json:"updated_at"`
+	ScanID              string             `json:"scan_id"`
+	VolumeID            pgtype.Text        `json:"volume_id"`
+	Status              string             `json:"status"`
+	TotalFiles          pgtype.Int8        `json:"total_files"`
+	ScannedFiles        pgtype.Int8        `json:"scanned_files"`
+	FailedFiles         pgtype.Int8        `json:"failed_files"`
+	TotalBytes          pgtype.Int8        `json:"total_bytes"`
+	ScannedBytes        pgtype.Int8        `json:"scanned_bytes"`
+	ScanRateFilesPerSec pgtype.Numeric     `json:"scan_rate_files_per_sec"`
+	ScanRateMbPerSec    pgtype.Numeric     `json:"scan_rate_mb_per_sec"`
+	ErrorMessage        pgtype.Text        `json:"error_message"`
+	ErrorDetails        []byte             `json:"error_details"`
+	StartedAt           pgtype.Timestamptz `json:"started_at"`
+	CompletedAt         pgtype.Timestamptz `json:"completed_at"`
+	PausedAt            pgtype.Timestamptz `json:"paused_at"`
+	PauseReason         pgtype.Text        `json:"pause_reason"`
+	DurationSeconds     pgtype.Int4        `json:"duration_seconds"`
+	TriggeredBy         pgtype.Text        `json:"triggered_by"`
+	ScanOptions         []byte             `json:"scan_options"`
+	CreatedAt           time.Time          `json:"created_at"`
+	UpdatedAt           time.Time          `json:"updated_at"`
+	OrganizationID      pgtype.Int8        `json:"organization_id"`
+}
+
+type ScanPerformanceMetrics struct {
+	ID          int64              `json:"id"`
+	ScanID      string             `json:"scan_id"`
+	MetricName  string             `json:"metric_name"`
+	MetricValue pgtype.Numeric     `json:"metric_value"`
+	MetricUnit  pgtype.Text        `json:"metric_unit"`
+	MeasuredAt  pgtype.Timestamptz `json:"measured_at"`
+	Phase       pgtype.Text        `json:"phase"`
+}
+
+type ScanPhaseSteps struct {
+	ID              int64              `json:"id"`
+	PhaseID         int64              `json:"phase_id"`
+	StepName        string             `json:"step_name"`
+	StepOrder       int32              `json:"step_order"`
+	Status          string             `json:"status"`
+	ProgressPercent pgtype.Int4        `json:"progress_percent"`
+	StartedAt       pgtype.Timestamptz `json:"started_at"`
+	CompletedAt     pgtype.Timestamptz `json:"completed_at"`
+	DurationMs      pgtype.Int8        `json:"duration_ms"`
+	ResultData      []byte             `json:"result_data"`
+	ErrorMessage    pgtype.Text        `json:"error_message"`
+	CreatedAt       time.Time          `json:"created_at"`
 }
 
 type ScanPhases struct {
 	ID                    int64              `json:"id"`
 	ScanID                string             `json:"scan_id"`
 	PhaseName             string             `json:"phase_name"`
-	PhaseOrder            int32              `json:"phase_order"`
 	Status                string             `json:"status"`
-	Progress              pgtype.Int4        `json:"progress"`
+	ProgressPercent       pgtype.Int4        `json:"progress_percent"`
 	ItemsTotal            pgtype.Int8        `json:"items_total"`
 	ItemsProcessed        pgtype.Int8        `json:"items_processed"`
-	ItemsSuccessful       pgtype.Int8        `json:"items_successful"`
 	ItemsFailed           pgtype.Int8        `json:"items_failed"`
-	ItemsSkipped          pgtype.Int8        `json:"items_skipped"`
-	BytesTotal            pgtype.Int8        `json:"bytes_total"`
-	BytesProcessed        pgtype.Int8        `json:"bytes_processed"`
-	ItemsPerSecond        pgtype.Numeric     `json:"items_per_second"`
-	BytesPerSecond        pgtype.Int8        `json:"bytes_per_second"`
+	CurrentItem           pgtype.Text        `json:"current_item"`
 	StartedAt             pgtype.Timestamptz `json:"started_at"`
 	CompletedAt           pgtype.Timestamptz `json:"completed_at"`
-	EstimatedCompletionAt pgtype.Timestamptz `json:"estimated_completion_at"`
 	DurationMs            pgtype.Int8        `json:"duration_ms"`
-	CurrentItem           pgtype.Text        `json:"current_item"`
-	CurrentDepth          pgtype.Int4        `json:"current_depth"`
+	ThroughputItemsPerSec pgtype.Numeric     `json:"throughput_items_per_sec"`
+	MemoryUsageMb         pgtype.Int8        `json:"memory_usage_mb"`
 	ErrorMessage          pgtype.Text        `json:"error_message"`
-	ErrorCount            pgtype.Int8        `json:"error_count"`
-	LastErrorAt           pgtype.Timestamptz `json:"last_error_at"`
-	Metadata              []byte             `json:"metadata"`
+	PauseReason           pgtype.Text        `json:"pause_reason"`
 	CreatedAt             time.Time          `json:"created_at"`
 	UpdatedAt             time.Time          `json:"updated_at"`
-}
-
-type StatsDaily struct {
-	ID            int64       `json:"id"`
-	Date          pgtype.Date `json:"date"`
-	VolumeID      string      `json:"volume_id"`
-	FolderID      pgtype.Int8 `json:"folder_id"`
-	MediaKind     pgtype.Text `json:"media_kind"`
-	FilesCount    int64       `json:"files_count"`
-	TotalBytes    int64       `json:"total_bytes"`
-	AddedBytes    int64       `json:"added_bytes"`
-	RemovedBytes  int64       `json:"removed_bytes"`
-	AddedFiles    int64       `json:"added_files"`
-	RemovedFiles  int64       `json:"removed_files"`
-	ComputedAt    time.Time   `json:"computed_at"`
-	ScanID        pgtype.Text `json:"scan_id"`
-	JobDurationMs pgtype.Int8 `json:"job_duration_ms"`
-}
-
-type StatsDailySummary struct {
-	Date               pgtype.Date `json:"date"`
-	VolumeID           string      `json:"volume_id"`
-	VolumeFilesTotal   int64       `json:"volume_files_total"`
-	VolumeBytesTotal   int64       `json:"volume_bytes_total"`
-	VolumeAddedBytes   int64       `json:"volume_added_bytes"`
-	VolumeRemovedBytes int64       `json:"volume_removed_bytes"`
-	MediaKindsTracked  int64       `json:"media_kinds_tracked"`
-	FoldersTracked     int64       `json:"folders_tracked"`
-	LastComputedAt     interface{} `json:"last_computed_at"`
-	TotalStatsRows     int64       `json:"total_stats_rows"`
-}
-
-type StatsDailyTrends struct {
-	Date               pgtype.Date `json:"date"`
-	VolumeID           string      `json:"volume_id"`
-	FolderID           pgtype.Int8 `json:"folder_id"`
-	MediaKind          pgtype.Text `json:"media_kind"`
-	FilesCount         int64       `json:"files_count"`
-	TotalBytes         int64       `json:"total_bytes"`
-	AddedBytes         int64       `json:"added_bytes"`
-	RemovedBytes       int64       `json:"removed_bytes"`
-	AddedFiles         int64       `json:"added_files"`
-	RemovedFiles       int64       `json:"removed_files"`
-	BytesChange7d      int32       `json:"bytes_change_7d"`
-	FilesChange7d      int32       `json:"files_change_7d"`
-	BytesChange30d     int32       `json:"bytes_change_30d"`
-	FilesChange30d     int32       `json:"files_change_30d"`
-	BytesGrowthRate7d  interface{} `json:"bytes_growth_rate_7d"`
-	BytesGrowthRate30d interface{} `json:"bytes_growth_rate_30d"`
-	ComputedAt         time.Time   `json:"computed_at"`
-}
-
-type StatsJobs struct {
-	ID             int64              `json:"id"`
-	JobType        string             `json:"job_type"`
-	VolumeID       pgtype.Text        `json:"volume_id"`
-	StartedAt      pgtype.Timestamptz `json:"started_at"`
-	CompletedAt    pgtype.Timestamptz `json:"completed_at"`
-	DurationMs     pgtype.Int8        `json:"duration_ms"`
-	Status         string             `json:"status"`
-	ErrorMessage   pgtype.Text        `json:"error_message"`
-	ProcessedDates pgtype.Int4        `json:"processed_dates"`
-	RecordsCreated pgtype.Int4        `json:"records_created"`
-	RecordsUpdated pgtype.Int4        `json:"records_updated"`
 }
 
 type TrackingRuleConditions struct {
@@ -647,87 +877,125 @@ type TrackingRules struct {
 	CreatedBy        pgtype.Text        `json:"created_by"`
 	CreatedAt        time.Time          `json:"created_at"`
 	UpdatedAt        time.Time          `json:"updated_at"`
+	OrganizationID   pgtype.Int8        `json:"organization_id"`
 }
 
 type UsageSnapshots struct {
-	ID                    int64         `json:"id"`
-	VolumeID              string        `json:"volume_id"`
-	SnapshotDate          time.Time     `json:"snapshot_date"`
-	SnapshotType          string        `json:"snapshot_type"`
-	TotalSize             int64         `json:"total_size"`
-	FileCount             int64         `json:"file_count"`
-	DirectoryCount        int64         `json:"directory_count"`
-	LargestFile           int64         `json:"largest_file"`
-	GrowthBytes           pgtype.Int8   `json:"growth_bytes"`
-	GrowthFiles           pgtype.Int8   `json:"growth_files"`
-	GrowthRateBytesPerDay pgtype.Float8 `json:"growth_rate_bytes_per_day"`
-	ScanMethod            string        `json:"scan_method"`
-	ScanDurationMs        pgtype.Int8   `json:"scan_duration_ms"`
-	CreatedAt             time.Time     `json:"created_at"`
-	UpdatedAt             time.Time     `json:"updated_at"`
+	ID               int64          `json:"id"`
+	VolumeID         string         `json:"volume_id"`
+	SnapshotDate     time.Time      `json:"snapshot_date"`
+	TotalSizeBytes   int64          `json:"total_size_bytes"`
+	TotalFiles       int64          `json:"total_files"`
+	TotalDirectories int64          `json:"total_directories"`
+	SizeChangeBytes  pgtype.Int8    `json:"size_change_bytes"`
+	FilesChange      pgtype.Int8    `json:"files_change"`
+	GrowthRate       pgtype.Numeric `json:"growth_rate"`
+	LargestFileSize  pgtype.Int8    `json:"largest_file_size"`
+	CreatedAt        time.Time      `json:"created_at"`
 }
 
-type VolumeMetrics struct {
-	ID              int64            `json:"id"`
-	VolumeID        string           `json:"volume_id"`
-	MetricTimestamp pgtype.Timestamp `json:"metric_timestamp"`
-	TotalSize       int64            `json:"total_size"`
-	FileCount       int64            `json:"file_count"`
-	DirectoryCount  int64            `json:"directory_count"`
-	GrowthRate      pgtype.Float8    `json:"growth_rate"`
-	AccessFrequency pgtype.Int8      `json:"access_frequency"`
-	ContainerCount  pgtype.Int8      `json:"container_count"`
-	CreatedAt       time.Time        `json:"created_at"`
-	UpdatedAt       time.Time        `json:"updated_at"`
+type UserActivityLog struct {
+	ID           int64       `json:"id"`
+	UserID       pgtype.Int8 `json:"user_id"`
+	Action       string      `json:"action"`
+	ResourceType pgtype.Text `json:"resource_type"`
+	ResourceID   pgtype.Text `json:"resource_id"`
+	Details      []byte      `json:"details"`
+	IpAddress    *netip.Addr `json:"ip_address"`
+	UserAgent    pgtype.Text `json:"user_agent"`
+	SessionID    pgtype.Int8 `json:"session_id"`
+	CreatedAt    time.Time   `json:"created_at"`
 }
 
-type VolumeMounts struct {
-	ID          int64       `json:"id"`
-	VolumeID    string      `json:"volume_id"`
-	ContainerID string      `json:"container_id"`
-	MountPath   string      `json:"mount_path"`
-	AccessMode  string      `json:"access_mode"`
-	IsActive    pgtype.Bool `json:"is_active"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+type UserPermissions struct {
+	ID           int64       `json:"id"`
+	UserID       int64       `json:"user_id"`
+	PermissionID int64       `json:"permission_id"`
+	Granted      bool        `json:"granted"`
+	GrantedBy    pgtype.Int8 `json:"granted_by"`
+	ResourceID   pgtype.Text `json:"resource_id"`
+	CreatedAt    time.Time   `json:"created_at"`
+}
+
+type UserPreferences struct {
+	ID              int64     `json:"id"`
+	UserID          int64     `json:"user_id"`
+	PreferenceKey   string    `json:"preference_key"`
+	PreferenceValue []byte    `json:"preference_value"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+type UserSessions struct {
+	ID           int64              `json:"id"`
+	UserID       int64              `json:"user_id"`
+	SessionToken string             `json:"session_token"`
+	JwtTokenID   string             `json:"jwt_token_id"`
+	DeviceInfo   []byte             `json:"device_info"`
+	IpAddress    *netip.Addr        `json:"ip_address"`
+	UserAgent    pgtype.Text        `json:"user_agent"`
+	CreatedAt    time.Time          `json:"created_at"`
+	ExpiresAt    pgtype.Timestamptz `json:"expires_at"`
+	LastUsedAt   pgtype.Timestamptz `json:"last_used_at"`
+	RevokedAt    pgtype.Timestamptz `json:"revoked_at"`
+	IsActive     bool               `json:"is_active"`
+}
+
+type Users struct {
+	ID                     int64              `json:"id"`
+	Username               string             `json:"username"`
+	Email                  string             `json:"email"`
+	PasswordHash           string             `json:"password_hash"`
+	Role                   UserRole           `json:"role"`
+	Status                 string             `json:"status"`
+	FirstName              pgtype.Text        `json:"first_name"`
+	LastName               pgtype.Text        `json:"last_name"`
+	DisplayName            pgtype.Text        `json:"display_name"`
+	AvatarUrl              pgtype.Text        `json:"avatar_url"`
+	Timezone               pgtype.Text        `json:"timezone"`
+	PasswordResetToken     pgtype.Text        `json:"password_reset_token"`
+	PasswordResetExpires   pgtype.Timestamptz `json:"password_reset_expires"`
+	EmailVerificationToken pgtype.Text        `json:"email_verification_token"`
+	EmailVerifiedAt        pgtype.Timestamptz `json:"email_verified_at"`
+	LastLoginAt            pgtype.Timestamptz `json:"last_login_at"`
+	LoginAttempts          pgtype.Int4        `json:"login_attempts"`
+	LockedUntil            pgtype.Timestamptz `json:"locked_until"`
+	CreatedAt              time.Time          `json:"created_at"`
+	UpdatedAt              time.Time          `json:"updated_at"`
+	CreatedBy              pgtype.Text        `json:"created_by"`
+	OrganizationID         pgtype.Int8        `json:"organization_id"`
 }
 
 type VolumeSizes struct {
-	ID               int64          `json:"id"`
-	VolumeID         string         `json:"volume_id"`
-	TotalSize        int64          `json:"total_size"`
-	FileCount        int64          `json:"file_count"`
-	DirectoryCount   int64          `json:"directory_count"`
-	LargestFile      int64          `json:"largest_file"`
-	ScanMethod       string         `json:"scan_method"`
-	ScanDuration     int64          `json:"scan_duration"`
-	FilesystemType   pgtype.Text    `json:"filesystem_type"`
-	ChecksumMd5      pgtype.Text    `json:"checksum_md5"`
-	IsValid          pgtype.Bool    `json:"is_valid"`
-	ErrorMessage     pgtype.Text    `json:"error_message"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	FsTotalBytes     pgtype.Int8    `json:"fs_total_bytes"`
-	FsAvailableBytes pgtype.Int8    `json:"fs_available_bytes"`
-	FsUsedBytes      pgtype.Int8    `json:"fs_used_bytes"`
-	FsUsagePercent   pgtype.Numeric `json:"fs_usage_percent"`
-	FsBlockSize      pgtype.Int8    `json:"fs_block_size"`
-	FsTotalBlocks    pgtype.Int8    `json:"fs_total_blocks"`
-	FsFreeBlocks     pgtype.Int8    `json:"fs_free_blocks"`
+	ID                    int64              `json:"id"`
+	VolumeID              string             `json:"volume_id"`
+	TotalSize             int64              `json:"total_size"`
+	FileCount             int64              `json:"file_count"`
+	DirectoryCount        int64              `json:"directory_count"`
+	LargestFileSize       pgtype.Int8        `json:"largest_file_size"`
+	SmallestFileSize      pgtype.Int8        `json:"smallest_file_size"`
+	AverageFileSize       pgtype.Int8        `json:"average_file_size"`
+	MedianFileSize        pgtype.Int8        `json:"median_file_size"`
+	TypeDistribution      []byte             `json:"type_distribution"`
+	ExtensionDistribution []byte             `json:"extension_distribution"`
+	CalculatedAt          pgtype.Timestamptz `json:"calculated_at"`
 }
 
 type Volumes struct {
-	ID          int64            `json:"id"`
-	VolumeID    string           `json:"volume_id"`
-	Name        string           `json:"name"`
-	Driver      string           `json:"driver"`
-	Mountpoint  string           `json:"mountpoint"`
-	Labels      pgtype.Text      `json:"labels"`
-	Options     pgtype.Text      `json:"options"`
-	Scope       pgtype.Text      `json:"scope"`
-	Status      string           `json:"status"`
-	LastScanned pgtype.Timestamp `json:"last_scanned"`
-	IsActive    pgtype.Bool      `json:"is_active"`
-	CreatedAt   time.Time        `json:"created_at"`
-	UpdatedAt   time.Time        `json:"updated_at"`
+	VolumeID       string             `json:"volume_id"`
+	DisplayName    pgtype.Text        `json:"display_name"`
+	MountPoint     string             `json:"mount_point"`
+	ContainerNames []string           `json:"container_names"`
+	IsActive       pgtype.Bool        `json:"is_active"`
+	TotalSizeBytes pgtype.Int8        `json:"total_size_bytes"`
+	UsedSizeBytes  pgtype.Int8        `json:"used_size_bytes"`
+	FreeSizeBytes  pgtype.Int8        `json:"free_size_bytes"`
+	FilesystemType pgtype.Text        `json:"filesystem_type"`
+	ContainerCount pgtype.Int4        `json:"container_count"`
+	FirstSeenAt    pgtype.Timestamptz `json:"first_seen_at"`
+	LastScanAt     pgtype.Timestamptz `json:"last_scan_at"`
+	LastModifiedAt pgtype.Timestamptz `json:"last_modified_at"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
+	OrganizationID pgtype.Int8        `json:"organization_id"`
 }
