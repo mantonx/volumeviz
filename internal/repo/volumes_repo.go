@@ -2,12 +2,15 @@ package repo
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
+	sqlcSQLite "github.com/mantonx/volumeviz/internal/db/sqlc-sqlite"
 	"github.com/mantonx/volumeviz/internal/models"
 )
 
@@ -37,9 +40,14 @@ type VolumesRepo interface {
 	GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*models.VolumeMount, error)
 }
 
-// volumesRepo implements VolumesRepo using sqlc generated queries
+// volumesRepo implements VolumesRepo using PostgreSQL sqlc generated queries
 type volumesRepo struct {
 	queries *sqlc.Queries
+}
+
+// volumesRepoSQLite implements VolumesRepo using SQLite sqlc generated queries  
+type volumesRepoSQLite struct {
+	queries *sqlcSQLite.Queries
 }
 
 // NewVolumesRepo creates a new volumes repository
@@ -47,52 +55,52 @@ func NewVolumesRepo(queries *sqlc.Queries) VolumesRepo {
 	return &volumesRepo{queries: queries}
 }
 
+// NewSQLiteVolumesRepo creates a new SQLite volumes repository
+func NewSQLiteVolumesRepo(queries *sqlcSQLite.Queries) VolumesRepo {
+	return &volumesRepoSQLite{queries: queries}
+}
+
 // =============================================================================
 // VOLUME OPERATIONS
 // =============================================================================
 
 func (r *volumesRepo) CreateVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error) {
-	labels, _ := json.Marshal(params.Labels)
-	options, _ := json.Marshal(params.Options)
-
+	now := time.Now()
 	result, err := r.queries.CreateVolume(ctx, sqlc.CreateVolumeParams{
-		VolumeID:   params.VolumeID,
-		Name:       params.Name,
-		Driver:     params.Driver,
-		Mountpoint: params.Mountpoint,
-		Labels:     pgtype.Text{String: string(labels), Valid: len(labels) > 0},
-		Options:    pgtype.Text{String: string(options), Valid: len(options) > 0},
-		Scope:      pgtype.Text{String: params.Scope, Valid: params.Scope != ""},
-		Status:     params.Status,
-		IsActive:   pgtype.Bool{Bool: params.IsActive, Valid: true},
+		VolumeID:       params.VolumeID,
+		DisplayName:    pgtype.Text{String: params.Name, Valid: params.Name != ""},
+		MountPoint:     params.Mountpoint,
+		ContainerNames: []string{}, // Initialize as empty
+		IsActive:       pgtype.Bool{Bool: params.IsActive, Valid: true},
+		TotalSizeBytes: pgtype.Int8{Valid: false}, // Will be filled later
+		UsedSizeBytes:  pgtype.Int8{Valid: false}, // Will be filled later
+		FreeSizeBytes:  pgtype.Int8{Valid: false}, // Will be filled later
+		FilesystemType: pgtype.Text{Valid: false}, // Will be detected later
+		ContainerCount: pgtype.Int4{Valid: false}, // Will be counted later
+		FirstSeenAt:    pgtype.Timestamptz{Time: now, Valid: true}, // Set to current time
+		LastScanAt:     pgtype.Timestamptz{Valid: false}, // No scan yet
+		LastModifiedAt: pgtype.Timestamptz{Valid: false}, // Will be detected later
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create volume: %w", err)
 	}
 
 	return &models.Volume{
-		ID:         result.ID,
-		VolumeID:   params.VolumeID,
-		Name:       params.Name,
-		Driver:     params.Driver,
-		Mountpoint: params.Mountpoint,
-		Labels:     params.Labels,
-		Options:    params.Options,
-		Scope:      params.Scope,
-		Status:     params.Status,
-		IsActive:   params.IsActive,
-		CreatedAt:  result.CreatedAt,
-		UpdatedAt:  result.UpdatedAt,
+		VolumeID:     result.VolumeID,
+		Name:         pgTextToString(result.DisplayName),
+		Mountpoint:   result.MountPoint,
+		IsActive:     pgBoolToBool(result.IsActive),
+		CreatedAt:    result.CreatedAt,
+		UpdatedAt:    result.UpdatedAt,
+		// Note: Other fields like ID, Driver, Labels, Options, Scope, Status not in current schema
 	}, nil
 }
 
 func (r *volumesRepo) GetVolumeByID(ctx context.Context, id int64) (*models.Volume, error) {
-	row, err := r.queries.GetVolumeByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get volume by ID: %w", err)
-	}
-
-	return r.convertRowToVolume(row)
+	// Note: Current schema uses string volume_id as primary key, not int64 id
+	// This method is problematic because we can't map int64 to volume_id string
+	// The interface should probably be changed to use string volumeID instead
+	return nil, fmt.Errorf("GetVolumeByID not supported - current schema uses string volume_id primary key, not int64 id")
 }
 
 func (r *volumesRepo) GetVolumeByVolumeID(ctx context.Context, volumeID string) (*models.Volume, error) {
@@ -126,115 +134,107 @@ func (r *volumesRepo) ListVolumes(ctx context.Context, limit, offset int32) ([]*
 }
 
 func (r *volumesRepo) UpdateVolume(ctx context.Context, params models.UpdateVolumeParams) (*models.Volume, error) {
-	labels, _ := json.Marshal(params.Labels)
-	options, _ := json.Marshal(params.Options)
-
-	_, err := r.queries.UpdateVolume(ctx, sqlc.UpdateVolumeParams{
-		ID:         params.ID,
-		Name:       params.Name,
-		Driver:     params.Driver,
-		Mountpoint: params.Mountpoint,
-		Labels:     pgtype.Text{String: string(labels), Valid: len(labels) > 0},
-		Options:    pgtype.Text{String: string(options), Valid: len(options) > 0},
-		Scope:      pgtype.Text{String: params.Scope, Valid: params.Scope != ""},
-		Status:     params.Status,
-		IsActive:   pgtype.Bool{Bool: params.IsActive, Valid: true},
+	result, err := r.queries.UpdateVolume(ctx, sqlc.UpdateVolumeParams{
+		VolumeID:       params.VolumeID,
+		DisplayName:    pgtype.Text{String: params.Name, Valid: params.Name != ""},
+		MountPoint:     params.Mountpoint,
+		ContainerNames: []string{}, // Update with actual container names if available
+		IsActive:       pgtype.Bool{Bool: params.IsActive, Valid: true},
+		TotalSizeBytes: pgtype.Int8{Valid: false}, // Update with actual size if available
+		UsedSizeBytes:  pgtype.Int8{Valid: false},
+		FreeSizeBytes:  pgtype.Int8{Valid: false},
+		FilesystemType: pgtype.Text{Valid: false},
+		ContainerCount: pgtype.Int4{Valid: false},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update volume: %w", err)
 	}
 
-	// Get the updated volume to return the complete object
-	volume, err := r.queries.GetVolumeByID(ctx, params.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get updated volume: %w", err)
-	}
-
-	return r.convertRowToVolume(volume)
-}
-
-func (r *volumesRepo) UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error {
-	err := r.queries.UpdateLastScanned(ctx, sqlc.UpdateLastScannedParams{
-		VolumeID:    volumeID,
-		LastScanned: pgtype.Timestamp{Time: lastScanned, Valid: true},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to update last scanned: %w", err)
-	}
-	return nil
-}
-
-func (r *volumesRepo) SoftDeleteVolume(ctx context.Context, id int64) error {
-	err := r.queries.SoftDeleteVolume(ctx, id)
-	if err != nil {
-		return fmt.Errorf("failed to soft delete volume: %w", err)
-	}
-	return nil
-}
-
-func (r *volumesRepo) UpsertVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error) {
-	labels, _ := json.Marshal(params.Labels)
-	options, _ := json.Marshal(params.Options)
-
-	result, err := r.queries.UpsertVolume(ctx, sqlc.UpsertVolumeParams{
-		VolumeID:   params.VolumeID,
-		Name:       params.Name,
-		Driver:     params.Driver,
-		Mountpoint: params.Mountpoint,
-		Labels:     pgtype.Text{String: string(labels), Valid: len(labels) > 0},
-		Options:    pgtype.Text{String: string(options), Valid: len(options) > 0},
-		Scope:      pgtype.Text{String: params.Scope, Valid: params.Scope != ""},
-		Status:     params.Status,
-		IsActive:   pgtype.Bool{Bool: params.IsActive, Valid: true},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to upsert volume: %w", err)
-	}
-
+	// Return a basic volume object with updated values
 	return &models.Volume{
-		ID:         result.ID,
 		VolumeID:   params.VolumeID,
 		Name:       params.Name,
-		Driver:     params.Driver,
 		Mountpoint: params.Mountpoint,
-		Labels:     params.Labels,
-		Options:    params.Options,
-		Scope:      params.Scope,
-		Status:     params.Status,
 		IsActive:   params.IsActive,
 		CreatedAt:  result.CreatedAt,
 		UpdatedAt:  result.UpdatedAt,
 	}, nil
 }
 
-func (r *volumesRepo) GetVolumeStats(ctx context.Context) (*models.VolumeStats, error) {
-	stats, err := r.queries.GetVolumeStats(ctx)
+func (r *volumesRepo) UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error {
+	err := r.queries.UpdateLastScanned(ctx, sqlc.UpdateLastScannedParams{
+		VolumeID:   volumeID,
+		LastScanAt: pgtype.Timestamptz{Time: lastScanned, Valid: true},
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get volume stats: %w", err)
+		return fmt.Errorf("failed to update last scanned time: %w", err)
+	}
+	return nil
+}
+
+func (r *volumesRepo) SoftDeleteVolume(ctx context.Context, id int64) error {
+	// Note: Current schema uses string volume_id as primary key, not int64 id
+	// This method is problematic because we can't map int64 to volume_id string
+	// The interface should probably be changed to use string volumeID instead
+	return fmt.Errorf("SoftDeleteVolume not supported - current schema uses string volume_id primary key, not int64 id")
+}
+
+func (r *volumesRepo) UpsertVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error) {
+	now := time.Now()
+	result, err := r.queries.UpsertVolume(ctx, sqlc.UpsertVolumeParams{
+		VolumeID:       params.VolumeID,
+		DisplayName:    pgtype.Text{String: params.Name, Valid: params.Name != ""},
+		MountPoint:     params.Mountpoint,
+		ContainerNames: []string{}, // Initialize as empty
+		IsActive:       pgtype.Bool{Bool: params.IsActive, Valid: true},
+		TotalSizeBytes: pgtype.Int8{Valid: false}, // Will be filled later
+		UsedSizeBytes:  pgtype.Int8{Valid: false}, // Will be filled later
+		FreeSizeBytes:  pgtype.Int8{Valid: false}, // Will be filled later
+		FilesystemType: pgtype.Text{Valid: false}, // Will be detected later
+		ContainerCount: pgtype.Int4{Valid: false}, // Will be counted later
+		FirstSeenAt:    pgtype.Timestamptz{Time: now, Valid: true}, // Set to current time for new volumes
+		LastScanAt:     pgtype.Timestamptz{Valid: false}, // No scan yet
+		LastModifiedAt: pgtype.Timestamptz{Valid: false}, // Will be detected later
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert volume: %w", err)
 	}
 
-	result := &models.VolumeStats{
-		TotalVolumes:  stats.TotalVolumes,
-		UniqueDrivers: stats.UniqueDrivers,
+	return &models.Volume{
+		VolumeID:   result.VolumeID,
+		Name:       pgTextToString(result.DisplayName),
+		Mountpoint: result.MountPoint,
+		IsActive:   pgBoolToBool(result.IsActive),
+		CreatedAt:  result.CreatedAt,
+		UpdatedAt:  result.UpdatedAt,
+	}, nil
+}
+
+func (r *volumesRepo) GetVolumeStats(ctx context.Context) (*models.VolumeStats, error) {
+	// Get total volume count
+	totalVolumes, err := r.queries.CountVolumes(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count total volumes: %w", err)
 	}
 
-	// Handle interface{} types with type assertions
-	if activeVols, ok := stats.ActiveVolumes.(int64); ok {
-		result.ActiveVolumes = activeVols
-	}
-	if scannedVols, ok := stats.ScannedVolumes.(int64); ok {
-		result.ScannedVolumes = scannedVols
+	// Get active volumes count
+	activeVolumes, err := r.queries.CountActiveVolumes(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count active volumes: %w", err)
 	}
 
-	// Handle timestamp interfaces
-	if newest, ok := stats.NewestVolume.(time.Time); ok {
-		result.NewestVolume = &newest
-	}
-	if oldest, ok := stats.OldestVolume.(time.Time); ok {
-		result.OldestVolume = &oldest
+	// For other statistics, we'll need to query volume records directly
+	// since we don't have specific SQLC queries for unique drivers, etc.
+	stats := &models.VolumeStats{
+		TotalVolumes:   totalVolumes,
+		ActiveVolumes:  activeVolumes,
+		UniqueDrivers:  0,  // TODO: Implement when volume schema includes driver field
+		ScannedVolumes: 0,  // TODO: Count volumes with last_scan_at not null  
+		NewestVolume:   nil, // TODO: Get MAX(created_at) when volume schema available
+		OldestVolume:   nil, // TODO: Get MIN(created_at) when volume schema available
 	}
 
-	return result, nil
+	return stats, nil
 }
 
 func (r *volumesRepo) CountVolumes(ctx context.Context) (int64, error) {
@@ -250,123 +250,120 @@ func (r *volumesRepo) CountVolumes(ctx context.Context) (int64, error) {
 // =============================================================================
 
 func (r *volumesRepo) CreateContainer(ctx context.Context, params models.CreateContainerParams) (*models.Container, error) {
-	labels, _ := json.Marshal(params.Labels)
-
-	var startedAt, finishedAt pgtype.Timestamp
-	if params.StartedAt != nil {
-		startedAt = pgtype.Timestamp{Time: *params.StartedAt, Valid: true}
-	}
-	if params.FinishedAt != nil {
-		finishedAt = pgtype.Timestamp{Time: *params.FinishedAt, Valid: true}
-	}
-
-	result, err := r.queries.CreateContainer(ctx, sqlc.CreateContainerParams{
-		ContainerID: params.ContainerID,
-		Name:        params.Name,
-		Image:       params.Image,
-		State:       params.State,
-		Status:      params.Status,
-		Labels:      pgtype.Text{String: string(labels), Valid: len(labels) > 0},
-		StartedAt:   startedAt,
-		FinishedAt:  finishedAt,
-		IsActive:    pgtype.Bool{Bool: params.IsActive, Valid: true},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create container: %w", err)
-	}
-
-	return &models.Container{
-		ID:          result.ID,
-		ContainerID: params.ContainerID,
-		Name:        params.Name,
-		Image:       params.Image,
-		State:       params.State,
-		Status:      params.Status,
-		Labels:      params.Labels,
-		StartedAt:   params.StartedAt,
-		FinishedAt:  params.FinishedAt,
-		IsActive:    params.IsActive,
-		CreatedAt:   result.CreatedAt,
-		UpdatedAt:   result.UpdatedAt,
-	}, nil
+	// TODO: CreateContainer needs proper container schema - current schema is for docker mount catalog
+	return nil, fmt.Errorf("CreateContainer not implemented - requires proper container schema")
 }
 
 func (r *volumesRepo) GetContainerByContainerID(ctx context.Context, containerID string) (*models.Container, error) {
-	row, err := r.queries.GetContainerByContainerID(ctx, containerID)
+	attachment, err := r.queries.GetContainerByContainerID(ctx, containerID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get container by container ID: %w", err)
+		return nil, err
 	}
 
-	var labels map[string]string
-	if row.Labels.Valid && len(row.Labels.String) > 0 {
-		if err := json.Unmarshal([]byte(row.Labels.String), &labels); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal container labels: %w", err)
+	// Convert from docker_mount_attachments to Container model
+	container := &models.Container{
+		ID:          attachment.ID,
+		ContainerID: attachment.ContainerID,
+		Name:        attachment.ContainerName.String,
+		Image:       attachment.ContainerImage.String,
+		State:       attachment.ContainerState.String,
+		Status:      "", // Not stored in mount attachments table
+		IsActive:    attachment.IsActive,
+		CreatedAt:   attachment.CreatedAt,
+		UpdatedAt:   attachment.UpdatedAt,
+	}
+
+	// Parse labels from JSON
+	if attachment.ContainerLabels != nil {
+		labels := make(map[string]string)
+		if err := json.Unmarshal(attachment.ContainerLabels, &labels); err == nil {
+			container.Labels = labels
 		}
 	}
 
-	container := &models.Container{
-		ID:          row.ID,
-		ContainerID: row.ContainerID,
-		Name:        row.Name,
-		Image:       row.Image,
-		State:       row.State,
-		Status:      row.Status,
-		Labels:      labels,
-		IsActive:    row.IsActive.Bool,
-		CreatedAt:   row.CreatedAt,
-		UpdatedAt:   row.UpdatedAt,
+	// Convert timestamps
+	if attachment.AttachedAt.Valid {
+		container.StartedAt = &attachment.AttachedAt.Time
 	}
-
-	if row.StartedAt.Valid {
-		container.StartedAt = &row.StartedAt.Time
-	}
-	if row.FinishedAt.Valid {
-		container.FinishedAt = &row.FinishedAt.Time
+	if attachment.DetachedAt.Valid {
+		container.FinishedAt = &attachment.DetachedAt.Time
 	}
 
 	return container, nil
 }
 
 func (r *volumesRepo) UpsertContainer(ctx context.Context, params models.CreateContainerParams) (*models.Container, error) {
-	labels, _ := json.Marshal(params.Labels)
-
-	var startedAt, finishedAt pgtype.Timestamp
-	if params.StartedAt != nil {
-		startedAt = pgtype.Timestamp{Time: *params.StartedAt, Valid: true}
-	}
-	if params.FinishedAt != nil {
-		finishedAt = pgtype.Timestamp{Time: *params.FinishedAt, Valid: true}
-	}
-
-	result, err := r.queries.UpsertContainer(ctx, sqlc.UpsertContainerParams{
-		ContainerID: params.ContainerID,
-		Name:        params.Name,
-		Image:       params.Image,
-		State:       params.State,
-		Status:      params.Status,
-		Labels:      pgtype.Text{String: string(labels), Valid: len(labels) > 0},
-		StartedAt:   startedAt,
-		FinishedAt:  finishedAt,
-		IsActive:    pgtype.Bool{Bool: params.IsActive, Valid: true},
-	})
+	// Convert labels to JSON
+	labelsJSON, err := json.Marshal(params.Labels)
 	if err != nil {
-		return nil, fmt.Errorf("failed to upsert container: %w", err)
+		labelsJSON = []byte("{}")
 	}
 
-	return &models.Container{
+	// Try INSERT first (using new simple UpsertContainer query)
+	sqlcParams := sqlc.UpsertContainerParams{
+		MountCatalogID:  0, // Default mount catalog ID for standalone container entries
+		ContainerID:     params.ContainerID,
+		ContainerName:   pgtype.Text{String: params.Name, Valid: params.Name != ""},
+		DestinationPath: "", // Not applicable for standalone containers
+		AccessMode:      "rw", // Default access mode
+		ContainerState:  pgtype.Text{String: params.State, Valid: params.State != ""},
+		ContainerImage:  pgtype.Text{String: params.Image, Valid: params.Image != ""},
+		ContainerLabels: labelsJSON,
+	}
+
+	result, err := r.queries.UpsertContainer(ctx, sqlcParams)
+	if err != nil {
+		// If insert fails due to constraint violation, try update
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
+			updateParams := sqlc.UpdateContainerParams{
+				ContainerID:     params.ContainerID,
+				MountCatalogID:  0,
+				ContainerName:   pgtype.Text{String: params.Name, Valid: params.Name != ""},
+				AccessMode:      "rw",
+				ContainerState:  pgtype.Text{String: params.State, Valid: params.State != ""},
+				ContainerImage:  pgtype.Text{String: params.Image, Valid: params.Image != ""},
+				ContainerLabels: labelsJSON,
+			}
+			
+			result, err = r.queries.UpdateContainer(ctx, updateParams)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	// Convert back to Container model
+	container := &models.Container{
 		ID:          result.ID,
-		ContainerID: params.ContainerID,
-		Name:        params.Name,
-		Image:       params.Image,
-		State:       params.State,
+		ContainerID: result.ContainerID,
+		Name:        result.ContainerName.String,
+		Image:       result.ContainerImage.String,
+		State:       result.ContainerState.String,
 		Status:      params.Status,
-		Labels:      params.Labels,
-		StartedAt:   params.StartedAt,
-		FinishedAt:  params.FinishedAt,
 		IsActive:    params.IsActive,
 		CreatedAt:   result.CreatedAt,
 		UpdatedAt:   result.UpdatedAt,
-	}, nil
+	}
+
+	// Parse labels from JSON
+	if result.ContainerLabels != nil {
+		labels := make(map[string]string)
+		if err := json.Unmarshal(result.ContainerLabels, &labels); err == nil {
+			container.Labels = labels
+		}
+	}
+
+	// Convert timestamps
+	if params.StartedAt != nil {
+		container.StartedAt = params.StartedAt
+	}
+	if params.FinishedAt != nil {
+		container.FinishedAt = params.FinishedAt
+	}
+
+	return container, nil
 }
 
 // =============================================================================
@@ -374,75 +371,75 @@ func (r *volumesRepo) UpsertContainer(ctx context.Context, params models.CreateC
 // =============================================================================
 
 func (r *volumesRepo) CreateVolumeMount(ctx context.Context, params models.CreateVolumeMountParams) (*models.VolumeMount, error) {
-	result, err := r.queries.CreateVolumeMount(ctx, sqlc.CreateVolumeMountParams{
-		VolumeID:    params.VolumeID,
-		ContainerID: params.ContainerID,
-		MountPath:   params.MountPath,
-		AccessMode:  params.AccessMode,
-		IsActive:    pgtype.Bool{Bool: params.IsActive, Valid: true},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create volume mount: %w", err)
-	}
-
-	return &models.VolumeMount{
-		ID:          result.ID,
-		VolumeID:    params.VolumeID,
-		ContainerID: params.ContainerID,
-		MountPath:   params.MountPath,
-		AccessMode:  params.AccessMode,
-		IsActive:    params.IsActive,
-		CreatedAt:   result.CreatedAt,
-		UpdatedAt:   result.UpdatedAt,
-	}, nil
+	// TODO: CreateVolumeMount needs proper volume mount schema - current schema is for docker mount catalog
+	return nil, fmt.Errorf("CreateVolumeMount not implemented - requires proper volume mount schema")
 }
 
 func (r *volumesRepo) UpsertVolumeMount(ctx context.Context, params models.CreateVolumeMountParams) (*models.VolumeMount, error) {
-	result, err := r.queries.UpsertVolumeMount(ctx, sqlc.UpsertVolumeMountParams{
-		VolumeID:    params.VolumeID,
-		ContainerID: params.ContainerID,
-		MountPath:   params.MountPath,
-		AccessMode:  params.AccessMode,
-		IsActive:    pgtype.Bool{Bool: params.IsActive, Valid: true},
-	})
+	sqlcParams := sqlc.UpsertVolumeMountParams{
+		MountID:        params.VolumeID, // Use volume ID as mount ID
+		MountType:      "volume",        // Default to volume type
+		SourcePath:     params.MountPath,
+		ContainerCount: 1, // Start with 1 container
+	}
+
+	result, err := r.queries.UpsertVolumeMount(ctx, sqlcParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert volume mount: %w", err)
 	}
 
-	return &models.VolumeMount{
+	// Convert DockerMountCatalog to VolumeMount
+	volumeMount := &models.VolumeMount{
 		ID:          result.ID,
-		VolumeID:    params.VolumeID,
+		VolumeID:    pgTextToString(result.VolumeName), // Use volume name if available, fallback to mount ID
 		ContainerID: params.ContainerID,
 		MountPath:   params.MountPath,
 		AccessMode:  params.AccessMode,
 		IsActive:    params.IsActive,
 		CreatedAt:   result.CreatedAt,
 		UpdatedAt:   result.UpdatedAt,
-	}, nil
+	}
+
+	// Use mount ID as volume ID if volume name is not set
+	if volumeMount.VolumeID == "" {
+		volumeMount.VolumeID = result.MountID
+	}
+
+	return volumeMount, nil
 }
 
 func (r *volumesRepo) GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*models.VolumeMount, error) {
-	rows, err := r.queries.GetVolumeMountsByVolume(ctx, volumeID)
+	// Use pgtype.Text for the query parameter
+	volumeParam := pgtype.Text{String: volumeID, Valid: true}
+	
+	results, err := r.queries.GetVolumeMountsByVolume(ctx, volumeParam)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get volume mounts by volume: %w", err)
 	}
 
-	mounts := make([]*models.VolumeMount, 0, len(rows))
-	for _, row := range rows {
-		mount := &models.VolumeMount{
-			ID:          row.ID,
-			VolumeID:    row.VolumeID,
-			ContainerID: row.ContainerID,
-			MountPath:   row.MountPath,
-			AccessMode:  row.AccessMode,
-			IsActive:    row.IsActive.Bool,
-			CreatedAt:   row.CreatedAt,
-			UpdatedAt:   row.UpdatedAt,
+	// Convert DockerMountCatalog entries to VolumeMount domain models
+	volumeMounts := make([]*models.VolumeMount, 0, len(results))
+	for _, result := range results {
+		volumeMount := &models.VolumeMount{
+			ID:          result.ID,
+			VolumeID:    pgTextToString(result.VolumeName), // Use volume name if available
+			ContainerID: "", // This will need to be populated from container attachments
+			MountPath:   result.SourcePath,
+			AccessMode:  "rw", // Default access mode
+			IsActive:    result.IsTracked, // Use tracking status as active status
+			CreatedAt:   result.CreatedAt,
+			UpdatedAt:   result.UpdatedAt,
 		}
-		mounts = append(mounts, mount)
+
+		// Use mount ID as volume ID if volume name is not set
+		if volumeMount.VolumeID == "" {
+			volumeMount.VolumeID = result.MountID
+		}
+
+		volumeMounts = append(volumeMounts, volumeMount)
 	}
 
-	return mounts, nil
+	return volumeMounts, nil
 }
 
 // =============================================================================
@@ -457,39 +454,304 @@ func (r *volumesRepo) convertRowToVolume(row interface{}) (*models.Volume, error
 	switch v := row.(type) {
 	case sqlc.Volumes:
 		volume = &models.Volume{
-			ID:         v.ID,
 			VolumeID:   v.VolumeID,
-			Name:       v.Name,
-			Driver:     v.Driver,
-			Mountpoint: v.Mountpoint,
-			Scope:      v.Scope.String,
-			Status:     v.Status,
-			IsActive:   v.IsActive.Bool,
+			Name:       pgTextToString(v.DisplayName),
+			Mountpoint: v.MountPoint,
+			IsActive:   pgBoolToBool(v.IsActive),
 			CreatedAt:  v.CreatedAt,
 			UpdatedAt:  v.UpdatedAt,
 		}
 
 		// Handle optional timestamp
-		if v.LastScanned.Valid {
-			volume.LastScanned = &v.LastScanned.Time
+		if v.LastScanAt.Valid {
+			volume.LastScanned = &v.LastScanAt.Time
 		}
 
-		// Parse JSON fields
-		if v.Labels.Valid && len(v.Labels.String) > 0 {
-			if err := json.Unmarshal([]byte(v.Labels.String), &volume.Labels); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal labels: %w", err)
-			}
-		}
-
-		if v.Options.Valid && len(v.Options.String) > 0 {
-			if err := json.Unmarshal([]byte(v.Options.String), &volume.Options); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal options: %w", err)
-			}
-		}
+		// Note: Labels, Options, Driver, Scope, Status not in current schema
 
 	default:
 		return nil, fmt.Errorf("unsupported row type: %T", row)
 	}
 
 	return volume, nil
+}
+
+// =============================================================================
+// SQLITE IMPLEMENTATION
+// =============================================================================
+
+func (r *volumesRepoSQLite) CreateVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error) {
+	// SQLite uses different parameter types (strings vs pgtype)
+	result, err := r.queries.CreateVolume(ctx, sqlcSQLite.CreateVolumeParams{
+		VolumeID:       params.VolumeID,
+		DisplayName:    sql.NullString{String: params.Name, Valid: params.Name != ""},
+		MountPoint:     params.Mountpoint,
+		ContainerNames: sql.NullString{String: "[]", Valid: true}, // JSON array as string  
+		IsActive:       sql.NullInt64{Int64: 1, Valid: params.IsActive}, // Boolean as integer
+		// Other fields will be filled later or default to NULL/0
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create volume: %w", err)
+	}
+
+	return &models.Volume{
+		VolumeID:   result.VolumeID,
+		Name:       sqlNullStringToString(result.DisplayName),
+		Mountpoint: result.MountPoint,
+		IsActive:   sqlNullIntToBool(result.IsActive),
+		CreatedAt:  result.CreatedAt,
+		UpdatedAt:  result.UpdatedAt,
+	}, nil
+}
+
+func (r *volumesRepoSQLite) GetVolumeByID(ctx context.Context, id int64) (*models.Volume, error) {
+	// Same issue as PostgreSQL - schema uses string volume_id primary key
+	return nil, fmt.Errorf("GetVolumeByID not supported - current schema uses string volume_id primary key, not int64 id")
+}
+
+func (r *volumesRepoSQLite) GetVolumeByVolumeID(ctx context.Context, volumeID string) (*models.Volume, error) {
+	// SQLite uses GetVolume instead of GetVolumeByVolumeID
+	row, err := r.queries.GetVolume(ctx, volumeID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get volume by volume ID: %w", err)
+	}
+
+	return r.convertSQLiteRowToVolume(row)
+}
+
+func (r *volumesRepoSQLite) ListVolumes(ctx context.Context, limit, offset int32) ([]*models.Volume, error) {
+	rows, err := r.queries.ListVolumes(ctx, sqlcSQLite.ListVolumesParams{
+		Limit:  int64(limit),
+		Offset: int64(offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list volumes: %w", err)
+	}
+
+	volumes := make([]*models.Volume, 0, len(rows))
+	for _, row := range rows {
+		volume, err := r.convertSQLiteRowToVolume(row)
+		if err != nil {
+			return nil, err
+		}
+		volumes = append(volumes, volume)
+	}
+
+	return volumes, nil
+}
+
+func (r *volumesRepoSQLite) UpdateVolume(ctx context.Context, params models.UpdateVolumeParams) (*models.Volume, error) {
+	result, err := r.queries.UpdateVolume(ctx, sqlcSQLite.UpdateVolumeParams{
+		VolumeID:       params.VolumeID,
+		DisplayName:    sql.NullString{String: params.Name, Valid: params.Name != ""},
+		MountPoint:     params.Mountpoint,
+		ContainerNames: sql.NullString{String: "[]", Valid: true}, // JSON array as string
+		IsActive:       sql.NullInt64{Int64: 1, Valid: params.IsActive}, // Boolean as integer
+		// Other fields handled by SQLC defaults
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update volume: %w", err)
+	}
+
+	return &models.Volume{
+		VolumeID:   params.VolumeID,
+		Name:       params.Name,
+		Mountpoint: params.Mountpoint,
+		IsActive:   params.IsActive,
+		CreatedAt:  result.CreatedAt,
+		UpdatedAt:  result.UpdatedAt,
+	}, nil
+}
+
+func (r *volumesRepoSQLite) UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error {
+	err := r.queries.UpdateLastScanned(ctx, sqlcSQLite.UpdateLastScannedParams{
+		VolumeID:   volumeID,
+		LastScanAt: sql.NullString{String: lastScanned.Format(time.RFC3339), Valid: true},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update last scanned time: %w", err)
+	}
+	return nil
+}
+
+func (r *volumesRepoSQLite) SoftDeleteVolume(ctx context.Context, id int64) error {
+	// Same issue as PostgreSQL - schema uses string volume_id primary key
+	return fmt.Errorf("SoftDeleteVolume not supported - current schema uses string volume_id primary key, not int64 id")
+}
+
+func (r *volumesRepoSQLite) UpsertVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error) {
+	// SQLite doesn't have UpsertVolume query - would need to be implemented
+	// For now, try to create and if it fails, update
+	volume, err := r.CreateVolume(ctx, params)
+	if err != nil {
+		// If create failed, try update
+		updateParams := models.UpdateVolumeParams{
+			VolumeID:   params.VolumeID,
+			Name:       params.Name,
+			Mountpoint: params.Mountpoint,
+			IsActive:   params.IsActive,
+		}
+		return r.UpdateVolume(ctx, updateParams)
+	}
+	return volume, nil
+}
+
+func (r *volumesRepoSQLite) GetVolumeStats(ctx context.Context) (*models.VolumeStats, error) {
+	totalVolumes, err := r.queries.CountVolumes(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count total volumes: %w", err)
+	}
+
+	// Get active volumes count
+	activeVolumes, err := r.queries.CountActiveVolumes(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count active volumes: %w", err)
+	}
+
+	return &models.VolumeStats{
+		TotalVolumes:   totalVolumes,
+		ActiveVolumes:  activeVolumes,
+		UniqueDrivers:  0,            // TODO: Count distinct drivers when schema includes driver field
+		ScannedVolumes: 0,            // TODO: Count volumes with last_scan_at not null
+		NewestVolume:   nil,          // TODO: Get MAX(created_at) when needed
+		OldestVolume:   nil,          // TODO: Get MIN(created_at) when needed
+	}, nil
+}
+
+func (r *volumesRepoSQLite) CountVolumes(ctx context.Context) (int64, error) {
+	count, err := r.queries.CountVolumes(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count volumes: %w", err)
+	}
+	return count, nil
+}
+
+// Container operations - not implemented for SQLite either
+func (r *volumesRepoSQLite) CreateContainer(ctx context.Context, params models.CreateContainerParams) (*models.Container, error) {
+	return nil, fmt.Errorf("CreateContainer not implemented for SQLite - requires proper container schema")
+}
+
+func (r *volumesRepoSQLite) GetContainerByContainerID(ctx context.Context, containerID string) (*models.Container, error) {
+	// TODO: Implement SQLite version of GetContainerByContainerID
+	// SQLite queries for container management need to be added to queries-sqlite/
+	return nil, fmt.Errorf("GetContainerByContainerID not implemented for SQLite - SQLite container queries need to be created")
+}
+
+func (r *volumesRepoSQLite) UpsertContainer(ctx context.Context, params models.CreateContainerParams) (*models.Container, error) {
+	// TODO: Implement SQLite version of UpsertContainer
+	// SQLite queries for container management need to be added to queries-sqlite/
+	return nil, fmt.Errorf("UpsertContainer not implemented for SQLite - SQLite container queries need to be created")
+}
+
+// Volume mount operations - not implemented for SQLite either
+func (r *volumesRepoSQLite) CreateVolumeMount(ctx context.Context, params models.CreateVolumeMountParams) (*models.VolumeMount, error) {
+	return nil, fmt.Errorf("CreateVolumeMount not implemented for SQLite - requires proper volume mount schema")
+}
+
+func (r *volumesRepoSQLite) UpsertVolumeMount(ctx context.Context, params models.CreateVolumeMountParams) (*models.VolumeMount, error) {
+	sqlcParams := sqlcSQLite.UpsertVolumeMountParams{
+		MountID:        params.VolumeID, // Use volume ID as mount ID
+		MountType:      "volume",        // Default to volume type
+		SourcePath:     params.MountPath,
+		ContainerCount: 1, // Start with 1 container
+	}
+
+	result, err := r.queries.UpsertVolumeMount(ctx, sqlcParams)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert volume mount: %w", err)
+	}
+
+	// Convert DockerMountCatalog to VolumeMount
+	volumeMount := &models.VolumeMount{
+		ID:          result.ID,
+		VolumeID:    sqlNullStringToString(result.VolumeName), // Use volume name if available
+		ContainerID: params.ContainerID,
+		MountPath:   params.MountPath,
+		AccessMode:  params.AccessMode,
+		IsActive:    params.IsActive,
+		CreatedAt:   result.CreatedAt,
+		UpdatedAt:   result.UpdatedAt,
+	}
+
+	// Use mount ID as volume ID if volume name is not set
+	if volumeMount.VolumeID == "" {
+		volumeMount.VolumeID = result.MountID
+	}
+
+	return volumeMount, nil
+}
+
+func (r *volumesRepoSQLite) GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*models.VolumeMount, error) {
+	// Use SQL NullString for SQLite query parameter
+	volumeParam := sql.NullString{String: volumeID, Valid: true}
+	
+	results, err := r.queries.GetVolumeMountsByVolume(ctx, volumeParam)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get volume mounts by volume: %w", err)
+	}
+
+	// Convert DockerMountCatalog entries to VolumeMount domain models
+	volumeMounts := make([]*models.VolumeMount, 0, len(results))
+	for _, result := range results {
+		volumeMount := &models.VolumeMount{
+			ID:          result.ID,
+			VolumeID:    sqlNullStringToString(result.VolumeName), // Use volume name if available
+			ContainerID: "", // This will need to be populated from container attachments
+			MountPath:   result.SourcePath,
+			AccessMode:  "rw", // Default access mode
+			IsActive:    result.IsTracked == 1, // Convert SQLite integer to boolean
+			CreatedAt:   result.CreatedAt,
+			UpdatedAt:   result.UpdatedAt,
+		}
+
+		// Use mount ID as volume ID if volume name is not set
+		if volumeMount.VolumeID == "" {
+			volumeMount.VolumeID = result.MountID
+		}
+
+		volumeMounts = append(volumeMounts, volumeMount)
+	}
+
+	return volumeMounts, nil
+}
+
+// SQLite-specific helper functions
+func (r *volumesRepoSQLite) convertSQLiteRowToVolume(row interface{}) (*models.Volume, error) {
+	var volume *models.Volume
+
+	switch v := row.(type) {
+	case sqlcSQLite.Volumes:
+		volume = &models.Volume{
+			VolumeID:   v.VolumeID,
+			Name:       sqlNullStringToString(v.DisplayName),
+			Mountpoint: v.MountPoint,
+			IsActive:   sqlNullIntToBool(v.IsActive),
+			CreatedAt:  v.CreatedAt,
+			UpdatedAt:  v.UpdatedAt,
+		}
+
+		// Handle optional timestamp (stored as string in SQLite)
+		if v.LastScanAt.Valid {
+			if t, err := time.Parse(time.RFC3339, v.LastScanAt.String); err == nil {
+				volume.LastScanned = &t
+			}
+		}
+
+	default:
+		return nil, fmt.Errorf("unsupported SQLite row type: %T", row)
+	}
+
+	return volume, nil
+}
+
+// SQLite helper functions
+func sqlNullStringToString(ns sql.NullString) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return ""
+}
+
+func sqlNullIntToBool(ni sql.NullInt64) bool {
+	return ni.Valid && ni.Int64 != 0
 }

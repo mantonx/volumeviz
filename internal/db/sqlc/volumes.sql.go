@@ -7,35 +7,23 @@ package sqlc
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const countContainers = `-- name: CountContainers :one
-SELECT COUNT(*) FROM containers WHERE is_active = true
+const countActiveVolumes = `-- name: CountActiveVolumes :one
+SELECT COUNT(*) FROM volumes WHERE is_active = true
 `
 
-func (q *Queries) CountContainers(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countContainers)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const countVolumeMounts = `-- name: CountVolumeMounts :one
-SELECT COUNT(*) FROM volume_mounts WHERE is_active = true
-`
-
-func (q *Queries) CountVolumeMounts(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countVolumeMounts)
+func (q *Queries) CountActiveVolumes(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countActiveVolumes)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
 const countVolumes = `-- name: CountVolumes :one
-SELECT COUNT(*) FROM volumes WHERE is_active = true
+SELECT COUNT(*) FROM volumes
 `
 
 func (q *Queries) CountVolumes(ctx context.Context) (int64, error) {
@@ -46,198 +34,215 @@ func (q *Queries) CountVolumes(ctx context.Context) (int64, error) {
 }
 
 const createContainer = `-- name: CreateContainer :one
-
-INSERT INTO containers (container_id, name, image, state, status, labels, started_at, finished_at, is_active)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, created_at, updated_at
+INSERT INTO docker_mount_attachments (
+    mount_catalog_id, container_id, container_name, destination_path,
+    access_mode, container_state, container_image, container_labels
+) VALUES (
+    $1, $2, $3, $4,
+    $5, $6, $7, $8
+) RETURNING id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at
 `
 
 type CreateContainerParams struct {
-	ContainerID string           `json:"container_id"`
-	Name        string           `json:"name"`
-	Image       string           `json:"image"`
-	State       string           `json:"state"`
-	Status      string           `json:"status"`
-	Labels      pgtype.Text      `json:"labels"`
-	StartedAt   pgtype.Timestamp `json:"started_at"`
-	FinishedAt  pgtype.Timestamp `json:"finished_at"`
-	IsActive    pgtype.Bool      `json:"is_active"`
+	MountCatalogID  int64       `json:"mount_catalog_id"`
+	ContainerID     string      `json:"container_id"`
+	ContainerName   pgtype.Text `json:"container_name"`
+	DestinationPath string      `json:"destination_path"`
+	AccessMode      string      `json:"access_mode"`
+	ContainerState  pgtype.Text `json:"container_state"`
+	ContainerImage  pgtype.Text `json:"container_image"`
+	ContainerLabels []byte      `json:"container_labels"`
 }
 
-type CreateContainerRow struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// =======================
-// CONTAINER OPERATIONS
-// =======================
-func (q *Queries) CreateContainer(ctx context.Context, arg CreateContainerParams) (CreateContainerRow, error) {
+// Container operations (using docker_mount_attachments)
+func (q *Queries) CreateContainer(ctx context.Context, arg CreateContainerParams) (DockerMountAttachments, error) {
 	row := q.db.QueryRow(ctx, createContainer,
+		arg.MountCatalogID,
 		arg.ContainerID,
-		arg.Name,
-		arg.Image,
-		arg.State,
-		arg.Status,
-		arg.Labels,
-		arg.StartedAt,
-		arg.FinishedAt,
-		arg.IsActive,
+		arg.ContainerName,
+		arg.DestinationPath,
+		arg.AccessMode,
+		arg.ContainerState,
+		arg.ContainerImage,
+		arg.ContainerLabels,
 	)
-	var i CreateContainerRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	var i DockerMountAttachments
+	err := row.Scan(
+		&i.ID,
+		&i.MountCatalogID,
+		&i.ContainerID,
+		&i.ContainerName,
+		&i.DestinationPath,
+		&i.AccessMode,
+		&i.Propagation,
+		&i.ContainerState,
+		&i.ContainerImage,
+		&i.ContainerLabels,
+		&i.ContainerComposeProject,
+		&i.ContainerComposeService,
+		&i.ContainerComposeContainerNumber,
+		&i.ContainerComposeConfigHash,
+		&i.AttachedAt,
+		&i.DetachedAt,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
 const createVolume = `-- name: CreateVolume :one
 
-
-INSERT INTO volumes (volume_id, name, driver, mountpoint, labels, options, scope, status, is_active)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, created_at, updated_at
+INSERT INTO volumes (
+    volume_id, display_name, mount_point, container_names, is_active,
+    total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type,
+    container_count, first_seen_at, last_scan_at, last_modified_at
+) VALUES (
+    $1, $2, $3, $4, $5,
+    $6, $7, $8, $9,
+    $10, $11, $12, $13
+) RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at
 `
 
 type CreateVolumeParams struct {
-	VolumeID   string      `json:"volume_id"`
-	Name       string      `json:"name"`
-	Driver     string      `json:"driver"`
-	Mountpoint string      `json:"mountpoint"`
-	Labels     pgtype.Text `json:"labels"`
-	Options    pgtype.Text `json:"options"`
-	Scope      pgtype.Text `json:"scope"`
-	Status     string      `json:"status"`
-	IsActive   pgtype.Bool `json:"is_active"`
+	VolumeID       string             `json:"volume_id"`
+	DisplayName    pgtype.Text        `json:"display_name"`
+	MountPoint     string             `json:"mount_point"`
+	ContainerNames []string           `json:"container_names"`
+	IsActive       pgtype.Bool        `json:"is_active"`
+	TotalSizeBytes pgtype.Int8        `json:"total_size_bytes"`
+	UsedSizeBytes  pgtype.Int8        `json:"used_size_bytes"`
+	FreeSizeBytes  pgtype.Int8        `json:"free_size_bytes"`
+	FilesystemType pgtype.Text        `json:"filesystem_type"`
+	ContainerCount pgtype.Int4        `json:"container_count"`
+	FirstSeenAt    pgtype.Timestamptz `json:"first_seen_at"`
+	LastScanAt     pgtype.Timestamptz `json:"last_scan_at"`
+	LastModifiedAt pgtype.Timestamptz `json:"last_modified_at"`
 }
 
-type CreateVolumeRow struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// volumes.sql: Docker volume, container, and mount operations
-// This file consolidates all Docker resource management queries
-// =======================
-// VOLUME OPERATIONS
-// =======================
-func (q *Queries) CreateVolume(ctx context.Context, arg CreateVolumeParams) (CreateVolumeRow, error) {
+// Volume management queries for PostgreSQL
+func (q *Queries) CreateVolume(ctx context.Context, arg CreateVolumeParams) (Volumes, error) {
 	row := q.db.QueryRow(ctx, createVolume,
 		arg.VolumeID,
-		arg.Name,
-		arg.Driver,
-		arg.Mountpoint,
-		arg.Labels,
-		arg.Options,
-		arg.Scope,
-		arg.Status,
+		arg.DisplayName,
+		arg.MountPoint,
+		arg.ContainerNames,
 		arg.IsActive,
+		arg.TotalSizeBytes,
+		arg.UsedSizeBytes,
+		arg.FreeSizeBytes,
+		arg.FilesystemType,
+		arg.ContainerCount,
+		arg.FirstSeenAt,
+		arg.LastScanAt,
+		arg.LastModifiedAt,
 	)
-	var i CreateVolumeRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	var i Volumes
+	err := row.Scan(
+		&i.VolumeID,
+		&i.DisplayName,
+		&i.MountPoint,
+		&i.ContainerNames,
+		&i.IsActive,
+		&i.TotalSizeBytes,
+		&i.UsedSizeBytes,
+		&i.FreeSizeBytes,
+		&i.FilesystemType,
+		&i.ContainerCount,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.LastModifiedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
 const createVolumeMount = `-- name: CreateVolumeMount :one
-
-INSERT INTO volume_mounts (volume_id, container_id, mount_path, access_mode, is_active)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, created_at, updated_at
+INSERT INTO docker_mount_catalog (
+    mount_id, mount_type, source_path, container_count
+) VALUES (
+    $1, $2, $3, $4
+) RETURNING id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at
 `
 
 type CreateVolumeMountParams struct {
-	VolumeID    string      `json:"volume_id"`
-	ContainerID string      `json:"container_id"`
-	MountPath   string      `json:"mount_path"`
-	AccessMode  string      `json:"access_mode"`
-	IsActive    pgtype.Bool `json:"is_active"`
+	MountID        string `json:"mount_id"`
+	MountType      string `json:"mount_type"`
+	SourcePath     string `json:"source_path"`
+	ContainerCount int32  `json:"container_count"`
 }
 
-type CreateVolumeMountRow struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// =======================
-// VOLUME MOUNT OPERATIONS
-// =======================
-func (q *Queries) CreateVolumeMount(ctx context.Context, arg CreateVolumeMountParams) (CreateVolumeMountRow, error) {
+// Volume mount operations (using docker_mount_catalog)
+func (q *Queries) CreateVolumeMount(ctx context.Context, arg CreateVolumeMountParams) (DockerMountCatalog, error) {
 	row := q.db.QueryRow(ctx, createVolumeMount,
-		arg.VolumeID,
-		arg.ContainerID,
-		arg.MountPath,
-		arg.AccessMode,
-		arg.IsActive,
+		arg.MountID,
+		arg.MountType,
+		arg.SourcePath,
+		arg.ContainerCount,
 	)
-	var i CreateVolumeMountRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	var i DockerMountCatalog
+	err := row.Scan(
+		&i.ID,
+		&i.MountID,
+		&i.MountType,
+		&i.VolumeName,
+		&i.VolumeDriver,
+		&i.VolumeOptions,
+		&i.VolumeLabels,
+		&i.VolumeScope,
+		&i.SourcePath,
+		&i.ContainerCount,
+		&i.IsOrphaned,
+		&i.ComposeProject,
+		&i.ComposeServices,
+		&i.ComposeVersion,
+		&i.ComposeConfigFiles,
+		&i.FirstDiscoveredAt,
+		&i.LastSeenAt,
+		&i.DiscoverySource,
+		&i.IsTracked,
+		&i.TrackingEnabledAt,
+		&i.TrackingDisabledAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
-const deactivateVolumeMounts = `-- name: DeactivateVolumeMounts :exec
-UPDATE volume_mounts 
-SET is_active = false, updated_at = CURRENT_TIMESTAMP 
-WHERE container_id = $1
+const deleteVolume = `-- name: DeleteVolume :exec
+DELETE FROM volumes WHERE volume_id = $1
 `
 
-func (q *Queries) DeactivateVolumeMounts(ctx context.Context, containerID string) error {
-	_, err := q.db.Exec(ctx, deactivateVolumeMounts, containerID)
+func (q *Queries) DeleteVolume(ctx context.Context, volumeID string) error {
+	_, err := q.db.Exec(ctx, deleteVolume, volumeID)
 	return err
 }
 
-const getActiveContainerCount = `-- name: GetActiveContainerCount :one
-SELECT COUNT(*) FROM containers WHERE is_active = true
-`
-
-func (q *Queries) GetActiveContainerCount(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, getActiveContainerCount)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const getActiveVolumeCount = `-- name: GetActiveVolumeCount :one
-SELECT COUNT(*) FROM volumes WHERE is_active = true
-`
-
-func (q *Queries) GetActiveVolumeCount(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, getActiveVolumeCount)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const getActiveVolumeMountCount = `-- name: GetActiveVolumeMountCount :one
-SELECT COUNT(*) FROM volume_mounts WHERE is_active = true
-`
-
-func (q *Queries) GetActiveVolumeMountCount(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, getActiveVolumeMountCount)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const getContainerByContainerID = `-- name: GetContainerByContainerID :one
-SELECT id, container_id, name, image, state, status, labels, started_at, finished_at, is_active, created_at, updated_at
-FROM containers 
-WHERE container_id = $1
+SELECT id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at FROM docker_mount_attachments WHERE container_id = $1 LIMIT 1
 `
 
-func (q *Queries) GetContainerByContainerID(ctx context.Context, containerID string) (Containers, error) {
+func (q *Queries) GetContainerByContainerID(ctx context.Context, containerID string) (DockerMountAttachments, error) {
 	row := q.db.QueryRow(ctx, getContainerByContainerID, containerID)
-	var i Containers
+	var i DockerMountAttachments
 	err := row.Scan(
 		&i.ID,
+		&i.MountCatalogID,
 		&i.ContainerID,
-		&i.Name,
-		&i.Image,
-		&i.State,
-		&i.Status,
-		&i.Labels,
-		&i.StartedAt,
-		&i.FinishedAt,
+		&i.ContainerName,
+		&i.DestinationPath,
+		&i.AccessMode,
+		&i.Propagation,
+		&i.ContainerState,
+		&i.ContainerImage,
+		&i.ContainerLabels,
+		&i.ContainerComposeProject,
+		&i.ContainerComposeService,
+		&i.ContainerComposeContainerNumber,
+		&i.ContainerComposeConfigHash,
+		&i.AttachedAt,
+		&i.DetachedAt,
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -245,167 +250,54 @@ func (q *Queries) GetContainerByContainerID(ctx context.Context, containerID str
 	return i, err
 }
 
-const getContainerByID = `-- name: GetContainerByID :one
-SELECT id, container_id, name, image, state, status, labels, started_at, finished_at, is_active, created_at, updated_at
-FROM containers 
-WHERE id = $1
+const getVolume = `-- name: GetVolume :one
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at FROM volumes WHERE volume_id = $1
 `
 
-func (q *Queries) GetContainerByID(ctx context.Context, id int64) (Containers, error) {
-	row := q.db.QueryRow(ctx, getContainerByID, id)
-	var i Containers
+func (q *Queries) GetVolume(ctx context.Context, volumeID string) (Volumes, error) {
+	row := q.db.QueryRow(ctx, getVolume, volumeID)
+	var i Volumes
 	err := row.Scan(
-		&i.ID,
-		&i.ContainerID,
-		&i.Name,
-		&i.Image,
-		&i.State,
-		&i.Status,
-		&i.Labels,
-		&i.StartedAt,
-		&i.FinishedAt,
+		&i.VolumeID,
+		&i.DisplayName,
+		&i.MountPoint,
+		&i.ContainerNames,
 		&i.IsActive,
+		&i.TotalSizeBytes,
+		&i.UsedSizeBytes,
+		&i.FreeSizeBytes,
+		&i.FilesystemType,
+		&i.ContainerCount,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.LastModifiedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const getContainerStats = `-- name: GetContainerStats :one
-SELECT 
-    COUNT(*) as total_containers,
-    COALESCE(SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END), 0) as active_containers,
-    COUNT(DISTINCT image) as unique_images,
-    COUNT(DISTINCT state) as unique_states,
-    MAX(created_at) as newest_container,
-    MIN(created_at) as oldest_container
-FROM containers
-`
-
-type GetContainerStatsRow struct {
-	TotalContainers  int64       `json:"total_containers"`
-	ActiveContainers interface{} `json:"active_containers"`
-	UniqueImages     int64       `json:"unique_images"`
-	UniqueStates     int64       `json:"unique_states"`
-	NewestContainer  interface{} `json:"newest_container"`
-	OldestContainer  interface{} `json:"oldest_container"`
-}
-
-func (q *Queries) GetContainerStats(ctx context.Context) (GetContainerStatsRow, error) {
-	row := q.db.QueryRow(ctx, getContainerStats)
-	var i GetContainerStatsRow
-	err := row.Scan(
-		&i.TotalContainers,
-		&i.ActiveContainers,
-		&i.UniqueImages,
-		&i.UniqueStates,
-		&i.NewestContainer,
-		&i.OldestContainer,
-	)
-	return i, err
-}
-
-const getContainersByImage = `-- name: GetContainersByImage :many
-SELECT id, container_id, name, image, state, status, labels, started_at, finished_at, is_active, created_at, updated_at
-FROM containers 
-WHERE image = $1 AND is_active = true
-ORDER BY created_at DESC
-`
-
-func (q *Queries) GetContainersByImage(ctx context.Context, image string) ([]Containers, error) {
-	rows, err := q.db.Query(ctx, getContainersByImage, image)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Containers{}
-	for rows.Next() {
-		var i Containers
-		if err := rows.Scan(
-			&i.ID,
-			&i.ContainerID,
-			&i.Name,
-			&i.Image,
-			&i.State,
-			&i.Status,
-			&i.Labels,
-			&i.StartedAt,
-			&i.FinishedAt,
-			&i.IsActive,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getContainersByState = `-- name: GetContainersByState :many
-SELECT id, container_id, name, image, state, status, labels, started_at, finished_at, is_active, created_at, updated_at
-FROM containers 
-WHERE state = $1 AND is_active = true
-ORDER BY created_at DESC
-`
-
-func (q *Queries) GetContainersByState(ctx context.Context, state string) ([]Containers, error) {
-	rows, err := q.db.Query(ctx, getContainersByState, state)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Containers{}
-	for rows.Next() {
-		var i Containers
-		if err := rows.Scan(
-			&i.ID,
-			&i.ContainerID,
-			&i.Name,
-			&i.Image,
-			&i.State,
-			&i.Status,
-			&i.Labels,
-			&i.StartedAt,
-			&i.FinishedAt,
-			&i.IsActive,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const getVolumeByID = `-- name: GetVolumeByID :one
-SELECT id, volume_id, name, driver, mountpoint, labels, options, scope, status, last_scanned, is_active, created_at, updated_at
-FROM volumes 
-WHERE id = $1
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at FROM volumes WHERE volume_id = $1
 `
 
-func (q *Queries) GetVolumeByID(ctx context.Context, id int64) (Volumes, error) {
-	row := q.db.QueryRow(ctx, getVolumeByID, id)
+func (q *Queries) GetVolumeByID(ctx context.Context, volumeID string) (Volumes, error) {
+	row := q.db.QueryRow(ctx, getVolumeByID, volumeID)
 	var i Volumes
 	err := row.Scan(
-		&i.ID,
 		&i.VolumeID,
-		&i.Name,
-		&i.Driver,
-		&i.Mountpoint,
-		&i.Labels,
-		&i.Options,
-		&i.Scope,
-		&i.Status,
-		&i.LastScanned,
+		&i.DisplayName,
+		&i.MountPoint,
+		&i.ContainerNames,
 		&i.IsActive,
+		&i.TotalSizeBytes,
+		&i.UsedSizeBytes,
+		&i.FreeSizeBytes,
+		&i.FilesystemType,
+		&i.ContainerCount,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.LastModifiedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -413,175 +305,67 @@ func (q *Queries) GetVolumeByID(ctx context.Context, id int64) (Volumes, error) 
 }
 
 const getVolumeByVolumeID = `-- name: GetVolumeByVolumeID :one
-SELECT id, volume_id, name, driver, mountpoint, labels, options, scope, status, last_scanned, is_active, created_at, updated_at
-FROM volumes 
-WHERE volume_id = $1
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at FROM volumes WHERE volume_id = $1
 `
 
 func (q *Queries) GetVolumeByVolumeID(ctx context.Context, volumeID string) (Volumes, error) {
 	row := q.db.QueryRow(ctx, getVolumeByVolumeID, volumeID)
 	var i Volumes
 	err := row.Scan(
-		&i.ID,
 		&i.VolumeID,
-		&i.Name,
-		&i.Driver,
-		&i.Mountpoint,
-		&i.Labels,
-		&i.Options,
-		&i.Scope,
-		&i.Status,
-		&i.LastScanned,
+		&i.DisplayName,
+		&i.MountPoint,
+		&i.ContainerNames,
 		&i.IsActive,
+		&i.TotalSizeBytes,
+		&i.UsedSizeBytes,
+		&i.FreeSizeBytes,
+		&i.FilesystemType,
+		&i.ContainerCount,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.LastModifiedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const getVolumeMountByID = `-- name: GetVolumeMountByID :one
-SELECT id, volume_id, container_id, mount_path, access_mode, is_active, created_at, updated_at
-FROM volume_mounts 
-WHERE id = $1
-`
-
-func (q *Queries) GetVolumeMountByID(ctx context.Context, id int64) (VolumeMounts, error) {
-	row := q.db.QueryRow(ctx, getVolumeMountByID, id)
-	var i VolumeMounts
-	err := row.Scan(
-		&i.ID,
-		&i.VolumeID,
-		&i.ContainerID,
-		&i.MountPath,
-		&i.AccessMode,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getVolumeMountByVolumeContainer = `-- name: GetVolumeMountByVolumeContainer :one
-SELECT id, volume_id, container_id, mount_path, access_mode, is_active, created_at, updated_at
-FROM volume_mounts 
-WHERE volume_id = $1 AND container_id = $2 AND mount_path = $3
-`
-
-type GetVolumeMountByVolumeContainerParams struct {
-	VolumeID    string `json:"volume_id"`
-	ContainerID string `json:"container_id"`
-	MountPath   string `json:"mount_path"`
-}
-
-func (q *Queries) GetVolumeMountByVolumeContainer(ctx context.Context, arg GetVolumeMountByVolumeContainerParams) (VolumeMounts, error) {
-	row := q.db.QueryRow(ctx, getVolumeMountByVolumeContainer, arg.VolumeID, arg.ContainerID, arg.MountPath)
-	var i VolumeMounts
-	err := row.Scan(
-		&i.ID,
-		&i.VolumeID,
-		&i.ContainerID,
-		&i.MountPath,
-		&i.AccessMode,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getVolumeMountStats = `-- name: GetVolumeMountStats :one
-SELECT 
-    COUNT(*) as total_mounts,
-    COALESCE(SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END), 0) as active_mounts,
-    COUNT(DISTINCT volume_id) as unique_volumes,
-    COUNT(DISTINCT container_id) as unique_containers,
-    MAX(created_at) as newest_mount,
-    MIN(created_at) as oldest_mount
-FROM volume_mounts
-`
-
-type GetVolumeMountStatsRow struct {
-	TotalMounts      int64       `json:"total_mounts"`
-	ActiveMounts     interface{} `json:"active_mounts"`
-	UniqueVolumes    int64       `json:"unique_volumes"`
-	UniqueContainers int64       `json:"unique_containers"`
-	NewestMount      interface{} `json:"newest_mount"`
-	OldestMount      interface{} `json:"oldest_mount"`
-}
-
-func (q *Queries) GetVolumeMountStats(ctx context.Context) (GetVolumeMountStatsRow, error) {
-	row := q.db.QueryRow(ctx, getVolumeMountStats)
-	var i GetVolumeMountStatsRow
-	err := row.Scan(
-		&i.TotalMounts,
-		&i.ActiveMounts,
-		&i.UniqueVolumes,
-		&i.UniqueContainers,
-		&i.NewestMount,
-		&i.OldestMount,
-	)
-	return i, err
-}
-
-const getVolumeMountsByContainer = `-- name: GetVolumeMountsByContainer :many
-SELECT id, volume_id, container_id, mount_path, access_mode, is_active, created_at, updated_at
-FROM volume_mounts 
-WHERE container_id = $1 AND is_active = true
-ORDER BY created_at DESC
-`
-
-func (q *Queries) GetVolumeMountsByContainer(ctx context.Context, containerID string) ([]VolumeMounts, error) {
-	rows, err := q.db.Query(ctx, getVolumeMountsByContainer, containerID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []VolumeMounts{}
-	for rows.Next() {
-		var i VolumeMounts
-		if err := rows.Scan(
-			&i.ID,
-			&i.VolumeID,
-			&i.ContainerID,
-			&i.MountPath,
-			&i.AccessMode,
-			&i.IsActive,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const getVolumeMountsByVolume = `-- name: GetVolumeMountsByVolume :many
-SELECT id, volume_id, container_id, mount_path, access_mode, is_active, created_at, updated_at
-FROM volume_mounts 
-WHERE volume_id = $1 AND is_active = true
-ORDER BY created_at DESC
+SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at FROM docker_mount_catalog WHERE volume_name = $1
 `
 
-func (q *Queries) GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]VolumeMounts, error) {
-	rows, err := q.db.Query(ctx, getVolumeMountsByVolume, volumeID)
+func (q *Queries) GetVolumeMountsByVolume(ctx context.Context, volumeName pgtype.Text) ([]DockerMountCatalog, error) {
+	rows, err := q.db.Query(ctx, getVolumeMountsByVolume, volumeName)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []VolumeMounts{}
+	items := []DockerMountCatalog{}
 	for rows.Next() {
-		var i VolumeMounts
+		var i DockerMountCatalog
 		if err := rows.Scan(
 			&i.ID,
-			&i.VolumeID,
-			&i.ContainerID,
-			&i.MountPath,
-			&i.AccessMode,
-			&i.IsActive,
+			&i.MountID,
+			&i.MountType,
+			&i.VolumeName,
+			&i.VolumeDriver,
+			&i.VolumeOptions,
+			&i.VolumeLabels,
+			&i.VolumeScope,
+			&i.SourcePath,
+			&i.ContainerCount,
+			&i.IsOrphaned,
+			&i.ComposeProject,
+			&i.ComposeServices,
+			&i.ComposeVersion,
+			&i.ComposeConfigFiles,
+			&i.FirstDiscoveredAt,
+			&i.LastSeenAt,
+			&i.DiscoverySource,
+			&i.IsTracked,
+			&i.TrackingEnabledAt,
+			&i.TrackingDisabledAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -597,47 +381,44 @@ func (q *Queries) GetVolumeMountsByVolume(ctx context.Context, volumeID string) 
 
 const getVolumeStats = `-- name: GetVolumeStats :one
 SELECT 
-    COUNT(*) as total_volumes,
-    COALESCE(COUNT(*) FILTER (WHERE is_active = true), 0) as active_volumes,
-    COUNT(DISTINCT driver) as unique_drivers,
-    COALESCE(COUNT(*) FILTER (WHERE last_scanned IS NOT NULL), 0) as scanned_volumes,
-    MAX(created_at) as newest_volume,
-    MIN(created_at) as oldest_volume
-FROM volumes
+    volume_id,
+    total_size_bytes,
+    used_size_bytes,
+    free_size_bytes,
+    last_scan_at
+FROM volumes 
+WHERE volume_id = $1
 `
 
 type GetVolumeStatsRow struct {
-	TotalVolumes   int64       `json:"total_volumes"`
-	ActiveVolumes  interface{} `json:"active_volumes"`
-	UniqueDrivers  int64       `json:"unique_drivers"`
-	ScannedVolumes interface{} `json:"scanned_volumes"`
-	NewestVolume   interface{} `json:"newest_volume"`
-	OldestVolume   interface{} `json:"oldest_volume"`
+	VolumeID       string             `json:"volume_id"`
+	TotalSizeBytes pgtype.Int8        `json:"total_size_bytes"`
+	UsedSizeBytes  pgtype.Int8        `json:"used_size_bytes"`
+	FreeSizeBytes  pgtype.Int8        `json:"free_size_bytes"`
+	LastScanAt     pgtype.Timestamptz `json:"last_scan_at"`
 }
 
-func (q *Queries) GetVolumeStats(ctx context.Context) (GetVolumeStatsRow, error) {
-	row := q.db.QueryRow(ctx, getVolumeStats)
+func (q *Queries) GetVolumeStats(ctx context.Context, volumeID string) (GetVolumeStatsRow, error) {
+	row := q.db.QueryRow(ctx, getVolumeStats, volumeID)
 	var i GetVolumeStatsRow
 	err := row.Scan(
-		&i.TotalVolumes,
-		&i.ActiveVolumes,
-		&i.UniqueDrivers,
-		&i.ScannedVolumes,
-		&i.NewestVolume,
-		&i.OldestVolume,
+		&i.VolumeID,
+		&i.TotalSizeBytes,
+		&i.UsedSizeBytes,
+		&i.FreeSizeBytes,
+		&i.LastScanAt,
 	)
 	return i, err
 }
 
-const getVolumesByDriver = `-- name: GetVolumesByDriver :many
-SELECT id, volume_id, name, driver, mountpoint, labels, options, scope, status, last_scanned, is_active, created_at, updated_at
-FROM volumes 
-WHERE driver = $1 AND is_active = true
-ORDER BY created_at DESC
+const listActiveVolumes = `-- name: ListActiveVolumes :many
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at FROM volumes 
+WHERE is_active = true
+ORDER BY volume_id
 `
 
-func (q *Queries) GetVolumesByDriver(ctx context.Context, driver string) ([]Volumes, error) {
-	rows, err := q.db.Query(ctx, getVolumesByDriver, driver)
+func (q *Queries) ListActiveVolumes(ctx context.Context) ([]Volumes, error) {
+	rows, err := q.db.Query(ctx, listActiveVolumes)
 	if err != nil {
 		return nil, err
 	}
@@ -646,192 +427,19 @@ func (q *Queries) GetVolumesByDriver(ctx context.Context, driver string) ([]Volu
 	for rows.Next() {
 		var i Volumes
 		if err := rows.Scan(
-			&i.ID,
 			&i.VolumeID,
-			&i.Name,
-			&i.Driver,
-			&i.Mountpoint,
-			&i.Labels,
-			&i.Options,
-			&i.Scope,
-			&i.Status,
-			&i.LastScanned,
+			&i.DisplayName,
+			&i.MountPoint,
+			&i.ContainerNames,
 			&i.IsActive,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getVolumesByLabel = `-- name: GetVolumesByLabel :many
-SELECT id, volume_id, name, driver, mountpoint, labels, options, scope, status, last_scanned, is_active, created_at, updated_at
-FROM volumes 
-WHERE labels->$1 = $2 AND is_active = true
-ORDER BY created_at DESC
-`
-
-type GetVolumesByLabelParams struct {
-	Labels   pgtype.Text `json:"labels"`
-	Labels_2 pgtype.Text `json:"labels_2"`
-}
-
-func (q *Queries) GetVolumesByLabel(ctx context.Context, arg GetVolumesByLabelParams) ([]Volumes, error) {
-	rows, err := q.db.Query(ctx, getVolumesByLabel, arg.Labels, arg.Labels_2)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Volumes{}
-	for rows.Next() {
-		var i Volumes
-		if err := rows.Scan(
-			&i.ID,
-			&i.VolumeID,
-			&i.Name,
-			&i.Driver,
-			&i.Mountpoint,
-			&i.Labels,
-			&i.Options,
-			&i.Scope,
-			&i.Status,
-			&i.LastScanned,
-			&i.IsActive,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const hardDeleteContainer = `-- name: HardDeleteContainer :exec
-DELETE FROM containers WHERE id = $1
-`
-
-func (q *Queries) HardDeleteContainer(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, hardDeleteContainer, id)
-	return err
-}
-
-const hardDeleteVolume = `-- name: HardDeleteVolume :exec
-DELETE FROM volumes WHERE id = $1
-`
-
-func (q *Queries) HardDeleteVolume(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, hardDeleteVolume, id)
-	return err
-}
-
-const hardDeleteVolumeMount = `-- name: HardDeleteVolumeMount :exec
-DELETE FROM volume_mounts WHERE id = $1
-`
-
-func (q *Queries) HardDeleteVolumeMount(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, hardDeleteVolumeMount, id)
-	return err
-}
-
-const hardDeleteVolumeMountByVolumeContainer = `-- name: HardDeleteVolumeMountByVolumeContainer :exec
-DELETE FROM volume_mounts WHERE volume_id = $1 AND container_id = $2
-`
-
-type HardDeleteVolumeMountByVolumeContainerParams struct {
-	VolumeID    string `json:"volume_id"`
-	ContainerID string `json:"container_id"`
-}
-
-func (q *Queries) HardDeleteVolumeMountByVolumeContainer(ctx context.Context, arg HardDeleteVolumeMountByVolumeContainerParams) error {
-	_, err := q.db.Exec(ctx, hardDeleteVolumeMountByVolumeContainer, arg.VolumeID, arg.ContainerID)
-	return err
-}
-
-const listContainers = `-- name: ListContainers :many
-SELECT id, container_id, name, image, state, status, labels, started_at, finished_at, is_active, created_at, updated_at
-FROM containers 
-WHERE is_active = true
-ORDER BY created_at DESC
-LIMIT $1 OFFSET $2
-`
-
-type ListContainersParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-func (q *Queries) ListContainers(ctx context.Context, arg ListContainersParams) ([]Containers, error) {
-	rows, err := q.db.Query(ctx, listContainers, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Containers{}
-	for rows.Next() {
-		var i Containers
-		if err := rows.Scan(
-			&i.ID,
-			&i.ContainerID,
-			&i.Name,
-			&i.Image,
-			&i.State,
-			&i.Status,
-			&i.Labels,
-			&i.StartedAt,
-			&i.FinishedAt,
-			&i.IsActive,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listVolumeMounts = `-- name: ListVolumeMounts :many
-SELECT id, volume_id, container_id, mount_path, access_mode, is_active, created_at, updated_at
-FROM volume_mounts 
-WHERE is_active = true
-ORDER BY created_at DESC
-LIMIT $1 OFFSET $2
-`
-
-type ListVolumeMountsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-func (q *Queries) ListVolumeMounts(ctx context.Context, arg ListVolumeMountsParams) ([]VolumeMounts, error) {
-	rows, err := q.db.Query(ctx, listVolumeMounts, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []VolumeMounts{}
-	for rows.Next() {
-		var i VolumeMounts
-		if err := rows.Scan(
-			&i.ID,
-			&i.VolumeID,
-			&i.ContainerID,
-			&i.MountPath,
-			&i.AccessMode,
-			&i.IsActive,
+			&i.TotalSizeBytes,
+			&i.UsedSizeBytes,
+			&i.FreeSizeBytes,
+			&i.FilesystemType,
+			&i.ContainerCount,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.LastModifiedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -846,10 +454,8 @@ func (q *Queries) ListVolumeMounts(ctx context.Context, arg ListVolumeMountsPara
 }
 
 const listVolumes = `-- name: ListVolumes :many
-SELECT id, volume_id, name, driver, mountpoint, labels, options, scope, status, last_scanned, is_active, created_at, updated_at
-FROM volumes 
-WHERE is_active = true
-ORDER BY created_at DESC
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at FROM volumes 
+ORDER BY volume_id
 LIMIT $1 OFFSET $2
 `
 
@@ -868,17 +474,19 @@ func (q *Queries) ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Vol
 	for rows.Next() {
 		var i Volumes
 		if err := rows.Scan(
-			&i.ID,
 			&i.VolumeID,
-			&i.Name,
-			&i.Driver,
-			&i.Mountpoint,
-			&i.Labels,
-			&i.Options,
-			&i.Scope,
-			&i.Status,
-			&i.LastScanned,
+			&i.DisplayName,
+			&i.MountPoint,
+			&i.ContainerNames,
 			&i.IsActive,
+			&i.TotalSizeBytes,
+			&i.UsedSizeBytes,
+			&i.FreeSizeBytes,
+			&i.FilesystemType,
+			&i.ContainerCount,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.LastModifiedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -892,301 +500,395 @@ func (q *Queries) ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Vol
 	return items, nil
 }
 
-const softDeleteContainer = `-- name: SoftDeleteContainer :exec
-UPDATE containers 
-SET is_active = false, updated_at = CURRENT_TIMESTAMP 
-WHERE id = $1
-`
-
-func (q *Queries) SoftDeleteContainer(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, softDeleteContainer, id)
-	return err
-}
-
 const softDeleteVolume = `-- name: SoftDeleteVolume :exec
 UPDATE volumes 
-SET is_active = false, updated_at = CURRENT_TIMESTAMP 
-WHERE id = $1
+SET is_active = false, updated_at = NOW()
+WHERE volume_id = $1
 `
 
-func (q *Queries) SoftDeleteVolume(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, softDeleteVolume, id)
-	return err
-}
-
-const softDeleteVolumeMount = `-- name: SoftDeleteVolumeMount :exec
-UPDATE volume_mounts 
-SET is_active = false, updated_at = CURRENT_TIMESTAMP 
-WHERE id = $1
-`
-
-func (q *Queries) SoftDeleteVolumeMount(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, softDeleteVolumeMount, id)
-	return err
-}
-
-const softDeleteVolumeMountByVolumeContainer = `-- name: SoftDeleteVolumeMountByVolumeContainer :exec
-UPDATE volume_mounts 
-SET is_active = false, updated_at = CURRENT_TIMESTAMP 
-WHERE volume_id = $1 AND container_id = $2
-`
-
-type SoftDeleteVolumeMountByVolumeContainerParams struct {
-	VolumeID    string `json:"volume_id"`
-	ContainerID string `json:"container_id"`
-}
-
-func (q *Queries) SoftDeleteVolumeMountByVolumeContainer(ctx context.Context, arg SoftDeleteVolumeMountByVolumeContainerParams) error {
-	_, err := q.db.Exec(ctx, softDeleteVolumeMountByVolumeContainer, arg.VolumeID, arg.ContainerID)
+func (q *Queries) SoftDeleteVolume(ctx context.Context, volumeID string) error {
+	_, err := q.db.Exec(ctx, softDeleteVolume, volumeID)
 	return err
 }
 
 const updateContainer = `-- name: UpdateContainer :one
-UPDATE containers 
-SET name = $2, image = $3, state = $4, status = $5, labels = $6, started_at = $7, finished_at = $8, is_active = $9, updated_at = CURRENT_TIMESTAMP
-WHERE id = $1
-RETURNING updated_at
+UPDATE docker_mount_attachments 
+SET 
+    container_name = $3,
+    access_mode = $4,
+    container_state = $5,
+    container_image = $6,
+    container_labels = $7,
+    updated_at = NOW()
+WHERE container_id = $1 AND mount_catalog_id = $2
+RETURNING id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at
 `
 
 type UpdateContainerParams struct {
-	ID         int64            `json:"id"`
-	Name       string           `json:"name"`
-	Image      string           `json:"image"`
-	State      string           `json:"state"`
-	Status     string           `json:"status"`
-	Labels     pgtype.Text      `json:"labels"`
-	StartedAt  pgtype.Timestamp `json:"started_at"`
-	FinishedAt pgtype.Timestamp `json:"finished_at"`
-	IsActive   pgtype.Bool      `json:"is_active"`
+	ContainerID     string      `json:"container_id"`
+	MountCatalogID  int64       `json:"mount_catalog_id"`
+	ContainerName   pgtype.Text `json:"container_name"`
+	AccessMode      string      `json:"access_mode"`
+	ContainerState  pgtype.Text `json:"container_state"`
+	ContainerImage  pgtype.Text `json:"container_image"`
+	ContainerLabels []byte      `json:"container_labels"`
 }
 
-func (q *Queries) UpdateContainer(ctx context.Context, arg UpdateContainerParams) (time.Time, error) {
+func (q *Queries) UpdateContainer(ctx context.Context, arg UpdateContainerParams) (DockerMountAttachments, error) {
 	row := q.db.QueryRow(ctx, updateContainer,
-		arg.ID,
-		arg.Name,
-		arg.Image,
-		arg.State,
-		arg.Status,
-		arg.Labels,
-		arg.StartedAt,
-		arg.FinishedAt,
-		arg.IsActive,
+		arg.ContainerID,
+		arg.MountCatalogID,
+		arg.ContainerName,
+		arg.AccessMode,
+		arg.ContainerState,
+		arg.ContainerImage,
+		arg.ContainerLabels,
 	)
-	var updated_at time.Time
-	err := row.Scan(&updated_at)
-	return updated_at, err
+	var i DockerMountAttachments
+	err := row.Scan(
+		&i.ID,
+		&i.MountCatalogID,
+		&i.ContainerID,
+		&i.ContainerName,
+		&i.DestinationPath,
+		&i.AccessMode,
+		&i.Propagation,
+		&i.ContainerState,
+		&i.ContainerImage,
+		&i.ContainerLabels,
+		&i.ContainerComposeProject,
+		&i.ContainerComposeService,
+		&i.ContainerComposeContainerNumber,
+		&i.ContainerComposeConfigHash,
+		&i.AttachedAt,
+		&i.DetachedAt,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateLastScanned = `-- name: UpdateLastScanned :exec
 UPDATE volumes 
-SET last_scanned = $2, updated_at = CURRENT_TIMESTAMP 
+SET last_scan_at = $2, updated_at = NOW()
 WHERE volume_id = $1
 `
 
 type UpdateLastScannedParams struct {
-	VolumeID    string           `json:"volume_id"`
-	LastScanned pgtype.Timestamp `json:"last_scanned"`
+	VolumeID   string             `json:"volume_id"`
+	LastScanAt pgtype.Timestamptz `json:"last_scan_at"`
 }
 
 func (q *Queries) UpdateLastScanned(ctx context.Context, arg UpdateLastScannedParams) error {
-	_, err := q.db.Exec(ctx, updateLastScanned, arg.VolumeID, arg.LastScanned)
+	_, err := q.db.Exec(ctx, updateLastScanned, arg.VolumeID, arg.LastScanAt)
 	return err
 }
 
 const updateVolume = `-- name: UpdateVolume :one
-UPDATE volumes 
-SET name = $2, driver = $3, mountpoint = $4, labels = $5, options = $6, scope = $7, status = $8, is_active = $9, updated_at = CURRENT_TIMESTAMP
-WHERE id = $1
-RETURNING updated_at
+UPDATE volumes
+SET 
+    display_name = $2,
+    mount_point = $3,
+    container_names = $4,
+    is_active = $5,
+    total_size_bytes = $6,
+    used_size_bytes = $7,
+    free_size_bytes = $8,
+    filesystem_type = $9,
+    container_count = $10,
+    last_scan_at = $11,
+    last_modified_at = $12,
+    updated_at = NOW()
+WHERE volume_id = $1
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at
 `
 
 type UpdateVolumeParams struct {
-	ID         int64       `json:"id"`
-	Name       string      `json:"name"`
-	Driver     string      `json:"driver"`
-	Mountpoint string      `json:"mountpoint"`
-	Labels     pgtype.Text `json:"labels"`
-	Options    pgtype.Text `json:"options"`
-	Scope      pgtype.Text `json:"scope"`
-	Status     string      `json:"status"`
-	IsActive   pgtype.Bool `json:"is_active"`
+	VolumeID       string             `json:"volume_id"`
+	DisplayName    pgtype.Text        `json:"display_name"`
+	MountPoint     string             `json:"mount_point"`
+	ContainerNames []string           `json:"container_names"`
+	IsActive       pgtype.Bool        `json:"is_active"`
+	TotalSizeBytes pgtype.Int8        `json:"total_size_bytes"`
+	UsedSizeBytes  pgtype.Int8        `json:"used_size_bytes"`
+	FreeSizeBytes  pgtype.Int8        `json:"free_size_bytes"`
+	FilesystemType pgtype.Text        `json:"filesystem_type"`
+	ContainerCount pgtype.Int4        `json:"container_count"`
+	LastScanAt     pgtype.Timestamptz `json:"last_scan_at"`
+	LastModifiedAt pgtype.Timestamptz `json:"last_modified_at"`
 }
 
-func (q *Queries) UpdateVolume(ctx context.Context, arg UpdateVolumeParams) (time.Time, error) {
+func (q *Queries) UpdateVolume(ctx context.Context, arg UpdateVolumeParams) (Volumes, error) {
 	row := q.db.QueryRow(ctx, updateVolume,
-		arg.ID,
-		arg.Name,
-		arg.Driver,
-		arg.Mountpoint,
-		arg.Labels,
-		arg.Options,
-		arg.Scope,
-		arg.Status,
+		arg.VolumeID,
+		arg.DisplayName,
+		arg.MountPoint,
+		arg.ContainerNames,
 		arg.IsActive,
+		arg.TotalSizeBytes,
+		arg.UsedSizeBytes,
+		arg.FreeSizeBytes,
+		arg.FilesystemType,
+		arg.ContainerCount,
+		arg.LastScanAt,
+		arg.LastModifiedAt,
 	)
-	var updated_at time.Time
-	err := row.Scan(&updated_at)
-	return updated_at, err
+	var i Volumes
+	err := row.Scan(
+		&i.VolumeID,
+		&i.DisplayName,
+		&i.MountPoint,
+		&i.ContainerNames,
+		&i.IsActive,
+		&i.TotalSizeBytes,
+		&i.UsedSizeBytes,
+		&i.FreeSizeBytes,
+		&i.FilesystemType,
+		&i.ContainerCount,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.LastModifiedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
-const updateVolumeMount = `-- name: UpdateVolumeMount :one
-UPDATE volume_mounts 
-SET access_mode = $2, is_active = $3, updated_at = CURRENT_TIMESTAMP
-WHERE id = $1
-RETURNING updated_at
+const updateVolumeStats = `-- name: UpdateVolumeStats :one
+UPDATE volumes
+SET 
+    total_size_bytes = $2,
+    used_size_bytes = $3,
+    free_size_bytes = $4,
+    last_scan_at = NOW(),
+    updated_at = NOW()
+WHERE volume_id = $1
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at
 `
 
-type UpdateVolumeMountParams struct {
-	ID         int64       `json:"id"`
-	AccessMode string      `json:"access_mode"`
-	IsActive   pgtype.Bool `json:"is_active"`
+type UpdateVolumeStatsParams struct {
+	VolumeID       string      `json:"volume_id"`
+	TotalSizeBytes pgtype.Int8 `json:"total_size_bytes"`
+	UsedSizeBytes  pgtype.Int8 `json:"used_size_bytes"`
+	FreeSizeBytes  pgtype.Int8 `json:"free_size_bytes"`
 }
 
-func (q *Queries) UpdateVolumeMount(ctx context.Context, arg UpdateVolumeMountParams) (time.Time, error) {
-	row := q.db.QueryRow(ctx, updateVolumeMount, arg.ID, arg.AccessMode, arg.IsActive)
-	var updated_at time.Time
-	err := row.Scan(&updated_at)
-	return updated_at, err
+func (q *Queries) UpdateVolumeStats(ctx context.Context, arg UpdateVolumeStatsParams) (Volumes, error) {
+	row := q.db.QueryRow(ctx, updateVolumeStats,
+		arg.VolumeID,
+		arg.TotalSizeBytes,
+		arg.UsedSizeBytes,
+		arg.FreeSizeBytes,
+	)
+	var i Volumes
+	err := row.Scan(
+		&i.VolumeID,
+		&i.DisplayName,
+		&i.MountPoint,
+		&i.ContainerNames,
+		&i.IsActive,
+		&i.TotalSizeBytes,
+		&i.UsedSizeBytes,
+		&i.FreeSizeBytes,
+		&i.FilesystemType,
+		&i.ContainerCount,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.LastModifiedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const upsertContainer = `-- name: UpsertContainer :one
-INSERT INTO containers (container_id, name, image, state, status, labels, started_at, finished_at, is_active)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-ON CONFLICT (container_id) 
-DO UPDATE SET 
-    name = EXCLUDED.name,
-    image = EXCLUDED.image,
-    state = EXCLUDED.state,
-    status = EXCLUDED.status,
-    labels = EXCLUDED.labels,
-    started_at = EXCLUDED.started_at,
-    finished_at = EXCLUDED.finished_at,
-    is_active = EXCLUDED.is_active,
-    updated_at = CURRENT_TIMESTAMP
-RETURNING id, created_at, updated_at
+INSERT INTO docker_mount_attachments (
+    mount_catalog_id, container_id, container_name, destination_path,
+    access_mode, container_state, container_image, container_labels
+) VALUES (
+    $1, $2, $3, $4,
+    $5, $6, $7, $8
+) RETURNING id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at
 `
 
 type UpsertContainerParams struct {
-	ContainerID string           `json:"container_id"`
-	Name        string           `json:"name"`
-	Image       string           `json:"image"`
-	State       string           `json:"state"`
-	Status      string           `json:"status"`
-	Labels      pgtype.Text      `json:"labels"`
-	StartedAt   pgtype.Timestamp `json:"started_at"`
-	FinishedAt  pgtype.Timestamp `json:"finished_at"`
-	IsActive    pgtype.Bool      `json:"is_active"`
+	MountCatalogID  int64       `json:"mount_catalog_id"`
+	ContainerID     string      `json:"container_id"`
+	ContainerName   pgtype.Text `json:"container_name"`
+	DestinationPath string      `json:"destination_path"`
+	AccessMode      string      `json:"access_mode"`
+	ContainerState  pgtype.Text `json:"container_state"`
+	ContainerImage  pgtype.Text `json:"container_image"`
+	ContainerLabels []byte      `json:"container_labels"`
 }
 
-type UpsertContainerRow struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (q *Queries) UpsertContainer(ctx context.Context, arg UpsertContainerParams) (UpsertContainerRow, error) {
+// Simple approach: try insert first, then handle constraint violations in Go
+func (q *Queries) UpsertContainer(ctx context.Context, arg UpsertContainerParams) (DockerMountAttachments, error) {
 	row := q.db.QueryRow(ctx, upsertContainer,
+		arg.MountCatalogID,
 		arg.ContainerID,
-		arg.Name,
-		arg.Image,
-		arg.State,
-		arg.Status,
-		arg.Labels,
-		arg.StartedAt,
-		arg.FinishedAt,
-		arg.IsActive,
+		arg.ContainerName,
+		arg.DestinationPath,
+		arg.AccessMode,
+		arg.ContainerState,
+		arg.ContainerImage,
+		arg.ContainerLabels,
 	)
-	var i UpsertContainerRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	var i DockerMountAttachments
+	err := row.Scan(
+		&i.ID,
+		&i.MountCatalogID,
+		&i.ContainerID,
+		&i.ContainerName,
+		&i.DestinationPath,
+		&i.AccessMode,
+		&i.Propagation,
+		&i.ContainerState,
+		&i.ContainerImage,
+		&i.ContainerLabels,
+		&i.ContainerComposeProject,
+		&i.ContainerComposeService,
+		&i.ContainerComposeContainerNumber,
+		&i.ContainerComposeConfigHash,
+		&i.AttachedAt,
+		&i.DetachedAt,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
 const upsertVolume = `-- name: UpsertVolume :one
-INSERT INTO volumes (volume_id, name, driver, mountpoint, labels, options, scope, status, is_active)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-ON CONFLICT (volume_id) 
-DO UPDATE SET 
-    name = EXCLUDED.name,
-    driver = EXCLUDED.driver,
-    mountpoint = EXCLUDED.mountpoint,
-    labels = EXCLUDED.labels,
-    options = EXCLUDED.options,
-    scope = EXCLUDED.scope,
-    status = EXCLUDED.status,
+INSERT INTO volumes (
+    volume_id, display_name, mount_point, container_names, is_active,
+    total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type,
+    container_count, first_seen_at, last_scan_at, last_modified_at
+) VALUES (
+    $1, $2, $3, $4, $5,
+    $6, $7, $8, $9,
+    $10, $11, $12, $13
+) ON CONFLICT (volume_id) DO UPDATE SET
+    display_name = EXCLUDED.display_name,
+    mount_point = EXCLUDED.mount_point,
+    container_names = EXCLUDED.container_names,
     is_active = EXCLUDED.is_active,
-    updated_at = CURRENT_TIMESTAMP
-RETURNING id, created_at, updated_at
+    total_size_bytes = EXCLUDED.total_size_bytes,
+    used_size_bytes = EXCLUDED.used_size_bytes,
+    free_size_bytes = EXCLUDED.free_size_bytes,
+    filesystem_type = EXCLUDED.filesystem_type,
+    container_count = EXCLUDED.container_count,
+    last_scan_at = EXCLUDED.last_scan_at,
+    last_modified_at = EXCLUDED.last_modified_at,
+    updated_at = NOW()
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at
 `
 
 type UpsertVolumeParams struct {
-	VolumeID   string      `json:"volume_id"`
-	Name       string      `json:"name"`
-	Driver     string      `json:"driver"`
-	Mountpoint string      `json:"mountpoint"`
-	Labels     pgtype.Text `json:"labels"`
-	Options    pgtype.Text `json:"options"`
-	Scope      pgtype.Text `json:"scope"`
-	Status     string      `json:"status"`
-	IsActive   pgtype.Bool `json:"is_active"`
+	VolumeID       string             `json:"volume_id"`
+	DisplayName    pgtype.Text        `json:"display_name"`
+	MountPoint     string             `json:"mount_point"`
+	ContainerNames []string           `json:"container_names"`
+	IsActive       pgtype.Bool        `json:"is_active"`
+	TotalSizeBytes pgtype.Int8        `json:"total_size_bytes"`
+	UsedSizeBytes  pgtype.Int8        `json:"used_size_bytes"`
+	FreeSizeBytes  pgtype.Int8        `json:"free_size_bytes"`
+	FilesystemType pgtype.Text        `json:"filesystem_type"`
+	ContainerCount pgtype.Int4        `json:"container_count"`
+	FirstSeenAt    pgtype.Timestamptz `json:"first_seen_at"`
+	LastScanAt     pgtype.Timestamptz `json:"last_scan_at"`
+	LastModifiedAt pgtype.Timestamptz `json:"last_modified_at"`
 }
 
-type UpsertVolumeRow struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (q *Queries) UpsertVolume(ctx context.Context, arg UpsertVolumeParams) (UpsertVolumeRow, error) {
+func (q *Queries) UpsertVolume(ctx context.Context, arg UpsertVolumeParams) (Volumes, error) {
 	row := q.db.QueryRow(ctx, upsertVolume,
 		arg.VolumeID,
-		arg.Name,
-		arg.Driver,
-		arg.Mountpoint,
-		arg.Labels,
-		arg.Options,
-		arg.Scope,
-		arg.Status,
+		arg.DisplayName,
+		arg.MountPoint,
+		arg.ContainerNames,
 		arg.IsActive,
+		arg.TotalSizeBytes,
+		arg.UsedSizeBytes,
+		arg.FreeSizeBytes,
+		arg.FilesystemType,
+		arg.ContainerCount,
+		arg.FirstSeenAt,
+		arg.LastScanAt,
+		arg.LastModifiedAt,
 	)
-	var i UpsertVolumeRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	var i Volumes
+	err := row.Scan(
+		&i.VolumeID,
+		&i.DisplayName,
+		&i.MountPoint,
+		&i.ContainerNames,
+		&i.IsActive,
+		&i.TotalSizeBytes,
+		&i.UsedSizeBytes,
+		&i.FreeSizeBytes,
+		&i.FilesystemType,
+		&i.ContainerCount,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.LastModifiedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
 const upsertVolumeMount = `-- name: UpsertVolumeMount :one
-INSERT INTO volume_mounts (volume_id, container_id, mount_path, access_mode, is_active)
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (volume_id, container_id, mount_path) 
-DO UPDATE SET 
-    access_mode = EXCLUDED.access_mode,
-    is_active = EXCLUDED.is_active,
-    updated_at = CURRENT_TIMESTAMP
-RETURNING id, created_at, updated_at
+INSERT INTO docker_mount_catalog (
+    mount_id, mount_type, source_path, container_count
+) VALUES (
+    $1, $2, $3, $4
+) ON CONFLICT (mount_id) DO UPDATE SET
+    container_count = EXCLUDED.container_count,
+    last_seen_at = NOW(),
+    updated_at = NOW()
+RETURNING id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at
 `
 
 type UpsertVolumeMountParams struct {
-	VolumeID    string      `json:"volume_id"`
-	ContainerID string      `json:"container_id"`
-	MountPath   string      `json:"mount_path"`
-	AccessMode  string      `json:"access_mode"`
-	IsActive    pgtype.Bool `json:"is_active"`
+	MountID        string `json:"mount_id"`
+	MountType      string `json:"mount_type"`
+	SourcePath     string `json:"source_path"`
+	ContainerCount int32  `json:"container_count"`
 }
 
-type UpsertVolumeMountRow struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (q *Queries) UpsertVolumeMount(ctx context.Context, arg UpsertVolumeMountParams) (UpsertVolumeMountRow, error) {
+func (q *Queries) UpsertVolumeMount(ctx context.Context, arg UpsertVolumeMountParams) (DockerMountCatalog, error) {
 	row := q.db.QueryRow(ctx, upsertVolumeMount,
-		arg.VolumeID,
-		arg.ContainerID,
-		arg.MountPath,
-		arg.AccessMode,
-		arg.IsActive,
+		arg.MountID,
+		arg.MountType,
+		arg.SourcePath,
+		arg.ContainerCount,
 	)
-	var i UpsertVolumeMountRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	var i DockerMountCatalog
+	err := row.Scan(
+		&i.ID,
+		&i.MountID,
+		&i.MountType,
+		&i.VolumeName,
+		&i.VolumeDriver,
+		&i.VolumeOptions,
+		&i.VolumeLabels,
+		&i.VolumeScope,
+		&i.SourcePath,
+		&i.ContainerCount,
+		&i.IsOrphaned,
+		&i.ComposeProject,
+		&i.ComposeServices,
+		&i.ComposeVersion,
+		&i.ComposeConfigFiles,
+		&i.FirstDiscoveredAt,
+		&i.LastSeenAt,
+		&i.DiscoverySource,
+		&i.IsTracked,
+		&i.TrackingEnabledAt,
+		&i.TrackingDisabledAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }

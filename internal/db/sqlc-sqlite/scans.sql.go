@@ -7,21 +7,20 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
+	"database/sql"
 )
 
 const cancelScanJob = `-- name: CancelScanJob :exec
 UPDATE scan_jobs
 SET 
     status = 'cancelled',
-    completed_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE scan_id = $1
+    completed_at = datetime('now'),
+    updated_at = datetime('now')
+WHERE scan_id = ?1
 `
 
 func (q *Queries) CancelScanJob(ctx context.Context, scanID string) error {
-	_, err := q.db.Exec(ctx, cancelScanJob, scanID)
+	_, err := q.exec(ctx, q.cancelScanJobStmt, cancelScanJob, scanID)
 	return err
 }
 
@@ -29,22 +28,22 @@ const completeScanJob = `-- name: CompleteScanJob :exec
 UPDATE scan_jobs
 SET 
     status = 'completed',
-    completed_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE scan_id = $1
+    completed_at = datetime('now'),
+    updated_at = datetime('now')
+WHERE scan_id = ?1
 `
 
 func (q *Queries) CompleteScanJob(ctx context.Context, scanID string) error {
-	_, err := q.db.Exec(ctx, completeScanJob, scanID)
+	_, err := q.exec(ctx, q.completeScanJobStmt, completeScanJob, scanID)
 	return err
 }
 
 const countScanJobsByStatus = `-- name: CountScanJobsByStatus :one
-SELECT COUNT(*) FROM scan_jobs WHERE status = $1
+SELECT COUNT(*) FROM scan_jobs WHERE status = ?
 `
 
 func (q *Queries) CountScanJobsByStatus(ctx context.Context, status string) (int64, error) {
-	row := q.db.QueryRow(ctx, countScanJobsByStatus, status)
+	row := q.queryRow(ctx, q.countScanJobsByStatusStmt, countScanJobsByStatus, status)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -55,20 +54,20 @@ const createScanJob = `-- name: CreateScanJob :one
 INSERT INTO scan_jobs (
     scan_id, volume_id, status, started_at
 ) VALUES (
-    $1, $2, $3, $4
+    ?, ?, ?, ?
 ) RETURNING scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at
 `
 
 type CreateScanJobParams struct {
-	ScanID    string             `json:"scan_id"`
-	VolumeID  pgtype.Text        `json:"volume_id"`
-	Status    string             `json:"status"`
-	StartedAt pgtype.Timestamptz `json:"started_at"`
+	ScanID    string         `json:"scan_id"`
+	VolumeID  sql.NullString `json:"volume_id"`
+	Status    string         `json:"status"`
+	StartedAt sql.NullString `json:"started_at"`
 }
 
-// Scan job management queries for PostgreSQL
+// Scan job management queries for SQLite
 func (q *Queries) CreateScanJob(ctx context.Context, arg CreateScanJobParams) (ScanJobs, error) {
-	row := q.db.QueryRow(ctx, createScanJob,
+	row := q.queryRow(ctx, q.createScanJobStmt, createScanJob,
 		arg.ScanID,
 		arg.VolumeID,
 		arg.Status,
@@ -103,12 +102,12 @@ func (q *Queries) CreateScanJob(ctx context.Context, arg CreateScanJobParams) (S
 
 const deleteOldScanJobs = `-- name: DeleteOldScanJobs :exec
 DELETE FROM scan_jobs
-WHERE completed_at < $1
+WHERE completed_at < ?
 AND status IN ('completed', 'failed', 'cancelled')
 `
 
-func (q *Queries) DeleteOldScanJobs(ctx context.Context, completedAt pgtype.Timestamptz) error {
-	_, err := q.db.Exec(ctx, deleteOldScanJobs, completedAt)
+func (q *Queries) DeleteOldScanJobs(ctx context.Context, completedAt sql.NullString) error {
+	_, err := q.exec(ctx, q.deleteOldScanJobsStmt, deleteOldScanJobs, completedAt)
 	return err
 }
 
@@ -116,19 +115,19 @@ const failScanJob = `-- name: FailScanJob :exec
 UPDATE scan_jobs
 SET 
     status = 'failed',
-    error_message = $2,
-    completed_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE scan_id = $1
+    error_message = ?2,
+    completed_at = datetime('now'),
+    updated_at = datetime('now')
+WHERE scan_id = ?1
 `
 
 type FailScanJobParams struct {
-	ScanID       string      `json:"scan_id"`
-	ErrorMessage pgtype.Text `json:"error_message"`
+	ScanID       string         `json:"scan_id"`
+	ErrorMessage sql.NullString `json:"error_message"`
 }
 
 func (q *Queries) FailScanJob(ctx context.Context, arg FailScanJobParams) error {
-	_, err := q.db.Exec(ctx, failScanJob, arg.ScanID, arg.ErrorMessage)
+	_, err := q.exec(ctx, q.failScanJobStmt, failScanJob, arg.ScanID, arg.ErrorMessage)
 	return err
 }
 
@@ -139,7 +138,7 @@ ORDER BY started_at ASC
 `
 
 func (q *Queries) GetActiveScanJobs(ctx context.Context) ([]ScanJobs, error) {
-	rows, err := q.db.Query(ctx, getActiveScanJobs)
+	rows, err := q.query(ctx, q.getActiveScanJobsStmt, getActiveScanJobs)
 	if err != nil {
 		return nil, err
 	}
@@ -173,6 +172,9 @@ func (q *Queries) GetActiveScanJobs(ctx context.Context) ([]ScanJobs, error) {
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -183,18 +185,18 @@ func (q *Queries) GetActiveScanJobs(ctx context.Context) ([]ScanJobs, error) {
 const getCompletedScanJobs = `-- name: GetCompletedScanJobs :many
 SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs
 WHERE status = 'completed'
-AND completed_at >= $1
+AND completed_at >= ?
 ORDER BY completed_at DESC
-LIMIT $2
+LIMIT ?
 `
 
 type GetCompletedScanJobsParams struct {
-	CompletedAt pgtype.Timestamptz `json:"completed_at"`
-	Limit       int32              `json:"limit"`
+	CompletedAt sql.NullString `json:"completed_at"`
+	Limit       int64          `json:"limit"`
 }
 
 func (q *Queries) GetCompletedScanJobs(ctx context.Context, arg GetCompletedScanJobsParams) ([]ScanJobs, error) {
-	rows, err := q.db.Query(ctx, getCompletedScanJobs, arg.CompletedAt, arg.Limit)
+	rows, err := q.query(ctx, q.getCompletedScanJobsStmt, getCompletedScanJobs, arg.CompletedAt, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -229,6 +231,9 @@ func (q *Queries) GetCompletedScanJobs(ctx context.Context, arg GetCompletedScan
 		}
 		items = append(items, i)
 	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -236,11 +241,11 @@ func (q *Queries) GetCompletedScanJobs(ctx context.Context, arg GetCompletedScan
 }
 
 const getScanJobByScanID = `-- name: GetScanJobByScanID :one
-SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs WHERE scan_id = $1
+SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs WHERE scan_id = ?
 `
 
 func (q *Queries) GetScanJobByScanID(ctx context.Context, scanID string) (ScanJobs, error) {
-	row := q.db.QueryRow(ctx, getScanJobByScanID, scanID)
+	row := q.queryRow(ctx, q.getScanJobByScanIDStmt, getScanJobByScanID, scanID)
 	var i ScanJobs
 	err := row.Scan(
 		&i.ScanID,
@@ -271,16 +276,16 @@ func (q *Queries) GetScanJobByScanID(ctx context.Context, scanID string) (ScanJo
 const listScanJobs = `-- name: ListScanJobs :many
 SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs
 ORDER BY started_at DESC
-LIMIT $1 OFFSET $2
+LIMIT ? OFFSET ?
 `
 
 type ListScanJobsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
 }
 
 func (q *Queries) ListScanJobs(ctx context.Context, arg ListScanJobsParams) ([]ScanJobs, error) {
-	rows, err := q.db.Query(ctx, listScanJobs, arg.Limit, arg.Offset)
+	rows, err := q.query(ctx, q.listScanJobsStmt, listScanJobs, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -314,6 +319,9 @@ func (q *Queries) ListScanJobs(ctx context.Context, arg ListScanJobsParams) ([]S
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -323,19 +331,19 @@ func (q *Queries) ListScanJobs(ctx context.Context, arg ListScanJobsParams) ([]S
 
 const listScanJobsByStatus = `-- name: ListScanJobsByStatus :many
 SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs
-WHERE status = $1
+WHERE status = ?
 ORDER BY started_at DESC
-LIMIT $2 OFFSET $3
+LIMIT ? OFFSET ?
 `
 
 type ListScanJobsByStatusParams struct {
 	Status string `json:"status"`
-	Limit  int32  `json:"limit"`
-	Offset int32  `json:"offset"`
+	Limit  int64  `json:"limit"`
+	Offset int64  `json:"offset"`
 }
 
 func (q *Queries) ListScanJobsByStatus(ctx context.Context, arg ListScanJobsByStatusParams) ([]ScanJobs, error) {
-	rows, err := q.db.Query(ctx, listScanJobsByStatus, arg.Status, arg.Limit, arg.Offset)
+	rows, err := q.query(ctx, q.listScanJobsByStatusStmt, listScanJobsByStatus, arg.Status, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -369,6 +377,9 @@ func (q *Queries) ListScanJobsByStatus(ctx context.Context, arg ListScanJobsBySt
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -378,19 +389,19 @@ func (q *Queries) ListScanJobsByStatus(ctx context.Context, arg ListScanJobsBySt
 
 const listScanJobsByVolume = `-- name: ListScanJobsByVolume :many
 SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs
-WHERE volume_id = $1
+WHERE volume_id = ?
 ORDER BY started_at DESC
-LIMIT $2 OFFSET $3
+LIMIT ? OFFSET ?
 `
 
 type ListScanJobsByVolumeParams struct {
-	VolumeID pgtype.Text `json:"volume_id"`
-	Limit    int32       `json:"limit"`
-	Offset   int32       `json:"offset"`
+	VolumeID sql.NullString `json:"volume_id"`
+	Limit    int64          `json:"limit"`
+	Offset   int64          `json:"offset"`
 }
 
 func (q *Queries) ListScanJobsByVolume(ctx context.Context, arg ListScanJobsByVolumeParams) ([]ScanJobs, error) {
-	rows, err := q.db.Query(ctx, listScanJobsByVolume, arg.VolumeID, arg.Limit, arg.Offset)
+	rows, err := q.query(ctx, q.listScanJobsByVolumeStmt, listScanJobsByVolume, arg.VolumeID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -424,6 +435,9 @@ func (q *Queries) ListScanJobsByVolume(ctx context.Context, arg ListScanJobsByVo
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -435,14 +449,14 @@ const markInFlightJobsAsPaused = `-- name: MarkInFlightJobsAsPaused :many
 UPDATE scan_jobs
 SET 
     status = 'paused',
-    error_message = $1,
-    updated_at = CURRENT_TIMESTAMP
+    error_message = ?,
+    updated_at = datetime('now')
 WHERE status IN ('running', 'pending')
 RETURNING scan_id
 `
 
-func (q *Queries) MarkInFlightJobsAsPaused(ctx context.Context, errorMessage pgtype.Text) ([]string, error) {
-	rows, err := q.db.Query(ctx, markInFlightJobsAsPaused, errorMessage)
+func (q *Queries) MarkInFlightJobsAsPaused(ctx context.Context, errorMessage sql.NullString) ([]string, error) {
+	rows, err := q.query(ctx, q.markInFlightJobsAsPausedStmt, markInFlightJobsAsPaused, errorMessage)
 	if err != nil {
 		return nil, err
 	}
@@ -454,6 +468,9 @@ func (q *Queries) MarkInFlightJobsAsPaused(ctx context.Context, errorMessage pgt
 			return nil, err
 		}
 		items = append(items, scan_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -466,16 +483,16 @@ UPDATE scan_jobs
 SET 
     status = 'failed',
     error_message = 'Scan job marked as stale after timeout',
-    completed_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
+    completed_at = datetime('now'),
+    updated_at = datetime('now')
 WHERE status = 'running'
-  AND started_at < (CURRENT_TIMESTAMP - INTERVAL '1 second' * $1)
+  AND started_at < datetime('now', '-' || ? || ' seconds')
   AND started_at IS NOT NULL
 RETURNING scan_id
 `
 
-func (q *Queries) MarkStaleScanJobsAsFailed(ctx context.Context, dollar_1 interface{}) ([]string, error) {
-	rows, err := q.db.Query(ctx, markStaleScanJobsAsFailed, dollar_1)
+func (q *Queries) MarkStaleScanJobsAsFailed(ctx context.Context, dollar_1 sql.NullString) ([]string, error) {
+	rows, err := q.query(ctx, q.markStaleScanJobsAsFailedStmt, markStaleScanJobsAsFailed, dollar_1)
 	if err != nil {
 		return nil, err
 	}
@@ -488,6 +505,9 @@ func (q *Queries) MarkStaleScanJobsAsFailed(ctx context.Context, dollar_1 interf
 		}
 		items = append(items, scan_id)
 	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -497,40 +517,40 @@ func (q *Queries) MarkStaleScanJobsAsFailed(ctx context.Context, dollar_1 interf
 const updateScanJobProgress = `-- name: UpdateScanJobProgress :exec
 UPDATE scan_jobs
 SET 
-    scanned_files = $2,
-    scanned_bytes = $3,
-    updated_at = CURRENT_TIMESTAMP
-WHERE scan_id = $1
+    scanned_files = ?2,
+    scanned_bytes = ?3,
+    updated_at = datetime('now')
+WHERE scan_id = ?1
 `
 
 type UpdateScanJobProgressParams struct {
-	ScanID       string      `json:"scan_id"`
-	ScannedFiles pgtype.Int8 `json:"scanned_files"`
-	ScannedBytes pgtype.Int8 `json:"scanned_bytes"`
+	ScanID       string        `json:"scan_id"`
+	ScannedFiles sql.NullInt64 `json:"scanned_files"`
+	ScannedBytes sql.NullInt64 `json:"scanned_bytes"`
 }
 
 func (q *Queries) UpdateScanJobProgress(ctx context.Context, arg UpdateScanJobProgressParams) error {
-	_, err := q.db.Exec(ctx, updateScanJobProgress, arg.ScanID, arg.ScannedFiles, arg.ScannedBytes)
+	_, err := q.exec(ctx, q.updateScanJobProgressStmt, updateScanJobProgress, arg.ScanID, arg.ScannedFiles, arg.ScannedBytes)
 	return err
 }
 
 const updateScanJobStatus = `-- name: UpdateScanJobStatus :exec
 UPDATE scan_jobs
 SET 
-    status = $2,
-    error_message = CASE WHEN $2 = 'failed' THEN $3 ELSE error_message END,
-    completed_at = CASE WHEN $2 IN ('completed', 'failed', 'cancelled') THEN CURRENT_TIMESTAMP ELSE completed_at END,
-    updated_at = CURRENT_TIMESTAMP
-WHERE scan_id = $1
+    status = ?1,
+    error_message = CASE WHEN ?1 = 'failed' THEN ?2 ELSE error_message END,
+    completed_at = CASE WHEN ?1 IN ('completed', 'failed', 'cancelled') THEN datetime('now') ELSE completed_at END,
+    updated_at = datetime('now')
+WHERE scan_id = ?3
 `
 
 type UpdateScanJobStatusParams struct {
-	ScanID       string      `json:"scan_id"`
-	Status       string      `json:"status"`
-	ErrorMessage pgtype.Text `json:"error_message"`
+	Status       string         `json:"status"`
+	ErrorMessage sql.NullString `json:"error_message"`
+	ScanID       string         `json:"scan_id"`
 }
 
 func (q *Queries) UpdateScanJobStatus(ctx context.Context, arg UpdateScanJobStatusParams) error {
-	_, err := q.db.Exec(ctx, updateScanJobStatus, arg.ScanID, arg.Status, arg.ErrorMessage)
+	_, err := q.exec(ctx, q.updateScanJobStatusStmt, updateScanJobStatus, arg.Status, arg.ErrorMessage, arg.ScanID)
 	return err
 }
