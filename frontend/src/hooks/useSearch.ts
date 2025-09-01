@@ -20,7 +20,7 @@ import {
   hasActiveFiltersAtom,
   clearSearchResultsAtom,
   resetSearchStateAtom,
-} from '@/store/atoms/search';
+} from '@/atoms/search';
 import {
   useFileSearch,
   useSavedSearches as useApiSavedSearches,

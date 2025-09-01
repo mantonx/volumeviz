@@ -9,7 +9,7 @@ import { useFileList } from '@/api/explorer';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { PreviewImage } from '@/components/preview';
-import type { FileItem } from '@/store/atoms/explorer';
+import type { FileItem } from '@/atoms/explorer';
 import { cn } from '@/utils';
 import {
   DownloadIcon,

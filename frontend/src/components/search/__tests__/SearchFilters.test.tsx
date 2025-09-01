@@ -8,7 +8,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useAtomValue } from 'jotai';
 import { SearchFilters } from '../SearchFilters';
-import { advancedFiltersAtom } from '@/store/atoms/search';
+import { advancedFiltersAtom } from '@/atoms/search';
 
 // Mock Jotai provider
 const TestProvider: React.FC<{ children: React.ReactNode }> = ({

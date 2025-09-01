@@ -7,7 +7,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { useSavedSearches } from '@/hooks/useSearch';
-import { searchQueryAtom, advancedFiltersAtom } from '@/store/atoms/search';
+import { searchQueryAtom, advancedFiltersAtom } from '@/atoms/search';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import type { SavedSearch, CreateSavedSearchRequest } from '@/api/search';

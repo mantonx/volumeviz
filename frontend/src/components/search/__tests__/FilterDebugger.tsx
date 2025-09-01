@@ -6,7 +6,7 @@
 
 import React, { useEffect } from 'react';
 import { useAtomValue } from 'jotai';
-import { advancedFiltersAtom } from '@/store/atoms/search';
+import { advancedFiltersAtom } from '@/atoms/search';
 import { useSearch } from '@/hooks/useSearch';
 
 export const FilterDebugger: React.FC = () => {

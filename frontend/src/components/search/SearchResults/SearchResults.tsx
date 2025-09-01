@@ -18,7 +18,7 @@ import {
   searchResultsAtom,
   searchTotalCountAtom,
   searchLoadingAtom,
-} from '@/store/atoms/search';
+} from '@/atoms/search';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PreviewThumbnail } from '@/components/preview/PreviewThumbnail';

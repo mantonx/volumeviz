@@ -6,7 +6,7 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { useAtom } from 'jotai';
-import { advancedFiltersAtom } from '@/store/atoms/search';
+import { advancedFiltersAtom } from '@/atoms/search';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useFilterMetadata } from '@/hooks/useFilterMetadata';

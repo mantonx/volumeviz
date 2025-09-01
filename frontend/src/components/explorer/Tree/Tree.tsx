@@ -5,8 +5,8 @@
  */
 
 import { useTreeNavigation } from '@/api/explorer';
-import type { TreeNode } from '@/store/atoms/explorer';
-import { currentVolumeAtom } from '@/store/atoms/explorer';
+import type { TreeNode } from '@/atoms/explorer';
+import { currentVolumeAtom } from '@/atoms/explorer';
 import { cn } from '@/utils';
 import { useSetAtom } from 'jotai';
 import {
