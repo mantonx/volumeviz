@@ -809,9 +809,15 @@ func (h *Handler) applyTrackingChanges(ctx context.Context, preview *rules.Previ
 
 	// Apply changes to mount catalog (update tracking status)
 	for _, change := range changes {
+		// Convert string MountID to int64
+		mountID, err := strconv.ParseInt(change.MountID, 10, 64)
+		if err != nil {
+			return 0, nil, fmt.Errorf("invalid mount ID %s: %w", change.MountID, err)
+		}
+		
 		// Update tracking status
 		isTracked := change.NewAction == "include"
-		err := h.mountsRepo.UpdateMountTrackingStatus(ctx, change.MountID, isTracked)
+		err = h.mountsRepo.UpdateMountTrackingStatus(ctx, mountID, isTracked)
 		if err != nil {
 			return 0, nil, fmt.Errorf("failed to update tracking status for mount %s: %w", change.MountID, err)
 		}

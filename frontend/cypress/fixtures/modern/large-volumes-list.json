@@ -1,0 +1,65 @@
+{
+  "data": [
+    {
+      "name": "volume-001",
+      "driver": "local",
+      "mountpoint": "/var/lib/docker/volumes/volume-001/_data",
+      "created_at": "2024-01-01T00:00:00Z",
+      "size_bytes": 1073741824,
+      "attachments_count": 1,
+      "is_orphaned": false,
+      "scan_status": "completed",
+      "file_count": 5000
+    },
+    {
+      "name": "volume-002",
+      "driver": "local",
+      "mountpoint": "/var/lib/docker/volumes/volume-002/_data",
+      "created_at": "2024-01-02T00:00:00Z",
+      "size_bytes": 2147483648,
+      "attachments_count": 0,
+      "is_orphaned": true,
+      "scan_status": "pending",
+      "file_count": 8000
+    },
+    {
+      "name": "volume-003",
+      "driver": "local",
+      "mountpoint": "/var/lib/docker/volumes/volume-003/_data",
+      "created_at": "2024-01-03T00:00:00Z",
+      "size_bytes": 536870912,
+      "attachments_count": 2,
+      "is_orphaned": false,
+      "scan_status": "scanning",
+      "file_count": 3000
+    },
+    {
+      "name": "volume-004",
+      "driver": "local",
+      "mountpoint": "/var/lib/docker/volumes/volume-004/_data",
+      "created_at": "2024-01-04T00:00:00Z",
+      "size_bytes": 3221225472,
+      "attachments_count": 1,
+      "is_orphaned": false,
+      "scan_status": "completed",
+      "file_count": 12000
+    },
+    {
+      "name": "volume-005",
+      "driver": "local",
+      "mountpoint": "/var/lib/docker/volumes/volume-005/_data",
+      "created_at": "2024-01-05T00:00:00Z",
+      "size_bytes": 1610612736,
+      "attachments_count": 3,
+      "is_orphaned": false,
+      "scan_status": "error",
+      "file_count": 6500
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 150,
+    "total_pages": 8
+  }
+}

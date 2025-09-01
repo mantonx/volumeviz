@@ -13,103 +13,69 @@ import (
 )
 
 const countSavedSearches = `-- name: CountSavedSearches :one
-SELECT COUNT(*)
-FROM saved_searches
-WHERE 
-    (CASE WHEN $1::text[] IS NULL THEN true
-          ELSE tags && $1 END)
+SELECT COUNT(*) FROM saved_searches
+WHERE organization_id = $1
+    AND ($2::text[] IS NULL OR tags && $2::text[])
 `
 
-func (q *Queries) CountSavedSearches(ctx context.Context, filterTags []string) (int64, error) {
-	row := q.db.QueryRow(ctx, countSavedSearches, filterTags)
+type CountSavedSearchesParams struct {
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	FilterTags     []string    `json:"filter_tags"`
+}
+
+func (q *Queries) CountSavedSearches(ctx context.Context, arg CountSavedSearchesParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countSavedSearches, arg.OrganizationID, arg.FilterTags)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
 const countSearchFiles = `-- name: CountSearchFiles :one
-SELECT COUNT(*)
-FROM files f
-WHERE 
-    -- Same filters as SearchFiles but without sorting/pagination
-    (CASE WHEN $1::text = '' THEN true 
-          ELSE (f.name ILIKE '%' || $1 || '%' OR f.path ILIKE '%' || $1 || '%') END)
-    AND (CASE WHEN $2::text = '' THEN true 
-              ELSE f.path LIKE $2 || '%' END)
-    AND (CASE WHEN $3::text = '' THEN true 
-              ELSE f.media_kind = $3 END)
-    AND (CASE WHEN $4::text = '' THEN true 
-              ELSE f.mime = ANY(string_to_array($4, ',')) END)
-    AND (CASE WHEN $5::bigint = 0 THEN true 
-              ELSE f.size_bytes >= $5 END)
-    AND (CASE WHEN $6::bigint = 0 THEN true 
-              ELSE f.size_bytes <= $6 END)
-    AND (CASE WHEN $7::timestamptz IS NULL THEN true 
-              ELSE f.mtime >= $7 END)
-    AND (CASE WHEN $8::timestamptz IS NULL THEN true 
-              ELSE f.mtime <= $8 END)
-    AND (CASE WHEN $9::bigint = 0 THEN true 
-              ELSE f.duration_ms >= $9 END)
-    AND (CASE WHEN $10::bigint = 0 THEN true 
-              ELSE f.duration_ms <= $10 END)
-    AND (CASE WHEN $11::int = 0 THEN true 
-              ELSE f.width >= $11 END)
-    AND (CASE WHEN $12::int = 0 THEN true 
-              ELSE f.width <= $12 END)
-    AND (CASE WHEN $13::int = 0 THEN true 
-              ELSE f.height >= $13 END)
-    AND (CASE WHEN $14::int = 0 THEN true 
-              ELSE f.height <= $14 END)
-    AND (CASE WHEN $15::boolean IS NULL THEN true
-              WHEN $15 = true THEN (f.gps_latitude IS NOT NULL AND f.gps_longitude IS NOT NULL)
-              ELSE (f.gps_latitude IS NULL OR f.gps_longitude IS NULL) END)
-    AND (CASE WHEN $16::boolean IS NULL THEN true
-              WHEN $16 = true THEN f.subtitle_language IS NOT NULL
-              ELSE f.subtitle_language IS NULL END)
-    AND (CASE WHEN $17::boolean IS NULL THEN true
-              WHEN $17 = true THEN f.hash IS NOT NULL
-              ELSE f.hash IS NULL END)
+SELECT COUNT(*) FROM files f
+WHERE 1=1
+    AND ($1::text = '' OR f.volume_id = $1)
+    AND ($2::text = '' OR f.name ILIKE '%' || $2 || '%')
+    AND ($3::text = '' OR f.path ILIKE '%' || $3 || '%')
+    AND ($4::text = '' OR f.extension = $4)
+    AND ($5::text = '' OR f.mime = $5)
+    AND ($6::text = '' OR f.media_kind = $6)
+    AND ($7::bigint = 0 OR f.size_bytes >= $7)
+    AND ($8::bigint = 0 OR f.size_bytes <= $8)
+    AND ($9::timestamptz IS NULL OR f.modified_at >= $9)
+    AND ($10::timestamptz IS NULL OR f.modified_at <= $10)
+    AND ($11::timestamptz IS NULL OR f.created_at >= $11)
+    AND ($12::timestamptz IS NULL OR f.created_at <= $12)
 `
 
 type CountSearchFilesParams struct {
-	SearchQuery  string             `json:"search_query"`
-	PathPrefix   string             `json:"path_prefix"`
-	MediaKind    string             `json:"media_kind"`
-	MimeType     string             `json:"mime_type"`
-	MinSize      int64              `json:"min_size"`
-	MaxSize      int64              `json:"max_size"`
-	MtimeFrom    pgtype.Timestamptz `json:"mtime_from"`
-	MtimeTo      pgtype.Timestamptz `json:"mtime_to"`
-	DurationFrom int64              `json:"duration_from"`
-	DurationTo   int64              `json:"duration_to"`
-	MinWidth     int32              `json:"min_width"`
-	MaxWidth     int32              `json:"max_width"`
-	MinHeight    int32              `json:"min_height"`
-	MaxHeight    int32              `json:"max_height"`
-	HasGps       bool               `json:"has_gps"`
-	HasSubs      bool               `json:"has_subs"`
-	HasHash      bool               `json:"has_hash"`
+	VolumeID    pgtype.Text        `json:"volume_id"`
+	SearchQuery pgtype.Text        `json:"search_query"`
+	PathPrefix  pgtype.Text        `json:"path_prefix"`
+	Extension   pgtype.Text        `json:"extension"`
+	MimeType    pgtype.Text        `json:"mime_type"`
+	MediaKind   pgtype.Text        `json:"media_kind"`
+	MinSize     pgtype.Int8        `json:"min_size"`
+	MaxSize     pgtype.Int8        `json:"max_size"`
+	MtimeFrom   pgtype.Timestamptz `json:"mtime_from"`
+	MtimeTo     pgtype.Timestamptz `json:"mtime_to"`
+	CtimeFrom   pgtype.Timestamptz `json:"ctime_from"`
+	CtimeTo     pgtype.Timestamptz `json:"ctime_to"`
 }
 
 func (q *Queries) CountSearchFiles(ctx context.Context, arg CountSearchFilesParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countSearchFiles,
+		arg.VolumeID,
 		arg.SearchQuery,
 		arg.PathPrefix,
-		arg.MediaKind,
+		arg.Extension,
 		arg.MimeType,
+		arg.MediaKind,
 		arg.MinSize,
 		arg.MaxSize,
 		arg.MtimeFrom,
 		arg.MtimeTo,
-		arg.DurationFrom,
-		arg.DurationTo,
-		arg.MinWidth,
-		arg.MaxWidth,
-		arg.MinHeight,
-		arg.MaxHeight,
-		arg.HasGps,
-		arg.HasSubs,
-		arg.HasHash,
+		arg.CtimeFrom,
+		arg.CtimeTo,
 	)
 	var count int64
 	err := row.Scan(&count)
@@ -118,22 +84,32 @@ func (q *Queries) CountSearchFiles(ctx context.Context, arg CountSearchFilesPara
 
 const createSavedSearch = `-- name: CreateSavedSearch :one
 
-INSERT INTO saved_searches (name, description, query, tags, is_public, metadata)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, name, description, query, tags, is_public, metadata, 
-          created_at, updated_at, last_run_at, run_count
+INSERT INTO saved_searches (
+    name, description, query, tags, is_public, metadata, organization_id
+) VALUES (
+    $1, 
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7
+) RETURNING id, name, description, query, tags, is_public, metadata, created_at, updated_at, last_run_at, run_count, organization_id
 `
 
 type CreateSavedSearchParams struct {
-	Name        string      `json:"name"`
-	Description pgtype.Text `json:"description"`
-	Query       []byte      `json:"query"`
-	Tags        []string    `json:"tags"`
-	IsPublic    pgtype.Bool `json:"is_public"`
-	Metadata    []byte      `json:"metadata"`
+	Name           string      `json:"name"`
+	Description    pgtype.Text `json:"description"`
+	Query          []byte      `json:"query"`
+	Tags           []string    `json:"tags"`
+	IsPublic       pgtype.Bool `json:"is_public"`
+	Metadata       []byte      `json:"metadata"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 }
 
-// Saved Searches CRUD Operations
+// =============================================================================
+// SAVED SEARCHES QUERIES
+// =============================================================================
 func (q *Queries) CreateSavedSearch(ctx context.Context, arg CreateSavedSearchParams) (SavedSearches, error) {
 	row := q.db.QueryRow(ctx, createSavedSearch,
 		arg.Name,
@@ -142,6 +118,7 @@ func (q *Queries) CreateSavedSearch(ctx context.Context, arg CreateSavedSearchPa
 		arg.Tags,
 		arg.IsPublic,
 		arg.Metadata,
+		arg.OrganizationID,
 	)
 	var i SavedSearches
 	err := row.Scan(
@@ -156,28 +133,36 @@ func (q *Queries) CreateSavedSearch(ctx context.Context, arg CreateSavedSearchPa
 		&i.UpdatedAt,
 		&i.LastRunAt,
 		&i.RunCount,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const deleteSavedSearch = `-- name: DeleteSavedSearch :exec
-DELETE FROM saved_searches WHERE id = $1
+DELETE FROM saved_searches WHERE id = $1 AND organization_id = $2
 `
 
-func (q *Queries) DeleteSavedSearch(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deleteSavedSearch, id)
+type DeleteSavedSearchParams struct {
+	ID             int64       `json:"id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+}
+
+func (q *Queries) DeleteSavedSearch(ctx context.Context, arg DeleteSavedSearchParams) error {
+	_, err := q.db.Exec(ctx, deleteSavedSearch, arg.ID, arg.OrganizationID)
 	return err
 }
 
 const getSavedSearch = `-- name: GetSavedSearch :one
-SELECT id, name, description, query, tags, is_public, metadata,
-       created_at, updated_at, last_run_at, run_count
-FROM saved_searches
-WHERE id = $1
+SELECT id, name, description, query, tags, is_public, metadata, created_at, updated_at, last_run_at, run_count, organization_id FROM saved_searches WHERE id = $1 AND organization_id = $2
 `
 
-func (q *Queries) GetSavedSearch(ctx context.Context, id int64) (SavedSearches, error) {
-	row := q.db.QueryRow(ctx, getSavedSearch, id)
+type GetSavedSearchParams struct {
+	ID             int64       `json:"id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+}
+
+func (q *Queries) GetSavedSearch(ctx context.Context, arg GetSavedSearchParams) (SavedSearches, error) {
+	row := q.db.QueryRow(ctx, getSavedSearch, arg.ID, arg.OrganizationID)
 	var i SavedSearches
 	err := row.Scan(
 		&i.ID,
@@ -191,40 +176,49 @@ func (q *Queries) GetSavedSearch(ctx context.Context, id int64) (SavedSearches, 
 		&i.UpdatedAt,
 		&i.LastRunAt,
 		&i.RunCount,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const getSavedSearchQuery = `-- name: GetSavedSearchQuery :one
-SELECT query FROM saved_searches WHERE id = $1
+SELECT query FROM saved_searches WHERE id = $1 AND organization_id = $2
 `
 
-func (q *Queries) GetSavedSearchQuery(ctx context.Context, id int64) ([]byte, error) {
-	row := q.db.QueryRow(ctx, getSavedSearchQuery, id)
+type GetSavedSearchQueryParams struct {
+	ID             int64       `json:"id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+}
+
+func (q *Queries) GetSavedSearchQuery(ctx context.Context, arg GetSavedSearchQueryParams) ([]byte, error) {
+	row := q.db.QueryRow(ctx, getSavedSearchQuery, arg.ID, arg.OrganizationID)
 	var query []byte
 	err := row.Scan(&query)
 	return query, err
 }
 
 const listSavedSearches = `-- name: ListSavedSearches :many
-SELECT id, name, description, query, tags, is_public, metadata,
-       created_at, updated_at, last_run_at, run_count
-FROM saved_searches
-WHERE 
-    (CASE WHEN $1::text[] IS NULL THEN true
-          ELSE tags && $1 END)
+SELECT id, name, description, query, tags, is_public, metadata, created_at, updated_at, last_run_at, run_count, organization_id FROM saved_searches
+WHERE organization_id = $1
+    AND ($2::text[] IS NULL OR tags && $2::text[])
 ORDER BY updated_at DESC
-LIMIT $3 OFFSET $2
+LIMIT $4 OFFSET $3
 `
 
 type ListSavedSearchesParams struct {
-	FilterTags []string `json:"filter_tags"`
-	PageOffset int32    `json:"page_offset"`
-	PageLimit  int32    `json:"page_limit"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	FilterTags     []string    `json:"filter_tags"`
+	ResultOffset   int32       `json:"result_offset"`
+	ResultLimit    int32       `json:"result_limit"`
 }
 
 func (q *Queries) ListSavedSearches(ctx context.Context, arg ListSavedSearchesParams) ([]SavedSearches, error) {
-	rows, err := q.db.Query(ctx, listSavedSearches, arg.FilterTags, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listSavedSearches,
+		arg.OrganizationID,
+		arg.FilterTags,
+		arg.ResultOffset,
+		arg.ResultLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -244,6 +238,7 @@ func (q *Queries) ListSavedSearches(ctx context.Context, arg ListSavedSearchesPa
 			&i.UpdatedAt,
 			&i.LastRunAt,
 			&i.RunCount,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -257,186 +252,74 @@ func (q *Queries) ListSavedSearches(ctx context.Context, arg ListSavedSearchesPa
 
 const searchFiles = `-- name: SearchFiles :many
 
-SELECT f.id, f.volume_id, f.path, f.name, f.size_bytes, f.disk_usage_bytes,
-       f.extension, f.mime, f.media_kind, f.mtime, f.ctime,
-       f.duration_ms, f.width, f.height, f.video_codec, f.audio_codec,
-       f.gps_latitude, f.gps_longitude, f.camera_model, f.capture_datetime,
-       f.hash
+SELECT f.id, f.volume_id, f.path, f.name, f.extension, f.size_bytes, 
+       f.mime, f.media_kind, f.created_at, f.modified_at, f.accessed_at
 FROM files f
-WHERE 
-    -- Text search filter
-    (CASE WHEN $1::text = '' THEN true 
-          ELSE (f.name ILIKE '%' || $1 || '%' OR f.path ILIKE '%' || $1 || '%') END)
-    -- Path prefix filter  
-    AND (CASE WHEN $2::text = '' THEN true 
-              ELSE f.path LIKE $2 || '%' END)
-    -- Media kind filter
-    AND (CASE WHEN $3::text = '' THEN true 
-              ELSE f.media_kind = $3 END)
-    -- MIME type filter (supports comma-separated values)
-    AND (CASE WHEN $4::text = '' THEN true 
-              ELSE f.mime = ANY(string_to_array($4, ',')) END)
-    -- Size range filters
-    AND (CASE WHEN $5::bigint = 0 THEN true 
-              ELSE f.size_bytes >= $5 END)
-    AND (CASE WHEN $6::bigint = 0 THEN true 
-              ELSE f.size_bytes <= $6 END)
-    -- Time range filters
-    AND (CASE WHEN $7::timestamptz IS NULL THEN true 
-              ELSE f.mtime >= $7 END)
-    AND (CASE WHEN $8::timestamptz IS NULL THEN true 
-              ELSE f.mtime <= $8 END)
-    -- Duration filters
-    AND (CASE WHEN $9::bigint = 0 THEN true 
-              ELSE f.duration_ms >= $9 END)
-    AND (CASE WHEN $10::bigint = 0 THEN true 
-              ELSE f.duration_ms <= $10 END)
-    -- Dimension filters
-    AND (CASE WHEN $11::int = 0 THEN true 
-              ELSE f.width >= $11 END)
-    AND (CASE WHEN $12::int = 0 THEN true 
-              ELSE f.width <= $12 END)
-    AND (CASE WHEN $13::int = 0 THEN true 
-              ELSE f.height >= $13 END)
-    AND (CASE WHEN $14::int = 0 THEN true 
-              ELSE f.height <= $14 END)
-    -- Boolean filters
-    AND (CASE WHEN $15::boolean IS NULL THEN true
-              WHEN $15 = true THEN (f.gps_latitude IS NOT NULL AND f.gps_longitude IS NOT NULL)
-              ELSE (f.gps_latitude IS NULL OR f.gps_longitude IS NULL) END)
-    AND (CASE WHEN $16::boolean IS NULL THEN true
-              WHEN $16 = true THEN f.subtitle_language IS NOT NULL
-              ELSE f.subtitle_language IS NULL END)
-    AND (CASE WHEN $17::boolean IS NULL THEN true
-              WHEN $17 = true THEN f.hash IS NOT NULL
-              ELSE f.hash IS NULL END)
-ORDER BY 
-    -- Relevance (search query match quality) - only when we have a search query
-    CASE WHEN $18::text = 'relevance' AND $1::text != '' AND $19::text = 'desc' THEN 
-        (CASE 
-            WHEN f.name ILIKE $1 THEN 100  -- Exact match
-            WHEN f.name ILIKE $1 || '%' THEN 90  -- Starts with query
-            WHEN f.name ILIKE '%' || $1 || '%' THEN 80  -- Contains query
-            WHEN f.path ILIKE '%' || $1 || '%' THEN 70  -- Path contains query
-            ELSE 50  -- Default match
-        END)
-    END DESC,
-    
-    -- Name sorting
-    CASE WHEN $18::text = 'name' AND $19::text = 'asc' THEN f.name END ASC,
-    CASE WHEN $18::text = 'name' AND $19::text = 'desc' THEN f.name END DESC,
-    
-    -- File size sorting
-    CASE WHEN $18::text = 'size' AND $19::text = 'asc' THEN f.size_bytes END ASC,
-    CASE WHEN $18::text = 'size' AND $19::text = 'desc' THEN f.size_bytes END DESC,
-    
-    -- Modified time sorting  
-    CASE WHEN $18::text = 'mtime' AND $19::text = 'asc' THEN f.mtime END ASC,
-    CASE WHEN $18::text = 'mtime' AND $19::text = 'desc' THEN f.mtime END DESC,
-    
-    -- Created time sorting
-    CASE WHEN $18::text = 'ctime' AND $19::text = 'asc' THEN f.ctime END ASC,
-    CASE WHEN $18::text = 'ctime' AND $19::text = 'desc' THEN f.ctime END DESC,
-    
-    -- Duration sorting (for media files)
-    CASE WHEN $18::text = 'duration' AND $19::text = 'asc' THEN f.duration_ms END ASC,
-    CASE WHEN $18::text = 'duration' AND $19::text = 'desc' THEN f.duration_ms END DESC,
-    
-    -- File type/extension sorting
-    CASE WHEN $18::text = 'type' AND $19::text = 'asc' THEN f.extension END ASC,
-    CASE WHEN $18::text = 'type' AND $19::text = 'desc' THEN f.extension END DESC,
-    
-    -- Media kind sorting  
-    CASE WHEN $18::text = 'media_kind' AND $19::text = 'asc' THEN f.media_kind END ASC,
-    CASE WHEN $18::text = 'media_kind' AND $19::text = 'desc' THEN f.media_kind END DESC,
-    
-    -- Default fallback: relevance if search query exists, otherwise name
-    CASE WHEN $1::text != '' THEN 
-        (CASE 
-            WHEN f.name ILIKE $1 THEN 100
-            WHEN f.name ILIKE $1 || '%' THEN 90
-            WHEN f.name ILIKE '%' || $1 || '%' THEN 80
-            WHEN f.path ILIKE '%' || $1 || '%' THEN 70
-            ELSE 50
-        END)
-    END DESC,
-    f.name ASC
-LIMIT $21 OFFSET $20
+WHERE 1=1
+    AND ($1::text = '' OR f.volume_id = $1)
+    AND ($2::text = '' OR f.name ILIKE '%' || $2 || '%')
+    AND ($3::text = '' OR f.path ILIKE '%' || $3 || '%')
+    AND ($4::text = '' OR f.extension = $4)
+    AND ($5::text = '' OR f.mime = $5)
+    AND ($6::text = '' OR f.media_kind = $6)
+    AND ($7::bigint = 0 OR f.size_bytes >= $7)
+    AND ($8::bigint = 0 OR f.size_bytes <= $8)
+    AND ($9::timestamptz IS NULL OR f.modified_at >= $9)
+    AND ($10::timestamptz IS NULL OR f.modified_at <= $10)
+    AND ($11::timestamptz IS NULL OR f.created_at >= $11)
+    AND ($12::timestamptz IS NULL OR f.created_at <= $12)
+ORDER BY f.modified_at DESC NULLS LAST
+LIMIT $14 OFFSET $13
 `
 
 type SearchFilesParams struct {
-	SearchQuery  string             `json:"search_query"`
-	PathPrefix   string             `json:"path_prefix"`
-	MediaKind    string             `json:"media_kind"`
-	MimeType     string             `json:"mime_type"`
-	MinSize      int64              `json:"min_size"`
-	MaxSize      int64              `json:"max_size"`
+	VolumeID     pgtype.Text        `json:"volume_id"`
+	SearchQuery  pgtype.Text        `json:"search_query"`
+	PathPrefix   pgtype.Text        `json:"path_prefix"`
+	Extension    pgtype.Text        `json:"extension"`
+	MimeType     pgtype.Text        `json:"mime_type"`
+	MediaKind    pgtype.Text        `json:"media_kind"`
+	MinSize      pgtype.Int8        `json:"min_size"`
+	MaxSize      pgtype.Int8        `json:"max_size"`
 	MtimeFrom    pgtype.Timestamptz `json:"mtime_from"`
 	MtimeTo      pgtype.Timestamptz `json:"mtime_to"`
-	DurationFrom int64              `json:"duration_from"`
-	DurationTo   int64              `json:"duration_to"`
-	MinWidth     int32              `json:"min_width"`
-	MaxWidth     int32              `json:"max_width"`
-	MinHeight    int32              `json:"min_height"`
-	MaxHeight    int32              `json:"max_height"`
-	HasGps       bool               `json:"has_gps"`
-	HasSubs      bool               `json:"has_subs"`
-	HasHash      bool               `json:"has_hash"`
-	SortField    string             `json:"sort_field"`
-	SortOrder    string             `json:"sort_order"`
-	PageOffset   int32              `json:"page_offset"`
-	PageLimit    int32              `json:"page_limit"`
+	CtimeFrom    pgtype.Timestamptz `json:"ctime_from"`
+	CtimeTo      pgtype.Timestamptz `json:"ctime_to"`
+	ResultOffset int32              `json:"result_offset"`
+	ResultLimit  int32              `json:"result_limit"`
 }
 
 type SearchFilesRow struct {
-	ID              int64              `json:"id"`
-	VolumeID        string             `json:"volume_id"`
-	Path            string             `json:"path"`
-	Name            string             `json:"name"`
-	SizeBytes       int64              `json:"size_bytes"`
-	DiskUsageBytes  int64              `json:"disk_usage_bytes"`
-	Extension       pgtype.Text        `json:"extension"`
-	Mime            pgtype.Text        `json:"mime"`
-	MediaKind       pgtype.Text        `json:"media_kind"`
-	Mtime           time.Time          `json:"mtime"`
-	Ctime           time.Time          `json:"ctime"`
-	DurationMs      pgtype.Int8        `json:"duration_ms"`
-	Width           pgtype.Int4        `json:"width"`
-	Height          pgtype.Int4        `json:"height"`
-	VideoCodec      pgtype.Text        `json:"video_codec"`
-	AudioCodec      pgtype.Text        `json:"audio_codec"`
-	GpsLatitude     pgtype.Numeric     `json:"gps_latitude"`
-	GpsLongitude    pgtype.Numeric     `json:"gps_longitude"`
-	CameraModel     pgtype.Text        `json:"camera_model"`
-	CaptureDatetime pgtype.Timestamptz `json:"capture_datetime"`
-	Hash            []byte             `json:"hash"`
+	ID         int64              `json:"id"`
+	VolumeID   string             `json:"volume_id"`
+	Path       string             `json:"path"`
+	Name       string             `json:"name"`
+	Extension  pgtype.Text        `json:"extension"`
+	SizeBytes  int64              `json:"size_bytes"`
+	Mime       pgtype.Text        `json:"mime"`
+	MediaKind  pgtype.Text        `json:"media_kind"`
+	CreatedAt  time.Time          `json:"created_at"`
+	ModifiedAt pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt pgtype.Timestamptz `json:"accessed_at"`
 }
 
-// Search Queries
-// Advanced file search with filters and sorting
+// Search queries for PostgreSQL
 func (q *Queries) SearchFiles(ctx context.Context, arg SearchFilesParams) ([]SearchFilesRow, error) {
 	rows, err := q.db.Query(ctx, searchFiles,
+		arg.VolumeID,
 		arg.SearchQuery,
 		arg.PathPrefix,
-		arg.MediaKind,
+		arg.Extension,
 		arg.MimeType,
+		arg.MediaKind,
 		arg.MinSize,
 		arg.MaxSize,
 		arg.MtimeFrom,
 		arg.MtimeTo,
-		arg.DurationFrom,
-		arg.DurationTo,
-		arg.MinWidth,
-		arg.MaxWidth,
-		arg.MinHeight,
-		arg.MaxHeight,
-		arg.HasGps,
-		arg.HasSubs,
-		arg.HasHash,
-		arg.SortField,
-		arg.SortOrder,
-		arg.PageOffset,
-		arg.PageLimit,
+		arg.CtimeFrom,
+		arg.CtimeTo,
+		arg.ResultOffset,
+		arg.ResultLimit,
 	)
 	if err != nil {
 		return nil, err
@@ -450,23 +333,74 @@ func (q *Queries) SearchFiles(ctx context.Context, arg SearchFilesParams) ([]Sea
 			&i.VolumeID,
 			&i.Path,
 			&i.Name,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
 			&i.Extension,
+			&i.SizeBytes,
 			&i.Mime,
 			&i.MediaKind,
-			&i.Mtime,
-			&i.Ctime,
-			&i.DurationMs,
-			&i.Width,
-			&i.Height,
-			&i.VideoCodec,
-			&i.AudioCodec,
-			&i.GpsLatitude,
-			&i.GpsLongitude,
-			&i.CameraModel,
-			&i.CaptureDatetime,
-			&i.Hash,
+			&i.CreatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchFoldersSimple = `-- name: SearchFoldersSimple :many
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders
+WHERE volume_id = $1
+    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+    AND ($3::text = '' OR path ILIKE '%' || $3 || '%')
+ORDER BY path
+LIMIT $5 OFFSET $4
+`
+
+type SearchFoldersSimpleParams struct {
+	VolumeID     string      `json:"volume_id"`
+	NameQuery    pgtype.Text `json:"name_query"`
+	PathQuery    pgtype.Text `json:"path_query"`
+	ResultOffset int32       `json:"result_offset"`
+	ResultLimit  int32       `json:"result_limit"`
+}
+
+func (q *Queries) SearchFoldersSimple(ctx context.Context, arg SearchFoldersSimpleParams) ([]Folders, error) {
+	rows, err := q.db.Query(ctx, searchFoldersSimple,
+		arg.VolumeID,
+		arg.NameQuery,
+		arg.PathQuery,
+		arg.ResultOffset,
+		arg.ResultLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Folders{}
+	for rows.Next() {
+		var i Folders
+		if err := rows.Scan(
+			&i.ID,
+			&i.VolumeID,
+			&i.ParentID,
+			&i.Path,
+			&i.Name,
+			&i.PathHash,
+			&i.SizeBytes,
+			&i.SizeBytesRecursive,
+			&i.FileCount,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
+			&i.CreatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -486,20 +420,21 @@ SET
     query = COALESCE($3, query),
     tags = COALESCE($4, tags),
     is_public = COALESCE($5, is_public),
-    metadata = COALESCE($6, metadata)
-WHERE id = $7
-RETURNING id, name, description, query, tags, is_public, metadata,
-          created_at, updated_at, last_run_at, run_count
+    metadata = COALESCE($6, metadata),
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $7 AND organization_id = $8
+RETURNING id, name, description, query, tags, is_public, metadata, created_at, updated_at, last_run_at, run_count, organization_id
 `
 
 type UpdateSavedSearchParams struct {
-	Name        string      `json:"name"`
-	Description pgtype.Text `json:"description"`
-	Query       []byte      `json:"query"`
-	Tags        []string    `json:"tags"`
-	IsPublic    pgtype.Bool `json:"is_public"`
-	Metadata    []byte      `json:"metadata"`
-	ID          int64       `json:"id"`
+	Name           pgtype.Text `json:"name"`
+	Description    pgtype.Text `json:"description"`
+	Query          []byte      `json:"query"`
+	Tags           []string    `json:"tags"`
+	IsPublic       pgtype.Bool `json:"is_public"`
+	Metadata       []byte      `json:"metadata"`
+	ID             int64       `json:"id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 }
 
 func (q *Queries) UpdateSavedSearch(ctx context.Context, arg UpdateSavedSearchParams) (SavedSearches, error) {
@@ -511,6 +446,7 @@ func (q *Queries) UpdateSavedSearch(ctx context.Context, arg UpdateSavedSearchPa
 		arg.IsPublic,
 		arg.Metadata,
 		arg.ID,
+		arg.OrganizationID,
 	)
 	var i SavedSearches
 	err := row.Scan(
@@ -525,17 +461,26 @@ func (q *Queries) UpdateSavedSearch(ctx context.Context, arg UpdateSavedSearchPa
 		&i.UpdatedAt,
 		&i.LastRunAt,
 		&i.RunCount,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const updateSavedSearchStats = `-- name: UpdateSavedSearchStats :exec
 UPDATE saved_searches 
-SET last_run_at = NOW(), run_count = run_count + 1
-WHERE id = $1
+SET 
+    run_count = run_count + 1,
+    last_run_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND organization_id = $2
 `
 
-func (q *Queries) UpdateSavedSearchStats(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, updateSavedSearchStats, id)
+type UpdateSavedSearchStatsParams struct {
+	ID             int64       `json:"id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+}
+
+func (q *Queries) UpdateSavedSearchStats(ctx context.Context, arg UpdateSavedSearchStatsParams) error {
+	_, err := q.db.Exec(ctx, updateSavedSearchStats, arg.ID, arg.OrganizationID)
 	return err
 }

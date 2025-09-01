@@ -1,8 +1,26 @@
 import type React from 'react';
-import type { VolumeMount } from '@/hooks/useVolumesAndMounts';
 import type { DropdownItem } from '@/components/ui/Dropdown';
-
 import type { ColumnDefinition } from '@/components/ui';
+import type { Volume } from '@/api/orval-generated/api';
+
+// Modern volume type extending the Orval-generated type
+export interface VolumeMount extends Volume {
+  id: string;
+  name: string;
+  path: string;
+  type: 'volume' | 'bind' | 'tmpfs';
+  compose_project?: string;
+  compose_services?: string[];
+  containers: string[];
+  container_count?: number;
+  readonly: boolean;
+  status: 'tracked' | 'untracked' | 'orphaned';
+  last_seen: string;
+  growth_rate?: number;
+  mount_point?: string;
+  source_type: 'volume' | 'mount';
+  volume_scope?: string;
+}
 
 export interface SortConfig {
   field: string;

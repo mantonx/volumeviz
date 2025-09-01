@@ -25,23 +25,24 @@ func (q *Queries) CleanupExpiredSessions(ctx context.Context) error {
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
     username, email, password_hash, role, status,
-    first_name, last_name, display_name, timezone, created_by
+    first_name, last_name, display_name, timezone, created_by, organization_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 ) RETURNING id, username, email, password_hash, role, status, first_name, last_name, display_name, avatar_url, timezone, password_reset_token, password_reset_expires, email_verification_token, email_verified_at, last_login_at, login_attempts, locked_until, created_at, updated_at, created_by, organization_id
 `
 
 type CreateUserParams struct {
-	Username     string      `json:"username"`
-	Email        string      `json:"email"`
-	PasswordHash string      `json:"password_hash"`
-	Role         UserRole    `json:"role"`
-	Status       string      `json:"status"`
-	FirstName    pgtype.Text `json:"first_name"`
-	LastName     pgtype.Text `json:"last_name"`
-	DisplayName  pgtype.Text `json:"display_name"`
-	Timezone     pgtype.Text `json:"timezone"`
-	CreatedBy    pgtype.Text `json:"created_by"`
+	Username       string      `json:"username"`
+	Email          string      `json:"email"`
+	PasswordHash   string      `json:"password_hash"`
+	Role           UserRole    `json:"role"`
+	Status         string      `json:"status"`
+	FirstName      pgtype.Text `json:"first_name"`
+	LastName       pgtype.Text `json:"last_name"`
+	DisplayName    pgtype.Text `json:"display_name"`
+	Timezone       pgtype.Text `json:"timezone"`
+	CreatedBy      pgtype.Text `json:"created_by"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, error) {
@@ -56,6 +57,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, 
 		arg.DisplayName,
 		arg.Timezone,
 		arg.CreatedBy,
+		arg.OrganizationID,
 	)
 	var i Users
 	err := row.Scan(
@@ -302,6 +304,45 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (Users, error) {
 	return i, err
 }
 
+const getUserByIDAndOrg = `-- name: GetUserByIDAndOrg :one
+SELECT id, username, email, password_hash, role, status, first_name, last_name, display_name, avatar_url, timezone, password_reset_token, password_reset_expires, email_verification_token, email_verified_at, last_login_at, login_attempts, locked_until, created_at, updated_at, created_by, organization_id FROM users WHERE id = $1 AND organization_id = $2
+`
+
+type GetUserByIDAndOrgParams struct {
+	ID             int64       `json:"id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+}
+
+func (q *Queries) GetUserByIDAndOrg(ctx context.Context, arg GetUserByIDAndOrgParams) (Users, error) {
+	row := q.db.QueryRow(ctx, getUserByIDAndOrg, arg.ID, arg.OrganizationID)
+	var i Users
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.Status,
+		&i.FirstName,
+		&i.LastName,
+		&i.DisplayName,
+		&i.AvatarUrl,
+		&i.Timezone,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
+		&i.EmailVerificationToken,
+		&i.EmailVerifiedAt,
+		&i.LastLoginAt,
+		&i.LoginAttempts,
+		&i.LockedUntil,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.CreatedBy,
+		&i.OrganizationID,
+	)
+	return i, err
+}
+
 const getUserByUsername = `-- name: GetUserByUsername :one
 SELECT id, username, email, password_hash, role, status, first_name, last_name, display_name, avatar_url, timezone, password_reset_token, password_reset_expires, email_verification_token, email_verified_at, last_login_at, login_attempts, locked_until, created_at, updated_at, created_by, organization_id FROM users WHERE username = $1
 `
@@ -423,17 +464,19 @@ func (q *Queries) IncrementLoginAttempts(ctx context.Context, id int64) error {
 
 const listUsers = `-- name: ListUsers :many
 SELECT id, username, email, password_hash, role, status, first_name, last_name, display_name, avatar_url, timezone, password_reset_token, password_reset_expires, email_verification_token, email_verified_at, last_login_at, login_attempts, locked_until, created_at, updated_at, created_by, organization_id FROM users 
+WHERE organization_id = $1
 ORDER BY created_at DESC
-LIMIT $1 OFFSET $2
+LIMIT $2 OFFSET $3
 `
 
 type ListUsersParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	Limit          int32       `json:"limit"`
+	Offset         int32       `json:"offset"`
 }
 
 func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]Users, error) {
-	rows, err := q.db.Query(ctx, listUsers, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listUsers, arg.OrganizationID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

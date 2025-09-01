@@ -49,29 +49,33 @@ func (r *MountCatalogRepository) convertFromSQLCMount(mount sqlc.DockerMountCata
 		ID:                mount.ID,
 		MountID:           mount.MountID,
 		MountType:         mount.MountType,
-		VolumeName:        nullTextToStringPtr(mount.VolumeName),
-		VolumeDriver:      nullTextToStringPtr(mount.VolumeDriver),
+		VolumeName:        pgTextToStringPtr(mount.VolumeName),
+		VolumeDriver:      pgTextToStringPtr(mount.VolumeDriver),
 		SourcePath:        mount.SourcePath,
-		ComposeProject:    nullTextToStringPtr(mount.ComposeProject),
+		ComposeProject:    pgTextToStringPtr(mount.ComposeProject),
 		ComposeServices:   mount.ComposeServices,
 		IsOrphaned:        mount.IsOrphaned,
 		IsTracked:         mount.IsTracked,
 		ContainerCount:    mount.ContainerCount,
-		FirstDiscoveredAt: nullTimestampToTimePtr2(mount.FirstDiscoveredAt),
-		LastSeenAt:        nullTimestampToTimePtr2(mount.LastSeenAt),
-		DiscoverySource:   mount.DiscoverySource,
+		FirstDiscoveredAt: pgTimestamptzToTimePtr(mount.FirstDiscoveredAt),
+		LastSeenAt:        pgTimestamptzToTimePtr(mount.LastSeenAt),
+		DiscoverySource:   "docker_engine", // Default discovery source
 		Metadata:          make(map[string]string), // Initialize empty metadata
 	}
 }
 
-// GetMountByMountID retrieves a mount by mount ID string
+// GetMountByMountID retrieves a mount by mount ID string (now volume ID)
 func (r *MountCatalogRepository) GetMountByMountID(ctx context.Context, mountID string) (*MountCatalogEntry, error) {
-	mount, err := r.queries.GetMountCatalogEntry(ctx, mountID)
+	mounts, err := r.queries.ListMountCatalogEntriesByVolume(ctx, mountID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get mount by mount ID: %w", err)
 	}
+	
+	if len(mounts) == 0 {
+		return nil, fmt.Errorf("mount not found")
+	}
 
-	return r.convertFromSQLCMount(mount), nil
+	return r.convertFromSQLCMount(mounts[0]), nil
 }
 
 // ListMounts retrieves all mounts with optional filtering
@@ -123,12 +127,7 @@ func (r *MountCatalogRepository) ListMountsByType(ctx context.Context, mountType
 
 // ListTrackedMounts retrieves all currently tracked mounts
 func (r *MountCatalogRepository) ListTrackedMounts(ctx context.Context) ([]*MountCatalogEntry, error) {
-	params := sqlc.ListTrackedMountsParams{
-		Limit:  1000,
-		Offset: 0,
-	}
-
-	mounts, err := r.queries.ListTrackedMounts(ctx, params)
+	mounts, err := r.queries.ListTrackedMounts(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list tracked mounts: %w", err)
 	}
@@ -143,12 +142,7 @@ func (r *MountCatalogRepository) ListTrackedMounts(ctx context.Context) ([]*Moun
 
 // ListOrphanedMounts retrieves all orphaned mounts
 func (r *MountCatalogRepository) ListOrphanedMounts(ctx context.Context) ([]*MountCatalogEntry, error) {
-	params := sqlc.ListOrphanedMountsParams{
-		Limit:  1000,
-		Offset: 0,
-	}
-
-	mounts, err := r.queries.ListOrphanedMounts(ctx, params)
+	mounts, err := r.queries.ListOrphanedMounts(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list orphaned mounts: %w", err)
 	}
@@ -162,13 +156,13 @@ func (r *MountCatalogRepository) ListOrphanedMounts(ctx context.Context) ([]*Mou
 }
 
 // UpdateMountTrackingStatus updates the tracking status of a mount
-func (r *MountCatalogRepository) UpdateMountTrackingStatus(ctx context.Context, mountID string, isTracked bool) error {
+func (r *MountCatalogRepository) UpdateMountTrackingStatus(ctx context.Context, id int64, isTracked bool) error {
 	params := sqlc.UpdateMountTrackingStatusParams{
-		MountID:   mountID,
+		ID:        id,
 		IsTracked: isTracked,
 	}
 
-	_, err := r.queries.UpdateMountTrackingStatus(ctx, params)
+	err := r.queries.UpdateMountTrackingStatus(ctx, params)
 	if err != nil {
 		return fmt.Errorf("failed to update mount tracking status: %w", err)
 	}

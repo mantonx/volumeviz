@@ -14,7 +14,15 @@ INSERT INTO volumes (
 -- name: GetVolume :one
 SELECT * FROM volumes WHERE volume_id = ?;
 
+-- name: GetVolumeSystemLevel :one
+SELECT * FROM volumes WHERE volume_id = ?;
+
 -- name: ListVolumes :many
+SELECT * FROM volumes 
+ORDER BY volume_id
+LIMIT ? OFFSET ?;
+
+-- name: ListAllVolumes :many
 SELECT * FROM volumes 
 ORDER BY volume_id
 LIMIT ? OFFSET ?;

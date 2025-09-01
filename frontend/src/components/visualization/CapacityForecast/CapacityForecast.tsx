@@ -33,7 +33,7 @@ import type {
   ModelPerformance,
 } from './CapacityForecast.types';
 import { DEFAULT_MODELS } from './CapacityForecast.types';
-import { formatBytes, formatDate } from '../../../utils/formatters';
+import { formatBytes, formatDate } from '@/utils/formatters';
 
 // Color palette for volumes
 const VOLUME_COLORS = [

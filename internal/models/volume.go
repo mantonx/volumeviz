@@ -101,20 +101,21 @@ type MediaEnrichmentStatusResponse struct {
 	Message        string  `json:"message,omitempty"`
 } // Volume represents a Docker volume in the domain
 type Volume struct {
-	ID          int64             `json:"id"`
-	VolumeID    string            `json:"volume_id"`
-	Name        string            `json:"name"`
-	Driver      string            `json:"driver"`
-	Mountpoint  string            `json:"mountpoint"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	Options     map[string]string `json:"options,omitempty"`
-	Scope       string            `json:"scope"`
-	Status      string            `json:"status"`
-	UsageData   *VolumeUsage      `json:"usage_data,omitempty"`
-	LastScanned *time.Time        `json:"last_scanned,omitempty"`
-	IsActive    bool              `json:"is_active"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
+	ID             int64             `json:"id"`
+	VolumeID       string            `json:"volume_id"`
+	Name           string            `json:"name"`
+	Driver         string            `json:"driver"`
+	Mountpoint     string            `json:"mountpoint"`
+	Labels         map[string]string `json:"labels,omitempty"`
+	Options        map[string]string `json:"options,omitempty"`
+	Scope          string            `json:"scope"`
+	Status         string            `json:"status"`
+	UsageData      *VolumeUsage      `json:"usage_data,omitempty"`
+	LastScanned    *time.Time        `json:"last_scanned,omitempty"`
+	IsActive       bool              `json:"is_active"`
+	OrganizationID *int64            `json:"organization_id,omitempty"`
+	CreatedAt      time.Time         `json:"created_at"`
+	UpdatedAt      time.Time         `json:"updated_at"`
 }
 
 // Container represents a Docker container in the domain
@@ -170,14 +171,14 @@ type CreateVolumeParams struct {
 
 // UpdateVolumeParams represents parameters for updating a volume
 type UpdateVolumeParams struct {
-	ID         int64             `json:"id"`
+	VolumeID   string            `json:"volume_id"`
 	Name       string            `json:"name"`
-	Driver     string            `json:"driver"`
+	Driver     string            `json:"driver,omitempty"`
 	Mountpoint string            `json:"mountpoint"`
 	Labels     map[string]string `json:"labels,omitempty"`
 	Options    map[string]string `json:"options,omitempty"`
-	Scope      string            `json:"scope"`
-	Status     string            `json:"status"`
+	Scope      string            `json:"scope,omitempty"`
+	Status     string            `json:"status,omitempty"`
 	IsActive   bool              `json:"is_active"`
 }
 
@@ -276,6 +277,7 @@ type DirRollup struct {
 type CreateScanJobParams struct {
 	ScanID            string     `json:"scan_id"`
 	VolumeID          string     `json:"volume_id"`
+	OrganizationID    *int64     `json:"organization_id,omitempty"`
 	TriggerType       string     `json:"trigger_type"`
 	TriggerBy         string     `json:"trigger_by"`
 	Status            string     `json:"status"`

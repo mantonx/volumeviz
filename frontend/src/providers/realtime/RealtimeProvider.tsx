@@ -1,6 +1,7 @@
 import { useAtom } from 'jotai';
 import * as React from 'react';
 import { createContext, useCallback } from 'react';
+import { logger } from '@/utils/logger';
 import {
   WebSocketProvider,
   useWebSocketContext,
@@ -112,7 +113,7 @@ const createVolumeVizMessageHandlers = (
   {
     type: 'volume.state',
     handler: (data) => {
-      console.log('[RealtimeProvider] volume.state handler triggered:', data);
+      logger.debug('[RealtimeProvider] volume.state handler triggered:', data);
       // Convert volume state to scan progress format for the atom
       if (data?.volume_id) {
         const progressData = {
@@ -132,7 +133,7 @@ const createVolumeVizMessageHandlers = (
             is_active: data.is_active,
           },
         };
-        console.log('[RealtimeProvider] Calling updateScanProgress with:', { volumeId: data.volume_id, progress: progressData });
+        logger.debug('[RealtimeProvider] Calling updateScanProgress with:', { volumeId: data.volume_id, progress: progressData });
         updateScanProgress({
           volumeId: data.volume_id,
           progress: progressData,
@@ -143,7 +144,7 @@ const createVolumeVizMessageHandlers = (
   {
     type: 'scan.status',
     handler: (data) => {
-      console.log('[RealtimeProvider] scan.status handler triggered:', data);
+      logger.debug('[RealtimeProvider] scan.status handler triggered:', data);
       // Convert scan status to scan progress format for the atom
       if (data?.volume_id) {
         const progressData = {
@@ -163,7 +164,7 @@ const createVolumeVizMessageHandlers = (
             is_active: data.is_active,
           },
         };
-        console.log('[RealtimeProvider] Calling updateScanProgress with:', { volumeId: data.volume_id, progress: progressData });
+        logger.debug('[RealtimeProvider] Calling updateScanProgress with:', { volumeId: data.volume_id, progress: progressData });
         updateScanProgress({
           volumeId: data.volume_id,
           progress: progressData,
@@ -514,7 +515,7 @@ export function RealtimeProvider({
   const [, updateScanProgress] = useAtom(updateScanProgressAtom);
   const [, addCapacityAlert] = useAtom(addCapacityAlertAtom);
 
-  console.log(
+  logger.debug(
     '[RealtimeProvider] Initializing with WebSocket URL:',
     websocketUrl,
   );

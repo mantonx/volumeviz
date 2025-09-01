@@ -7,32 +7,35 @@ package sqlc
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createMountTrackingAssignment = `-- name: CreateMountTrackingAssignment :one
+
 INSERT INTO mount_tracking_assignments (
     mount_catalog_id, rule_id, evaluation_id, action, is_active,
-    matched_conditions, rule_priority, rule_name
+    matched_conditions, rule_priority, rule_name, expires_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
 ) RETURNING id, mount_catalog_id, rule_id, evaluation_id, action, is_active, matched_conditions, rule_priority, rule_name, assigned_at, expires_at, created_at, updated_at
 `
 
 type CreateMountTrackingAssignmentParams struct {
-	MountCatalogID    pgtype.Int8 `json:"mount_catalog_id"`
-	RuleID            pgtype.Int8 `json:"rule_id"`
-	EvaluationID      pgtype.Int8 `json:"evaluation_id"`
-	Action            string      `json:"action"`
-	IsActive          bool        `json:"is_active"`
-	MatchedConditions []byte      `json:"matched_conditions"`
-	RulePriority      pgtype.Int4 `json:"rule_priority"`
-	RuleName          pgtype.Text `json:"rule_name"`
+	MountCatalogID    pgtype.Int8        `json:"mount_catalog_id"`
+	RuleID            pgtype.Int8        `json:"rule_id"`
+	EvaluationID      pgtype.Int8        `json:"evaluation_id"`
+	Action            string             `json:"action"`
+	IsActive          bool               `json:"is_active"`
+	MatchedConditions []byte             `json:"matched_conditions"`
+	RulePriority      pgtype.Int4        `json:"rule_priority"`
+	RuleName          pgtype.Text        `json:"rule_name"`
+	ExpiresAt         pgtype.Timestamptz `json:"expires_at"`
 }
 
-// Mount Tracking Assignments
+// =============================================================================
+// MOUNT TRACKING ASSIGNMENTS
+// =============================================================================
 func (q *Queries) CreateMountTrackingAssignment(ctx context.Context, arg CreateMountTrackingAssignmentParams) (MountTrackingAssignments, error) {
 	row := q.db.QueryRow(ctx, createMountTrackingAssignment,
 		arg.MountCatalogID,
@@ -43,6 +46,7 @@ func (q *Queries) CreateMountTrackingAssignment(ctx context.Context, arg CreateM
 		arg.MatchedConditions,
 		arg.RulePriority,
 		arg.RuleName,
+		arg.ExpiresAt,
 	)
 	var i MountTrackingAssignments
 	err := row.Scan(
@@ -64,8 +68,11 @@ func (q *Queries) CreateMountTrackingAssignment(ctx context.Context, arg CreateM
 }
 
 const createTrackingRule = `-- name: CreateTrackingRule :one
+
+
 INSERT INTO tracking_rules (
-    name, description, action, priority, is_enabled, conditions, created_by
+    name, description, action, priority, is_enabled, 
+    conditions, created_by
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7
 ) RETURNING id, name, description, action, priority, is_enabled, conditions, match_count, last_matched_at, last_evaluation_at, created_by, created_at, updated_at
@@ -81,6 +88,11 @@ type CreateTrackingRuleParams struct {
 	CreatedBy   pgtype.Text `json:"created_by"`
 }
 
+// Tracking Rules Engine Queries
+// SQLC queries for tracking rules operations
+// =============================================================================
+// TRACKING RULES
+// =============================================================================
 func (q *Queries) CreateTrackingRule(ctx context.Context, arg CreateTrackingRuleParams) (TrackingRules, error) {
 	row := q.db.QueryRow(ctx, createTrackingRule,
 		arg.Name,
@@ -111,8 +123,10 @@ func (q *Queries) CreateTrackingRule(ctx context.Context, arg CreateTrackingRule
 }
 
 const createTrackingRuleCondition = `-- name: CreateTrackingRuleCondition :one
+
 INSERT INTO tracking_rule_conditions (
-    rule_id, field_name, operator, value, values, is_case_sensitive, description
+    rule_id, field_name, operator, value, values, 
+    is_case_sensitive, description
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7
 ) RETURNING id, rule_id, field_name, operator, value, values, is_case_sensitive, description, match_count, last_matched_at, created_at, updated_at
@@ -128,7 +142,9 @@ type CreateTrackingRuleConditionParams struct {
 	Description     pgtype.Text `json:"description"`
 }
 
-// Rule Conditions
+// =============================================================================
+// RULE CONDITIONS
+// =============================================================================
 func (q *Queries) CreateTrackingRuleCondition(ctx context.Context, arg CreateTrackingRuleConditionParams) (TrackingRuleConditions, error) {
 	row := q.db.QueryRow(ctx, createTrackingRuleCondition,
 		arg.RuleID,
@@ -158,8 +174,9 @@ func (q *Queries) CreateTrackingRuleCondition(ctx context.Context, arg CreateTra
 }
 
 const createTrackingRuleEvaluation = `-- name: CreateTrackingRuleEvaluation :one
+
 INSERT INTO tracking_rule_evaluations (
-    rule_id, evaluation_type, triggered_by, status, 
+    rule_id, evaluation_type, triggered_by, status,
     mounts_evaluated, mounts_matched, mounts_included, mounts_excluded,
     execution_time_ms, error_message, error_details, started_at, completed_at
 ) VALUES (
@@ -183,7 +200,9 @@ type CreateTrackingRuleEvaluationParams struct {
 	CompletedAt     pgtype.Timestamptz `json:"completed_at"`
 }
 
-// Rule Evaluations
+// =============================================================================
+// RULE EVALUATIONS
+// =============================================================================
 func (q *Queries) CreateTrackingRuleEvaluation(ctx context.Context, arg CreateTrackingRuleEvaluationParams) (TrackingRuleEvaluations, error) {
 	row := q.db.QueryRow(ctx, createTrackingRuleEvaluation,
 		arg.RuleID,
@@ -238,7 +257,6 @@ type CreateTrackingRuleTemplateParams struct {
 	Tags         []string `json:"tags"`
 }
 
-// Rule Templates
 func (q *Queries) CreateTrackingRuleTemplate(ctx context.Context, arg CreateTrackingRuleTemplateParams) (TrackingRuleTemplates, error) {
 	row := q.db.QueryRow(ctx, createTrackingRuleTemplate,
 		arg.Name,
@@ -265,59 +283,31 @@ func (q *Queries) CreateTrackingRuleTemplate(ctx context.Context, arg CreateTrac
 	return i, err
 }
 
-const deactivateAllMountTrackingAssignments = `-- name: DeactivateAllMountTrackingAssignments :exec
+const deactivateMountAssignment = `-- name: DeactivateMountAssignment :exec
 UPDATE mount_tracking_assignments
-SET is_active = false, updated_at = NOW()
-WHERE mount_catalog_id = $1
+SET is_active = false,
+    updated_at = CURRENT_TIMESTAMP
+WHERE mount_catalog_id = $1 AND is_active = true
 `
 
-func (q *Queries) DeactivateAllMountTrackingAssignments(ctx context.Context, mountCatalogID pgtype.Int8) error {
-	_, err := q.db.Exec(ctx, deactivateAllMountTrackingAssignments, mountCatalogID)
+func (q *Queries) DeactivateMountAssignment(ctx context.Context, mountCatalogID pgtype.Int8) error {
+	_, err := q.db.Exec(ctx, deactivateMountAssignment, mountCatalogID)
 	return err
 }
 
-const deactivateMountTrackingAssignment = `-- name: DeactivateMountTrackingAssignment :exec
-UPDATE mount_tracking_assignments
-SET is_active = false, updated_at = NOW()
-WHERE id = $1
+const deleteRuleConditions = `-- name: DeleteRuleConditions :exec
+DELETE FROM tracking_rule_conditions
+WHERE rule_id = $1
 `
 
-func (q *Queries) DeactivateMountTrackingAssignment(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deactivateMountTrackingAssignment, id)
-	return err
-}
-
-const deleteExpiredMountTrackingAssignments = `-- name: DeleteExpiredMountTrackingAssignments :exec
-DELETE FROM mount_tracking_assignments
-WHERE expires_at IS NOT NULL AND expires_at < NOW()
-`
-
-func (q *Queries) DeleteExpiredMountTrackingAssignments(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, deleteExpiredMountTrackingAssignments)
-	return err
-}
-
-const deleteMountTrackingAssignment = `-- name: DeleteMountTrackingAssignment :exec
-DELETE FROM mount_tracking_assignments WHERE id = $1
-`
-
-func (q *Queries) DeleteMountTrackingAssignment(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deleteMountTrackingAssignment, id)
-	return err
-}
-
-const deleteOldTrackingRuleEvaluations = `-- name: DeleteOldTrackingRuleEvaluations :exec
-DELETE FROM tracking_rule_evaluations
-WHERE started_at < $1
-`
-
-func (q *Queries) DeleteOldTrackingRuleEvaluations(ctx context.Context, startedAt pgtype.Timestamptz) error {
-	_, err := q.db.Exec(ctx, deleteOldTrackingRuleEvaluations, startedAt)
+func (q *Queries) DeleteRuleConditions(ctx context.Context, ruleID pgtype.Int8) error {
+	_, err := q.db.Exec(ctx, deleteRuleConditions, ruleID)
 	return err
 }
 
 const deleteTrackingRule = `-- name: DeleteTrackingRule :exec
-DELETE FROM tracking_rules WHERE id = $1
+DELETE FROM tracking_rules
+WHERE id = $1
 `
 
 func (q *Queries) DeleteTrackingRule(ctx context.Context, id int64) error {
@@ -325,35 +315,9 @@ func (q *Queries) DeleteTrackingRule(ctx context.Context, id int64) error {
 	return err
 }
 
-const deleteTrackingRuleByName = `-- name: DeleteTrackingRuleByName :exec
-DELETE FROM tracking_rules WHERE name = $1
-`
-
-func (q *Queries) DeleteTrackingRuleByName(ctx context.Context, name string) error {
-	_, err := q.db.Exec(ctx, deleteTrackingRuleByName, name)
-	return err
-}
-
-const deleteTrackingRuleCondition = `-- name: DeleteTrackingRuleCondition :exec
-DELETE FROM tracking_rule_conditions WHERE id = $1
-`
-
-func (q *Queries) DeleteTrackingRuleCondition(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deleteTrackingRuleCondition, id)
-	return err
-}
-
-const deleteTrackingRuleConditionsByRule = `-- name: DeleteTrackingRuleConditionsByRule :exec
-DELETE FROM tracking_rule_conditions WHERE rule_id = $1
-`
-
-func (q *Queries) DeleteTrackingRuleConditionsByRule(ctx context.Context, ruleID pgtype.Int8) error {
-	_, err := q.db.Exec(ctx, deleteTrackingRuleConditionsByRule, ruleID)
-	return err
-}
-
 const deleteTrackingRuleTemplate = `-- name: DeleteTrackingRuleTemplate :exec
-DELETE FROM tracking_rule_templates WHERE id = $1
+DELETE FROM tracking_rule_templates
+WHERE id = $1 AND is_builtin = false
 `
 
 func (q *Queries) DeleteTrackingRuleTemplate(ctx context.Context, id int64) error {
@@ -361,44 +325,25 @@ func (q *Queries) DeleteTrackingRuleTemplate(ctx context.Context, id int64) erro
 	return err
 }
 
-const deleteTrackingRuleTemplateByName = `-- name: DeleteTrackingRuleTemplateByName :exec
-DELETE FROM tracking_rule_templates WHERE name = $1
+const expireOldAssignments = `-- name: ExpireOldAssignments :exec
+UPDATE mount_tracking_assignments
+SET is_active = false,
+    updated_at = CURRENT_TIMESTAMP
+WHERE expires_at < CURRENT_TIMESTAMP AND is_active = true
 `
 
-func (q *Queries) DeleteTrackingRuleTemplateByName(ctx context.Context, name string) error {
-	_, err := q.db.Exec(ctx, deleteTrackingRuleTemplateByName, name)
+func (q *Queries) ExpireOldAssignments(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, expireOldAssignments)
 	return err
 }
 
-const disableTrackingRule = `-- name: DisableTrackingRule :exec
-UPDATE tracking_rules
-SET is_enabled = false, updated_at = NOW()
-WHERE id = $1
-`
-
-func (q *Queries) DisableTrackingRule(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, disableTrackingRule, id)
-	return err
-}
-
-const enableTrackingRule = `-- name: EnableTrackingRule :exec
-UPDATE tracking_rules
-SET is_enabled = true, updated_at = NOW()
-WHERE id = $1
-`
-
-func (q *Queries) EnableTrackingRule(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, enableTrackingRule, id)
-	return err
-}
-
-const getActiveMountTrackingAssignment = `-- name: GetActiveMountTrackingAssignment :one
+const getActiveMountAssignment = `-- name: GetActiveMountAssignment :one
 SELECT id, mount_catalog_id, rule_id, evaluation_id, action, is_active, matched_conditions, rule_priority, rule_name, assigned_at, expires_at, created_at, updated_at FROM mount_tracking_assignments
 WHERE mount_catalog_id = $1 AND is_active = true
 `
 
-func (q *Queries) GetActiveMountTrackingAssignment(ctx context.Context, mountCatalogID pgtype.Int8) (MountTrackingAssignments, error) {
-	row := q.db.QueryRow(ctx, getActiveMountTrackingAssignment, mountCatalogID)
+func (q *Queries) GetActiveMountAssignment(ctx context.Context, mountCatalogID pgtype.Int8) (MountTrackingAssignments, error) {
+	row := q.db.QueryRow(ctx, getActiveMountAssignment, mountCatalogID)
 	var i MountTrackingAssignments
 	err := row.Scan(
 		&i.ID,
@@ -418,52 +363,39 @@ func (q *Queries) GetActiveMountTrackingAssignment(ctx context.Context, mountCat
 	return i, err
 }
 
-const getMostActiveTrackingRules = `-- name: GetMostActiveTrackingRules :many
-SELECT id, name, action, priority, match_count, last_matched_at
-FROM tracking_rules
-WHERE match_count > 0
-ORDER BY match_count DESC, last_matched_at DESC
-LIMIT $1
+const getLatestRuleEvaluation = `-- name: GetLatestRuleEvaluation :one
+SELECT id, rule_id, evaluation_type, triggered_by, status, mounts_evaluated, mounts_matched, mounts_included, mounts_excluded, execution_time_ms, error_message, error_details, started_at, completed_at, created_at FROM tracking_rule_evaluations
+WHERE rule_id = $1
+ORDER BY started_at DESC
+LIMIT 1
 `
 
-type GetMostActiveTrackingRulesRow struct {
-	ID            int64              `json:"id"`
-	Name          string             `json:"name"`
-	Action        string             `json:"action"`
-	Priority      int32              `json:"priority"`
-	MatchCount    int32              `json:"match_count"`
-	LastMatchedAt pgtype.Timestamptz `json:"last_matched_at"`
-}
-
-func (q *Queries) GetMostActiveTrackingRules(ctx context.Context, limit int32) ([]GetMostActiveTrackingRulesRow, error) {
-	rows, err := q.db.Query(ctx, getMostActiveTrackingRules, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetMostActiveTrackingRulesRow{}
-	for rows.Next() {
-		var i GetMostActiveTrackingRulesRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Action,
-			&i.Priority,
-			&i.MatchCount,
-			&i.LastMatchedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetLatestRuleEvaluation(ctx context.Context, ruleID pgtype.Int8) (TrackingRuleEvaluations, error) {
+	row := q.db.QueryRow(ctx, getLatestRuleEvaluation, ruleID)
+	var i TrackingRuleEvaluations
+	err := row.Scan(
+		&i.ID,
+		&i.RuleID,
+		&i.EvaluationType,
+		&i.TriggeredBy,
+		&i.Status,
+		&i.MountsEvaluated,
+		&i.MountsMatched,
+		&i.MountsIncluded,
+		&i.MountsExcluded,
+		&i.ExecutionTimeMs,
+		&i.ErrorMessage,
+		&i.ErrorDetails,
+		&i.StartedAt,
+		&i.CompletedAt,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const getMountTrackingAssignment = `-- name: GetMountTrackingAssignment :one
-SELECT id, mount_catalog_id, rule_id, evaluation_id, action, is_active, matched_conditions, rule_priority, rule_name, assigned_at, expires_at, created_at, updated_at FROM mount_tracking_assignments WHERE id = $1
+SELECT id, mount_catalog_id, rule_id, evaluation_id, action, is_active, matched_conditions, rule_priority, rule_name, assigned_at, expires_at, created_at, updated_at FROM mount_tracking_assignments
+WHERE id = $1
 `
 
 func (q *Queries) GetMountTrackingAssignment(ctx context.Context, id int64) (MountTrackingAssignments, error) {
@@ -487,36 +419,48 @@ func (q *Queries) GetMountTrackingAssignment(ctx context.Context, id int64) (Mou
 	return i, err
 }
 
-const getMountTrackingAssignmentStats = `-- name: GetMountTrackingAssignmentStats :one
-SELECT 
-    COUNT(*) as total_assignments,
-    COUNT(*) FILTER (WHERE is_active = true) as active_assignments,
-    COUNT(*) FILTER (WHERE action = 'include' AND is_active = true) as active_includes,
-    COUNT(*) FILTER (WHERE action = 'exclude' AND is_active = true) as active_excludes
-FROM mount_tracking_assignments
+const getRuleConditions = `-- name: GetRuleConditions :many
+SELECT id, rule_id, field_name, operator, value, values, is_case_sensitive, description, match_count, last_matched_at, created_at, updated_at FROM tracking_rule_conditions
+WHERE rule_id = $1
+ORDER BY id
 `
 
-type GetMountTrackingAssignmentStatsRow struct {
-	TotalAssignments  int64 `json:"total_assignments"`
-	ActiveAssignments int64 `json:"active_assignments"`
-	ActiveIncludes    int64 `json:"active_includes"`
-	ActiveExcludes    int64 `json:"active_excludes"`
-}
-
-func (q *Queries) GetMountTrackingAssignmentStats(ctx context.Context) (GetMountTrackingAssignmentStatsRow, error) {
-	row := q.db.QueryRow(ctx, getMountTrackingAssignmentStats)
-	var i GetMountTrackingAssignmentStatsRow
-	err := row.Scan(
-		&i.TotalAssignments,
-		&i.ActiveAssignments,
-		&i.ActiveIncludes,
-		&i.ActiveExcludes,
-	)
-	return i, err
+func (q *Queries) GetRuleConditions(ctx context.Context, ruleID pgtype.Int8) ([]TrackingRuleConditions, error) {
+	rows, err := q.db.Query(ctx, getRuleConditions, ruleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []TrackingRuleConditions{}
+	for rows.Next() {
+		var i TrackingRuleConditions
+		if err := rows.Scan(
+			&i.ID,
+			&i.RuleID,
+			&i.FieldName,
+			&i.Operator,
+			&i.Value,
+			&i.Values,
+			&i.IsCaseSensitive,
+			&i.Description,
+			&i.MatchCount,
+			&i.LastMatchedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getTrackingRule = `-- name: GetTrackingRule :one
-SELECT id, name, description, action, priority, is_enabled, conditions, match_count, last_matched_at, last_evaluation_at, created_by, created_at, updated_at FROM tracking_rules WHERE id = $1
+SELECT id, name, description, action, priority, is_enabled, conditions, match_count, last_matched_at, last_evaluation_at, created_by, created_at, updated_at FROM tracking_rules
+WHERE id = $1
 `
 
 func (q *Queries) GetTrackingRule(ctx context.Context, id int64) (TrackingRules, error) {
@@ -541,7 +485,8 @@ func (q *Queries) GetTrackingRule(ctx context.Context, id int64) (TrackingRules,
 }
 
 const getTrackingRuleByName = `-- name: GetTrackingRuleByName :one
-SELECT id, name, description, action, priority, is_enabled, conditions, match_count, last_matched_at, last_evaluation_at, created_by, created_at, updated_at FROM tracking_rules WHERE name = $1
+SELECT id, name, description, action, priority, is_enabled, conditions, match_count, last_matched_at, last_evaluation_at, created_by, created_at, updated_at FROM tracking_rules
+WHERE name = $1
 `
 
 func (q *Queries) GetTrackingRuleByName(ctx context.Context, name string) (TrackingRules, error) {
@@ -565,32 +510,9 @@ func (q *Queries) GetTrackingRuleByName(ctx context.Context, name string) (Track
 	return i, err
 }
 
-const getTrackingRuleCondition = `-- name: GetTrackingRuleCondition :one
-SELECT id, rule_id, field_name, operator, value, values, is_case_sensitive, description, match_count, last_matched_at, created_at, updated_at FROM tracking_rule_conditions WHERE id = $1
-`
-
-func (q *Queries) GetTrackingRuleCondition(ctx context.Context, id int64) (TrackingRuleConditions, error) {
-	row := q.db.QueryRow(ctx, getTrackingRuleCondition, id)
-	var i TrackingRuleConditions
-	err := row.Scan(
-		&i.ID,
-		&i.RuleID,
-		&i.FieldName,
-		&i.Operator,
-		&i.Value,
-		&i.Values,
-		&i.IsCaseSensitive,
-		&i.Description,
-		&i.MatchCount,
-		&i.LastMatchedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getTrackingRuleEvaluation = `-- name: GetTrackingRuleEvaluation :one
-SELECT id, rule_id, evaluation_type, triggered_by, status, mounts_evaluated, mounts_matched, mounts_included, mounts_excluded, execution_time_ms, error_message, error_details, started_at, completed_at, created_at FROM tracking_rule_evaluations WHERE id = $1
+SELECT id, rule_id, evaluation_type, triggered_by, status, mounts_evaluated, mounts_matched, mounts_included, mounts_excluded, execution_time_ms, error_message, error_details, started_at, completed_at, created_at FROM tracking_rule_evaluations
+WHERE id = $1
 `
 
 func (q *Queries) GetTrackingRuleEvaluation(ctx context.Context, id int64) (TrackingRuleEvaluations, error) {
@@ -616,45 +538,15 @@ func (q *Queries) GetTrackingRuleEvaluation(ctx context.Context, id int64) (Trac
 	return i, err
 }
 
-const getTrackingRuleEvaluationStats = `-- name: GetTrackingRuleEvaluationStats :one
-SELECT 
-    COUNT(*) as total_evaluations,
-    COUNT(*) FILTER (WHERE status = 'success') as successful_evaluations,
-    COUNT(*) FILTER (WHERE status = 'error') as failed_evaluations,
-    AVG(execution_time_ms) as avg_execution_time_ms,
-    SUM(mounts_evaluated) as total_mounts_evaluated,
-    SUM(mounts_matched) as total_mounts_matched
-FROM tracking_rule_evaluations
-WHERE started_at >= $1
-`
-
-type GetTrackingRuleEvaluationStatsRow struct {
-	TotalEvaluations      int64   `json:"total_evaluations"`
-	SuccessfulEvaluations int64   `json:"successful_evaluations"`
-	FailedEvaluations     int64   `json:"failed_evaluations"`
-	AvgExecutionTimeMs    float64 `json:"avg_execution_time_ms"`
-	TotalMountsEvaluated  int64   `json:"total_mounts_evaluated"`
-	TotalMountsMatched    int64   `json:"total_mounts_matched"`
-}
-
-func (q *Queries) GetTrackingRuleEvaluationStats(ctx context.Context, startedAt pgtype.Timestamptz) (GetTrackingRuleEvaluationStatsRow, error) {
-	row := q.db.QueryRow(ctx, getTrackingRuleEvaluationStats, startedAt)
-	var i GetTrackingRuleEvaluationStatsRow
-	err := row.Scan(
-		&i.TotalEvaluations,
-		&i.SuccessfulEvaluations,
-		&i.FailedEvaluations,
-		&i.AvgExecutionTimeMs,
-		&i.TotalMountsEvaluated,
-		&i.TotalMountsMatched,
-	)
-	return i, err
-}
-
 const getTrackingRuleTemplate = `-- name: GetTrackingRuleTemplate :one
-SELECT id, name, description, category, template_data, usage_count, last_used_at, is_builtin, tags, created_at, updated_at FROM tracking_rule_templates WHERE id = $1
+
+SELECT id, name, description, category, template_data, usage_count, last_used_at, is_builtin, tags, created_at, updated_at FROM tracking_rule_templates
+WHERE id = $1
 `
 
+// =============================================================================
+// RULE TEMPLATES
+// =============================================================================
 func (q *Queries) GetTrackingRuleTemplate(ctx context.Context, id int64) (TrackingRuleTemplates, error) {
 	row := q.db.QueryRow(ctx, getTrackingRuleTemplate, id)
 	var i TrackingRuleTemplates
@@ -675,7 +567,8 @@ func (q *Queries) GetTrackingRuleTemplate(ctx context.Context, id int64) (Tracki
 }
 
 const getTrackingRuleTemplateByName = `-- name: GetTrackingRuleTemplateByName :one
-SELECT id, name, description, category, template_data, usage_count, last_used_at, is_builtin, tags, created_at, updated_at FROM tracking_rule_templates WHERE name = $1
+SELECT id, name, description, category, template_data, usage_count, last_used_at, is_builtin, tags, created_at, updated_at FROM tracking_rule_templates
+WHERE name = $1
 `
 
 func (q *Queries) GetTrackingRuleTemplateByName(ctx context.Context, name string) (TrackingRuleTemplates, error) {
@@ -697,111 +590,21 @@ func (q *Queries) GetTrackingRuleTemplateByName(ctx context.Context, name string
 	return i, err
 }
 
-const getTrackingRulesStats = `-- name: GetTrackingRulesStats :one
-SELECT 
-    COUNT(*) as total_rules,
-    COUNT(*) FILTER (WHERE is_enabled = true) as enabled_rules,
-    COUNT(*) FILTER (WHERE action = 'include') as include_rules,
-    COUNT(*) FILTER (WHERE action = 'exclude') as exclude_rules,
-    AVG(match_count) as avg_match_count,
-    MAX(last_evaluation_at) as last_evaluation_time
-FROM tracking_rules
+const listActiveAssignments = `-- name: ListActiveAssignments :many
+SELECT id, mount_catalog_id, rule_id, evaluation_id, action, is_active, matched_conditions, rule_priority, rule_name, assigned_at, expires_at, created_at, updated_at FROM mount_tracking_assignments
+WHERE is_active = true
+ORDER BY assigned_at DESC
 `
 
-type GetTrackingRulesStatsRow struct {
-	TotalRules         int64       `json:"total_rules"`
-	EnabledRules       int64       `json:"enabled_rules"`
-	IncludeRules       int64       `json:"include_rules"`
-	ExcludeRules       int64       `json:"exclude_rules"`
-	AvgMatchCount      float64     `json:"avg_match_count"`
-	LastEvaluationTime interface{} `json:"last_evaluation_time"`
-}
-
-// Statistics and Analytics
-func (q *Queries) GetTrackingRulesStats(ctx context.Context) (GetTrackingRulesStatsRow, error) {
-	row := q.db.QueryRow(ctx, getTrackingRulesStats)
-	var i GetTrackingRulesStatsRow
-	err := row.Scan(
-		&i.TotalRules,
-		&i.EnabledRules,
-		&i.IncludeRules,
-		&i.ExcludeRules,
-		&i.AvgMatchCount,
-		&i.LastEvaluationTime,
-	)
-	return i, err
-}
-
-const incrementConditionMatchCount = `-- name: IncrementConditionMatchCount :exec
-UPDATE tracking_rule_conditions
-SET match_count = match_count + 1, last_matched_at = NOW(), updated_at = NOW()
-WHERE id = $1
-`
-
-func (q *Queries) IncrementConditionMatchCount(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, incrementConditionMatchCount, id)
-	return err
-}
-
-const incrementRuleMatchCount = `-- name: IncrementRuleMatchCount :exec
-UPDATE tracking_rules
-SET match_count = match_count + 1, last_matched_at = NOW(), updated_at = NOW()
-WHERE id = $1
-`
-
-func (q *Queries) IncrementRuleMatchCount(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, incrementRuleMatchCount, id)
-	return err
-}
-
-const incrementTemplateUsageCount = `-- name: IncrementTemplateUsageCount :exec
-UPDATE tracking_rule_templates
-SET usage_count = usage_count + 1, last_used_at = NOW(), updated_at = NOW()
-WHERE id = $1
-`
-
-func (q *Queries) IncrementTemplateUsageCount(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, incrementTemplateUsageCount, id)
-	return err
-}
-
-const listActiveMountTrackingAssignments = `-- name: ListActiveMountTrackingAssignments :many
-SELECT mta.id, mta.mount_catalog_id, mta.rule_id, mta.evaluation_id, mta.action, mta.is_active, mta.matched_conditions, mta.rule_priority, mta.rule_name, mta.assigned_at, mta.expires_at, mta.created_at, mta.updated_at, tr.name as current_rule_name, dmc.mount_id, dmc.volume_name
-FROM mount_tracking_assignments mta
-LEFT JOIN tracking_rules tr ON mta.rule_id = tr.id
-JOIN docker_mount_catalog dmc ON mta.mount_catalog_id = dmc.id
-WHERE mta.is_active = true
-ORDER BY mta.assigned_at DESC
-`
-
-type ListActiveMountTrackingAssignmentsRow struct {
-	ID                int64              `json:"id"`
-	MountCatalogID    pgtype.Int8        `json:"mount_catalog_id"`
-	RuleID            pgtype.Int8        `json:"rule_id"`
-	EvaluationID      pgtype.Int8        `json:"evaluation_id"`
-	Action            string             `json:"action"`
-	IsActive          bool               `json:"is_active"`
-	MatchedConditions []byte             `json:"matched_conditions"`
-	RulePriority      pgtype.Int4        `json:"rule_priority"`
-	RuleName          pgtype.Text        `json:"rule_name"`
-	AssignedAt        pgtype.Timestamptz `json:"assigned_at"`
-	ExpiresAt         pgtype.Timestamptz `json:"expires_at"`
-	CreatedAt         time.Time          `json:"created_at"`
-	UpdatedAt         time.Time          `json:"updated_at"`
-	CurrentRuleName   pgtype.Text        `json:"current_rule_name"`
-	MountID           string             `json:"mount_id"`
-	VolumeName        pgtype.Text        `json:"volume_name"`
-}
-
-func (q *Queries) ListActiveMountTrackingAssignments(ctx context.Context) ([]ListActiveMountTrackingAssignmentsRow, error) {
-	rows, err := q.db.Query(ctx, listActiveMountTrackingAssignments)
+func (q *Queries) ListActiveAssignments(ctx context.Context) ([]MountTrackingAssignments, error) {
+	rows, err := q.db.Query(ctx, listActiveAssignments)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListActiveMountTrackingAssignmentsRow{}
+	items := []MountTrackingAssignments{}
 	for rows.Next() {
-		var i ListActiveMountTrackingAssignmentsRow
+		var i MountTrackingAssignments
 		if err := rows.Scan(
 			&i.ID,
 			&i.MountCatalogID,
@@ -816,9 +619,6 @@ func (q *Queries) ListActiveMountTrackingAssignments(ctx context.Context) ([]Lis
 			&i.ExpiresAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.CurrentRuleName,
-			&i.MountID,
-			&i.VolumeName,
 		); err != nil {
 			return nil, err
 		}
@@ -830,14 +630,14 @@ func (q *Queries) ListActiveMountTrackingAssignments(ctx context.Context) ([]Lis
 	return items, nil
 }
 
-const listBuiltinTrackingRuleTemplates = `-- name: ListBuiltinTrackingRuleTemplates :many
+const listBuiltinTemplates = `-- name: ListBuiltinTemplates :many
 SELECT id, name, description, category, template_data, usage_count, last_used_at, is_builtin, tags, created_at, updated_at FROM tracking_rule_templates
 WHERE is_builtin = true
-ORDER BY category ASC, name ASC
+ORDER BY category, name
 `
 
-func (q *Queries) ListBuiltinTrackingRuleTemplates(ctx context.Context) ([]TrackingRuleTemplates, error) {
-	rows, err := q.db.Query(ctx, listBuiltinTrackingRuleTemplates)
+func (q *Queries) ListBuiltinTemplates(ctx context.Context) ([]TrackingRuleTemplates, error) {
+	rows, err := q.db.Query(ctx, listBuiltinTemplates)
 	if err != nil {
 		return nil, err
 	}
@@ -908,40 +708,28 @@ func (q *Queries) ListEnabledTrackingRules(ctx context.Context) ([]TrackingRules
 	return items, nil
 }
 
-const listMountTrackingAssignments = `-- name: ListMountTrackingAssignments :many
-SELECT mta.id, mta.mount_catalog_id, mta.rule_id, mta.evaluation_id, mta.action, mta.is_active, mta.matched_conditions, mta.rule_priority, mta.rule_name, mta.assigned_at, mta.expires_at, mta.created_at, mta.updated_at, tr.name as current_rule_name
-FROM mount_tracking_assignments mta
-LEFT JOIN tracking_rules tr ON mta.rule_id = tr.id
-WHERE mta.mount_catalog_id = $1
-ORDER BY mta.assigned_at DESC
+const listMountAssignments = `-- name: ListMountAssignments :many
+SELECT id, mount_catalog_id, rule_id, evaluation_id, action, is_active, matched_conditions, rule_priority, rule_name, assigned_at, expires_at, created_at, updated_at FROM mount_tracking_assignments
+WHERE mount_catalog_id = $1
+ORDER BY assigned_at DESC
+LIMIT $2 OFFSET $3
 `
 
-type ListMountTrackingAssignmentsRow struct {
-	ID                int64              `json:"id"`
-	MountCatalogID    pgtype.Int8        `json:"mount_catalog_id"`
-	RuleID            pgtype.Int8        `json:"rule_id"`
-	EvaluationID      pgtype.Int8        `json:"evaluation_id"`
-	Action            string             `json:"action"`
-	IsActive          bool               `json:"is_active"`
-	MatchedConditions []byte             `json:"matched_conditions"`
-	RulePriority      pgtype.Int4        `json:"rule_priority"`
-	RuleName          pgtype.Text        `json:"rule_name"`
-	AssignedAt        pgtype.Timestamptz `json:"assigned_at"`
-	ExpiresAt         pgtype.Timestamptz `json:"expires_at"`
-	CreatedAt         time.Time          `json:"created_at"`
-	UpdatedAt         time.Time          `json:"updated_at"`
-	CurrentRuleName   pgtype.Text        `json:"current_rule_name"`
+type ListMountAssignmentsParams struct {
+	MountCatalogID pgtype.Int8 `json:"mount_catalog_id"`
+	Limit          int32       `json:"limit"`
+	Offset         int32       `json:"offset"`
 }
 
-func (q *Queries) ListMountTrackingAssignments(ctx context.Context, mountCatalogID pgtype.Int8) ([]ListMountTrackingAssignmentsRow, error) {
-	rows, err := q.db.Query(ctx, listMountTrackingAssignments, mountCatalogID)
+func (q *Queries) ListMountAssignments(ctx context.Context, arg ListMountAssignmentsParams) ([]MountTrackingAssignments, error) {
+	rows, err := q.db.Query(ctx, listMountAssignments, arg.MountCatalogID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListMountTrackingAssignmentsRow{}
+	items := []MountTrackingAssignments{}
 	for rows.Next() {
-		var i ListMountTrackingAssignmentsRow
+		var i MountTrackingAssignments
 		if err := rows.Scan(
 			&i.ID,
 			&i.MountCatalogID,
@@ -956,7 +744,6 @@ func (q *Queries) ListMountTrackingAssignments(ctx context.Context, mountCatalog
 			&i.ExpiresAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.CurrentRuleName,
 		); err != nil {
 			return nil, err
 		}
@@ -968,194 +755,21 @@ func (q *Queries) ListMountTrackingAssignments(ctx context.Context, mountCatalog
 	return items, nil
 }
 
-const listMountTrackingAssignmentsByAction = `-- name: ListMountTrackingAssignmentsByAction :many
-SELECT mta.id, mta.mount_catalog_id, mta.rule_id, mta.evaluation_id, mta.action, mta.is_active, mta.matched_conditions, mta.rule_priority, mta.rule_name, mta.assigned_at, mta.expires_at, mta.created_at, mta.updated_at, tr.name as current_rule_name, dmc.mount_id, dmc.volume_name
-FROM mount_tracking_assignments mta
-LEFT JOIN tracking_rules tr ON mta.rule_id = tr.id
-JOIN docker_mount_catalog dmc ON mta.mount_catalog_id = dmc.id
-WHERE mta.is_active = true AND mta.action = $1
-ORDER BY mta.assigned_at DESC
-`
-
-type ListMountTrackingAssignmentsByActionRow struct {
-	ID                int64              `json:"id"`
-	MountCatalogID    pgtype.Int8        `json:"mount_catalog_id"`
-	RuleID            pgtype.Int8        `json:"rule_id"`
-	EvaluationID      pgtype.Int8        `json:"evaluation_id"`
-	Action            string             `json:"action"`
-	IsActive          bool               `json:"is_active"`
-	MatchedConditions []byte             `json:"matched_conditions"`
-	RulePriority      pgtype.Int4        `json:"rule_priority"`
-	RuleName          pgtype.Text        `json:"rule_name"`
-	AssignedAt        pgtype.Timestamptz `json:"assigned_at"`
-	ExpiresAt         pgtype.Timestamptz `json:"expires_at"`
-	CreatedAt         time.Time          `json:"created_at"`
-	UpdatedAt         time.Time          `json:"updated_at"`
-	CurrentRuleName   pgtype.Text        `json:"current_rule_name"`
-	MountID           string             `json:"mount_id"`
-	VolumeName        pgtype.Text        `json:"volume_name"`
-}
-
-func (q *Queries) ListMountTrackingAssignmentsByAction(ctx context.Context, action string) ([]ListMountTrackingAssignmentsByActionRow, error) {
-	rows, err := q.db.Query(ctx, listMountTrackingAssignmentsByAction, action)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListMountTrackingAssignmentsByActionRow{}
-	for rows.Next() {
-		var i ListMountTrackingAssignmentsByActionRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.MountCatalogID,
-			&i.RuleID,
-			&i.EvaluationID,
-			&i.Action,
-			&i.IsActive,
-			&i.MatchedConditions,
-			&i.RulePriority,
-			&i.RuleName,
-			&i.AssignedAt,
-			&i.ExpiresAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.CurrentRuleName,
-			&i.MountID,
-			&i.VolumeName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listRecentTrackingRuleEvaluations = `-- name: ListRecentTrackingRuleEvaluations :many
-SELECT tre.id, tre.rule_id, tre.evaluation_type, tre.triggered_by, tre.status, tre.mounts_evaluated, tre.mounts_matched, tre.mounts_included, tre.mounts_excluded, tre.execution_time_ms, tre.error_message, tre.error_details, tre.started_at, tre.completed_at, tre.created_at, tr.name as rule_name
-FROM tracking_rule_evaluations tre
-JOIN tracking_rules tr ON tre.rule_id = tr.id
-ORDER BY tre.started_at DESC
-LIMIT $1 OFFSET $2
-`
-
-type ListRecentTrackingRuleEvaluationsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-type ListRecentTrackingRuleEvaluationsRow struct {
-	ID              int64              `json:"id"`
-	RuleID          pgtype.Int8        `json:"rule_id"`
-	EvaluationType  string             `json:"evaluation_type"`
-	TriggeredBy     pgtype.Text        `json:"triggered_by"`
-	Status          string             `json:"status"`
-	MountsEvaluated int32              `json:"mounts_evaluated"`
-	MountsMatched   int32              `json:"mounts_matched"`
-	MountsIncluded  int32              `json:"mounts_included"`
-	MountsExcluded  int32              `json:"mounts_excluded"`
-	ExecutionTimeMs pgtype.Int4        `json:"execution_time_ms"`
-	ErrorMessage    pgtype.Text        `json:"error_message"`
-	ErrorDetails    []byte             `json:"error_details"`
-	StartedAt       pgtype.Timestamptz `json:"started_at"`
-	CompletedAt     pgtype.Timestamptz `json:"completed_at"`
-	CreatedAt       time.Time          `json:"created_at"`
-	RuleName        string             `json:"rule_name"`
-}
-
-func (q *Queries) ListRecentTrackingRuleEvaluations(ctx context.Context, arg ListRecentTrackingRuleEvaluationsParams) ([]ListRecentTrackingRuleEvaluationsRow, error) {
-	rows, err := q.db.Query(ctx, listRecentTrackingRuleEvaluations, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListRecentTrackingRuleEvaluationsRow{}
-	for rows.Next() {
-		var i ListRecentTrackingRuleEvaluationsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.RuleID,
-			&i.EvaluationType,
-			&i.TriggeredBy,
-			&i.Status,
-			&i.MountsEvaluated,
-			&i.MountsMatched,
-			&i.MountsIncluded,
-			&i.MountsExcluded,
-			&i.ExecutionTimeMs,
-			&i.ErrorMessage,
-			&i.ErrorDetails,
-			&i.StartedAt,
-			&i.CompletedAt,
-			&i.CreatedAt,
-			&i.RuleName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listTrackingRuleConditions = `-- name: ListTrackingRuleConditions :many
-SELECT id, rule_id, field_name, operator, value, values, is_case_sensitive, description, match_count, last_matched_at, created_at, updated_at FROM tracking_rule_conditions
-WHERE rule_id = $1
-ORDER BY id ASC
-`
-
-func (q *Queries) ListTrackingRuleConditions(ctx context.Context, ruleID pgtype.Int8) ([]TrackingRuleConditions, error) {
-	rows, err := q.db.Query(ctx, listTrackingRuleConditions, ruleID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []TrackingRuleConditions{}
-	for rows.Next() {
-		var i TrackingRuleConditions
-		if err := rows.Scan(
-			&i.ID,
-			&i.RuleID,
-			&i.FieldName,
-			&i.Operator,
-			&i.Value,
-			&i.Values,
-			&i.IsCaseSensitive,
-			&i.Description,
-			&i.MatchCount,
-			&i.LastMatchedAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listTrackingRuleEvaluations = `-- name: ListTrackingRuleEvaluations :many
+const listRuleEvaluations = `-- name: ListRuleEvaluations :many
 SELECT id, rule_id, evaluation_type, triggered_by, status, mounts_evaluated, mounts_matched, mounts_included, mounts_excluded, execution_time_ms, error_message, error_details, started_at, completed_at, created_at FROM tracking_rule_evaluations
 WHERE rule_id = $1
 ORDER BY started_at DESC
 LIMIT $2 OFFSET $3
 `
 
-type ListTrackingRuleEvaluationsParams struct {
+type ListRuleEvaluationsParams struct {
 	RuleID pgtype.Int8 `json:"rule_id"`
 	Limit  int32       `json:"limit"`
 	Offset int32       `json:"offset"`
 }
 
-func (q *Queries) ListTrackingRuleEvaluations(ctx context.Context, arg ListTrackingRuleEvaluationsParams) ([]TrackingRuleEvaluations, error) {
-	rows, err := q.db.Query(ctx, listTrackingRuleEvaluations, arg.RuleID, arg.Limit, arg.Offset)
+func (q *Queries) ListRuleEvaluations(ctx context.Context, arg ListRuleEvaluationsParams) ([]TrackingRuleEvaluations, error) {
+	rows, err := q.db.Query(ctx, listRuleEvaluations, arg.RuleID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -1190,13 +804,14 @@ func (q *Queries) ListTrackingRuleEvaluations(ctx context.Context, arg ListTrack
 	return items, nil
 }
 
-const listTrackingRuleTemplates = `-- name: ListTrackingRuleTemplates :many
+const listTemplatesByCategory = `-- name: ListTemplatesByCategory :many
 SELECT id, name, description, category, template_data, usage_count, last_used_at, is_builtin, tags, created_at, updated_at FROM tracking_rule_templates
-ORDER BY category ASC, name ASC
+WHERE category = $1
+ORDER BY name
 `
 
-func (q *Queries) ListTrackingRuleTemplates(ctx context.Context) ([]TrackingRuleTemplates, error) {
-	rows, err := q.db.Query(ctx, listTrackingRuleTemplates)
+func (q *Queries) ListTemplatesByCategory(ctx context.Context, category string) ([]TrackingRuleTemplates, error) {
+	rows, err := q.db.Query(ctx, listTemplatesByCategory, category)
 	if err != nil {
 		return nil, err
 	}
@@ -1227,14 +842,19 @@ func (q *Queries) ListTrackingRuleTemplates(ctx context.Context) ([]TrackingRule
 	return items, nil
 }
 
-const listTrackingRuleTemplatesByCategory = `-- name: ListTrackingRuleTemplatesByCategory :many
+const listTrackingRuleTemplates = `-- name: ListTrackingRuleTemplates :many
 SELECT id, name, description, category, template_data, usage_count, last_used_at, is_builtin, tags, created_at, updated_at FROM tracking_rule_templates
-WHERE category = $1
-ORDER BY name ASC
+ORDER BY category, name
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) ListTrackingRuleTemplatesByCategory(ctx context.Context, category string) ([]TrackingRuleTemplates, error) {
-	rows, err := q.db.Query(ctx, listTrackingRuleTemplatesByCategory, category)
+type ListTrackingRuleTemplatesParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListTrackingRuleTemplates(ctx context.Context, arg ListTrackingRuleTemplatesParams) ([]TrackingRuleTemplates, error) {
+	rows, err := q.db.Query(ctx, listTrackingRuleTemplates, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -1268,10 +888,16 @@ func (q *Queries) ListTrackingRuleTemplatesByCategory(ctx context.Context, categ
 const listTrackingRules = `-- name: ListTrackingRules :many
 SELECT id, name, description, action, priority, is_enabled, conditions, match_count, last_matched_at, last_evaluation_at, created_by, created_at, updated_at FROM tracking_rules
 ORDER BY priority ASC, id ASC
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) ListTrackingRules(ctx context.Context) ([]TrackingRules, error) {
-	rows, err := q.db.Query(ctx, listTrackingRules)
+type ListTrackingRulesParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListTrackingRules(ctx context.Context, arg ListTrackingRulesParams) ([]TrackingRules, error) {
+	rows, err := q.db.Query(ctx, listTrackingRules, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -1304,141 +930,41 @@ func (q *Queries) ListTrackingRules(ctx context.Context) ([]TrackingRules, error
 	return items, nil
 }
 
-const listTrackingRulesByAction = `-- name: ListTrackingRulesByAction :many
-SELECT id, name, description, action, priority, is_enabled, conditions, match_count, last_matched_at, last_evaluation_at, created_by, created_at, updated_at FROM tracking_rules
-WHERE action = $1
-ORDER BY priority ASC, id ASC
-`
-
-func (q *Queries) ListTrackingRulesByAction(ctx context.Context, action string) ([]TrackingRules, error) {
-	rows, err := q.db.Query(ctx, listTrackingRulesByAction, action)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []TrackingRules{}
-	for rows.Next() {
-		var i TrackingRules
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.Action,
-			&i.Priority,
-			&i.IsEnabled,
-			&i.Conditions,
-			&i.MatchCount,
-			&i.LastMatchedAt,
-			&i.LastEvaluationAt,
-			&i.CreatedBy,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const searchTrackingRuleTemplates = `-- name: SearchTrackingRuleTemplates :many
-SELECT id, name, description, category, template_data, usage_count, last_used_at, is_builtin, tags, created_at, updated_at FROM tracking_rule_templates
-WHERE name ILIKE '%' || $1 || '%' OR description ILIKE '%' || $1 || '%'
-   OR $1 = ANY(tags)
-ORDER BY 
-    CASE WHEN name ILIKE $1 || '%' THEN 1
-         WHEN name ILIKE '%' || $1 || '%' THEN 2
-         WHEN $1 = ANY(tags) THEN 3
-         ELSE 4 END,
-    name ASC
-`
-
-func (q *Queries) SearchTrackingRuleTemplates(ctx context.Context, dollar_1 pgtype.Text) ([]TrackingRuleTemplates, error) {
-	rows, err := q.db.Query(ctx, searchTrackingRuleTemplates, dollar_1)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []TrackingRuleTemplates{}
-	for rows.Next() {
-		var i TrackingRuleTemplates
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.Category,
-			&i.TemplateData,
-			&i.UsageCount,
-			&i.LastUsedAt,
-			&i.IsBuiltin,
-			&i.Tags,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const updateMountTrackingAssignment = `-- name: UpdateMountTrackingAssignment :one
-UPDATE mount_tracking_assignments
-SET rule_id = $2, evaluation_id = $3, action = $4, 
-    matched_conditions = $5, rule_priority = $6, rule_name = $7, updated_at = NOW()
+const updateConditionStats = `-- name: UpdateConditionStats :exec
+UPDATE tracking_rule_conditions
+SET match_count = match_count + 1,
+    last_matched_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, mount_catalog_id, rule_id, evaluation_id, action, is_active, matched_conditions, rule_priority, rule_name, assigned_at, expires_at, created_at, updated_at
 `
 
-type UpdateMountTrackingAssignmentParams struct {
-	ID                int64       `json:"id"`
-	RuleID            pgtype.Int8 `json:"rule_id"`
-	EvaluationID      pgtype.Int8 `json:"evaluation_id"`
-	Action            string      `json:"action"`
-	MatchedConditions []byte      `json:"matched_conditions"`
-	RulePriority      pgtype.Int4 `json:"rule_priority"`
-	RuleName          pgtype.Text `json:"rule_name"`
+func (q *Queries) UpdateConditionStats(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateConditionStats, id)
+	return err
 }
 
-func (q *Queries) UpdateMountTrackingAssignment(ctx context.Context, arg UpdateMountTrackingAssignmentParams) (MountTrackingAssignments, error) {
-	row := q.db.QueryRow(ctx, updateMountTrackingAssignment,
-		arg.ID,
-		arg.RuleID,
-		arg.EvaluationID,
-		arg.Action,
-		arg.MatchedConditions,
-		arg.RulePriority,
-		arg.RuleName,
-	)
-	var i MountTrackingAssignments
-	err := row.Scan(
-		&i.ID,
-		&i.MountCatalogID,
-		&i.RuleID,
-		&i.EvaluationID,
-		&i.Action,
-		&i.IsActive,
-		&i.MatchedConditions,
-		&i.RulePriority,
-		&i.RuleName,
-		&i.AssignedAt,
-		&i.ExpiresAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+const updateTemplateUsage = `-- name: UpdateTemplateUsage :exec
+UPDATE tracking_rule_templates
+SET usage_count = usage_count + 1,
+    last_used_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+`
+
+func (q *Queries) UpdateTemplateUsage(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateTemplateUsage, id)
+	return err
 }
 
 const updateTrackingRule = `-- name: UpdateTrackingRule :one
 UPDATE tracking_rules
-SET name = $2, description = $3, action = $4, priority = $5, 
-    is_enabled = $6, conditions = $7, updated_at = NOW()
+SET name = $2,
+    description = $3,
+    action = $4,
+    priority = $5,
+    is_enabled = $6,
+    conditions = $7,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 RETURNING id, name, description, action, priority, is_enabled, conditions, match_count, last_matched_at, last_evaluation_at, created_by, created_at, updated_at
 `
@@ -1482,158 +1008,39 @@ func (q *Queries) UpdateTrackingRule(ctx context.Context, arg UpdateTrackingRule
 	return i, err
 }
 
-const updateTrackingRuleCondition = `-- name: UpdateTrackingRuleCondition :one
-UPDATE tracking_rule_conditions
-SET field_name = $2, operator = $3, value = $4, values = $5,
-    is_case_sensitive = $6, description = $7, updated_at = NOW()
-WHERE id = $1
-RETURNING id, rule_id, field_name, operator, value, values, is_case_sensitive, description, match_count, last_matched_at, created_at, updated_at
-`
-
-type UpdateTrackingRuleConditionParams struct {
-	ID              int64       `json:"id"`
-	FieldName       string      `json:"field_name"`
-	Operator        string      `json:"operator"`
-	Value           pgtype.Text `json:"value"`
-	Values          []string    `json:"values"`
-	IsCaseSensitive bool        `json:"is_case_sensitive"`
-	Description     pgtype.Text `json:"description"`
-}
-
-func (q *Queries) UpdateTrackingRuleCondition(ctx context.Context, arg UpdateTrackingRuleConditionParams) (TrackingRuleConditions, error) {
-	row := q.db.QueryRow(ctx, updateTrackingRuleCondition,
-		arg.ID,
-		arg.FieldName,
-		arg.Operator,
-		arg.Value,
-		arg.Values,
-		arg.IsCaseSensitive,
-		arg.Description,
-	)
-	var i TrackingRuleConditions
-	err := row.Scan(
-		&i.ID,
-		&i.RuleID,
-		&i.FieldName,
-		&i.Operator,
-		&i.Value,
-		&i.Values,
-		&i.IsCaseSensitive,
-		&i.Description,
-		&i.MatchCount,
-		&i.LastMatchedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const updateTrackingRuleConditionStats = `-- name: UpdateTrackingRuleConditionStats :exec
-UPDATE tracking_rule_conditions
-SET match_count = $2, last_matched_at = $3, updated_at = NOW()
+const updateTrackingRuleStats = `-- name: UpdateTrackingRuleStats :exec
+UPDATE tracking_rules
+SET match_count = match_count + $2,
+    last_matched_at = CASE WHEN $3 THEN CURRENT_TIMESTAMP ELSE last_matched_at END,
+    last_evaluation_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 `
 
-type UpdateTrackingRuleConditionStatsParams struct {
+type UpdateTrackingRuleStatsParams struct {
 	ID            int64              `json:"id"`
 	MatchCount    int32              `json:"match_count"`
 	LastMatchedAt pgtype.Timestamptz `json:"last_matched_at"`
 }
 
-func (q *Queries) UpdateTrackingRuleConditionStats(ctx context.Context, arg UpdateTrackingRuleConditionStatsParams) error {
-	_, err := q.db.Exec(ctx, updateTrackingRuleConditionStats, arg.ID, arg.MatchCount, arg.LastMatchedAt)
-	return err
-}
-
-const updateTrackingRuleEvaluationResults = `-- name: UpdateTrackingRuleEvaluationResults :exec
-UPDATE tracking_rule_evaluations
-SET mounts_evaluated = $2, mounts_matched = $3, mounts_included = $4, 
-    mounts_excluded = $5, execution_time_ms = $6, completed_at = $7
-WHERE id = $1
-`
-
-type UpdateTrackingRuleEvaluationResultsParams struct {
-	ID              int64              `json:"id"`
-	MountsEvaluated int32              `json:"mounts_evaluated"`
-	MountsMatched   int32              `json:"mounts_matched"`
-	MountsIncluded  int32              `json:"mounts_included"`
-	MountsExcluded  int32              `json:"mounts_excluded"`
-	ExecutionTimeMs pgtype.Int4        `json:"execution_time_ms"`
-	CompletedAt     pgtype.Timestamptz `json:"completed_at"`
-}
-
-func (q *Queries) UpdateTrackingRuleEvaluationResults(ctx context.Context, arg UpdateTrackingRuleEvaluationResultsParams) error {
-	_, err := q.db.Exec(ctx, updateTrackingRuleEvaluationResults,
-		arg.ID,
-		arg.MountsEvaluated,
-		arg.MountsMatched,
-		arg.MountsIncluded,
-		arg.MountsExcluded,
-		arg.ExecutionTimeMs,
-		arg.CompletedAt,
-	)
-	return err
-}
-
-const updateTrackingRuleEvaluationStatus = `-- name: UpdateTrackingRuleEvaluationStatus :exec
-UPDATE tracking_rule_evaluations
-SET status = $2, completed_at = $3, error_message = $4, error_details = $5
-WHERE id = $1
-`
-
-type UpdateTrackingRuleEvaluationStatusParams struct {
-	ID           int64              `json:"id"`
-	Status       string             `json:"status"`
-	CompletedAt  pgtype.Timestamptz `json:"completed_at"`
-	ErrorMessage pgtype.Text        `json:"error_message"`
-	ErrorDetails []byte             `json:"error_details"`
-}
-
-func (q *Queries) UpdateTrackingRuleEvaluationStatus(ctx context.Context, arg UpdateTrackingRuleEvaluationStatusParams) error {
-	_, err := q.db.Exec(ctx, updateTrackingRuleEvaluationStatus,
-		arg.ID,
-		arg.Status,
-		arg.CompletedAt,
-		arg.ErrorMessage,
-		arg.ErrorDetails,
-	)
-	return err
-}
-
-const updateTrackingRuleStats = `-- name: UpdateTrackingRuleStats :exec
-UPDATE tracking_rules
-SET match_count = $2, last_matched_at = $3, last_evaluation_at = $4, updated_at = NOW()
-WHERE id = $1
-`
-
-type UpdateTrackingRuleStatsParams struct {
-	ID               int64              `json:"id"`
-	MatchCount       int32              `json:"match_count"`
-	LastMatchedAt    pgtype.Timestamptz `json:"last_matched_at"`
-	LastEvaluationAt pgtype.Timestamptz `json:"last_evaluation_at"`
-}
-
 func (q *Queries) UpdateTrackingRuleStats(ctx context.Context, arg UpdateTrackingRuleStatsParams) error {
-	_, err := q.db.Exec(ctx, updateTrackingRuleStats,
-		arg.ID,
-		arg.MatchCount,
-		arg.LastMatchedAt,
-		arg.LastEvaluationAt,
-	)
+	_, err := q.db.Exec(ctx, updateTrackingRuleStats, arg.ID, arg.MatchCount, arg.LastMatchedAt)
 	return err
 }
 
 const updateTrackingRuleTemplate = `-- name: UpdateTrackingRuleTemplate :one
 UPDATE tracking_rule_templates
-SET name = $2, description = $3, category = $4, template_data = $5,
-    tags = $6, updated_at = NOW()
+SET description = $2,
+    category = $3,
+    template_data = $4,
+    tags = $5,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 RETURNING id, name, description, category, template_data, usage_count, last_used_at, is_builtin, tags, created_at, updated_at
 `
 
 type UpdateTrackingRuleTemplateParams struct {
 	ID           int64    `json:"id"`
-	Name         string   `json:"name"`
 	Description  string   `json:"description"`
 	Category     string   `json:"category"`
 	TemplateData []byte   `json:"template_data"`
@@ -1643,7 +1050,6 @@ type UpdateTrackingRuleTemplateParams struct {
 func (q *Queries) UpdateTrackingRuleTemplate(ctx context.Context, arg UpdateTrackingRuleTemplateParams) (TrackingRuleTemplates, error) {
 	row := q.db.QueryRow(ctx, updateTrackingRuleTemplate,
 		arg.ID,
-		arg.Name,
 		arg.Description,
 		arg.Category,
 		arg.TemplateData,

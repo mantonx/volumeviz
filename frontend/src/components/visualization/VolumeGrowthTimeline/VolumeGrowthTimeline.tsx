@@ -33,7 +33,7 @@ import type {
   ChartAnnotation,
 } from './VolumeGrowthTimeline.types';
 import { TIME_RANGE_OPTIONS } from './VolumeGrowthTimeline.types';
-import { formatBytes, formatDate } from '../../../utils/formatters';
+import { formatBytes, formatDate } from '@/utils/formatters';
 
 // Color palette for volume lines
 const VOLUME_COLORS = [

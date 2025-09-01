@@ -29,7 +29,7 @@ type FilesRepository interface {
 }
 
 type VolumesRepository interface {
-	UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error
+	UpdateLastScanned(ctx context.Context, organizationID int64, volumeID string, lastScanned time.Time) error
 }
 
 // VolumeScanner implements the main volume scanning service

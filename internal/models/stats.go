@@ -178,3 +178,44 @@ type FolderSizeInfo struct {
 	FileCount               int64  `json:"file_count"`
 	DirCount                int64  `json:"dir_count"`
 }
+
+// Organization-specific analytics models for multi-tenant statistics
+
+// OrganizationStats represents aggregated statistics for an entire organization
+type OrganizationStats struct {
+	OrganizationID int64              `json:"organization_id"`
+	TotalVolumes   int64              `json:"total_volumes"`
+	TotalSize      int64              `json:"total_size"`
+	TotalFiles     int64              `json:"total_files"`
+	VolumeStats    []*VolumeStatsInfo `json:"volume_stats"`
+	ComputedAt     time.Time          `json:"computed_at"`
+}
+
+// VolumeStatsInfo represents summary statistics for a single volume within an organization
+type VolumeStatsInfo struct {
+	VolumeID    string     `json:"volume_id"`
+	VolumeName  string     `json:"volume_name"`
+	TotalSize   int64      `json:"total_size"`
+	FileCount   int64      `json:"file_count"`
+	LastScanned *time.Time `json:"last_scanned"`
+}
+
+// OrganizationGrowthTrend represents growth trends for volumes within an organization
+type OrganizationGrowthTrend struct {
+	VolumeID      string  `json:"volume_id"`
+	VolumeName    string  `json:"volume_name"`
+	StartSize     int64   `json:"start_size"`
+	EndSize       int64   `json:"end_size"`
+	SizeChange    int64   `json:"size_change"`
+	GrowthPercent float64 `json:"growth_percent"`
+	DaysPeriod    int32   `json:"days_period"`
+}
+
+// TopFile represents top files by size within an organization
+type TopFile struct {
+	VolumeID   string    `json:"volume_id"`
+	VolumeName string    `json:"volume_name"`
+	FilePath   string    `json:"file_path"`
+	Size       int64     `json:"size"`
+	ModTime    time.Time `json:"mod_time"`
+}

@@ -1,37 +1,33 @@
 import { useEffect } from 'react';
-import { useApiHealth } from '@/api/services';
+import { useGetHealthDatabase } from '@/api/orval-generated/api';
+import { logger } from '@/utils/logger';
 
 /**
  * Component that checks API health on mount and periodically
  */
 export function ApiHealthChecker() {
-  const { checkHealth } = useApiHealth();
+  const { data: healthData, error, refetch } = useGetHealthDatabase({
+    query: {
+      refetchInterval: 10000, // Check every 10 seconds
+      retry: (failureCount, error) => {
+        // Retry up to 3 times with exponential backoff
+        return failureCount < 3;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+  });
 
   useEffect(() => {
-    console.log('[ApiHealthChecker] Starting health checks');
-
-    // Initial health check
-    checkHealth()
-      .then(() => {
-        console.log('[ApiHealthChecker] Initial health check completed');
-      })
-      .catch((err) => {
-        console.error('[ApiHealthChecker] Initial health check failed:', err);
-      });
-
-    // Check health every 10 seconds for faster feedback
-    const interval = setInterval(() => {
-      console.log('[ApiHealthChecker] Running periodic health check');
-      checkHealth().catch((err) => {
-        console.error('[ApiHealthChecker] Periodic health check failed:', err);
-      });
-    }, 10000);
-
-    return () => {
-      console.log('[ApiHealthChecker] Cleaning up health checks');
-      clearInterval(interval);
-    };
-  }, [checkHealth]);
+    logger.debug('[ApiHealthChecker] Starting health checks');
+    
+    if (healthData) {
+      logger.info('[ApiHealthChecker] Health check completed:', healthData.status);
+    }
+    
+    if (error) {
+      logger.error('[ApiHealthChecker] Health check failed:', error);
+    }
+  }, [healthData, error]);
 
   return null;
 }

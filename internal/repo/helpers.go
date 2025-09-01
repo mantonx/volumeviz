@@ -41,6 +41,14 @@ func pgInt4ToInt32Ptr(pi pgtype.Int4) *int32 {
 	return &pi.Int32
 }
 
+// pgtype.Int4 to int32
+func pgInt4ToInt32(pi pgtype.Int4) int32 {
+	if !pi.Valid {
+		return 0
+	}
+	return pi.Int32
+}
+
 // Int64 pointer to pgtype.Int8
 func int64PtrToPgInt8(i *int64) pgtype.Int8 {
 	if i == nil {
@@ -55,6 +63,14 @@ func pgInt8ToInt64Ptr(pi pgtype.Int8) *int64 {
 		return nil
 	}
 	return &pi.Int64
+}
+
+// pgtype.Int8 to int64
+func pgInt8ToInt64(pi pgtype.Int8) int64 {
+	if !pi.Valid {
+		return 0
+	}
+	return pi.Int64
 }
 
 // Time pointer to pgtype.Timestamp
@@ -84,6 +100,14 @@ func pgBoolToBool(pb pgtype.Bool) bool {
 		return false
 	}
 	return pb.Bool
+}
+
+// Bool pointer to pgtype.Bool
+func boolPtrToPgBool(b *bool) pgtype.Bool {
+	if b == nil {
+		return pgtype.Bool{Valid: false}
+	}
+	return pgtype.Bool{Bool: *b, Valid: true}
 }
 
 // Time pointer to time.Time (with zero value for nil)

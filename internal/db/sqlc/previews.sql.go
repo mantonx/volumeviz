@@ -11,85 +11,84 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const bulkDeletePreviews = `-- name: BulkDeletePreviews :exec
-DELETE FROM previews 
-WHERE storage_path = ANY($1::text[])
+const cleanupStalePreviews = `-- name: CleanupStalePreviews :exec
+DELETE FROM file_previews
+WHERE status = 'failed'
+AND generated_at < NOW() - INTERVAL '30 days'
 `
 
-func (q *Queries) BulkDeletePreviews(ctx context.Context, dollar_1 []string) error {
-	_, err := q.db.Exec(ctx, bulkDeletePreviews, dollar_1)
+func (q *Queries) CleanupStalePreviews(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, cleanupStalePreviews)
 	return err
 }
 
-const cleanupOrphanedPreviews = `-- name: CleanupOrphanedPreviews :exec
-DELETE FROM previews 
-WHERE file_id NOT IN (SELECT id FROM files)
+const countPreviewsByStatus = `-- name: CountPreviewsByStatus :one
+SELECT COUNT(*) FROM file_previews WHERE status = $1
 `
 
-func (q *Queries) CleanupOrphanedPreviews(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, cleanupOrphanedPreviews)
-	return err
+func (q *Queries) CountPreviewsByStatus(ctx context.Context, status string) (int64, error) {
+	row := q.db.QueryRow(ctx, countPreviewsByStatus, status)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const createPreview = `-- name: CreatePreview :one
-INSERT INTO previews (
-    file_id, type, size, format, width, height, file_size, 
-    content_hash, storage_path, time_offset, processing_ms
+
+INSERT INTO file_previews (
+    file_id, preview_type, file_path, file_size,
+    width, height, format, status, generated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-) RETURNING id, file_id, type, size, format, width, height, file_size, content_hash, storage_path, time_offset, processing_ms, created_at, accessed_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
+) RETURNING id, file_id, preview_type, file_path, file_size, width, height, format, status, generated_at, error_message, processing_duration_ms, created_at
 `
 
 type CreatePreviewParams struct {
-	FileID       int64         `json:"file_id"`
-	Type         string        `json:"type"`
-	Size         string        `json:"size"`
-	Format       string        `json:"format"`
-	Width        pgtype.Int4   `json:"width"`
-	Height       pgtype.Int4   `json:"height"`
-	FileSize     int64         `json:"file_size"`
-	ContentHash  string        `json:"content_hash"`
-	StoragePath  string        `json:"storage_path"`
-	TimeOffset   pgtype.Float8 `json:"time_offset"`
-	ProcessingMs pgtype.Int8   `json:"processing_ms"`
+	FileID      int64              `json:"file_id"`
+	PreviewType string             `json:"preview_type"`
+	FilePath    string             `json:"file_path"`
+	FileSize    pgtype.Int8        `json:"file_size"`
+	Width       pgtype.Int4        `json:"width"`
+	Height      pgtype.Int4        `json:"height"`
+	Format      pgtype.Text        `json:"format"`
+	Status      string             `json:"status"`
+	GeneratedAt pgtype.Timestamptz `json:"generated_at"`
 }
 
-func (q *Queries) CreatePreview(ctx context.Context, arg CreatePreviewParams) (Previews, error) {
+// Preview management queries for PostgreSQL
+func (q *Queries) CreatePreview(ctx context.Context, arg CreatePreviewParams) (FilePreviews, error) {
 	row := q.db.QueryRow(ctx, createPreview,
 		arg.FileID,
-		arg.Type,
-		arg.Size,
-		arg.Format,
+		arg.PreviewType,
+		arg.FilePath,
+		arg.FileSize,
 		arg.Width,
 		arg.Height,
-		arg.FileSize,
-		arg.ContentHash,
-		arg.StoragePath,
-		arg.TimeOffset,
-		arg.ProcessingMs,
+		arg.Format,
+		arg.Status,
+		arg.GeneratedAt,
 	)
-	var i Previews
+	var i FilePreviews
 	err := row.Scan(
 		&i.ID,
 		&i.FileID,
-		&i.Type,
-		&i.Size,
-		&i.Format,
+		&i.PreviewType,
+		&i.FilePath,
+		&i.FileSize,
 		&i.Width,
 		&i.Height,
-		&i.FileSize,
-		&i.ContentHash,
-		&i.StoragePath,
-		&i.TimeOffset,
-		&i.ProcessingMs,
+		&i.Format,
+		&i.Status,
+		&i.GeneratedAt,
+		&i.ErrorMessage,
+		&i.ProcessingDurationMs,
 		&i.CreatedAt,
-		&i.AccessedAt,
 	)
 	return i, err
 }
 
 const deletePreview = `-- name: DeletePreview :exec
-DELETE FROM previews WHERE id = $1
+DELETE FROM file_previews WHERE id = $1
 `
 
 func (q *Queries) DeletePreview(ctx context.Context, id int64) error {
@@ -97,300 +96,66 @@ func (q *Queries) DeletePreview(ctx context.Context, id int64) error {
 	return err
 }
 
-const deletePreviewByStoragePath = `-- name: DeletePreviewByStoragePath :exec
-DELETE FROM previews WHERE storage_path = $1
+const deletePreviewsByFileID = `-- name: DeletePreviewsByFileID :exec
+DELETE FROM file_previews WHERE file_id = $1
 `
 
-func (q *Queries) DeletePreviewByStoragePath(ctx context.Context, storagePath string) error {
-	_, err := q.db.Exec(ctx, deletePreviewByStoragePath, storagePath)
+func (q *Queries) DeletePreviewsByFileID(ctx context.Context, fileID int64) error {
+	_, err := q.db.Exec(ctx, deletePreviewsByFileID, fileID)
 	return err
 }
 
-const deletePreviewsForFile = `-- name: DeletePreviewsForFile :exec
-DELETE FROM previews WHERE file_id = $1
+const getPreview = `-- name: GetPreview :one
+SELECT id, file_id, preview_type, file_path, file_size, width, height, format, status, generated_at, error_message, processing_duration_ms, created_at FROM file_previews WHERE id = $1
 `
 
-func (q *Queries) DeletePreviewsForFile(ctx context.Context, fileID int64) error {
-	_, err := q.db.Exec(ctx, deletePreviewsForFile, fileID)
-	return err
-}
-
-const getLeastAccessedPreviews = `-- name: GetLeastAccessedPreviews :many
-SELECT id, file_id, type, size, format, width, height, file_size, content_hash, storage_path, time_offset, processing_ms, created_at, accessed_at FROM previews 
-ORDER BY accessed_at ASC 
-LIMIT $1
-`
-
-func (q *Queries) GetLeastAccessedPreviews(ctx context.Context, limit int32) ([]Previews, error) {
-	rows, err := q.db.Query(ctx, getLeastAccessedPreviews, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Previews{}
-	for rows.Next() {
-		var i Previews
-		if err := rows.Scan(
-			&i.ID,
-			&i.FileID,
-			&i.Type,
-			&i.Size,
-			&i.Format,
-			&i.Width,
-			&i.Height,
-			&i.FileSize,
-			&i.ContentHash,
-			&i.StoragePath,
-			&i.TimeOffset,
-			&i.ProcessingMs,
-			&i.CreatedAt,
-			&i.AccessedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getMostAccessedPreviews = `-- name: GetMostAccessedPreviews :many
-SELECT id, file_id, type, size, format, width, height, file_size, content_hash, storage_path, time_offset, processing_ms, created_at, accessed_at FROM previews 
-ORDER BY accessed_at DESC 
-LIMIT $1
-`
-
-func (q *Queries) GetMostAccessedPreviews(ctx context.Context, limit int32) ([]Previews, error) {
-	rows, err := q.db.Query(ctx, getMostAccessedPreviews, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Previews{}
-	for rows.Next() {
-		var i Previews
-		if err := rows.Scan(
-			&i.ID,
-			&i.FileID,
-			&i.Type,
-			&i.Size,
-			&i.Format,
-			&i.Width,
-			&i.Height,
-			&i.FileSize,
-			&i.ContentHash,
-			&i.StoragePath,
-			&i.TimeOffset,
-			&i.ProcessingMs,
-			&i.CreatedAt,
-			&i.AccessedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getOldPreviews = `-- name: GetOldPreviews :many
-SELECT id, file_id, type, size, format, width, height, file_size, content_hash, storage_path, time_offset, processing_ms, created_at, accessed_at FROM previews 
-WHERE accessed_at < $1 
-ORDER BY accessed_at ASC 
-LIMIT $2
-`
-
-type GetOldPreviewsParams struct {
-	AccessedAt pgtype.Timestamptz `json:"accessed_at"`
-	Limit      int32              `json:"limit"`
-}
-
-func (q *Queries) GetOldPreviews(ctx context.Context, arg GetOldPreviewsParams) ([]Previews, error) {
-	rows, err := q.db.Query(ctx, getOldPreviews, arg.AccessedAt, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Previews{}
-	for rows.Next() {
-		var i Previews
-		if err := rows.Scan(
-			&i.ID,
-			&i.FileID,
-			&i.Type,
-			&i.Size,
-			&i.Format,
-			&i.Width,
-			&i.Height,
-			&i.FileSize,
-			&i.ContentHash,
-			&i.StoragePath,
-			&i.TimeOffset,
-			&i.ProcessingMs,
-			&i.CreatedAt,
-			&i.AccessedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getPreviewByContentHash = `-- name: GetPreviewByContentHash :one
-SELECT id, file_id, type, size, format, width, height, file_size, content_hash, storage_path, time_offset, processing_ms, created_at, accessed_at FROM previews WHERE content_hash = $1
-`
-
-func (q *Queries) GetPreviewByContentHash(ctx context.Context, contentHash string) (Previews, error) {
-	row := q.db.QueryRow(ctx, getPreviewByContentHash, contentHash)
-	var i Previews
+func (q *Queries) GetPreview(ctx context.Context, id int64) (FilePreviews, error) {
+	row := q.db.QueryRow(ctx, getPreview, id)
+	var i FilePreviews
 	err := row.Scan(
 		&i.ID,
 		&i.FileID,
-		&i.Type,
-		&i.Size,
-		&i.Format,
+		&i.PreviewType,
+		&i.FilePath,
+		&i.FileSize,
 		&i.Width,
 		&i.Height,
-		&i.FileSize,
-		&i.ContentHash,
-		&i.StoragePath,
-		&i.TimeOffset,
-		&i.ProcessingMs,
+		&i.Format,
+		&i.Status,
+		&i.GeneratedAt,
+		&i.ErrorMessage,
+		&i.ProcessingDurationMs,
 		&i.CreatedAt,
-		&i.AccessedAt,
 	)
 	return i, err
 }
 
-const getPreviewByID = `-- name: GetPreviewByID :one
-SELECT id, file_id, type, size, format, width, height, file_size, content_hash, storage_path, time_offset, processing_ms, created_at, accessed_at FROM previews WHERE id = $1
+const getPreviewByFileID = `-- name: GetPreviewByFileID :one
+SELECT id, file_id, preview_type, file_path, file_size, width, height, format, status, generated_at, error_message, processing_duration_ms, created_at FROM file_previews WHERE file_id = $1 AND preview_type = $2
 `
 
-func (q *Queries) GetPreviewByID(ctx context.Context, id int64) (Previews, error) {
-	row := q.db.QueryRow(ctx, getPreviewByID, id)
-	var i Previews
+type GetPreviewByFileIDParams struct {
+	FileID      int64  `json:"file_id"`
+	PreviewType string `json:"preview_type"`
+}
+
+func (q *Queries) GetPreviewByFileID(ctx context.Context, arg GetPreviewByFileIDParams) (FilePreviews, error) {
+	row := q.db.QueryRow(ctx, getPreviewByFileID, arg.FileID, arg.PreviewType)
+	var i FilePreviews
 	err := row.Scan(
 		&i.ID,
 		&i.FileID,
-		&i.Type,
-		&i.Size,
-		&i.Format,
+		&i.PreviewType,
+		&i.FilePath,
+		&i.FileSize,
 		&i.Width,
 		&i.Height,
-		&i.FileSize,
-		&i.ContentHash,
-		&i.StoragePath,
-		&i.TimeOffset,
-		&i.ProcessingMs,
-		&i.CreatedAt,
-		&i.AccessedAt,
-	)
-	return i, err
-}
-
-const getPreviewByStoragePath = `-- name: GetPreviewByStoragePath :one
-SELECT id, file_id, type, size, format, width, height, file_size, content_hash, storage_path, time_offset, processing_ms, created_at, accessed_at FROM previews WHERE storage_path = $1
-`
-
-func (q *Queries) GetPreviewByStoragePath(ctx context.Context, storagePath string) (Previews, error) {
-	row := q.db.QueryRow(ctx, getPreviewByStoragePath, storagePath)
-	var i Previews
-	err := row.Scan(
-		&i.ID,
-		&i.FileID,
-		&i.Type,
-		&i.Size,
 		&i.Format,
-		&i.Width,
-		&i.Height,
-		&i.FileSize,
-		&i.ContentHash,
-		&i.StoragePath,
-		&i.TimeOffset,
-		&i.ProcessingMs,
+		&i.Status,
+		&i.GeneratedAt,
+		&i.ErrorMessage,
+		&i.ProcessingDurationMs,
 		&i.CreatedAt,
-		&i.AccessedAt,
-	)
-	return i, err
-}
-
-const getPreviewCountByFileIDs = `-- name: GetPreviewCountByFileIDs :many
-SELECT file_id, COUNT(*) as preview_count 
-FROM previews 
-WHERE file_id = ANY($1::bigint[])
-GROUP BY file_id
-`
-
-type GetPreviewCountByFileIDsRow struct {
-	FileID       int64 `json:"file_id"`
-	PreviewCount int64 `json:"preview_count"`
-}
-
-func (q *Queries) GetPreviewCountByFileIDs(ctx context.Context, dollar_1 []int64) ([]GetPreviewCountByFileIDsRow, error) {
-	rows, err := q.db.Query(ctx, getPreviewCountByFileIDs, dollar_1)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetPreviewCountByFileIDsRow{}
-	for rows.Next() {
-		var i GetPreviewCountByFileIDsRow
-		if err := rows.Scan(&i.FileID, &i.PreviewCount); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getPreviewForFileByTypeSize = `-- name: GetPreviewForFileByTypeSize :one
-SELECT id, file_id, type, size, format, width, height, file_size, content_hash, storage_path, time_offset, processing_ms, created_at, accessed_at FROM previews 
-WHERE file_id = $1 AND type = $2 AND size = $3 
-  AND (time_offset = $4 OR ($4 = 0 AND time_offset IS NULL))
-LIMIT 1
-`
-
-type GetPreviewForFileByTypeSizeParams struct {
-	FileID     int64         `json:"file_id"`
-	Type       string        `json:"type"`
-	Size       string        `json:"size"`
-	TimeOffset pgtype.Float8 `json:"time_offset"`
-}
-
-func (q *Queries) GetPreviewForFileByTypeSize(ctx context.Context, arg GetPreviewForFileByTypeSizeParams) (Previews, error) {
-	row := q.db.QueryRow(ctx, getPreviewForFileByTypeSize,
-		arg.FileID,
-		arg.Type,
-		arg.Size,
-		arg.TimeOffset,
-	)
-	var i Previews
-	err := row.Scan(
-		&i.ID,
-		&i.FileID,
-		&i.Type,
-		&i.Size,
-		&i.Format,
-		&i.Width,
-		&i.Height,
-		&i.FileSize,
-		&i.ContentHash,
-		&i.StoragePath,
-		&i.TimeOffset,
-		&i.ProcessingMs,
-		&i.CreatedAt,
-		&i.AccessedAt,
 	)
 	return i, err
 }
@@ -398,19 +163,19 @@ func (q *Queries) GetPreviewForFileByTypeSize(ctx context.Context, arg GetPrevie
 const getPreviewStats = `-- name: GetPreviewStats :one
 SELECT 
     COUNT(*) as total_previews,
-    SUM(file_size) as total_size_bytes,
-    AVG(processing_ms) as avg_processing_ms,
-    MIN(created_at) as oldest_preview,
-    MAX(created_at) as newest_preview
-FROM previews
+    COUNT(*) FILTER (WHERE status = 'completed') as completed_previews,
+    COUNT(*) FILTER (WHERE status = 'failed') as failed_previews,
+    COUNT(*) FILTER (WHERE status = 'pending') as pending_previews,
+    COALESCE(SUM(file_size), 0) as total_size
+FROM file_previews
 `
 
 type GetPreviewStatsRow struct {
-	TotalPreviews   int64       `json:"total_previews"`
-	TotalSizeBytes  int64       `json:"total_size_bytes"`
-	AvgProcessingMs float64     `json:"avg_processing_ms"`
-	OldestPreview   interface{} `json:"oldest_preview"`
-	NewestPreview   interface{} `json:"newest_preview"`
+	TotalPreviews     int64       `json:"total_previews"`
+	CompletedPreviews int64       `json:"completed_previews"`
+	FailedPreviews    int64       `json:"failed_previews"`
+	PendingPreviews   int64       `json:"pending_previews"`
+	TotalSize         interface{} `json:"total_size"`
 }
 
 func (q *Queries) GetPreviewStats(ctx context.Context) (GetPreviewStatsRow, error) {
@@ -418,49 +183,45 @@ func (q *Queries) GetPreviewStats(ctx context.Context) (GetPreviewStatsRow, erro
 	var i GetPreviewStatsRow
 	err := row.Scan(
 		&i.TotalPreviews,
-		&i.TotalSizeBytes,
-		&i.AvgProcessingMs,
-		&i.OldestPreview,
-		&i.NewestPreview,
+		&i.CompletedPreviews,
+		&i.FailedPreviews,
+		&i.PendingPreviews,
+		&i.TotalSize,
 	)
 	return i, err
 }
 
-const getPreviewStatsByType = `-- name: GetPreviewStatsByType :many
-SELECT 
-    type,
-    size,
-    COUNT(*) as count,
-    SUM(file_size) as total_size,
-    AVG(processing_ms) as avg_processing_ms
-FROM previews 
-GROUP BY type, size 
-ORDER BY type, size
+const getStaleFailedPreviews = `-- name: GetStaleFailedPreviews :many
+SELECT id, file_id, preview_type, file_path, file_size, width, height, format, status, generated_at, error_message, processing_duration_ms, created_at FROM file_previews
+WHERE status = 'failed'
+AND generated_at < NOW() - INTERVAL '30 days'
+ORDER BY generated_at ASC NULLS LAST
+LIMIT $1
 `
 
-type GetPreviewStatsByTypeRow struct {
-	Type            string  `json:"type"`
-	Size            string  `json:"size"`
-	Count           int64   `json:"count"`
-	TotalSize       int64   `json:"total_size"`
-	AvgProcessingMs float64 `json:"avg_processing_ms"`
-}
-
-func (q *Queries) GetPreviewStatsByType(ctx context.Context) ([]GetPreviewStatsByTypeRow, error) {
-	rows, err := q.db.Query(ctx, getPreviewStatsByType)
+func (q *Queries) GetStaleFailedPreviews(ctx context.Context, limit int32) ([]FilePreviews, error) {
+	rows, err := q.db.Query(ctx, getStaleFailedPreviews, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetPreviewStatsByTypeRow{}
+	items := []FilePreviews{}
 	for rows.Next() {
-		var i GetPreviewStatsByTypeRow
+		var i FilePreviews
 		if err := rows.Scan(
-			&i.Type,
-			&i.Size,
-			&i.Count,
-			&i.TotalSize,
-			&i.AvgProcessingMs,
+			&i.ID,
+			&i.FileID,
+			&i.PreviewType,
+			&i.FilePath,
+			&i.FileSize,
+			&i.Width,
+			&i.Height,
+			&i.Format,
+			&i.Status,
+			&i.GeneratedAt,
+			&i.ErrorMessage,
+			&i.ProcessingDurationMs,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -472,62 +233,89 @@ func (q *Queries) GetPreviewStatsByType(ctx context.Context) ([]GetPreviewStatsB
 	return items, nil
 }
 
-const getPreviewStatsRecord = `-- name: GetPreviewStatsRecord :one
-SELECT id, total_generated, total_size_bytes, cache_hits, cache_misses, last_cleanup, recorded_at FROM preview_stats WHERE id = 1
-`
-
-func (q *Queries) GetPreviewStatsRecord(ctx context.Context) (PreviewStats, error) {
-	row := q.db.QueryRow(ctx, getPreviewStatsRecord)
-	var i PreviewStats
-	err := row.Scan(
-		&i.ID,
-		&i.TotalGenerated,
-		&i.TotalSizeBytes,
-		&i.CacheHits,
-		&i.CacheMisses,
-		&i.LastCleanup,
-		&i.RecordedAt,
-	)
-	return i, err
-}
-
-const getPreviewsByType = `-- name: GetPreviewsByType :many
-SELECT id, file_id, type, size, format, width, height, file_size, content_hash, storage_path, time_offset, processing_ms, created_at, accessed_at FROM previews 
-WHERE type = $1 
-ORDER BY created_at DESC 
+const listPreviews = `-- name: ListPreviews :many
+SELECT id, file_id, preview_type, file_path, file_size, width, height, format, status, generated_at, error_message, processing_duration_ms, created_at FROM file_previews
+WHERE file_id = ANY($1::bigint[])
+ORDER BY generated_at DESC NULLS LAST
 LIMIT $2 OFFSET $3
 `
 
-type GetPreviewsByTypeParams struct {
-	Type   string `json:"type"`
+type ListPreviewsParams struct {
+	Column1 []int64 `json:"column_1"`
+	Limit   int32   `json:"limit"`
+	Offset  int32   `json:"offset"`
+}
+
+func (q *Queries) ListPreviews(ctx context.Context, arg ListPreviewsParams) ([]FilePreviews, error) {
+	rows, err := q.db.Query(ctx, listPreviews, arg.Column1, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FilePreviews{}
+	for rows.Next() {
+		var i FilePreviews
+		if err := rows.Scan(
+			&i.ID,
+			&i.FileID,
+			&i.PreviewType,
+			&i.FilePath,
+			&i.FileSize,
+			&i.Width,
+			&i.Height,
+			&i.Format,
+			&i.Status,
+			&i.GeneratedAt,
+			&i.ErrorMessage,
+			&i.ProcessingDurationMs,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPreviewsByStatus = `-- name: ListPreviewsByStatus :many
+SELECT id, file_id, preview_type, file_path, file_size, width, height, format, status, generated_at, error_message, processing_duration_ms, created_at FROM file_previews
+WHERE status = $1
+ORDER BY generated_at DESC NULLS LAST
+LIMIT $2 OFFSET $3
+`
+
+type ListPreviewsByStatusParams struct {
+	Status string `json:"status"`
 	Limit  int32  `json:"limit"`
 	Offset int32  `json:"offset"`
 }
 
-func (q *Queries) GetPreviewsByType(ctx context.Context, arg GetPreviewsByTypeParams) ([]Previews, error) {
-	rows, err := q.db.Query(ctx, getPreviewsByType, arg.Type, arg.Limit, arg.Offset)
+func (q *Queries) ListPreviewsByStatus(ctx context.Context, arg ListPreviewsByStatusParams) ([]FilePreviews, error) {
+	rows, err := q.db.Query(ctx, listPreviewsByStatus, arg.Status, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Previews{}
+	items := []FilePreviews{}
 	for rows.Next() {
-		var i Previews
+		var i FilePreviews
 		if err := rows.Scan(
 			&i.ID,
 			&i.FileID,
-			&i.Type,
-			&i.Size,
-			&i.Format,
+			&i.PreviewType,
+			&i.FilePath,
+			&i.FileSize,
 			&i.Width,
 			&i.Height,
-			&i.FileSize,
-			&i.ContentHash,
-			&i.StoragePath,
-			&i.TimeOffset,
-			&i.ProcessingMs,
+			&i.Format,
+			&i.Status,
+			&i.GeneratedAt,
+			&i.ErrorMessage,
+			&i.ProcessingDurationMs,
 			&i.CreatedAt,
-			&i.AccessedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -539,136 +327,57 @@ func (q *Queries) GetPreviewsByType(ctx context.Context, arg GetPreviewsByTypePa
 	return items, nil
 }
 
-const getPreviewsForFile = `-- name: GetPreviewsForFile :many
-SELECT id, file_id, type, size, format, width, height, file_size, content_hash, storage_path, time_offset, processing_ms, created_at, accessed_at FROM previews 
-WHERE file_id = $1 
-ORDER BY type, size
-`
-
-func (q *Queries) GetPreviewsForFile(ctx context.Context, fileID int64) ([]Previews, error) {
-	rows, err := q.db.Query(ctx, getPreviewsForFile, fileID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Previews{}
-	for rows.Next() {
-		var i Previews
-		if err := rows.Scan(
-			&i.ID,
-			&i.FileID,
-			&i.Type,
-			&i.Size,
-			&i.Format,
-			&i.Width,
-			&i.Height,
-			&i.FileSize,
-			&i.ContentHash,
-			&i.StoragePath,
-			&i.TimeOffset,
-			&i.ProcessingMs,
-			&i.CreatedAt,
-			&i.AccessedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getPreviewsNeedingCleanup = `-- name: GetPreviewsNeedingCleanup :many
-SELECT storage_path, file_size FROM previews 
-WHERE accessed_at < $1
-`
-
-type GetPreviewsNeedingCleanupRow struct {
-	StoragePath string `json:"storage_path"`
-	FileSize    int64  `json:"file_size"`
-}
-
-func (q *Queries) GetPreviewsNeedingCleanup(ctx context.Context, accessedAt pgtype.Timestamptz) ([]GetPreviewsNeedingCleanupRow, error) {
-	rows, err := q.db.Query(ctx, getPreviewsNeedingCleanup, accessedAt)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetPreviewsNeedingCleanupRow{}
-	for rows.Next() {
-		var i GetPreviewsNeedingCleanupRow
-		if err := rows.Scan(&i.StoragePath, &i.FileSize); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const updatePreviewAccessTime = `-- name: UpdatePreviewAccessTime :exec
-UPDATE previews 
-SET accessed_at = CURRENT_TIMESTAMP 
+const updatePreview = `-- name: UpdatePreview :one
+UPDATE file_previews
+SET 
+    file_path = $2,
+    file_size = $3,
+    width = $4,
+    height = $5,
+    format = $6,
+    status = $7,
+    generated_at = $8
 WHERE id = $1
+RETURNING id, file_id, preview_type, file_path, file_size, width, height, format, status, generated_at, error_message, processing_duration_ms, created_at
 `
 
-func (q *Queries) UpdatePreviewAccessTime(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, updatePreviewAccessTime, id)
-	return err
+type UpdatePreviewParams struct {
+	ID          int64              `json:"id"`
+	FilePath    string             `json:"file_path"`
+	FileSize    pgtype.Int8        `json:"file_size"`
+	Width       pgtype.Int4        `json:"width"`
+	Height      pgtype.Int4        `json:"height"`
+	Format      pgtype.Text        `json:"format"`
+	Status      string             `json:"status"`
+	GeneratedAt pgtype.Timestamptz `json:"generated_at"`
 }
 
-const updatePreviewAccessTimeByPath = `-- name: UpdatePreviewAccessTimeByPath :exec
-UPDATE previews 
-SET accessed_at = CURRENT_TIMESTAMP 
-WHERE storage_path = $1
-`
-
-func (q *Queries) UpdatePreviewAccessTimeByPath(ctx context.Context, storagePath string) error {
-	_, err := q.db.Exec(ctx, updatePreviewAccessTimeByPath, storagePath)
-	return err
-}
-
-const updatePreviewStatsCleanup = `-- name: UpdatePreviewStatsCleanup :exec
-UPDATE preview_stats 
-SET 
-    last_cleanup = CURRENT_TIMESTAMP,
-    recorded_at = CURRENT_TIMESTAMP
-WHERE id = 1
-`
-
-func (q *Queries) UpdatePreviewStatsCleanup(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, updatePreviewStatsCleanup)
-	return err
-}
-
-const updatePreviewStatsIncrement = `-- name: UpdatePreviewStatsIncrement :exec
-UPDATE preview_stats 
-SET 
-    total_generated = total_generated + $1,
-    total_size_bytes = total_size_bytes + $2,
-    cache_hits = cache_hits + $3,
-    cache_misses = cache_misses + $4,
-    recorded_at = CURRENT_TIMESTAMP
-WHERE id = 1
-`
-
-type UpdatePreviewStatsIncrementParams struct {
-	TotalGenerated pgtype.Int8 `json:"total_generated"`
-	TotalSizeBytes pgtype.Int8 `json:"total_size_bytes"`
-	CacheHits      pgtype.Int8 `json:"cache_hits"`
-	CacheMisses    pgtype.Int8 `json:"cache_misses"`
-}
-
-func (q *Queries) UpdatePreviewStatsIncrement(ctx context.Context, arg UpdatePreviewStatsIncrementParams) error {
-	_, err := q.db.Exec(ctx, updatePreviewStatsIncrement,
-		arg.TotalGenerated,
-		arg.TotalSizeBytes,
-		arg.CacheHits,
-		arg.CacheMisses,
+func (q *Queries) UpdatePreview(ctx context.Context, arg UpdatePreviewParams) (FilePreviews, error) {
+	row := q.db.QueryRow(ctx, updatePreview,
+		arg.ID,
+		arg.FilePath,
+		arg.FileSize,
+		arg.Width,
+		arg.Height,
+		arg.Format,
+		arg.Status,
+		arg.GeneratedAt,
 	)
-	return err
+	var i FilePreviews
+	err := row.Scan(
+		&i.ID,
+		&i.FileID,
+		&i.PreviewType,
+		&i.FilePath,
+		&i.FileSize,
+		&i.Width,
+		&i.Height,
+		&i.Format,
+		&i.Status,
+		&i.GeneratedAt,
+		&i.ErrorMessage,
+		&i.ProcessingDurationMs,
+		&i.CreatedAt,
+	)
+	return i, err
 }

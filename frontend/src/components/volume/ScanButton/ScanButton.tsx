@@ -1,7 +1,7 @@
 import React from 'react';
 import { Scan, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useVolumeScanning } from '../../../api/services';
+import { useVolumeOperations } from '@/hooks/api/useVolumeOperations';
 import { useToast } from '../../ui/Toast/ToastProvider';
 import { DetailedScanButton } from './DetailedScanButton';
 
@@ -55,9 +55,9 @@ export const ScanButton: React.FC<ScanButtonProps> = ({
   className,
   legacy = false,
 }) => {
-  const { scanVolume, scanLoading } = useVolumeScanning();
+  const { scanVolume } = useVolumeOperations();
   const { success, error: showError } = useToast();
-  const isScanning = scanLoading[volumeId] || false;
+  const isScanning = scanVolume.isLoading;
   const isDisabled = disabled || isScanning;
 
   // Use legacy implementation if requested
@@ -66,7 +66,7 @@ export const ScanButton: React.FC<ScanButtonProps> = ({
       if (isDisabled) return;
 
       try {
-        const result = await scanVolume(volumeId);
+        const result = await scanVolume.mutateAsync(volumeId);
         success(`Volume scan completed successfully`);
         onScanComplete?.(result);
       } catch (err) {

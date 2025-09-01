@@ -191,8 +191,20 @@ func main() {
 			log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 		}
 		storeInstance = store.NewPostgreSQLStore(conn)
+	case storeconfig.DatabaseTypeSQLite:
+		// Build SQLite DSN - use database path directly
+		dsn := dbConfig.Database
+		if dsn == "" {
+			dsn = "./volumeviz.db" // Default SQLite database file
+		}
+		ctx := context.Background()
+		conn, err := db.ConnectSQLite(ctx, dsn)
+		if err != nil {
+			log.Fatalf("Failed to connect to SQLite: %v", err)
+		}
+		storeInstance = store.NewSQLiteStore(conn)
 	default:
-		log.Fatalf("Unsupported database type: %s (only PostgreSQL supported in new architecture)", dbConfig.Type)
+		log.Fatalf("Unsupported database type: %s (supported types: postgresql, sqlite)", dbConfig.Type)
 	}
 	log.Printf("Store instance created successfully")
 

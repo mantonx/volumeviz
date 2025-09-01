@@ -28,7 +28,7 @@ import type {
   SizeRangeBreakdown,
 } from './SystemOverview.types';
 import { SIZE_RANGES, DRIVER_COLORS } from './SystemOverview.types';
-import { formatBytes } from '../../../utils/formatters';
+import { formatBytes } from '@/utils/formatters';
 
 /**
  * SystemOverview component provides a comprehensive view of total storage usage.

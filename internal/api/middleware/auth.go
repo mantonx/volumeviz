@@ -1,16 +1,12 @@
 package middleware
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/utils/auth"
 )
 
 // UserRole represents user authorization roles
@@ -22,25 +18,10 @@ const (
 	RoleAdmin    UserRole = "admin"
 )
 
-// JWTHeader represents JWT header
-type JWTHeader struct {
-	Type      string `json:"typ"`
-	Algorithm string `json:"alg"`
-}
-
-// AuthClaims represents JWT claims for authentication
-type AuthClaims struct {
-	UserID    string    `json:"user_id"`
-	Role      UserRole  `json:"role"`
-	ExpiresAt time.Time `json:"exp"`
-	IssuedAt  time.Time `json:"iat"`
-	Issuer    string    `json:"iss"`
-}
-
 // AuthConfig holds authentication middleware configuration
 type AuthConfig struct {
 	Enabled      bool
-	Secret       string
+	JWTManager   *auth.JWTManager
 	SkipPaths    []string
 	RequiredRole UserRole // Minimum required role
 }
@@ -60,6 +41,14 @@ func DefaultAuthConfig() *AuthConfig {
 	}
 }
 
+// NewAuthConfig creates a new auth config with JWT manager
+func NewAuthConfig(jwtManager *auth.JWTManager, enabled bool) *AuthConfig {
+	config := DefaultAuthConfig()
+	config.JWTManager = jwtManager
+	config.Enabled = enabled
+	return config
+}
+
 // AuthMiddleware returns JWT authentication middleware
 func AuthMiddleware(config *AuthConfig) gin.HandlerFunc {
 	if config == nil {
@@ -73,9 +62,9 @@ func AuthMiddleware(config *AuthConfig) gin.HandlerFunc {
 		}
 	}
 
-	// Validate secret is provided
-	if config.Secret == "" {
-		panic("AUTH_HS256_SECRET must be provided when AUTH_ENABLED=true")
+	// Validate JWT manager is provided
+	if config.JWTManager == nil {
+		panic("JWTManager must be provided when AUTH_ENABLED=true")
 	}
 
 	return gin.HandlerFunc(func(c *gin.Context) {
@@ -111,8 +100,8 @@ func AuthMiddleware(config *AuthConfig) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		// Parse and validate JWT token
-		claims, err := validateJWT(tokenString, config.Secret)
+		// Parse and validate JWT token using JWT manager
+		claims, err := config.JWTManager.ValidateAccessToken(tokenString)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":     "Invalid token",
@@ -124,7 +113,7 @@ func AuthMiddleware(config *AuthConfig) gin.HandlerFunc {
 		}
 
 		// Check if user role meets minimum requirement
-		if !hasRequiredRole(claims.Role, config.RequiredRole) {
+		if !hasRequiredRole(UserRole(claims.Role), config.RequiredRole) {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"error":     "Insufficient permissions",
 				"code":      "INSUFFICIENT_PERMISSIONS",
@@ -134,8 +123,13 @@ func AuthMiddleware(config *AuthConfig) gin.HandlerFunc {
 		}
 
 		// Store user information in context for use by handlers
-		c.Set("userID", claims.UserID)
-		c.Set("userRole", string(claims.Role))
+		c.Set("user_id", claims.UserID)
+		c.Set("user_role", claims.Role)
+		
+		// Store organization ID if present in token
+		if claims.OrganizationID != nil {
+			c.Set("organization_id", *claims.OrganizationID)
+		}
 
 		c.Next()
 	})
@@ -159,7 +153,7 @@ func ProtectMutatingOperations(config *AuthConfig) gin.HandlerFunc {
 		method := c.Request.Method
 		if method == "POST" || method == "PUT" || method == "PATCH" || method == "DELETE" {
 			// Check if user has operator role or higher
-			userRole := c.GetString("userRole")
+			userRole := c.GetString("user_role")
 			if userRole == "" {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 					"error":     "Authentication required for this operation",
@@ -186,7 +180,7 @@ func ProtectMutatingOperations(config *AuthConfig) gin.HandlerFunc {
 // RequireRole middleware requires a specific minimum role
 func RequireRole(requiredRole UserRole) gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
-		userRole := c.GetString("userRole")
+		userRole := c.GetString("user_role")
 		if userRole == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":     "Authentication required",
@@ -243,102 +237,3 @@ func GetUserRole(c *gin.Context) UserRole {
 	return ""
 }
 
-// validateJWT validates a JWT token and returns claims
-func validateJWT(tokenString, secret string) (*AuthClaims, error) {
-	// Split JWT into parts
-	parts := strings.Split(tokenString, ".")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid JWT format")
-	}
-
-	// Decode header
-	headerData, err := base64.RawURLEncoding.DecodeString(parts[0])
-	if err != nil {
-		return nil, fmt.Errorf("invalid JWT header encoding")
-	}
-
-	var header JWTHeader
-	if err := json.Unmarshal(headerData, &header); err != nil {
-		return nil, fmt.Errorf("invalid JWT header")
-	}
-
-	// Check algorithm
-	if header.Algorithm != "HS256" {
-		return nil, fmt.Errorf("unsupported algorithm: %s", header.Algorithm)
-	}
-
-	// Verify signature
-	payload := parts[0] + "." + parts[1]
-	expectedSignature := generateHS256Signature(payload, secret)
-	actualSignature := parts[2]
-
-	if expectedSignature != actualSignature {
-		return nil, fmt.Errorf("invalid signature")
-	}
-
-	// Decode payload
-	payloadData, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil, fmt.Errorf("invalid JWT payload encoding")
-	}
-
-	var claims AuthClaims
-	if err := json.Unmarshal(payloadData, &claims); err != nil {
-		return nil, fmt.Errorf("invalid JWT claims")
-	}
-
-	// Check expiration
-	if time.Now().After(claims.ExpiresAt) {
-		return nil, fmt.Errorf("token expired")
-	}
-
-	return &claims, nil
-}
-
-// generateHS256Signature generates HMAC SHA256 signature
-func generateHS256Signature(payload, secret string) string {
-	h := hmac.New(sha256.New, []byte(secret))
-	h.Write([]byte(payload))
-	return base64.RawURLEncoding.EncodeToString(h.Sum(nil))
-}
-
-// GenerateJWT generates a JWT token (helper for development)
-func GenerateJWT(userID string, role UserRole, secret string, duration time.Duration) (string, error) {
-	if secret == "" {
-		return "", fmt.Errorf("secret cannot be empty")
-	}
-
-	now := time.Now()
-	header := JWTHeader{
-		Type:      "JWT",
-		Algorithm: "HS256",
-	}
-
-	claims := AuthClaims{
-		UserID:    userID,
-		Role:      role,
-		ExpiresAt: now.Add(duration),
-		IssuedAt:  now,
-		Issuer:    "volumeviz",
-	}
-
-	// Encode header
-	headerBytes, err := json.Marshal(header)
-	if err != nil {
-		return "", err
-	}
-	headerEncoded := base64.RawURLEncoding.EncodeToString(headerBytes)
-
-	// Encode claims
-	claimsBytes, err := json.Marshal(claims)
-	if err != nil {
-		return "", err
-	}
-	claimsEncoded := base64.RawURLEncoding.EncodeToString(claimsBytes)
-
-	// Generate signature
-	payload := headerEncoded + "." + claimsEncoded
-	signature := generateHS256Signature(payload, secret)
-
-	return payload + "." + signature, nil
-}

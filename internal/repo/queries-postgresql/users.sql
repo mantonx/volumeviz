@@ -1,13 +1,16 @@
 -- name: CreateUser :one
 INSERT INTO users (
     username, email, password_hash, role, status,
-    first_name, last_name, display_name, timezone, created_by
+    first_name, last_name, display_name, timezone, created_by, organization_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 ) RETURNING *;
 
 -- name: GetUserByID :one
 SELECT * FROM users WHERE id = $1;
+
+-- name: GetUserByIDAndOrg :one
+SELECT * FROM users WHERE id = $1 AND organization_id = $2;
 
 -- name: GetUserByUsername :one
 SELECT * FROM users WHERE username = $1;
@@ -66,8 +69,9 @@ WHERE id = $1;
 
 -- name: ListUsers :many
 SELECT * FROM users 
+WHERE organization_id = $1
 ORDER BY created_at DESC
-LIMIT $1 OFFSET $2;
+LIMIT $2 OFFSET $3;
 
 -- name: DeleteUser :exec
 DELETE FROM users WHERE id = $1;

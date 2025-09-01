@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/api/middleware"
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/store"
 )
@@ -32,6 +33,21 @@ func NewHandler(store store.Store) *Handler {
 	return &Handler{
 		store: store,
 	}
+}
+
+// validateVolumeAccess checks if the user's organization has access to the volume
+func (h *Handler) validateVolumeAccess(c *gin.Context, volumeID string) bool {
+	if orgID, hasOrg := middleware.GetOrganizationID(c.Request.Context()); hasOrg {
+		// Check if volume belongs to this organization
+		if volume, err := h.store.Volumes().GetVolumeByVolumeID(c.Request.Context(), orgID, volumeID); err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Volume not found"})
+			return false
+		} else if volume.OrganizationID == nil || *volume.OrganizationID != orgID {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Volume not found"})
+			return false
+		}
+	}
+	return true
 }
 
 // GetFilesByFolderRequest represents the request for getting files by folder
@@ -296,6 +312,11 @@ func (h *Handler) GetFilesByFolder(c *gin.Context) {
 	// Calculate offset for pagination
 	offset := (req.Page - 1) * req.Limit
 
+	// Validate organization access to volume
+	if !h.validateVolumeAccess(c, req.VolumeID) {
+		return
+	}
+
 	// Get files from store with proper pagination
 	fileRepo := h.store.Files()
 	folderRepo := h.store.Folders()
@@ -485,6 +506,11 @@ func (h *Handler) GetFilesByMediaType(c *gin.Context) {
 	// Calculate offset
 	offset := (req.Page - 1) * req.Limit
 
+	// Validate organization access to volume
+	if !h.validateVolumeAccess(c, req.VolumeID) {
+		return
+	}
+
 	// Get files from store
 	fileRepo := h.store.Files()
 	files, err := fileRepo.GetFilesByMimeType(c.Request.Context(), req.VolumeID, req.MediaType, int32(req.Limit), int32(offset))
@@ -578,6 +604,11 @@ func (h *Handler) GetFilesByExtension(c *gin.Context) {
 	// Calculate offset
 	offset := (req.Page - 1) * req.Limit
 
+	// Validate organization access to volume
+	if !h.validateVolumeAccess(c, req.VolumeID) {
+		return
+	}
+
 	// Get files from store
 	fileRepo := h.store.Files()
 	files, err := fileRepo.GetFilesByExtension(c.Request.Context(), req.VolumeID, req.Extension, int32(req.Limit), int32(offset))
@@ -669,6 +700,11 @@ func (h *Handler) GetRecentFiles(c *gin.Context) {
 
 	// Calculate time threshold
 	since := time.Now().AddDate(0, 0, -req.Days)
+
+	// Validate organization access to volume
+	if !h.validateVolumeAccess(c, req.VolumeID) {
+		return
+	}
 
 	// Get files from store
 	fileRepo := h.store.Files()

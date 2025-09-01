@@ -39,7 +39,7 @@ LIMIT $1 OFFSET $2;
 -- name: CreateOrganizationInvitation :one
 INSERT INTO organization_invitations (organization_id, email, role, token, invited_by, message, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, organization_id, email, role, token, invited_by, message, status, expires_at, created_at, updated_at;
+RETURNING *;
 
 -- name: GetOrganizationInvitationByToken :one
 SELECT id, organization_id, email, role, token, invited_by, message, status, accepted_at, accepted_by, expires_at, created_at, updated_at

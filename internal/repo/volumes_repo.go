@@ -14,20 +14,20 @@ import (
 	"github.com/mantonx/volumeviz/internal/models"
 )
 
-// VolumesRepo handles volume, container, and mount operations
+// VolumesRepo handles volume, container, and mount operations with organization scoping
 // This repo accepts sqlc.Queries (injected by store) and returns domain models
 type VolumesRepo interface {
-	// Volume operations
-	CreateVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error)
-	GetVolumeByID(ctx context.Context, id int64) (*models.Volume, error)
-	GetVolumeByVolumeID(ctx context.Context, volumeID string) (*models.Volume, error)
-	ListVolumes(ctx context.Context, limit, offset int32) ([]*models.Volume, error)
-	UpdateVolume(ctx context.Context, params models.UpdateVolumeParams) (*models.Volume, error)
-	UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error
-	SoftDeleteVolume(ctx context.Context, id int64) error
-	UpsertVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error)
-	GetVolumeStats(ctx context.Context) (*models.VolumeStats, error)
-	CountVolumes(ctx context.Context) (int64, error)
+	// Volume operations - all require organization context
+	CreateVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error)
+	GetVolumeByID(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error)
+	GetVolumeByVolumeID(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error)
+	ListVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error)
+	UpdateVolume(ctx context.Context, organizationID int64, params models.UpdateVolumeParams) (*models.Volume, error)
+	UpdateLastScanned(ctx context.Context, organizationID int64, volumeID string, lastScanned time.Time) error
+	SoftDeleteVolume(ctx context.Context, organizationID int64, volumeID string) error
+	UpsertVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error)
+	GetVolumeStats(ctx context.Context, organizationID int64, volumeID string) (*models.VolumeStats, error)
+	CountVolumes(ctx context.Context, organizationID int64) (int64, error)
 
 	// Container operations
 	CreateContainer(ctx context.Context, params models.CreateContainerParams) (*models.Container, error)
@@ -38,6 +38,10 @@ type VolumesRepo interface {
 	CreateVolumeMount(ctx context.Context, params models.CreateVolumeMountParams) (*models.VolumeMount, error)
 	UpsertVolumeMount(ctx context.Context, params models.CreateVolumeMountParams) (*models.VolumeMount, error)
 	GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*models.VolumeMount, error)
+
+	// System-level operations (for services that operate across organizations)
+	GetVolumeByVolumeIDSystemLevel(ctx context.Context, volumeID string) (*models.Volume, error)
+	ListAllVolumes(ctx context.Context, limit, offset int32) ([]*models.Volume, error)
 }
 
 // volumesRepo implements VolumesRepo using PostgreSQL sqlc generated queries
@@ -64,7 +68,7 @@ func NewSQLiteVolumesRepo(queries *sqlcSQLite.Queries) VolumesRepo {
 // VOLUME OPERATIONS
 // =============================================================================
 
-func (r *volumesRepo) CreateVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error) {
+func (r *volumesRepo) CreateVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error) {
 	now := time.Now()
 	result, err := r.queries.CreateVolume(ctx, sqlc.CreateVolumeParams{
 		VolumeID:       params.VolumeID,
@@ -80,6 +84,7 @@ func (r *volumesRepo) CreateVolume(ctx context.Context, params models.CreateVolu
 		FirstSeenAt:    pgtype.Timestamptz{Time: now, Valid: true}, // Set to current time
 		LastScanAt:     pgtype.Timestamptz{Valid: false}, // No scan yet
 		LastModifiedAt: pgtype.Timestamptz{Valid: false}, // Will be detected later
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true}, // Organization context
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create volume: %w", err)
@@ -96,15 +101,23 @@ func (r *volumesRepo) CreateVolume(ctx context.Context, params models.CreateVolu
 	}, nil
 }
 
-func (r *volumesRepo) GetVolumeByID(ctx context.Context, id int64) (*models.Volume, error) {
-	// Note: Current schema uses string volume_id as primary key, not int64 id
-	// This method is problematic because we can't map int64 to volume_id string
-	// The interface should probably be changed to use string volumeID instead
-	return nil, fmt.Errorf("GetVolumeByID not supported - current schema uses string volume_id primary key, not int64 id")
+func (r *volumesRepo) GetVolumeByID(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
+	row, err := r.queries.GetVolumeByID(ctx, sqlc.GetVolumeByIDParams{
+		VolumeID:       volumeID,
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get volume by ID: %w", err)
+	}
+
+	return r.convertRowToVolume(row)
 }
 
-func (r *volumesRepo) GetVolumeByVolumeID(ctx context.Context, volumeID string) (*models.Volume, error) {
-	row, err := r.queries.GetVolumeByVolumeID(ctx, volumeID)
+func (r *volumesRepo) GetVolumeByVolumeID(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
+	row, err := r.queries.GetVolumeByVolumeID(ctx, sqlc.GetVolumeByVolumeIDParams{
+		VolumeID:       volumeID,
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get volume by volume ID: %w", err)
 	}
@@ -112,10 +125,43 @@ func (r *volumesRepo) GetVolumeByVolumeID(ctx context.Context, volumeID string) 
 	return r.convertRowToVolume(row)
 }
 
-func (r *volumesRepo) ListVolumes(ctx context.Context, limit, offset int32) ([]*models.Volume, error) {
-	rows, err := r.queries.ListVolumes(ctx, sqlc.ListVolumesParams{
+// GetVolumeByVolumeIDSystemLevel gets volume without organization filtering (for system services)
+func (r *volumesRepo) GetVolumeByVolumeIDSystemLevel(ctx context.Context, volumeID string) (*models.Volume, error) {
+	row, err := r.queries.GetVolumeSystemLevel(ctx, volumeID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get volume by volume ID (system level): %w", err)
+	}
+
+	return r.convertRowToVolume(row)
+}
+
+// ListAllVolumes lists all volumes across organizations (for system services)
+func (r *volumesRepo) ListAllVolumes(ctx context.Context, limit, offset int32) ([]*models.Volume, error) {
+	rows, err := r.queries.ListAllVolumes(ctx, sqlc.ListAllVolumesParams{
 		Limit:  limit,
 		Offset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all volumes: %w", err)
+	}
+
+	volumes := make([]*models.Volume, 0, len(rows))
+	for _, row := range rows {
+		volume, err := r.convertRowToVolume(row)
+		if err != nil {
+			return nil, err
+		}
+		volumes = append(volumes, volume)
+	}
+
+	return volumes, nil
+}
+
+func (r *volumesRepo) ListVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error) {
+	rows, err := r.queries.ListVolumes(ctx, sqlc.ListVolumesParams{
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+		Limit:          limit,
+		Offset:         offset,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list volumes: %w", err)
@@ -133,7 +179,7 @@ func (r *volumesRepo) ListVolumes(ctx context.Context, limit, offset int32) ([]*
 	return volumes, nil
 }
 
-func (r *volumesRepo) UpdateVolume(ctx context.Context, params models.UpdateVolumeParams) (*models.Volume, error) {
+func (r *volumesRepo) UpdateVolume(ctx context.Context, organizationID int64, params models.UpdateVolumeParams) (*models.Volume, error) {
 	result, err := r.queries.UpdateVolume(ctx, sqlc.UpdateVolumeParams{
 		VolumeID:       params.VolumeID,
 		DisplayName:    pgtype.Text{String: params.Name, Valid: params.Name != ""},
@@ -145,6 +191,9 @@ func (r *volumesRepo) UpdateVolume(ctx context.Context, params models.UpdateVolu
 		FreeSizeBytes:  pgtype.Int8{Valid: false},
 		FilesystemType: pgtype.Text{Valid: false},
 		ContainerCount: pgtype.Int4{Valid: false},
+		LastScanAt:     pgtype.Timestamptz{Valid: false},
+		LastModifiedAt: pgtype.Timestamptz{Valid: false},
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update volume: %w", err)
@@ -161,10 +210,11 @@ func (r *volumesRepo) UpdateVolume(ctx context.Context, params models.UpdateVolu
 	}, nil
 }
 
-func (r *volumesRepo) UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error {
+func (r *volumesRepo) UpdateLastScanned(ctx context.Context, organizationID int64, volumeID string, lastScanned time.Time) error {
 	err := r.queries.UpdateLastScanned(ctx, sqlc.UpdateLastScannedParams{
-		VolumeID:   volumeID,
-		LastScanAt: pgtype.Timestamptz{Time: lastScanned, Valid: true},
+		VolumeID:       volumeID,
+		LastScanAt:     pgtype.Timestamptz{Time: lastScanned, Valid: true},
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update last scanned time: %w", err)
@@ -172,14 +222,18 @@ func (r *volumesRepo) UpdateLastScanned(ctx context.Context, volumeID string, la
 	return nil
 }
 
-func (r *volumesRepo) SoftDeleteVolume(ctx context.Context, id int64) error {
-	// Note: Current schema uses string volume_id as primary key, not int64 id
-	// This method is problematic because we can't map int64 to volume_id string
-	// The interface should probably be changed to use string volumeID instead
-	return fmt.Errorf("SoftDeleteVolume not supported - current schema uses string volume_id primary key, not int64 id")
+func (r *volumesRepo) SoftDeleteVolume(ctx context.Context, organizationID int64, volumeID string) error {
+	err := r.queries.SoftDeleteVolume(ctx, sqlc.SoftDeleteVolumeParams{
+		VolumeID:       volumeID,
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to soft delete volume: %w", err)
+	}
+	return nil
 }
 
-func (r *volumesRepo) UpsertVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error) {
+func (r *volumesRepo) UpsertVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error) {
 	now := time.Now()
 	result, err := r.queries.UpsertVolume(ctx, sqlc.UpsertVolumeParams{
 		VolumeID:       params.VolumeID,
@@ -195,6 +249,7 @@ func (r *volumesRepo) UpsertVolume(ctx context.Context, params models.CreateVolu
 		FirstSeenAt:    pgtype.Timestamptz{Time: now, Valid: true}, // Set to current time for new volumes
 		LastScanAt:     pgtype.Timestamptz{Valid: false}, // No scan yet
 		LastModifiedAt: pgtype.Timestamptz{Valid: false}, // Will be detected later
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true}, // Organization context
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert volume: %w", err)
@@ -210,35 +265,31 @@ func (r *volumesRepo) UpsertVolume(ctx context.Context, params models.CreateVolu
 	}, nil
 }
 
-func (r *volumesRepo) GetVolumeStats(ctx context.Context) (*models.VolumeStats, error) {
-	// Get total volume count
-	totalVolumes, err := r.queries.CountVolumes(ctx)
+func (r *volumesRepo) GetVolumeStats(ctx context.Context, organizationID int64, volumeID string) (*models.VolumeStats, error) {
+	// Get total volume count for organization
+	totalVolumes, err := r.queries.CountVolumes(ctx, pgtype.Int8{Int64: organizationID, Valid: true})
 	if err != nil {
 		return nil, fmt.Errorf("failed to count total volumes: %w", err)
 	}
 
-	// Get active volumes count
-	activeVolumes, err := r.queries.CountActiveVolumes(ctx)
+	// Get active volumes count for organization
+	activeVolumes, err := r.queries.CountActiveVolumes(ctx, pgtype.Int8{Int64: organizationID, Valid: true})
 	if err != nil {
 		return nil, fmt.Errorf("failed to count active volumes: %w", err)
 	}
 
-	// For other statistics, we'll need to query volume records directly
-	// since we don't have specific SQLC queries for unique drivers, etc.
-	stats := &models.VolumeStats{
+	return &models.VolumeStats{
 		TotalVolumes:   totalVolumes,
 		ActiveVolumes:  activeVolumes,
-		UniqueDrivers:  0,  // TODO: Implement when volume schema includes driver field
-		ScannedVolumes: 0,  // TODO: Count volumes with last_scan_at not null  
+		UniqueDrivers:  0, // TODO: Implement when volume schema includes driver field
+		ScannedVolumes: 0, // TODO: Count volumes with last_scan_at not null
 		NewestVolume:   nil, // TODO: Get MAX(created_at) when volume schema available
 		OldestVolume:   nil, // TODO: Get MIN(created_at) when volume schema available
-	}
-
-	return stats, nil
+	}, nil
 }
 
-func (r *volumesRepo) CountVolumes(ctx context.Context) (int64, error) {
-	count, err := r.queries.CountVolumes(ctx)
+func (r *volumesRepo) CountVolumes(ctx context.Context, organizationID int64) (int64, error) {
+	count, err := r.queries.CountVolumes(ctx, pgtype.Int8{Int64: organizationID, Valid: true})
 	if err != nil {
 		return 0, fmt.Errorf("failed to count volumes: %w", err)
 	}
@@ -467,6 +518,11 @@ func (r *volumesRepo) convertRowToVolume(row interface{}) (*models.Volume, error
 			volume.LastScanned = &v.LastScanAt.Time
 		}
 
+		// Handle organization ID
+		if v.OrganizationID.Valid {
+			volume.OrganizationID = &v.OrganizationID.Int64
+		}
+
 		// Note: Labels, Options, Driver, Scope, Status not in current schema
 
 	default:
@@ -477,10 +533,11 @@ func (r *volumesRepo) convertRowToVolume(row interface{}) (*models.Volume, error
 }
 
 // =============================================================================
-// SQLITE IMPLEMENTATION
+// SQLITE IMPLEMENTATION 
+// TODO: Update SQLite implementation to match organization-scoped interface
 // =============================================================================
 
-func (r *volumesRepoSQLite) CreateVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error) {
+func (r *volumesRepoSQLite) CreateVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error) {
 	// SQLite uses different parameter types (strings vs pgtype)
 	result, err := r.queries.CreateVolume(ctx, sqlcSQLite.CreateVolumeParams{
 		VolumeID:       params.VolumeID,
@@ -504,12 +561,12 @@ func (r *volumesRepoSQLite) CreateVolume(ctx context.Context, params models.Crea
 	}, nil
 }
 
-func (r *volumesRepoSQLite) GetVolumeByID(ctx context.Context, id int64) (*models.Volume, error) {
+func (r *volumesRepoSQLite) GetVolumeByID(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
 	// Same issue as PostgreSQL - schema uses string volume_id primary key
 	return nil, fmt.Errorf("GetVolumeByID not supported - current schema uses string volume_id primary key, not int64 id")
 }
 
-func (r *volumesRepoSQLite) GetVolumeByVolumeID(ctx context.Context, volumeID string) (*models.Volume, error) {
+func (r *volumesRepoSQLite) GetVolumeByVolumeID(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
 	// SQLite uses GetVolume instead of GetVolumeByVolumeID
 	row, err := r.queries.GetVolume(ctx, volumeID)
 	if err != nil {
@@ -519,7 +576,41 @@ func (r *volumesRepoSQLite) GetVolumeByVolumeID(ctx context.Context, volumeID st
 	return r.convertSQLiteRowToVolume(row)
 }
 
-func (r *volumesRepoSQLite) ListVolumes(ctx context.Context, limit, offset int32) ([]*models.Volume, error) {
+// GetVolumeByVolumeIDSystemLevel gets volume without organization filtering (for system services)
+func (r *volumesRepoSQLite) GetVolumeByVolumeIDSystemLevel(ctx context.Context, volumeID string) (*models.Volume, error) {
+	// For SQLite, we can use GetVolume since it doesn't filter by organization
+	row, err := r.queries.GetVolume(ctx, volumeID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get volume by volume ID (system level): %w", err)
+	}
+
+	return r.convertSQLiteRowToVolume(row)
+}
+
+// ListAllVolumes lists all volumes across organizations (for system services)
+func (r *volumesRepoSQLite) ListAllVolumes(ctx context.Context, limit, offset int32) ([]*models.Volume, error) {
+	// For SQLite, ListVolumes already doesn't filter by organization, so we can use it
+	rows, err := r.queries.ListVolumes(ctx, sqlcSQLite.ListVolumesParams{
+		Limit:  int64(limit),
+		Offset: int64(offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all volumes: %w", err)
+	}
+
+	volumes := make([]*models.Volume, 0, len(rows))
+	for _, row := range rows {
+		volume, err := r.convertSQLiteRowToVolume(row)
+		if err != nil {
+			return nil, err
+		}
+		volumes = append(volumes, volume)
+	}
+
+	return volumes, nil
+}
+
+func (r *volumesRepoSQLite) ListVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error) {
 	rows, err := r.queries.ListVolumes(ctx, sqlcSQLite.ListVolumesParams{
 		Limit:  int64(limit),
 		Offset: int64(offset),
@@ -540,7 +631,7 @@ func (r *volumesRepoSQLite) ListVolumes(ctx context.Context, limit, offset int32
 	return volumes, nil
 }
 
-func (r *volumesRepoSQLite) UpdateVolume(ctx context.Context, params models.UpdateVolumeParams) (*models.Volume, error) {
+func (r *volumesRepoSQLite) UpdateVolume(ctx context.Context, organizationID int64, params models.UpdateVolumeParams) (*models.Volume, error) {
 	result, err := r.queries.UpdateVolume(ctx, sqlcSQLite.UpdateVolumeParams{
 		VolumeID:       params.VolumeID,
 		DisplayName:    sql.NullString{String: params.Name, Valid: params.Name != ""},
@@ -563,7 +654,7 @@ func (r *volumesRepoSQLite) UpdateVolume(ctx context.Context, params models.Upda
 	}, nil
 }
 
-func (r *volumesRepoSQLite) UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error {
+func (r *volumesRepoSQLite) UpdateLastScanned(ctx context.Context, organizationID int64, volumeID string, lastScanned time.Time) error {
 	err := r.queries.UpdateLastScanned(ctx, sqlcSQLite.UpdateLastScannedParams{
 		VolumeID:   volumeID,
 		LastScanAt: sql.NullString{String: lastScanned.Format(time.RFC3339), Valid: true},
@@ -574,15 +665,15 @@ func (r *volumesRepoSQLite) UpdateLastScanned(ctx context.Context, volumeID stri
 	return nil
 }
 
-func (r *volumesRepoSQLite) SoftDeleteVolume(ctx context.Context, id int64) error {
+func (r *volumesRepoSQLite) SoftDeleteVolume(ctx context.Context, organizationID int64, volumeID string) error {
 	// Same issue as PostgreSQL - schema uses string volume_id primary key
 	return fmt.Errorf("SoftDeleteVolume not supported - current schema uses string volume_id primary key, not int64 id")
 }
 
-func (r *volumesRepoSQLite) UpsertVolume(ctx context.Context, params models.CreateVolumeParams) (*models.Volume, error) {
+func (r *volumesRepoSQLite) UpsertVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error) {
 	// SQLite doesn't have UpsertVolume query - would need to be implemented
 	// For now, try to create and if it fails, update
-	volume, err := r.CreateVolume(ctx, params)
+	volume, err := r.CreateVolume(ctx, organizationID, params)
 	if err != nil {
 		// If create failed, try update
 		updateParams := models.UpdateVolumeParams{
@@ -591,12 +682,12 @@ func (r *volumesRepoSQLite) UpsertVolume(ctx context.Context, params models.Crea
 			Mountpoint: params.Mountpoint,
 			IsActive:   params.IsActive,
 		}
-		return r.UpdateVolume(ctx, updateParams)
+		return r.UpdateVolume(ctx, organizationID, updateParams)
 	}
 	return volume, nil
 }
 
-func (r *volumesRepoSQLite) GetVolumeStats(ctx context.Context) (*models.VolumeStats, error) {
+func (r *volumesRepoSQLite) GetVolumeStats(ctx context.Context, organizationID int64, volumeID string) (*models.VolumeStats, error) {
 	totalVolumes, err := r.queries.CountVolumes(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count total volumes: %w", err)
@@ -618,7 +709,7 @@ func (r *volumesRepoSQLite) GetVolumeStats(ctx context.Context) (*models.VolumeS
 	}, nil
 }
 
-func (r *volumesRepoSQLite) CountVolumes(ctx context.Context) (int64, error) {
+func (r *volumesRepoSQLite) CountVolumes(ctx context.Context, organizationID int64) (int64, error) {
 	count, err := r.queries.CountVolumes(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count volumes: %w", err)

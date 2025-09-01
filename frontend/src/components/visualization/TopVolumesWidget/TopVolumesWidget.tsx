@@ -19,7 +19,7 @@ import type {
   TopVolumeData,
 } from './TopVolumesWidget.types';
 import { SIZE_CATEGORIES, RANKING_COLORS } from './TopVolumesWidget.types';
-import { formatBytes } from '../../../utils/formatters';
+import { formatBytes } from '@/utils/formatters';
 
 /**
  * TopVolumesWidget component displays largest volumes with ranking and visual indicators.

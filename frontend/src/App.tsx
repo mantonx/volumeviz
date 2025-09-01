@@ -1,34 +1,41 @@
 import { ApiHealthChecker } from '@/components/ApiHealthChecker';
 import { Layout } from '@/components/layout/Layout';
 import { ToastProvider } from '@/components/ui';
-import {
-  HistoricalDataDashboard,
-  RealTimeDashboard,
-} from '@/components/visualization';
-import {
-  AlertsPage,
-  Dashboard,
-  ExplorerPage,
-  HealthPage,
-  MountsPage,
-  NotFoundPage,
-  OnboardingPage,
-  RealtimeTestPage,
-  RulesPage,
-  SearchPage,
-  SettingsPage,
-  VolumeDetailsPage,
-  VolumesPage,
-  WebSocketTestPage,
-} from '@/pages';
+// Lazy load visualization components
+const RealTimeDashboard = React.lazy(() => import('@/components/visualization/RealTimeDashboard'));
+const HistoricalDataDashboard = React.lazy(() => import('@/components/visualization/HistoricalDataDashboard'));
+// Lazy load pages for better code splitting
+const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
+const VolumesPage = React.lazy(() => import('@/pages/VolumesPage'));  
+const VolumeDetailsPage = React.lazy(() => import('@/pages/VolumeDetailsPage'));
+const MountsPage = React.lazy(() => import('@/pages/MountsPage'));
+const RulesPage = React.lazy(() => import('@/pages/RulesPage'));
+const ExplorerPage = React.lazy(() => import('@/pages/ExplorerPage'));
+const SearchPage = React.lazy(() => import('@/pages/SearchPage'));
+const AlertsPage = React.lazy(() => import('@/pages/AlertsPage'));
+const HealthPage = React.lazy(() => import('@/pages/HealthPage'));
+const SettingsPage = React.lazy(() => import('@/pages/SettingsPage'));
+const OnboardingPage = React.lazy(() => import('@/pages/OnboardingPage'));
+const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
+const RealtimeTestPage = React.lazy(() => import('@/pages/RealtimeTestPage'));
+const WebSocketTestPage = React.lazy(() => import('@/pages/WebSocketTestPage'));
 import { RealtimeProvider } from '@/providers/realtime';
-import React, { useEffect, useState } from 'react';
+import { backgroundSyncManager } from '@/utils/background-sync';
+import { serviceWorkerManager } from '@/utils/service-worker';
+import React, { Suspense, useEffect, useState } from 'react';
 import {
   Navigate,
   Route,
   BrowserRouter as Router,
   Routes,
 } from 'react-router-dom';
+
+const PageLoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+    <span className="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
+  </div>
+);
 
 const App: React.FC = () => {
   const [shouldRedirectToOnboarding, setShouldRedirectToOnboarding] =
@@ -70,6 +77,23 @@ const App: React.FC = () => {
     };
 
     checkOnboardingStatus();
+    
+    // Set up background sync event listener
+    const handleBackgroundSync = () => {
+      // Background sync triggered from service worker
+      backgroundSyncManager.forcSync();
+    };
+    
+    window.addEventListener('sw-background-sync', handleBackgroundSync);
+    
+    // Register for background sync if supported
+    if (serviceWorkerManager.isSupported()) {
+      serviceWorkerManager.registerBackgroundSync();
+    }
+    
+    return () => {
+      window.removeEventListener('sw-background-sync', handleBackgroundSync);
+    };
   }, []);
 
   if (loading) {
@@ -95,7 +119,8 @@ const App: React.FC = () => {
           <ApiHealthChecker />
           <Router>
             <Layout>
-              <Routes>
+              <Suspense fallback={<PageLoadingSpinner />}>
+                <Routes>
                 {/* Onboarding Route */}
                 <Route path="/onboarding" element={<OnboardingPage />} />
 
@@ -142,7 +167,8 @@ const App: React.FC = () => {
 
                 {/* 404 Route */}
                 <Route path="*" element={<NotFoundPage />} />
-              </Routes>
+                </Routes>
+              </Suspense>
             </Layout>
           </Router>
         </RealtimeProvider>

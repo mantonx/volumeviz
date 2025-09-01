@@ -13,8 +13,8 @@ import {
 import {
   formatPhaseTransition,
   type PhaseTransition,
-} from '../../../utils/phaseTransitionNotifications';
-import { formatDuration } from '../../../utils/format';
+} from '@/utils/phaseTransitionNotifications';
+import { formatDuration } from '@/utils/format';
 
 export interface PhaseTransitionNotificationProps {
   /** The phase transition to display */

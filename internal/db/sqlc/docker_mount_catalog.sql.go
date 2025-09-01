@@ -7,80 +7,236 @@ package sqlc
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const cleanupStaleAttachments = `-- name: CleanupStaleAttachments :many
-UPDATE docker_mount_attachments SET
-    is_active = false,
-    detached_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE is_active = true 
-  AND updated_at < CURRENT_TIMESTAMP - INTERVAL '1 hour'
-RETURNING id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at
+const countActiveMountAttachments = `-- name: CountActiveMountAttachments :one
+SELECT COUNT(*) FROM docker_mount_attachments
+WHERE mount_catalog_id = $1 AND is_active = true
 `
 
-// Mark attachments as inactive if they haven't been updated recently
-func (q *Queries) CleanupStaleAttachments(ctx context.Context) ([]DockerMountAttachments, error) {
-	rows, err := q.db.Query(ctx, cleanupStaleAttachments)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []DockerMountAttachments{}
-	for rows.Next() {
-		var i DockerMountAttachments
-		if err := rows.Scan(
-			&i.ID,
-			&i.MountCatalogID,
-			&i.ContainerID,
-			&i.ContainerName,
-			&i.DestinationPath,
-			&i.AccessMode,
-			&i.Propagation,
-			&i.ContainerState,
-			&i.ContainerImage,
-			&i.ContainerLabels,
-			&i.ContainerComposeProject,
-			&i.ContainerComposeService,
-			&i.ContainerComposeContainerNumber,
-			&i.ContainerComposeConfigHash,
-			&i.AttachedAt,
-			&i.DetachedAt,
-			&i.IsActive,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) CountActiveMountAttachments(ctx context.Context, mountCatalogID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countActiveMountAttachments, mountCatalogID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countMountsByComposeProject = `-- name: CountMountsByComposeProject :one
+SELECT COUNT(*) FROM docker_mount_catalog WHERE compose_project = $1
+`
+
+func (q *Queries) CountMountsByComposeProject(ctx context.Context, composeProject pgtype.Text) (int64, error) {
+	row := q.db.QueryRow(ctx, countMountsByComposeProject, composeProject)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countMountsByType = `-- name: CountMountsByType :one
+SELECT COUNT(*) FROM docker_mount_catalog WHERE mount_type = $1
+`
+
+func (q *Queries) CountMountsByType(ctx context.Context, mountType string) (int64, error) {
+	row := q.db.QueryRow(ctx, countMountsByType, mountType)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createDockerMount = `-- name: CreateDockerMount :one
+
+
+INSERT INTO docker_mount_catalog (
+    mount_id, mount_type, volume_name, volume_driver, volume_options,
+    volume_labels, volume_scope, source_path, container_count, is_orphaned,
+    compose_project, compose_services, compose_version, compose_config_files,
+    discovery_source, is_tracked, organization_id
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+) ON CONFLICT(mount_id) 
+DO UPDATE SET
+    mount_type = EXCLUDED.mount_type,
+    volume_driver = EXCLUDED.volume_driver,
+    volume_options = EXCLUDED.volume_options,
+    volume_labels = EXCLUDED.volume_labels,
+    volume_scope = EXCLUDED.volume_scope,
+    source_path = EXCLUDED.source_path,
+    container_count = EXCLUDED.container_count,
+    is_orphaned = EXCLUDED.is_orphaned,
+    compose_project = EXCLUDED.compose_project,
+    compose_services = EXCLUDED.compose_services,
+    compose_version = EXCLUDED.compose_version,
+    compose_config_files = EXCLUDED.compose_config_files,
+    discovery_source = EXCLUDED.discovery_source,
+    is_tracked = EXCLUDED.is_tracked,
+    organization_id = EXCLUDED.organization_id,
+    last_seen_at = CURRENT_TIMESTAMP
+RETURNING id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at, organization_id
+`
+
+type CreateDockerMountParams struct {
+	MountID            string      `json:"mount_id"`
+	MountType          string      `json:"mount_type"`
+	VolumeName         pgtype.Text `json:"volume_name"`
+	VolumeDriver       pgtype.Text `json:"volume_driver"`
+	VolumeOptions      []byte      `json:"volume_options"`
+	VolumeLabels       []byte      `json:"volume_labels"`
+	VolumeScope        pgtype.Text `json:"volume_scope"`
+	SourcePath         string      `json:"source_path"`
+	ContainerCount     int32       `json:"container_count"`
+	IsOrphaned         bool        `json:"is_orphaned"`
+	ComposeProject     pgtype.Text `json:"compose_project"`
+	ComposeServices    []string    `json:"compose_services"`
+	ComposeVersion     pgtype.Text `json:"compose_version"`
+	ComposeConfigFiles []string    `json:"compose_config_files"`
+	DiscoverySource    string      `json:"discovery_source"`
+	IsTracked          bool        `json:"is_tracked"`
+	OrganizationID     pgtype.Int8 `json:"organization_id"`
+}
+
+// Docker Mount Catalog Queries (PostgreSQL version)
+// SQLC queries for Docker mount catalog operations
+// =============================================================================
+// DOCKER MOUNT CATALOG
+// =============================================================================
+func (q *Queries) CreateDockerMount(ctx context.Context, arg CreateDockerMountParams) (DockerMountCatalog, error) {
+	row := q.db.QueryRow(ctx, createDockerMount,
+		arg.MountID,
+		arg.MountType,
+		arg.VolumeName,
+		arg.VolumeDriver,
+		arg.VolumeOptions,
+		arg.VolumeLabels,
+		arg.VolumeScope,
+		arg.SourcePath,
+		arg.ContainerCount,
+		arg.IsOrphaned,
+		arg.ComposeProject,
+		arg.ComposeServices,
+		arg.ComposeVersion,
+		arg.ComposeConfigFiles,
+		arg.DiscoverySource,
+		arg.IsTracked,
+		arg.OrganizationID,
+	)
+	var i DockerMountCatalog
+	err := row.Scan(
+		&i.ID,
+		&i.MountID,
+		&i.MountType,
+		&i.VolumeName,
+		&i.VolumeDriver,
+		&i.VolumeOptions,
+		&i.VolumeLabels,
+		&i.VolumeScope,
+		&i.SourcePath,
+		&i.ContainerCount,
+		&i.IsOrphaned,
+		&i.ComposeProject,
+		&i.ComposeServices,
+		&i.ComposeVersion,
+		&i.ComposeConfigFiles,
+		&i.FirstDiscoveredAt,
+		&i.LastSeenAt,
+		&i.DiscoverySource,
+		&i.IsTracked,
+		&i.TrackingEnabledAt,
+		&i.TrackingDisabledAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.OrganizationID,
+	)
+	return i, err
+}
+
+const createDockerProject = `-- name: CreateDockerProject :one
+
+INSERT INTO docker_projects (
+    project_name, compose_file_path, compose_file_hash,
+    working_directory, services, networks, volumes, config_data
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8
+) ON CONFLICT(project_name)
+DO UPDATE SET
+    compose_file_path = EXCLUDED.compose_file_path,
+    compose_file_hash = EXCLUDED.compose_file_hash,
+    working_directory = EXCLUDED.working_directory,
+    services = EXCLUDED.services,
+    networks = EXCLUDED.networks,
+    volumes = EXCLUDED.volumes,
+    config_data = EXCLUDED.config_data,
+    last_seen_at = CURRENT_TIMESTAMP
+RETURNING id, project_name, compose_file_path, compose_file_hash, working_directory, services, networks, volumes, config_data, last_seen_at, created_at
+`
+
+type CreateDockerProjectParams struct {
+	ProjectName      string      `json:"project_name"`
+	ComposeFilePath  pgtype.Text `json:"compose_file_path"`
+	ComposeFileHash  pgtype.Text `json:"compose_file_hash"`
+	WorkingDirectory pgtype.Text `json:"working_directory"`
+	Services         []string    `json:"services"`
+	Networks         []string    `json:"networks"`
+	Volumes          []string    `json:"volumes"`
+	ConfigData       []byte      `json:"config_data"`
+}
+
+// =============================================================================
+// DOCKER PROJECTS
+// =============================================================================
+func (q *Queries) CreateDockerProject(ctx context.Context, arg CreateDockerProjectParams) (DockerProjects, error) {
+	row := q.db.QueryRow(ctx, createDockerProject,
+		arg.ProjectName,
+		arg.ComposeFilePath,
+		arg.ComposeFileHash,
+		arg.WorkingDirectory,
+		arg.Services,
+		arg.Networks,
+		arg.Volumes,
+		arg.ConfigData,
+	)
+	var i DockerProjects
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectName,
+		&i.ComposeFilePath,
+		&i.ComposeFileHash,
+		&i.WorkingDirectory,
+		&i.Services,
+		&i.Networks,
+		&i.Volumes,
+		&i.ConfigData,
+		&i.LastSeenAt,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const createMountAttachment = `-- name: CreateMountAttachment :one
+
 INSERT INTO docker_mount_attachments (
-    mount_catalog_id,
-    container_id,
-    container_name,
-    destination_path,
-    access_mode,
-    propagation,
-    container_state,
-    container_image,
-    container_labels,
-    container_compose_project,
-    container_compose_service,
-    container_compose_container_number,
-    container_compose_config_hash
+    mount_catalog_id, container_id, container_name, destination_path,
+    access_mode, propagation, container_state, container_image,
+    container_labels, container_compose_project, container_compose_service,
+    container_compose_container_number, container_compose_config_hash
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-) RETURNING id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at
+) ON CONFLICT(mount_catalog_id, container_id, destination_path)
+DO UPDATE SET
+    container_name = EXCLUDED.container_name,
+    access_mode = EXCLUDED.access_mode,
+    propagation = EXCLUDED.propagation,
+    container_state = EXCLUDED.container_state,
+    container_image = EXCLUDED.container_image,
+    container_labels = EXCLUDED.container_labels,
+    container_compose_project = EXCLUDED.container_compose_project,
+    container_compose_service = EXCLUDED.container_compose_service,
+    container_compose_container_number = EXCLUDED.container_compose_container_number,
+    container_compose_config_hash = EXCLUDED.container_compose_config_hash,
+    is_active = true,
+    updated_at = CURRENT_TIMESTAMP
+RETURNING id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at
 `
 
 type CreateMountAttachmentParams struct {
@@ -99,6 +255,9 @@ type CreateMountAttachmentParams struct {
 	ContainerComposeConfigHash      pgtype.Text `json:"container_compose_config_hash"`
 }
 
+// =============================================================================
+// DOCKER MOUNT ATTACHMENTS
+// =============================================================================
 func (q *Queries) CreateMountAttachment(ctx context.Context, arg CreateMountAttachmentParams) (DockerMountAttachments, error) {
 	row := q.db.QueryRow(ctx, createMountAttachment,
 		arg.MountCatalogID,
@@ -140,129 +299,44 @@ func (q *Queries) CreateMountAttachment(ctx context.Context, arg CreateMountAtta
 	return i, err
 }
 
-const createMountCatalogEntry = `-- name: CreateMountCatalogEntry :one
-
-INSERT INTO docker_mount_catalog (
-    mount_id,
-    mount_type,
-    volume_name,
-    volume_driver,
-    volume_options,
-    volume_labels,
-    volume_scope,
-    source_path,
-    container_count,
-    is_orphaned,
-    compose_project,
-    compose_services,
-    compose_version,
-    compose_config_files,
-    discovery_source,
-    is_tracked
-) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
-) RETURNING id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at
-`
-
-type CreateMountCatalogEntryParams struct {
-	MountID            string      `json:"mount_id"`
-	MountType          string      `json:"mount_type"`
-	VolumeName         pgtype.Text `json:"volume_name"`
-	VolumeDriver       pgtype.Text `json:"volume_driver"`
-	VolumeOptions      []byte      `json:"volume_options"`
-	VolumeLabels       []byte      `json:"volume_labels"`
-	VolumeScope        pgtype.Text `json:"volume_scope"`
-	SourcePath         string      `json:"source_path"`
-	ContainerCount     int32       `json:"container_count"`
-	IsOrphaned         bool        `json:"is_orphaned"`
-	ComposeProject     pgtype.Text `json:"compose_project"`
-	ComposeServices    []string    `json:"compose_services"`
-	ComposeVersion     pgtype.Text `json:"compose_version"`
-	ComposeConfigFiles []string    `json:"compose_config_files"`
-	DiscoverySource    string      `json:"discovery_source"`
-	IsTracked          bool        `json:"is_tracked"`
-}
-
-// Docker Mount Catalog Queries (VV-301)
-// SQLC queries for Docker mount catalog operations
-func (q *Queries) CreateMountCatalogEntry(ctx context.Context, arg CreateMountCatalogEntryParams) (DockerMountCatalog, error) {
-	row := q.db.QueryRow(ctx, createMountCatalogEntry,
-		arg.MountID,
-		arg.MountType,
-		arg.VolumeName,
-		arg.VolumeDriver,
-		arg.VolumeOptions,
-		arg.VolumeLabels,
-		arg.VolumeScope,
-		arg.SourcePath,
-		arg.ContainerCount,
-		arg.IsOrphaned,
-		arg.ComposeProject,
-		arg.ComposeServices,
-		arg.ComposeVersion,
-		arg.ComposeConfigFiles,
-		arg.DiscoverySource,
-		arg.IsTracked,
-	)
-	var i DockerMountCatalog
-	err := row.Scan(
-		&i.ID,
-		&i.MountID,
-		&i.MountType,
-		&i.VolumeName,
-		&i.VolumeDriver,
-		&i.VolumeOptions,
-		&i.VolumeLabels,
-		&i.VolumeScope,
-		&i.SourcePath,
-		&i.ContainerCount,
-		&i.IsOrphaned,
-		&i.ComposeProject,
-		&i.ComposeServices,
-		&i.ComposeVersion,
-		&i.ComposeConfigFiles,
-		&i.FirstDiscoveredAt,
-		&i.LastSeenAt,
-		&i.DiscoverySource,
-		&i.IsTracked,
-		&i.TrackingEnabledAt,
-		&i.TrackingDisabledAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const createMountStatistics = `-- name: CreateMountStatistics :one
+
 INSERT INTO docker_mount_statistics (
-    mount_catalog_id,
-    peak_container_count,
-    total_attachments,
-    compose_projects_count,
-    compose_services_count,
-    days_since_creation,
-    days_since_last_use,
-    attachment_frequency_score,
-    last_known_size_bytes,
-    last_scanned_at
+    mount_catalog_id, peak_container_count, total_attachments,
+    compose_projects_count, compose_services_count, days_since_creation,
+    days_since_last_use, attachment_frequency_score, last_known_size_bytes
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-) RETURNING id, mount_catalog_id, peak_container_count, total_attachments, compose_projects_count, compose_services_count, days_since_creation, days_since_last_use, attachment_frequency_score, last_known_size_bytes, last_scanned_at, calculated_at, created_at, updated_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
+) ON CONFLICT(mount_catalog_id)
+DO UPDATE SET
+    peak_container_count = EXCLUDED.peak_container_count,
+    total_attachments = EXCLUDED.total_attachments,
+    compose_projects_count = EXCLUDED.compose_projects_count,
+    compose_services_count = EXCLUDED.compose_services_count,
+    days_since_creation = EXCLUDED.days_since_creation,
+    days_since_last_use = EXCLUDED.days_since_last_use,
+    attachment_frequency_score = EXCLUDED.attachment_frequency_score,
+    last_known_size_bytes = EXCLUDED.last_known_size_bytes,
+    calculated_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
+RETURNING id, mount_catalog_id, peak_container_count, total_attachments, compose_projects_count, compose_services_count, days_since_creation, days_since_last_use, attachment_frequency_score, last_known_size_bytes, last_scanned_at, calculated_at, created_at, updated_at
 `
 
 type CreateMountStatisticsParams struct {
-	MountCatalogID           int64            `json:"mount_catalog_id"`
-	PeakContainerCount       int32            `json:"peak_container_count"`
-	TotalAttachments         int32            `json:"total_attachments"`
-	ComposeProjectsCount     int32            `json:"compose_projects_count"`
-	ComposeServicesCount     int32            `json:"compose_services_count"`
-	DaysSinceCreation        pgtype.Int4      `json:"days_since_creation"`
-	DaysSinceLastUse         pgtype.Int4      `json:"days_since_last_use"`
-	AttachmentFrequencyScore pgtype.Float4    `json:"attachment_frequency_score"`
-	LastKnownSizeBytes       pgtype.Int8      `json:"last_known_size_bytes"`
-	LastScannedAt            pgtype.Timestamp `json:"last_scanned_at"`
+	MountCatalogID           int64         `json:"mount_catalog_id"`
+	PeakContainerCount       int32         `json:"peak_container_count"`
+	TotalAttachments         int32         `json:"total_attachments"`
+	ComposeProjectsCount     int32         `json:"compose_projects_count"`
+	ComposeServicesCount     int32         `json:"compose_services_count"`
+	DaysSinceCreation        pgtype.Int4   `json:"days_since_creation"`
+	DaysSinceLastUse         pgtype.Int4   `json:"days_since_last_use"`
+	AttachmentFrequencyScore pgtype.Float4 `json:"attachment_frequency_score"`
+	LastKnownSizeBytes       pgtype.Int8   `json:"last_known_size_bytes"`
 }
 
+// =============================================================================
+// DOCKER MOUNT STATISTICS
+// =============================================================================
 func (q *Queries) CreateMountStatistics(ctx context.Context, arg CreateMountStatisticsParams) (DockerMountStatistics, error) {
 	row := q.db.QueryRow(ctx, createMountStatistics,
 		arg.MountCatalogID,
@@ -274,7 +348,6 @@ func (q *Queries) CreateMountStatistics(ctx context.Context, arg CreateMountStat
 		arg.DaysSinceLastUse,
 		arg.AttachmentFrequencyScore,
 		arg.LastKnownSizeBytes,
-		arg.LastScannedAt,
 	)
 	var i DockerMountStatistics
 	err := row.Scan(
@@ -296,208 +369,34 @@ func (q *Queries) CreateMountStatistics(ctx context.Context, arg CreateMountStat
 	return i, err
 }
 
-const deactivateContainerAttachments = `-- name: DeactivateContainerAttachments :many
-UPDATE docker_mount_attachments SET
-    is_active = false,
-    detached_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE container_id = $1 AND is_active = true
-RETURNING id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at
+const deactivateMountAttachment = `-- name: DeactivateMountAttachment :exec
+UPDATE docker_mount_attachments
+SET is_active = false, detached_at = CURRENT_TIMESTAMP
+WHERE id = $1
 `
 
-func (q *Queries) DeactivateContainerAttachments(ctx context.Context, containerID string) ([]DockerMountAttachments, error) {
-	rows, err := q.db.Query(ctx, deactivateContainerAttachments, containerID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []DockerMountAttachments{}
-	for rows.Next() {
-		var i DockerMountAttachments
-		if err := rows.Scan(
-			&i.ID,
-			&i.MountCatalogID,
-			&i.ContainerID,
-			&i.ContainerName,
-			&i.DestinationPath,
-			&i.AccessMode,
-			&i.Propagation,
-			&i.ContainerState,
-			&i.ContainerImage,
-			&i.ContainerLabels,
-			&i.ContainerComposeProject,
-			&i.ContainerComposeService,
-			&i.ContainerComposeContainerNumber,
-			&i.ContainerComposeConfigHash,
-			&i.AttachedAt,
-			&i.DetachedAt,
-			&i.IsActive,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const deactivateMountAttachment = `-- name: DeactivateMountAttachment :one
-UPDATE docker_mount_attachments SET
-    is_active = false,
-    detached_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE mount_catalog_id = $1 AND container_id = $2 AND destination_path = $3 AND is_active = true
-RETURNING id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at
-`
-
-type DeactivateMountAttachmentParams struct {
-	MountCatalogID  int64  `json:"mount_catalog_id"`
-	ContainerID     string `json:"container_id"`
-	DestinationPath string `json:"destination_path"`
-}
-
-func (q *Queries) DeactivateMountAttachment(ctx context.Context, arg DeactivateMountAttachmentParams) (DockerMountAttachments, error) {
-	row := q.db.QueryRow(ctx, deactivateMountAttachment, arg.MountCatalogID, arg.ContainerID, arg.DestinationPath)
-	var i DockerMountAttachments
-	err := row.Scan(
-		&i.ID,
-		&i.MountCatalogID,
-		&i.ContainerID,
-		&i.ContainerName,
-		&i.DestinationPath,
-		&i.AccessMode,
-		&i.Propagation,
-		&i.ContainerState,
-		&i.ContainerImage,
-		&i.ContainerLabels,
-		&i.ContainerComposeProject,
-		&i.ContainerComposeService,
-		&i.ContainerComposeContainerNumber,
-		&i.ContainerComposeConfigHash,
-		&i.AttachedAt,
-		&i.DetachedAt,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const deleteMountCatalogEntry = `-- name: DeleteMountCatalogEntry :exec
-DELETE FROM docker_mount_catalog
-WHERE mount_id = $1
-`
-
-func (q *Queries) DeleteMountCatalogEntry(ctx context.Context, mountID string) error {
-	_, err := q.db.Exec(ctx, deleteMountCatalogEntry, mountID)
+func (q *Queries) DeactivateMountAttachment(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deactivateMountAttachment, id)
 	return err
 }
 
-const getComposeProjectMountSummary = `-- name: GetComposeProjectMountSummary :many
-SELECT
-    compose_project,
-    COUNT(*) as mount_count,
-    COUNT(*) FILTER (WHERE mount_type = 'volume') as volume_count,
-    COUNT(*) FILTER (WHERE mount_type = 'bind') as bind_count,
-    COUNT(*) FILTER (WHERE mount_type = 'tmpfs') as tmpfs_count,
-    COUNT(*) FILTER (WHERE is_orphaned = true) as orphaned_count,
-    COUNT(*) FILTER (WHERE is_tracked = true) as tracked_count,
-    array_agg(DISTINCT mount_id ORDER BY mount_id) as mount_ids
-FROM docker_mount_catalog
-WHERE compose_project IS NOT NULL
-GROUP BY compose_project
-ORDER BY mount_count DESC, compose_project
+const deactivateMountAttachmentsByContainer = `-- name: DeactivateMountAttachmentsByContainer :exec
+UPDATE docker_mount_attachments
+SET is_active = false, detached_at = CURRENT_TIMESTAMP
+WHERE container_id = $1
 `
 
-type GetComposeProjectMountSummaryRow struct {
-	ComposeProject pgtype.Text `json:"compose_project"`
-	MountCount     int64       `json:"mount_count"`
-	VolumeCount    int64       `json:"volume_count"`
-	BindCount      int64       `json:"bind_count"`
-	TmpfsCount     int64       `json:"tmpfs_count"`
-	OrphanedCount  int64       `json:"orphaned_count"`
-	TrackedCount   int64       `json:"tracked_count"`
-	MountIds       interface{} `json:"mount_ids"`
+func (q *Queries) DeactivateMountAttachmentsByContainer(ctx context.Context, containerID string) error {
+	_, err := q.db.Exec(ctx, deactivateMountAttachmentsByContainer, containerID)
+	return err
 }
 
-func (q *Queries) GetComposeProjectMountSummary(ctx context.Context) ([]GetComposeProjectMountSummaryRow, error) {
-	rows, err := q.db.Query(ctx, getComposeProjectMountSummary)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetComposeProjectMountSummaryRow{}
-	for rows.Next() {
-		var i GetComposeProjectMountSummaryRow
-		if err := rows.Scan(
-			&i.ComposeProject,
-			&i.MountCount,
-			&i.VolumeCount,
-			&i.BindCount,
-			&i.TmpfsCount,
-			&i.OrphanedCount,
-			&i.TrackedCount,
-			&i.MountIds,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getMountAttachment = `-- name: GetMountAttachment :one
-SELECT id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at FROM docker_mount_attachments
-WHERE mount_catalog_id = $1 AND container_id = $2 AND destination_path = $3 AND is_active = true
+const getDockerMount = `-- name: GetDockerMount :one
+SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at, organization_id FROM docker_mount_catalog WHERE id = $1
 `
 
-type GetMountAttachmentParams struct {
-	MountCatalogID  int64  `json:"mount_catalog_id"`
-	ContainerID     string `json:"container_id"`
-	DestinationPath string `json:"destination_path"`
-}
-
-func (q *Queries) GetMountAttachment(ctx context.Context, arg GetMountAttachmentParams) (DockerMountAttachments, error) {
-	row := q.db.QueryRow(ctx, getMountAttachment, arg.MountCatalogID, arg.ContainerID, arg.DestinationPath)
-	var i DockerMountAttachments
-	err := row.Scan(
-		&i.ID,
-		&i.MountCatalogID,
-		&i.ContainerID,
-		&i.ContainerName,
-		&i.DestinationPath,
-		&i.AccessMode,
-		&i.Propagation,
-		&i.ContainerState,
-		&i.ContainerImage,
-		&i.ContainerLabels,
-		&i.ContainerComposeProject,
-		&i.ContainerComposeService,
-		&i.ContainerComposeContainerNumber,
-		&i.ContainerComposeConfigHash,
-		&i.AttachedAt,
-		&i.DetachedAt,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getMountCatalogEntry = `-- name: GetMountCatalogEntry :one
-SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at FROM docker_mount_catalog
-WHERE mount_id = $1
-`
-
-func (q *Queries) GetMountCatalogEntry(ctx context.Context, mountID string) (DockerMountCatalog, error) {
-	row := q.db.QueryRow(ctx, getMountCatalogEntry, mountID)
+func (q *Queries) GetDockerMount(ctx context.Context, id int64) (DockerMountCatalog, error) {
+	row := q.db.QueryRow(ctx, getDockerMount, id)
 	var i DockerMountCatalog
 	err := row.Scan(
 		&i.ID,
@@ -523,54 +422,126 @@ func (q *Queries) GetMountCatalogEntry(ctx context.Context, mountID string) (Doc
 		&i.TrackingDisabledAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
-const getMountCatalogSummary = `-- name: GetMountCatalogSummary :one
-
-SELECT
-    COUNT(*) as total_mounts,
-    COUNT(*) FILTER (WHERE mount_type = 'volume') as volume_mounts,
-    COUNT(*) FILTER (WHERE mount_type = 'bind') as bind_mounts,
-    COUNT(*) FILTER (WHERE mount_type = 'tmpfs') as tmpfs_mounts,
-    COUNT(*) FILTER (WHERE is_orphaned = true) as orphaned_mounts,
-    COUNT(*) FILTER (WHERE is_tracked = true) as tracked_mounts,
-    COUNT(DISTINCT compose_project) FILTER (WHERE compose_project IS NOT NULL) as compose_projects
-FROM docker_mount_catalog
+const getDockerMountByMountId = `-- name: GetDockerMountByMountId :one
+SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at, organization_id FROM docker_mount_catalog WHERE mount_id = $1
 `
 
-type GetMountCatalogSummaryRow struct {
-	TotalMounts     int64 `json:"total_mounts"`
-	VolumeMounts    int64 `json:"volume_mounts"`
-	BindMounts      int64 `json:"bind_mounts"`
-	TmpfsMounts     int64 `json:"tmpfs_mounts"`
-	OrphanedMounts  int64 `json:"orphaned_mounts"`
-	TrackedMounts   int64 `json:"tracked_mounts"`
-	ComposeProjects int64 `json:"compose_projects"`
+func (q *Queries) GetDockerMountByMountId(ctx context.Context, mountID string) (DockerMountCatalog, error) {
+	row := q.db.QueryRow(ctx, getDockerMountByMountId, mountID)
+	var i DockerMountCatalog
+	err := row.Scan(
+		&i.ID,
+		&i.MountID,
+		&i.MountType,
+		&i.VolumeName,
+		&i.VolumeDriver,
+		&i.VolumeOptions,
+		&i.VolumeLabels,
+		&i.VolumeScope,
+		&i.SourcePath,
+		&i.ContainerCount,
+		&i.IsOrphaned,
+		&i.ComposeProject,
+		&i.ComposeServices,
+		&i.ComposeVersion,
+		&i.ComposeConfigFiles,
+		&i.FirstDiscoveredAt,
+		&i.LastSeenAt,
+		&i.DiscoverySource,
+		&i.IsTracked,
+		&i.TrackingEnabledAt,
+		&i.TrackingDisabledAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.OrganizationID,
+	)
+	return i, err
 }
 
-// Complex analytical queries
-func (q *Queries) GetMountCatalogSummary(ctx context.Context) (GetMountCatalogSummaryRow, error) {
-	row := q.db.QueryRow(ctx, getMountCatalogSummary)
-	var i GetMountCatalogSummaryRow
+const getDockerProject = `-- name: GetDockerProject :one
+SELECT id, project_name, compose_file_path, compose_file_hash, working_directory, services, networks, volumes, config_data, last_seen_at, created_at FROM docker_projects WHERE id = $1
+`
+
+func (q *Queries) GetDockerProject(ctx context.Context, id int64) (DockerProjects, error) {
+	row := q.db.QueryRow(ctx, getDockerProject, id)
+	var i DockerProjects
 	err := row.Scan(
-		&i.TotalMounts,
-		&i.VolumeMounts,
-		&i.BindMounts,
-		&i.TmpfsMounts,
-		&i.OrphanedMounts,
-		&i.TrackedMounts,
-		&i.ComposeProjects,
+		&i.ID,
+		&i.ProjectName,
+		&i.ComposeFilePath,
+		&i.ComposeFileHash,
+		&i.WorkingDirectory,
+		&i.Services,
+		&i.Networks,
+		&i.Volumes,
+		&i.ConfigData,
+		&i.LastSeenAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getDockerProjectByName = `-- name: GetDockerProjectByName :one
+SELECT id, project_name, compose_file_path, compose_file_hash, working_directory, services, networks, volumes, config_data, last_seen_at, created_at FROM docker_projects WHERE project_name = $1
+`
+
+func (q *Queries) GetDockerProjectByName(ctx context.Context, projectName string) (DockerProjects, error) {
+	row := q.db.QueryRow(ctx, getDockerProjectByName, projectName)
+	var i DockerProjects
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectName,
+		&i.ComposeFilePath,
+		&i.ComposeFileHash,
+		&i.WorkingDirectory,
+		&i.Services,
+		&i.Networks,
+		&i.Volumes,
+		&i.ConfigData,
+		&i.LastSeenAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getMountAttachment = `-- name: GetMountAttachment :one
+SELECT id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at FROM docker_mount_attachments WHERE id = $1
+`
+
+func (q *Queries) GetMountAttachment(ctx context.Context, id int64) (DockerMountAttachments, error) {
+	row := q.db.QueryRow(ctx, getMountAttachment, id)
+	var i DockerMountAttachments
+	err := row.Scan(
+		&i.ID,
+		&i.MountCatalogID,
+		&i.ContainerID,
+		&i.ContainerName,
+		&i.DestinationPath,
+		&i.AccessMode,
+		&i.Propagation,
+		&i.ContainerState,
+		&i.ContainerImage,
+		&i.ContainerLabels,
+		&i.ContainerComposeProject,
+		&i.ContainerComposeService,
+		&i.ContainerComposeContainerNumber,
+		&i.ContainerComposeConfigHash,
+		&i.AttachedAt,
+		&i.DetachedAt,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getMountStatistics = `-- name: GetMountStatistics :one
-SELECT id, mount_catalog_id, peak_container_count, total_attachments, compose_projects_count, compose_services_count, days_since_creation, days_since_last_use, attachment_frequency_score, last_known_size_bytes, last_scanned_at, calculated_at, created_at, updated_at FROM docker_mount_statistics
-WHERE mount_catalog_id = $1
-ORDER BY calculated_at DESC
-LIMIT 1
+SELECT id, mount_catalog_id, peak_container_count, total_attachments, compose_projects_count, compose_services_count, days_since_creation, days_since_last_use, attachment_frequency_score, last_known_size_bytes, last_scanned_at, calculated_at, created_at, updated_at FROM docker_mount_statistics WHERE mount_catalog_id = $1
 `
 
 func (q *Queries) GetMountStatistics(ctx context.Context, mountCatalogID int64) (DockerMountStatistics, error) {
@@ -595,98 +566,14 @@ func (q *Queries) GetMountStatistics(ctx context.Context, mountCatalogID int64) 
 	return i, err
 }
 
-const getMountUsageAnalytics = `-- name: GetMountUsageAnalytics :many
-SELECT
-    dmc.mount_id,
-    dmc.mount_type,
-    dmc.volume_name,
-    dmc.compose_project,
-    dmc.container_count,
-    dmc.is_orphaned,
-    dmc.is_tracked,
-    dms.peak_container_count,
-    dms.total_attachments,
-    dms.attachment_frequency_score,
-    dms.days_since_creation,
-    dms.days_since_last_use,
-    dms.last_known_size_bytes
-FROM docker_mount_catalog dmc
-LEFT JOIN docker_mount_statistics dms ON dmc.id = dms.mount_catalog_id
-ORDER BY 
-    CASE WHEN $1::text = 'usage' THEN dms.attachment_frequency_score END DESC,
-    CASE WHEN $1::text = 'size' THEN dms.last_known_size_bytes END DESC,
-    CASE WHEN $1::text = 'age' THEN dms.days_since_creation END DESC,
-    dmc.mount_id
-LIMIT $2 OFFSET $3
-`
-
-type GetMountUsageAnalyticsParams struct {
-	Column1 string `json:"column_1"`
-	Limit   int32  `json:"limit"`
-	Offset  int32  `json:"offset"`
-}
-
-type GetMountUsageAnalyticsRow struct {
-	MountID                  string        `json:"mount_id"`
-	MountType                string        `json:"mount_type"`
-	VolumeName               pgtype.Text   `json:"volume_name"`
-	ComposeProject           pgtype.Text   `json:"compose_project"`
-	ContainerCount           int32         `json:"container_count"`
-	IsOrphaned               bool          `json:"is_orphaned"`
-	IsTracked                bool          `json:"is_tracked"`
-	PeakContainerCount       pgtype.Int4   `json:"peak_container_count"`
-	TotalAttachments         pgtype.Int4   `json:"total_attachments"`
-	AttachmentFrequencyScore pgtype.Float4 `json:"attachment_frequency_score"`
-	DaysSinceCreation        pgtype.Int4   `json:"days_since_creation"`
-	DaysSinceLastUse         pgtype.Int4   `json:"days_since_last_use"`
-	LastKnownSizeBytes       pgtype.Int8   `json:"last_known_size_bytes"`
-}
-
-func (q *Queries) GetMountUsageAnalytics(ctx context.Context, arg GetMountUsageAnalyticsParams) ([]GetMountUsageAnalyticsRow, error) {
-	rows, err := q.db.Query(ctx, getMountUsageAnalytics, arg.Column1, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetMountUsageAnalyticsRow{}
-	for rows.Next() {
-		var i GetMountUsageAnalyticsRow
-		if err := rows.Scan(
-			&i.MountID,
-			&i.MountType,
-			&i.VolumeName,
-			&i.ComposeProject,
-			&i.ContainerCount,
-			&i.IsOrphaned,
-			&i.IsTracked,
-			&i.PeakContainerCount,
-			&i.TotalAttachments,
-			&i.AttachmentFrequencyScore,
-			&i.DaysSinceCreation,
-			&i.DaysSinceLastUse,
-			&i.LastKnownSizeBytes,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getStaleAttachments = `-- name: GetStaleAttachments :many
+const listActiveMountAttachments = `-- name: ListActiveMountAttachments :many
 SELECT id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at FROM docker_mount_attachments
-WHERE is_active = true 
-  AND updated_at < CURRENT_TIMESTAMP - INTERVAL '1 hour'
-ORDER BY updated_at
-LIMIT $1
+WHERE mount_catalog_id = $1 AND is_active = true
+ORDER BY attached_at DESC
 `
 
-// Find attachments where container no longer exists (for cleanup)
-func (q *Queries) GetStaleAttachments(ctx context.Context, limit int32) ([]DockerMountAttachments, error) {
-	rows, err := q.db.Query(ctx, getStaleAttachments, limit)
+func (q *Queries) ListActiveMountAttachments(ctx context.Context, mountCatalogID int64) ([]DockerMountAttachments, error) {
+	rows, err := q.db.Query(ctx, listActiveMountAttachments, mountCatalogID)
 	if err != nil {
 		return nil, err
 	}
@@ -725,78 +612,32 @@ func (q *Queries) GetStaleAttachments(ctx context.Context, limit int32) ([]Docke
 	return items, nil
 }
 
-const listContainerAttachments = `-- name: ListContainerAttachments :many
-SELECT 
-    dma.id, dma.mount_catalog_id, dma.container_id, dma.container_name, dma.destination_path, dma.access_mode, dma.propagation, dma.container_state, dma.container_image, dma.container_labels, dma.container_compose_project, dma.container_compose_service, dma.container_compose_container_number, dma.container_compose_config_hash, dma.attached_at, dma.detached_at, dma.is_active, dma.created_at, dma.updated_at,
-    dmc.mount_id,
-    dmc.mount_type,
-    dmc.volume_name,
-    dmc.source_path
-FROM docker_mount_attachments dma
-JOIN docker_mount_catalog dmc ON dma.mount_catalog_id = dmc.id
-WHERE dma.container_id = $1 AND dma.is_active = true
-ORDER BY dma.destination_path
+const listDockerProjects = `-- name: ListDockerProjects :many
+SELECT id, project_name, compose_file_path, compose_file_hash, working_directory, services, networks, volumes, config_data, last_seen_at, created_at FROM docker_projects
+ORDER BY last_seen_at DESC
 `
 
-type ListContainerAttachmentsRow struct {
-	ID                              int64            `json:"id"`
-	MountCatalogID                  int64            `json:"mount_catalog_id"`
-	ContainerID                     string           `json:"container_id"`
-	ContainerName                   pgtype.Text      `json:"container_name"`
-	DestinationPath                 string           `json:"destination_path"`
-	AccessMode                      string           `json:"access_mode"`
-	Propagation                     pgtype.Text      `json:"propagation"`
-	ContainerState                  pgtype.Text      `json:"container_state"`
-	ContainerImage                  pgtype.Text      `json:"container_image"`
-	ContainerLabels                 []byte           `json:"container_labels"`
-	ContainerComposeProject         pgtype.Text      `json:"container_compose_project"`
-	ContainerComposeService         pgtype.Text      `json:"container_compose_service"`
-	ContainerComposeContainerNumber pgtype.Int4      `json:"container_compose_container_number"`
-	ContainerComposeConfigHash      pgtype.Text      `json:"container_compose_config_hash"`
-	AttachedAt                      pgtype.Timestamp `json:"attached_at"`
-	DetachedAt                      pgtype.Timestamp `json:"detached_at"`
-	IsActive                        bool             `json:"is_active"`
-	CreatedAt                       time.Time        `json:"created_at"`
-	UpdatedAt                       time.Time        `json:"updated_at"`
-	MountID                         string           `json:"mount_id"`
-	MountType                       string           `json:"mount_type"`
-	VolumeName                      pgtype.Text      `json:"volume_name"`
-	SourcePath                      string           `json:"source_path"`
-}
-
-func (q *Queries) ListContainerAttachments(ctx context.Context, containerID string) ([]ListContainerAttachmentsRow, error) {
-	rows, err := q.db.Query(ctx, listContainerAttachments, containerID)
+func (q *Queries) ListDockerProjects(ctx context.Context) ([]DockerProjects, error) {
+	rows, err := q.db.Query(ctx, listDockerProjects)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListContainerAttachmentsRow{}
+	items := []DockerProjects{}
 	for rows.Next() {
-		var i ListContainerAttachmentsRow
+		var i DockerProjects
 		if err := rows.Scan(
 			&i.ID,
-			&i.MountCatalogID,
-			&i.ContainerID,
-			&i.ContainerName,
-			&i.DestinationPath,
-			&i.AccessMode,
-			&i.Propagation,
-			&i.ContainerState,
-			&i.ContainerImage,
-			&i.ContainerLabels,
-			&i.ContainerComposeProject,
-			&i.ContainerComposeService,
-			&i.ContainerComposeContainerNumber,
-			&i.ContainerComposeConfigHash,
-			&i.AttachedAt,
-			&i.DetachedAt,
-			&i.IsActive,
+			&i.ProjectName,
+			&i.ComposeFilePath,
+			&i.ComposeFileHash,
+			&i.WorkingDirectory,
+			&i.Services,
+			&i.Networks,
+			&i.Volumes,
+			&i.ConfigData,
+			&i.LastSeenAt,
 			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.MountID,
-			&i.MountType,
-			&i.VolumeName,
-			&i.SourcePath,
 		); err != nil {
 			return nil, err
 		}
@@ -810,8 +651,8 @@ func (q *Queries) ListContainerAttachments(ctx context.Context, containerID stri
 
 const listMountAttachments = `-- name: ListMountAttachments :many
 SELECT id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at FROM docker_mount_attachments
-WHERE mount_catalog_id = $1 AND is_active = true
-ORDER BY container_name, destination_path
+WHERE mount_catalog_id = $1
+ORDER BY attached_at DESC
 `
 
 func (q *Queries) ListMountAttachments(ctx context.Context, mountCatalogID int64) ([]DockerMountAttachments, error) {
@@ -855,24 +696,18 @@ func (q *Queries) ListMountAttachments(ctx context.Context, mountCatalogID int64
 }
 
 const listMountCatalogEntries = `-- name: ListMountCatalogEntries :many
-SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at FROM docker_mount_catalog
-ORDER BY 
-    CASE WHEN $1::text = 'mount_type' THEN mount_type::text END,
-    CASE WHEN $1::text = 'compose_project' THEN compose_project END,
-    CASE WHEN $1::text = 'last_seen' THEN last_seen_at END DESC,
-    CASE WHEN $1::text = 'container_count' THEN container_count END DESC,
-    volume_name, mount_id
-LIMIT $2 OFFSET $3
+SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at, organization_id FROM docker_mount_catalog
+ORDER BY last_seen_at DESC
+LIMIT $1 OFFSET $2
 `
 
 type ListMountCatalogEntriesParams struct {
-	Column1 string `json:"column_1"`
-	Limit   int32  `json:"limit"`
-	Offset  int32  `json:"offset"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
 }
 
 func (q *Queries) ListMountCatalogEntries(ctx context.Context, arg ListMountCatalogEntriesParams) ([]DockerMountCatalog, error) {
-	rows, err := q.db.Query(ctx, listMountCatalogEntries, arg.Column1, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listMountCatalogEntries, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -904,6 +739,7 @@ func (q *Queries) ListMountCatalogEntries(ctx context.Context, arg ListMountCata
 			&i.TrackingDisabledAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -915,21 +751,21 @@ func (q *Queries) ListMountCatalogEntries(ctx context.Context, arg ListMountCata
 	return items, nil
 }
 
-const listMountCatalogEntriesByComposeProject = `-- name: ListMountCatalogEntriesByComposeProject :many
-SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at FROM docker_mount_catalog
-WHERE compose_project = $1
-ORDER BY mount_type, volume_name, mount_id
+const listMountCatalogEntriesByOrganization = `-- name: ListMountCatalogEntriesByOrganization :many
+SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at, organization_id FROM docker_mount_catalog
+WHERE organization_id = $1
+ORDER BY last_seen_at DESC
 LIMIT $2 OFFSET $3
 `
 
-type ListMountCatalogEntriesByComposeProjectParams struct {
-	ComposeProject pgtype.Text `json:"compose_project"`
+type ListMountCatalogEntriesByOrganizationParams struct {
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 	Limit          int32       `json:"limit"`
 	Offset         int32       `json:"offset"`
 }
 
-func (q *Queries) ListMountCatalogEntriesByComposeProject(ctx context.Context, arg ListMountCatalogEntriesByComposeProjectParams) ([]DockerMountCatalog, error) {
-	rows, err := q.db.Query(ctx, listMountCatalogEntriesByComposeProject, arg.ComposeProject, arg.Limit, arg.Offset)
+func (q *Queries) ListMountCatalogEntriesByOrganization(ctx context.Context, arg ListMountCatalogEntriesByOrganizationParams) ([]DockerMountCatalog, error) {
+	rows, err := q.db.Query(ctx, listMountCatalogEntriesByOrganization, arg.OrganizationID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -961,6 +797,7 @@ func (q *Queries) ListMountCatalogEntriesByComposeProject(ctx context.Context, a
 			&i.TrackingDisabledAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -973,9 +810,9 @@ func (q *Queries) ListMountCatalogEntriesByComposeProject(ctx context.Context, a
 }
 
 const listMountCatalogEntriesByType = `-- name: ListMountCatalogEntriesByType :many
-SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at FROM docker_mount_catalog
+SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at, organization_id FROM docker_mount_catalog 
 WHERE mount_type = $1
-ORDER BY volume_name, mount_id
+ORDER BY last_seen_at DESC
 LIMIT $2 OFFSET $3
 `
 
@@ -1018,6 +855,97 @@ func (q *Queries) ListMountCatalogEntriesByType(ctx context.Context, arg ListMou
 			&i.TrackingDisabledAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMountCatalogEntriesByVolume = `-- name: ListMountCatalogEntriesByVolume :many
+SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at, organization_id FROM docker_mount_catalog WHERE mount_id = $1
+`
+
+func (q *Queries) ListMountCatalogEntriesByVolume(ctx context.Context, mountID string) ([]DockerMountCatalog, error) {
+	rows, err := q.db.Query(ctx, listMountCatalogEntriesByVolume, mountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DockerMountCatalog{}
+	for rows.Next() {
+		var i DockerMountCatalog
+		if err := rows.Scan(
+			&i.ID,
+			&i.MountID,
+			&i.MountType,
+			&i.VolumeName,
+			&i.VolumeDriver,
+			&i.VolumeOptions,
+			&i.VolumeLabels,
+			&i.VolumeScope,
+			&i.SourcePath,
+			&i.ContainerCount,
+			&i.IsOrphaned,
+			&i.ComposeProject,
+			&i.ComposeServices,
+			&i.ComposeVersion,
+			&i.ComposeConfigFiles,
+			&i.FirstDiscoveredAt,
+			&i.LastSeenAt,
+			&i.DiscoverySource,
+			&i.IsTracked,
+			&i.TrackingEnabledAt,
+			&i.TrackingDisabledAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMountStatistics = `-- name: ListMountStatistics :many
+SELECT id, mount_catalog_id, peak_container_count, total_attachments, compose_projects_count, compose_services_count, days_since_creation, days_since_last_use, attachment_frequency_score, last_known_size_bytes, last_scanned_at, calculated_at, created_at, updated_at FROM docker_mount_statistics
+ORDER BY calculated_at DESC
+LIMIT $1
+`
+
+func (q *Queries) ListMountStatistics(ctx context.Context, limit int32) ([]DockerMountStatistics, error) {
+	rows, err := q.db.Query(ctx, listMountStatistics, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DockerMountStatistics{}
+	for rows.Next() {
+		var i DockerMountStatistics
+		if err := rows.Scan(
+			&i.ID,
+			&i.MountCatalogID,
+			&i.PeakContainerCount,
+			&i.TotalAttachments,
+			&i.ComposeProjectsCount,
+			&i.ComposeServicesCount,
+			&i.DaysSinceCreation,
+			&i.DaysSinceLastUse,
+			&i.AttachmentFrequencyScore,
+			&i.LastKnownSizeBytes,
+			&i.LastScannedAt,
+			&i.CalculatedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -1030,19 +958,13 @@ func (q *Queries) ListMountCatalogEntriesByType(ctx context.Context, arg ListMou
 }
 
 const listOrphanedMounts = `-- name: ListOrphanedMounts :many
-SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at FROM docker_mount_catalog
+SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at, organization_id FROM docker_mount_catalog 
 WHERE is_orphaned = true
 ORDER BY last_seen_at DESC
-LIMIT $1 OFFSET $2
 `
 
-type ListOrphanedMountsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-func (q *Queries) ListOrphanedMounts(ctx context.Context, arg ListOrphanedMountsParams) ([]DockerMountCatalog, error) {
-	rows, err := q.db.Query(ctx, listOrphanedMounts, arg.Limit, arg.Offset)
+func (q *Queries) ListOrphanedMounts(ctx context.Context) ([]DockerMountCatalog, error) {
+	rows, err := q.db.Query(ctx, listOrphanedMounts)
 	if err != nil {
 		return nil, err
 	}
@@ -1074,6 +996,7 @@ func (q *Queries) ListOrphanedMounts(ctx context.Context, arg ListOrphanedMounts
 			&i.TrackingDisabledAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -1086,96 +1009,13 @@ func (q *Queries) ListOrphanedMounts(ctx context.Context, arg ListOrphanedMounts
 }
 
 const listTrackedMounts = `-- name: ListTrackedMounts :many
-SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at FROM docker_mount_catalog
+SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at, organization_id FROM docker_mount_catalog 
 WHERE is_tracked = true
-ORDER BY mount_type, volume_name, mount_id
-LIMIT $1 OFFSET $2
-`
-
-type ListTrackedMountsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-func (q *Queries) ListTrackedMounts(ctx context.Context, arg ListTrackedMountsParams) ([]DockerMountCatalog, error) {
-	rows, err := q.db.Query(ctx, listTrackedMounts, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []DockerMountCatalog{}
-	for rows.Next() {
-		var i DockerMountCatalog
-		if err := rows.Scan(
-			&i.ID,
-			&i.MountID,
-			&i.MountType,
-			&i.VolumeName,
-			&i.VolumeDriver,
-			&i.VolumeOptions,
-			&i.VolumeLabels,
-			&i.VolumeScope,
-			&i.SourcePath,
-			&i.ContainerCount,
-			&i.IsOrphaned,
-			&i.ComposeProject,
-			&i.ComposeServices,
-			&i.ComposeVersion,
-			&i.ComposeConfigFiles,
-			&i.FirstDiscoveredAt,
-			&i.LastSeenAt,
-			&i.DiscoverySource,
-			&i.IsTracked,
-			&i.TrackingEnabledAt,
-			&i.TrackingDisabledAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const searchMountCatalog = `-- name: SearchMountCatalog :many
-SELECT id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at FROM docker_mount_catalog
-WHERE 
-    ($1::text IS NULL OR mount_id ILIKE '%' || $1 || '%') AND
-    ($2::text IS NULL OR volume_name ILIKE '%' || $2 || '%') AND
-    ($3::text IS NULL OR compose_project ILIKE '%' || $3 || '%') AND
-    ($4::mount_type IS NULL OR mount_type = $4) AND
-    ($5::boolean IS NULL OR is_orphaned = $5) AND
-    ($6::boolean IS NULL OR is_tracked = $6)
 ORDER BY last_seen_at DESC
-LIMIT $7 OFFSET $8
 `
 
-type SearchMountCatalogParams struct {
-	Column1 string      `json:"column_1"`
-	Column2 string      `json:"column_2"`
-	Column3 string      `json:"column_3"`
-	Column4 interface{} `json:"column_4"`
-	Column5 bool        `json:"column_5"`
-	Column6 bool        `json:"column_6"`
-	Limit   int32       `json:"limit"`
-	Offset  int32       `json:"offset"`
-}
-
-func (q *Queries) SearchMountCatalog(ctx context.Context, arg SearchMountCatalogParams) ([]DockerMountCatalog, error) {
-	rows, err := q.db.Query(ctx, searchMountCatalog,
-		arg.Column1,
-		arg.Column2,
-		arg.Column3,
-		arg.Column4,
-		arg.Column5,
-		arg.Column6,
-		arg.Limit,
-		arg.Offset,
-	)
+func (q *Queries) ListTrackedMounts(ctx context.Context) ([]DockerMountCatalog, error) {
+	rows, err := q.db.Query(ctx, listTrackedMounts)
 	if err != nil {
 		return nil, err
 	}
@@ -1207,6 +1047,7 @@ func (q *Queries) SearchMountCatalog(ctx context.Context, arg SearchMountCatalog
 			&i.TrackingDisabledAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -1218,260 +1059,45 @@ func (q *Queries) SearchMountCatalog(ctx context.Context, arg SearchMountCatalog
 	return items, nil
 }
 
-const updateMountAttachment = `-- name: UpdateMountAttachment :one
-UPDATE docker_mount_attachments SET
-    container_name = COALESCE($4, container_name),
-    access_mode = COALESCE($5, access_mode),
-    propagation = COALESCE($6, propagation),
-    container_state = COALESCE($7, container_state),
-    container_image = COALESCE($8, container_image),
-    container_labels = COALESCE($9, container_labels),
-    container_compose_project = COALESCE($10, container_compose_project),
-    container_compose_service = COALESCE($11, container_compose_service),
-    container_compose_container_number = COALESCE($12, container_compose_container_number),
-    container_compose_config_hash = COALESCE($13, container_compose_config_hash),
-    updated_at = CURRENT_TIMESTAMP
-WHERE mount_catalog_id = $1 AND container_id = $2 AND destination_path = $3 AND is_active = true
-RETURNING id, mount_catalog_id, container_id, container_name, destination_path, access_mode, propagation, container_state, container_image, container_labels, container_compose_project, container_compose_service, container_compose_container_number, container_compose_config_hash, attached_at, detached_at, is_active, created_at, updated_at
+const updateDockerProjectLastSeen = `-- name: UpdateDockerProjectLastSeen :exec
+UPDATE docker_projects
+SET last_seen_at = CURRENT_TIMESTAMP
+WHERE project_name = $1
 `
 
-type UpdateMountAttachmentParams struct {
-	MountCatalogID                  int64       `json:"mount_catalog_id"`
-	ContainerID                     string      `json:"container_id"`
-	DestinationPath                 string      `json:"destination_path"`
-	ContainerName                   pgtype.Text `json:"container_name"`
-	AccessMode                      string      `json:"access_mode"`
-	Propagation                     pgtype.Text `json:"propagation"`
-	ContainerState                  pgtype.Text `json:"container_state"`
-	ContainerImage                  pgtype.Text `json:"container_image"`
-	ContainerLabels                 []byte      `json:"container_labels"`
-	ContainerComposeProject         pgtype.Text `json:"container_compose_project"`
-	ContainerComposeService         pgtype.Text `json:"container_compose_service"`
-	ContainerComposeContainerNumber pgtype.Int4 `json:"container_compose_container_number"`
-	ContainerComposeConfigHash      pgtype.Text `json:"container_compose_config_hash"`
+func (q *Queries) UpdateDockerProjectLastSeen(ctx context.Context, projectName string) error {
+	_, err := q.db.Exec(ctx, updateDockerProjectLastSeen, projectName)
+	return err
 }
 
-func (q *Queries) UpdateMountAttachment(ctx context.Context, arg UpdateMountAttachmentParams) (DockerMountAttachments, error) {
-	row := q.db.QueryRow(ctx, updateMountAttachment,
-		arg.MountCatalogID,
-		arg.ContainerID,
-		arg.DestinationPath,
-		arg.ContainerName,
-		arg.AccessMode,
-		arg.Propagation,
-		arg.ContainerState,
-		arg.ContainerImage,
-		arg.ContainerLabels,
-		arg.ContainerComposeProject,
-		arg.ContainerComposeService,
-		arg.ContainerComposeContainerNumber,
-		arg.ContainerComposeConfigHash,
-	)
-	var i DockerMountAttachments
-	err := row.Scan(
-		&i.ID,
-		&i.MountCatalogID,
-		&i.ContainerID,
-		&i.ContainerName,
-		&i.DestinationPath,
-		&i.AccessMode,
-		&i.Propagation,
-		&i.ContainerState,
-		&i.ContainerImage,
-		&i.ContainerLabels,
-		&i.ContainerComposeProject,
-		&i.ContainerComposeService,
-		&i.ContainerComposeContainerNumber,
-		&i.ContainerComposeConfigHash,
-		&i.AttachedAt,
-		&i.DetachedAt,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const updateMountCatalogEntry = `-- name: UpdateMountCatalogEntry :one
-UPDATE docker_mount_catalog SET
-    volume_driver = COALESCE($2, volume_driver),
-    volume_options = COALESCE($3, volume_options),
-    volume_labels = COALESCE($4, volume_labels),
-    volume_scope = COALESCE($5, volume_scope),
-    container_count = COALESCE($6, container_count),
-    is_orphaned = COALESCE($7, is_orphaned),
-    compose_project = COALESCE($8, compose_project),
-    compose_services = COALESCE($9, compose_services),
-    compose_version = COALESCE($10, compose_version),
-    compose_config_files = COALESCE($11, compose_config_files),
-    last_seen_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE mount_id = $1
-RETURNING id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at
+const updateMountContainerCount = `-- name: UpdateMountContainerCount :exec
+UPDATE docker_mount_catalog 
+SET container_count = $2, last_seen_at = CURRENT_TIMESTAMP
+WHERE id = $1
 `
 
-type UpdateMountCatalogEntryParams struct {
-	MountID            string      `json:"mount_id"`
-	VolumeDriver       pgtype.Text `json:"volume_driver"`
-	VolumeOptions      []byte      `json:"volume_options"`
-	VolumeLabels       []byte      `json:"volume_labels"`
-	VolumeScope        pgtype.Text `json:"volume_scope"`
-	ContainerCount     int32       `json:"container_count"`
-	IsOrphaned         bool        `json:"is_orphaned"`
-	ComposeProject     pgtype.Text `json:"compose_project"`
-	ComposeServices    []string    `json:"compose_services"`
-	ComposeVersion     pgtype.Text `json:"compose_version"`
-	ComposeConfigFiles []string    `json:"compose_config_files"`
+type UpdateMountContainerCountParams struct {
+	ID             int64 `json:"id"`
+	ContainerCount int32 `json:"container_count"`
 }
 
-func (q *Queries) UpdateMountCatalogEntry(ctx context.Context, arg UpdateMountCatalogEntryParams) (DockerMountCatalog, error) {
-	row := q.db.QueryRow(ctx, updateMountCatalogEntry,
-		arg.MountID,
-		arg.VolumeDriver,
-		arg.VolumeOptions,
-		arg.VolumeLabels,
-		arg.VolumeScope,
-		arg.ContainerCount,
-		arg.IsOrphaned,
-		arg.ComposeProject,
-		arg.ComposeServices,
-		arg.ComposeVersion,
-		arg.ComposeConfigFiles,
-	)
-	var i DockerMountCatalog
-	err := row.Scan(
-		&i.ID,
-		&i.MountID,
-		&i.MountType,
-		&i.VolumeName,
-		&i.VolumeDriver,
-		&i.VolumeOptions,
-		&i.VolumeLabels,
-		&i.VolumeScope,
-		&i.SourcePath,
-		&i.ContainerCount,
-		&i.IsOrphaned,
-		&i.ComposeProject,
-		&i.ComposeServices,
-		&i.ComposeVersion,
-		&i.ComposeConfigFiles,
-		&i.FirstDiscoveredAt,
-		&i.LastSeenAt,
-		&i.DiscoverySource,
-		&i.IsTracked,
-		&i.TrackingEnabledAt,
-		&i.TrackingDisabledAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+func (q *Queries) UpdateMountContainerCount(ctx context.Context, arg UpdateMountContainerCountParams) error {
+	_, err := q.db.Exec(ctx, updateMountContainerCount, arg.ID, arg.ContainerCount)
+	return err
 }
 
-const updateMountStatistics = `-- name: UpdateMountStatistics :one
-UPDATE docker_mount_statistics SET
-    peak_container_count = GREATEST(peak_container_count, $2),
-    total_attachments = $3,
-    compose_projects_count = $4,
-    compose_services_count = $5,
-    days_since_creation = $6,
-    days_since_last_use = $7,
-    attachment_frequency_score = $8,
-    last_known_size_bytes = COALESCE($9, last_known_size_bytes),
-    last_scanned_at = COALESCE($10, last_scanned_at),
-    calculated_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE mount_catalog_id = $1
-RETURNING id, mount_catalog_id, peak_container_count, total_attachments, compose_projects_count, compose_services_count, days_since_creation, days_since_last_use, attachment_frequency_score, last_known_size_bytes, last_scanned_at, calculated_at, created_at, updated_at
-`
-
-type UpdateMountStatisticsParams struct {
-	MountCatalogID           int64            `json:"mount_catalog_id"`
-	PeakContainerCount       int32            `json:"peak_container_count"`
-	TotalAttachments         int32            `json:"total_attachments"`
-	ComposeProjectsCount     int32            `json:"compose_projects_count"`
-	ComposeServicesCount     int32            `json:"compose_services_count"`
-	DaysSinceCreation        pgtype.Int4      `json:"days_since_creation"`
-	DaysSinceLastUse         pgtype.Int4      `json:"days_since_last_use"`
-	AttachmentFrequencyScore pgtype.Float4    `json:"attachment_frequency_score"`
-	LastKnownSizeBytes       pgtype.Int8      `json:"last_known_size_bytes"`
-	LastScannedAt            pgtype.Timestamp `json:"last_scanned_at"`
-}
-
-func (q *Queries) UpdateMountStatistics(ctx context.Context, arg UpdateMountStatisticsParams) (DockerMountStatistics, error) {
-	row := q.db.QueryRow(ctx, updateMountStatistics,
-		arg.MountCatalogID,
-		arg.PeakContainerCount,
-		arg.TotalAttachments,
-		arg.ComposeProjectsCount,
-		arg.ComposeServicesCount,
-		arg.DaysSinceCreation,
-		arg.DaysSinceLastUse,
-		arg.AttachmentFrequencyScore,
-		arg.LastKnownSizeBytes,
-		arg.LastScannedAt,
-	)
-	var i DockerMountStatistics
-	err := row.Scan(
-		&i.ID,
-		&i.MountCatalogID,
-		&i.PeakContainerCount,
-		&i.TotalAttachments,
-		&i.ComposeProjectsCount,
-		&i.ComposeServicesCount,
-		&i.DaysSinceCreation,
-		&i.DaysSinceLastUse,
-		&i.AttachmentFrequencyScore,
-		&i.LastKnownSizeBytes,
-		&i.LastScannedAt,
-		&i.CalculatedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const updateMountTrackingStatus = `-- name: UpdateMountTrackingStatus :one
-UPDATE docker_mount_catalog SET
-    is_tracked = $2,
-    tracking_enabled_at = CASE WHEN $2 = true THEN CURRENT_TIMESTAMP ELSE tracking_enabled_at END,
-    tracking_disabled_at = CASE WHEN $2 = false THEN CURRENT_TIMESTAMP ELSE tracking_disabled_at END,
-    updated_at = CURRENT_TIMESTAMP
-WHERE mount_id = $1
-RETURNING id, mount_id, mount_type, volume_name, volume_driver, volume_options, volume_labels, volume_scope, source_path, container_count, is_orphaned, compose_project, compose_services, compose_version, compose_config_files, first_discovered_at, last_seen_at, discovery_source, is_tracked, tracking_enabled_at, tracking_disabled_at, created_at, updated_at
+const updateMountTrackingStatus = `-- name: UpdateMountTrackingStatus :exec
+UPDATE docker_mount_catalog 
+SET is_tracked = $2
+WHERE id = $1
 `
 
 type UpdateMountTrackingStatusParams struct {
-	MountID   string `json:"mount_id"`
-	IsTracked bool   `json:"is_tracked"`
+	ID        int64 `json:"id"`
+	IsTracked bool  `json:"is_tracked"`
 }
 
-func (q *Queries) UpdateMountTrackingStatus(ctx context.Context, arg UpdateMountTrackingStatusParams) (DockerMountCatalog, error) {
-	row := q.db.QueryRow(ctx, updateMountTrackingStatus, arg.MountID, arg.IsTracked)
-	var i DockerMountCatalog
-	err := row.Scan(
-		&i.ID,
-		&i.MountID,
-		&i.MountType,
-		&i.VolumeName,
-		&i.VolumeDriver,
-		&i.VolumeOptions,
-		&i.VolumeLabels,
-		&i.VolumeScope,
-		&i.SourcePath,
-		&i.ContainerCount,
-		&i.IsOrphaned,
-		&i.ComposeProject,
-		&i.ComposeServices,
-		&i.ComposeVersion,
-		&i.ComposeConfigFiles,
-		&i.FirstDiscoveredAt,
-		&i.LastSeenAt,
-		&i.DiscoverySource,
-		&i.IsTracked,
-		&i.TrackingEnabledAt,
-		&i.TrackingDisabledAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+func (q *Queries) UpdateMountTrackingStatus(ctx context.Context, arg UpdateMountTrackingStatusParams) error {
+	_, err := q.db.Exec(ctx, updateMountTrackingStatus, arg.ID, arg.IsTracked)
+	return err
 }

@@ -65,6 +65,7 @@ ws.onmessage = (event) => {
 
 | API Category | Base Path | Description | Endpoints |
 |-------------|-----------|-------------|-----------|
+| **[Organizations](organizations.md)** | `/organizations` | Multi-tenant organization management and isolation | 15+ |
 | **[Volumes](volumes.md)** | `/volumes` | Volume discovery, management, and operations | 4 |
 | **[Explorer](explorer.md)** | `/explorer` | File system browsing and file operations | 9 |
 | **[Metadata](metadata.md)** | `/metadata` | File metadata extraction and classification | 5 |
@@ -330,6 +331,7 @@ curl "http://localhost:8080/api/v1/health" | jq '.checks'
 
 | Document | Description |
 |----------|-------------|
+| **[Organization Management](organizations.md)** | Multi-tenant organization management and data isolation |
 | **[Volume Management](volumes.md)** | Volume discovery, statistics, and operations |
 | **[File Explorer](explorer.md)** | Browse volume contents and file operations |
 | **[Metadata & Classification](metadata.md)** | File metadata extraction and analysis |
@@ -362,4 +364,4 @@ curl "http://localhost:8080/api/v1/health" | jq '.checks'
 
 ---
 
-**Ready to get started?** Begin with [Volume Management](volumes.md) or explore the [Interactive API Documentation](/api/docs).
+**Ready to get started?** Begin with [Organization Management](organizations.md) for multi-tenant setup, explore [Volume Management](volumes.md) for core functionality, or check out the [Interactive API Documentation](/api/docs).

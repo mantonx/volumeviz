@@ -435,7 +435,6 @@ type AlertRules struct {
 	TriggerCount      pgtype.Int4        `json:"trigger_count"`
 	CreatedAt         time.Time          `json:"created_at"`
 	UpdatedAt         time.Time          `json:"updated_at"`
-	OrganizationID    pgtype.Int8        `json:"organization_id"`
 }
 
 type Alerts struct {
@@ -449,6 +448,8 @@ type Alerts struct {
 	IsResolved  pgtype.Bool        `json:"is_resolved"`
 	ResolvedAt  pgtype.Timestamptz `json:"resolved_at"`
 	CreatedAt   time.Time          `json:"created_at"`
+	// Organization that owns this alert
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 }
 
 type AuditLogs struct {
@@ -490,6 +491,8 @@ type DailyStats struct {
 	OtherFiles      pgtype.Int8    `json:"other_files"`
 	ScanDurationMs  pgtype.Int8    `json:"scan_duration_ms"`
 	CreatedAt       time.Time      `json:"created_at"`
+	// Organization that owns this daily stat record
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 }
 
 type DockerMountAttachments struct {
@@ -538,7 +541,8 @@ type DockerMountCatalog struct {
 	TrackingDisabledAt pgtype.Timestamptz `json:"tracking_disabled_at"`
 	CreatedAt          time.Time          `json:"created_at"`
 	UpdatedAt          time.Time          `json:"updated_at"`
-	OrganizationID     pgtype.Int8        `json:"organization_id"`
+	// Organization that owns this docker mount
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 }
 
 type DockerMountStatistics struct {
@@ -645,6 +649,8 @@ type Files struct {
 	VideoLevel             pgtype.Text        `json:"video_level"`
 	FirstSeenAt            pgtype.Timestamptz `json:"first_seen_at"`
 	LastScanAt             pgtype.Timestamptz `json:"last_scan_at"`
+	// Organization that has access to this file
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 }
 
 type Folders struct {
@@ -664,6 +670,8 @@ type Folders struct {
 	CreatedAt          time.Time          `json:"created_at"`
 	ModifiedAt         pgtype.Timestamptz `json:"modified_at"`
 	AccessedAt         pgtype.Timestamptz `json:"accessed_at"`
+	// Organization that has access to this folder
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 }
 
 type MountTrackingAssignments struct {
@@ -686,7 +694,7 @@ type OrganizationInvitations struct {
 	ID             int64              `json:"id"`
 	OrganizationID int64              `json:"organization_id"`
 	Email          string             `json:"email"`
-	Role           interface{}        `json:"role"`
+	Role           string             `json:"role"`
 	Token          string             `json:"token"`
 	InvitedBy      pgtype.Int8        `json:"invited_by"`
 	Message        pgtype.Text        `json:"message"`
@@ -724,25 +732,26 @@ type Permissions struct {
 }
 
 type RolePermissions struct {
-	ID           int64       `json:"id"`
-	Role         interface{} `json:"role"`
-	PermissionID int64       `json:"permission_id"`
-	CreatedAt    time.Time   `json:"created_at"`
+	ID           int64     `json:"id"`
+	Role         string    `json:"role"`
+	PermissionID int64     `json:"permission_id"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type SavedSearches struct {
-	ID             int64              `json:"id"`
-	Name           string             `json:"name"`
-	Description    pgtype.Text        `json:"description"`
-	Query          []byte             `json:"query"`
-	Tags           []string           `json:"tags"`
-	IsPublic       pgtype.Bool        `json:"is_public"`
-	Metadata       []byte             `json:"metadata"`
-	CreatedAt      time.Time          `json:"created_at"`
-	UpdatedAt      time.Time          `json:"updated_at"`
-	LastRunAt      pgtype.Timestamptz `json:"last_run_at"`
-	RunCount       pgtype.Int4        `json:"run_count"`
-	OrganizationID pgtype.Int8        `json:"organization_id"`
+	ID          int64              `json:"id"`
+	Name        string             `json:"name"`
+	Description pgtype.Text        `json:"description"`
+	Query       []byte             `json:"query"`
+	Tags        []string           `json:"tags"`
+	IsPublic    pgtype.Bool        `json:"is_public"`
+	Metadata    []byte             `json:"metadata"`
+	CreatedAt   time.Time          `json:"created_at"`
+	UpdatedAt   time.Time          `json:"updated_at"`
+	LastRunAt   pgtype.Timestamptz `json:"last_run_at"`
+	RunCount    pgtype.Int4        `json:"run_count"`
+	// Organization that owns this saved search
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 }
 
 type ScanJobs struct {
@@ -767,7 +776,8 @@ type ScanJobs struct {
 	ScanOptions         []byte             `json:"scan_options"`
 	CreatedAt           time.Time          `json:"created_at"`
 	UpdatedAt           time.Time          `json:"updated_at"`
-	OrganizationID      pgtype.Int8        `json:"organization_id"`
+	// Organization that owns this scan job
+	OrganizationID pgtype.Int8 `json:"organization_id"`
 }
 
 type ScanPerformanceMetrics struct {
@@ -877,7 +887,6 @@ type TrackingRules struct {
 	CreatedBy        pgtype.Text        `json:"created_by"`
 	CreatedAt        time.Time          `json:"created_at"`
 	UpdatedAt        time.Time          `json:"updated_at"`
-	OrganizationID   pgtype.Int8        `json:"organization_id"`
 }
 
 type UsageSnapshots struct {

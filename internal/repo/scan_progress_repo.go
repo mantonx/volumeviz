@@ -69,6 +69,12 @@ func NewScanProgressRepoFromConn(conn *pgx.Conn) ScanProgressRepo {
 	return nil
 }
 
+// NewSQLiteScanProgressRepo creates a new SQLite scan progress repository
+func NewSQLiteScanProgressRepo(db *sql.DB) ScanProgressRepo {
+	// TODO: Implement SQLite-specific version
+	return nil
+}
+
 // =============================================================================
 // SCAN PHASES OPERATIONS
 // =============================================================================

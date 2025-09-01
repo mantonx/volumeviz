@@ -9,43 +9,6 @@ import (
 	"context"
 )
 
-// iteratorForBulkInsertDirNodes implements pgx.CopyFromSource.
-type iteratorForBulkInsertDirNodes struct {
-	rows                 []BulkInsertDirNodesParams
-	skippedFirstNextCall bool
-}
-
-func (r *iteratorForBulkInsertDirNodes) Next() bool {
-	if len(r.rows) == 0 {
-		return false
-	}
-	if !r.skippedFirstNextCall {
-		r.skippedFirstNextCall = true
-		return true
-	}
-	r.rows = r.rows[1:]
-	return len(r.rows) > 0
-}
-
-func (r iteratorForBulkInsertDirNodes) Values() ([]interface{}, error) {
-	return []interface{}{
-		r.rows[0].VolumeID,
-		r.rows[0].ParentID,
-		r.rows[0].Name,
-		r.rows[0].Path,
-		r.rows[0].PathHash,
-		r.rows[0].Depth,
-	}, nil
-}
-
-func (r iteratorForBulkInsertDirNodes) Err() error {
-	return nil
-}
-
-func (q *Queries) BulkInsertDirNodes(ctx context.Context, arg []BulkInsertDirNodesParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"folders"}, []string{"volume_id", "parent_id", "name", "path", "path_hash", "depth"}, &iteratorForBulkInsertDirNodes{rows: arg})
-}
-
 // iteratorForBulkInsertFiles implements pgx.CopyFromSource.
 type iteratorForBulkInsertFiles struct {
 	rows                 []BulkInsertFilesParams
@@ -66,29 +29,23 @@ func (r *iteratorForBulkInsertFiles) Next() bool {
 
 func (r iteratorForBulkInsertFiles) Values() ([]interface{}, error) {
 	return []interface{}{
-		r.rows[0].FolderID,
 		r.rows[0].VolumeID,
-		r.rows[0].Name,
+		r.rows[0].FolderID,
 		r.rows[0].Path,
-		r.rows[0].Extension,
-		r.rows[0].SizeBytes,
-		r.rows[0].DiskUsageBytes,
-		r.rows[0].Mtime,
-		r.rows[0].Ctime,
-		r.rows[0].Birthtime,
-		r.rows[0].Uid,
-		r.rows[0].Gid,
-		r.rows[0].Mode,
-		r.rows[0].Inode,
-		r.rows[0].Device,
-		r.rows[0].IsSymlink,
-		r.rows[0].SymlinkTarget,
-		r.rows[0].Mime,
-		r.rows[0].MediaKind,
-		r.rows[0].Encoding,
-		r.rows[0].HashAlgo,
-		r.rows[0].Hash,
 		r.rows[0].PathHash,
+		r.rows[0].Name,
+		r.rows[0].Extension,
+		r.rows[0].Mime,
+		r.rows[0].SizeBytes,
+		r.rows[0].ModifiedAt,
+		r.rows[0].AccessedAt,
+		r.rows[0].Mode,
+		r.rows[0].OwnerUid,
+		r.rows[0].OwnerGid,
+		r.rows[0].ContentHash,
+		r.rows[0].IsText,
+		r.rows[0].IsBinary,
+		r.rows[0].MediaKind,
 	}, nil
 }
 
@@ -97,49 +54,5 @@ func (r iteratorForBulkInsertFiles) Err() error {
 }
 
 func (q *Queries) BulkInsertFiles(ctx context.Context, arg []BulkInsertFilesParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"files"}, []string{"folder_id", "volume_id", "name", "path", "extension", "size_bytes", "disk_usage_bytes", "mtime", "ctime", "birthtime", "uid", "gid", "mode", "inode", "device", "is_symlink", "symlink_target", "mime", "media_kind", "encoding", "hash_algo", "hash", "path_hash"}, &iteratorForBulkInsertFiles{rows: arg})
-}
-
-// iteratorForBulkInsertFolders implements pgx.CopyFromSource.
-type iteratorForBulkInsertFolders struct {
-	rows                 []BulkInsertFoldersParams
-	skippedFirstNextCall bool
-}
-
-func (r *iteratorForBulkInsertFolders) Next() bool {
-	if len(r.rows) == 0 {
-		return false
-	}
-	if !r.skippedFirstNextCall {
-		r.skippedFirstNextCall = true
-		return true
-	}
-	r.rows = r.rows[1:]
-	return len(r.rows) > 0
-}
-
-func (r iteratorForBulkInsertFolders) Values() ([]interface{}, error) {
-	return []interface{}{
-		r.rows[0].ParentID,
-		r.rows[0].VolumeID,
-		r.rows[0].Name,
-		r.rows[0].Path,
-		r.rows[0].PathHash,
-		r.rows[0].Depth,
-		r.rows[0].Mtime,
-		r.rows[0].Ctime,
-		r.rows[0].Uid,
-		r.rows[0].Gid,
-		r.rows[0].Mode,
-		r.rows[0].IsSymlink,
-		r.rows[0].SymlinkTarget,
-	}, nil
-}
-
-func (r iteratorForBulkInsertFolders) Err() error {
-	return nil
-}
-
-func (q *Queries) BulkInsertFolders(ctx context.Context, arg []BulkInsertFoldersParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"folders"}, []string{"parent_id", "volume_id", "name", "path", "path_hash", "depth", "mtime", "ctime", "uid", "gid", "mode", "is_symlink", "symlink_target"}, &iteratorForBulkInsertFolders{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"files"}, []string{"volume_id", "folder_id", "path", "path_hash", "name", "extension", "mime", "size_bytes", "modified_at", "accessed_at", "mode", "owner_uid", "owner_gid", "content_hash", "is_text", "is_binary", "media_kind"}, &iteratorForBulkInsertFiles{rows: arg})
 }

@@ -53,17 +53,18 @@ func (q *Queries) CountScanJobsByStatus(ctx context.Context, status string) (int
 const createScanJob = `-- name: CreateScanJob :one
 
 INSERT INTO scan_jobs (
-    scan_id, volume_id, status, started_at
+    scan_id, volume_id, status, started_at, organization_id
 ) VALUES (
-    $1, $2, $3, $4
-) RETURNING scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at
+    $1, $2, $3, $4, $5
+) RETURNING scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id
 `
 
 type CreateScanJobParams struct {
-	ScanID    string             `json:"scan_id"`
-	VolumeID  pgtype.Text        `json:"volume_id"`
-	Status    string             `json:"status"`
-	StartedAt pgtype.Timestamptz `json:"started_at"`
+	ScanID         string             `json:"scan_id"`
+	VolumeID       pgtype.Text        `json:"volume_id"`
+	Status         string             `json:"status"`
+	StartedAt      pgtype.Timestamptz `json:"started_at"`
+	OrganizationID pgtype.Int8        `json:"organization_id"`
 }
 
 // Scan job management queries for PostgreSQL
@@ -73,6 +74,7 @@ func (q *Queries) CreateScanJob(ctx context.Context, arg CreateScanJobParams) (S
 		arg.VolumeID,
 		arg.Status,
 		arg.StartedAt,
+		arg.OrganizationID,
 	)
 	var i ScanJobs
 	err := row.Scan(
@@ -97,6 +99,7 @@ func (q *Queries) CreateScanJob(ctx context.Context, arg CreateScanJobParams) (S
 		&i.ScanOptions,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
@@ -133,7 +136,7 @@ func (q *Queries) FailScanJob(ctx context.Context, arg FailScanJobParams) error 
 }
 
 const getActiveScanJobs = `-- name: GetActiveScanJobs :many
-SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs
+SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs
 WHERE status IN ('pending', 'running')
 ORDER BY started_at ASC
 `
@@ -169,6 +172,56 @@ func (q *Queries) GetActiveScanJobs(ctx context.Context) ([]ScanJobs, error) {
 			&i.ScanOptions,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getActiveScanJobsByOrganization = `-- name: GetActiveScanJobsByOrganization :many
+SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs
+WHERE status IN ('pending', 'running') AND organization_id = $1
+ORDER BY started_at ASC
+`
+
+func (q *Queries) GetActiveScanJobsByOrganization(ctx context.Context, organizationID pgtype.Int8) ([]ScanJobs, error) {
+	rows, err := q.db.Query(ctx, getActiveScanJobsByOrganization, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ScanJobs{}
+	for rows.Next() {
+		var i ScanJobs
+		if err := rows.Scan(
+			&i.ScanID,
+			&i.VolumeID,
+			&i.Status,
+			&i.TotalFiles,
+			&i.ScannedFiles,
+			&i.FailedFiles,
+			&i.TotalBytes,
+			&i.ScannedBytes,
+			&i.ScanRateFilesPerSec,
+			&i.ScanRateMbPerSec,
+			&i.ErrorMessage,
+			&i.ErrorDetails,
+			&i.StartedAt,
+			&i.CompletedAt,
+			&i.PausedAt,
+			&i.PauseReason,
+			&i.DurationSeconds,
+			&i.TriggeredBy,
+			&i.ScanOptions,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -181,7 +234,7 @@ func (q *Queries) GetActiveScanJobs(ctx context.Context) ([]ScanJobs, error) {
 }
 
 const getCompletedScanJobs = `-- name: GetCompletedScanJobs :many
-SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs
+SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs
 WHERE status = 'completed'
 AND completed_at >= $1
 ORDER BY completed_at DESC
@@ -224,6 +277,7 @@ func (q *Queries) GetCompletedScanJobs(ctx context.Context, arg GetCompletedScan
 			&i.ScanOptions,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -236,7 +290,7 @@ func (q *Queries) GetCompletedScanJobs(ctx context.Context, arg GetCompletedScan
 }
 
 const getScanJobByScanID = `-- name: GetScanJobByScanID :one
-SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs WHERE scan_id = $1
+SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs WHERE scan_id = $1
 `
 
 func (q *Queries) GetScanJobByScanID(ctx context.Context, scanID string) (ScanJobs, error) {
@@ -264,12 +318,13 @@ func (q *Queries) GetScanJobByScanID(ctx context.Context, scanID string) (ScanJo
 		&i.ScanOptions,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const listScanJobs = `-- name: ListScanJobs :many
-SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs
+SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs
 ORDER BY started_at DESC
 LIMIT $1 OFFSET $2
 `
@@ -310,6 +365,63 @@ func (q *Queries) ListScanJobs(ctx context.Context, arg ListScanJobsParams) ([]S
 			&i.ScanOptions,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listScanJobsByOrganization = `-- name: ListScanJobsByOrganization :many
+SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs
+WHERE organization_id = $1
+ORDER BY started_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListScanJobsByOrganizationParams struct {
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	Limit          int32       `json:"limit"`
+	Offset         int32       `json:"offset"`
+}
+
+func (q *Queries) ListScanJobsByOrganization(ctx context.Context, arg ListScanJobsByOrganizationParams) ([]ScanJobs, error) {
+	rows, err := q.db.Query(ctx, listScanJobsByOrganization, arg.OrganizationID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ScanJobs{}
+	for rows.Next() {
+		var i ScanJobs
+		if err := rows.Scan(
+			&i.ScanID,
+			&i.VolumeID,
+			&i.Status,
+			&i.TotalFiles,
+			&i.ScannedFiles,
+			&i.FailedFiles,
+			&i.TotalBytes,
+			&i.ScannedBytes,
+			&i.ScanRateFilesPerSec,
+			&i.ScanRateMbPerSec,
+			&i.ErrorMessage,
+			&i.ErrorDetails,
+			&i.StartedAt,
+			&i.CompletedAt,
+			&i.PausedAt,
+			&i.PauseReason,
+			&i.DurationSeconds,
+			&i.TriggeredBy,
+			&i.ScanOptions,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -322,7 +434,7 @@ func (q *Queries) ListScanJobs(ctx context.Context, arg ListScanJobsParams) ([]S
 }
 
 const listScanJobsByStatus = `-- name: ListScanJobsByStatus :many
-SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs
+SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs
 WHERE status = $1
 ORDER BY started_at DESC
 LIMIT $2 OFFSET $3
@@ -365,6 +477,7 @@ func (q *Queries) ListScanJobsByStatus(ctx context.Context, arg ListScanJobsBySt
 			&i.ScanOptions,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -377,7 +490,7 @@ func (q *Queries) ListScanJobsByStatus(ctx context.Context, arg ListScanJobsBySt
 }
 
 const listScanJobsByVolume = `-- name: ListScanJobsByVolume :many
-SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at FROM scan_jobs
+SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs
 WHERE volume_id = $1
 ORDER BY started_at DESC
 LIMIT $2 OFFSET $3
@@ -420,6 +533,69 @@ func (q *Queries) ListScanJobsByVolume(ctx context.Context, arg ListScanJobsByVo
 			&i.ScanOptions,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listScanJobsByVolumeAndOrganization = `-- name: ListScanJobsByVolumeAndOrganization :many
+SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs
+WHERE volume_id = $1 AND organization_id = $2
+ORDER BY started_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListScanJobsByVolumeAndOrganizationParams struct {
+	VolumeID       pgtype.Text `json:"volume_id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	Limit          int32       `json:"limit"`
+	Offset         int32       `json:"offset"`
+}
+
+func (q *Queries) ListScanJobsByVolumeAndOrganization(ctx context.Context, arg ListScanJobsByVolumeAndOrganizationParams) ([]ScanJobs, error) {
+	rows, err := q.db.Query(ctx, listScanJobsByVolumeAndOrganization,
+		arg.VolumeID,
+		arg.OrganizationID,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ScanJobs{}
+	for rows.Next() {
+		var i ScanJobs
+		if err := rows.Scan(
+			&i.ScanID,
+			&i.VolumeID,
+			&i.Status,
+			&i.TotalFiles,
+			&i.ScannedFiles,
+			&i.FailedFiles,
+			&i.TotalBytes,
+			&i.ScannedBytes,
+			&i.ScanRateFilesPerSec,
+			&i.ScanRateMbPerSec,
+			&i.ErrorMessage,
+			&i.ErrorDetails,
+			&i.StartedAt,
+			&i.CompletedAt,
+			&i.PausedAt,
+			&i.PauseReason,
+			&i.DurationSeconds,
+			&i.TriggeredBy,
+			&i.ScanOptions,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}

@@ -1,5 +1,4 @@
-import type { VolumeResponse } from '@/api/client';
-import { useVolumes, useVolumeScanning } from '@/api/services';
+import { useGetVolumes, useGetVolumesIdScanStatus, usePostVolumesIdSizeRefresh } from '@/api/orval-generated/api';
 import { ExplorerView } from '@/components/explorer';
 import { FileMetadataView } from '@/components/explorer/FileMetadataView';
 import { Badge } from '@/components/ui/Badge';
@@ -24,46 +23,52 @@ import { useNavigate, useParams } from 'react-router-dom';
 const VolumeDetailsPage: React.FC = () => {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
-  const volumes = useAtomValue(volumesAtom);
-  const { fetchVolumes } = useVolumes();
-  const { scanVolume, scanResults, scanLoading, scanError } =
-    useVolumeScanning();
+  const { data: volumesData, isLoading: volumesLoading, error: volumesError } = useGetVolumes({});
+  const { data: scanStatus, isLoading: scanLoading, error: scanError } = useGetVolumesIdScanStatus(name || '', {
+    query: { enabled: !!name }
+  });
+  const sizeRefreshMutation = usePostVolumesIdSizeRefresh();
 
-  const [volume, setVolume] = useState<VolumeResponse | null>(null);
+  const [volume, setVolume] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Find volume in current data or fetch if needed
+  // Find volume in current data
   useEffect(() => {
-    const findVolume = () => {
-      const foundVolume = volumes.find((v) => v.name === name);
+    if (volumesLoading) {
+      setLoading(true);
+      return;
+    }
+
+    if (volumesError) {
+      setError('Failed to load volumes');
+      setLoading(false);
+      return;
+    }
+
+    if (volumesData?.data) {
+      const foundVolume = volumesData.data.find((v) => v.name === name);
       if (foundVolume) {
         setVolume(foundVolume);
-        setLoading(false);
         setError(null);
-      } else if (volumes.length === 0) {
-        // No volumes loaded yet, fetch all volumes
-        fetchVolumes({ q: name });
       } else {
-        // Volume not found in current data
         setError('Volume not found');
-        setLoading(false);
       }
-    };
-
-    if (name) {
-      findVolume();
     }
-  }, [name, volumes, fetchVolumes]);
+    
+    setLoading(false);
+  }, [name, volumesData, volumesLoading, volumesError]);
 
   const handleScan = async () => {
-    if (!volume) return;
+    if (!volume || !name) return;
 
     try {
-      const volumeId = volume.volume_id || volume.name;
-      await scanVolume(volumeId, { async: false });
+      await sizeRefreshMutation.mutateAsync({
+        id: name,
+        data: { method: 'du', async: false }
+      });
     } catch (error) {
-      console.error('Failed to scan volume:', error);
+      console.error('Failed to refresh volume size:', error);
     }
   };
 

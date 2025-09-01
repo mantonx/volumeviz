@@ -25,12 +25,18 @@ type Store interface {
 	FileMetadata() *repo.FileMetadataRepo
 	Alerts() repo.AlertsRepo
 	Search() *repo.SearchRepo
+	Users() repo.UsersRepo
+	Organizations() repo.OrganizationsRepo
 
 	// Health check
 	Health(ctx context.Context) error
 
 	// Raw SQLC queries access (for services that need direct query access)
 	Queries() interface{}
+
+	// Direct convenience methods for common operations
+	GetUserByID(ctx context.Context, id int64) (User, error)
+	GetOrganizationByID(ctx context.Context, id int64) (Organization, error)
 }
 
 // TxStore provides access to repositories within a transaction context
@@ -45,4 +51,6 @@ type TxStore interface {
 	Folders() *repo.FoldersRepo
 	FileMetadata() *repo.FileMetadataRepo
 	Alerts() repo.AlertsRepo
+	Users() repo.UsersRepo
+	Organizations() repo.OrganizationsRepo
 }

@@ -54,7 +54,7 @@ import type {
   SearchScope,
   FileTypeCategory,
 } from './SearchInterface.types';
-import { searchUtils } from '../../../utils';
+import { searchUtils } from '@/utils';
 
 /**
  * SearchInterface - Advanced search with filters and saved searches

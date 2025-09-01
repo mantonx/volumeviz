@@ -5,8 +5,8 @@
 
 set -euo pipefail
 
-# Default configuration
-MIGRATE_PATH="${MIGRATE_PATH:-migrations}"
+# Default configuration - will be set based on database type
+MIGRATE_PATH_BASE="${MIGRATE_PATH:-migrations}"
 DB_TYPE="${DB_TYPE:-postgres}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
@@ -16,8 +16,18 @@ DB_NAME="${DB_NAME:-volumeviz}"
 DB_PATH="${DB_PATH:-./volumeviz.db}"
 DB_SSLMODE="${DB_SSLMODE:-disable}"
 
+# Set migration path based on database type
+if [ "$DB_TYPE" = "postgres" ] || [ "$DB_TYPE" = "postgresql" ]; then
+    MIGRATE_PATH="$MIGRATE_PATH_BASE/postgresql"
+elif [ "$DB_TYPE" = "sqlite" ]; then
+    MIGRATE_PATH="$MIGRATE_PATH_BASE/sqlite"
+else
+    echo "Error: Supported database types are 'postgres' and 'sqlite'"
+    exit 1
+fi
+
 # Construct database URL
-if [ "$DB_TYPE" = "postgres" ]; then
+if [ "$DB_TYPE" = "postgres" ] || [ "$DB_TYPE" = "postgresql" ]; then
     DB_URL="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE"
 elif [ "$DB_TYPE" = "sqlite" ]; then
     DB_URL="sqlite3://$DB_PATH"

@@ -36,7 +36,7 @@ import {
   formatBytes,
   formatDate,
   formatPercentage,
-} from '../../../utils/formatters';
+} from '@/utils/formatters';
 
 // Color palette for volumes
 const VOLUME_COLORS = [

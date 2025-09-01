@@ -9,7 +9,7 @@ import {
   getTimeRangeCutoff,
   SIZE_RANGES,
 } from './data-transformations';
-import type { VolumeResponse, ScanResponse } from '../../api/client';
+import type { VolumeResponse, ScanResponse } from '@/api/client';
 
 const mockVolumes: VolumeResponse[] = [
   {

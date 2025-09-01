@@ -20,13 +20,11 @@ import { useRealtime } from '@/providers/realtime';
 import { ReadyState } from 'react-use-websocket';
 import {
   themeAtom,
-  apiStatusAtom,
-  requestCountAtom,
   websocketEnabledAtom,
 } from '@/store';
 import { cn } from '@/utils';
 import type { HeaderProps, ThemeOption, ApiStatus } from './Header.types';
-import type { WebSocketStatus } from '@/store/atoms/websocket';
+import type { WebSocketStatus } from '@/atoms/websocket';
 
 /**
  * Theme icon component mapping theme names to appropriate icons
@@ -137,8 +135,9 @@ export const Header: React.FC<HeaderProps> = ({
   setSidebarOpen,
 }) => {
   const [theme, setTheme] = useAtom(themeAtom);
-  const requestCount = useAtomValue(requestCountAtom);
-  const apiStatus = useAtomValue(apiStatusAtom);
+  // API status is now handled by TanStack Query - using placeholder values
+  const requestCount = 0;
+  const apiStatus: ApiStatus = 'online';
   const websocketEnabled = useAtomValue(websocketEnabledAtom);
   const {
     connectionStatus: wsReadyState,

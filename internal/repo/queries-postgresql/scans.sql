@@ -2,9 +2,9 @@
 
 -- name: CreateScanJob :one
 INSERT INTO scan_jobs (
-    scan_id, volume_id, status, started_at
+    scan_id, volume_id, status, started_at, organization_id
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5
 ) RETURNING *;
 
 -- name: GetScanJobByScanID :one
@@ -15,11 +15,23 @@ SELECT * FROM scan_jobs
 ORDER BY started_at DESC
 LIMIT $1 OFFSET $2;
 
+-- name: ListScanJobsByOrganization :many
+SELECT * FROM scan_jobs
+WHERE organization_id = $1
+ORDER BY started_at DESC
+LIMIT $2 OFFSET $3;
+
 -- name: ListScanJobsByVolume :many
 SELECT * FROM scan_jobs
 WHERE volume_id = $1
 ORDER BY started_at DESC
 LIMIT $2 OFFSET $3;
+
+-- name: ListScanJobsByVolumeAndOrganization :many
+SELECT * FROM scan_jobs
+WHERE volume_id = $1 AND organization_id = $2
+ORDER BY started_at DESC
+LIMIT $3 OFFSET $4;
 
 -- name: ListScanJobsByStatus :many
 SELECT * FROM scan_jobs
@@ -72,6 +84,11 @@ WHERE scan_id = $1;
 -- name: GetActiveScanJobs :many
 SELECT * FROM scan_jobs
 WHERE status IN ('pending', 'running')
+ORDER BY started_at ASC;
+
+-- name: GetActiveScanJobsByOrganization :many
+SELECT * FROM scan_jobs
+WHERE status IN ('pending', 'running') AND organization_id = $1
 ORDER BY started_at ASC;
 
 -- name: GetCompletedScanJobs :many

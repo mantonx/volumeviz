@@ -36,7 +36,7 @@ import {
   formatBytes,
   formatDate,
   formatPercentage,
-} from '../../../utils/formatters';
+} from '@/utils/formatters';
 
 /**
  * VolumeComparisonChart component for side-by-side historical analysis of multiple volumes.

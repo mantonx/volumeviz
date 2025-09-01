@@ -207,7 +207,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.CreateAlertDestinationParams"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.CreateAlertDestinationParams"
                         }
                     }
                 ],
@@ -215,7 +215,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.AlertDestination"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination"
                         }
                     },
                     "400": {
@@ -259,7 +259,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.AlertDestination"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination"
                         }
                     },
                     "404": {
@@ -302,7 +302,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.UpdateAlertDestinationParams"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.UpdateAlertDestinationParams"
                         }
                     }
                 ],
@@ -557,7 +557,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.CreateAlertRouteParams"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.CreateAlertRouteParams"
                         }
                     }
                 ],
@@ -565,7 +565,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.AlertRoute"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRoute"
                         }
                     },
                     "400": {
@@ -609,7 +609,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.AlertRoute"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRoute"
                         }
                     },
                     "404": {
@@ -652,7 +652,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.UpdateAlertRouteParams"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.UpdateAlertRouteParams"
                         }
                     }
                 ],
@@ -790,7 +790,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.CreateAlertRuleParams"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.CreateAlertRuleParams"
                         }
                     }
                 ],
@@ -798,7 +798,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.AlertRule"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule"
                         }
                     },
                     "400": {
@@ -842,7 +842,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.AlertRule"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule"
                         }
                     },
                     "404": {
@@ -885,7 +885,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.UpdateAlertRuleParams"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.UpdateAlertRuleParams"
                         }
                     }
                 ],
@@ -1026,7 +1026,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Alert"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.Alert"
                         }
                     },
                     "404": {
@@ -1061,7 +1061,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/diag.RealtimeDiagnostics"
+                            "$ref": "#/definitions/internal_api_v1_diag.RealtimeDiagnostics"
                         }
                     }
                 }
@@ -1129,7 +1129,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Folder browsing data retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/explorer.FolderBrowsingResponse"
+                            "$ref": "#/definitions/internal_api_v1_explorer.FolderBrowsingResponse"
                         }
                     },
                     "400": {
@@ -1239,7 +1239,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Files retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/explorer.GetFilesByFolderResponse"
+                            "$ref": "#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse"
                         }
                     },
                     "400": {
@@ -1315,7 +1315,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Files retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/explorer.GetFilesByFolderResponse"
+                            "$ref": "#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse"
                         }
                     },
                     "400": {
@@ -1391,7 +1391,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Files retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/explorer.GetFilesByFolderResponse"
+                            "$ref": "#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse"
                         }
                     },
                     "400": {
@@ -1508,7 +1508,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Files retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/explorer.PaginatedFileResponse"
+                            "$ref": "#/definitions/internal_api_v1_explorer.PaginatedFileResponse"
                         }
                     },
                     "400": {
@@ -1576,7 +1576,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Files retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/explorer.GetFilesByFolderResponse"
+                            "$ref": "#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse"
                         }
                     },
                     "400": {
@@ -1645,7 +1645,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Files retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/explorer.GetFilesByFolderResponse"
+                            "$ref": "#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse"
                         }
                     },
                     "400": {
@@ -1720,7 +1720,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Folder tree retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/explorer.GetFolderTreeResponse"
+                            "$ref": "#/definitions/internal_api_v1_explorer.GetFolderTreeResponse"
                         }
                     },
                     "400": {
@@ -1802,7 +1802,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Children retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/explorer.GetTreeChildrenResponse"
+                            "$ref": "#/definitions/internal_api_v1_explorer.GetTreeChildrenResponse"
                         }
                     },
                     "400": {
@@ -1884,7 +1884,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Files retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/metadata.GetFilesByDurationResponse"
+                            "$ref": "#/definitions/internal_api_v1_metadata.GetFilesByDurationResponse"
                         }
                     },
                     "400": {
@@ -1976,7 +1976,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Files retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/metadata.GetFilesByLocationResponse"
+                            "$ref": "#/definitions/internal_api_v1_metadata.GetFilesByLocationResponse"
                         }
                     },
                     "400": {
@@ -2156,7 +2156,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Files retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/metadata.GetFilesByResolutionResponse"
+                            "$ref": "#/definitions/internal_api_v1_metadata.GetFilesByResolutionResponse"
                         }
                     },
                     "400": {
@@ -2325,28 +2325,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/gin.H"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "filters": {
-                                            "type": "object"
-                                        },
-                                        "mounts": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/mounts.MountCatalogResponse"
-                                            }
-                                        },
-                                        "pagination": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -2383,7 +2362,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/mounts.DiscoverMountsRequest"
+                            "$ref": "#/definitions/internal_api_v1_mounts.DiscoverMountsRequest"
                         }
                     }
                 ],
@@ -2391,7 +2370,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mounts.DiscoverMountsResponse"
+                            "$ref": "#/definitions/internal_api_v1_mounts.DiscoverMountsResponse"
                         }
                     },
                     "400": {
@@ -2423,7 +2402,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mounts.MountCatalogSummaryResponse"
+                            "$ref": "#/definitions/internal_api_v1_mounts.MountCatalogSummaryResponse"
                         }
                     },
                     "500": {
@@ -2459,7 +2438,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mounts.MountCatalogResponse"
+                            "$ref": "#/definitions/internal_api_v1_mounts.MountCatalogResponse"
                         }
                     },
                     "400": {
@@ -2511,19 +2490,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/gin.H"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "is_tracked": {
-                                            "type": "boolean"
-                                        }
-                                    }
-                                }
-                            ]
+                            "type": "object"
                         }
                     }
                 ],
@@ -2531,7 +2498,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mounts.MountCatalogResponse"
+                            "$ref": "#/definitions/internal_api_v1_mounts.MountCatalogResponse"
                         }
                     },
                     "400": {
@@ -2550,6 +2517,117 @@ const docTemplate = `{
                         "description": "Not Implemented",
                         "schema": {
                             "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/me": {
+            "get": {
+                "description": "Get the organization details for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get current organization",
+                "responses": {
+                    "200": {
+                        "description": "Organization details with stats",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_organizations.OrganizationWithStatsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Organization not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update organization details (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Update current organization",
+                "parameters": [
+                    {
+                        "description": "Organization update details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_organizations.UpdateOrganizationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated organization details",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_organizations.OrganizationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Organization not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -2583,7 +2661,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.ListRulesResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.ListRulesResponse"
                         }
                     },
                     "500": {
@@ -2613,7 +2691,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/rules.CreateRuleRequest"
+                            "$ref": "#/definitions/internal_api_v1_rules.CreateRuleRequest"
                         }
                     }
                 ],
@@ -2621,7 +2699,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/rules.RuleResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.RuleResponse"
                         }
                     },
                     "400": {
@@ -2667,7 +2745,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.ListRuleTemplatesResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.ListRuleTemplatesResponse"
                         }
                     }
                 }
@@ -2696,7 +2774,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.RuleResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.RuleResponse"
                         }
                     },
                     "400": {
@@ -2739,7 +2817,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/rules.UpdateRuleRequest"
+                            "$ref": "#/definitions/internal_api_v1_rules.UpdateRuleRequest"
                         }
                     }
                 ],
@@ -2747,7 +2825,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.RuleResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.RuleResponse"
                         }
                     },
                     "400": {
@@ -2827,7 +2905,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.RuleResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.RuleResponse"
                         }
                     },
                     "400": {
@@ -2874,7 +2952,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.RuleResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.RuleResponse"
                         }
                     },
                     "400": {
@@ -3059,7 +3137,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/search.SearchFilesResponse"
+                            "$ref": "#/definitions/internal_api_v1_search.SearchFilesResponse"
                         }
                     }
                 }
@@ -3106,7 +3184,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/search.ListSavedSearchesResponse"
+                            "$ref": "#/definitions/internal_api_v1_search.ListSavedSearchesResponse"
                         }
                     }
                 }
@@ -3130,7 +3208,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/search.CreateSavedSearchRequest"
+                            "$ref": "#/definitions/internal_api_v1_search.CreateSavedSearchRequest"
                         }
                     }
                 ],
@@ -3138,7 +3216,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/search.SavedSearch"
+                            "$ref": "#/definitions/internal_api_v1_search.SavedSearch"
                         }
                     }
                 }
@@ -3170,7 +3248,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/search.SavedSearch"
+                            "$ref": "#/definitions/internal_api_v1_search.SavedSearch"
                         }
                     }
                 }
@@ -3201,7 +3279,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/search.UpdateSavedSearchRequest"
+                            "$ref": "#/definitions/internal_api_v1_search.UpdateSavedSearchRequest"
                         }
                     }
                 ],
@@ -3209,7 +3287,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/search.SavedSearch"
+                            "$ref": "#/definitions/internal_api_v1_search.SavedSearch"
                         }
                     }
                 }
@@ -3268,7 +3346,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/search.SearchFilesResponse"
+                            "$ref": "#/definitions/internal_api_v1_search.SearchFilesResponse"
                         }
                     }
                 }
@@ -3313,7 +3391,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/search.SearchSuggestionsResponse"
+                            "$ref": "#/definitions/internal_api_v1_search.SearchSuggestionsResponse"
                         }
                     }
                 }
@@ -3338,7 +3416,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/rules.ApplyTrackingRulesRequest"
+                            "$ref": "#/definitions/internal_api_v1_rules.ApplyTrackingRulesRequest"
                         }
                     }
                 ],
@@ -3346,7 +3424,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.ApplyTrackingRulesResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.ApplyTrackingRulesResponse"
                         }
                     },
                     "500": {
@@ -3372,7 +3450,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.ListMountOverridesResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.ListMountOverridesResponse"
                         }
                     },
                     "500": {
@@ -3402,7 +3480,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/rules.CreateMountOverrideRequest"
+                            "$ref": "#/definitions/internal_api_v1_rules.CreateMountOverrideRequest"
                         }
                     }
                 ],
@@ -3410,7 +3488,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/rules.MountOverrideResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.MountOverrideResponse"
                         }
                     },
                     "400": {
@@ -3488,7 +3566,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/rules.PreviewRequest"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.PreviewRequest"
                         }
                     }
                 ],
@@ -3496,7 +3574,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.PreviewResponse"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.PreviewResponse"
                         }
                     },
                     "500": {
@@ -3522,7 +3600,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.TrackingRulesConfigResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.TrackingRulesConfigResponse"
                         }
                     },
                     "500": {
@@ -3552,7 +3630,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/rules.UpdateTrackingRulesConfigRequest"
+                            "$ref": "#/definitions/internal_api_v1_rules.UpdateTrackingRulesConfigRequest"
                         }
                     }
                 ],
@@ -3560,7 +3638,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rules.TrackingRulesConfigResponse"
+                            "$ref": "#/definitions/internal_api_v1_rules.TrackingRulesConfigResponse"
                         }
                     },
                     "400": {
@@ -3573,6 +3651,492 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/accept-invitation": {
+            "post": {
+                "description": "Accept an organization invitation for an existing user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Accept organization invitation",
+                "parameters": [
+                    {
+                        "description": "Invitation acceptance",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.AcceptInvitationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/csrf": {
+            "get": {
+                "description": "Get CSRF token for state-changing operations",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get CSRF token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user and return JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User login",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "description": "Logout user and revoke session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Logout",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "description": "Get authenticated user's profile information",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get current user profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.UserProfile"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/password/change": {
+            "post": {
+                "description": "Change authenticated user's password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change password",
+                "parameters": [
+                    {
+                        "description": "Password change request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.PasswordChangeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/password/force-change": {
+            "post": {
+                "description": "Change default admin password (requires current default password)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Force password change for default admin",
+                "parameters": [
+                    {
+                        "description": "Forced password change request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.ForcePasswordChangeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/password/reset": {
+            "post": {
+                "description": "Request password reset email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Request password reset",
+                "parameters": [
+                    {
+                        "description": "Password reset request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.PasswordResetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Refresh access token using refresh token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "description": "Refresh token request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Register a new user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User registration",
+                "parameters": [
+                    {
+                        "description": "Registration details",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register/invitation": {
+            "post": {
+                "description": "Register a new user with an organization invitation token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register with invitation token",
+                "parameters": [
+                    {
+                        "description": "Registration with invitation",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.RegisterWithInvitationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
                         }
                     }
                 }
@@ -3954,7 +4518,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_api_v1_previews.PreviewRequest"
+                            "$ref": "#/definitions/internal_api_v1_previews.PreviewRequest"
                         }
                     }
                 ],
@@ -3962,7 +4526,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Preview generated successfully",
                         "schema": {
-                            "$ref": "#/definitions/previews.PreviewResponse"
+                            "$ref": "#/definitions/internal_api_v1_previews.PreviewResponse"
                         }
                     },
                     "400": {
@@ -4214,7 +4778,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Paginated list of orphaned volumes",
                         "schema": {
-                            "$ref": "#/definitions/utils.PagedResponse"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse"
                         }
                     },
                     "400": {
@@ -4457,7 +5021,7 @@ const docTemplate = `{
         },
         "/scans/{scanId}/progress": {
             "get": {
-                "description": "Get comprehensive progress information including phases, items, and errors",
+                "description": "Get comprehensive progress information including phases, sub-phases, items, errors, and confidence indicators",
                 "consumes": [
                     "application/json"
                 ],
@@ -4467,7 +5031,7 @@ const docTemplate = `{
                 "tags": [
                     "scan"
                 ],
-                "summary": "Get detailed scan progress",
+                "summary": "Get detailed scan progress with sub-phase information",
                 "parameters": [
                     {
                         "type": "string",
@@ -4479,7 +5043,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Comprehensive scan progress",
+                        "description": "Comprehensive scan progress with sub-phase details",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -5206,7 +5770,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Paginated list of volumes",
                         "schema": {
-                            "$ref": "#/definitions/utils.PagedResponse"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse"
                         }
                     },
                     "400": {
@@ -5657,7 +6221,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of container attachments",
                         "schema": {
-                            "$ref": "#/definitions/utils.PagedResponse"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse"
                         }
                     },
                     "400": {
@@ -5748,7 +6312,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Volume ID",
-                        "name": "id",
+                        "name": "volumeId",
                         "in": "path",
                         "required": true
                     }
@@ -6599,6 +7163,16 @@ const docTemplate = `{
                 "filesystem_capacity": {
                     "$ref": "#/definitions/FilesystemCapacity"
                 },
+                "filesystem_progress": {
+                    "description": "Background indexing progress details",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "filesystem_status": {
+                    "description": "Background filesystem indexing status",
+                    "type": "string",
+                    "example": "indexing"
+                },
                 "is_orphaned": {
                     "type": "boolean",
                     "example": false
@@ -6620,6 +7194,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2023-01-01T12:00:00Z"
                 },
+                "last_scan_id": {
+                    "description": "Latest scan ID for tracking",
+                    "type": "string",
+                    "example": "scan_abc123def"
+                },
                 "mountpoint": {
                     "type": "string",
                     "example": "/var/lib/docker/volumes/tv-shows-readonly/_data"
@@ -6627,6 +7206,16 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "tv-shows-readonly"
+                },
+                "scan_progress": {
+                    "description": "Latest scan progress (0-100)",
+                    "type": "integer",
+                    "example": 100
+                },
+                "scan_status": {
+                    "description": "Scan status information",
+                    "type": "string",
+                    "example": "completed"
                 },
                 "scope": {
                     "type": "string",
@@ -6638,642 +7227,33 @@ const docTemplate = `{
                 }
             }
         },
-        "diag.RealtimeDiagnostics": {
-            "type": "object",
-            "properties": {
-                "active_connections": {
-                    "type": "integer"
-                },
-                "features": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "mode": {
-                    "$ref": "#/definitions/diag.RealtimeMode"
-                },
-                "polling_enabled": {
-                    "type": "boolean"
-                },
-                "polling_interval_ms": {
-                    "type": "integer"
-                },
-                "sse_enabled": {
-                    "type": "boolean"
-                },
-                "websocket_enabled": {
-                    "type": "boolean"
-                },
-                "websocket_url": {
-                    "type": "string"
-                }
-            }
-        },
-        "diag.RealtimeMode": {
-            "type": "string",
-            "enum": [
-                "ws",
-                "polling",
-                "sse"
-            ],
-            "x-enum-varnames": [
-                "ModeWebSocket",
-                "ModePolling",
-                "ModeSSE"
-            ]
-        },
-        "explorer.AppliedFilters": {
-            "description": "Applied filters for the file query",
-            "type": "object",
-            "properties": {
-                "file_type": {
-                    "type": "string",
-                    "example": "pdf"
-                },
-                "max_size": {
-                    "type": "integer",
-                    "example": 10485760
-                },
-                "mime_type": {
-                    "type": "string",
-                    "example": "application/pdf"
-                },
-                "min_size": {
-                    "type": "integer",
-                    "example": 1024
-                }
-            }
-        },
-        "explorer.EnhancedFileItem": {
-            "description": "Enhanced file item with performance and metadata information",
-            "type": "object",
-            "properties": {
-                "disk_usage": {
-                    "type": "integer",
-                    "example": 1024000
-                },
-                "extension": {
-                    "type": "string",
-                    "example": "pdf"
-                },
-                "id": {
-                    "type": "integer",
-                    "example": 123
-                },
-                "is_directory": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "media_kind": {
-                    "type": "string",
-                    "example": "document"
-                },
-                "media_type": {
-                    "type": "string",
-                    "example": "application/pdf"
-                },
-                "modified_time": {
-                    "type": "string",
-                    "example": "2024-01-15T10:30:00Z"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "document.pdf"
-                },
-                "path": {
-                    "type": "string",
-                    "example": "/home/user/documents/document.pdf"
-                },
-                "size": {
-                    "type": "integer",
-                    "example": 1024000
-                }
-            }
-        },
-        "explorer.FileInfo": {
-            "description": "File or directory information for explorer browsing",
-            "type": "object",
-            "properties": {
-                "extension": {
-                    "type": "string",
-                    "example": "pdf"
-                },
-                "is_directory": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "media_type": {
-                    "type": "string",
-                    "example": "application/pdf"
-                },
-                "modified_time": {
-                    "type": "string",
-                    "example": "2024-01-15T10:30:00Z"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "document.pdf"
-                },
-                "path": {
-                    "type": "string",
-                    "example": "/home/user/documents/document.pdf"
-                },
-                "size": {
-                    "type": "integer",
-                    "example": 1024000
-                }
-            }
-        },
-        "explorer.FolderBrowsingItem": {
-            "description": "A folder item with parent/child relationship information",
-            "type": "object",
-            "properties": {
-                "file_count": {
-                    "type": "integer",
-                    "example": 42
-                },
-                "folder_count": {
-                    "type": "integer",
-                    "example": 5
-                },
-                "has_children": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "id": {
-                    "type": "integer",
-                    "example": 123
-                },
-                "is_directory": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "name": {
-                    "type": "string",
-                    "example": "documents"
-                },
-                "path": {
-                    "type": "string",
-                    "example": "/home/user/documents"
-                },
-                "total_size": {
-                    "type": "integer",
-                    "example": 1073741824
-                }
-            }
-        },
-        "explorer.FolderBrowsingResponse": {
-            "description": "Response containing folder hierarchy with parent/child relationships",
-            "type": "object",
-            "properties": {
-                "children": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/explorer.FolderBrowsingItem"
-                    }
-                },
-                "current": {
-                    "$ref": "#/definitions/explorer.FolderBrowsingItem"
-                },
-                "current_path": {
-                    "type": "string",
-                    "example": "/home/user/documents"
-                },
-                "limit": {
-                    "type": "integer",
-                    "example": 100
-                },
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "parent": {
-                    "$ref": "#/definitions/explorer.FolderBrowsingItem"
-                },
-                "total_children": {
-                    "type": "integer",
-                    "example": 15
-                },
-                "total_pages": {
-                    "type": "integer",
-                    "example": 2
-                },
-                "volume_id": {
-                    "type": "string",
-                    "example": "vol_123"
-                }
-            }
-        },
-        "explorer.FolderNode": {
-            "description": "A node in the hierarchical folder structure",
-            "type": "object",
-            "properties": {
-                "children": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/explorer.FolderNode"
-                    }
-                },
-                "file_count": {
-                    "type": "integer",
-                    "example": 15
-                },
-                "folder_count": {
-                    "type": "integer",
-                    "example": 3
-                },
-                "name": {
-                    "type": "string",
-                    "example": "documents"
-                },
-                "path": {
-                    "type": "string",
-                    "example": "/home/user/documents"
-                },
-                "total_size": {
-                    "type": "integer",
-                    "example": 52428800
-                }
-            }
-        },
-        "explorer.GetFilesByFolderResponse": {
-            "description": "Response containing files in a folder with pagination",
-            "type": "object",
-            "properties": {
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/explorer.FileInfo"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "example": 100
-                },
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "total_count": {
-                    "type": "integer",
-                    "example": 250
-                },
-                "total_pages": {
-                    "type": "integer",
-                    "example": 3
-                }
-            }
-        },
-        "explorer.GetFolderTreeResponse": {
-            "description": "Response containing hierarchical folder structure",
-            "type": "object",
-            "properties": {
-                "tree": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/explorer.FolderNode"
-                    }
-                }
-            }
-        },
-        "explorer.GetTreeChildrenResponse": {
-            "description": "Response containing immediate children of a path",
-            "type": "object",
-            "properties": {
-                "children": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/explorer.TreeChildItem"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "example": 100
-                },
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "parent_path": {
-                    "type": "string",
-                    "example": "/home/user"
-                },
-                "total_count": {
-                    "type": "integer",
-                    "example": 25
-                },
-                "total_pages": {
-                    "type": "integer",
-                    "example": 1
-                }
-            }
-        },
-        "explorer.PaginatedFileResponse": {
-            "description": "Enhanced response for paginated file listing with performance metadata",
-            "type": "object",
-            "properties": {
-                "cache_hit": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/explorer.EnhancedFileItem"
-                    }
-                },
-                "filters": {
-                    "$ref": "#/definitions/explorer.AppliedFilters"
-                },
-                "has_more": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "limit": {
-                    "type": "integer",
-                    "example": 50
-                },
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "query_time_ms": {
-                    "type": "integer",
-                    "example": 45
-                },
-                "sort_by": {
-                    "type": "string",
-                    "example": "name"
-                },
-                "sort_order": {
-                    "type": "string",
-                    "example": "asc"
-                },
-                "total_count": {
-                    "type": "integer",
-                    "example": 1250
-                },
-                "total_pages": {
-                    "type": "integer",
-                    "example": 25
-                }
-            }
-        },
-        "explorer.TreeChildItem": {
-            "description": "A child file or folder in tree navigation",
-            "type": "object",
-            "properties": {
-                "extension": {
-                    "type": "string",
-                    "example": "pdf"
-                },
-                "has_children": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "is_directory": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "media_type": {
-                    "type": "string",
-                    "example": "application/pdf"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "documents"
-                },
-                "path": {
-                    "type": "string",
-                    "example": "/home/user/documents"
-                },
-                "size": {
-                    "type": "integer",
-                    "example": 1024000
-                }
-            }
-        },
         "gin.H": {
             "type": "object",
             "additionalProperties": {}
         },
-        "github_com_mantonx_volumeviz_internal_api_v1_previews.PreviewRequest": {
-            "type": "object",
-            "required": [
-                "file_id",
-                "file_path",
-                "mime_type",
-                "size",
-                "type"
-            ],
-            "properties": {
-                "file_hash": {
-                    "type": "string"
-                },
-                "file_id": {
-                    "type": "integer"
-                },
-                "file_path": {
-                    "type": "string"
-                },
-                "mime_type": {
-                    "type": "string"
-                },
-                "size": {
-                    "type": "string",
-                    "enum": [
-                        "small",
-                        "medium",
-                        "large"
-                    ]
-                },
-                "time_offset": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string",
-                    "enum": [
-                        "thumbnail",
-                        "poster",
-                        "cover"
-                    ]
-                }
-            }
-        },
-        "github_com_mantonx_volumeviz_internal_models.ErrorResponse": {
+        "github_com_mantonx_volumeviz_internal_api_utils.PagedResponse": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "details": {
-                    "type": "string"
-                },
-                "error": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_mantonx_volumeviz_internal_models.FilesystemIndexingRequest": {
-            "type": "object",
-            "properties": {
-                "delta_mode": {
-                    "type": "boolean"
-                },
-                "full_scan": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "metadata.FileDurationItem": {
-            "type": "object",
-            "properties": {
-                "duration_seconds": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "media_type": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                },
-                "size": {
-                    "type": "integer"
-                }
-            }
-        },
-        "metadata.FileLocationItem": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "latitude": {
-                    "type": "number"
-                },
-                "longitude": {
-                    "type": "number"
-                },
-                "media_type": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                },
-                "size": {
-                    "type": "integer"
-                }
-            }
-        },
-        "metadata.FileResolutionItem": {
-            "type": "object",
-            "properties": {
-                "height": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "media_type": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                },
-                "size": {
-                    "type": "integer"
-                },
-                "width": {
-                    "type": "integer"
-                }
-            }
-        },
-        "metadata.GetFilesByDurationResponse": {
-            "type": "object",
-            "properties": {
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/metadata.FileDurationItem"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
+                "data": {},
+                "filters": {
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "page": {
                     "type": "integer"
                 },
-                "total_count": {
+                "page_size": {
                     "type": "integer"
                 },
-                "total_pages": {
+                "sort": {
+                    "type": "string"
+                },
+                "total": {
                     "type": "integer"
                 }
             }
         },
-        "metadata.GetFilesByLocationResponse": {
-            "type": "object",
-            "properties": {
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/metadata.FileLocationItem"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total_count": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
-        },
-        "metadata.GetFilesByResolutionResponse": {
-            "type": "object",
-            "properties": {
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/metadata.FileResolutionItem"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total_count": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.Alert": {
+        "github_com_mantonx_volumeviz_internal_models.Alert": {
             "type": "object",
             "properties": {
                 "annotations": {
@@ -7313,7 +7293,7 @@ const docTemplate = `{
                     "description": "Relationships",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/models.AlertRule"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule"
                         }
                     ]
                 },
@@ -7335,7 +7315,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.AlertDestination": {
+        "github_com_mantonx_volumeviz_internal_models.AlertDestination": {
             "type": "object",
             "properties": {
                 "config": {
@@ -7363,7 +7343,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.AlertRoute": {
+        "github_com_mantonx_volumeviz_internal_models.AlertRoute": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -7373,7 +7353,7 @@ const docTemplate = `{
                     "description": "Relationships",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/models.AlertDestination"
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination"
                         }
                     ]
                 },
@@ -7405,7 +7385,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.AlertRule": {
+        "github_com_mantonx_volumeviz_internal_models.AlertRule": {
             "type": "object",
             "properties": {
                 "condition": {
@@ -7456,7 +7436,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.CreateAlertDestinationParams": {
+        "github_com_mantonx_volumeviz_internal_models.CreateAlertDestinationParams": {
             "type": "object",
             "required": [
                 "config",
@@ -7486,7 +7466,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.CreateAlertRouteParams": {
+        "github_com_mantonx_volumeviz_internal_models.CreateAlertRouteParams": {
             "type": "object",
             "required": [
                 "destination_id",
@@ -7517,7 +7497,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.CreateAlertRuleParams": {
+        "github_com_mantonx_volumeviz_internal_models.CreateAlertRuleParams": {
             "type": "object",
             "required": [
                 "condition",
@@ -7575,7 +7555,35 @@ const docTemplate = `{
                 }
             }
         },
-        "models.UpdateAlertDestinationParams": {
+        "github_com_mantonx_volumeviz_internal_models.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_models.FilesystemIndexingRequest": {
+            "type": "object",
+            "properties": {
+                "delta_mode": {
+                    "type": "boolean"
+                },
+                "full_scan": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_models.UpdateAlertDestinationParams": {
             "type": "object",
             "required": [
                 "config",
@@ -7608,7 +7616,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.UpdateAlertRouteParams": {
+        "github_com_mantonx_volumeviz_internal_models.UpdateAlertRouteParams": {
             "type": "object",
             "required": [
                 "destination_id",
@@ -7642,7 +7650,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.UpdateAlertRuleParams": {
+        "github_com_mantonx_volumeviz_internal_models.UpdateAlertRuleParams": {
             "type": "object",
             "required": [
                 "condition",
@@ -7703,7 +7711,1091 @@ const docTemplate = `{
                 }
             }
         },
-        "mounts.DiscoverMountsRequest": {
+        "github_com_mantonx_volumeviz_internal_services_rules.ActionBreakdown": {
+            "type": "object",
+            "properties": {
+                "exclude": {
+                    "type": "integer"
+                },
+                "include": {
+                    "type": "integer"
+                },
+                "unmatched": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_services_rules.ConditionResult": {
+            "type": "object",
+            "properties": {
+                "error": {},
+                "field_name": {
+                    "type": "string"
+                },
+                "matched": {
+                    "type": "boolean"
+                },
+                "operator": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_services_rules.ConflictAnalysis": {
+            "type": "object",
+            "properties": {
+                "conflicting_rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RuleConflict"
+                    }
+                },
+                "has_conflicts": {
+                    "type": "boolean"
+                },
+                "resolution": {
+                    "description": "how conflicts are resolved",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_services_rules.MountPreview": {
+            "type": "object",
+            "properties": {
+                "action_changed": {
+                    "description": "whether action would change",
+                    "type": "boolean"
+                },
+                "all_matches": {
+                    "description": "all matching rules (if detailed)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RuleMatchSummary"
+                    }
+                },
+                "conflict_details": {
+                    "description": "rule conflicts if any",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.ConflictAnalysis"
+                        }
+                    ]
+                },
+                "current_action": {
+                    "description": "current tracking status",
+                    "type": "string"
+                },
+                "mount": {
+                    "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.MountSummary"
+                },
+                "preview_action": {
+                    "description": "predicted action based on rules",
+                    "type": "string"
+                },
+                "winning_rule": {
+                    "description": "highest priority matching rule",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RuleMatchSummary"
+                        }
+                    ]
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_services_rules.MountSummary": {
+            "type": "object",
+            "properties": {
+                "compose_project": {
+                    "type": "string"
+                },
+                "compose_services": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "container_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_orphaned": {
+                    "type": "boolean"
+                },
+                "is_tracked": {
+                    "type": "boolean"
+                },
+                "mount_id": {
+                    "type": "string"
+                },
+                "mount_type": {
+                    "type": "string"
+                },
+                "source_path": {
+                    "type": "string"
+                },
+                "volume_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_services_rules.PreviewRequest": {
+            "type": "object",
+            "properties": {
+                "dry_run": {
+                    "description": "DryRun mode - if true, doesn't create evaluation records",
+                    "type": "boolean"
+                },
+                "include_rule_details": {
+                    "description": "IncludeRuleDetails whether to include detailed rule condition matching info",
+                    "type": "boolean"
+                },
+                "include_unmatched": {
+                    "description": "IncludeUnmatched whether to include mounts that don't match any rules",
+                    "type": "boolean"
+                },
+                "mount_ids": {
+                    "description": "MountIDs to limit preview to specific mounts (if empty, all mounts are evaluated)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rule_ids": {
+                    "description": "RuleIDs to include in preview (if empty, all enabled rules are used)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_services_rules.PreviewResponse": {
+            "type": "object",
+            "properties": {
+                "completed_at": {
+                    "type": "string"
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "execution_time_ms": {
+                    "type": "integer"
+                },
+                "mount_previews": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.MountPreview"
+                    }
+                },
+                "preview_id": {
+                    "type": "string"
+                },
+                "requested_at": {
+                    "type": "string"
+                },
+                "rule_performance": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RulePerformanceResult"
+                    }
+                },
+                "summary": {
+                    "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.PreviewSummary"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_services_rules.PreviewSummary": {
+            "type": "object",
+            "properties": {
+                "action_breakdown": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                },
+                "mounts_evaluated": {
+                    "type": "integer"
+                },
+                "mounts_excluded": {
+                    "type": "integer"
+                },
+                "mounts_included": {
+                    "type": "integer"
+                },
+                "mounts_matched": {
+                    "type": "integer"
+                },
+                "mounts_unmatched": {
+                    "type": "integer"
+                },
+                "project_breakdown": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.ActionBreakdown"
+                    }
+                },
+                "rules_evaluated": {
+                    "type": "integer"
+                },
+                "total_mounts": {
+                    "type": "integer"
+                },
+                "type_breakdown": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.ActionBreakdown"
+                    }
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_services_rules.RuleConflict": {
+            "type": "object",
+            "properties": {
+                "conflict": {
+                    "description": "description of the conflict",
+                    "type": "string"
+                },
+                "rule1": {
+                    "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RuleMatchSummary"
+                },
+                "rule2": {
+                    "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RuleMatchSummary"
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_services_rules.RuleMatchSummary": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "execution_time_ms": {
+                    "type": "integer"
+                },
+                "match_confidence": {
+                    "description": "0.0-1.0 based on condition matches",
+                    "type": "number"
+                },
+                "matched": {
+                    "type": "boolean"
+                },
+                "matched_conditions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_rules.ConditionResult"
+                    }
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "rule_id": {
+                    "type": "integer"
+                },
+                "rule_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mantonx_volumeviz_internal_services_rules.RulePerformanceResult": {
+            "type": "object",
+            "properties": {
+                "avg_execution_time_ms": {
+                    "type": "integer"
+                },
+                "mounts_evaluated": {
+                    "type": "integer"
+                },
+                "mounts_matched": {
+                    "type": "integer"
+                },
+                "rule_id": {
+                    "type": "integer"
+                },
+                "rule_name": {
+                    "type": "string"
+                },
+                "total_execution_time_ms": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_v1_auth.AcceptInvitationRequest": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_auth.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/internal_api_v1_auth.UserProfile"
+                }
+            }
+        },
+        "internal_api_v1_auth.ForcePasswordChangeRequest": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
+        "internal_api_v1_auth.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_auth.PasswordChangeRequest": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
+        "internal_api_v1_auth.PasswordResetRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_auth.RefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_auth.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "role": {
+                    "description": "Only admin can set role",
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
+        "internal_api_v1_auth.RegisterWithInvitationRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "token",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "token": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
+        "internal_api_v1_auth.UserProfile": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_login_at": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timezone": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_diag.RealtimeDiagnostics": {
+            "type": "object",
+            "properties": {
+                "active_connections": {
+                    "type": "integer"
+                },
+                "features": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "mode": {
+                    "$ref": "#/definitions/internal_api_v1_diag.RealtimeMode"
+                },
+                "polling_enabled": {
+                    "type": "boolean"
+                },
+                "polling_interval_ms": {
+                    "type": "integer"
+                },
+                "sse_enabled": {
+                    "type": "boolean"
+                },
+                "websocket_enabled": {
+                    "type": "boolean"
+                },
+                "websocket_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_diag.RealtimeMode": {
+            "type": "string",
+            "enum": [
+                "ws",
+                "polling",
+                "sse"
+            ],
+            "x-enum-varnames": [
+                "ModeWebSocket",
+                "ModePolling",
+                "ModeSSE"
+            ]
+        },
+        "internal_api_v1_explorer.AppliedFilters": {
+            "description": "Applied filters for the file query",
+            "type": "object",
+            "properties": {
+                "file_type": {
+                    "type": "string",
+                    "example": "pdf"
+                },
+                "max_size": {
+                    "type": "integer",
+                    "example": 10485760
+                },
+                "mime_type": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "min_size": {
+                    "type": "integer",
+                    "example": 1024
+                }
+            }
+        },
+        "internal_api_v1_explorer.EnhancedFileItem": {
+            "description": "Enhanced file item with performance and metadata information",
+            "type": "object",
+            "properties": {
+                "disk_usage": {
+                    "type": "integer",
+                    "example": 1024000
+                },
+                "extension": {
+                    "type": "string",
+                    "example": "pdf"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "is_directory": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "media_kind": {
+                    "type": "string",
+                    "example": "document"
+                },
+                "media_type": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "modified_time": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/home/user/documents/document.pdf"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 1024000
+                }
+            }
+        },
+        "internal_api_v1_explorer.FileInfo": {
+            "description": "File or directory information for explorer browsing",
+            "type": "object",
+            "properties": {
+                "extension": {
+                    "type": "string",
+                    "example": "pdf"
+                },
+                "is_directory": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "media_type": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "modified_time": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/home/user/documents/document.pdf"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 1024000
+                }
+            }
+        },
+        "internal_api_v1_explorer.FolderBrowsingItem": {
+            "description": "A folder item with parent/child relationship information",
+            "type": "object",
+            "properties": {
+                "file_count": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "folder_count": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "has_children": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "is_directory": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "documents"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/home/user/documents"
+                },
+                "total_size": {
+                    "type": "integer",
+                    "example": 1073741824
+                }
+            }
+        },
+        "internal_api_v1_explorer.FolderBrowsingResponse": {
+            "description": "Response containing folder hierarchy with parent/child relationships",
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_explorer.FolderBrowsingItem"
+                    }
+                },
+                "current": {
+                    "$ref": "#/definitions/internal_api_v1_explorer.FolderBrowsingItem"
+                },
+                "current_path": {
+                    "type": "string",
+                    "example": "/home/user/documents"
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "parent": {
+                    "$ref": "#/definitions/internal_api_v1_explorer.FolderBrowsingItem"
+                },
+                "total_children": {
+                    "type": "integer",
+                    "example": 15
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "volume_id": {
+                    "type": "string",
+                    "example": "vol_123"
+                }
+            }
+        },
+        "internal_api_v1_explorer.FolderNode": {
+            "description": "A node in the hierarchical folder structure",
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_explorer.FolderNode"
+                    }
+                },
+                "file_count": {
+                    "type": "integer",
+                    "example": 15
+                },
+                "folder_count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "name": {
+                    "type": "string",
+                    "example": "documents"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/home/user/documents"
+                },
+                "total_size": {
+                    "type": "integer",
+                    "example": 52428800
+                }
+            }
+        },
+        "internal_api_v1_explorer.GetFilesByFolderResponse": {
+            "description": "Response containing files in a folder with pagination",
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_explorer.FileInfo"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total_count": {
+                    "type": "integer",
+                    "example": 250
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "internal_api_v1_explorer.GetFolderTreeResponse": {
+            "description": "Response containing hierarchical folder structure",
+            "type": "object",
+            "properties": {
+                "tree": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_explorer.FolderNode"
+                    }
+                }
+            }
+        },
+        "internal_api_v1_explorer.GetTreeChildrenResponse": {
+            "description": "Response containing immediate children of a path",
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_explorer.TreeChildItem"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "parent_path": {
+                    "type": "string",
+                    "example": "/home/user"
+                },
+                "total_count": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "internal_api_v1_explorer.PaginatedFileResponse": {
+            "description": "Enhanced response for paginated file listing with performance metadata",
+            "type": "object",
+            "properties": {
+                "cache_hit": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_explorer.EnhancedFileItem"
+                    }
+                },
+                "filters": {
+                    "$ref": "#/definitions/internal_api_v1_explorer.AppliedFilters"
+                },
+                "has_more": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "query_time_ms": {
+                    "type": "integer",
+                    "example": 45
+                },
+                "sort_by": {
+                    "type": "string",
+                    "example": "name"
+                },
+                "sort_order": {
+                    "type": "string",
+                    "example": "asc"
+                },
+                "total_count": {
+                    "type": "integer",
+                    "example": 1250
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 25
+                }
+            }
+        },
+        "internal_api_v1_explorer.TreeChildItem": {
+            "description": "A child file or folder in tree navigation",
+            "type": "object",
+            "properties": {
+                "extension": {
+                    "type": "string",
+                    "example": "pdf"
+                },
+                "has_children": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_directory": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "media_type": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "documents"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/home/user/documents"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 1024000
+                }
+            }
+        },
+        "internal_api_v1_metadata.FileDurationItem": {
+            "type": "object",
+            "properties": {
+                "duration_seconds": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "media_type": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_v1_metadata.FileLocationItem": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "media_type": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_v1_metadata.FileResolutionItem": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "media_type": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_v1_metadata.GetFilesByDurationResponse": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_metadata.FileDurationItem"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_v1_metadata.GetFilesByLocationResponse": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_metadata.FileLocationItem"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_v1_metadata.GetFilesByResolutionResponse": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_metadata.FileResolutionItem"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_v1_mounts.DiscoverMountsRequest": {
             "type": "object",
             "properties": {
                 "force": {
@@ -7712,7 +8804,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mounts.DiscoverMountsResponse": {
+        "internal_api_v1_mounts.DiscoverMountsResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -7725,7 +8817,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mounts.MountCatalogResponse": {
+        "internal_api_v1_mounts.MountCatalogResponse": {
             "type": "object",
             "properties": {
                 "compose_project": {
@@ -7826,7 +8918,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mounts.MountCatalogSummaryResponse": {
+        "internal_api_v1_mounts.MountCatalogSummaryResponse": {
             "type": "object",
             "properties": {
                 "bind_mounts": {
@@ -7859,7 +8951,217 @@ const docTemplate = `{
                 }
             }
         },
-        "previews.PreviewResponse": {
+        "internal_api_v1_organizations.OrganizationLimits": {
+            "type": "object",
+            "properties": {
+                "max_storage_gb": {
+                    "type": "integer",
+                    "example": 1000
+                },
+                "max_users": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "max_volumes": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "storage_left_gb": {
+                    "type": "number",
+                    "example": 499.5
+                },
+                "storage_used_gb": {
+                    "type": "number",
+                    "example": 500.5
+                },
+                "users_left": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "users_used": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "volumes_left": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "volumes_used": {
+                    "type": "integer",
+                    "example": 75
+                }
+            }
+        },
+        "internal_api_v1_organizations.OrganizationResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T12:00:00Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "A leading technology company"
+                },
+                "display_name": {
+                    "type": "string",
+                    "example": "ACME Corporation"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "max_storage_gb": {
+                    "type": "integer",
+                    "example": 1000
+                },
+                "max_users": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "max_volumes": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "name": {
+                    "type": "string",
+                    "example": "acme-corp"
+                },
+                "plan_type": {
+                    "type": "string",
+                    "example": "pro"
+                },
+                "subdomain": {
+                    "type": "string",
+                    "example": "acme"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T14:30:00Z"
+                }
+            }
+        },
+        "internal_api_v1_organizations.OrganizationStatsResponse": {
+            "type": "object",
+            "properties": {
+                "storage_usage_bytes": {
+                    "type": "integer",
+                    "example": 536870912000
+                },
+                "user_count": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "volume_count": {
+                    "type": "integer",
+                    "example": 75
+                }
+            }
+        },
+        "internal_api_v1_organizations.OrganizationWithStatsResponse": {
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "$ref": "#/definitions/internal_api_v1_organizations.OrganizationLimits"
+                },
+                "organization": {
+                    "$ref": "#/definitions/internal_api_v1_organizations.OrganizationResponse"
+                },
+                "stats": {
+                    "$ref": "#/definitions/internal_api_v1_organizations.OrganizationStatsResponse"
+                }
+            }
+        },
+        "internal_api_v1_organizations.UpdateOrganizationRequest": {
+            "type": "object",
+            "required": [
+                "display_name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "A leading technology company"
+                },
+                "display_name": {
+                    "type": "string",
+                    "minLength": 3,
+                    "example": "ACME Corporation"
+                },
+                "max_storage_gb": {
+                    "type": "integer",
+                    "example": 1000
+                },
+                "max_users": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "max_volumes": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "plan_type": {
+                    "type": "string",
+                    "enum": [
+                        "free",
+                        "pro",
+                        "enterprise"
+                    ],
+                    "example": "pro"
+                },
+                "subdomain": {
+                    "type": "string",
+                    "example": "acme"
+                }
+            }
+        },
+        "internal_api_v1_previews.PreviewRequest": {
+            "type": "object",
+            "required": [
+                "file_id",
+                "file_path",
+                "mime_type",
+                "size",
+                "type"
+            ],
+            "properties": {
+                "file_hash": {
+                    "type": "string"
+                },
+                "file_id": {
+                    "type": "integer"
+                },
+                "file_path": {
+                    "type": "string"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "string",
+                    "enum": [
+                        "small",
+                        "medium",
+                        "large"
+                    ]
+                },
+                "time_offset": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "thumbnail",
+                        "poster",
+                        "cover"
+                    ]
+                }
+            }
+        },
+        "internal_api_v1_previews.PreviewResponse": {
             "type": "object",
             "properties": {
                 "cache_hit": {
@@ -7903,21 +9205,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.ActionBreakdown": {
-            "type": "object",
-            "properties": {
-                "exclude": {
-                    "type": "integer"
-                },
-                "include": {
-                    "type": "integer"
-                },
-                "unmatched": {
-                    "type": "integer"
-                }
-            }
-        },
-        "rules.ApplyTrackingRulesRequest": {
+        "internal_api_v1_rules.ApplyTrackingRulesRequest": {
             "type": "object",
             "properties": {
                 "dry_run": {
@@ -7925,7 +9213,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.ApplyTrackingRulesResponse": {
+        "internal_api_v1_rules.ApplyTrackingRulesResponse": {
             "type": "object",
             "properties": {
                 "applied_at": {
@@ -7934,7 +9222,7 @@ const docTemplate = `{
                 "changes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/rules.TrackingChange"
+                        "$ref": "#/definitions/internal_api_v1_rules.TrackingChange"
                     }
                 },
                 "changes_count": {
@@ -7945,7 +9233,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.ConditionRequest": {
+        "internal_api_v1_rules.ConditionRequest": {
             "type": "object",
             "required": [
                 "field_name",
@@ -8005,43 +9293,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.ConditionResult": {
-            "type": "object",
-            "properties": {
-                "error": {},
-                "field_name": {
-                    "type": "string"
-                },
-                "matched": {
-                    "type": "boolean"
-                },
-                "operator": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "rules.ConflictAnalysis": {
-            "type": "object",
-            "properties": {
-                "conflicting_rules": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/rules.RuleConflict"
-                    }
-                },
-                "has_conflicts": {
-                    "type": "boolean"
-                },
-                "resolution": {
-                    "description": "how conflicts are resolved",
-                    "type": "string"
-                }
-            }
-        },
-        "rules.CreateMountOverrideRequest": {
+        "internal_api_v1_rules.CreateMountOverrideRequest": {
             "type": "object",
             "required": [
                 "action",
@@ -8066,7 +9318,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.CreateRuleRequest": {
+        "internal_api_v1_rules.CreateRuleRequest": {
             "type": "object",
             "required": [
                 "action",
@@ -8086,7 +9338,7 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/rules.ConditionRequest"
+                        "$ref": "#/definitions/internal_api_v1_rules.ConditionRequest"
                     }
                 },
                 "created_by": {
@@ -8113,13 +9365,13 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.ListMountOverridesResponse": {
+        "internal_api_v1_rules.ListMountOverridesResponse": {
             "type": "object",
             "properties": {
                 "overrides": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/rules.MountOverrideResponse"
+                        "$ref": "#/definitions/internal_api_v1_rules.MountOverrideResponse"
                     }
                 },
                 "total": {
@@ -8127,13 +9379,13 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.ListRuleTemplatesResponse": {
+        "internal_api_v1_rules.ListRuleTemplatesResponse": {
             "type": "object",
             "properties": {
                 "templates": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/rules.RuleTemplate"
+                        "$ref": "#/definitions/internal_api_v1_rules.RuleTemplate"
                     }
                 },
                 "total": {
@@ -8141,13 +9393,13 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.ListRulesResponse": {
+        "internal_api_v1_rules.ListRulesResponse": {
             "type": "object",
             "properties": {
                 "rules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/rules.RuleResponse"
+                        "$ref": "#/definitions/internal_api_v1_rules.RuleResponse"
                     }
                 },
                 "total": {
@@ -8155,7 +9407,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.MountOverrideResponse": {
+        "internal_api_v1_rules.MountOverrideResponse": {
             "type": "object",
             "properties": {
                 "action": {
@@ -8181,208 +9433,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.MountPreview": {
-            "type": "object",
-            "properties": {
-                "action_changed": {
-                    "description": "whether action would change",
-                    "type": "boolean"
-                },
-                "all_matches": {
-                    "description": "all matching rules (if detailed)",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/rules.RuleMatchSummary"
-                    }
-                },
-                "conflict_details": {
-                    "description": "rule conflicts if any",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/rules.ConflictAnalysis"
-                        }
-                    ]
-                },
-                "current_action": {
-                    "description": "current tracking status",
-                    "type": "string"
-                },
-                "mount": {
-                    "$ref": "#/definitions/rules.MountSummary"
-                },
-                "preview_action": {
-                    "description": "predicted action based on rules",
-                    "type": "string"
-                },
-                "winning_rule": {
-                    "description": "highest priority matching rule",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/rules.RuleMatchSummary"
-                        }
-                    ]
-                }
-            }
-        },
-        "rules.MountSummary": {
-            "type": "object",
-            "properties": {
-                "compose_project": {
-                    "type": "string"
-                },
-                "compose_services": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "container_count": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_orphaned": {
-                    "type": "boolean"
-                },
-                "is_tracked": {
-                    "type": "boolean"
-                },
-                "mount_id": {
-                    "type": "string"
-                },
-                "mount_type": {
-                    "type": "string"
-                },
-                "source_path": {
-                    "type": "string"
-                },
-                "volume_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "rules.PreviewRequest": {
-            "type": "object",
-            "properties": {
-                "dry_run": {
-                    "description": "DryRun mode - if true, doesn't create evaluation records",
-                    "type": "boolean"
-                },
-                "include_rule_details": {
-                    "description": "IncludeRuleDetails whether to include detailed rule condition matching info",
-                    "type": "boolean"
-                },
-                "include_unmatched": {
-                    "description": "IncludeUnmatched whether to include mounts that don't match any rules",
-                    "type": "boolean"
-                },
-                "mount_ids": {
-                    "description": "MountIDs to limit preview to specific mounts (if empty, all mounts are evaluated)",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "rule_ids": {
-                    "description": "RuleIDs to include in preview (if empty, all enabled rules are used)",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "rules.PreviewResponse": {
-            "type": "object",
-            "properties": {
-                "completed_at": {
-                    "type": "string"
-                },
-                "errors": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "execution_time_ms": {
-                    "type": "integer"
-                },
-                "mount_previews": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/rules.MountPreview"
-                    }
-                },
-                "preview_id": {
-                    "type": "string"
-                },
-                "requested_at": {
-                    "type": "string"
-                },
-                "rule_performance": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/rules.RulePerformanceResult"
-                    }
-                },
-                "summary": {
-                    "$ref": "#/definitions/rules.PreviewSummary"
-                },
-                "warnings": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "rules.PreviewSummary": {
-            "type": "object",
-            "properties": {
-                "action_breakdown": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "integer",
-                        "format": "int32"
-                    }
-                },
-                "mounts_evaluated": {
-                    "type": "integer"
-                },
-                "mounts_excluded": {
-                    "type": "integer"
-                },
-                "mounts_included": {
-                    "type": "integer"
-                },
-                "mounts_matched": {
-                    "type": "integer"
-                },
-                "mounts_unmatched": {
-                    "type": "integer"
-                },
-                "project_breakdown": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/rules.ActionBreakdown"
-                    }
-                },
-                "rules_evaluated": {
-                    "type": "integer"
-                },
-                "total_mounts": {
-                    "type": "integer"
-                },
-                "type_breakdown": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/rules.ActionBreakdown"
-                    }
-                }
-            }
-        },
-        "rules.RuleConfigUpdate": {
+        "internal_api_v1_rules.RuleConfigUpdate": {
             "type": "object",
             "required": [
                 "id"
@@ -8399,78 +9450,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.RuleConflict": {
-            "type": "object",
-            "properties": {
-                "conflict": {
-                    "description": "description of the conflict",
-                    "type": "string"
-                },
-                "rule1": {
-                    "$ref": "#/definitions/rules.RuleMatchSummary"
-                },
-                "rule2": {
-                    "$ref": "#/definitions/rules.RuleMatchSummary"
-                }
-            }
-        },
-        "rules.RuleMatchSummary": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string"
-                },
-                "execution_time_ms": {
-                    "type": "integer"
-                },
-                "match_confidence": {
-                    "description": "0.0-1.0 based on condition matches",
-                    "type": "number"
-                },
-                "matched": {
-                    "type": "boolean"
-                },
-                "matched_conditions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/rules.ConditionResult"
-                    }
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "rule_id": {
-                    "type": "integer"
-                },
-                "rule_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "rules.RulePerformanceResult": {
-            "type": "object",
-            "properties": {
-                "avg_execution_time_ms": {
-                    "type": "integer"
-                },
-                "mounts_evaluated": {
-                    "type": "integer"
-                },
-                "mounts_matched": {
-                    "type": "integer"
-                },
-                "rule_id": {
-                    "type": "integer"
-                },
-                "rule_name": {
-                    "type": "string"
-                },
-                "total_execution_time_ms": {
-                    "type": "integer"
-                }
-            }
-        },
-        "rules.RuleResponse": {
+        "internal_api_v1_rules.RuleResponse": {
             "type": "object",
             "properties": {
                 "action": {
@@ -8484,7 +9464,7 @@ const docTemplate = `{
                 "conditions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/rules.ConditionRequest"
+                        "$ref": "#/definitions/internal_api_v1_rules.ConditionRequest"
                     }
                 },
                 "created_at": {
@@ -8535,7 +9515,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.RuleTemplate": {
+        "internal_api_v1_rules.RuleTemplate": {
             "type": "object",
             "properties": {
                 "category": {
@@ -8577,7 +9557,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.TrackingChange": {
+        "internal_api_v1_rules.TrackingChange": {
             "type": "object",
             "properties": {
                 "mount_id": {
@@ -8603,7 +9583,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.TrackingRulesConfigResponse": {
+        "internal_api_v1_rules.TrackingRulesConfigResponse": {
             "type": "object",
             "properties": {
                 "enabled": {
@@ -8612,7 +9592,7 @@ const docTemplate = `{
                 "rules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/rules.RuleResponse"
+                        "$ref": "#/definitions/internal_api_v1_rules.RuleResponse"
                     }
                 },
                 "total": {
@@ -8620,7 +9600,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.UpdateRuleRequest": {
+        "internal_api_v1_rules.UpdateRuleRequest": {
             "type": "object",
             "properties": {
                 "action": {
@@ -8633,7 +9613,7 @@ const docTemplate = `{
                 "conditions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/rules.ConditionRequest"
+                        "$ref": "#/definitions/internal_api_v1_rules.ConditionRequest"
                     }
                 },
                 "description": {
@@ -8650,7 +9630,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rules.UpdateTrackingRulesConfigRequest": {
+        "internal_api_v1_rules.UpdateTrackingRulesConfigRequest": {
             "type": "object",
             "required": [
                 "rules"
@@ -8659,12 +9639,12 @@ const docTemplate = `{
                 "rules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/rules.RuleConfigUpdate"
+                        "$ref": "#/definitions/internal_api_v1_rules.RuleConfigUpdate"
                     }
                 }
             }
         },
-        "search.CreateSavedSearchRequest": {
+        "internal_api_v1_search.CreateSavedSearchRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -8685,7 +9665,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "query": {
-                    "$ref": "#/definitions/search.SearchFilesRequest"
+                    "$ref": "#/definitions/internal_api_v1_search.SearchFilesRequest"
                 },
                 "tags": {
                     "type": "array",
@@ -8695,7 +9675,7 @@ const docTemplate = `{
                 }
             }
         },
-        "search.FileResult": {
+        "internal_api_v1_search.FileResult": {
             "type": "object",
             "properties": {
                 "audio_codec": {
@@ -8771,7 +9751,7 @@ const docTemplate = `{
                 }
             }
         },
-        "search.ListSavedSearchesResponse": {
+        "internal_api_v1_search.ListSavedSearchesResponse": {
             "type": "object",
             "properties": {
                 "page": {
@@ -8783,7 +9763,7 @@ const docTemplate = `{
                 "searches": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/search.SavedSearch"
+                        "$ref": "#/definitions/internal_api_v1_search.SavedSearch"
                     }
                 },
                 "total_count": {
@@ -8791,7 +9771,7 @@ const docTemplate = `{
                 }
             }
         },
-        "search.SavedSearch": {
+        "internal_api_v1_search.SavedSearch": {
             "type": "object",
             "required": [
                 "name"
@@ -8820,7 +9800,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "query": {
-                    "$ref": "#/definitions/search.SearchFilesRequest"
+                    "$ref": "#/definitions/internal_api_v1_search.SearchFilesRequest"
                 },
                 "run_count": {
                     "type": "integer"
@@ -8836,7 +9816,7 @@ const docTemplate = `{
                 }
             }
         },
-        "search.SearchFilesRequest": {
+        "internal_api_v1_search.SearchFilesRequest": {
             "type": "object",
             "properties": {
                 "durationFrom": {
@@ -8938,13 +9918,13 @@ const docTemplate = `{
                 }
             }
         },
-        "search.SearchFilesResponse": {
+        "internal_api_v1_search.SearchFilesResponse": {
             "type": "object",
             "properties": {
                 "files": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/search.FileResult"
+                        "$ref": "#/definitions/internal_api_v1_search.FileResult"
                     }
                 },
                 "filters": {},
@@ -8965,7 +9945,7 @@ const docTemplate = `{
                 }
             }
         },
-        "search.SearchSuggestion": {
+        "internal_api_v1_search.SearchSuggestion": {
             "type": "object",
             "properties": {
                 "count": {
@@ -8986,7 +9966,7 @@ const docTemplate = `{
                 }
             }
         },
-        "search.SearchSuggestionsResponse": {
+        "internal_api_v1_search.SearchSuggestionsResponse": {
             "type": "object",
             "properties": {
                 "query_time_ms": {
@@ -8995,12 +9975,12 @@ const docTemplate = `{
                 "suggestions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/search.SearchSuggestion"
+                        "$ref": "#/definitions/internal_api_v1_search.SearchSuggestion"
                     }
                 }
             }
         },
-        "search.UpdateSavedSearchRequest": {
+        "internal_api_v1_search.UpdateSavedSearchRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -9017,7 +9997,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "query": {
-                    "$ref": "#/definitions/search.SearchFilesRequest"
+                    "$ref": "#/definitions/internal_api_v1_search.SearchFilesRequest"
                 },
                 "tags": {
                     "type": "array",
@@ -9050,28 +10030,6 @@ const docTemplate = `{
                 "Minute",
                 "Hour"
             ]
-        },
-        "utils.PagedResponse": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "filters": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "sort": {
-                    "type": "string"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
         }
     },
     "tags": [

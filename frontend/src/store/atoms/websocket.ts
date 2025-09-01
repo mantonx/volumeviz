@@ -1,5 +1,4 @@
 import { atom } from 'jotai';
-import { apiStatusAtom } from './api';
 
 export type WebSocketStatus =
   | 'connected'
@@ -45,7 +44,7 @@ export interface ConnectionStatus {
 // Combined status atom for the header component
 export const connectionStatusAtom = atom<ConnectionStatus>((get) => {
   return {
-    api: get(apiStatusAtom),
+    api: 'online', // API status handled by TanStack Query now
     websocket: get(websocketStatusAtom),
     websocketEnabled: get(websocketEnabledAtom),
   };

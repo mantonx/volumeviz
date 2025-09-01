@@ -153,13 +153,13 @@ func (h *Handler) GetFileMetadata(c *gin.Context) {
 
 	// Add enriched metadata
 	for _, meta := range metadata {
-		if len(meta.DataJson) > 0 {
+		if len(meta.RawMetadata) > 0 {
 			var enrichedData map[string]interface{}
-			if err := json.Unmarshal(meta.DataJson, &enrichedData); err == nil {
-				// Namespace metadata by kind
-				metadataMap[meta.Kind] = enrichedData
-				if meta.EnrichedAt.Valid && (lastEnriched == nil || meta.EnrichedAt.Time.After(*lastEnriched)) {
-					lastEnriched = &meta.EnrichedAt.Time
+			if err := json.Unmarshal(meta.RawMetadata, &enrichedData); err == nil {
+				// Namespace metadata by kind - using extracted_at as timestamp
+				metadataMap["metadata"] = enrichedData
+				if meta.ExtractedAt.Valid && (lastEnriched == nil || meta.ExtractedAt.Time.After(*lastEnriched)) {
+					lastEnriched = &meta.ExtractedAt.Time
 				}
 			}
 		}
@@ -581,22 +581,22 @@ func (h *Handler) GetFilesByLocation(c *gin.Context) {
 func (h *Handler) GetFilterMetadata(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Get distinct MIME types
-	mimeTypes, err := h.store.FileMetadata().GetDistinctMimeTypes(ctx)
+	// Get distinct MIME types - using empty volumeID for all volumes
+	mimeTypes, err := h.store.FileMetadata().GetDistinctMimeTypes(ctx, "")
 	if err != nil {
 		utils.RespondWithInternalError(c, "Failed to retrieve MIME types", err)
 		return
 	}
 
-	// Get distinct media kinds
-	mediaKinds, err := h.store.FileMetadata().GetDistinctMediaKinds(ctx)
+	// Get distinct media kinds - using empty volumeID for all volumes
+	mediaKinds, err := h.store.FileMetadata().GetDistinctMediaKinds(ctx, "")
 	if err != nil {
 		utils.RespondWithInternalError(c, "Failed to retrieve media kinds", err)
 		return
 	}
 
-	// Get distinct extensions
-	extensions, err := h.store.FileMetadata().GetDistinctExtensions(ctx)
+	// Get distinct extensions - using empty volumeID and limit of 100
+	extensions, err := h.store.FileMetadata().GetDistinctExtensions(ctx, "", 100)
 	if err != nil {
 		utils.RespondWithInternalError(c, "Failed to retrieve extensions", err)
 		return
@@ -619,7 +619,7 @@ func (h *Handler) GetFilterMetadata(c *gin.Context) {
 		response.MimeTypes = append(response.MimeTypes, models.MimeTypeOption{
 			Value:     mimeTypeStr,
 			Label:     label,
-			FileCount: int(mt.FileCount),
+			FileCount: int(mt.Count),
 		})
 	}
 
@@ -632,7 +632,7 @@ func (h *Handler) GetFilterMetadata(c *gin.Context) {
 		response.MediaKinds = append(response.MediaKinds, models.MediaKindOption{
 			Value:     mediaKindStr,
 			Label:     capitalizeFirst(mediaKindStr),
-			FileCount: int(mk.FileCount),
+			FileCount: int(mk.Count),
 		})
 	}
 
@@ -645,7 +645,7 @@ func (h *Handler) GetFilterMetadata(c *gin.Context) {
 		response.Extensions = append(response.Extensions, models.ExtensionOption{
 			Value:     extensionStr,
 			Label:     strings.ToUpper(extensionStr) + " Files",
-			FileCount: int(ext.FileCount),
+			FileCount: int(ext.Count),
 		})
 	}
 

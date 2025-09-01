@@ -7,42 +7,35 @@ package sqlc
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type BulkInsertFilesParams struct {
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
+	VolumeID    string             `json:"volume_id"`
+	FolderID    pgtype.Int8        `json:"folder_id"`
+	Path        string             `json:"path"`
+	PathHash    []byte             `json:"path_hash"`
+	Name        string             `json:"name"`
+	Extension   pgtype.Text        `json:"extension"`
+	Mime        pgtype.Text        `json:"mime"`
+	SizeBytes   int64              `json:"size_bytes"`
+	ModifiedAt  pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt  pgtype.Timestamptz `json:"accessed_at"`
+	Mode        pgtype.Int4        `json:"mode"`
+	OwnerUid    pgtype.Int4        `json:"owner_uid"`
+	OwnerGid    pgtype.Int4        `json:"owner_gid"`
+	ContentHash pgtype.Text        `json:"content_hash"`
+	IsText      pgtype.Bool        `json:"is_text"`
+	IsBinary    pgtype.Bool        `json:"is_binary"`
+	MediaKind   pgtype.Text        `json:"media_kind"`
 }
 
 const countFilesByFolder = `-- name: CountFilesByFolder :one
 SELECT COUNT(*) FROM files WHERE folder_id = $1
 `
 
-func (q *Queries) CountFilesByFolder(ctx context.Context, folderID int64) (int64, error) {
+func (q *Queries) CountFilesByFolder(ctx context.Context, folderID pgtype.Int8) (int64, error) {
 	row := q.db.QueryRow(ctx, countFilesByFolder, folderID)
 	var count int64
 	err := row.Scan(&count)
@@ -60,83 +53,121 @@ func (q *Queries) CountFilesByVolume(ctx context.Context, volumeID string) (int6
 	return count, err
 }
 
+const countOldFiles = `-- name: CountOldFiles :one
+SELECT COUNT(*) FROM files 
+WHERE last_scan_at < $1
+  AND last_scan_at IS NOT NULL
+`
+
+func (q *Queries) CountOldFiles(ctx context.Context, lastScanAt pgtype.Timestamptz) (int64, error) {
+	row := q.db.QueryRow(ctx, countOldFiles, lastScanAt)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createFile = `-- name: CreateFile :one
-
-
 INSERT INTO files (
-    folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-    mtime, ctime, birthtime, uid, gid, mode, inode, device,
-    is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash
+    volume_id, folder_id, path, path_hash, name, extension, mime, 
+    size_bytes, modified_at, accessed_at, mode, owner_uid, owner_gid, 
+    content_hash, is_text, is_binary, media_kind
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
-) RETURNING id, created_at, updated_at
+    $1, $2, $3, $4, $5, $6, $7, 
+    $8, $9, $10, $11, $12, $13, 
+    $14, $15, $16, $17
+) RETURNING id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id
 `
 
 type CreateFileParams struct {
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
+	VolumeID    string             `json:"volume_id"`
+	FolderID    pgtype.Int8        `json:"folder_id"`
+	Path        string             `json:"path"`
+	PathHash    []byte             `json:"path_hash"`
+	Name        string             `json:"name"`
+	Extension   pgtype.Text        `json:"extension"`
+	Mime        pgtype.Text        `json:"mime"`
+	SizeBytes   int64              `json:"size_bytes"`
+	ModifiedAt  pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt  pgtype.Timestamptz `json:"accessed_at"`
+	Mode        pgtype.Int4        `json:"mode"`
+	OwnerUid    pgtype.Int4        `json:"owner_uid"`
+	OwnerGid    pgtype.Int4        `json:"owner_gid"`
+	ContentHash pgtype.Text        `json:"content_hash"`
+	IsText      pgtype.Bool        `json:"is_text"`
+	IsBinary    pgtype.Bool        `json:"is_binary"`
+	MediaKind   pgtype.Text        `json:"media_kind"`
 }
 
-type CreateFileRow struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// files.sql: File record operations
-// This file contains all SQLC queries for file management
-// =======================
-// FILE OPERATIONS
-// =======================
-func (q *Queries) CreateFile(ctx context.Context, arg CreateFileParams) (CreateFileRow, error) {
+func (q *Queries) CreateFile(ctx context.Context, arg CreateFileParams) (Files, error) {
 	row := q.db.QueryRow(ctx, createFile,
-		arg.FolderID,
 		arg.VolumeID,
-		arg.Name,
+		arg.FolderID,
 		arg.Path,
-		arg.Extension,
-		arg.SizeBytes,
-		arg.DiskUsageBytes,
-		arg.Mtime,
-		arg.Ctime,
-		arg.Birthtime,
-		arg.Uid,
-		arg.Gid,
-		arg.Mode,
-		arg.Inode,
-		arg.Device,
-		arg.IsSymlink,
-		arg.SymlinkTarget,
-		arg.Mime,
-		arg.MediaKind,
-		arg.Encoding,
-		arg.HashAlgo,
-		arg.Hash,
 		arg.PathHash,
+		arg.Name,
+		arg.Extension,
+		arg.Mime,
+		arg.SizeBytes,
+		arg.ModifiedAt,
+		arg.AccessedAt,
+		arg.Mode,
+		arg.OwnerUid,
+		arg.OwnerGid,
+		arg.ContentHash,
+		arg.IsText,
+		arg.IsBinary,
+		arg.MediaKind,
 	)
-	var i CreateFileRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	var i Files
+	err := row.Scan(
+		&i.ID,
+		&i.VolumeID,
+		&i.FolderID,
+		&i.Path,
+		&i.PathHash,
+		&i.Name,
+		&i.Extension,
+		&i.Mime,
+		&i.SizeBytes,
+		&i.CreatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.Mode,
+		&i.OwnerUid,
+		&i.OwnerGid,
+		&i.ContentHash,
+		&i.IsText,
+		&i.IsBinary,
+		&i.MediaKind,
+		&i.DurationMs,
+		&i.BitrateKbps,
+		&i.Width,
+		&i.Height,
+		&i.Fps,
+		&i.ColorPrimaries,
+		&i.TransferCharacteristic,
+		&i.HdrFormat,
+		&i.CaptureDatetime,
+		&i.CameraMake,
+		&i.CameraModel,
+		&i.LensModel,
+		&i.Orientation,
+		&i.GpsLatitude,
+		&i.GpsLongitude,
+		&i.SubtitleLanguage,
+		&i.SubtitleFormat,
+		&i.CueCount,
+		&i.CoveragePercent,
+		&i.AudioChannels,
+		&i.AudioCodec,
+		&i.AudioSampleRate,
+		&i.VideoCodec,
+		&i.VideoProfile,
+		&i.VideoLevel,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.OrganizationID,
+	)
 	return i, err
 }
 
@@ -149,15 +180,6 @@ func (q *Queries) DeleteFile(ctx context.Context, id int64) error {
 	return err
 }
 
-const deleteFilesByFolder = `-- name: DeleteFilesByFolder :exec
-DELETE FROM files WHERE folder_id = $1
-`
-
-func (q *Queries) DeleteFilesByFolder(ctx context.Context, folderID int64) error {
-	_, err := q.db.Exec(ctx, deleteFilesByFolder, folderID)
-	return err
-}
-
 const deleteFilesByVolume = `-- name: DeleteFilesByVolume :exec
 DELETE FROM files WHERE volume_id = $1
 `
@@ -167,93 +189,303 @@ func (q *Queries) DeleteFilesByVolume(ctx context.Context, volumeID string) erro
 	return err
 }
 
-const getDuplicateFiles = `-- name: GetDuplicateFiles :many
-SELECT f.id, f.folder_id, f.volume_id, f.name, f.path, f.extension, f.size_bytes, f.disk_usage_bytes,
-       f.mtime, f.ctime, f.birthtime, f.uid, f.gid, f.mode, f.inode, f.device,
-       f.is_symlink, f.symlink_target, f.mime, f.media_kind, f.encoding, f.hash_algo, f.hash, f.path_hash,
-       f.created_at, f.updated_at
-FROM files f
-WHERE f.volume_id = $1 AND f.hash_algo = $2 AND f.hash IS NOT NULL
-  AND f.hash IN (
-    SELECT f2.hash
-    FROM files f2
-    WHERE f2.volume_id = $1 AND f2.hash_algo = $2 AND f2.hash IS NOT NULL
-    GROUP BY f2.hash
-    HAVING COUNT(*) > 1
-  )
-ORDER BY f.hash, f.size_bytes DESC
+const deleteOldFiles = `-- name: DeleteOldFiles :exec
+DELETE FROM files 
+WHERE last_scan_at < $1
+  AND last_scan_at IS NOT NULL
 `
 
-type GetDuplicateFilesParams struct {
-	VolumeID string      `json:"volume_id"`
-	HashAlgo pgtype.Text `json:"hash_algo"`
+// Retention queries for cleanup
+func (q *Queries) DeleteOldFiles(ctx context.Context, lastScanAt pgtype.Timestamptz) error {
+	_, err := q.db.Exec(ctx, deleteOldFiles, lastScanAt)
+	return err
 }
 
-type GetDuplicateFilesRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
+const getDistinctExtensions = `-- name: GetDistinctExtensions :many
+SELECT extension, COUNT(*) as count
+FROM files 
+WHERE volume_id = $1 AND extension IS NOT NULL
+GROUP BY extension
+ORDER BY count DESC
+LIMIT $2
+`
+
+type GetDistinctExtensionsParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
 }
 
-func (q *Queries) GetDuplicateFiles(ctx context.Context, arg GetDuplicateFilesParams) ([]GetDuplicateFilesRow, error) {
-	rows, err := q.db.Query(ctx, getDuplicateFiles, arg.VolumeID, arg.HashAlgo)
+type GetDistinctExtensionsRow struct {
+	Extension pgtype.Text `json:"extension"`
+	Count     int64       `json:"count"`
+}
+
+func (q *Queries) GetDistinctExtensions(ctx context.Context, arg GetDistinctExtensionsParams) ([]GetDistinctExtensionsRow, error) {
+	rows, err := q.db.Query(ctx, getDistinctExtensions, arg.VolumeID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetDuplicateFilesRow{}
+	items := []GetDistinctExtensionsRow{}
 	for rows.Next() {
-		var i GetDuplicateFilesRow
+		var i GetDistinctExtensionsRow
+		if err := rows.Scan(&i.Extension, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDistinctMediaKinds = `-- name: GetDistinctMediaKinds :many
+SELECT media_kind, COUNT(*) as count
+FROM files 
+WHERE volume_id = $1 AND media_kind IS NOT NULL
+GROUP BY media_kind
+ORDER BY count DESC
+`
+
+type GetDistinctMediaKindsRow struct {
+	MediaKind pgtype.Text `json:"media_kind"`
+	Count     int64       `json:"count"`
+}
+
+func (q *Queries) GetDistinctMediaKinds(ctx context.Context, volumeID string) ([]GetDistinctMediaKindsRow, error) {
+	rows, err := q.db.Query(ctx, getDistinctMediaKinds, volumeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetDistinctMediaKindsRow{}
+	for rows.Next() {
+		var i GetDistinctMediaKindsRow
+		if err := rows.Scan(&i.MediaKind, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDistinctMimeTypes = `-- name: GetDistinctMimeTypes :many
+SELECT mime as mime_type, COUNT(*) as count
+FROM files 
+WHERE volume_id = $1 AND mime IS NOT NULL
+GROUP BY mime
+ORDER BY count DESC
+`
+
+type GetDistinctMimeTypesRow struct {
+	MimeType pgtype.Text `json:"mime_type"`
+	Count    int64       `json:"count"`
+}
+
+func (q *Queries) GetDistinctMimeTypes(ctx context.Context, volumeID string) ([]GetDistinctMimeTypesRow, error) {
+	rows, err := q.db.Query(ctx, getDistinctMimeTypes, volumeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetDistinctMimeTypesRow{}
+	for rows.Next() {
+		var i GetDistinctMimeTypesRow
+		if err := rows.Scan(&i.MimeType, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDuplicateFiles = `-- name: GetDuplicateFiles :many
+SELECT files.id, files.volume_id, files.folder_id, files.path, files.path_hash, files.name, files.extension, files.mime, files.size_bytes, files.created_at, files.modified_at, files.accessed_at, files.mode, files.owner_uid, files.owner_gid, files.content_hash, files.is_text, files.is_binary, files.media_kind, files.duration_ms, files.bitrate_kbps, files.width, files.height, files.fps, files.color_primaries, files.transfer_characteristic, files.hdr_format, files.capture_datetime, files.camera_make, files.camera_model, files.lens_model, files.orientation, files.gps_latitude, files.gps_longitude, files.subtitle_language, files.subtitle_format, files.cue_count, files.coverage_percent, files.audio_channels, files.audio_codec, files.audio_sample_rate, files.video_codec, files.video_profile, files.video_level, files.first_seen_at, files.last_scan_at, files.organization_id FROM files WHERE files.volume_id = $1 AND files.content_hash IS NOT NULL AND files.content_hash IN (
+    SELECT f.content_hash FROM files f WHERE f.volume_id = $1 AND f.content_hash IS NOT NULL
+    GROUP BY f.content_hash HAVING COUNT(*) > 1
+) ORDER BY files.content_hash, files.path
+`
+
+func (q *Queries) GetDuplicateFiles(ctx context.Context, volumeID string) ([]Files, error) {
+	rows, err := q.db.Query(ctx, getDuplicateFiles, volumeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Files{}
+	for rows.Next() {
+		var i Files
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
+			&i.FolderID,
 			&i.Path,
-			&i.Extension,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
 			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDuplicateFilesBySize = `-- name: GetDuplicateFilesBySize :many
+SELECT size_bytes, COUNT(*) as count, array_agg(path) as paths
+FROM files 
+WHERE volume_id = $1 AND size_bytes > 0
+GROUP BY size_bytes
+HAVING COUNT(*) > 1
+ORDER BY size_bytes DESC
+LIMIT $2
+`
+
+type GetDuplicateFilesBySizeParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
+}
+
+type GetDuplicateFilesBySizeRow struct {
+	SizeBytes int64       `json:"size_bytes"`
+	Count     int64       `json:"count"`
+	Paths     interface{} `json:"paths"`
+}
+
+func (q *Queries) GetDuplicateFilesBySize(ctx context.Context, arg GetDuplicateFilesBySizeParams) ([]GetDuplicateFilesBySizeRow, error) {
+	rows, err := q.db.Query(ctx, getDuplicateFilesBySize, arg.VolumeID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetDuplicateFilesBySizeRow{}
+	for rows.Next() {
+		var i GetDuplicateFilesBySizeRow
+		if err := rows.Scan(&i.SizeBytes, &i.Count, &i.Paths); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDuplicateFilesContent = `-- name: GetDuplicateFilesContent :many
+SELECT files.id, files.volume_id, files.folder_id, files.path, files.path_hash, files.name, files.extension, files.mime, files.size_bytes, files.created_at, files.modified_at, files.accessed_at, files.mode, files.owner_uid, files.owner_gid, files.content_hash, files.is_text, files.is_binary, files.media_kind, files.duration_ms, files.bitrate_kbps, files.width, files.height, files.fps, files.color_primaries, files.transfer_characteristic, files.hdr_format, files.capture_datetime, files.camera_make, files.camera_model, files.lens_model, files.orientation, files.gps_latitude, files.gps_longitude, files.subtitle_language, files.subtitle_format, files.cue_count, files.coverage_percent, files.audio_channels, files.audio_codec, files.audio_sample_rate, files.video_codec, files.video_profile, files.video_level, files.first_seen_at, files.last_scan_at, files.organization_id FROM files WHERE files.volume_id = $1 AND files.content_hash IS NOT NULL AND files.content_hash IN (
+    SELECT f.content_hash FROM files f WHERE f.volume_id = $1 AND f.content_hash IS NOT NULL
+    GROUP BY f.content_hash HAVING COUNT(*) > 1
+) ORDER BY files.content_hash, files.path
+`
+
+func (q *Queries) GetDuplicateFilesContent(ctx context.Context, volumeID string) ([]Files, error) {
+	rows, err := q.db.Query(ctx, getDuplicateFilesContent, volumeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Files{}
+	for rows.Next() {
+		var i Files
+		if err := rows.Scan(
+			&i.ID,
+			&i.VolumeID,
+			&i.FolderID,
+			&i.Path,
+			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
+			&i.CreatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -266,15 +498,15 @@ func (q *Queries) GetDuplicateFiles(ctx context.Context, arg GetDuplicateFilesPa
 }
 
 const getExtensionStats = `-- name: GetExtensionStats :many
-SELECT
+SELECT 
     extension,
     COUNT(*) as file_count,
-    SUM(size_bytes) as total_size,
-    AVG(size_bytes) as avg_size
-FROM files
+    COALESCE(SUM(size_bytes), 0) as total_size,
+    COALESCE(AVG(size_bytes), 0) as avg_size
+FROM files 
 WHERE volume_id = $1 AND extension IS NOT NULL
 GROUP BY extension
-ORDER BY total_size DESC
+ORDER BY file_count DESC
 LIMIT $2
 `
 
@@ -286,8 +518,8 @@ type GetExtensionStatsParams struct {
 type GetExtensionStatsRow struct {
 	Extension pgtype.Text `json:"extension"`
 	FileCount int64       `json:"file_count"`
-	TotalSize int64       `json:"total_size"`
-	AvgSize   float64     `json:"avg_size"`
+	TotalSize interface{} `json:"total_size"`
+	AvgSize   interface{} `json:"avg_size"`
 }
 
 func (q *Queries) GetExtensionStats(ctx context.Context, arg GetExtensionStatsParams) ([]GetExtensionStatsRow, error) {
@@ -315,176 +547,210 @@ func (q *Queries) GetExtensionStats(ctx context.Context, arg GetExtensionStatsPa
 	return items, nil
 }
 
-const getFileByID = `-- name: GetFileByID :one
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
-WHERE id = $1
+const getFile = `-- name: GetFile :one
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files WHERE id = $1
 `
 
-type GetFileByIDRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) GetFileByID(ctx context.Context, id int64) (GetFileByIDRow, error) {
-	row := q.db.QueryRow(ctx, getFileByID, id)
-	var i GetFileByIDRow
+func (q *Queries) GetFile(ctx context.Context, id int64) (Files, error) {
+	row := q.db.QueryRow(ctx, getFile, id)
+	var i Files
 	err := row.Scan(
 		&i.ID,
-		&i.FolderID,
 		&i.VolumeID,
-		&i.Name,
+		&i.FolderID,
 		&i.Path,
-		&i.Extension,
-		&i.SizeBytes,
-		&i.DiskUsageBytes,
-		&i.Mtime,
-		&i.Ctime,
-		&i.Birthtime,
-		&i.Uid,
-		&i.Gid,
-		&i.Mode,
-		&i.Inode,
-		&i.Device,
-		&i.IsSymlink,
-		&i.SymlinkTarget,
-		&i.Mime,
-		&i.MediaKind,
-		&i.Encoding,
-		&i.HashAlgo,
-		&i.Hash,
 		&i.PathHash,
+		&i.Name,
+		&i.Extension,
+		&i.Mime,
+		&i.SizeBytes,
 		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.Mode,
+		&i.OwnerUid,
+		&i.OwnerGid,
+		&i.ContentHash,
+		&i.IsText,
+		&i.IsBinary,
+		&i.MediaKind,
+		&i.DurationMs,
+		&i.BitrateKbps,
+		&i.Width,
+		&i.Height,
+		&i.Fps,
+		&i.ColorPrimaries,
+		&i.TransferCharacteristic,
+		&i.HdrFormat,
+		&i.CaptureDatetime,
+		&i.CameraMake,
+		&i.CameraModel,
+		&i.LensModel,
+		&i.Orientation,
+		&i.GpsLatitude,
+		&i.GpsLongitude,
+		&i.SubtitleLanguage,
+		&i.SubtitleFormat,
+		&i.CueCount,
+		&i.CoveragePercent,
+		&i.AudioChannels,
+		&i.AudioCodec,
+		&i.AudioSampleRate,
+		&i.VideoCodec,
+		&i.VideoProfile,
+		&i.VideoLevel,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.OrganizationID,
+	)
+	return i, err
+}
+
+const getFileByID = `-- name: GetFileByID :one
+
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files WHERE id = $1
+`
+
+// File management queries for PostgreSQL
+func (q *Queries) GetFileByID(ctx context.Context, id int64) (Files, error) {
+	row := q.db.QueryRow(ctx, getFileByID, id)
+	var i Files
+	err := row.Scan(
+		&i.ID,
+		&i.VolumeID,
+		&i.FolderID,
+		&i.Path,
+		&i.PathHash,
+		&i.Name,
+		&i.Extension,
+		&i.Mime,
+		&i.SizeBytes,
+		&i.CreatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.Mode,
+		&i.OwnerUid,
+		&i.OwnerGid,
+		&i.ContentHash,
+		&i.IsText,
+		&i.IsBinary,
+		&i.MediaKind,
+		&i.DurationMs,
+		&i.BitrateKbps,
+		&i.Width,
+		&i.Height,
+		&i.Fps,
+		&i.ColorPrimaries,
+		&i.TransferCharacteristic,
+		&i.HdrFormat,
+		&i.CaptureDatetime,
+		&i.CameraMake,
+		&i.CameraModel,
+		&i.LensModel,
+		&i.Orientation,
+		&i.GpsLatitude,
+		&i.GpsLongitude,
+		&i.SubtitleLanguage,
+		&i.SubtitleFormat,
+		&i.CueCount,
+		&i.CoveragePercent,
+		&i.AudioChannels,
+		&i.AudioCodec,
+		&i.AudioSampleRate,
+		&i.VideoCodec,
+		&i.VideoProfile,
+		&i.VideoLevel,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const getFileByPath = `-- name: GetFileByPath :one
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
-WHERE volume_id = $1 AND path_hash = $2
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files WHERE volume_id = $1 AND path = $2
 `
 
 type GetFileByPathParams struct {
 	VolumeID string `json:"volume_id"`
-	PathHash []byte `json:"path_hash"`
+	Path     string `json:"path"`
 }
 
-type GetFileByPathRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) GetFileByPath(ctx context.Context, arg GetFileByPathParams) (GetFileByPathRow, error) {
-	row := q.db.QueryRow(ctx, getFileByPath, arg.VolumeID, arg.PathHash)
-	var i GetFileByPathRow
+func (q *Queries) GetFileByPath(ctx context.Context, arg GetFileByPathParams) (Files, error) {
+	row := q.db.QueryRow(ctx, getFileByPath, arg.VolumeID, arg.Path)
+	var i Files
 	err := row.Scan(
 		&i.ID,
-		&i.FolderID,
 		&i.VolumeID,
-		&i.Name,
+		&i.FolderID,
 		&i.Path,
-		&i.Extension,
-		&i.SizeBytes,
-		&i.DiskUsageBytes,
-		&i.Mtime,
-		&i.Ctime,
-		&i.Birthtime,
-		&i.Uid,
-		&i.Gid,
-		&i.Mode,
-		&i.Inode,
-		&i.Device,
-		&i.IsSymlink,
-		&i.SymlinkTarget,
-		&i.Mime,
-		&i.MediaKind,
-		&i.Encoding,
-		&i.HashAlgo,
-		&i.Hash,
 		&i.PathHash,
+		&i.Name,
+		&i.Extension,
+		&i.Mime,
+		&i.SizeBytes,
 		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.Mode,
+		&i.OwnerUid,
+		&i.OwnerGid,
+		&i.ContentHash,
+		&i.IsText,
+		&i.IsBinary,
+		&i.MediaKind,
+		&i.DurationMs,
+		&i.BitrateKbps,
+		&i.Width,
+		&i.Height,
+		&i.Fps,
+		&i.ColorPrimaries,
+		&i.TransferCharacteristic,
+		&i.HdrFormat,
+		&i.CaptureDatetime,
+		&i.CameraMake,
+		&i.CameraModel,
+		&i.LensModel,
+		&i.Orientation,
+		&i.GpsLatitude,
+		&i.GpsLongitude,
+		&i.SubtitleLanguage,
+		&i.SubtitleFormat,
+		&i.CueCount,
+		&i.CoveragePercent,
+		&i.AudioChannels,
+		&i.AudioCodec,
+		&i.AudioSampleRate,
+		&i.VideoCodec,
+		&i.VideoProfile,
+		&i.VideoLevel,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const getFileStats = `-- name: GetFileStats :one
-SELECT
+SELECT 
     COUNT(*) as total_files,
-    COALESCE(SUM(size_bytes), 0)::bigint as total_size,
-    COALESCE(AVG(size_bytes), 0.0)::double precision as avg_file_size,
-    COALESCE(MAX(size_bytes), 0)::bigint as largest_file,
+    COALESCE(SUM(size_bytes), 0) as total_size,
+    COALESCE(AVG(size_bytes), 0) as avg_file_size,
+    COALESCE(MAX(size_bytes), 0) as largest_file,
     COUNT(DISTINCT extension) as unique_extensions,
     COUNT(DISTINCT media_kind) as unique_media_kinds,
-    COUNT(*) FILTER (WHERE hash IS NOT NULL) as hashed_files
-FROM files
-WHERE volume_id = $1
+    COUNT(content_hash) as hashed_files
+FROM files WHERE volume_id = $1
 `
 
 type GetFileStatsRow struct {
-	TotalFiles       int64   `json:"total_files"`
-	TotalSize        int64   `json:"total_size"`
-	AvgFileSize      float64 `json:"avg_file_size"`
-	LargestFile      int64   `json:"largest_file"`
-	UniqueExtensions int64   `json:"unique_extensions"`
-	UniqueMediaKinds int64   `json:"unique_media_kinds"`
-	HashedFiles      int64   `json:"hashed_files"`
+	TotalFiles       int64       `json:"total_files"`
+	TotalSize        interface{} `json:"total_size"`
+	AvgFileSize      interface{} `json:"avg_file_size"`
+	LargestFile      interface{} `json:"largest_file"`
+	UniqueExtensions int64       `json:"unique_extensions"`
+	UniqueMediaKinds int64       `json:"unique_media_kinds"`
+	HashedFiles      int64       `json:"hashed_files"`
 }
 
 func (q *Queries) GetFileStats(ctx context.Context, volumeID string) (GetFileStatsRow, error) {
@@ -503,54 +769,61 @@ func (q *Queries) GetFileStats(ctx context.Context, volumeID string) (GetFileSta
 }
 
 const getFilesByExtension = `-- name: GetFilesByExtension :many
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
-WHERE volume_id = $1 AND extension = $2
-ORDER BY size_bytes DESC
-LIMIT $3 OFFSET $4
+SELECT extension, COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as total_size
+FROM files 
+WHERE volume_id = $1 AND extension IS NOT NULL
+GROUP BY extension
+ORDER BY count DESC
+LIMIT $2
 `
 
 type GetFilesByExtensionParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
+}
+
+type GetFilesByExtensionRow struct {
+	Extension pgtype.Text `json:"extension"`
+	Count     int64       `json:"count"`
+	TotalSize interface{} `json:"total_size"`
+}
+
+func (q *Queries) GetFilesByExtension(ctx context.Context, arg GetFilesByExtensionParams) ([]GetFilesByExtensionRow, error) {
+	rows, err := q.db.Query(ctx, getFilesByExtension, arg.VolumeID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetFilesByExtensionRow{}
+	for rows.Next() {
+		var i GetFilesByExtensionRow
+		if err := rows.Scan(&i.Extension, &i.Count, &i.TotalSize); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFilesByExtensionFiles = `-- name: GetFilesByExtensionFiles :many
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files
+WHERE volume_id = $1 AND extension = $2
+ORDER BY path
+LIMIT $3 OFFSET $4
+`
+
+type GetFilesByExtensionFilesParams struct {
 	VolumeID  string      `json:"volume_id"`
 	Extension pgtype.Text `json:"extension"`
 	Limit     int32       `json:"limit"`
 	Offset    int32       `json:"offset"`
 }
 
-type GetFilesByExtensionRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) GetFilesByExtension(ctx context.Context, arg GetFilesByExtensionParams) ([]GetFilesByExtensionRow, error) {
-	rows, err := q.db.Query(ctx, getFilesByExtension,
+func (q *Queries) GetFilesByExtensionFiles(ctx context.Context, arg GetFilesByExtensionFilesParams) ([]Files, error) {
+	rows, err := q.db.Query(ctx, getFilesByExtensionFiles,
 		arg.VolumeID,
 		arg.Extension,
 		arg.Limit,
@@ -560,36 +833,57 @@ func (q *Queries) GetFilesByExtension(ctx context.Context, arg GetFilesByExtensi
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetFilesByExtensionRow{}
+	items := []Files{}
 	for rows.Next() {
-		var i GetFilesByExtensionRow
+		var i Files
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
+			&i.FolderID,
 			&i.Path,
-			&i.Extension,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
 			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -602,13 +896,9 @@ func (q *Queries) GetFilesByExtension(ctx context.Context, arg GetFilesByExtensi
 }
 
 const getFilesByMediaKind = `-- name: GetFilesByMediaKind :many
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files
 WHERE volume_id = $1 AND media_kind = $2
-ORDER BY size_bytes DESC
+ORDER BY path
 LIMIT $3 OFFSET $4
 `
 
@@ -619,36 +909,7 @@ type GetFilesByMediaKindParams struct {
 	Offset    int32       `json:"offset"`
 }
 
-type GetFilesByMediaKindRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) GetFilesByMediaKind(ctx context.Context, arg GetFilesByMediaKindParams) ([]GetFilesByMediaKindRow, error) {
+func (q *Queries) GetFilesByMediaKind(ctx context.Context, arg GetFilesByMediaKindParams) ([]Files, error) {
 	rows, err := q.db.Query(ctx, getFilesByMediaKind,
 		arg.VolumeID,
 		arg.MediaKind,
@@ -659,36 +920,57 @@ func (q *Queries) GetFilesByMediaKind(ctx context.Context, arg GetFilesByMediaKi
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetFilesByMediaKindRow{}
+	items := []Files{}
 	for rows.Next() {
-		var i GetFilesByMediaKindRow
+		var i Files
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
+			&i.FolderID,
 			&i.Path,
-			&i.Extension,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
 			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -701,13 +983,9 @@ func (q *Queries) GetFilesByMediaKind(ctx context.Context, arg GetFilesByMediaKi
 }
 
 const getFilesByMimeType = `-- name: GetFilesByMimeType :many
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files
 WHERE volume_id = $1 AND mime = $2
-ORDER BY size_bytes DESC
+ORDER BY path
 LIMIT $3 OFFSET $4
 `
 
@@ -718,36 +996,7 @@ type GetFilesByMimeTypeParams struct {
 	Offset   int32       `json:"offset"`
 }
 
-type GetFilesByMimeTypeRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) GetFilesByMimeType(ctx context.Context, arg GetFilesByMimeTypeParams) ([]GetFilesByMimeTypeRow, error) {
+func (q *Queries) GetFilesByMimeType(ctx context.Context, arg GetFilesByMimeTypeParams) ([]Files, error) {
 	rows, err := q.db.Query(ctx, getFilesByMimeType,
 		arg.VolumeID,
 		arg.Mime,
@@ -758,36 +1007,57 @@ func (q *Queries) GetFilesByMimeType(ctx context.Context, arg GetFilesByMimeType
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetFilesByMimeTypeRow{}
+	items := []Files{}
 	for rows.Next() {
-		var i GetFilesByMimeTypeRow
+		var i Files
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
+			&i.FolderID,
 			&i.Path,
-			&i.Extension,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
 			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -800,14 +1070,7 @@ func (q *Queries) GetFilesByMimeType(ctx context.Context, arg GetFilesByMimeType
 }
 
 const getFilesBySize = `-- name: GetFilesBySize :many
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
-WHERE volume_id = $1 AND size_bytes >= $2 AND size_bytes <= $3
-ORDER BY size_bytes DESC
-LIMIT $4
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files WHERE volume_id = $1 AND size_bytes BETWEEN $2 AND $3 ORDER BY size_bytes DESC LIMIT $4
 `
 
 type GetFilesBySizeParams struct {
@@ -817,36 +1080,7 @@ type GetFilesBySizeParams struct {
 	Limit       int32  `json:"limit"`
 }
 
-type GetFilesBySizeRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) GetFilesBySize(ctx context.Context, arg GetFilesBySizeParams) ([]GetFilesBySizeRow, error) {
+func (q *Queries) GetFilesBySize(ctx context.Context, arg GetFilesBySizeParams) ([]Files, error) {
 	rows, err := q.db.Query(ctx, getFilesBySize,
 		arg.VolumeID,
 		arg.SizeBytes,
@@ -857,36 +1091,57 @@ func (q *Queries) GetFilesBySize(ctx context.Context, arg GetFilesBySizeParams) 
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetFilesBySizeRow{}
+	items := []Files{}
 	for rows.Next() {
-		var i GetFilesBySizeRow
+		var i Files
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
+			&i.FolderID,
 			&i.Path,
-			&i.Extension,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
 			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -899,85 +1154,71 @@ func (q *Queries) GetFilesBySize(ctx context.Context, arg GetFilesBySizeParams) 
 }
 
 const getFilesModifiedSince = `-- name: GetFilesModifiedSince :many
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
-WHERE volume_id = $1 AND (mtime > $2 OR ctime > $2)
-ORDER BY mtime DESC
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files WHERE volume_id = $1 AND modified_at >= $2 ORDER BY modified_at DESC
 `
 
 type GetFilesModifiedSinceParams struct {
-	VolumeID string    `json:"volume_id"`
-	Mtime    time.Time `json:"mtime"`
+	VolumeID   string             `json:"volume_id"`
+	ModifiedAt pgtype.Timestamptz `json:"modified_at"`
 }
 
-type GetFilesModifiedSinceRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) GetFilesModifiedSince(ctx context.Context, arg GetFilesModifiedSinceParams) ([]GetFilesModifiedSinceRow, error) {
-	rows, err := q.db.Query(ctx, getFilesModifiedSince, arg.VolumeID, arg.Mtime)
+func (q *Queries) GetFilesModifiedSince(ctx context.Context, arg GetFilesModifiedSinceParams) ([]Files, error) {
+	rows, err := q.db.Query(ctx, getFilesModifiedSince, arg.VolumeID, arg.ModifiedAt)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetFilesModifiedSinceRow{}
+	items := []Files{}
 	for rows.Next() {
-		var i GetFilesModifiedSinceRow
+		var i Files
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
+			&i.FolderID,
 			&i.Path,
-			&i.Extension,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
 			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -990,11 +1231,8 @@ func (q *Queries) GetFilesModifiedSince(ctx context.Context, arg GetFilesModifie
 }
 
 const getLargestFiles = `-- name: GetLargestFiles :many
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
+SELECT id, volume_id, path, name, size_bytes, modified_at
+FROM files 
 WHERE volume_id = $1
 ORDER BY size_bytes DESC
 LIMIT $2
@@ -1006,32 +1244,12 @@ type GetLargestFilesParams struct {
 }
 
 type GetLargestFilesRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
+	ID         int64              `json:"id"`
+	VolumeID   string             `json:"volume_id"`
+	Path       string             `json:"path"`
+	Name       string             `json:"name"`
+	SizeBytes  int64              `json:"size_bytes"`
+	ModifiedAt pgtype.Timestamptz `json:"modified_at"`
 }
 
 func (q *Queries) GetLargestFiles(ctx context.Context, arg GetLargestFilesParams) ([]GetLargestFilesRow, error) {
@@ -1045,31 +1263,11 @@ func (q *Queries) GetLargestFiles(ctx context.Context, arg GetLargestFilesParams
 		var i GetLargestFilesRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
 			&i.Path,
-			&i.Extension,
+			&i.Name,
 			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
-			&i.PathHash,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -1082,22 +1280,22 @@ func (q *Queries) GetLargestFiles(ctx context.Context, arg GetLargestFilesParams
 }
 
 const getMediaKindStats = `-- name: GetMediaKindStats :many
-SELECT
+SELECT 
     media_kind,
     COUNT(*) as file_count,
-    SUM(size_bytes) as total_size,
-    AVG(size_bytes) as avg_size
-FROM files
+    COALESCE(SUM(size_bytes), 0) as total_size,
+    COALESCE(AVG(size_bytes), 0) as avg_size
+FROM files 
 WHERE volume_id = $1 AND media_kind IS NOT NULL
 GROUP BY media_kind
-ORDER BY total_size DESC
+ORDER BY file_count DESC
 `
 
 type GetMediaKindStatsRow struct {
 	MediaKind pgtype.Text `json:"media_kind"`
 	FileCount int64       `json:"file_count"`
-	TotalSize int64       `json:"total_size"`
-	AvgSize   float64     `json:"avg_size"`
+	TotalSize interface{} `json:"total_size"`
+	AvgSize   interface{} `json:"avg_size"`
 }
 
 func (q *Queries) GetMediaKindStats(ctx context.Context, volumeID string) ([]GetMediaKindStatsRow, error) {
@@ -1126,87 +1324,164 @@ func (q *Queries) GetMediaKindStats(ctx context.Context, volumeID string) ([]Get
 }
 
 const getRecentFiles = `-- name: GetRecentFiles :many
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
-WHERE volume_id = $1 AND mtime > $2
-ORDER BY mtime DESC
-LIMIT $3
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files WHERE volume_id = $1 AND modified_at >= $2 ORDER BY modified_at DESC LIMIT $3
 `
 
 type GetRecentFilesParams struct {
-	VolumeID string    `json:"volume_id"`
-	Mtime    time.Time `json:"mtime"`
-	Limit    int32     `json:"limit"`
+	VolumeID   string             `json:"volume_id"`
+	ModifiedAt pgtype.Timestamptz `json:"modified_at"`
+	Limit      int32              `json:"limit"`
 }
 
-type GetRecentFilesRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) GetRecentFiles(ctx context.Context, arg GetRecentFilesParams) ([]GetRecentFilesRow, error) {
-	rows, err := q.db.Query(ctx, getRecentFiles, arg.VolumeID, arg.Mtime, arg.Limit)
+func (q *Queries) GetRecentFiles(ctx context.Context, arg GetRecentFilesParams) ([]Files, error) {
+	rows, err := q.db.Query(ctx, getRecentFiles, arg.VolumeID, arg.ModifiedAt, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetRecentFilesRow{}
+	items := []Files{}
 	for rows.Next() {
-		var i GetRecentFilesRow
+		var i Files
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
+			&i.FolderID,
 			&i.Path,
-			&i.Extension,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
 			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTotalSizeByVolume = `-- name: GetTotalSizeByVolume :one
+SELECT COALESCE(SUM(size_bytes), 0) as total_size FROM files WHERE volume_id = $1
+`
+
+func (q *Queries) GetTotalSizeByVolume(ctx context.Context, volumeID string) (interface{}, error) {
+	row := q.db.QueryRow(ctx, getTotalSizeByVolume, volumeID)
+	var total_size interface{}
+	err := row.Scan(&total_size)
+	return total_size, err
+}
+
+const listFiles = `-- name: ListFiles :many
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files 
+WHERE volume_id = $1
+ORDER BY path
+LIMIT $2 OFFSET $3
+`
+
+type ListFilesParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+func (q *Queries) ListFiles(ctx context.Context, arg ListFilesParams) ([]Files, error) {
+	rows, err := q.db.Query(ctx, listFiles, arg.VolumeID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Files{}
+	for rows.Next() {
+		var i Files
+		if err := rows.Scan(
+			&i.ID,
+			&i.VolumeID,
+			&i.FolderID,
+			&i.Path,
+			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
+			&i.CreatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -1219,87 +1494,72 @@ func (q *Queries) GetRecentFiles(ctx context.Context, arg GetRecentFilesParams) 
 }
 
 const listFilesByFolder = `-- name: ListFilesByFolder :many
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
-WHERE folder_id = $1
-ORDER BY name
-LIMIT $2 OFFSET $3
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files WHERE folder_id = $1 ORDER BY name LIMIT $2 OFFSET $3
 `
 
 type ListFilesByFolderParams struct {
-	FolderID int64 `json:"folder_id"`
-	Limit    int32 `json:"limit"`
-	Offset   int32 `json:"offset"`
+	FolderID pgtype.Int8 `json:"folder_id"`
+	Limit    int32       `json:"limit"`
+	Offset   int32       `json:"offset"`
 }
 
-type ListFilesByFolderRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) ListFilesByFolder(ctx context.Context, arg ListFilesByFolderParams) ([]ListFilesByFolderRow, error) {
+func (q *Queries) ListFilesByFolder(ctx context.Context, arg ListFilesByFolderParams) ([]Files, error) {
 	rows, err := q.db.Query(ctx, listFilesByFolder, arg.FolderID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListFilesByFolderRow{}
+	items := []Files{}
 	for rows.Next() {
-		var i ListFilesByFolderRow
+		var i Files
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
+			&i.FolderID,
 			&i.Path,
-			&i.Extension,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
 			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -1312,14 +1572,7 @@ func (q *Queries) ListFilesByFolder(ctx context.Context, arg ListFilesByFolderPa
 }
 
 const listFilesByVolume = `-- name: ListFilesByVolume :many
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
-WHERE volume_id = $1
-ORDER BY path
-LIMIT $2 OFFSET $3
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files WHERE volume_id = $1 ORDER BY path LIMIT $2 OFFSET $3
 `
 
 type ListFilesByVolumeParams struct {
@@ -1328,71 +1581,147 @@ type ListFilesByVolumeParams struct {
 	Offset   int32  `json:"offset"`
 }
 
-type ListFilesByVolumeRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) ListFilesByVolume(ctx context.Context, arg ListFilesByVolumeParams) ([]ListFilesByVolumeRow, error) {
+func (q *Queries) ListFilesByVolume(ctx context.Context, arg ListFilesByVolumeParams) ([]Files, error) {
 	rows, err := q.db.Query(ctx, listFilesByVolume, arg.VolumeID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListFilesByVolumeRow{}
+	items := []Files{}
 	for rows.Next() {
-		var i ListFilesByVolumeRow
+		var i Files
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
+			&i.FolderID,
 			&i.Path,
-			&i.Extension,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
 			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFilesByVolumeAndOrganization = `-- name: ListFilesByVolumeAndOrganization :many
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files WHERE volume_id = $1 AND organization_id = $2 ORDER BY path LIMIT $3 OFFSET $4
+`
+
+type ListFilesByVolumeAndOrganizationParams struct {
+	VolumeID       string      `json:"volume_id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	Limit          int32       `json:"limit"`
+	Offset         int32       `json:"offset"`
+}
+
+func (q *Queries) ListFilesByVolumeAndOrganization(ctx context.Context, arg ListFilesByVolumeAndOrganizationParams) ([]Files, error) {
+	rows, err := q.db.Query(ctx, listFilesByVolumeAndOrganization,
+		arg.VolumeID,
+		arg.OrganizationID,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Files{}
+	for rows.Next() {
+		var i Files
+		if err := rows.Scan(
+			&i.ID,
+			&i.VolumeID,
+			&i.FolderID,
+			&i.Path,
+			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
+			&i.CreatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -1405,87 +1734,81 @@ func (q *Queries) ListFilesByVolume(ctx context.Context, arg ListFilesByVolumePa
 }
 
 const searchFilesByName = `-- name: SearchFilesByName :many
-SELECT id, folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-       mtime, ctime, birthtime, uid, gid, mode, inode, device,
-       is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash,
-       created_at, updated_at
-FROM files
-WHERE volume_id = $1 AND name ILIKE $2
+SELECT id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id FROM files
+WHERE volume_id = $1 AND name ILIKE '%' || $2 || '%'
 ORDER BY name
-LIMIT $3
+LIMIT $3 OFFSET $4
 `
 
 type SearchFilesByNameParams struct {
-	VolumeID string `json:"volume_id"`
-	Name     string `json:"name"`
-	Limit    int32  `json:"limit"`
+	VolumeID string      `json:"volume_id"`
+	Column2  pgtype.Text `json:"column_2"`
+	Limit    int32       `json:"limit"`
+	Offset   int32       `json:"offset"`
 }
 
-type SearchFilesByNameRow struct {
-	ID             int64            `json:"id"`
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
-	CreatedAt      time.Time        `json:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at"`
-}
-
-func (q *Queries) SearchFilesByName(ctx context.Context, arg SearchFilesByNameParams) ([]SearchFilesByNameRow, error) {
-	rows, err := q.db.Query(ctx, searchFilesByName, arg.VolumeID, arg.Name, arg.Limit)
+func (q *Queries) SearchFilesByName(ctx context.Context, arg SearchFilesByNameParams) ([]Files, error) {
+	rows, err := q.db.Query(ctx, searchFilesByName,
+		arg.VolumeID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []SearchFilesByNameRow{}
+	items := []Files{}
 	for rows.Next() {
-		var i SearchFilesByNameRow
+		var i Files
 		if err := rows.Scan(
 			&i.ID,
-			&i.FolderID,
 			&i.VolumeID,
-			&i.Name,
+			&i.FolderID,
 			&i.Path,
-			&i.Extension,
-			&i.SizeBytes,
-			&i.DiskUsageBytes,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Birthtime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.Inode,
-			&i.Device,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.Mime,
-			&i.MediaKind,
-			&i.Encoding,
-			&i.HashAlgo,
-			&i.Hash,
 			&i.PathHash,
+			&i.Name,
+			&i.Extension,
+			&i.Mime,
+			&i.SizeBytes,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.Mode,
+			&i.OwnerUid,
+			&i.OwnerGid,
+			&i.ContentHash,
+			&i.IsText,
+			&i.IsBinary,
+			&i.MediaKind,
+			&i.DurationMs,
+			&i.BitrateKbps,
+			&i.Width,
+			&i.Height,
+			&i.Fps,
+			&i.ColorPrimaries,
+			&i.TransferCharacteristic,
+			&i.HdrFormat,
+			&i.CaptureDatetime,
+			&i.CameraMake,
+			&i.CameraModel,
+			&i.LensModel,
+			&i.Orientation,
+			&i.GpsLatitude,
+			&i.GpsLongitude,
+			&i.SubtitleLanguage,
+			&i.SubtitleFormat,
+			&i.CueCount,
+			&i.CoveragePercent,
+			&i.AudioChannels,
+			&i.AudioCodec,
+			&i.AudioSampleRate,
+			&i.VideoCodec,
+			&i.VideoProfile,
+			&i.VideoLevel,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -1497,75 +1820,107 @@ func (q *Queries) SearchFilesByName(ctx context.Context, arg SearchFilesByNamePa
 	return items, nil
 }
 
-const updateFileHash = `-- name: UpdateFileHash :exec
-UPDATE files
-SET
-    hash_algo = $2,
-    hash = $3,
-    updated_at = CURRENT_TIMESTAMP
+const updateFile = `-- name: UpdateFile :one
+UPDATE files 
+SET 
+    size_bytes = $2,
+    modified_at = $3,
+    accessed_at = $4,
+    content_hash = $5,
+    last_scan_at = NOW()
 WHERE id = $1
+RETURNING id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id
+`
+
+type UpdateFileParams struct {
+	ID          int64              `json:"id"`
+	SizeBytes   int64              `json:"size_bytes"`
+	ModifiedAt  pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt  pgtype.Timestamptz `json:"accessed_at"`
+	ContentHash pgtype.Text        `json:"content_hash"`
+}
+
+func (q *Queries) UpdateFile(ctx context.Context, arg UpdateFileParams) (Files, error) {
+	row := q.db.QueryRow(ctx, updateFile,
+		arg.ID,
+		arg.SizeBytes,
+		arg.ModifiedAt,
+		arg.AccessedAt,
+		arg.ContentHash,
+	)
+	var i Files
+	err := row.Scan(
+		&i.ID,
+		&i.VolumeID,
+		&i.FolderID,
+		&i.Path,
+		&i.PathHash,
+		&i.Name,
+		&i.Extension,
+		&i.Mime,
+		&i.SizeBytes,
+		&i.CreatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.Mode,
+		&i.OwnerUid,
+		&i.OwnerGid,
+		&i.ContentHash,
+		&i.IsText,
+		&i.IsBinary,
+		&i.MediaKind,
+		&i.DurationMs,
+		&i.BitrateKbps,
+		&i.Width,
+		&i.Height,
+		&i.Fps,
+		&i.ColorPrimaries,
+		&i.TransferCharacteristic,
+		&i.HdrFormat,
+		&i.CaptureDatetime,
+		&i.CameraMake,
+		&i.CameraModel,
+		&i.LensModel,
+		&i.Orientation,
+		&i.GpsLatitude,
+		&i.GpsLongitude,
+		&i.SubtitleLanguage,
+		&i.SubtitleFormat,
+		&i.CueCount,
+		&i.CoveragePercent,
+		&i.AudioChannels,
+		&i.AudioCodec,
+		&i.AudioSampleRate,
+		&i.VideoCodec,
+		&i.VideoProfile,
+		&i.VideoLevel,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.OrganizationID,
+	)
+	return i, err
+}
+
+const updateFileHash = `-- name: UpdateFileHash :exec
+UPDATE files SET content_hash = $2 WHERE id = $1
 `
 
 type UpdateFileHashParams struct {
-	ID       int64       `json:"id"`
-	HashAlgo pgtype.Text `json:"hash_algo"`
-	Hash     []byte      `json:"hash"`
+	ID          int64       `json:"id"`
+	ContentHash pgtype.Text `json:"content_hash"`
 }
 
 func (q *Queries) UpdateFileHash(ctx context.Context, arg UpdateFileHashParams) error {
-	_, err := q.db.Exec(ctx, updateFileHash, arg.ID, arg.HashAlgo, arg.Hash)
-	return err
-}
-
-const updateFileMetadata = `-- name: UpdateFileMetadata :exec
-UPDATE files
-SET
-    size_bytes = $2,
-    disk_usage_bytes = $3,
-    mtime = $4,
-    ctime = $5,
-    birthtime = $6,
-    uid = $7,
-    gid = $8,
-    mode = $9,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1
-`
-
-type UpdateFileMetadataParams struct {
-	ID             int64            `json:"id"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-}
-
-func (q *Queries) UpdateFileMetadata(ctx context.Context, arg UpdateFileMetadataParams) error {
-	_, err := q.db.Exec(ctx, updateFileMetadata,
-		arg.ID,
-		arg.SizeBytes,
-		arg.DiskUsageBytes,
-		arg.Mtime,
-		arg.Ctime,
-		arg.Birthtime,
-		arg.Uid,
-		arg.Gid,
-		arg.Mode,
-	)
+	_, err := q.db.Exec(ctx, updateFileHash, arg.ID, arg.ContentHash)
 	return err
 }
 
 const updateFileMime = `-- name: UpdateFileMime :exec
-UPDATE files
-SET
+UPDATE files SET 
     mime = $2,
     media_kind = $3,
-    encoding = $4,
-    updated_at = CURRENT_TIMESTAMP
+    is_text = $4,
+    is_binary = $5
 WHERE id = $1
 `
 
@@ -1573,7 +1928,8 @@ type UpdateFileMimeParams struct {
 	ID        int64       `json:"id"`
 	Mime      pgtype.Text `json:"mime"`
 	MediaKind pgtype.Text `json:"media_kind"`
-	Encoding  pgtype.Text `json:"encoding"`
+	IsText    pgtype.Bool `json:"is_text"`
+	IsBinary  pgtype.Bool `json:"is_binary"`
 }
 
 func (q *Queries) UpdateFileMime(ctx context.Context, arg UpdateFileMimeParams) error {
@@ -1581,105 +1937,165 @@ func (q *Queries) UpdateFileMime(ctx context.Context, arg UpdateFileMimeParams) 
 		arg.ID,
 		arg.Mime,
 		arg.MediaKind,
-		arg.Encoding,
+		arg.IsText,
+		arg.IsBinary,
+	)
+	return err
+}
+
+const updateFileSystemMetadata = `-- name: UpdateFileSystemMetadata :exec
+UPDATE files SET 
+    size_bytes = $2,
+    modified_at = $3,
+    accessed_at = $4,
+    mode = $5,
+    owner_uid = $6,
+    owner_gid = $7
+WHERE id = $1
+`
+
+type UpdateFileSystemMetadataParams struct {
+	ID         int64              `json:"id"`
+	SizeBytes  int64              `json:"size_bytes"`
+	ModifiedAt pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt pgtype.Timestamptz `json:"accessed_at"`
+	Mode       pgtype.Int4        `json:"mode"`
+	OwnerUid   pgtype.Int4        `json:"owner_uid"`
+	OwnerGid   pgtype.Int4        `json:"owner_gid"`
+}
+
+func (q *Queries) UpdateFileSystemMetadata(ctx context.Context, arg UpdateFileSystemMetadataParams) error {
+	_, err := q.db.Exec(ctx, updateFileSystemMetadata,
+		arg.ID,
+		arg.SizeBytes,
+		arg.ModifiedAt,
+		arg.AccessedAt,
+		arg.Mode,
+		arg.OwnerUid,
+		arg.OwnerGid,
 	)
 	return err
 }
 
 const upsertFile = `-- name: UpsertFile :one
 INSERT INTO files (
-    folder_id, volume_id, name, path, extension, size_bytes, disk_usage_bytes,
-    mtime, ctime, birthtime, uid, gid, mode, inode, device,
-    is_symlink, symlink_target, mime, media_kind, encoding, hash_algo, hash, path_hash
+    volume_id, folder_id, path, path_hash, name, extension, mime, 
+    size_bytes, modified_at, accessed_at, mode, owner_uid, owner_gid, 
+    content_hash, is_text, is_binary, media_kind, organization_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
-)
-ON CONFLICT (volume_id, path_hash)
-DO UPDATE SET
+    $1, $2, $3, $4, $5, $6, $7, 
+    $8, $9, $10, $11, $12, $13, 
+    $14, $15, $16, $17, $18
+) ON CONFLICT (volume_id, path_hash) DO UPDATE SET
     folder_id = EXCLUDED.folder_id,
     name = EXCLUDED.name,
-    path = EXCLUDED.path,
     extension = EXCLUDED.extension,
-    size_bytes = EXCLUDED.size_bytes,
-    disk_usage_bytes = EXCLUDED.disk_usage_bytes,
-    mtime = EXCLUDED.mtime,
-    ctime = EXCLUDED.ctime,
-    birthtime = EXCLUDED.birthtime,
-    uid = EXCLUDED.uid,
-    gid = EXCLUDED.gid,
-    mode = EXCLUDED.mode,
-    inode = EXCLUDED.inode,
-    device = EXCLUDED.device,
-    is_symlink = EXCLUDED.is_symlink,
-    symlink_target = EXCLUDED.symlink_target,
     mime = EXCLUDED.mime,
+    size_bytes = EXCLUDED.size_bytes,
+    modified_at = EXCLUDED.modified_at,
+    accessed_at = EXCLUDED.accessed_at,
+    mode = EXCLUDED.mode,
+    owner_uid = EXCLUDED.owner_uid,
+    owner_gid = EXCLUDED.owner_gid,
+    content_hash = EXCLUDED.content_hash,
+    is_text = EXCLUDED.is_text,
+    is_binary = EXCLUDED.is_binary,
     media_kind = EXCLUDED.media_kind,
-    encoding = EXCLUDED.encoding,
-    hash_algo = EXCLUDED.hash_algo,
-    hash = EXCLUDED.hash,
-    updated_at = CURRENT_TIMESTAMP
-RETURNING id, created_at, updated_at
+    organization_id = EXCLUDED.organization_id
+RETURNING id, volume_id, folder_id, path, path_hash, name, extension, mime, size_bytes, created_at, modified_at, accessed_at, mode, owner_uid, owner_gid, content_hash, is_text, is_binary, media_kind, duration_ms, bitrate_kbps, width, height, fps, color_primaries, transfer_characteristic, hdr_format, capture_datetime, camera_make, camera_model, lens_model, orientation, gps_latitude, gps_longitude, subtitle_language, subtitle_format, cue_count, coverage_percent, audio_channels, audio_codec, audio_sample_rate, video_codec, video_profile, video_level, first_seen_at, last_scan_at, organization_id
 `
 
 type UpsertFileParams struct {
-	FolderID       int64            `json:"folder_id"`
-	VolumeID       string           `json:"volume_id"`
-	Name           string           `json:"name"`
-	Path           string           `json:"path"`
-	Extension      pgtype.Text      `json:"extension"`
-	SizeBytes      int64            `json:"size_bytes"`
-	DiskUsageBytes int64            `json:"disk_usage_bytes"`
-	Mtime          time.Time        `json:"mtime"`
-	Ctime          time.Time        `json:"ctime"`
-	Birthtime      pgtype.Timestamp `json:"birthtime"`
-	Uid            pgtype.Int4      `json:"uid"`
-	Gid            pgtype.Int4      `json:"gid"`
-	Mode           pgtype.Int4      `json:"mode"`
-	Inode          pgtype.Int8      `json:"inode"`
-	Device         pgtype.Text      `json:"device"`
-	IsSymlink      pgtype.Bool      `json:"is_symlink"`
-	SymlinkTarget  pgtype.Text      `json:"symlink_target"`
-	Mime           pgtype.Text      `json:"mime"`
-	MediaKind      pgtype.Text      `json:"media_kind"`
-	Encoding       pgtype.Text      `json:"encoding"`
-	HashAlgo       pgtype.Text      `json:"hash_algo"`
-	Hash           []byte           `json:"hash"`
-	PathHash       []byte           `json:"path_hash"`
+	VolumeID       string             `json:"volume_id"`
+	FolderID       pgtype.Int8        `json:"folder_id"`
+	Path           string             `json:"path"`
+	PathHash       []byte             `json:"path_hash"`
+	Name           string             `json:"name"`
+	Extension      pgtype.Text        `json:"extension"`
+	Mime           pgtype.Text        `json:"mime"`
+	SizeBytes      int64              `json:"size_bytes"`
+	ModifiedAt     pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt     pgtype.Timestamptz `json:"accessed_at"`
+	Mode           pgtype.Int4        `json:"mode"`
+	OwnerUid       pgtype.Int4        `json:"owner_uid"`
+	OwnerGid       pgtype.Int4        `json:"owner_gid"`
+	ContentHash    pgtype.Text        `json:"content_hash"`
+	IsText         pgtype.Bool        `json:"is_text"`
+	IsBinary       pgtype.Bool        `json:"is_binary"`
+	MediaKind      pgtype.Text        `json:"media_kind"`
+	OrganizationID pgtype.Int8        `json:"organization_id"`
 }
 
-type UpsertFileRow struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (q *Queries) UpsertFile(ctx context.Context, arg UpsertFileParams) (UpsertFileRow, error) {
+func (q *Queries) UpsertFile(ctx context.Context, arg UpsertFileParams) (Files, error) {
 	row := q.db.QueryRow(ctx, upsertFile,
-		arg.FolderID,
 		arg.VolumeID,
-		arg.Name,
+		arg.FolderID,
 		arg.Path,
-		arg.Extension,
-		arg.SizeBytes,
-		arg.DiskUsageBytes,
-		arg.Mtime,
-		arg.Ctime,
-		arg.Birthtime,
-		arg.Uid,
-		arg.Gid,
-		arg.Mode,
-		arg.Inode,
-		arg.Device,
-		arg.IsSymlink,
-		arg.SymlinkTarget,
-		arg.Mime,
-		arg.MediaKind,
-		arg.Encoding,
-		arg.HashAlgo,
-		arg.Hash,
 		arg.PathHash,
+		arg.Name,
+		arg.Extension,
+		arg.Mime,
+		arg.SizeBytes,
+		arg.ModifiedAt,
+		arg.AccessedAt,
+		arg.Mode,
+		arg.OwnerUid,
+		arg.OwnerGid,
+		arg.ContentHash,
+		arg.IsText,
+		arg.IsBinary,
+		arg.MediaKind,
+		arg.OrganizationID,
 	)
-	var i UpsertFileRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	var i Files
+	err := row.Scan(
+		&i.ID,
+		&i.VolumeID,
+		&i.FolderID,
+		&i.Path,
+		&i.PathHash,
+		&i.Name,
+		&i.Extension,
+		&i.Mime,
+		&i.SizeBytes,
+		&i.CreatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.Mode,
+		&i.OwnerUid,
+		&i.OwnerGid,
+		&i.ContentHash,
+		&i.IsText,
+		&i.IsBinary,
+		&i.MediaKind,
+		&i.DurationMs,
+		&i.BitrateKbps,
+		&i.Width,
+		&i.Height,
+		&i.Fps,
+		&i.ColorPrimaries,
+		&i.TransferCharacteristic,
+		&i.HdrFormat,
+		&i.CaptureDatetime,
+		&i.CameraMake,
+		&i.CameraModel,
+		&i.LensModel,
+		&i.Orientation,
+		&i.GpsLatitude,
+		&i.GpsLongitude,
+		&i.SubtitleLanguage,
+		&i.SubtitleFormat,
+		&i.CueCount,
+		&i.CoveragePercent,
+		&i.AudioChannels,
+		&i.AudioCodec,
+		&i.AudioSampleRate,
+		&i.VideoCodec,
+		&i.VideoProfile,
+		&i.VideoLevel,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.OrganizationID,
+	)
 	return i, err
 }

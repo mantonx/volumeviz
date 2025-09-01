@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
 )
 
@@ -108,50 +110,147 @@ func NewPermissionChecker(queries *sqlc.Queries) PermissionChecker {
 	}
 }
 
-// Stub implementations - TODO: Replace with actual SQLC-generated methods
+// SQLC-based implementations
 
 func (pc *DefaultPermissionChecker) HasPermission(ctx context.Context, userID int64, permission Permission) (bool, error) {
-	// TODO: Implement when SQLC generates the methods
-	// For now, allow admin-level permissions for testing
-	return true, nil
+	// Parse permission to get resource and action
+	resource, action := parsePermission(permission)
+	
+	// Get the permission record
+	perm, err := pc.queries.GetPermissionByResourceAction(ctx, sqlc.GetPermissionByResourceActionParams{
+		Resource: resource,
+		Action:   action,
+	})
+	if err != nil {
+		// If permission doesn't exist, check role-based permissions
+		return pc.checkRoleBasedPermission(ctx, userID, permission)
+	}
+	
+	// Check user-specific permission override
+	userPerm, err := pc.queries.CheckUserPermission(ctx, sqlc.CheckUserPermissionParams{
+		UserID:       userID,
+		PermissionID: perm.ID,
+		ResourceID:   pgtype.Text{}, // NULL for general permissions
+	})
+	if err == nil {
+		return userPerm.Granted, nil
+	}
+	
+	// Fall back to role-based permissions
+	return pc.checkRoleBasedPermission(ctx, userID, permission)
 }
 
 func (pc *DefaultPermissionChecker) HasPermissionForResource(ctx context.Context, userID int64, permission Permission, resourceID string) (bool, error) {
-	// TODO: Implement when SQLC generates the methods
-	// For now, allow admin-level permissions for testing
-	return true, nil
+	// Parse permission to get resource and action
+	resource, action := parsePermission(permission)
+	
+	// Get the permission record
+	perm, err := pc.queries.GetPermissionByResourceAction(ctx, sqlc.GetPermissionByResourceActionParams{
+		Resource: resource,
+		Action:   action,
+	})
+	if err != nil {
+		// If permission doesn't exist, check role-based permissions
+		return pc.checkRoleBasedPermission(ctx, userID, permission)
+	}
+	
+	// Check user-specific permission for this resource
+	userPerm, err := pc.queries.CheckUserPermission(ctx, sqlc.CheckUserPermissionParams{
+		UserID:       userID,
+		PermissionID: perm.ID,
+		ResourceID:   pgtype.Text{String: resourceID, Valid: true},
+	})
+	if err == nil {
+		return userPerm.Granted, nil
+	}
+	
+	// Fall back to general permission check
+	return pc.HasPermission(ctx, userID, permission)
 }
 
 func (pc *DefaultPermissionChecker) GetUserPermissions(ctx context.Context, userID int64) (PermissionSet, error) {
-	// TODO: Implement when SQLC generates the methods
-	// For now, return all permissions for testing
 	permissions := make(PermissionSet)
-	allPerms := []Permission{
-		PermissionVolumesRead, PermissionVolumesWrite, PermissionVolumesDelete, PermissionVolumesScan,
-		PermissionScansRead, PermissionScansWrite, PermissionScansDelete,
-		PermissionUsersRead, PermissionUsersWrite, PermissionUsersDelete,
-		PermissionOrganizationRead, PermissionOrganizationWrite, PermissionOrganizationAdmin,
-		PermissionSettingsRead, PermissionSettingsWrite,
-		PermissionAlertsRead, PermissionAlertsWrite,
-		PermissionSearchRead, PermissionSearchWrite,
-		PermissionDockerRead, PermissionDockerWrite,
+	
+	// Get user-specific permissions
+	userPerms, err := pc.queries.GetUserPermissions(ctx, userID)
+	if err == nil {
+		for _, perm := range userPerms {
+			if perm.Granted {
+				permissions.Add(Permission(perm.Name))
+			}
+		}
 	}
 	
-	for _, perm := range allPerms {
-		permissions.Add(perm)
+	// Get role-based permissions
+	user, err := pc.queries.GetUserByID(ctx, userID)
+	if err != nil {
+		return permissions, err
+	}
+	
+	rolePerms, err := pc.queries.GetRolePermissions(ctx, string(user.Role))
+	if err == nil {
+		for _, perm := range rolePerms {
+			permissions.Add(Permission(perm))
+		}
 	}
 	
 	return permissions, nil
 }
 
 func (pc *DefaultPermissionChecker) GrantPermission(ctx context.Context, userID int64, permission Permission, grantedBy int64, resourceID *string) error {
-	// TODO: Implement when SQLC generates the methods
-	return fmt.Errorf("GrantPermission not implemented yet - waiting for SQLC generation")
+	// Parse permission to get resource and action
+	resource, action := parsePermission(permission)
+	
+	// Get the permission record
+	perm, err := pc.queries.GetPermissionByResourceAction(ctx, sqlc.GetPermissionByResourceActionParams{
+		Resource: resource,
+		Action:   action,
+	})
+	if err != nil {
+		return fmt.Errorf("permission not found: %w", err)
+	}
+	
+	// Convert resourceID to pgtype.Text
+	var resourceIDText pgtype.Text
+	if resourceID != nil {
+		resourceIDText = pgtype.Text{String: *resourceID, Valid: true}
+	}
+	
+	// Grant the permission
+	return pc.queries.GrantUserPermission(ctx, sqlc.GrantUserPermissionParams{
+		UserID:       userID,
+		PermissionID: perm.ID,
+		Granted:      true,
+		GrantedBy:    pgtype.Int8{Int64: grantedBy, Valid: true},
+		ResourceID:   resourceIDText,
+	})
 }
 
 func (pc *DefaultPermissionChecker) RevokePermission(ctx context.Context, userID int64, permission Permission, resourceID *string) error {
-	// TODO: Implement when SQLC generates the methods
-	return fmt.Errorf("RevokePermission not implemented yet - waiting for SQLC generation")
+	// Parse permission to get resource and action
+	resource, action := parsePermission(permission)
+	
+	// Get the permission record
+	perm, err := pc.queries.GetPermissionByResourceAction(ctx, sqlc.GetPermissionByResourceActionParams{
+		Resource: resource,
+		Action:   action,
+	})
+	if err != nil {
+		return fmt.Errorf("permission not found: %w", err)
+	}
+	
+	// Convert resourceID to pgtype.Text
+	var resourceIDText pgtype.Text
+	if resourceID != nil {
+		resourceIDText = pgtype.Text{String: *resourceID, Valid: true}
+	}
+	
+	// Revoke the permission
+	return pc.queries.RevokeUserPermission(ctx, sqlc.RevokeUserPermissionParams{
+		UserID:       userID,
+		PermissionID: perm.ID,
+		ResourceID:   resourceIDText,
+	})
 }
 
 // RequirePermission is a middleware function that checks if the current user has a specific permission
@@ -180,6 +279,41 @@ func RequirePermission(checker PermissionChecker, permission Permission) func(ne
 			next(w, r)
 		}
 	}
+}
+
+// Helper functions
+
+// parsePermission splits a permission string like "volumes:read" into resource and action
+func parsePermission(permission Permission) (resource, action string) {
+	parts := strings.Split(string(permission), ":")
+	if len(parts) != 2 {
+		return "unknown", "unknown"
+	}
+	return parts[0], parts[1]
+}
+
+// checkRoleBasedPermission checks if user has permission based on their role
+func (pc *DefaultPermissionChecker) checkRoleBasedPermission(ctx context.Context, userID int64, permission Permission) (bool, error) {
+	// Get user to check their role
+	user, err := pc.queries.GetUserByID(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	
+	// Get permissions for this role
+	rolePerms, err := pc.queries.GetRolePermissions(ctx, string(user.Role))
+	if err != nil {
+		return false, err
+	}
+	
+	// Check if permission is in role permissions
+	for _, perm := range rolePerms {
+		if Permission(perm) == permission {
+			return true, nil
+		}
+	}
+	
+	return false, nil
 }
 
 // RequirePermissionForResource checks permission for a specific resource

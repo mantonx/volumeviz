@@ -358,7 +358,14 @@ func (h *Hub) broadcastCurrentVolumeStates() {
 	log.Printf("[WEBSOCKET-HUB] Broadcasting volume states to %d connected clients", totalConnections)
 
 	ctx := context.Background()
-	volumes, err := h.store.Volumes().ListVolumes(ctx, 100, 0)
+	// TODO: CRITICAL SECURITY ISSUE - WebSocket realtime service leaks data between organizations
+	// This system needs complete redesign for multi-tenancy with proper authentication:
+	// 1. WebSocket connections must authenticate and maintain organization context
+	// 2. Room subscriptions must be organization-scoped
+	// 3. Volume broadcasts must filter by organization access
+	// 4. Currently all volumes are broadcast to all clients regardless of organization
+	// TEMPORARY FIX: Using system-level query to prevent compilation errors
+	volumes, err := h.store.Volumes().ListAllVolumes(ctx, 100, 0)
 	if err != nil {
 		log.Printf("[WEBSOCKET-HUB] Failed to query volumes for periodic broadcast: %v", err)
 		return
@@ -618,7 +625,10 @@ func (h *Hub) sendInitialStateData(conn *Connection, event, room string) {
 	case "scan.progress":
 		// Query current volume states and scan progress
 		if h.store != nil {
-			volumes, err := h.store.Volumes().ListVolumes(ctx, 100, 0) // Get first 100 volumes
+			// TODO: CRITICAL SECURITY ISSUE - WebSocket lacks organization-specific queries
+			// This sends volumes from ALL organizations to any connected client
+			// TEMPORARY FIX: Using system-level query to prevent compilation errors
+			volumes, err := h.store.Volumes().ListAllVolumes(ctx, 100, 0) // Get first 100 volumes
 			if err != nil {
 				log.Printf("[WEBSOCKET-HUB] Failed to query volumes for initial state: %v", err)
 			} else {
@@ -659,7 +669,10 @@ func (h *Hub) sendInitialStateData(conn *Connection, event, room string) {
 	case "volume.updates":
 		// Query and send current volume states
 		if h.store != nil {
-			volumes, err := h.store.Volumes().ListVolumes(ctx, 100, 0) // Get first 100 volumes
+			// TODO: CRITICAL SECURITY ISSUE - WebSocket lacks organization-specific queries
+			// This sends volumes from ALL organizations to any connected client
+			// TEMPORARY FIX: Using system-level query to prevent compilation errors
+			volumes, err := h.store.Volumes().ListAllVolumes(ctx, 100, 0) // Get first 100 volumes
 			if err != nil {
 				log.Printf("[WEBSOCKET-HUB] Failed to query volumes for initial state: %v", err)
 			} else {

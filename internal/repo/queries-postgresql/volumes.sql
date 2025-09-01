@@ -1,0 +1,182 @@
+-- Volume management queries for PostgreSQL
+
+-- name: CreateVolume :one
+INSERT INTO volumes (
+    volume_id, display_name, mount_point, container_names, is_active,
+    total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type,
+    container_count, first_seen_at, last_scan_at, last_modified_at, organization_id
+) VALUES (
+    $1, $2, $3, $4, $5,
+    $6, $7, $8, $9,
+    $10, $11, $12, $13, $14
+) RETURNING *;
+
+-- name: GetVolume :one
+SELECT * FROM volumes WHERE volume_id = $1 AND organization_id = $2;
+
+-- name: GetVolumeByOrg :one
+SELECT * FROM volumes WHERE volume_id = $1 AND organization_id = $2;
+
+-- name: GetVolumeSystemLevel :one
+SELECT * FROM volumes WHERE volume_id = $1;
+
+-- name: ListVolumes :many
+SELECT * FROM volumes 
+WHERE organization_id = $1
+ORDER BY volume_id
+LIMIT $2 OFFSET $3;
+
+-- name: ListAllVolumes :many
+SELECT * FROM volumes 
+ORDER BY volume_id
+LIMIT $1 OFFSET $2;
+
+-- name: ListActiveVolumes :many
+SELECT * FROM volumes 
+WHERE is_active = true AND organization_id = $1
+ORDER BY volume_id;
+
+-- name: UpdateVolume :one
+UPDATE volumes
+SET 
+    display_name = $2,
+    mount_point = $3,
+    container_names = $4,
+    is_active = $5,
+    total_size_bytes = $6,
+    used_size_bytes = $7,
+    free_size_bytes = $8,
+    filesystem_type = $9,
+    container_count = $10,
+    last_scan_at = $11,
+    last_modified_at = $12,
+    updated_at = NOW()
+WHERE volume_id = $1 AND organization_id = $13
+RETURNING *;
+
+-- name: UpdateVolumeStats :one
+UPDATE volumes
+SET 
+    total_size_bytes = $2,
+    used_size_bytes = $3,
+    free_size_bytes = $4,
+    last_scan_at = NOW(),
+    updated_at = NOW()
+WHERE volume_id = $1 AND organization_id = $5
+RETURNING *;
+
+-- name: DeleteVolume :exec
+DELETE FROM volumes WHERE volume_id = $1;
+
+-- name: CountVolumes :one
+SELECT COUNT(*) FROM volumes WHERE organization_id = $1;
+
+-- name: CountActiveVolumes :one
+SELECT COUNT(*) FROM volumes WHERE is_active = true AND organization_id = $1;
+
+-- name: GetVolumeByVolumeID :one  
+SELECT * FROM volumes WHERE volume_id = $1 AND organization_id = $2;
+
+-- name: GetVolumeByID :one
+SELECT * FROM volumes WHERE volume_id = $1 AND organization_id = $2;
+
+-- name: UpdateLastScanned :exec
+UPDATE volumes 
+SET last_scan_at = $2, updated_at = NOW()
+WHERE volume_id = $1 AND organization_id = $3;
+
+-- name: SoftDeleteVolume :exec
+UPDATE volumes 
+SET is_active = false, updated_at = NOW()
+WHERE volume_id = $1 AND organization_id = $2;
+
+-- name: UpsertVolume :one
+INSERT INTO volumes (
+    volume_id, display_name, mount_point, container_names, is_active,
+    total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type,
+    container_count, first_seen_at, last_scan_at, last_modified_at, organization_id
+) VALUES (
+    $1, $2, $3, $4, $5,
+    $6, $7, $8, $9,
+    $10, $11, $12, $13, $14
+) ON CONFLICT (volume_id) DO UPDATE SET
+    display_name = EXCLUDED.display_name,
+    mount_point = EXCLUDED.mount_point,
+    container_names = EXCLUDED.container_names,
+    is_active = EXCLUDED.is_active,
+    total_size_bytes = EXCLUDED.total_size_bytes,
+    used_size_bytes = EXCLUDED.used_size_bytes,
+    free_size_bytes = EXCLUDED.free_size_bytes,
+    filesystem_type = EXCLUDED.filesystem_type,
+    container_count = EXCLUDED.container_count,
+    last_scan_at = EXCLUDED.last_scan_at,
+    last_modified_at = EXCLUDED.last_modified_at,
+    updated_at = NOW()
+RETURNING *;
+
+-- name: GetVolumeStats :one
+SELECT 
+    volume_id,
+    total_size_bytes,
+    used_size_bytes,
+    free_size_bytes,
+    last_scan_at
+FROM volumes 
+WHERE volume_id = $1 AND organization_id = $2;
+
+-- Container operations (using docker_mount_attachments)
+-- name: CreateContainer :one
+INSERT INTO docker_mount_attachments (
+    mount_catalog_id, container_id, container_name, destination_path,
+    access_mode, container_state, container_image, container_labels
+) VALUES (
+    $1, $2, $3, $4,
+    $5, $6, $7, $8
+) RETURNING *;
+
+-- name: GetContainerByContainerID :one
+SELECT * FROM docker_mount_attachments WHERE container_id = $1 LIMIT 1;
+
+-- name: UpsertContainer :one
+-- Simple approach: try insert first, then handle constraint violations in Go
+INSERT INTO docker_mount_attachments (
+    mount_catalog_id, container_id, container_name, destination_path,
+    access_mode, container_state, container_image, container_labels
+) VALUES (
+    $1, $2, $3, $4,
+    $5, $6, $7, $8
+) RETURNING *;
+
+-- name: UpdateContainer :one
+UPDATE docker_mount_attachments 
+SET 
+    container_name = $3,
+    access_mode = $4,
+    container_state = $5,
+    container_image = $6,
+    container_labels = $7,
+    updated_at = NOW()
+WHERE container_id = $1 AND mount_catalog_id = $2
+RETURNING *;
+
+-- Volume mount operations (using docker_mount_catalog)
+-- name: CreateVolumeMount :one
+INSERT INTO docker_mount_catalog (
+    mount_id, mount_type, source_path, container_count
+) VALUES (
+    $1, $2, $3, $4
+) RETURNING *;
+
+-- name: UpsertVolumeMount :one
+INSERT INTO docker_mount_catalog (
+    mount_id, mount_type, source_path, container_count
+) VALUES (
+    $1, $2, $3, $4
+) ON CONFLICT (mount_id) DO UPDATE SET
+    container_count = EXCLUDED.container_count,
+    last_seen_at = NOW(),
+    updated_at = NOW()
+RETURNING *;
+
+-- name: GetVolumeMountsByVolume :many
+SELECT * FROM docker_mount_catalog WHERE volume_name = $1;

@@ -1,6 +1,6 @@
 import type React from 'react';
-import type { VolumeMount } from '@/hooks/useVolumesAndMounts';
 import type { DropdownItem } from '@/components/ui/Dropdown';
+import type { VolumeMount } from '../VolumeTableView/VolumeTableView.types';
 
 export interface VolumeCardViewProps {
   /** Volume data to display */

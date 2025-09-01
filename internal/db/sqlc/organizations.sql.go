@@ -7,7 +7,6 @@ package sqlc
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -91,34 +90,20 @@ func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganization
 const createOrganizationInvitation = `-- name: CreateOrganizationInvitation :one
 INSERT INTO organization_invitations (organization_id, email, role, token, invited_by, message, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, organization_id, email, role, token, invited_by, message, status, expires_at, created_at, updated_at
+RETURNING id, organization_id, email, role, token, invited_by, message, status, accepted_at, accepted_by, expires_at, created_at, updated_at
 `
 
 type CreateOrganizationInvitationParams struct {
 	OrganizationID int64              `json:"organization_id"`
 	Email          string             `json:"email"`
-	Role           interface{}        `json:"role"`
+	Role           string             `json:"role"`
 	Token          string             `json:"token"`
 	InvitedBy      pgtype.Int8        `json:"invited_by"`
 	Message        pgtype.Text        `json:"message"`
 	ExpiresAt      pgtype.Timestamptz `json:"expires_at"`
 }
 
-type CreateOrganizationInvitationRow struct {
-	ID             int64              `json:"id"`
-	OrganizationID int64              `json:"organization_id"`
-	Email          string             `json:"email"`
-	Role           interface{}        `json:"role"`
-	Token          string             `json:"token"`
-	InvitedBy      pgtype.Int8        `json:"invited_by"`
-	Message        pgtype.Text        `json:"message"`
-	Status         string             `json:"status"`
-	ExpiresAt      pgtype.Timestamptz `json:"expires_at"`
-	CreatedAt      time.Time          `json:"created_at"`
-	UpdatedAt      time.Time          `json:"updated_at"`
-}
-
-func (q *Queries) CreateOrganizationInvitation(ctx context.Context, arg CreateOrganizationInvitationParams) (CreateOrganizationInvitationRow, error) {
+func (q *Queries) CreateOrganizationInvitation(ctx context.Context, arg CreateOrganizationInvitationParams) (OrganizationInvitations, error) {
 	row := q.db.QueryRow(ctx, createOrganizationInvitation,
 		arg.OrganizationID,
 		arg.Email,
@@ -128,7 +113,7 @@ func (q *Queries) CreateOrganizationInvitation(ctx context.Context, arg CreateOr
 		arg.Message,
 		arg.ExpiresAt,
 	)
-	var i CreateOrganizationInvitationRow
+	var i OrganizationInvitations
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
@@ -138,6 +123,8 @@ func (q *Queries) CreateOrganizationInvitation(ctx context.Context, arg CreateOr
 		&i.InvitedBy,
 		&i.Message,
 		&i.Status,
+		&i.AcceptedAt,
+		&i.AcceptedBy,
 		&i.ExpiresAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,

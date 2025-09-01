@@ -19,7 +19,7 @@ import type {
   TrendIndicator,
 } from './TrendAnalysisWidget.types';
 import { TREND_INDICATORS } from './TrendAnalysisWidget.types';
-import { formatBytes, formatPercentage } from '../../../utils/formatters';
+import { formatBytes, formatPercentage } from '@/utils/formatters';
 
 /**
  * TrendAnalysisWidget component for displaying volume growth trends and insights.

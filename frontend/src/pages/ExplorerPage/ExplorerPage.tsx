@@ -8,12 +8,11 @@
  * - Real-time updates via WebSocket
  */
 
-import { useVolumes } from '@/api/services';
+import { useGetVolumes } from '@/api/orval-generated/api';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useRealtime } from '@/providers/realtime';
-import { currentPathAtom, searchQueryAtom } from '@/store/api-state';
-import { useAtom } from 'jotai';
+import { useState } from 'react';
 import {
   FileIcon,
   FolderIcon,
@@ -34,8 +33,8 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
   const { volumes, loading, fetchVolumes } = useVolumes();
 
   // State management
-  const [currentPath, setCurrentPath] = useAtom(currentPathAtom);
-  const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom);
+  const [currentPath, setCurrentPath] = useState('/');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Local state
   const [drawerOpen, setDrawerOpen] = useState(false);

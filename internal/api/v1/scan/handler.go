@@ -993,14 +993,14 @@ func (h *Handler) GetSchedulerCapabilities(c *gin.Context) {
 // @Tags filesystem
 // @Accept json
 // @Produce json
-// @Param id path string true "Volume ID"
+// @Param volumeId path string true "Volume ID"
 // @Success 200 {object} models.FilesystemIndexingResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 503 {object} models.ErrorResponse "Filesystem indexing not enabled"
 // @Router /volumes/{volumeId}/filesystem/status [get]
 func (h *Handler) GetFilesystemIndexingStatus(c *gin.Context) {
-	volumeID := c.Param("name")
+	volumeID := c.Param("volumeId")
 	if volumeID == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error:   "Volume ID is required",

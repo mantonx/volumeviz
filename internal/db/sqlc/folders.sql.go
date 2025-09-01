@@ -7,25 +7,57 @@ package sqlc
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const bulkInsertFolders = `-- name: BulkInsertFolders :execrows
+INSERT INTO folders (
+    volume_id, parent_id, path, name, path_hash,
+    size_bytes, size_bytes_recursive, file_count, file_count_recursive,
+    subfolder_count, media_file_count, has_media_files,
+    modified_at, accessed_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+`
+
 type BulkInsertFoldersParams struct {
-	ParentID      pgtype.Int8 `json:"parent_id"`
-	VolumeID      string      `json:"volume_id"`
-	Name          string      `json:"name"`
-	Path          string      `json:"path"`
-	PathHash      []byte      `json:"path_hash"`
-	Depth         int32       `json:"depth"`
-	Mtime         time.Time   `json:"mtime"`
-	Ctime         time.Time   `json:"ctime"`
-	Uid           pgtype.Int4 `json:"uid"`
-	Gid           pgtype.Int4 `json:"gid"`
-	Mode          pgtype.Int4 `json:"mode"`
-	IsSymlink     pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget pgtype.Text `json:"symlink_target"`
+	VolumeID           string             `json:"volume_id"`
+	ParentID           pgtype.Int8        `json:"parent_id"`
+	Path               string             `json:"path"`
+	Name               string             `json:"name"`
+	PathHash           []byte             `json:"path_hash"`
+	SizeBytes          pgtype.Int8        `json:"size_bytes"`
+	SizeBytesRecursive pgtype.Int8        `json:"size_bytes_recursive"`
+	FileCount          pgtype.Int4        `json:"file_count"`
+	FileCountRecursive pgtype.Int4        `json:"file_count_recursive"`
+	SubfolderCount     pgtype.Int4        `json:"subfolder_count"`
+	MediaFileCount     pgtype.Int4        `json:"media_file_count"`
+	HasMediaFiles      pgtype.Bool        `json:"has_media_files"`
+	ModifiedAt         pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt         pgtype.Timestamptz `json:"accessed_at"`
+}
+
+func (q *Queries) BulkInsertFolders(ctx context.Context, arg BulkInsertFoldersParams) (int64, error) {
+	result, err := q.db.Exec(ctx, bulkInsertFolders,
+		arg.VolumeID,
+		arg.ParentID,
+		arg.Path,
+		arg.Name,
+		arg.PathHash,
+		arg.SizeBytes,
+		arg.SizeBytesRecursive,
+		arg.FileCount,
+		arg.FileCountRecursive,
+		arg.SubfolderCount,
+		arg.MediaFileCount,
+		arg.HasMediaFiles,
+		arg.ModifiedAt,
+		arg.AccessedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const countFoldersByVolume = `-- name: CountFoldersByVolume :one
@@ -41,59 +73,76 @@ func (q *Queries) CountFoldersByVolume(ctx context.Context, volumeID string) (in
 
 const createFolder = `-- name: CreateFolder :one
 
-
 INSERT INTO folders (
-    parent_id, volume_id, name, path, path_hash, depth, mtime, ctime, uid, gid, mode, is_symlink, symlink_target
+    volume_id, parent_id, path, name, path_hash,
+    size_bytes, size_bytes_recursive, file_count, file_count_recursive,
+    subfolder_count, media_file_count, has_media_files,
+    modified_at, accessed_at, organization_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-) RETURNING id, created_at, updated_at
+    $1, $2, $3, $4, $5,
+    $6, $7, $8, $9,
+    $10, $11, $12,
+    $13, $14, $15
+) RETURNING id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id
 `
 
 type CreateFolderParams struct {
-	ParentID      pgtype.Int8 `json:"parent_id"`
-	VolumeID      string      `json:"volume_id"`
-	Name          string      `json:"name"`
-	Path          string      `json:"path"`
-	PathHash      []byte      `json:"path_hash"`
-	Depth         int32       `json:"depth"`
-	Mtime         time.Time   `json:"mtime"`
-	Ctime         time.Time   `json:"ctime"`
-	Uid           pgtype.Int4 `json:"uid"`
-	Gid           pgtype.Int4 `json:"gid"`
-	Mode          pgtype.Int4 `json:"mode"`
-	IsSymlink     pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget pgtype.Text `json:"symlink_target"`
+	VolumeID           string             `json:"volume_id"`
+	ParentID           pgtype.Int8        `json:"parent_id"`
+	Path               string             `json:"path"`
+	Name               string             `json:"name"`
+	PathHash           []byte             `json:"path_hash"`
+	SizeBytes          pgtype.Int8        `json:"size_bytes"`
+	SizeBytesRecursive pgtype.Int8        `json:"size_bytes_recursive"`
+	FileCount          pgtype.Int4        `json:"file_count"`
+	FileCountRecursive pgtype.Int4        `json:"file_count_recursive"`
+	SubfolderCount     pgtype.Int4        `json:"subfolder_count"`
+	MediaFileCount     pgtype.Int4        `json:"media_file_count"`
+	HasMediaFiles      pgtype.Bool        `json:"has_media_files"`
+	ModifiedAt         pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt         pgtype.Timestamptz `json:"accessed_at"`
+	OrganizationID     pgtype.Int8        `json:"organization_id"`
 }
 
-type CreateFolderRow struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// folders.sql: Folder tree operations
-// This file contains all SQLC queries for folder management
-// =======================
-// FOLDER OPERATIONS
-// =======================
-func (q *Queries) CreateFolder(ctx context.Context, arg CreateFolderParams) (CreateFolderRow, error) {
+// Folder management queries for PostgreSQL
+func (q *Queries) CreateFolder(ctx context.Context, arg CreateFolderParams) (Folders, error) {
 	row := q.db.QueryRow(ctx, createFolder,
-		arg.ParentID,
 		arg.VolumeID,
-		arg.Name,
+		arg.ParentID,
 		arg.Path,
+		arg.Name,
 		arg.PathHash,
-		arg.Depth,
-		arg.Mtime,
-		arg.Ctime,
-		arg.Uid,
-		arg.Gid,
-		arg.Mode,
-		arg.IsSymlink,
-		arg.SymlinkTarget,
+		arg.SizeBytes,
+		arg.SizeBytesRecursive,
+		arg.FileCount,
+		arg.FileCountRecursive,
+		arg.SubfolderCount,
+		arg.MediaFileCount,
+		arg.HasMediaFiles,
+		arg.ModifiedAt,
+		arg.AccessedAt,
+		arg.OrganizationID,
 	)
-	var i CreateFolderRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	var i Folders
+	err := row.Scan(
+		&i.ID,
+		&i.VolumeID,
+		&i.ParentID,
+		&i.Path,
+		&i.Name,
+		&i.PathHash,
+		&i.SizeBytes,
+		&i.SizeBytesRecursive,
+		&i.FileCount,
+		&i.FileCountRecursive,
+		&i.SubfolderCount,
+		&i.MediaFileCount,
+		&i.HasMediaFiles,
+		&i.CreatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.OrganizationID,
+	)
 	return i, err
 }
 
@@ -115,162 +164,129 @@ func (q *Queries) DeleteFoldersByVolume(ctx context.Context, volumeID string) er
 	return err
 }
 
-const getFolderByID = `-- name: GetFolderByID :one
-SELECT id, parent_id, volume_id, name, path, path_hash, size_bytes_recursive, disk_usage_bytes_recursive,
-       file_count, dir_count, depth, mtime, ctime, uid, gid, mode, is_symlink, symlink_target,
-       created_at, updated_at
-FROM folders
-WHERE id = $1
+const getFolder = `-- name: GetFolder :one
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders WHERE id = $1
 `
 
-type GetFolderByIDRow struct {
-	ID                      int64       `json:"id"`
-	ParentID                pgtype.Int8 `json:"parent_id"`
-	VolumeID                string      `json:"volume_id"`
-	Name                    string      `json:"name"`
-	Path                    string      `json:"path"`
-	PathHash                []byte      `json:"path_hash"`
-	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
-	FileCount               int64       `json:"file_count"`
-	DirCount                int64       `json:"dir_count"`
-	Depth                   int32       `json:"depth"`
-	Mtime                   time.Time   `json:"mtime"`
-	Ctime                   time.Time   `json:"ctime"`
-	Uid                     pgtype.Int4 `json:"uid"`
-	Gid                     pgtype.Int4 `json:"gid"`
-	Mode                    pgtype.Int4 `json:"mode"`
-	IsSymlink               pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget           pgtype.Text `json:"symlink_target"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
-}
-
-func (q *Queries) GetFolderByID(ctx context.Context, id int64) (GetFolderByIDRow, error) {
-	row := q.db.QueryRow(ctx, getFolderByID, id)
-	var i GetFolderByIDRow
+func (q *Queries) GetFolder(ctx context.Context, id int64) (Folders, error) {
+	row := q.db.QueryRow(ctx, getFolder, id)
+	var i Folders
 	err := row.Scan(
 		&i.ID,
-		&i.ParentID,
 		&i.VolumeID,
-		&i.Name,
+		&i.ParentID,
 		&i.Path,
+		&i.Name,
 		&i.PathHash,
+		&i.SizeBytes,
 		&i.SizeBytesRecursive,
-		&i.DiskUsageBytesRecursive,
 		&i.FileCount,
-		&i.DirCount,
-		&i.Depth,
-		&i.Mtime,
-		&i.Ctime,
-		&i.Uid,
-		&i.Gid,
-		&i.Mode,
-		&i.IsSymlink,
-		&i.SymlinkTarget,
+		&i.FileCountRecursive,
+		&i.SubfolderCount,
+		&i.MediaFileCount,
+		&i.HasMediaFiles,
 		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.OrganizationID,
+	)
+	return i, err
+}
+
+const getFolderByID = `-- name: GetFolderByID :one
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders WHERE id = $1
+`
+
+func (q *Queries) GetFolderByID(ctx context.Context, id int64) (Folders, error) {
+	row := q.db.QueryRow(ctx, getFolderByID, id)
+	var i Folders
+	err := row.Scan(
+		&i.ID,
+		&i.VolumeID,
+		&i.ParentID,
+		&i.Path,
+		&i.Name,
+		&i.PathHash,
+		&i.SizeBytes,
+		&i.SizeBytesRecursive,
+		&i.FileCount,
+		&i.FileCountRecursive,
+		&i.SubfolderCount,
+		&i.MediaFileCount,
+		&i.HasMediaFiles,
+		&i.CreatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const getFolderByPath = `-- name: GetFolderByPath :one
-SELECT id, parent_id, volume_id, name, path, path_hash, size_bytes_recursive, disk_usage_bytes_recursive,
-       file_count, dir_count, depth, mtime, ctime, uid, gid, mode, is_symlink, symlink_target,
-       created_at, updated_at
-FROM folders
-WHERE volume_id = $1 AND path_hash = $2
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders WHERE volume_id = $1 AND path = $2
 `
 
 type GetFolderByPathParams struct {
 	VolumeID string `json:"volume_id"`
-	PathHash []byte `json:"path_hash"`
+	Path     string `json:"path"`
 }
 
-type GetFolderByPathRow struct {
-	ID                      int64       `json:"id"`
-	ParentID                pgtype.Int8 `json:"parent_id"`
-	VolumeID                string      `json:"volume_id"`
-	Name                    string      `json:"name"`
-	Path                    string      `json:"path"`
-	PathHash                []byte      `json:"path_hash"`
-	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
-	FileCount               int64       `json:"file_count"`
-	DirCount                int64       `json:"dir_count"`
-	Depth                   int32       `json:"depth"`
-	Mtime                   time.Time   `json:"mtime"`
-	Ctime                   time.Time   `json:"ctime"`
-	Uid                     pgtype.Int4 `json:"uid"`
-	Gid                     pgtype.Int4 `json:"gid"`
-	Mode                    pgtype.Int4 `json:"mode"`
-	IsSymlink               pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget           pgtype.Text `json:"symlink_target"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
-}
-
-func (q *Queries) GetFolderByPath(ctx context.Context, arg GetFolderByPathParams) (GetFolderByPathRow, error) {
-	row := q.db.QueryRow(ctx, getFolderByPath, arg.VolumeID, arg.PathHash)
-	var i GetFolderByPathRow
+func (q *Queries) GetFolderByPath(ctx context.Context, arg GetFolderByPathParams) (Folders, error) {
+	row := q.db.QueryRow(ctx, getFolderByPath, arg.VolumeID, arg.Path)
+	var i Folders
 	err := row.Scan(
 		&i.ID,
-		&i.ParentID,
 		&i.VolumeID,
-		&i.Name,
+		&i.ParentID,
 		&i.Path,
+		&i.Name,
 		&i.PathHash,
+		&i.SizeBytes,
 		&i.SizeBytesRecursive,
-		&i.DiskUsageBytesRecursive,
 		&i.FileCount,
-		&i.DirCount,
-		&i.Depth,
-		&i.Mtime,
-		&i.Ctime,
-		&i.Uid,
-		&i.Gid,
-		&i.Mode,
-		&i.IsSymlink,
-		&i.SymlinkTarget,
+		&i.FileCountRecursive,
+		&i.SubfolderCount,
+		&i.MediaFileCount,
+		&i.HasMediaFiles,
 		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const getFolderPath = `-- name: GetFolderPath :many
-SELECT f.id, f.parent_id, f.volume_id, f.name, f.path, f.depth
-FROM folders f
-WHERE f.volume_id = (SELECT f2.volume_id FROM folders f2 WHERE f2.id = $1)
-  AND f.depth <= (SELECT f3.depth FROM folders f3 WHERE f3.id = $1)
-ORDER BY f.depth
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders WHERE id = $1
 `
 
-type GetFolderPathRow struct {
-	ID       int64       `json:"id"`
-	ParentID pgtype.Int8 `json:"parent_id"`
-	VolumeID string      `json:"volume_id"`
-	Name     string      `json:"name"`
-	Path     string      `json:"path"`
-	Depth    int32       `json:"depth"`
-}
-
-func (q *Queries) GetFolderPath(ctx context.Context, id int64) ([]GetFolderPathRow, error) {
+func (q *Queries) GetFolderPath(ctx context.Context, id int64) ([]Folders, error) {
 	rows, err := q.db.Query(ctx, getFolderPath, id)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetFolderPathRow{}
+	items := []Folders{}
 	for rows.Next() {
-		var i GetFolderPathRow
+		var i Folders
 		if err := rows.Scan(
 			&i.ID,
-			&i.ParentID,
 			&i.VolumeID,
-			&i.Name,
+			&i.ParentID,
 			&i.Path,
-			&i.Depth,
+			&i.Name,
+			&i.PathHash,
+			&i.SizeBytes,
+			&i.SizeBytesRecursive,
+			&i.FileCount,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
+			&i.CreatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -285,22 +301,19 @@ func (q *Queries) GetFolderPath(ctx context.Context, id int64) ([]GetFolderPathR
 const getFolderStats = `-- name: GetFolderStats :one
 SELECT 
     COUNT(*) as total_folders,
-    COUNT(*) FILTER (WHERE parent_id IS NULL) as root_folders,
-    COALESCE(MAX(depth), 0)::integer as max_depth,
-    COALESCE(AVG(file_count), 0.0)::double precision as avg_files_per_folder,
-    COALESCE(SUM(size_bytes_recursive), 0)::bigint as total_size,
-    COALESCE(MAX(size_bytes_recursive), 0)::bigint as largest_folder_size
-FROM folders
-WHERE volume_id = $1
+    COALESCE(SUM(size_bytes_recursive), 0) as total_size,
+    COALESCE(AVG(size_bytes_recursive), 0) as avg_folder_size,
+    COALESCE(MAX(size_bytes_recursive), 0) as largest_folder,
+    COALESCE(SUM(file_count_recursive), 0) as total_files
+FROM folders WHERE volume_id = $1
 `
 
 type GetFolderStatsRow struct {
-	TotalFolders      int64   `json:"total_folders"`
-	RootFolders       int64   `json:"root_folders"`
-	MaxDepth          int32   `json:"max_depth"`
-	AvgFilesPerFolder float64 `json:"avg_files_per_folder"`
-	TotalSize         int64   `json:"total_size"`
-	LargestFolderSize int64   `json:"largest_folder_size"`
+	TotalFolders  int64       `json:"total_folders"`
+	TotalSize     interface{} `json:"total_size"`
+	AvgFolderSize interface{} `json:"avg_folder_size"`
+	LargestFolder interface{} `json:"largest_folder"`
+	TotalFiles    interface{} `json:"total_files"`
 }
 
 func (q *Queries) GetFolderStats(ctx context.Context, volumeID string) (GetFolderStatsRow, error) {
@@ -308,162 +321,54 @@ func (q *Queries) GetFolderStats(ctx context.Context, volumeID string) (GetFolde
 	var i GetFolderStatsRow
 	err := row.Scan(
 		&i.TotalFolders,
-		&i.RootFolders,
-		&i.MaxDepth,
-		&i.AvgFilesPerFolder,
 		&i.TotalSize,
-		&i.LargestFolderSize,
+		&i.AvgFolderSize,
+		&i.LargestFolder,
+		&i.TotalFiles,
 	)
 	return i, err
 }
 
 const getFolderTree = `-- name: GetFolderTree :many
-SELECT f.id, f.parent_id, f.volume_id, f.name, f.path, f.path_hash, f.size_bytes_recursive, f.disk_usage_bytes_recursive,
-       f.file_count, f.dir_count, f.depth, f.mtime, f.ctime, f.uid, f.gid, f.mode, f.is_symlink, f.symlink_target,
-       f.created_at, f.updated_at
-FROM folders f
-WHERE f.volume_id = (SELECT f2.volume_id FROM folders f2 WHERE f2.id = $1)
-  AND f.depth >= (SELECT f3.depth FROM folders f3 WHERE f3.id = $1)
-  AND f.depth <= (SELECT f4.depth FROM folders f4 WHERE f4.id = $1) + $2
-ORDER BY f.depth, f.name
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders
+WHERE parent_id = $1 AND volume_id = $2
+ORDER BY name
+LIMIT $3
 `
 
 type GetFolderTreeParams struct {
-	ID    int64 `json:"id"`
-	Depth int32 `json:"depth"`
+	ParentID pgtype.Int8 `json:"parent_id"`
+	VolumeID string      `json:"volume_id"`
+	Limit    int32       `json:"limit"`
 }
 
-type GetFolderTreeRow struct {
-	ID                      int64       `json:"id"`
-	ParentID                pgtype.Int8 `json:"parent_id"`
-	VolumeID                string      `json:"volume_id"`
-	Name                    string      `json:"name"`
-	Path                    string      `json:"path"`
-	PathHash                []byte      `json:"path_hash"`
-	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
-	FileCount               int64       `json:"file_count"`
-	DirCount                int64       `json:"dir_count"`
-	Depth                   int32       `json:"depth"`
-	Mtime                   time.Time   `json:"mtime"`
-	Ctime                   time.Time   `json:"ctime"`
-	Uid                     pgtype.Int4 `json:"uid"`
-	Gid                     pgtype.Int4 `json:"gid"`
-	Mode                    pgtype.Int4 `json:"mode"`
-	IsSymlink               pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget           pgtype.Text `json:"symlink_target"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
-}
-
-func (q *Queries) GetFolderTree(ctx context.Context, arg GetFolderTreeParams) ([]GetFolderTreeRow, error) {
-	rows, err := q.db.Query(ctx, getFolderTree, arg.ID, arg.Depth)
+func (q *Queries) GetFolderTree(ctx context.Context, arg GetFolderTreeParams) ([]Folders, error) {
+	rows, err := q.db.Query(ctx, getFolderTree, arg.ParentID, arg.VolumeID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetFolderTreeRow{}
+	items := []Folders{}
 	for rows.Next() {
-		var i GetFolderTreeRow
+		var i Folders
 		if err := rows.Scan(
 			&i.ID,
-			&i.ParentID,
 			&i.VolumeID,
-			&i.Name,
-			&i.Path,
-			&i.PathHash,
-			&i.SizeBytesRecursive,
-			&i.DiskUsageBytesRecursive,
-			&i.FileCount,
-			&i.DirCount,
-			&i.Depth,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getFoldersByDepth = `-- name: GetFoldersByDepth :many
-SELECT id, parent_id, volume_id, name, path, path_hash, size_bytes_recursive, disk_usage_bytes_recursive,
-       file_count, dir_count, depth, mtime, ctime, uid, gid, mode, is_symlink, symlink_target,
-       created_at, updated_at
-FROM folders
-WHERE volume_id = $1 AND depth = $2
-ORDER BY path
-`
-
-type GetFoldersByDepthParams struct {
-	VolumeID string `json:"volume_id"`
-	Depth    int32  `json:"depth"`
-}
-
-type GetFoldersByDepthRow struct {
-	ID                      int64       `json:"id"`
-	ParentID                pgtype.Int8 `json:"parent_id"`
-	VolumeID                string      `json:"volume_id"`
-	Name                    string      `json:"name"`
-	Path                    string      `json:"path"`
-	PathHash                []byte      `json:"path_hash"`
-	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
-	FileCount               int64       `json:"file_count"`
-	DirCount                int64       `json:"dir_count"`
-	Depth                   int32       `json:"depth"`
-	Mtime                   time.Time   `json:"mtime"`
-	Ctime                   time.Time   `json:"ctime"`
-	Uid                     pgtype.Int4 `json:"uid"`
-	Gid                     pgtype.Int4 `json:"gid"`
-	Mode                    pgtype.Int4 `json:"mode"`
-	IsSymlink               pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget           pgtype.Text `json:"symlink_target"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
-}
-
-func (q *Queries) GetFoldersByDepth(ctx context.Context, arg GetFoldersByDepthParams) ([]GetFoldersByDepthRow, error) {
-	rows, err := q.db.Query(ctx, getFoldersByDepth, arg.VolumeID, arg.Depth)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetFoldersByDepthRow{}
-	for rows.Next() {
-		var i GetFoldersByDepthRow
-		if err := rows.Scan(
-			&i.ID,
 			&i.ParentID,
-			&i.VolumeID,
-			&i.Name,
 			&i.Path,
+			&i.Name,
 			&i.PathHash,
+			&i.SizeBytes,
 			&i.SizeBytesRecursive,
-			&i.DiskUsageBytesRecursive,
 			&i.FileCount,
-			&i.DirCount,
-			&i.Depth,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -476,12 +381,9 @@ func (q *Queries) GetFoldersByDepth(ctx context.Context, arg GetFoldersByDepthPa
 }
 
 const getFoldersWithMostFiles = `-- name: GetFoldersWithMostFiles :many
-SELECT id, parent_id, volume_id, name, path, path_hash, size_bytes_recursive, disk_usage_bytes_recursive,
-       file_count, dir_count, depth, mtime, ctime, uid, gid, mode, is_symlink, symlink_target,
-       created_at, updated_at
-FROM folders
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders
 WHERE volume_id = $1
-ORDER BY file_count DESC
+ORDER BY file_count_recursive DESC NULLS LAST
 LIMIT $2
 `
 
@@ -490,59 +392,33 @@ type GetFoldersWithMostFilesParams struct {
 	Limit    int32  `json:"limit"`
 }
 
-type GetFoldersWithMostFilesRow struct {
-	ID                      int64       `json:"id"`
-	ParentID                pgtype.Int8 `json:"parent_id"`
-	VolumeID                string      `json:"volume_id"`
-	Name                    string      `json:"name"`
-	Path                    string      `json:"path"`
-	PathHash                []byte      `json:"path_hash"`
-	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
-	FileCount               int64       `json:"file_count"`
-	DirCount                int64       `json:"dir_count"`
-	Depth                   int32       `json:"depth"`
-	Mtime                   time.Time   `json:"mtime"`
-	Ctime                   time.Time   `json:"ctime"`
-	Uid                     pgtype.Int4 `json:"uid"`
-	Gid                     pgtype.Int4 `json:"gid"`
-	Mode                    pgtype.Int4 `json:"mode"`
-	IsSymlink               pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget           pgtype.Text `json:"symlink_target"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
-}
-
-func (q *Queries) GetFoldersWithMostFiles(ctx context.Context, arg GetFoldersWithMostFilesParams) ([]GetFoldersWithMostFilesRow, error) {
+func (q *Queries) GetFoldersWithMostFiles(ctx context.Context, arg GetFoldersWithMostFilesParams) ([]Folders, error) {
 	rows, err := q.db.Query(ctx, getFoldersWithMostFiles, arg.VolumeID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetFoldersWithMostFilesRow{}
+	items := []Folders{}
 	for rows.Next() {
-		var i GetFoldersWithMostFilesRow
+		var i Folders
 		if err := rows.Scan(
 			&i.ID,
-			&i.ParentID,
 			&i.VolumeID,
-			&i.Name,
+			&i.ParentID,
 			&i.Path,
+			&i.Name,
 			&i.PathHash,
+			&i.SizeBytes,
 			&i.SizeBytesRecursive,
-			&i.DiskUsageBytesRecursive,
 			&i.FileCount,
-			&i.DirCount,
-			&i.Depth,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -555,12 +431,10 @@ func (q *Queries) GetFoldersWithMostFiles(ctx context.Context, arg GetFoldersWit
 }
 
 const getLargestFolders = `-- name: GetLargestFolders :many
-SELECT id, parent_id, volume_id, name, path, path_hash, size_bytes_recursive, disk_usage_bytes_recursive,
-       file_count, dir_count, depth, mtime, ctime, uid, gid, mode, is_symlink, symlink_target,
-       created_at, updated_at
+SELECT id, volume_id, path, name, size_bytes_recursive
 FROM folders
 WHERE volume_id = $1
-ORDER BY size_bytes_recursive DESC
+ORDER BY size_bytes_recursive DESC NULLS LAST
 LIMIT $2
 `
 
@@ -570,26 +444,11 @@ type GetLargestFoldersParams struct {
 }
 
 type GetLargestFoldersRow struct {
-	ID                      int64       `json:"id"`
-	ParentID                pgtype.Int8 `json:"parent_id"`
-	VolumeID                string      `json:"volume_id"`
-	Name                    string      `json:"name"`
-	Path                    string      `json:"path"`
-	PathHash                []byte      `json:"path_hash"`
-	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
-	FileCount               int64       `json:"file_count"`
-	DirCount                int64       `json:"dir_count"`
-	Depth                   int32       `json:"depth"`
-	Mtime                   time.Time   `json:"mtime"`
-	Ctime                   time.Time   `json:"ctime"`
-	Uid                     pgtype.Int4 `json:"uid"`
-	Gid                     pgtype.Int4 `json:"gid"`
-	Mode                    pgtype.Int4 `json:"mode"`
-	IsSymlink               pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget           pgtype.Text `json:"symlink_target"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
+	ID                 int64       `json:"id"`
+	VolumeID           string      `json:"volume_id"`
+	Path               string      `json:"path"`
+	Name               string      `json:"name"`
+	SizeBytesRecursive pgtype.Int8 `json:"size_bytes_recursive"`
 }
 
 func (q *Queries) GetLargestFolders(ctx context.Context, arg GetLargestFoldersParams) ([]GetLargestFoldersRow, error) {
@@ -603,25 +462,10 @@ func (q *Queries) GetLargestFolders(ctx context.Context, arg GetLargestFoldersPa
 		var i GetLargestFoldersRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.ParentID,
 			&i.VolumeID,
-			&i.Name,
 			&i.Path,
-			&i.PathHash,
+			&i.Name,
 			&i.SizeBytesRecursive,
-			&i.DiskUsageBytesRecursive,
-			&i.FileCount,
-			&i.DirCount,
-			&i.Depth,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -634,67 +478,146 @@ func (q *Queries) GetLargestFolders(ctx context.Context, arg GetLargestFoldersPa
 }
 
 const getRootFolders = `-- name: GetRootFolders :many
-SELECT id, parent_id, volume_id, name, path, path_hash, size_bytes_recursive, disk_usage_bytes_recursive,
-       file_count, dir_count, depth, mtime, ctime, uid, gid, mode, is_symlink, symlink_target,
-       created_at, updated_at
-FROM folders
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders
 WHERE volume_id = $1 AND parent_id IS NULL
 ORDER BY name
 `
 
-type GetRootFoldersRow struct {
-	ID                      int64       `json:"id"`
-	ParentID                pgtype.Int8 `json:"parent_id"`
-	VolumeID                string      `json:"volume_id"`
-	Name                    string      `json:"name"`
-	Path                    string      `json:"path"`
-	PathHash                []byte      `json:"path_hash"`
-	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
-	FileCount               int64       `json:"file_count"`
-	DirCount                int64       `json:"dir_count"`
-	Depth                   int32       `json:"depth"`
-	Mtime                   time.Time   `json:"mtime"`
-	Ctime                   time.Time   `json:"ctime"`
-	Uid                     pgtype.Int4 `json:"uid"`
-	Gid                     pgtype.Int4 `json:"gid"`
-	Mode                    pgtype.Int4 `json:"mode"`
-	IsSymlink               pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget           pgtype.Text `json:"symlink_target"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
-}
-
-func (q *Queries) GetRootFolders(ctx context.Context, volumeID string) ([]GetRootFoldersRow, error) {
+func (q *Queries) GetRootFolders(ctx context.Context, volumeID string) ([]Folders, error) {
 	rows, err := q.db.Query(ctx, getRootFolders, volumeID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetRootFoldersRow{}
+	items := []Folders{}
 	for rows.Next() {
-		var i GetRootFoldersRow
+		var i Folders
 		if err := rows.Scan(
 			&i.ID,
-			&i.ParentID,
 			&i.VolumeID,
-			&i.Name,
+			&i.ParentID,
 			&i.Path,
+			&i.Name,
 			&i.PathHash,
+			&i.SizeBytes,
 			&i.SizeBytesRecursive,
-			&i.DiskUsageBytesRecursive,
 			&i.FileCount,
-			&i.DirCount,
-			&i.Depth,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFolders = `-- name: ListFolders :many
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders 
+WHERE volume_id = $1
+ORDER BY path
+LIMIT $2 OFFSET $3
+`
+
+type ListFoldersParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+func (q *Queries) ListFolders(ctx context.Context, arg ListFoldersParams) ([]Folders, error) {
+	rows, err := q.db.Query(ctx, listFolders, arg.VolumeID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Folders{}
+	for rows.Next() {
+		var i Folders
+		if err := rows.Scan(
+			&i.ID,
+			&i.VolumeID,
+			&i.ParentID,
+			&i.Path,
+			&i.Name,
+			&i.PathHash,
+			&i.SizeBytes,
+			&i.SizeBytesRecursive,
+			&i.FileCount,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
+			&i.CreatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFoldersByOrganization = `-- name: ListFoldersByOrganization :many
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders 
+WHERE volume_id = $1 AND organization_id = $2
+ORDER BY path
+LIMIT $3 OFFSET $4
+`
+
+type ListFoldersByOrganizationParams struct {
+	VolumeID       string      `json:"volume_id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	Limit          int32       `json:"limit"`
+	Offset         int32       `json:"offset"`
+}
+
+func (q *Queries) ListFoldersByOrganization(ctx context.Context, arg ListFoldersByOrganizationParams) ([]Folders, error) {
+	rows, err := q.db.Query(ctx, listFoldersByOrganization,
+		arg.VolumeID,
+		arg.OrganizationID,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Folders{}
+	for rows.Next() {
+		var i Folders
+		if err := rows.Scan(
+			&i.ID,
+			&i.VolumeID,
+			&i.ParentID,
+			&i.Path,
+			&i.Name,
+			&i.PathHash,
+			&i.SizeBytes,
+			&i.SizeBytesRecursive,
+			&i.FileCount,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
+			&i.CreatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -707,72 +630,45 @@ func (q *Queries) GetRootFolders(ctx context.Context, volumeID string) ([]GetRoo
 }
 
 const listFoldersByParent = `-- name: ListFoldersByParent :many
-SELECT id, parent_id, volume_id, name, path, path_hash, size_bytes_recursive, disk_usage_bytes_recursive,
-       file_count, dir_count, depth, mtime, ctime, uid, gid, mode, is_symlink, symlink_target,
-       created_at, updated_at
-FROM folders
-WHERE volume_id = $1 AND parent_id = $2
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders
+WHERE parent_id = $1
 ORDER BY name
+LIMIT $2 OFFSET $3
 `
 
 type ListFoldersByParentParams struct {
-	VolumeID string      `json:"volume_id"`
 	ParentID pgtype.Int8 `json:"parent_id"`
+	Limit    int32       `json:"limit"`
+	Offset   int32       `json:"offset"`
 }
 
-type ListFoldersByParentRow struct {
-	ID                      int64       `json:"id"`
-	ParentID                pgtype.Int8 `json:"parent_id"`
-	VolumeID                string      `json:"volume_id"`
-	Name                    string      `json:"name"`
-	Path                    string      `json:"path"`
-	PathHash                []byte      `json:"path_hash"`
-	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
-	FileCount               int64       `json:"file_count"`
-	DirCount                int64       `json:"dir_count"`
-	Depth                   int32       `json:"depth"`
-	Mtime                   time.Time   `json:"mtime"`
-	Ctime                   time.Time   `json:"ctime"`
-	Uid                     pgtype.Int4 `json:"uid"`
-	Gid                     pgtype.Int4 `json:"gid"`
-	Mode                    pgtype.Int4 `json:"mode"`
-	IsSymlink               pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget           pgtype.Text `json:"symlink_target"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
-}
-
-func (q *Queries) ListFoldersByParent(ctx context.Context, arg ListFoldersByParentParams) ([]ListFoldersByParentRow, error) {
-	rows, err := q.db.Query(ctx, listFoldersByParent, arg.VolumeID, arg.ParentID)
+func (q *Queries) ListFoldersByParent(ctx context.Context, arg ListFoldersByParentParams) ([]Folders, error) {
+	rows, err := q.db.Query(ctx, listFoldersByParent, arg.ParentID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListFoldersByParentRow{}
+	items := []Folders{}
 	for rows.Next() {
-		var i ListFoldersByParentRow
+		var i Folders
 		if err := rows.Scan(
 			&i.ID,
-			&i.ParentID,
 			&i.VolumeID,
-			&i.Name,
+			&i.ParentID,
 			&i.Path,
+			&i.Name,
 			&i.PathHash,
+			&i.SizeBytes,
 			&i.SizeBytesRecursive,
-			&i.DiskUsageBytesRecursive,
 			&i.FileCount,
-			&i.DirCount,
-			&i.Depth,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -785,10 +681,7 @@ func (q *Queries) ListFoldersByParent(ctx context.Context, arg ListFoldersByPare
 }
 
 const listFoldersByVolume = `-- name: ListFoldersByVolume :many
-SELECT id, parent_id, volume_id, name, path, path_hash, size_bytes_recursive, disk_usage_bytes_recursive,
-       file_count, dir_count, depth, mtime, ctime, uid, gid, mode, is_symlink, symlink_target,
-       created_at, updated_at
-FROM folders
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders 
 WHERE volume_id = $1
 ORDER BY path
 LIMIT $2 OFFSET $3
@@ -800,59 +693,33 @@ type ListFoldersByVolumeParams struct {
 	Offset   int32  `json:"offset"`
 }
 
-type ListFoldersByVolumeRow struct {
-	ID                      int64       `json:"id"`
-	ParentID                pgtype.Int8 `json:"parent_id"`
-	VolumeID                string      `json:"volume_id"`
-	Name                    string      `json:"name"`
-	Path                    string      `json:"path"`
-	PathHash                []byte      `json:"path_hash"`
-	SizeBytesRecursive      int64       `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64       `json:"disk_usage_bytes_recursive"`
-	FileCount               int64       `json:"file_count"`
-	DirCount                int64       `json:"dir_count"`
-	Depth                   int32       `json:"depth"`
-	Mtime                   time.Time   `json:"mtime"`
-	Ctime                   time.Time   `json:"ctime"`
-	Uid                     pgtype.Int4 `json:"uid"`
-	Gid                     pgtype.Int4 `json:"gid"`
-	Mode                    pgtype.Int4 `json:"mode"`
-	IsSymlink               pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget           pgtype.Text `json:"symlink_target"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
-}
-
-func (q *Queries) ListFoldersByVolume(ctx context.Context, arg ListFoldersByVolumeParams) ([]ListFoldersByVolumeRow, error) {
+func (q *Queries) ListFoldersByVolume(ctx context.Context, arg ListFoldersByVolumeParams) ([]Folders, error) {
 	rows, err := q.db.Query(ctx, listFoldersByVolume, arg.VolumeID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListFoldersByVolumeRow{}
+	items := []Folders{}
 	for rows.Next() {
-		var i ListFoldersByVolumeRow
+		var i Folders
 		if err := rows.Scan(
 			&i.ID,
-			&i.ParentID,
 			&i.VolumeID,
-			&i.Name,
+			&i.ParentID,
 			&i.Path,
+			&i.Name,
 			&i.PathHash,
+			&i.SizeBytes,
 			&i.SizeBytesRecursive,
-			&i.DiskUsageBytesRecursive,
 			&i.FileCount,
-			&i.DirCount,
-			&i.Depth,
-			&i.Mtime,
-			&i.Ctime,
-			&i.Uid,
-			&i.Gid,
-			&i.Mode,
-			&i.IsSymlink,
-			&i.SymlinkTarget,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}
@@ -864,131 +731,243 @@ func (q *Queries) ListFoldersByVolume(ctx context.Context, arg ListFoldersByVolu
 	return items, nil
 }
 
-const updateFolderMetadata = `-- name: UpdateFolderMetadata :exec
+const listSubfolders = `-- name: ListSubfolders :many
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders
+WHERE parent_id = $1
+ORDER BY name
+`
+
+func (q *Queries) ListSubfolders(ctx context.Context, parentID pgtype.Int8) ([]Folders, error) {
+	rows, err := q.db.Query(ctx, listSubfolders, parentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Folders{}
+	for rows.Next() {
+		var i Folders
+		if err := rows.Scan(
+			&i.ID,
+			&i.VolumeID,
+			&i.ParentID,
+			&i.Path,
+			&i.Name,
+			&i.PathHash,
+			&i.SizeBytes,
+			&i.SizeBytesRecursive,
+			&i.FileCount,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
+			&i.CreatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateFolder = `-- name: UpdateFolder :one
 UPDATE folders
 SET 
-    mtime = $2,
-    ctime = $3,
-    uid = $4,
-    gid = $5,
-    mode = $6,
-    updated_at = CURRENT_TIMESTAMP
+    size_bytes = $2,
+    size_bytes_recursive = $3,
+    file_count = $4,
+    file_count_recursive = $5,
+    subfolder_count = $6,
+    media_file_count = $7,
+    has_media_files = $8,
+    modified_at = $9,
+    accessed_at = $10
+WHERE id = $1
+RETURNING id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id
+`
+
+type UpdateFolderParams struct {
+	ID                 int64              `json:"id"`
+	SizeBytes          pgtype.Int8        `json:"size_bytes"`
+	SizeBytesRecursive pgtype.Int8        `json:"size_bytes_recursive"`
+	FileCount          pgtype.Int4        `json:"file_count"`
+	FileCountRecursive pgtype.Int4        `json:"file_count_recursive"`
+	SubfolderCount     pgtype.Int4        `json:"subfolder_count"`
+	MediaFileCount     pgtype.Int4        `json:"media_file_count"`
+	HasMediaFiles      pgtype.Bool        `json:"has_media_files"`
+	ModifiedAt         pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt         pgtype.Timestamptz `json:"accessed_at"`
+}
+
+func (q *Queries) UpdateFolder(ctx context.Context, arg UpdateFolderParams) (Folders, error) {
+	row := q.db.QueryRow(ctx, updateFolder,
+		arg.ID,
+		arg.SizeBytes,
+		arg.SizeBytesRecursive,
+		arg.FileCount,
+		arg.FileCountRecursive,
+		arg.SubfolderCount,
+		arg.MediaFileCount,
+		arg.HasMediaFiles,
+		arg.ModifiedAt,
+		arg.AccessedAt,
+	)
+	var i Folders
+	err := row.Scan(
+		&i.ID,
+		&i.VolumeID,
+		&i.ParentID,
+		&i.Path,
+		&i.Name,
+		&i.PathHash,
+		&i.SizeBytes,
+		&i.SizeBytesRecursive,
+		&i.FileCount,
+		&i.FileCountRecursive,
+		&i.SubfolderCount,
+		&i.MediaFileCount,
+		&i.HasMediaFiles,
+		&i.CreatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.OrganizationID,
+	)
+	return i, err
+}
+
+const updateFolderMetadata = `-- name: UpdateFolderMetadata :exec
+UPDATE folders SET
+    modified_at = $2,
+    accessed_at = $3
 WHERE id = $1
 `
 
 type UpdateFolderMetadataParams struct {
-	ID    int64       `json:"id"`
-	Mtime time.Time   `json:"mtime"`
-	Ctime time.Time   `json:"ctime"`
-	Uid   pgtype.Int4 `json:"uid"`
-	Gid   pgtype.Int4 `json:"gid"`
-	Mode  pgtype.Int4 `json:"mode"`
+	ID         int64              `json:"id"`
+	ModifiedAt pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt pgtype.Timestamptz `json:"accessed_at"`
 }
 
 func (q *Queries) UpdateFolderMetadata(ctx context.Context, arg UpdateFolderMetadataParams) error {
-	_, err := q.db.Exec(ctx, updateFolderMetadata,
-		arg.ID,
-		arg.Mtime,
-		arg.Ctime,
-		arg.Uid,
-		arg.Gid,
-		arg.Mode,
-	)
+	_, err := q.db.Exec(ctx, updateFolderMetadata, arg.ID, arg.ModifiedAt, arg.AccessedAt)
 	return err
 }
 
 const updateFolderStats = `-- name: UpdateFolderStats :exec
-UPDATE folders
-SET 
-    size_bytes_recursive = $2,
-    disk_usage_bytes_recursive = $3,
+UPDATE folders SET
+    size_bytes = $2,
+    size_bytes_recursive = $3,
     file_count = $4,
-    dir_count = $5,
-    updated_at = CURRENT_TIMESTAMP
+    file_count_recursive = $5,
+    subfolder_count = $6
 WHERE id = $1
 `
 
 type UpdateFolderStatsParams struct {
-	ID                      int64 `json:"id"`
-	SizeBytesRecursive      int64 `json:"size_bytes_recursive"`
-	DiskUsageBytesRecursive int64 `json:"disk_usage_bytes_recursive"`
-	FileCount               int64 `json:"file_count"`
-	DirCount                int64 `json:"dir_count"`
+	ID                 int64       `json:"id"`
+	SizeBytes          pgtype.Int8 `json:"size_bytes"`
+	SizeBytesRecursive pgtype.Int8 `json:"size_bytes_recursive"`
+	FileCount          pgtype.Int4 `json:"file_count"`
+	FileCountRecursive pgtype.Int4 `json:"file_count_recursive"`
+	SubfolderCount     pgtype.Int4 `json:"subfolder_count"`
 }
 
 func (q *Queries) UpdateFolderStats(ctx context.Context, arg UpdateFolderStatsParams) error {
 	_, err := q.db.Exec(ctx, updateFolderStats,
 		arg.ID,
+		arg.SizeBytes,
 		arg.SizeBytesRecursive,
-		arg.DiskUsageBytesRecursive,
 		arg.FileCount,
-		arg.DirCount,
+		arg.FileCountRecursive,
+		arg.SubfolderCount,
 	)
 	return err
 }
 
 const upsertFolder = `-- name: UpsertFolder :one
 INSERT INTO folders (
-    parent_id, volume_id, name, path, path_hash, depth, mtime, ctime, uid, gid, mode, is_symlink, symlink_target
+    volume_id, parent_id, path, name, path_hash,
+    size_bytes, size_bytes_recursive, file_count, file_count_recursive,
+    subfolder_count, media_file_count, has_media_files,
+    modified_at, accessed_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-)
-ON CONFLICT (volume_id, path_hash)
-DO UPDATE SET
+    $1, $2, $3, $4, $5,
+    $6, $7, $8, $9,
+    $10, $11, $12,
+    $13, $14
+) ON CONFLICT (volume_id, path_hash) DO UPDATE SET
     parent_id = EXCLUDED.parent_id,
     name = EXCLUDED.name,
-    path = EXCLUDED.path,
-    depth = EXCLUDED.depth,
-    mtime = EXCLUDED.mtime,
-    ctime = EXCLUDED.ctime,
-    uid = EXCLUDED.uid,
-    gid = EXCLUDED.gid,
-    mode = EXCLUDED.mode,
-    is_symlink = EXCLUDED.is_symlink,
-    symlink_target = EXCLUDED.symlink_target,
-    updated_at = CURRENT_TIMESTAMP
-RETURNING id, created_at, updated_at
+    size_bytes = EXCLUDED.size_bytes,
+    size_bytes_recursive = EXCLUDED.size_bytes_recursive,
+    file_count = EXCLUDED.file_count,
+    file_count_recursive = EXCLUDED.file_count_recursive,
+    subfolder_count = EXCLUDED.subfolder_count,
+    media_file_count = EXCLUDED.media_file_count,
+    has_media_files = EXCLUDED.has_media_files,
+    modified_at = EXCLUDED.modified_at,
+    accessed_at = EXCLUDED.accessed_at
+RETURNING id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id
 `
 
 type UpsertFolderParams struct {
-	ParentID      pgtype.Int8 `json:"parent_id"`
-	VolumeID      string      `json:"volume_id"`
-	Name          string      `json:"name"`
-	Path          string      `json:"path"`
-	PathHash      []byte      `json:"path_hash"`
-	Depth         int32       `json:"depth"`
-	Mtime         time.Time   `json:"mtime"`
-	Ctime         time.Time   `json:"ctime"`
-	Uid           pgtype.Int4 `json:"uid"`
-	Gid           pgtype.Int4 `json:"gid"`
-	Mode          pgtype.Int4 `json:"mode"`
-	IsSymlink     pgtype.Bool `json:"is_symlink"`
-	SymlinkTarget pgtype.Text `json:"symlink_target"`
+	VolumeID           string             `json:"volume_id"`
+	ParentID           pgtype.Int8        `json:"parent_id"`
+	Path               string             `json:"path"`
+	Name               string             `json:"name"`
+	PathHash           []byte             `json:"path_hash"`
+	SizeBytes          pgtype.Int8        `json:"size_bytes"`
+	SizeBytesRecursive pgtype.Int8        `json:"size_bytes_recursive"`
+	FileCount          pgtype.Int4        `json:"file_count"`
+	FileCountRecursive pgtype.Int4        `json:"file_count_recursive"`
+	SubfolderCount     pgtype.Int4        `json:"subfolder_count"`
+	MediaFileCount     pgtype.Int4        `json:"media_file_count"`
+	HasMediaFiles      pgtype.Bool        `json:"has_media_files"`
+	ModifiedAt         pgtype.Timestamptz `json:"modified_at"`
+	AccessedAt         pgtype.Timestamptz `json:"accessed_at"`
 }
 
-type UpsertFolderRow struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (q *Queries) UpsertFolder(ctx context.Context, arg UpsertFolderParams) (UpsertFolderRow, error) {
+func (q *Queries) UpsertFolder(ctx context.Context, arg UpsertFolderParams) (Folders, error) {
 	row := q.db.QueryRow(ctx, upsertFolder,
-		arg.ParentID,
 		arg.VolumeID,
-		arg.Name,
+		arg.ParentID,
 		arg.Path,
+		arg.Name,
 		arg.PathHash,
-		arg.Depth,
-		arg.Mtime,
-		arg.Ctime,
-		arg.Uid,
-		arg.Gid,
-		arg.Mode,
-		arg.IsSymlink,
-		arg.SymlinkTarget,
+		arg.SizeBytes,
+		arg.SizeBytesRecursive,
+		arg.FileCount,
+		arg.FileCountRecursive,
+		arg.SubfolderCount,
+		arg.MediaFileCount,
+		arg.HasMediaFiles,
+		arg.ModifiedAt,
+		arg.AccessedAt,
 	)
-	var i UpsertFolderRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	var i Folders
+	err := row.Scan(
+		&i.ID,
+		&i.VolumeID,
+		&i.ParentID,
+		&i.Path,
+		&i.Name,
+		&i.PathHash,
+		&i.SizeBytes,
+		&i.SizeBytesRecursive,
+		&i.FileCount,
+		&i.FileCountRecursive,
+		&i.SubfolderCount,
+		&i.MediaFileCount,
+		&i.HasMediaFiles,
+		&i.CreatedAt,
+		&i.ModifiedAt,
+		&i.AccessedAt,
+		&i.OrganizationID,
+	)
 	return i, err
 }

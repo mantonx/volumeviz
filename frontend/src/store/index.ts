@@ -1,94 +1,47 @@
-// Container atoms
-export {
-  containersAtom,
-  containersLoadingAtom,
-  containersErrorAtom,
-  containerFiltersAtom,
-  containerSortAtom,
-  filteredContainersAtom,
-  containerStatsAtom,
-} from './atoms/containers';
+// Modern atoms are now organized under /src/atoms/
+// Legacy container atoms removed during modernization
 
-// Theme atoms
-export { themeAtom, resolvedThemeAtom, systemThemeAtom } from './atoms/theme';
+// Theme atoms (migrated to /src/atoms/theme/)
+export { themeAtom, resolvedThemeAtom, systemThemeAtom } from '@/atoms/theme';
 
-// Volume atoms
+// Volume atoms (moved to /src/atoms/volumes/)
 export {
   volumesAtom,
   volumesLoadingAtom,
   volumesErrorAtom,
-  volumesLastUpdatedAtom,
-  volumeFiltersAtom,
-  volumeSortAtom,
-  scanLoadingAtom,
-  scanErrorAtom,
-  scanResultsAtom,
-  asyncScansAtom,
-  autoRefreshEnabledAtom,
-  autoRefreshIntervalAtom,
-  filteredVolumesAtom,
   volumeStatsAtom,
-  volumeStateAtom,
-  scanStateAtom,
-  volumeByIdAtom,
-  scanResultByIdAtom,
-  volumeLoadingByIdAtom,
-} from './atoms/volumes';
+} from '@/atoms/volumes';
 
-// Volume UI atoms
+// UI atoms (moved to /src/atoms/ui/)
 export {
   volumesViewModeAtom,
-  volumesShowFiltersAtom,
-  volumesShowColumnConfigAtom,
-  volumesShowKeyboardHelpAtom,
-  volumesSelectedIdsAtom,
-  volumesSelectAllModeAtom,
-  volumesSelectedForDetailsAtom,
-  volumesShowDetailsModalAtom,
-  volumesShowSelectDropdownAtom,
-  volumesWithDetailedProgressAtom,
-  volumesSearchQueryAtom,
-  volumesVisibleColumnsAtom,
-  volumesBulkActionsVisibleAtom,
-  volumesSelectedCountAtom,
-  volumesHasSelectionAtom,
-  volumesToggleSelectionAtom,
-  volumesClearSelectionAtom,
-  volumesSelectAllAtom,
-  volumesSelectPageAtom,
-  volumesToggleColumnAtom,
-  volumesAddDetailedProgressAtom,
-  volumesRemoveDetailedProgressAtom,
-  volumesUIStateAtom,
-} from './atoms/volumesUI';
+} from '@/atoms/ui';
 
-// API atoms
-export {
-  apiConfigAtom,
-  apiHealthAtom,
-  apiHealthLoadingAtom,
-  apiHealthErrorAtom,
-  apiErrorsAtom,
-  lastApiErrorAtom,
-  apiConnectedAtom,
-  apiConnectingAtom,
-  activeRequestsAtom,
-  requestCountAtom,
-  apiStatsAtom,
-  apiStatusAtom,
-  addApiErrorAtom,
-  clearApiErrorsAtom,
-  addActiveRequestAtom,
-  removeActiveRequestAtom,
-  environmentAtom,
-  featureFlagsAtom,
-  apiDebugAtom,
-} from './atoms/api';
-
-// WebSocket atoms
+// WebSocket atoms (migrated to /src/atoms/websocket/)
 export {
   websocketStateAtom,
   websocketStatusAtom,
   websocketEnabledAtom,
   connectionStatusAtom,
-} from './atoms/websocket';
+} from '@/atoms/websocket';
+
+// Settings atoms (migrated to /src/atoms/settings/)
+export {
+  autoRefreshEnabledAtom,
+  autoRefreshIntervalAtom,
+  apiConfigAtom,
+  notificationsEnabledAtom,
+  soundEnabledAtom,
+  maxConcurrentScansAtom,
+  debugModeAtom,
+  verboseLoggingAtom,
+  compactModeAtom,
+  showTooltipsAtom,
+  animationsEnabledAtom,
+  experimentalFeaturesAtom,
+  betaFeaturesAtom,
+  featureFlagsAtom,
+  environmentAtom,
+  isProductionModeAtom,
+  effectiveApiTimeoutAtom,
+} from '@/atoms/settings';

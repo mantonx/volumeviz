@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/mantonx/volumeviz/internal/api/middleware"
+	"github.com/mantonx/volumeviz/internal/utils/auth"
 )
 
 func main() {
@@ -33,20 +33,29 @@ func main() {
 	}
 
 	// Validate role
-	var userRole middleware.UserRole
 	switch *role {
-	case "viewer":
-		userRole = middleware.RoleViewer
-	case "operator":
-		userRole = middleware.RoleOperator
-	case "admin":
-		userRole = middleware.RoleAdmin
+	case "viewer", "operator", "admin":
+		// Valid roles
 	default:
 		log.Fatalf("Invalid role: %s. Must be viewer, operator, or admin", *role)
 	}
 
-	// Generate JWT token
-	token, err := middleware.GenerateJWT(*userID, userRole, *secret, *duration)
+	// Create JWT config
+	jwtConfig := &auth.JWTConfig{
+		AccessSecret:     *secret,
+		RefreshSecret:    *secret,
+		AccessExpiration: *duration,
+		Issuer:           "volumeviz",
+	}
+	
+	// Create JWT manager
+	jwtManager := auth.NewJWTManager(jwtConfig)
+	
+	// Convert role to string
+	roleStr := *role
+	
+	// Generate JWT token with organization context
+	token, _, err := jwtManager.GenerateAccessToken(*userID, *userID, "", roleStr, "jwt-gen", nil)
 	if err != nil {
 		log.Fatalf("Failed to generate JWT token: %v", err)
 	}

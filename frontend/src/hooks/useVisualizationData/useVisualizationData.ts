@@ -9,9 +9,7 @@ import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useAtomValue } from 'jotai';
 import {
   volumesAtom,
-  scanResultsAtom,
-  volumeStatsAtom,
-} from '../../store/atoms/volumes';
+} from '@/atoms/volumes';
 import { useRealTimeScans } from '../useRealTimeScans';
 import type {
   VisualizationDataOptions,
@@ -23,7 +21,7 @@ import {
   generateSystemStorageData,
   generateTopVolumesData,
   getTimeRangeCutoff,
-} from '../../utils/visualization/data-transformations';
+} from '@/utils/visualization/data-transformations';
 
 /**
  * Hook for managing visualization-ready data with real-time updates

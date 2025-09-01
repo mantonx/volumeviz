@@ -55,7 +55,7 @@ import type {
   BreadcrumbItem,
   ExplorerContextAction,
 } from './VolumeExplorerPanel.types';
-import { explorerUtils } from '../../../utils';
+import { explorerUtils } from '@/utils';
 
 /**
  * VolumeExplorerPanel - Comprehensive file browser with preview integration

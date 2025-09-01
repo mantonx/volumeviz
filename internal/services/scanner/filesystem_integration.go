@@ -140,7 +140,15 @@ func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID
 		updateCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		if err := vs.volumesRepo.UpdateLastScanned(updateCtx, volumeID, time.Now()); err != nil {
+		// Scanner service uses system-level operations with intelligent organization assignment
+		// First get the volume to determine its organization context
+		volume, volErr := vs.store.Volumes().GetVolumeByVolumeIDSystemLevel(updateCtx, volumeID)
+		organizationID := int64(1) // Default fallback
+		if volErr == nil && volume != nil && volume.OrganizationID != nil {
+			organizationID = *volume.OrganizationID
+		}
+		
+		if err := vs.volumesRepo.UpdateLastScanned(updateCtx, organizationID, volumeID, time.Now()); err != nil {
 			if vs.logger != nil {
 				vs.logger.Printf("Failed to update last_scanned for volume %s: %v", volumeID, err)
 			}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
+	sqlcSQLite "github.com/mantonx/volumeviz/internal/db/sqlc-sqlite"
 	"github.com/mantonx/volumeviz/internal/models"
 )
 
@@ -102,6 +103,12 @@ type alertsRepo struct {
 // NewAlertsRepo creates a new alerts repository
 func NewAlertsRepo(queries *sqlc.Queries) AlertsRepo {
 	return &alertsRepo{queries: queries}
+}
+
+// NewSQLiteAlertsRepo creates a new SQLite alerts repository
+func NewSQLiteAlertsRepo(queries *sqlcSQLite.Queries) AlertsRepo {
+	// TODO: Implement SQLite-specific version
+	return &alertsRepo{queries: nil}
 }
 
 // Alert Rules implementation

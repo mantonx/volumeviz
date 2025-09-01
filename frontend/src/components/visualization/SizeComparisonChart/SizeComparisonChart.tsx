@@ -17,7 +17,7 @@ import type {
   ChartMargins,
 } from './SizeComparisonChart.types';
 import { COMPARISON_COLORS } from './SizeComparisonChart.types';
-import { formatBytes } from '../../../utils/formatters';
+import { formatBytes } from '@/utils/formatters';
 
 /**
  * SizeComparisonChart component for comparing volume sizes with change indicators.

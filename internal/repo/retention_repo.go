@@ -2,47 +2,34 @@ package repo
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
+	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
+	sqlcSQLite "github.com/mantonx/volumeviz/internal/db/sqlc-sqlite"
 )
 
-// RetentionRepo handles data retention operations
-// This repo accepts sqlc.Queries (injected by store) and performs cleanup operations
+// RetentionRepo handles data retention and cleanup operations
 type RetentionRepo interface {
-	// PruneVolumeMetrics removes volume_metrics entries older than the specified days
-	PruneVolumeMetrics(ctx context.Context, ttlDays int) (int64, error)
-
-	// PruneVolumeSizes removes volume_sizes entries older than the specified days (legacy compatibility)
-	PruneVolumeSizes(ctx context.Context, ttlDays int) (int64, error)
-
-	// PruneScanJobs removes completed/failed scan_jobs entries older than the specified days
-	PruneScanJobs(ctx context.Context, ttlDays int) (int64, error)
-
-	// PruneDailyStats removes stats_daily entries older than the specified days
-	PruneDailyStats(ctx context.Context, ttlDays int) (int64, error)
-
-	// PruneFileMetadata removes file_metadata entries older than the specified days
-	PruneFileMetadata(ctx context.Context, ttlDays int) (int64, error)
-
-	// PruneInactiveFiles removes files from inactive volumes older than the specified days
-	PruneInactiveFiles(ctx context.Context, ttlDays int) (int64, error)
-
-	// PruneInactiveFolders removes folders from inactive volumes older than the specified days
-	PruneInactiveFolders(ctx context.Context, ttlDays int) (int64, error)
-
-	// VacuumAnalyze performs database maintenance
-	VacuumAnalyze(ctx context.Context) error
-
-	// CreateDailyRollupTable ensures the daily rollup table exists (legacy compatibility)
+	PruneVolumeMetrics(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error)
+	PruneScanJobs(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error)
+	PruneDailyStats(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error)
+	PruneFileMetadata(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error)
+	PruneInactiveFiles(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error)
+	GetRetentionStats(ctx context.Context) (map[string]int64, error)
 	CreateDailyRollupTable(ctx context.Context) error
-
-	// RollupDailyMetrics creates or updates daily aggregates (legacy compatibility)
 	RollupDailyMetrics(ctx context.Context) error
 }
 
+// retentionRepo implements RetentionRepo using sqlc generated queries
 type retentionRepo struct {
 	queries *sqlc.Queries
+}
+
+// retentionRepoSQLite implements RetentionRepo using SQLite sqlc generated queries
+type retentionRepoSQLite struct {
+	queries *sqlcSQLite.Queries
 }
 
 // NewRetentionRepo creates a new retention repository
@@ -50,125 +37,289 @@ func NewRetentionRepo(queries *sqlc.Queries) RetentionRepo {
 	return &retentionRepo{queries: queries}
 }
 
-func (r *retentionRepo) PruneVolumeMetrics(ctx context.Context, ttlDays int) (int64, error) {
-	// Count before deletion for metrics
-	count, err := r.queries.CountVolumeMetrics(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count volume metrics to prune: %w", err)
-	}
-
-	// Perform the deletion
-	err = r.queries.PruneVolumeMetrics(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to prune volume metrics: %w", err)
-	}
-
-	return count, nil
+// NewSQLiteRetentionRepo creates a new SQLite retention repository
+func NewSQLiteRetentionRepo(queries *sqlcSQLite.Queries) RetentionRepo {
+	return &retentionRepoSQLite{queries: queries}
 }
 
-func (r *retentionRepo) PruneVolumeSizes(ctx context.Context, ttlDays int) (int64, error) {
-	// Volume sizes are not included in the current retention queries
-	// This table may not need automatic pruning based on the schema
-	return 0, nil
+// RetentionResult represents the result of a retention operation
+type RetentionResult struct {
+	RecordsDeleted int64
+	BytesFreed     int64
 }
 
-func (r *retentionRepo) PruneScanJobs(ctx context.Context, ttlDays int) (int64, error) {
-	// Count before deletion for metrics
-	count, err := r.queries.CountOldScanJobs(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count scan jobs to prune: %w", err)
-	}
+// =============================================================================
+// PostgreSQL Implementation
+// =============================================================================
 
-	// Perform the deletion
-	err = r.queries.PruneScanJobs(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to prune scan jobs: %w", err)
-	}
-
-	return count, nil
+// PruneVolumeMetrics removes old volume metrics
+func (r *retentionRepo) PruneVolumeMetrics(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
+	// TODO: Implement when retention queries are available
+	return &RetentionResult{RecordsDeleted: 0, BytesFreed: 0}, nil
 }
 
+// PruneScanJobs removes old scan job records
+func (r *retentionRepo) PruneScanJobs(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
+	cutoffTime := time.Now().Add(-retentionPeriod)
+	
+	// First count how many records will be deleted for reporting
+	countBefore, err := r.queries.CountScanJobsByStatus(ctx, "completed")
+	if err != nil {
+		return nil, err
+	}
+	failedCount, err := r.queries.CountScanJobsByStatus(ctx, "failed") 
+	if err != nil {
+		return nil, err
+	}
+	cancelledCount, err := r.queries.CountScanJobsByStatus(ctx, "cancelled")
+	if err != nil {
+		return nil, err
+	}
+	totalBefore := countBefore + failedCount + cancelledCount
+
+	// Delete old scan jobs using the existing SQLC query
+	err = r.queries.DeleteOldScanJobs(ctx, pgtype.Timestamptz{
+		Time: cutoffTime,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Count remaining records to calculate how many were deleted
+	countAfter, _ := r.queries.CountScanJobsByStatus(ctx, "completed")
+	failedAfter, _ := r.queries.CountScanJobsByStatus(ctx, "failed") 
+	cancelledAfter, _ := r.queries.CountScanJobsByStatus(ctx, "cancelled")
+	totalAfter := countAfter + failedAfter + cancelledAfter
+	
+	recordsDeleted := totalBefore - totalAfter
+
+	return &RetentionResult{
+		RecordsDeleted: recordsDeleted,
+		BytesFreed:     recordsDeleted * 1024, // Rough estimate of bytes per record
+	}, nil
+}
+
+// PruneDailyStats removes old daily statistics
+func (r *retentionRepo) PruneDailyStats(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
+	// TODO: Implement when retention queries are available
+	return &RetentionResult{RecordsDeleted: 0, BytesFreed: 0}, nil
+}
+
+// PruneFileMetadata removes old file metadata
+func (r *retentionRepo) PruneFileMetadata(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
+	cutoffTime := time.Now().Add(-retentionPeriod)
+	
+	// Count old metadata before deletion
+	countBefore, err := r.queries.CountOldFileMetadata(ctx, pgtype.Timestamptz{
+		Time: cutoffTime,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete old file metadata
+	err = r.queries.DeleteOldFileMetadata(ctx, pgtype.Timestamptz{
+		Time: cutoffTime,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RetentionResult{
+		RecordsDeleted: countBefore,
+		BytesFreed:     countBefore * 2048, // Rough estimate of bytes per metadata record
+	}, nil
+}
+
+// PruneInactiveFiles removes records for files that haven't been seen recently
+func (r *retentionRepo) PruneInactiveFiles(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
+	cutoffTime := time.Now().Add(-retentionPeriod)
+	
+	// Count old files before deletion
+	countBefore, err := r.queries.CountOldFiles(ctx, pgtype.Timestamptz{
+		Time: cutoffTime,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete old files
+	err = r.queries.DeleteOldFiles(ctx, pgtype.Timestamptz{
+		Time: cutoffTime,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RetentionResult{
+		RecordsDeleted: countBefore,
+		BytesFreed:     countBefore * 512, // Rough estimate of bytes per file record
+	}, nil
+}
+
+// GetRetentionStats returns statistics about data eligible for retention
+func (r *retentionRepo) GetRetentionStats(ctx context.Context) (map[string]int64, error) {
+	// TODO: Implement when retention queries are available
+	return map[string]int64{
+		"volume_metrics":  0,
+		"scan_jobs":       0,
+		"daily_stats":     0,
+		"file_metadata":   0,
+		"inactive_files":  0,
+	}, nil
+}
+
+// CreateDailyRollupTable creates the daily rollup table if it doesn't exist
 func (r *retentionRepo) CreateDailyRollupTable(ctx context.Context) error {
-	// Daily stats table already exists in the schema (stats_daily)
-	// No additional table creation needed
+	// TODO: Implement when schema and queries are available
 	return nil
 }
 
-func (r *retentionRepo) PruneDailyStats(ctx context.Context, ttlDays int) (int64, error) {
-	// Count before deletion for metrics
-	count, err := r.queries.CountOldDailyStats(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count daily stats to prune: %w", err)
-	}
-
-	// Perform the deletion
-	err = r.queries.PruneDailyStats(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to prune daily stats: %w", err)
-	}
-
-	return count, nil
-}
-
-func (r *retentionRepo) PruneFileMetadata(ctx context.Context, ttlDays int) (int64, error) {
-	// Count before deletion for metrics
-	count, err := r.queries.CountOldFileMetadata(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count file metadata to prune: %w", err)
-	}
-
-	// Perform the deletion
-	err = r.queries.PruneFileMetadata(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to prune file metadata: %w", err)
-	}
-
-	return count, nil
-}
-
-func (r *retentionRepo) PruneInactiveFiles(ctx context.Context, ttlDays int) (int64, error) {
-	// Count before deletion for metrics
-	count, err := r.queries.CountInactiveFiles(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count inactive files to prune: %w", err)
-	}
-
-	// Perform the deletion
-	err = r.queries.PruneInactiveFiles(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to prune inactive files: %w", err)
-	}
-
-	return count, nil
-}
-
-func (r *retentionRepo) PruneInactiveFolders(ctx context.Context, ttlDays int) (int64, error) {
-	// Count before deletion for metrics
-	count, err := r.queries.CountInactiveFolders(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count inactive folders to prune: %w", err)
-	}
-
-	// Perform the deletion
-	err = r.queries.PruneInactiveFolders(ctx, ttlDays)
-	if err != nil {
-		return 0, fmt.Errorf("failed to prune inactive folders: %w", err)
-	}
-
-	return count, nil
-}
-
-func (r *retentionRepo) VacuumAnalyze(ctx context.Context) error {
-	err := r.queries.VacuumAnalyze(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to vacuum analyze database: %w", err)
-	}
-
-	return nil
-}
-
+// RollupDailyMetrics performs daily metric rollup aggregation
 func (r *retentionRepo) RollupDailyMetrics(ctx context.Context) error {
-	// Daily metrics rollup would be handled by the stats service
-	// This is just a placeholder for the interface
+	// TODO: Implement when schema and queries are available
+	return nil
+}
+
+// =============================================================================
+// SQLite Implementation
+// =============================================================================
+
+// PruneVolumeMetrics removes old volume metrics
+func (r *retentionRepoSQLite) PruneVolumeMetrics(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
+	// TODO: Implement when retention queries are available
+	return &RetentionResult{RecordsDeleted: 0, BytesFreed: 0}, nil
+}
+
+// PruneScanJobs removes old scan job records
+func (r *retentionRepoSQLite) PruneScanJobs(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
+	cutoffTime := time.Now().Add(-retentionPeriod)
+	
+	// First count how many records will be deleted for reporting
+	countBefore, err := r.queries.CountScanJobsByStatus(ctx, "completed")
+	if err != nil {
+		return nil, err
+	}
+	failedCount, err := r.queries.CountScanJobsByStatus(ctx, "failed") 
+	if err != nil {
+		return nil, err
+	}
+	cancelledCount, err := r.queries.CountScanJobsByStatus(ctx, "cancelled")
+	if err != nil {
+		return nil, err
+	}
+	totalBefore := countBefore + failedCount + cancelledCount
+
+	// Delete old scan jobs using the existing SQLC query
+	err = r.queries.DeleteOldScanJobs(ctx, sql.NullString{
+		String: cutoffTime.Format(time.RFC3339),
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Count remaining records to calculate how many were deleted
+	countAfter, _ := r.queries.CountScanJobsByStatus(ctx, "completed")
+	failedAfter, _ := r.queries.CountScanJobsByStatus(ctx, "failed") 
+	cancelledAfter, _ := r.queries.CountScanJobsByStatus(ctx, "cancelled")
+	totalAfter := countAfter + failedAfter + cancelledAfter
+	
+	recordsDeleted := totalBefore - totalAfter
+
+	return &RetentionResult{
+		RecordsDeleted: recordsDeleted,
+		BytesFreed:     recordsDeleted * 1024, // Rough estimate of bytes per record
+	}, nil
+}
+
+// PruneDailyStats removes old daily statistics
+func (r *retentionRepoSQLite) PruneDailyStats(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
+	// TODO: Implement when retention queries are available
+	return &RetentionResult{RecordsDeleted: 0, BytesFreed: 0}, nil
+}
+
+// PruneFileMetadata removes old file metadata
+func (r *retentionRepoSQLite) PruneFileMetadata(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
+	cutoffTime := time.Now().Add(-retentionPeriod)
+	
+	// Count old metadata before deletion
+	countBefore, err := r.queries.CountOldFileMetadata(ctx, sql.NullString{
+		String: cutoffTime.Format(time.RFC3339),
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete old file metadata
+	err = r.queries.DeleteOldFileMetadata(ctx, sql.NullString{
+		String: cutoffTime.Format(time.RFC3339),
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RetentionResult{
+		RecordsDeleted: countBefore,
+		BytesFreed:     countBefore * 2048, // Rough estimate of bytes per metadata record
+	}, nil
+}
+
+// PruneInactiveFiles removes records for files that haven't been seen recently
+func (r *retentionRepoSQLite) PruneInactiveFiles(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
+	cutoffTime := time.Now().Add(-retentionPeriod)
+	
+	// Count old files before deletion
+	countBefore, err := r.queries.CountOldFiles(ctx, sql.NullString{
+		String: cutoffTime.Format(time.RFC3339),
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete old files
+	err = r.queries.DeleteOldFiles(ctx, sql.NullString{
+		String: cutoffTime.Format(time.RFC3339),
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RetentionResult{
+		RecordsDeleted: countBefore,
+		BytesFreed:     countBefore * 512, // Rough estimate of bytes per file record
+	}, nil
+}
+
+// GetRetentionStats returns statistics about data eligible for retention
+func (r *retentionRepoSQLite) GetRetentionStats(ctx context.Context) (map[string]int64, error) {
+	// TODO: Implement when retention queries are available
+	return map[string]int64{
+		"volume_metrics":  0,
+		"scan_jobs":       0,
+		"daily_stats":     0,
+		"file_metadata":   0,
+		"inactive_files":  0,
+	}, nil
+}
+
+// CreateDailyRollupTable creates the daily rollup table if it doesn't exist
+func (r *retentionRepoSQLite) CreateDailyRollupTable(ctx context.Context) error {
+	// TODO: Implement when schema and queries are available
+	return nil
+}
+
+// RollupDailyMetrics performs daily metric rollup aggregation
+func (r *retentionRepoSQLite) RollupDailyMetrics(ctx context.Context) error {
+	// TODO: Implement when schema and queries are available
 	return nil
 }

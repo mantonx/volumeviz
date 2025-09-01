@@ -9,13 +9,16 @@ export default defineConfig(({ mode }) => ({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@/components': path.resolve(__dirname, './src/components'),
+      '@/atoms': path.resolve(__dirname, './src/atoms'),
       '@/hooks': path.resolve(__dirname, './src/hooks'),
       '@/utils': path.resolve(__dirname, './src/utils'),
       '@/types': path.resolve(__dirname, './src/types'),
       '@/api': path.resolve(__dirname, './src/api'),
+      '@/providers': path.resolve(__dirname, './src/providers'),
       '@/store': path.resolve(__dirname, './src/store'),
       '@/pages': path.resolve(__dirname, './src/pages'),
       '@/styles': path.resolve(__dirname, './src/styles'),
+      '@/test': path.resolve(__dirname, './src/test'),
     },
   },
   optimizeDeps: {
@@ -34,21 +37,95 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: mode !== 'production',
     minify: 'esbuild',
     chunkSizeWarningLimit: 800, // Increase limit for visualization components
+    target: 'es2020', // Modern browsers support
     rollupOptions: {
       external: mode === 'production' ? ['msw', 'msw/browser', 'msw/node'] : ['msw/node'],
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          jotai: ['jotai'],
-          ui: ['lucide-react', 'clsx', 'tailwind-merge'],
-          charts: ['recharts'],
-          testing: ['@testing-library/react', '@testing-library/jest-dom', 'vitest'],
-          utils: ['lodash-es', 'date-fns', 'validator'],
+        // Optimize chunk splitting for better caching
+        manualChunks: (id) => {
+          // Vendor dependencies
+          if (id.includes('node_modules')) {
+            // React ecosystem
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor';
+            }
+            // TanStack Query
+            if (id.includes('@tanstack/react-query')) {
+              return 'tanstack-query';
+            }
+            // Jotai
+            if (id.includes('jotai')) {
+              return 'jotai';
+            }
+            // UI components
+            if (id.includes('lucide-react') || id.includes('clsx') || id.includes('tailwind-merge')) {
+              return 'ui';
+            }
+            // Charts
+            if (id.includes('recharts') || id.includes('d3')) {
+              return 'charts';
+            }
+            // Testing
+            if (id.includes('@testing-library') || id.includes('vitest')) {
+              return 'testing';
+            }
+            // Utilities
+            if (id.includes('lodash') || id.includes('date-fns') || id.includes('validator')) {
+              return 'utils';
+            }
+            // WebSocket client
+            if (id.includes('websocket') || id.includes('ws')) {
+              return 'websocket-client';
+            }
+            // Everything else in vendor
+            return 'vendor-misc';
+          }
+
+          // App code chunks
+          if (id.includes('/src/api/orval-generated/')) {
+            return 'api-client';
+          }
+          if (id.includes('/src/components/')) {
+            return 'components';
+          }
+          if (id.includes('/src/hooks/')) {
+            return 'hooks';
+          }
+          if (id.includes('/src/atoms/')) {
+            return 'atoms';
+          }
+          if (id.includes('/src/utils/')) {
+            return 'utils';
+          }
         },
+        // Optimize output filenames for caching
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
+          return `assets/${facadeModuleId}-[hash].js`;
+        },
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith('.css')) {
+            return 'assets/[name]-[hash][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
+        },
+        // Enable modern ES features for better compression
+        format: 'es',
+        // Split CSS into separate files
+        exports: 'named',
       },
+    },
+    // Enable compression
+    assetsInclude: ['**/*.woff2', '**/*.woff'],
+    cssCodeSplit: true,
+    // Tree shaking optimization
+    treeshake: {
+      moduleSideEffects: false,
+      propertyReadSideEffects: false,
+      unknownGlobalSideEffects: false,
     },
   },
   define: {

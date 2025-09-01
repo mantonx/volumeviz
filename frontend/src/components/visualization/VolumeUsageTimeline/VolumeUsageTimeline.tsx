@@ -20,7 +20,7 @@ import type {
   BrushSelection,
 } from './VolumeUsageTimeline.types';
 import { TIME_RANGE_OPTIONS } from './VolumeUsageTimeline.types';
-import { formatBytes } from '../../../utils/formatters';
+import { formatBytes } from '@/utils/formatters';
 
 // Color palette for volume lines
 const VOLUME_COLORS = [

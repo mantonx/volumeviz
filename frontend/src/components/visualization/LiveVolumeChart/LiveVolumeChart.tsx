@@ -18,10 +18,10 @@ import type {
   VolumeChartData,
   ChartTooltipData,
 } from './LiveVolumeChart.types';
-import { formatBytes } from '../../../utils/formatters';
+import { formatBytes } from '@/utils/formatters';
 import { useRealtime } from '@/providers/realtime';
 import { ReadyState } from 'react-use-websocket';
-import type { VolumeResponseType } from '../../../api/generated/volumeviz-api';
+import type { VolumeResponseType } from '@/api/generated/volumeviz-api';
 
 // Predefined color palette for volume segments
 const VOLUME_COLORS = [

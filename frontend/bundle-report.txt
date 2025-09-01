@@ -1,0 +1,3 @@
+npm warn exec The following package was not found and will be installed: webpack-bundle-analyzer@4.10.2
+Couldn't read webpack bundle stats from "/home/fictional/Projects/volumeviz/frontend/dist":
+Error: EISDIR: illegal operation on a directory, read

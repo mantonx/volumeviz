@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { useAtomValue } from 'jotai';
-import { Header } from '../Header';
-import { Sidebar } from '../Sidebar';
-import {
-  WebSocketDevPanel,
-  useWebSocketDevPanel,
-} from '@/components/dev/WebSocketDevPanel';
+import { Header } from '@/components/layout/Header';
+import { Sidebar } from '@/components/layout/Sidebar';
 import { resolvedThemeAtom } from '@/store';
 import { cn } from '@/utils';
 import type { LayoutProps } from './Layout.types';
@@ -31,7 +27,6 @@ import type { LayoutProps } from './Layout.types';
 export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const resolvedTheme = useAtomValue(resolvedThemeAtom);
-  const devPanel = useWebSocketDevPanel();
 
   // Apply theme to document root for global dark mode support
   React.useEffect(() => {
@@ -59,13 +54,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
         </main>
       </div>
 
-      {/* WebSocket Dev Panel (DEV mode only) */}
-      {import.meta.env.DEV && (
-        <WebSocketDevPanel
-          isOpen={devPanel.isOpen}
-          onClose={devPanel.closePanel}
-        />
-      )}
     </div>
   );
 };

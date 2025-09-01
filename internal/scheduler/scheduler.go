@@ -398,11 +398,19 @@ func (s *Scheduler) EnqueueVolume(volumeName string) (string, error) {
 
 		// Create scan job in database
 		scanID := uuid.New().String()
+		
+		// Get organization ID from volume (system-level lookup for scheduler)
+		var organizationID *int64
+		if volume, err := s.store.Volumes().GetVolumeByVolumeIDSystemLevel(s.ctx, volumeName); err == nil {
+			organizationID = volume.OrganizationID
+		}
+		
 		scanJob := models.CreateScanJobParams{
-			ScanID:   scanID,
-			VolumeID: volumeName,
-			Status:   "queued",
-			Method:   s.selectScanMethod(),
+			ScanID:         scanID,
+			VolumeID:       volumeName,
+			OrganizationID: organizationID,
+			Status:         "queued",
+			Method:         s.selectScanMethod(),
 		}
 
 		// Insert scan job atomically

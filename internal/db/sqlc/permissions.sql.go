@@ -67,7 +67,7 @@ JOIN role_permissions rp ON p.id = rp.permission_id
 WHERE rp.role = $1
 `
 
-func (q *Queries) GetRolePermissions(ctx context.Context, role interface{}) ([]string, error) {
+func (q *Queries) GetRolePermissions(ctx context.Context, role string) ([]string, error) {
 	rows, err := q.db.Query(ctx, getRolePermissions, role)
 	if err != nil {
 		return nil, err

@@ -2,7 +2,7 @@
  * Type definitions for real-time scan management hook
  */
 
-import type { VolumeResponse, ScanResponse } from '../../api/client';
+import type { VolumeResponse, ScanResponse } from '@/api/client';
 
 export interface RealTimeScanOptions {
   /** Enable automatic polling for volume updates */

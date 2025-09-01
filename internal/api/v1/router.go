@@ -10,11 +10,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/middleware"
 	"github.com/mantonx/volumeviz/internal/api/v1/alerts"
+	"github.com/mantonx/volumeviz/internal/api/v1/auth"
 	"github.com/mantonx/volumeviz/internal/api/v1/diag"
 	"github.com/mantonx/volumeviz/internal/api/v1/explorer"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
 	"github.com/mantonx/volumeviz/internal/api/v1/metadata"
 	"github.com/mantonx/volumeviz/internal/api/v1/mounts"
+	"github.com/mantonx/volumeviz/internal/api/v1/organizations"
 	previewsAPI "github.com/mantonx/volumeviz/internal/api/v1/previews"
 	"github.com/mantonx/volumeviz/internal/api/v1/rules"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
@@ -44,6 +46,10 @@ import (
 	"github.com/mantonx/volumeviz/internal/services/scanner"
 	statsService "github.com/mantonx/volumeviz/internal/services/stats"
 	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/audit"
+	authServices "github.com/mantonx/volumeviz/internal/auth"
+	organizationsService "github.com/mantonx/volumeviz/internal/services/organizations"
+	authUtils "github.com/mantonx/volumeviz/internal/utils/auth"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
@@ -68,6 +74,10 @@ type Router struct {
 	mountsRepo          *repo.MountCatalogRepository           // Mount catalog repository
 	rulesEngine         *rulesService.TrackingRulesEngine      // Rules engine
 	rulesPreviewService *rulesService.EvaluationPreviewService // Rules preview service
+	auditLogger         audit.Logger                           // Audit logging service
+	permissionChecker   authServices.PermissionChecker        // Permission checking service
+	organizationService organizationsService.Service          // Organization management service
+	jwtManager          *authUtils.JWTManager                  // JWT manager for authentication
 }
 
 // NewRouter creates a new v1 API router
@@ -304,6 +314,32 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 	dockerClient := dockerSvc.GetDockerClient()
 	mountCatalogService := dockerService.NewMountCatalogService(dockerClient, queries)
 
+	// Initialize audit logger
+	auditLogger := audit.NewLogger(queries)
+	log.Printf("[INFO] Audit logger initialized successfully")
+
+	// Initialize permission checker
+	permissionChecker := authServices.NewPermissionChecker(queries)
+	log.Printf("[INFO] Permission checker initialized successfully")
+
+	// Initialize organization service
+	organizationService := organizationsService.NewService(queries, auditLogger)
+	log.Printf("[INFO] Organization service initialized successfully")
+
+	// Initialize JWT manager if auth is enabled
+	var jwtManager *authUtils.JWTManager
+	if config.Auth.Enabled && config.Auth.Secret != "" {
+		jwtConfig := &authUtils.JWTConfig{
+			AccessSecret:      config.Auth.Secret,
+			RefreshSecret:     "", // Will use access secret
+			AccessExpiration:  15 * time.Minute,
+			RefreshExpiration: 7 * 24 * time.Hour,
+			Issuer:            "volumeviz",
+		}
+		jwtManager = authUtils.NewJWTManager(jwtConfig)
+		log.Printf("[INFO] JWT manager initialized successfully")
+	}
+
 	// Initialize tracking rules repository and services
 	// For now, we'll create placeholder services since we need proper database connection setup
 	var rulesRepo *repo.TrackingRulesRepository
@@ -353,6 +389,10 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		mountsRepo:          mountsRepo,
 		rulesEngine:         rulesEngine,
 		rulesPreviewService: rulesPreviewService,
+		auditLogger:         auditLogger,
+		permissionChecker:   permissionChecker,
+		organizationService: organizationService,
+		jwtManager:          jwtManager,
 	}
 
 	router.setupMiddleware(config)
@@ -401,7 +441,24 @@ func (r *Router) setupMiddleware(config *config.Config) {
 
 	// Security middleware
 	r.engine.Use(middleware.RequestIDMiddleware())
-	r.engine.Use(middleware.SecurityHeadersMiddleware(nil)) // Use defaults
+	
+	// HTTPS redirect middleware (only in production when TLS is enabled)
+	r.engine.Use(middleware.HTTPSRedirectMiddleware(config.TLS.Enabled))
+	
+	// Enhanced security headers with HSTS if TLS is enabled
+	securityConfig := &middleware.SecurityConfig{
+		ContentTypeOptions:           "nosniff",
+		FrameOptions:                 "SAMEORIGIN",
+		ReferrerPolicy:               "strict-origin-when-cross-origin",
+		ContentSecurityPolicy:        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; font-src 'self'; object-src 'none'; media-src 'self'; frame-src 'none';",
+		PermittedCrossDomainPolicies: "none",
+		HideServerHeader:             true,
+	}
+	// Add HSTS header if TLS is enabled
+	if config.TLS.Enabled {
+		securityConfig.StrictTransportSecurity = "max-age=31536000; includeSubDomains; preload"
+	}
+	r.engine.Use(middleware.SecurityHeadersMiddleware(securityConfig))
 
 	// CORS middleware with configuration
 	corsConfig := &middleware.CORSConfig{
@@ -450,17 +507,19 @@ func (r *Router) setupMiddleware(config *config.Config) {
 	r.engine.Use(middleware.ErrorBudgetMiddleware(errorBudgetConfig))
 
 	// Authentication middleware (if enabled)
-	authConfig := &middleware.AuthConfig{
-		Enabled:      config.Auth.Enabled,
-		Secret:       config.Auth.Secret,
-		RequiredRole: middleware.RoleViewer,
-		SkipPaths: []string{
-			"/api/v1/health",
-			"/health",
-			"/metrics",
-			"/api/docs",
-			"/openapi",
-		},
+	authConfig := middleware.NewAuthConfig(r.jwtManager, config.Auth.Enabled)
+	authConfig.RequiredRole = middleware.RoleViewer
+	authConfig.SkipPaths = []string{
+		"/api/v1/health",
+		"/health",
+		"/metrics",
+		"/api/docs",
+		"/openapi",
+		"/api/v1/auth/login",
+		"/api/v1/auth/register",
+		"/api/v1/auth/password/reset",
+		"/api/v1/auth/refresh",
+		"/api/v1/auth/csrf",
 	}
 	r.engine.Use(middleware.AuthMiddleware(authConfig))
 }
@@ -496,86 +555,113 @@ func (r *Router) setupRoutes(config *config.Config) {
 		diagHandler := diag.NewHandler(config)
 		diagHandler.RegisterRoutes(v1)
 
+		// Authentication routes (must come before other protected routes)
+		authConfig := &middleware.AuthConfig{
+			Enabled:      config.Auth.Enabled,
+			JWTManager:   r.jwtManager,
+			RequiredRole: middleware.RoleViewer,
+		}
+		auth.RegisterRoutes(v1, r.store, r.jwtManager, authConfig)
+
+		// Organization middleware setup
+		orgMiddleware := middleware.NewOrganizationMiddleware(r.store)
+
+		// Organization routes
+		organizationHandler := organizations.NewHandler(r.store, r.organizationService)
+		orgRoutes := v1.Group("/organizations")
+		orgRoutes.Use(orgMiddleware.RequireOrganization())
+		{
+			orgRoutes.GET("/me", organizationHandler.GetMyOrganization)
+			orgRoutes.PUT("/me", organizationHandler.UpdateMyOrganization)
+		}
+
 		// Register sub-routers with store interface
 		r.healthRouter = health.NewRouter(r.dockerService, r.store, r.eventsService, r.scheduler)
 		r.healthRouter.RegisterRoutes(v1)
 
-		volumesRouter := volumes.NewRouterWithScanner(r.dockerService, r.store, nil, r.scanner)
-		volumesRouter.RegisterRoutes(v1)
-
-		// Explorer router for directory browsing and file operations
-		explorer.RegisterRoutes(v1, r.store)
-
-		// File metadata router for detailed file information
-		metadata.RegisterRoutes(v1, r.store)
-
+		// System router (no organization scoping needed)
 		systemRouter := system.NewRouter(r.dockerService)
 		systemRouter.RegisterRoutes(v1)
 
-		scanRouter := scan.NewRouter(r.scanner, r.store, r.scheduler, nil)
+		// Organization-scoped routes that require organization context
+		orgScopedRoutes := v1.Group("/")
+		orgScopedRoutes.Use(orgMiddleware.RequireOrganization())
+		{
+			// Volumes router - organization scoped
+			volumesRouter := volumes.NewRouterWithScanner(r.dockerService, r.store, nil, r.scanner)
+			volumesRouter.RegisterRoutes(orgScopedRoutes)
 
-		// Set enrichment manager on scan router if available
-		if r.enrichmentManager != nil {
-			scanRouter.SetEnrichmentManager(r.enrichmentManager)
-			log.Printf("[INFO] Enrichment manager set on scan router")
+			// Explorer router for directory browsing and file operations - organization scoped
+			explorer.RegisterRoutes(orgScopedRoutes, r.store)
+
+			// File metadata router for detailed file information - organization scoped
+			metadata.RegisterRoutes(orgScopedRoutes, r.store)
+
+			// Scan router - organization scoped
+			scanRouter := scan.NewRouter(r.scanner, r.store, r.scheduler, nil)
+			// Set enrichment manager on scan router if available
+			if r.enrichmentManager != nil {
+				scanRouter.SetEnrichmentManager(r.enrichmentManager)
+				log.Printf("[INFO] Enrichment manager set on scan router")
+			}
+			scanRouter.RegisterRoutes(orgScopedRoutes)
+
+			// Initialize StatsService for trends API
+			statsRepo := r.store.Stats()
+			logger := log.New(os.Stdout, "[STATS] ", log.LstdFlags)
+			metricsCollector := coreMetrics.NewPrometheusMetricsCollector(
+				"volumeviz",
+				"stats",
+				prometheus.Labels{"instance": "main"},
+			)
+			statsSvc := statsService.NewStatsService(statsRepo, metricsCollector, logger)
+
+			// Trends router with Store interface and StatsService - organization scoped
+			trendsRouter := trends.NewRouter(r.store, statsSvc)
+			trendsRouter.RegisterRoutes(orgScopedRoutes)
+
+			// Stats router with StatsService integration - organization scoped
+			statsRouter := stats.NewStatsRouter(r.store, statsSvc)
+			statsRouter.RegisterRoutes(orgScopedRoutes)
+
+			// Search router for advanced file search and saved searches - organization scoped
+			searchRouter := search.NewRouter(r.store)
+			searchRouter.RegisterRoutes(orgScopedRoutes)
+
+			// Preview router if preview service is available - organization scoped
+			if r.previewService != nil {
+				previewHandler := previewsAPI.NewHandler(r.previewService, r.store)
+				previewsAPI.RegisterRoutes(orgScopedRoutes, previewHandler)
+				log.Printf("[INFO] Preview API routes registered successfully (organization-scoped)")
+			} else {
+				log.Printf("[WARNING] Preview service unavailable - preview routes not registered")
+			}
+
+			// Alerts router if alerts engine is available - organization scoped
+			if r.alertsEngine != nil {
+				alertsRouter := alerts.NewRouter(r.store, r.alertsEngine)
+				alertsRouter.RegisterRoutes(orgScopedRoutes)
+				log.Printf("[INFO] Alerts API routes registered successfully (organization-scoped)")
+			}
+
+			// Tracking rules router for mount tracking rules management - organization scoped
+			if r.rulesRepo != nil && r.rulesEngine != nil && r.rulesPreviewService != nil {
+				rulesHandler := rules.NewHandler(r.rulesRepo, r.mountsRepo, r.rulesEngine, r.rulesPreviewService)
+				rules.SetupRoutes(orgScopedRoutes, rulesHandler)
+				log.Printf("[INFO] Tracking rules API routes registered successfully (organization-scoped)")
+			} else {
+				log.Printf("[WARNING] Tracking rules services unavailable - rules routes not registered")
+			}
 		}
-
-		scanRouter.RegisterRoutes(v1)
 
 		// Note: Database admin API removed as part of database cleanup
 		// Database operations now handled through store facade
 
 		// Note: Metrics API temporarily removed during database cleanup
 
-		// Initialize StatsService for trends API
-		statsRepo := r.store.Stats()
-		logger := log.New(os.Stdout, "[STATS] ", log.LstdFlags)
-		metricsCollector := coreMetrics.NewPrometheusMetricsCollector(
-			"volumeviz",
-			"stats",
-			prometheus.Labels{"instance": "main"},
-		)
-		statsSvc := statsService.NewStatsService(statsRepo, metricsCollector, logger)
-
-		// Trends router with Store interface and StatsService
-		trendsRouter := trends.NewRouter(r.store, statsSvc)
-		trendsRouter.RegisterRoutes(v1)
-
-		// Stats router with StatsService integration
-		statsRouter := stats.NewStatsRouter(r.store, statsSvc)
-		statsRouter.RegisterRoutes(v1)
-
-		// Search router for advanced file search and saved searches
-		searchRouter := search.NewRouter(r.store)
-		searchRouter.RegisterRoutes(v1)
-
-		// Preview router if preview service is available
-		if r.previewService != nil {
-			previewHandler := previewsAPI.NewHandler(r.previewService, r.store)
-			previewsAPI.RegisterRoutes(v1, previewHandler)
-			log.Printf("[INFO] Preview API routes registered successfully")
-		} else {
-			log.Printf("[WARNING] Preview service unavailable - preview routes not registered")
-		}
-
-		// Alerts router if alerts engine is available
-		if r.alertsEngine != nil {
-			alertsRouter := alerts.NewRouter(r.store, r.alertsEngine)
-			alertsRouter.RegisterRoutes(v1)
-		}
-
-		// Mount catalog router for Docker mount discovery and management
+		// Mount catalog router for Docker mount discovery and management (global scope - not per organization)
 		mountsHandler := mounts.NewHandler(r.mountCatalogService)
 		mounts.RegisterRoutes(v1, mountsHandler)
-
-		// Tracking rules router for mount tracking rules management
-		if r.rulesRepo != nil && r.rulesEngine != nil && r.rulesPreviewService != nil {
-			rulesHandler := rules.NewHandler(r.rulesRepo, r.mountsRepo, r.rulesEngine, r.rulesPreviewService)
-			rules.SetupRoutes(v1, rulesHandler)
-			log.Printf("[INFO] Tracking rules API routes registered successfully")
-		} else {
-			log.Printf("[WARNING] Tracking rules services unavailable - rules routes not registered")
-		}
 	}
 }
 

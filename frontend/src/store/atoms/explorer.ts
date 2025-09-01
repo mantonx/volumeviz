@@ -1,150 +1,137 @@
 /**
- * Explorer atoms for managing file system navigation state
+ * Explorer state atoms
+ * 
+ * Jotai atoms for managing file explorer state, navigation, and file data.
  */
 
 import { atom } from 'jotai';
 
-// Types for explorer data
-export interface TreeNode {
-  id: string;
-  name: string;
-  path: string;
-  type: 'folder' | 'file';
-  children?: TreeNode[];
-  isExpanded?: boolean;
-  isLoading?: boolean;
-  hasChildren?: boolean;
-}
-
+// File item interface for explorer components
 export interface FileItem {
   id: string;
   name: string;
   path: string;
-  type: 'folder' | 'file';
   size: number;
-  modified: string;
-  extension?: string;
-  mediaType?: string;
+  type: 'file' | 'directory';
+  modified: Date;
   permissions?: string;
-  owner?: string;
-  group?: string;
-}
-
-export interface FileDetails extends FileItem {
-  created: string;
-  accessed: string;
-  rawMetadata?: Record<string, any>;
-}
-
-export interface VolumeStats {
-  volume_id: string;
-  date: string;
-  total_size: number;
-  file_count: number;
-  folder_count: number;
-  growth_bytes: number;
-  growth_files: number;
-}
-
-export interface TopFolder {
-  path: string;
-  name: string;
-  size: number;
-  file_count: number;
-  growth_bytes: number;
-  growth_percentage: number;
-}
-
-export interface FileTypeComposition {
-  extension: string;
-  count: number;
-  total_size: number;
-  percentage: number;
-}
-
-// Tree state atoms
-export const treeNodesAtom = atom<Record<string, TreeNode[]>>({});
-export const expandedNodesAtom = atom<Set<string>>(new Set<string>());
-export const treeLoadingAtom = atom<boolean>(false);
-export const treeErrorAtom = atom<string | null>(null);
-
-// File list state atoms
-export const currentPathAtom = atom<string>('/');
-export const filesAtom = atom<FileItem[]>([]);
-export const filesLoadingAtom = atom<boolean>(false);
-export const filesErrorAtom = atom<string | null>(null);
-export const filesTotalAtom = atom<number>(0);
-export const filesPageAtom = atom<number>(1);
-export const filesPageSizeAtom = atom<number>(50);
-
-// File details state atoms
-export const selectedFileAtom = atom<FileItem | null>(null);
-export const fileDetailsAtom = atom<FileDetails | null>(null);
-export const fileDetailsLoadingAtom = atom<boolean>(false);
-export const fileDetailsErrorAtom = atom<string | null>(null);
-
-// Search state atoms
-export const searchQueryAtom = atom<string>('');
-export const searchFiltersAtom = atom<{
   extension?: string;
   mimeType?: string;
-  minSize?: number;
-  maxSize?: number;
-}>({});
+  thumbnail?: string;
+}
 
-// Volume insights state atoms
-export const volumeStatsAtom = atom<VolumeStats[]>([]);
-export const volumeStatsLoadingAtom = atom<boolean>(false);
-export const volumeStatsErrorAtom = atom<string | null>(null);
-
-export const topFoldersAtom = atom<TopFolder[]>([]);
-export const topFoldersLoadingAtom = atom<boolean>(false);
-export const topFoldersErrorAtom = atom<string | null>(null);
-
-export const fileCompositionAtom = atom<FileTypeComposition[]>([]);
-export const fileCompositionLoadingAtom = atom<boolean>(false);
-export const fileCompositionErrorAtom = atom<string | null>(null);
+// Tree node interface for navigation tree
+export interface TreeNode {
+  id: string;
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  children?: TreeNode[];
+  expanded?: boolean;
+  hasChildren?: boolean;
+}
 
 // Current volume atom
-export const currentVolumeAtom = atom<string>('');
+export const currentVolumeAtom = atom<string | null>(null);
 
-// Derived atoms
-export const currentFilesAtom = atom((get) => {
-  const files = get(filesAtom);
-  const query = get(searchQueryAtom);
-  const filters = get(searchFiltersAtom);
+// Current path atom
+export const currentPathAtom = atom<string>('/');
 
-  if (!query && Object.keys(filters).length === 0) {
-    return files;
-  }
+// Explorer files atom
+export const explorerFilesAtom = atom<FileItem[]>([]);
 
-  return files.filter((file) => {
-    // Text search
-    if (query && !file.name.toLowerCase().includes(query.toLowerCase())) {
-      return false;
-    }
+// Explorer loading state
+export const explorerLoadingAtom = atom<boolean>(false);
 
-    // Extension filter
-    if (filters.extension && file.extension !== filters.extension) {
-      return false;
-    }
+// Explorer error state
+export const explorerErrorAtom = atom<string | null>(null);
 
-    // MIME type filter
-    if (filters.mimeType && file.mediaType !== filters.mimeType) {
-      return false;
-    }
+// Tree nodes atom
+export const treeNodesAtom = atom<TreeNode[]>([]);
 
-    // Size filters
-    if (filters.minSize && file.size < filters.minSize) {
-      return false;
-    }
+// Selected files atom (for bulk operations)
+export const selectedFilesAtom = atom<string[]>([]);
 
-    if (filters.maxSize && file.size > filters.maxSize) {
-      return false;
-    }
+// File view mode atom (grid, list, table)
+export const viewModeAtom = atom<'grid' | 'list' | 'table'>('table');
 
-    return true;
-  });
+// Sort options atom
+export interface SortOption {
+  field: 'name' | 'size' | 'modified' | 'type';
+  direction: 'asc' | 'desc';
+}
+
+export const sortOptionsAtom = atom<SortOption>({
+  field: 'name',
+  direction: 'asc',
 });
 
-export const isDrawerOpenAtom = atom<boolean>(false);
+// Search query atom for explorer
+export const explorerSearchAtom = atom<string>('');
+
+// File preview atom
+export interface FilePreview {
+  fileId: string;
+  isOpen: boolean;
+  content?: string;
+  error?: string;
+}
+
+export const filePreviewAtom = atom<FilePreview | null>(null);
+
+// Navigation history atoms
+export const navigationHistoryAtom = atom<string[]>(['/']);
+export const navigationIndexAtom = atom<number>(0);
+
+// Computed atoms
+export const canGoBackAtom = atom((get) => {
+  const index = get(navigationIndexAtom);
+  return index > 0;
+});
+
+export const canGoForwardAtom = atom((get) => {
+  const index = get(navigationIndexAtom);
+  const history = get(navigationHistoryAtom);
+  return index < history.length - 1;
+});
+
+// Filtered and sorted files atom
+export const filteredFilesAtom = atom((get) => {
+  const files = get(explorerFilesAtom);
+  const searchQuery = get(explorerSearchAtom);
+  const sortOptions = get(sortOptionsAtom);
+  
+  let filtered = files;
+  
+  // Apply search filter
+  if (searchQuery) {
+    filtered = files.filter(file => 
+      file.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
+  
+  // Apply sorting
+  filtered.sort((a, b) => {
+    const { field, direction } = sortOptions;
+    let comparison = 0;
+    
+    switch (field) {
+      case 'name':
+        comparison = a.name.localeCompare(b.name);
+        break;
+      case 'size':
+        comparison = a.size - b.size;
+        break;
+      case 'modified':
+        comparison = a.modified.getTime() - b.modified.getTime();
+        break;
+      case 'type':
+        comparison = a.type.localeCompare(b.type);
+        break;
+    }
+    
+    return direction === 'asc' ? comparison : -comparison;
+  });
+  
+  return filtered;
+});

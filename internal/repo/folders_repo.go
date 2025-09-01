@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
+	sqlcSQLite "github.com/mantonx/volumeviz/internal/db/sqlc-sqlite"
 	"github.com/mantonx/volumeviz/internal/models"
 )
 
@@ -26,24 +28,33 @@ func NewFoldersRepo(db sqlc.DBTX) *FoldersRepo {
 	}
 }
 
+// NewSQLiteFoldersRepo creates a new SQLite folders repository
+func NewSQLiteFoldersRepo(queries *sqlcSQLite.Queries) *FoldersRepo {
+	// TODO: Implement SQLite-specific version
+	return &FoldersRepo{
+		queries: nil,
+	}
+}
+
 // CreateFolder creates a new folder record
 func (r *FoldersRepo) CreateFolder(ctx context.Context, params models.CreateFolderParams) (*models.Folder, error) {
 	pathHash := sha256.Sum256([]byte(params.Path))
 
 	result, err := r.queries.CreateFolder(ctx, sqlc.CreateFolderParams{
-		ParentID:      int64PtrToPgInt8(params.ParentID),
-		VolumeID:      params.VolumeID,
-		Name:          params.Name,
-		Path:          params.Path,
-		PathHash:      pathHash[:],
-		Depth:         params.Depth,
-		Mtime:         timePtrToTime(params.Mtime),
-		Ctime:         timePtrToTime(params.Ctime),
-		Uid:           int32PtrToPgInt4(params.Uid),
-		Gid:           int32PtrToPgInt4(params.Gid),
-		Mode:          int32PtrToPgInt4(params.Mode),
-		IsSymlink:     boolToPgBool(params.IsSymlink),
-		SymlinkTarget: stringPtrToPgText(params.SymlinkTarget),
+		VolumeID:           params.VolumeID,
+		ParentID:           int64PtrToPgInt8(params.ParentID),
+		Path:               params.Path,
+		Name:               params.Name,
+		PathHash:           pathHash[:],
+		SizeBytes:          pgtype.Int8{Valid: false},
+		SizeBytesRecursive: pgtype.Int8{Valid: false},
+		FileCount:          pgtype.Int4{Valid: false},
+		FileCountRecursive: pgtype.Int4{Valid: false},
+		SubfolderCount:     pgtype.Int4{Valid: false},
+		MediaFileCount:     pgtype.Int4{Valid: false},
+		HasMediaFiles:      pgtype.Bool{Valid: false},
+		ModifiedAt:         timePtrToPgTimestamptz(params.Mtime),
+		AccessedAt:         timePtrToPgTimestamptz(params.Ctime),
 	})
 	if err != nil {
 		return nil, err
@@ -64,11 +75,9 @@ func (r *FoldersRepo) GetFolderByID(ctx context.Context, id int64) (*models.Fold
 
 // GetFolderByPath retrieves a folder by volume ID and path
 func (r *FoldersRepo) GetFolderByPath(ctx context.Context, volumeID, path string) (*models.Folder, error) {
-	pathHash := sha256.Sum256([]byte(path))
-
 	folder, err := r.queries.GetFolderByPath(ctx, sqlc.GetFolderByPathParams{
 		VolumeID: volumeID,
-		PathHash: pathHash[:],
+		Path:     path,
 	})
 	if err != nil {
 		return nil, err
@@ -97,10 +106,7 @@ func (r *FoldersRepo) ListFoldersByVolume(ctx context.Context, volumeID string, 
 
 // ListFoldersByParent lists folders under a parent folder
 func (r *FoldersRepo) ListFoldersByParent(ctx context.Context, volumeID string, parentID *int64) ([]*models.Folder, error) {
-	folders, err := r.queries.ListFoldersByParent(ctx, sqlc.ListFoldersByParentParams{
-		VolumeID: volumeID,
-		ParentID: int64PtrToPgInt8(parentID),
-	})
+	folders, err := r.queries.ListSubfolders(ctx, int64PtrToPgInt8(parentID))
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +144,18 @@ func (r *FoldersRepo) GetLargestFolders(ctx context.Context, volumeID string, li
 
 	result := make([]*models.Folder, len(folders))
 	for i, folder := range folders {
-		result[i] = r.convertToFolder(folder)
+		result[i] = &models.Folder{
+			ID:                      folder.ID,
+			VolumeID:                folder.VolumeID,
+			Path:                    folder.Path,
+			Name:                    folder.Name,
+			SizeBytesRecursive:      pgInt8ToInt64(folder.SizeBytesRecursive),
+			DiskUsageBytesRecursive: pgInt8ToInt64(folder.SizeBytesRecursive),
+			FileCount:               0, // Not available in this query
+			DirCount:                0, // Not available
+			CreatedAt:               time.Now(), // Placeholder
+			UpdatedAt:               time.Now(), // Placeholder
+		}
 	}
 	return result, nil
 }
@@ -165,19 +182,20 @@ func (r *FoldersRepo) UpsertFolder(ctx context.Context, params models.CreateFold
 	pathHash := sha256.Sum256([]byte(params.Path))
 
 	result, err := r.queries.UpsertFolder(ctx, sqlc.UpsertFolderParams{
-		ParentID:      int64PtrToPgInt8(params.ParentID),
-		VolumeID:      params.VolumeID,
-		Name:          params.Name,
-		Path:          params.Path,
-		PathHash:      pathHash[:],
-		Depth:         params.Depth,
-		Mtime:         timePtrToTime(params.Mtime),
-		Ctime:         timePtrToTime(params.Ctime),
-		Uid:           int32PtrToPgInt4(params.Uid),
-		Gid:           int32PtrToPgInt4(params.Gid),
-		Mode:          int32PtrToPgInt4(params.Mode),
-		IsSymlink:     boolToPgBool(params.IsSymlink),
-		SymlinkTarget: stringPtrToPgText(params.SymlinkTarget),
+		VolumeID:           params.VolumeID,
+		ParentID:           int64PtrToPgInt8(params.ParentID),
+		Path:               params.Path,
+		Name:               params.Name,
+		PathHash:           pathHash[:],
+		SizeBytes:          pgtype.Int8{Valid: false},
+		SizeBytesRecursive: pgtype.Int8{Valid: false},
+		FileCount:          pgtype.Int4{Valid: false},
+		FileCountRecursive: pgtype.Int4{Valid: false},
+		SubfolderCount:     pgtype.Int4{Valid: false},
+		MediaFileCount:     pgtype.Int4{Valid: false},
+		HasMediaFiles:      pgtype.Bool{Valid: false},
+		ModifiedAt:         timePtrToPgTimestamptz(params.Mtime),
+		AccessedAt:         timePtrToPgTimestamptz(params.Ctime),
 	})
 	if err != nil {
 		return nil, err
@@ -246,38 +264,22 @@ func (r *FoldersRepo) GetFolderStats(ctx context.Context, volumeID string) (*mod
 		return nil, err
 	}
 
-	var maxDepth *int32
-	if stats.MaxDepth != 0 {
-		maxDepth = &stats.MaxDepth
-	}
-	var avgFilesPerFolder *float64
-	if stats.AvgFilesPerFolder != 0 {
-		avgFilesPerFolder = &stats.AvgFilesPerFolder
-	}
-	var totalSize *int64
-	if stats.TotalSize != 0 {
-		totalSize = &stats.TotalSize
-	}
-	var largestFolderSize *int64
-	if stats.LargestFolderSize != 0 {
-		largestFolderSize = &stats.LargestFolderSize
-	}
-
 	return &models.FolderStats{
 		TotalFolders:      stats.TotalFolders,
-		RootFolders:       stats.RootFolders,
-		MaxDepth:          maxDepth,
-		AvgFilesPerFolder: avgFilesPerFolder,
-		TotalSize:         totalSize,
-		LargestFolderSize: largestFolderSize,
+		RootFolders:       0, // Not available in current stats
+		MaxDepth:          nil, // Not available
+		AvgFilesPerFolder: nil, // Not available
+		TotalSize:         nil, // Will need to handle interface{} conversion
+		LargestFolderSize: nil, // Will need to handle interface{} conversion
 	}, nil
 }
 
 // GetFolderTree gets a folder and its children up to specified depth
 func (r *FoldersRepo) GetFolderTree(ctx context.Context, folderID int64, maxDepth int32) ([]*models.Folder, error) {
 	folders, err := r.queries.GetFolderTree(ctx, sqlc.GetFolderTreeParams{
-		ID:    folderID,
-		Depth: maxDepth,
+		ParentID: pgtype.Int8{Int64: folderID, Valid: true},
+		VolumeID: "",
+		Limit:    maxDepth,
 	})
 	if err != nil {
 		return nil, err
@@ -305,7 +307,7 @@ func (r *FoldersRepo) GetFolderPath(ctx context.Context, folderID int64) ([]*mod
 			VolumeID: folder.VolumeID,
 			Name:     folder.Name,
 			Path:     folder.Path,
-			Depth:    folder.Depth,
+			Depth:    0, // Will need to calculate this
 		}
 	}
 	return result, nil
@@ -314,268 +316,75 @@ func (r *FoldersRepo) GetFolderPath(ctx context.Context, folderID int64) ([]*mod
 // UpdateFolderStats updates folder statistics
 func (r *FoldersRepo) UpdateFolderStats(ctx context.Context, id int64, sizeBytes, diskUsageBytes, fileCount, dirCount int64) error {
 	return r.queries.UpdateFolderStats(ctx, sqlc.UpdateFolderStatsParams{
-		ID:                      id,
-		SizeBytesRecursive:      sizeBytes,
-		DiskUsageBytesRecursive: diskUsageBytes,
-		FileCount:               fileCount,
-		DirCount:                dirCount,
+		ID:                 id,
+		SizeBytes:          pgtype.Int8{Int64: sizeBytes, Valid: true},
+		SizeBytesRecursive: pgtype.Int8{Int64: sizeBytes, Valid: true},
+		FileCount:          pgtype.Int4{Int32: int32(fileCount), Valid: true},
+		FileCountRecursive: pgtype.Int4{Int32: int32(fileCount), Valid: true},
+		SubfolderCount:     pgtype.Int4{Int32: int32(dirCount), Valid: true},
 	})
 }
 
 // UpdateFolderMetadata updates folder metadata
 func (r *FoldersRepo) UpdateFolderMetadata(ctx context.Context, id int64, mtime, ctime *time.Time, uid, gid, mode *int32) error {
 	return r.queries.UpdateFolderMetadata(ctx, sqlc.UpdateFolderMetadataParams{
-		ID:    id,
-		Mtime: timePtrToTime(mtime),
-		Ctime: timePtrToTime(ctime),
-		Uid:   int32PtrToPgInt4(uid),
-		Gid:   int32PtrToPgInt4(gid),
-		Mode:  int32PtrToPgInt4(mode),
+		ID:         id,
+		ModifiedAt: timePtrToPgTimestamptz(mtime),
+		AccessedAt: timePtrToPgTimestamptz(ctime),
 	})
 }
 
 // BulkInsertFolders inserts multiple folders efficiently
 func (r *FoldersRepo) BulkInsertFolders(ctx context.Context, folders []models.CreateFolderParams) error {
-	rows := make([]sqlc.BulkInsertFoldersParams, len(folders))
-	for i, folder := range folders {
+	for _, folder := range folders {
 		pathHash := sha256.Sum256([]byte(folder.Path))
-		rows[i] = sqlc.BulkInsertFoldersParams{
-			ParentID:      int64PtrToPgInt8(folder.ParentID),
-			VolumeID:      folder.VolumeID,
-			Name:          folder.Name,
-			Path:          folder.Path,
-			PathHash:      pathHash[:],
-			Depth:         folder.Depth,
-			Mtime:         timePtrToTime(folder.Mtime),
-			Ctime:         timePtrToTime(folder.Ctime),
-			Uid:           int32PtrToPgInt4(folder.Uid),
-			Gid:           int32PtrToPgInt4(folder.Gid),
-			Mode:          int32PtrToPgInt4(folder.Mode),
-			IsSymlink:     boolToPgBool(folder.IsSymlink),
-			SymlinkTarget: stringPtrToPgText(folder.SymlinkTarget),
+		_, err := r.queries.BulkInsertFolders(ctx, sqlc.BulkInsertFoldersParams{
+			VolumeID:           folder.VolumeID,
+			ParentID:           int64PtrToPgInt8(folder.ParentID),
+			Path:               folder.Path,
+			Name:               folder.Name,
+			PathHash:           pathHash[:],
+			SizeBytes:          pgtype.Int8{Valid: false},
+			SizeBytesRecursive: pgtype.Int8{Valid: false},
+			FileCount:          pgtype.Int4{Valid: false},
+			FileCountRecursive: pgtype.Int4{Valid: false},
+			SubfolderCount:     pgtype.Int4{Valid: false},
+			MediaFileCount:     pgtype.Int4{Valid: false},
+			HasMediaFiles:      pgtype.Bool{Valid: false},
+			ModifiedAt:         timePtrToPgTimestamptz(folder.Mtime),
+			AccessedAt:         timePtrToPgTimestamptz(folder.Ctime),
+		})
+		if err != nil {
+			return err
 		}
 	}
-
-	_, err := r.queries.BulkInsertFolders(ctx, rows)
+	var err error
 	return err
 }
 
 // Helper method to convert sqlc folder to domain model
-func (r *FoldersRepo) convertToFolder(folder interface{}) *models.Folder {
-	// Use reflection to access common fields from different row types
-	// This is a temporary solution until sqlc generates a common interface
-
-	switch f := folder.(type) {
-	case sqlc.Folders:
-		return &models.Folder{
-			ID:                      f.ID,
-			ParentID:                pgInt8ToInt64Ptr(f.ParentID),
-			VolumeID:                f.VolumeID,
-			Name:                    f.Name,
-			Path:                    f.Path,
-			PathHash:                f.PathHash,
-			SizeBytesRecursive:      f.SizeBytesRecursive,
-			DiskUsageBytesRecursive: f.DiskUsageBytesRecursive,
-			FileCount:               f.FileCount,
-			DirCount:                f.DirCount,
-			Depth:                   f.Depth,
-			Mtime:                   timeToTimePtr(f.Mtime),
-			Ctime:                   timeToTimePtr(f.Ctime),
-			Uid:                     pgInt4ToInt32Ptr(f.Uid),
-			Gid:                     pgInt4ToInt32Ptr(f.Gid),
-			Mode:                    pgInt4ToInt32Ptr(f.Mode),
-			IsSymlink:               pgBoolToBool(f.IsSymlink),
-			SymlinkTarget:           pgTextToStringPtr(f.SymlinkTarget),
-			CreatedAt:               f.CreatedAt,
-			UpdatedAt:               f.UpdatedAt,
-		}
-	case sqlc.GetFolderByIDRow:
-		return &models.Folder{
-			ID:                      f.ID,
-			ParentID:                pgInt8ToInt64Ptr(f.ParentID),
-			VolumeID:                f.VolumeID,
-			Name:                    f.Name,
-			Path:                    f.Path,
-			PathHash:                f.PathHash,
-			SizeBytesRecursive:      f.SizeBytesRecursive,
-			DiskUsageBytesRecursive: f.DiskUsageBytesRecursive,
-			FileCount:               f.FileCount,
-			DirCount:                f.DirCount,
-			Depth:                   f.Depth,
-			Mtime:                   timeToTimePtr(f.Mtime),
-			Ctime:                   timeToTimePtr(f.Ctime),
-			Uid:                     pgInt4ToInt32Ptr(f.Uid),
-			Gid:                     pgInt4ToInt32Ptr(f.Gid),
-			Mode:                    pgInt4ToInt32Ptr(f.Mode),
-			IsSymlink:               pgBoolToBool(f.IsSymlink),
-			SymlinkTarget:           pgTextToStringPtr(f.SymlinkTarget),
-			CreatedAt:               f.CreatedAt,
-			UpdatedAt:               f.UpdatedAt,
-		}
-	case sqlc.GetFolderByPathRow:
-		return &models.Folder{
-			ID:                      f.ID,
-			ParentID:                pgInt8ToInt64Ptr(f.ParentID),
-			VolumeID:                f.VolumeID,
-			Name:                    f.Name,
-			Path:                    f.Path,
-			PathHash:                f.PathHash,
-			SizeBytesRecursive:      f.SizeBytesRecursive,
-			DiskUsageBytesRecursive: f.DiskUsageBytesRecursive,
-			FileCount:               f.FileCount,
-			DirCount:                f.DirCount,
-			Depth:                   f.Depth,
-			Mtime:                   timeToTimePtr(f.Mtime),
-			Ctime:                   timeToTimePtr(f.Ctime),
-			Uid:                     pgInt4ToInt32Ptr(f.Uid),
-			Gid:                     pgInt4ToInt32Ptr(f.Gid),
-			Mode:                    pgInt4ToInt32Ptr(f.Mode),
-			IsSymlink:               pgBoolToBool(f.IsSymlink),
-			SymlinkTarget:           pgTextToStringPtr(f.SymlinkTarget),
-			CreatedAt:               f.CreatedAt,
-			UpdatedAt:               f.UpdatedAt,
-		}
-	case sqlc.ListFoldersByVolumeRow:
-		return &models.Folder{
-			ID:                      f.ID,
-			ParentID:                pgInt8ToInt64Ptr(f.ParentID),
-			VolumeID:                f.VolumeID,
-			Name:                    f.Name,
-			Path:                    f.Path,
-			PathHash:                f.PathHash,
-			SizeBytesRecursive:      f.SizeBytesRecursive,
-			DiskUsageBytesRecursive: f.DiskUsageBytesRecursive,
-			FileCount:               f.FileCount,
-			DirCount:                f.DirCount,
-			Depth:                   f.Depth,
-			Mtime:                   timeToTimePtr(f.Mtime),
-			Ctime:                   timeToTimePtr(f.Ctime),
-			Uid:                     pgInt4ToInt32Ptr(f.Uid),
-			Gid:                     pgInt4ToInt32Ptr(f.Gid),
-			Mode:                    pgInt4ToInt32Ptr(f.Mode),
-			IsSymlink:               pgBoolToBool(f.IsSymlink),
-			SymlinkTarget:           pgTextToStringPtr(f.SymlinkTarget),
-			CreatedAt:               f.CreatedAt,
-			UpdatedAt:               f.UpdatedAt,
-		}
-	case sqlc.ListFoldersByParentRow:
-		return &models.Folder{
-			ID:                      f.ID,
-			ParentID:                pgInt8ToInt64Ptr(f.ParentID),
-			VolumeID:                f.VolumeID,
-			Name:                    f.Name,
-			Path:                    f.Path,
-			PathHash:                f.PathHash,
-			SizeBytesRecursive:      f.SizeBytesRecursive,
-			DiskUsageBytesRecursive: f.DiskUsageBytesRecursive,
-			FileCount:               f.FileCount,
-			DirCount:                f.DirCount,
-			Depth:                   f.Depth,
-			Mtime:                   timeToTimePtr(f.Mtime),
-			Ctime:                   timeToTimePtr(f.Ctime),
-			Uid:                     pgInt4ToInt32Ptr(f.Uid),
-			Gid:                     pgInt4ToInt32Ptr(f.Gid),
-			Mode:                    pgInt4ToInt32Ptr(f.Mode),
-			IsSymlink:               pgBoolToBool(f.IsSymlink),
-			SymlinkTarget:           pgTextToStringPtr(f.SymlinkTarget),
-			CreatedAt:               f.CreatedAt,
-			UpdatedAt:               f.UpdatedAt,
-		}
-	case sqlc.GetRootFoldersRow:
-		return &models.Folder{
-			ID:                      f.ID,
-			ParentID:                pgInt8ToInt64Ptr(f.ParentID),
-			VolumeID:                f.VolumeID,
-			Name:                    f.Name,
-			Path:                    f.Path,
-			PathHash:                f.PathHash,
-			SizeBytesRecursive:      f.SizeBytesRecursive,
-			DiskUsageBytesRecursive: f.DiskUsageBytesRecursive,
-			FileCount:               f.FileCount,
-			DirCount:                f.DirCount,
-			Depth:                   f.Depth,
-			Mtime:                   timeToTimePtr(f.Mtime),
-			Ctime:                   timeToTimePtr(f.Ctime),
-			Uid:                     pgInt4ToInt32Ptr(f.Uid),
-			Gid:                     pgInt4ToInt32Ptr(f.Gid),
-			Mode:                    pgInt4ToInt32Ptr(f.Mode),
-			IsSymlink:               pgBoolToBool(f.IsSymlink),
-			SymlinkTarget:           pgTextToStringPtr(f.SymlinkTarget),
-			CreatedAt:               f.CreatedAt,
-			UpdatedAt:               f.UpdatedAt,
-		}
-	case sqlc.GetLargestFoldersRow:
-		return &models.Folder{
-			ID:                      f.ID,
-			ParentID:                pgInt8ToInt64Ptr(f.ParentID),
-			VolumeID:                f.VolumeID,
-			Name:                    f.Name,
-			Path:                    f.Path,
-			PathHash:                f.PathHash,
-			SizeBytesRecursive:      f.SizeBytesRecursive,
-			DiskUsageBytesRecursive: f.DiskUsageBytesRecursive,
-			FileCount:               f.FileCount,
-			DirCount:                f.DirCount,
-			Depth:                   f.Depth,
-			Mtime:                   timeToTimePtr(f.Mtime),
-			Ctime:                   timeToTimePtr(f.Ctime),
-			Uid:                     pgInt4ToInt32Ptr(f.Uid),
-			Gid:                     pgInt4ToInt32Ptr(f.Gid),
-			Mode:                    pgInt4ToInt32Ptr(f.Mode),
-			IsSymlink:               pgBoolToBool(f.IsSymlink),
-			SymlinkTarget:           pgTextToStringPtr(f.SymlinkTarget),
-			CreatedAt:               f.CreatedAt,
-			UpdatedAt:               f.UpdatedAt,
-		}
-	case sqlc.GetFoldersWithMostFilesRow:
-		return &models.Folder{
-			ID:                      f.ID,
-			ParentID:                pgInt8ToInt64Ptr(f.ParentID),
-			VolumeID:                f.VolumeID,
-			Name:                    f.Name,
-			Path:                    f.Path,
-			PathHash:                f.PathHash,
-			SizeBytesRecursive:      f.SizeBytesRecursive,
-			DiskUsageBytesRecursive: f.DiskUsageBytesRecursive,
-			FileCount:               f.FileCount,
-			DirCount:                f.DirCount,
-			Depth:                   f.Depth,
-			Mtime:                   timeToTimePtr(f.Mtime),
-			Ctime:                   timeToTimePtr(f.Ctime),
-			Uid:                     pgInt4ToInt32Ptr(f.Uid),
-			Gid:                     pgInt4ToInt32Ptr(f.Gid),
-			Mode:                    pgInt4ToInt32Ptr(f.Mode),
-			IsSymlink:               pgBoolToBool(f.IsSymlink),
-			SymlinkTarget:           pgTextToStringPtr(f.SymlinkTarget),
-			CreatedAt:               f.CreatedAt,
-			UpdatedAt:               f.UpdatedAt,
-		}
-	case sqlc.GetFolderTreeRow:
-		return &models.Folder{
-			ID:                      f.ID,
-			ParentID:                pgInt8ToInt64Ptr(f.ParentID),
-			VolumeID:                f.VolumeID,
-			Name:                    f.Name,
-			Path:                    f.Path,
-			PathHash:                f.PathHash,
-			SizeBytesRecursive:      f.SizeBytesRecursive,
-			DiskUsageBytesRecursive: f.DiskUsageBytesRecursive,
-			FileCount:               f.FileCount,
-			DirCount:                f.DirCount,
-			Depth:                   f.Depth,
-			Mtime:                   timeToTimePtr(f.Mtime),
-			Ctime:                   timeToTimePtr(f.Ctime),
-			Uid:                     pgInt4ToInt32Ptr(f.Uid),
-			Gid:                     pgInt4ToInt32Ptr(f.Gid),
-			Mode:                    pgInt4ToInt32Ptr(f.Mode),
-			IsSymlink:               pgBoolToBool(f.IsSymlink),
-			SymlinkTarget:           pgTextToStringPtr(f.SymlinkTarget),
-			CreatedAt:               f.CreatedAt,
-			UpdatedAt:               f.UpdatedAt,
-		}
-	default:
-		// This should not happen, but return nil to avoid panic
-		return nil
+func (r *FoldersRepo) convertToFolder(f sqlc.Folders) *models.Folder {
+	return &models.Folder{
+		ID:                      f.ID,
+		ParentID:                pgInt8ToInt64Ptr(f.ParentID),
+		VolumeID:                f.VolumeID,
+		Name:                    f.Name,
+		Path:                    f.Path,
+		PathHash:                f.PathHash,
+		SizeBytesRecursive:      pgInt8ToInt64(f.SizeBytesRecursive),
+		DiskUsageBytesRecursive: pgInt8ToInt64(f.SizeBytesRecursive), // Use same value
+		FileCount:               int64(pgInt4ToInt32(f.FileCount)),
+		DirCount:                int64(pgInt4ToInt32(f.SubfolderCount)),
+		Depth:                   0, // Will need to calculate this
+		Mtime:                   pgTimestamptzToTimePtr(f.ModifiedAt),
+		Ctime:                   pgTimestamptzToTimePtr(f.AccessedAt),
+		Uid:                     nil, // Not in current schema
+		Gid:                     nil, // Not in current schema
+		Mode:                    nil, // Not in current schema
+		IsSymlink:               false, // Not in current schema
+		SymlinkTarget:           nil, // Not in current schema
+		CreatedAt:               f.CreatedAt,
+		UpdatedAt:               f.CreatedAt, // Use same value since we don't have updated_at
 	}
 }
 

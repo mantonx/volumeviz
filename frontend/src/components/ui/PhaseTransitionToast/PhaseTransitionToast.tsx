@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { PhaseTransitionNotification } from '../PhaseTransitionNotification';
-import { usePhaseTransitionNotifications } from '../../../hooks/usePhaseTransitionNotifications';
-import type { PhaseTransition } from '../../../utils/phaseTransitionNotifications';
+import { usePhaseTransitionNotifications } from '@/hooks/usePhaseTransitionNotifications';
+import type { PhaseTransition } from '@/utils/phaseTransitionNotifications';
 
 export interface PhaseTransitionToastProps {
   /** Whether toast notifications are enabled */

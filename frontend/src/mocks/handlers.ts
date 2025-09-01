@@ -1,18 +1,16 @@
 import { http, HttpResponse } from 'msw';
+import type { 
+  Volume, 
+  Organization, 
+  VolumeSize,
+  ScanStatus,
+  FileListResponse,
+  HealthCheckResponse 
+} from '@/api/orval-generated/api';
 
-// Simplified mock types to avoid import issues
-interface MockVolume {
-  id: number;
-  name: string;
-  driver: 'local' | 'nfs' | 'cifs' | 'overlay2';
-  mount_point: string;
-  status: 'active' | 'inactive' | 'error';
-  size_bytes?: number;
-  used_bytes?: number;
-  available_bytes?: number;
-  created_at: string;
-  last_scanned?: string;
-  scan_progress?: number;
+// Mock volume data using modern Orval types
+interface MockVolume extends Volume {
+  // Extend with any additional mock-specific fields if needed
 }
 
 interface MockAlert {
@@ -69,33 +67,94 @@ interface MockFileMetadata {
   file_type: string;
 }
 
-// Mock data
-const mockVolumes: MockVolume[] = [
+// Mock data using modern API structure
+const mockVolumes: Volume[] = [
   {
-    id: 1,
-    name: 'Data Drive',
+    name: 'production-db-data',
     driver: 'local',
-    mount_point: '/mnt/data',
-    status: 'active',
-    size_bytes: 1000000000000, // 1TB
-    used_bytes: 500000000000, // 500GB
-    available_bytes: 500000000000, // 500GB
-    created_at: '2024-01-01T00:00:00Z',
-    last_scanned: '2024-01-15T10:30:00Z',
+    mountpoint: '/var/lib/docker/volumes/production-db-data/_data',
+    created_at: '2024-01-15T10:30:00Z',
+    size_bytes: 2147483648, // 2GB
+    attachments_count: 1,
+    is_orphaned: false,
+    is_system: false,
+    labels: {
+      'com.docker.compose.project': 'production',
+      'com.docker.compose.service': 'database'
+    },
+    last_scan_at: '2024-12-15T14:20:00Z',
+    scan_status: 'completed',
+    filesystem_capacity: {
+      total: 107374182400, // 100GB
+      used: 21474836480,   // 20GB
+      available: 85899345920, // 80GB
+      percentage: 20
+    }
   },
   {
-    id: 2,
-    name: 'Backup Drive',
+    name: 'redis-cache-vol',
     driver: 'local',
-    mount_point: '/mnt/backup',
-    status: 'active',
-    size_bytes: 2000000000000, // 2TB
-    used_bytes: 800000000000, // 800GB
-    available_bytes: 1200000000000, // 1.2TB
-    created_at: '2024-01-01T00:00:00Z',
-    last_scanned: '2024-01-14T08:00:00Z',
-    scan_progress: 65,
+    mountpoint: '/var/lib/docker/volumes/redis-cache-vol/_data',
+    created_at: '2024-02-20T09:15:00Z',
+    size_bytes: 524288000, // 500MB
+    attachments_count: 1,
+    is_orphaned: false,
+    is_system: false,
+    labels: {
+      'com.docker.compose.project': 'cache',
+      'com.docker.compose.service': 'redis'
+    },
+    last_scan_at: '2024-12-15T13:45:00Z',
+    scan_status: 'completed'
   },
+  {
+    name: 'orphaned-volume',
+    driver: 'local',
+    mountpoint: '/var/lib/docker/volumes/orphaned-volume/_data',
+    created_at: '2024-01-01T00:00:00Z',
+    size_bytes: 1048576, // 1MB
+    attachments_count: 0,
+    is_orphaned: true,
+    is_system: false,
+    labels: {},
+    scan_status: 'pending'
+  }
+];
+
+const mockOrganization: Organization = {
+  id: 1,
+  name: 'VolumeViz Demo Organization',
+  description: 'Demo organization for VolumeViz testing and development',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-12-15T12:00:00Z'
+};
+
+const mockFiles = [
+  {
+    name: 'config.json',
+    path: '/config.json',
+    type: 'file' as const,
+    size: 1024,
+    modified_at: '2024-12-15T10:00:00Z',
+    is_directory: false
+  },
+  {
+    name: 'logs',
+    path: '/logs',
+    type: 'directory' as const,
+    size: 0,
+    modified_at: '2024-12-15T11:30:00Z',
+    is_directory: true,
+    children_count: 15
+  },
+  {
+    name: 'data.db',
+    path: '/data.db',
+    type: 'file' as const,
+    size: 2147483648, // 2GB
+    modified_at: '2024-12-15T14:20:00Z',
+    is_directory: false
+  }
 ];
 
 const mockAlerts: MockAlert[] = [
@@ -122,18 +181,21 @@ const mockSystemInfo: MockSystemInfo = {
   cache_size: '128MB',
 };
 
-// API handlers
+// Modern API handlers matching Orval-generated endpoints
 export const handlers = [
-  // Health endpoints
+  // Health Check
   http.get('/api/v1/health', () => {
-    const health: MockHealthStatus = {
+    const healthResponse: HealthCheckResponse = {
       status: 'healthy',
-      database: 'connected',
-      websocket: 'connected',
-      version: '1.2.0',
-      timestamp: new Date().toISOString(),
+      timestamp: Date.now(),
+      checks: {
+        database: { status: 'healthy' },
+        filesystem: { status: 'healthy' },
+        docker: { status: 'healthy' }
+      }
     };
-    return HttpResponse.json(health);
+    
+    return HttpResponse.json(healthResponse);
   }),
 
   http.get('/api/v1/health/ready', () => {
@@ -161,63 +223,66 @@ export const handlers = [
     return HttpResponse.json(stats);
   }),
 
-  // Volume endpoints
+  // Volumes List - Modern API format
   http.get('/api/v1/volumes', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
-    const limit = parseInt(url.searchParams.get('limit') || '10');
-    const status = url.searchParams.get('status');
+    const pageSize = parseInt(url.searchParams.get('page_size') || '25');
+    const search = url.searchParams.get('q');
+    const orphaned = url.searchParams.get('orphaned');
 
-    let filteredVolumes = mockVolumes;
-    if (status) {
-      filteredVolumes = mockVolumes.filter((v) => v.status === status);
+    let filteredVolumes = [...mockVolumes];
+
+    // Apply search filter
+    if (search) {
+      filteredVolumes = filteredVolumes.filter(vol => 
+        vol.name.toLowerCase().includes(search.toLowerCase())
+      );
     }
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedVolumes = filteredVolumes.slice(startIndex, endIndex);
+    // Apply orphaned filter
+    if (orphaned === 'true') {
+      filteredVolumes = filteredVolumes.filter(vol => vol.is_orphaned);
+    } else if (orphaned === 'false') {
+      filteredVolumes = filteredVolumes.filter(vol => !vol.is_orphaned);
+    }
+
+    // Pagination
+    const start = (page - 1) * pageSize;
+    const paginatedVolumes = filteredVolumes.slice(start, start + pageSize);
 
     return HttpResponse.json({
+      success: true,
       data: paginatedVolumes,
       pagination: {
         page,
-        limit,
+        page_size: pageSize,
         total: filteredVolumes.length,
-        total_pages: Math.ceil(filteredVolumes.length / limit),
-        has_next: endIndex < filteredVolumes.length,
-        has_prev: page > 1,
-      },
+        has_more: start + pageSize < filteredVolumes.length
+      }
     });
   }),
 
-  http.get('/api/v1/volumes/:id', ({ params }) => {
-    const volumeId = parseInt(params.id as string);
-    const volume = mockVolumes.find((v) => v.id === volumeId);
+  // Volume Size
+  http.get('/api/v1/volumes/:volumeId/size', ({ params }) => {
+    const volumeId = params.volumeId as string;
+    const volume = mockVolumes.find(v => v.name === volumeId);
+    
     if (!volume) {
-      return HttpResponse.json({ error: 'Volume not found' }, { status: 404 });
+      return HttpResponse.json(
+        { error: 'Volume not found' },
+        { status: 404 }
+      );
     }
 
-    const volumeDetails = {
-      ...volume,
-      file_count: 12450,
-      directory_count: 890,
-      largest_files: [
-        {
-          id: '1',
-          name: 'backup.tar.gz',
-          path: '/mnt/data/backup.tar.gz',
-          size: 5000000000, // 5GB
-          modified_time: '2024-01-14T15:30:00Z',
-          file_type: 'archive',
-          permissions: '644',
-          is_directory: false,
-        },
-      ],
-      recent_changes: [],
-      scan_history: [],
+    const sizeResponse: VolumeSize = {
+      volume_id: volumeId,
+      size_bytes: volume.size_bytes || 0,
+      file_count: Math.floor((volume.size_bytes || 0) / 10000), // Mock file count
+      last_updated: volume.last_scan_at || new Date().toISOString()
     };
 
-    return HttpResponse.json(volumeDetails);
+    return HttpResponse.json(sizeResponse);
   }),
 
   http.post('/api/v1/volumes', async ({ request }) => {
@@ -248,18 +313,149 @@ export const handlers = [
     return HttpResponse.json({ message: 'Volume deleted successfully' });
   }),
 
-  // Scan endpoints
-  http.post('/api/v1/volumes/:id/scan', ({ params }) => {
-    const volumeId = parseInt(params.id as string);
-    const volume = mockVolumes.find((v) => v.id === volumeId);
-    if (!volume) {
-      return HttpResponse.json({ error: 'Volume not found' }, { status: 404 });
-    }
-    volume.scan_progress = 0;
+  // Volume Scan
+  http.post('/api/v1/volumes/:volumeId/scan', ({ params }) => {
+    const volumeId = params.volumeId as string;
+    const scanId = `scan_${volumeId}_${Date.now()}`;
+    
     return HttpResponse.json({
-      message: 'Scan started',
-      scan_id: 'scan_123',
+      scan_id: scanId,
+      status: 'started',
+      volume_id: volumeId,
+      started_at: new Date().toISOString()
     });
+  }),
+
+  // Volume Size Refresh
+  http.post('/api/v1/volumes/:volumeId/size/refresh', ({ params }) => {
+    const volumeId = params.volumeId as string;
+    const volume = mockVolumes.find(v => v.name === volumeId);
+    
+    if (!volume) {
+      return HttpResponse.json(
+        { error: 'Volume not found' },
+        { status: 404 }
+      );
+    }
+
+    // Simulate slight size change
+    const newSize = (volume.size_bytes || 0) + Math.floor(Math.random() * 1000000);
+    
+    return HttpResponse.json({
+      volume_id: volumeId,
+      size_bytes: newSize,
+      file_count: Math.floor(newSize / 10000),
+      last_updated: new Date().toISOString()
+    });
+  }),
+
+  // Filesystem Index
+  http.post('/api/v1/volumes/:volumeId/filesystem/index', ({ params }) => {
+    const volumeId = params.volumeId as string;
+    const indexId = `index_${volumeId}_${Date.now()}`;
+    
+    return HttpResponse.json({
+      index_id: indexId,
+      status: 'started',
+      volume_id: volumeId,
+      started_at: new Date().toISOString()
+    });
+  }),
+
+  // Organization Info
+  http.get('/api/v1/organizations/me', () => {
+    return HttpResponse.json(mockOrganization);
+  }),
+
+  // File Explorer - Browse Files
+  http.get('/api/v1/explorer/browse', ({ request }) => {
+    const url = new URL(request.url);
+    const path = url.searchParams.get('path') || '/';
+    const volumeId = url.searchParams.get('volume_id');
+
+    if (!volumeId) {
+      return HttpResponse.json(
+        { error: 'volume_id is required' },
+        { status: 400 }
+      );
+    }
+
+    // Return different files based on path
+    let files = [...mockFiles];
+    if (path === '/logs') {
+      files = [
+        {
+          name: 'app.log',
+          path: '/logs/app.log',
+          type: 'file' as const,
+          size: 1048576, // 1MB
+          modified_at: '2024-12-15T14:00:00Z',
+          is_directory: false
+        },
+        {
+          name: 'error.log',
+          path: '/logs/error.log', 
+          type: 'file' as const,
+          size: 524288, // 512KB
+          modified_at: '2024-12-15T13:30:00Z',
+          is_directory: false
+        }
+      ];
+    }
+
+    const response: FileListResponse = {
+      path,
+      volume_id: volumeId,
+      files,
+      total_count: files.length
+    };
+
+    return HttpResponse.json(response);
+  }),
+
+  // Scan Status
+  http.get('/api/v1/scans/:scanId/status', ({ params }) => {
+    const scanId = params.scanId as string;
+    
+    // Simulate different scan states
+    const states = ['running', 'completed', 'failed'];
+    const randomState = states[Math.floor(Math.random() * states.length)];
+    
+    const scanStatus: ScanStatus = {
+      scan_id: scanId,
+      status: randomState,
+      progress: randomState === 'running' ? Math.floor(Math.random() * 90) + 10 : 100,
+      started_at: new Date(Date.now() - 30000).toISOString(), // 30 seconds ago
+      completed_at: randomState !== 'running' ? new Date().toISOString() : undefined
+    };
+
+    return HttpResponse.json(scanStatus);
+  }),
+
+  // Bulk Operations
+  http.post('/api/v1/volumes/bulk-scan', async ({ request }) => {
+    const body = await request.json() as { volume_ids: string[]; async?: boolean; method?: string };
+    const { volume_ids, async = false } = body;
+    
+    if (async) {
+      // Return scan IDs for async operations
+      const scanIds = volume_ids.map(id => `bulk_scan_${id}_${Date.now()}`);
+      return HttpResponse.json({
+        scan_ids: scanIds,
+        status: 'started',
+        async: true
+      });
+    } else {
+      // Return immediate results for sync operations
+      const results = volume_ids.map(id => ({
+        volume_id: id,
+        size_bytes: Math.floor(Math.random() * 2147483648),
+        file_count: Math.floor(Math.random() * 50000),
+        last_updated: new Date().toISOString()
+      }));
+      
+      return HttpResponse.json({ results });
+    }
   }),
 
   http.get('/api/v1/scans', () => {
@@ -435,6 +631,14 @@ export const handlers = [
     });
   }),
 
+  // Error simulation for testing
+  http.get('/api/v1/volumes/error-test', () => {
+    return HttpResponse.json(
+      { error: 'Simulated server error for testing' },
+      { status: 500 }
+    );
+  }),
+
   // Catch-all for unhandled requests
   http.all('*', ({ request }) => {
     console.warn(`Unhandled ${request.method} request to ${request.url}`);
@@ -444,3 +648,6 @@ export const handlers = [
     );
   }),
 ];
+
+// Export for individual handler testing
+export { mockVolumes, mockOrganization, mockFiles };

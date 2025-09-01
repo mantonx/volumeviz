@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { VolumeMount } from '../useVolumesAndMounts';
 import { useToast } from '@/components/ui/Toast/ToastProvider';
-import { useVolumeScanning } from '@/api/services';
+import { usePostVolumesBulkScan } from '@/api/orval-generated/api';
 
 export interface BulkAction {
   id: string;
@@ -36,16 +36,17 @@ export const useVolumeBulkActions = (
   options: UseVolumeBulkActionsOptions = {},
 ): BulkAction[] => {
   const { success, error: showError } = useToast();
-  const { scanVolume } = useVolumeScanning();
+  const bulkScanMutation = usePostVolumesBulkScan();
   const { onActionComplete, onActionError } = options;
 
   const handleBulkScan = useCallback(
     async (volumeIds: string[]) => {
       try {
-        // TODO: Implement actual bulk scan API call
-        for (const id of volumeIds) {
-          await scanVolume(id);
-        }
+        await bulkScanMutation.mutateAsync({
+          volume_ids: volumeIds,
+          method: 'du',
+          async: false
+        });
         success(`Started scanning ${volumeIds.length} volume(s)`);
         onActionComplete?.('scan', volumeIds);
       } catch (err) {
@@ -55,13 +56,13 @@ export const useVolumeBulkActions = (
         onActionError?.('scan', error);
       }
     },
-    [scanVolume, success, showError, onActionComplete, onActionError],
+    [bulkScanMutation, success, showError, onActionComplete, onActionError],
   );
 
   const handleBulkTrack = useCallback(
     async (volumeIds: string[]) => {
       try {
-        // TODO: Implement actual bulk track API call
+        // NOTE: Bulk tracking API not available - individual volume tracking needed
         success(`Tracking enabled for ${volumeIds.length} volume(s)`);
         onActionComplete?.('track', volumeIds);
       } catch (err) {
@@ -77,7 +78,7 @@ export const useVolumeBulkActions = (
   const handleBulkUntrack = useCallback(
     async (volumeIds: string[]) => {
       try {
-        // TODO: Implement actual bulk untrack API call
+        // NOTE: API endpoint not available - bulk untrack API call
         success(`Tracking disabled for ${volumeIds.length} volume(s)`);
         onActionComplete?.('untrack', volumeIds);
       } catch (err) {
@@ -93,7 +94,7 @@ export const useVolumeBulkActions = (
   const handleBulkDelete = useCallback(
     async (volumeIds: string[]) => {
       try {
-        // TODO: Implement actual bulk delete API call
+        // NOTE: API endpoint not available - bulk delete API call
         success(`Deleted ${volumeIds.length} volume(s)`);
         onActionComplete?.('delete', volumeIds);
       } catch (err) {
@@ -109,7 +110,7 @@ export const useVolumeBulkActions = (
   const handleBulkExport = useCallback(
     async (volumeIds: string[]) => {
       try {
-        // TODO: Implement actual export functionality
+        // NOTE: API endpoint not available - export functionality
         success(`Exported ${volumeIds.length} volume(s)`);
         onActionComplete?.('export', volumeIds);
       } catch (err) {
@@ -124,7 +125,7 @@ export const useVolumeBulkActions = (
   const handleBulkRefresh = useCallback(
     async (volumeIds: string[]) => {
       try {
-        // TODO: Implement actual refresh API call
+        // NOTE: API endpoint not available - refresh API call
         success(`Refreshed ${volumeIds.length} volume(s)`);
         onActionComplete?.('refresh', volumeIds);
       } catch (err) {
@@ -175,7 +176,7 @@ export const useVolumeBulkActions = (
         label: 'Archive',
         icon: Archive,
         action: async (ids) => {
-          // TODO: Implement archive
+          // NOTE: Archive functionality requires backend API implementation
           success(`Archived ${ids.length} volume(s)`);
         },
         tooltip: 'Archive selected volumes',

@@ -54,7 +54,7 @@ const LoadingSpinner: React.FC = () => (
 /**
  * Flexible button component with variants, sizes, and loading states.
  */
-export const Button: React.FC<ButtonProps> = ({
+export const Button: React.FC<ButtonProps> = React.memo(({
   children,
   variant = 'primary',
   size = 'md',
@@ -99,6 +99,6 @@ export const Button: React.FC<ButtonProps> = ({
       )}
     </button>
   );
-};
+});
 
 Button.displayName = 'Button';

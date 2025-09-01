@@ -149,15 +149,16 @@ func (vds *VolumeDiscoveryService) persistVolumes(ctx context.Context, volumes [
 	updatedCount := 0
 
 	for _, vol := range volumes {
-		// Check if volume already exists
-		existing, err := vds.store.Volumes().GetVolumeByVolumeID(ctx, vol.VolumeID)
+		// Check if volume already exists using system-level lookup
+		// Volume discovery operates at system level and preserves existing organization assignments
+		existing, err := vds.store.Volumes().GetVolumeByVolumeIDSystemLevel(ctx, vol.VolumeID)
 		if err != nil && err.Error() != "volume not found" {
 			log.Printf("[ERROR] Failed to check existing volume %s: %v", vol.VolumeID, err)
 			continue
 		}
 
 		if existing == nil {
-			// Create new volume
+			// Create new volume - assign to default organization for discovery
 			createParams := models.CreateVolumeParams{
 				VolumeID:   vol.VolumeID,
 				Name:       vol.Name,
@@ -170,7 +171,11 @@ func (vds *VolumeDiscoveryService) persistVolumes(ctx context.Context, volumes [
 				IsActive:   true,
 			}
 
-			created, err := vds.store.Volumes().CreateVolume(ctx, createParams)
+			// Determine organization for new volumes (could use labels or default)
+			organizationID := int64(1) // Default organization for discovered volumes
+			// TODO: Could implement smart organization assignment based on volume labels here
+			
+			created, err := vds.store.Volumes().CreateVolume(ctx, organizationID, createParams)
 			if err != nil {
 				log.Printf("[ERROR] Failed to create volume %s: %v", vol.VolumeID, err)
 				continue
@@ -179,9 +184,10 @@ func (vds *VolumeDiscoveryService) persistVolumes(ctx context.Context, volumes [
 			log.Printf("[INFO] Discovered new volume: %s (id: %d)", created.VolumeID, created.ID)
 			discoveredCount++
 		} else {
-			// Update existing volume
+			// Update existing volume - preserve organization assignment
 			updateParams := models.UpdateVolumeParams{
-				ID:         existing.ID,
+				VolumeID:   vol.VolumeID,
+				Name:       vol.Name,
 				Driver:     vol.Driver,
 				Mountpoint: vol.Mountpoint,
 				Labels:     vol.Labels,
@@ -191,7 +197,13 @@ func (vds *VolumeDiscoveryService) persistVolumes(ctx context.Context, volumes [
 				IsActive:   true,
 			}
 
-			updated, err := vds.store.Volumes().UpdateVolume(ctx, updateParams)
+			// Use existing volume's organization ID to preserve assignment
+			organizationID := int64(1) // Default fallback
+			if existing.OrganizationID != nil {
+				organizationID = *existing.OrganizationID
+			}
+			
+			updated, err := vds.store.Volumes().UpdateVolume(ctx, organizationID, updateParams)
 			if err != nil {
 				log.Printf("[ERROR] Failed to update volume %s: %v", vol.VolumeID, err)
 				continue
@@ -215,8 +227,9 @@ func (vds *VolumeDiscoveryService) persistVolumes(ctx context.Context, volumes [
 
 // markMissingVolumesInactive marks volumes that are no longer in Docker as inactive
 func (vds *VolumeDiscoveryService) markMissingVolumesInactive(ctx context.Context, dockerVolumes []models.Volume) error {
-	// Get all active volumes from database
-	allVolumes, err := vds.store.Volumes().ListVolumes(ctx, 1000, 0) // TODO: Add pagination for large volume counts
+	// Get all active volumes from database using system-level query
+	// Volume cleanup operates across all organizations
+	allVolumes, err := vds.store.Volumes().ListAllVolumes(ctx, 1000, 0) // TODO: Add pagination for large volume counts
 	if err != nil {
 		return fmt.Errorf("failed to list stored volumes: %w", err)
 	}
@@ -231,12 +244,19 @@ func (vds *VolumeDiscoveryService) markMissingVolumesInactive(ctx context.Contex
 	for _, storedVol := range allVolumes {
 		if storedVol.IsActive && !dockerVolumeMap[storedVol.VolumeID] {
 			updateParams := models.UpdateVolumeParams{
-				ID:       storedVol.ID,
+				VolumeID: storedVol.VolumeID,
+				Name:     storedVol.Name,
 				Status:   "inactive",
 				IsActive: false,
 			}
 
-			_, err := vds.store.Volumes().UpdateVolume(ctx, updateParams)
+			// Use stored volume's organization ID to preserve assignment
+			organizationID := int64(1) // Default fallback
+			if storedVol.OrganizationID != nil {
+				organizationID = *storedVol.OrganizationID
+			}
+			
+			_, err := vds.store.Volumes().UpdateVolume(ctx, organizationID, updateParams)
 			if err != nil {
 				log.Printf("[ERROR] Failed to mark volume %s as inactive: %v", storedVol.VolumeID, err)
 				continue

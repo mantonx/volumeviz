@@ -83,6 +83,26 @@ func (s *pgStore) Search() *repo.SearchRepo {
 	return repo.NewSearchRepo(s.conn.Queries)
 }
 
+// Users returns a users repository using the pool connection
+func (s *pgStore) Users() repo.UsersRepo {
+	return repo.NewPostgreSQLUsersRepo(s.conn.Queries, s.conn.Pool)
+}
+
+// Organizations returns an organizations repository using the pool connection
+func (s *pgStore) Organizations() repo.OrganizationsRepo {
+	return repo.NewPostgreSQLOrganizationsRepo(s.conn.Queries, s.conn.Pool)
+}
+
+// GetUserByID is a convenience method for getting a user by ID
+func (s *pgStore) GetUserByID(ctx context.Context, id int64) (User, error) {
+	return s.conn.Queries.GetUserByID(ctx, id)
+}
+
+// GetOrganizationByID is a convenience method for getting an organization by ID
+func (s *pgStore) GetOrganizationByID(ctx context.Context, id int64) (Organization, error) {
+	return s.conn.Queries.GetOrganizationByID(ctx, id)
+}
+
 // Health performs a health check on the database connection
 func (s *pgStore) Health(ctx context.Context) error {
 	return s.conn.Pool.Ping(ctx)
@@ -155,4 +175,14 @@ func (s *pgTxStore) FileMetadata() *repo.FileMetadataRepo {
 // Alerts returns an alerts repository using the transaction connection
 func (s *pgTxStore) Alerts() repo.AlertsRepo {
 	return repo.NewAlertsRepo(s.queries)
+}
+
+// Users returns a users repository using the transaction connection
+func (s *pgTxStore) Users() repo.UsersRepo {
+	return repo.NewPostgreSQLUsersRepo(s.queries, s.tx)
+}
+
+// Organizations returns an organizations repository using the transaction connection
+func (s *pgTxStore) Organizations() repo.OrganizationsRepo {
+	return repo.NewPostgreSQLOrganizationsRepo(s.queries, s.tx)
 }

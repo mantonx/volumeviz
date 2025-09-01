@@ -19,14 +19,11 @@ Migration files are stored in the `/migrations` directory:
 
 ```
 migrations/
-├── 000001_create_core_schema.up.sql
-├── 000001_create_core_schema.down.sql
-├── 000002_create_file_analytics.up.sql
-├── 000002_create_file_analytics.down.sql
-├── 000013_add_filesystem_capacity.up.sql
-├── 000013_add_filesystem_capacity.down.sql
-└── ...
+├── 000001_consolidated_schema.up.sql
+└── 000001_consolidated_schema.down.sql
 ```
+
+**Note**: This project uses a single consolidated migration that includes the complete schema. The original 16 separate migrations were consolidated for simplicity during development.
 
 Each migration consists of two files:
 - **`.up.sql`**: Contains the forward migration (apply changes)

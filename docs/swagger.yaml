@@ -587,6 +587,14 @@ definitions:
         type: string
       filesystem_capacity:
         $ref: '#/definitions/FilesystemCapacity'
+      filesystem_progress:
+        additionalProperties: true
+        description: Background indexing progress details
+        type: object
+      filesystem_status:
+        description: Background filesystem indexing status
+        example: indexing
+        type: string
       is_orphaned:
         example: false
         type: boolean
@@ -602,11 +610,23 @@ definitions:
       last_scan_at:
         example: "2023-01-01T12:00:00Z"
         type: string
+      last_scan_id:
+        description: Latest scan ID for tracking
+        example: scan_abc123def
+        type: string
       mountpoint:
         example: /var/lib/docker/volumes/tv-shows-readonly/_data
         type: string
       name:
         example: tv-shows-readonly
+        type: string
+      scan_progress:
+        description: Latest scan progress (0-100)
+        example: 100
+        type: integer
+      scan_status:
+        description: Scan status information
+        example: completed
         type: string
       scope:
         example: local
@@ -615,453 +635,25 @@ definitions:
         example: 1073741824
         type: integer
     type: object
-  diag.RealtimeDiagnostics:
-    properties:
-      active_connections:
-        type: integer
-      features:
-        items:
-          type: string
-        type: array
-      mode:
-        $ref: '#/definitions/diag.RealtimeMode'
-      polling_enabled:
-        type: boolean
-      polling_interval_ms:
-        type: integer
-      sse_enabled:
-        type: boolean
-      websocket_enabled:
-        type: boolean
-      websocket_url:
-        type: string
-    type: object
-  diag.RealtimeMode:
-    enum:
-    - ws
-    - polling
-    - sse
-    type: string
-    x-enum-varnames:
-    - ModeWebSocket
-    - ModePolling
-    - ModeSSE
-  explorer.AppliedFilters:
-    description: Applied filters for the file query
-    properties:
-      file_type:
-        example: pdf
-        type: string
-      max_size:
-        example: 10485760
-        type: integer
-      mime_type:
-        example: application/pdf
-        type: string
-      min_size:
-        example: 1024
-        type: integer
-    type: object
-  explorer.EnhancedFileItem:
-    description: Enhanced file item with performance and metadata information
-    properties:
-      disk_usage:
-        example: 1024000
-        type: integer
-      extension:
-        example: pdf
-        type: string
-      id:
-        example: 123
-        type: integer
-      is_directory:
-        example: false
-        type: boolean
-      media_kind:
-        example: document
-        type: string
-      media_type:
-        example: application/pdf
-        type: string
-      modified_time:
-        example: "2024-01-15T10:30:00Z"
-        type: string
-      name:
-        example: document.pdf
-        type: string
-      path:
-        example: /home/user/documents/document.pdf
-        type: string
-      size:
-        example: 1024000
-        type: integer
-    type: object
-  explorer.FileInfo:
-    description: File or directory information for explorer browsing
-    properties:
-      extension:
-        example: pdf
-        type: string
-      is_directory:
-        example: false
-        type: boolean
-      media_type:
-        example: application/pdf
-        type: string
-      modified_time:
-        example: "2024-01-15T10:30:00Z"
-        type: string
-      name:
-        example: document.pdf
-        type: string
-      path:
-        example: /home/user/documents/document.pdf
-        type: string
-      size:
-        example: 1024000
-        type: integer
-    type: object
-  explorer.FolderBrowsingItem:
-    description: A folder item with parent/child relationship information
-    properties:
-      file_count:
-        example: 42
-        type: integer
-      folder_count:
-        example: 5
-        type: integer
-      has_children:
-        example: true
-        type: boolean
-      id:
-        example: 123
-        type: integer
-      is_directory:
-        example: true
-        type: boolean
-      name:
-        example: documents
-        type: string
-      path:
-        example: /home/user/documents
-        type: string
-      total_size:
-        example: 1073741824
-        type: integer
-    type: object
-  explorer.FolderBrowsingResponse:
-    description: Response containing folder hierarchy with parent/child relationships
-    properties:
-      children:
-        items:
-          $ref: '#/definitions/explorer.FolderBrowsingItem'
-        type: array
-      current:
-        $ref: '#/definitions/explorer.FolderBrowsingItem'
-      current_path:
-        example: /home/user/documents
-        type: string
-      limit:
-        example: 100
-        type: integer
-      page:
-        example: 1
-        type: integer
-      parent:
-        $ref: '#/definitions/explorer.FolderBrowsingItem'
-      total_children:
-        example: 15
-        type: integer
-      total_pages:
-        example: 2
-        type: integer
-      volume_id:
-        example: vol_123
-        type: string
-    type: object
-  explorer.FolderNode:
-    description: A node in the hierarchical folder structure
-    properties:
-      children:
-        items:
-          $ref: '#/definitions/explorer.FolderNode'
-        type: array
-      file_count:
-        example: 15
-        type: integer
-      folder_count:
-        example: 3
-        type: integer
-      name:
-        example: documents
-        type: string
-      path:
-        example: /home/user/documents
-        type: string
-      total_size:
-        example: 52428800
-        type: integer
-    type: object
-  explorer.GetFilesByFolderResponse:
-    description: Response containing files in a folder with pagination
-    properties:
-      files:
-        items:
-          $ref: '#/definitions/explorer.FileInfo'
-        type: array
-      limit:
-        example: 100
-        type: integer
-      page:
-        example: 1
-        type: integer
-      total_count:
-        example: 250
-        type: integer
-      total_pages:
-        example: 3
-        type: integer
-    type: object
-  explorer.GetFolderTreeResponse:
-    description: Response containing hierarchical folder structure
-    properties:
-      tree:
-        items:
-          $ref: '#/definitions/explorer.FolderNode'
-        type: array
-    type: object
-  explorer.GetTreeChildrenResponse:
-    description: Response containing immediate children of a path
-    properties:
-      children:
-        items:
-          $ref: '#/definitions/explorer.TreeChildItem'
-        type: array
-      limit:
-        example: 100
-        type: integer
-      page:
-        example: 1
-        type: integer
-      parent_path:
-        example: /home/user
-        type: string
-      total_count:
-        example: 25
-        type: integer
-      total_pages:
-        example: 1
-        type: integer
-    type: object
-  explorer.PaginatedFileResponse:
-    description: Enhanced response for paginated file listing with performance metadata
-    properties:
-      cache_hit:
-        example: false
-        type: boolean
-      files:
-        items:
-          $ref: '#/definitions/explorer.EnhancedFileItem'
-        type: array
-      filters:
-        $ref: '#/definitions/explorer.AppliedFilters'
-      has_more:
-        example: true
-        type: boolean
-      limit:
-        example: 50
-        type: integer
-      page:
-        example: 1
-        type: integer
-      query_time_ms:
-        example: 45
-        type: integer
-      sort_by:
-        example: name
-        type: string
-      sort_order:
-        example: asc
-        type: string
-      total_count:
-        example: 1250
-        type: integer
-      total_pages:
-        example: 25
-        type: integer
-    type: object
-  explorer.TreeChildItem:
-    description: A child file or folder in tree navigation
-    properties:
-      extension:
-        example: pdf
-        type: string
-      has_children:
-        example: true
-        type: boolean
-      is_directory:
-        example: true
-        type: boolean
-      media_type:
-        example: application/pdf
-        type: string
-      name:
-        example: documents
-        type: string
-      path:
-        example: /home/user/documents
-        type: string
-      size:
-        example: 1024000
-        type: integer
-    type: object
   gin.H:
     additionalProperties: {}
     type: object
-  github_com_mantonx_volumeviz_internal_api_v1_previews.PreviewRequest:
+  github_com_mantonx_volumeviz_internal_api_utils.PagedResponse:
     properties:
-      file_hash:
-        type: string
-      file_id:
-        type: integer
-      file_path:
-        type: string
-      mime_type:
-        type: string
-      size:
-        enum:
-        - small
-        - medium
-        - large
-        type: string
-      time_offset:
-        type: string
-      type:
-        enum:
-        - thumbnail
-        - poster
-        - cover
-        type: string
-    required:
-    - file_id
-    - file_path
-    - mime_type
-    - size
-    - type
-    type: object
-  github_com_mantonx_volumeviz_internal_models.ErrorResponse:
-    properties:
-      code:
-        type: string
-      details:
-        type: string
-      error:
-        type: string
-      message:
-        type: string
-    type: object
-  github_com_mantonx_volumeviz_internal_models.FilesystemIndexingRequest:
-    properties:
-      delta_mode:
-        type: boolean
-      full_scan:
-        type: boolean
-    type: object
-  metadata.FileDurationItem:
-    properties:
-      duration_seconds:
-        type: integer
-      id:
-        type: integer
-      media_type:
-        type: string
-      name:
-        type: string
-      path:
-        type: string
-      size:
-        type: integer
-    type: object
-  metadata.FileLocationItem:
-    properties:
-      id:
-        type: integer
-      latitude:
-        type: number
-      longitude:
-        type: number
-      media_type:
-        type: string
-      name:
-        type: string
-      path:
-        type: string
-      size:
-        type: integer
-    type: object
-  metadata.FileResolutionItem:
-    properties:
-      height:
-        type: integer
-      id:
-        type: integer
-      media_type:
-        type: string
-      name:
-        type: string
-      path:
-        type: string
-      size:
-        type: integer
-      width:
-        type: integer
-    type: object
-  metadata.GetFilesByDurationResponse:
-    properties:
-      files:
-        items:
-          $ref: '#/definitions/metadata.FileDurationItem'
-        type: array
-      limit:
-        type: integer
+      data: {}
+      filters:
+        additionalProperties: true
+        type: object
       page:
         type: integer
-      total_count:
+      page_size:
         type: integer
-      total_pages:
-        type: integer
-    type: object
-  metadata.GetFilesByLocationResponse:
-    properties:
-      files:
-        items:
-          $ref: '#/definitions/metadata.FileLocationItem'
-        type: array
-      limit:
-        type: integer
-      page:
-        type: integer
-      total_count:
-        type: integer
-      total_pages:
+      sort:
+        type: string
+      total:
         type: integer
     type: object
-  metadata.GetFilesByResolutionResponse:
-    properties:
-      files:
-        items:
-          $ref: '#/definitions/metadata.FileResolutionItem'
-        type: array
-      limit:
-        type: integer
-      page:
-        type: integer
-      total_count:
-        type: integer
-      total_pages:
-        type: integer
-    type: object
-  models.Alert:
+  github_com_mantonx_volumeviz_internal_models.Alert:
     properties:
       annotations:
         additionalProperties:
@@ -1088,7 +680,7 @@ definitions:
         type: object
       rule:
         allOf:
-        - $ref: '#/definitions/models.AlertRule'
+        - $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule'
         description: Relationships
       rule_id:
         type: integer
@@ -1102,7 +694,7 @@ definitions:
       value:
         type: number
     type: object
-  models.AlertDestination:
+  github_com_mantonx_volumeviz_internal_models.AlertDestination:
     properties:
       config:
         additionalProperties: true
@@ -1121,13 +713,13 @@ definitions:
       updated_at:
         type: string
     type: object
-  models.AlertRoute:
+  github_com_mantonx_volumeviz_internal_models.AlertRoute:
     properties:
       created_at:
         type: string
       destination:
         allOf:
-        - $ref: '#/definitions/models.AlertDestination'
+        - $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination'
         description: Relationships
       destination_id:
         type: integer
@@ -1148,7 +740,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  models.AlertRule:
+  github_com_mantonx_volumeviz_internal_models.AlertRule:
     properties:
       condition:
         description: e.g., "gt", "lt", "eq"
@@ -1184,7 +776,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  models.CreateAlertDestinationParams:
+  github_com_mantonx_volumeviz_internal_models.CreateAlertDestinationParams:
     properties:
       config:
         additionalProperties: true
@@ -1206,7 +798,7 @@ definitions:
     - name
     - type
     type: object
-  models.CreateAlertRouteParams:
+  github_com_mantonx_volumeviz_internal_models.CreateAlertRouteParams:
     properties:
       destination_id:
         type: integer
@@ -1228,7 +820,7 @@ definitions:
     - matchers
     - name
     type: object
-  models.CreateAlertRuleParams:
+  github_com_mantonx_volumeviz_internal_models.CreateAlertRuleParams:
     properties:
       condition:
         enum:
@@ -1272,7 +864,25 @@ definitions:
     - query
     - threshold
     type: object
-  models.UpdateAlertDestinationParams:
+  github_com_mantonx_volumeviz_internal_models.ErrorResponse:
+    properties:
+      code:
+        type: string
+      details:
+        type: string
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.FilesystemIndexingRequest:
+    properties:
+      delta_mode:
+        type: boolean
+      full_scan:
+        type: boolean
+    type: object
+  github_com_mantonx_volumeviz_internal_models.UpdateAlertDestinationParams:
     properties:
       config:
         additionalProperties: true
@@ -1296,7 +906,7 @@ definitions:
     - name
     - type
     type: object
-  models.UpdateAlertRouteParams:
+  github_com_mantonx_volumeviz_internal_models.UpdateAlertRouteParams:
     properties:
       destination_id:
         type: integer
@@ -1320,7 +930,7 @@ definitions:
     - matchers
     - name
     type: object
-  models.UpdateAlertRuleParams:
+  github_com_mantonx_volumeviz_internal_models.UpdateAlertRuleParams:
     properties:
       condition:
         enum:
@@ -1366,13 +976,761 @@ definitions:
     - query
     - threshold
     type: object
-  mounts.DiscoverMountsRequest:
+  github_com_mantonx_volumeviz_internal_services_rules.ActionBreakdown:
+    properties:
+      exclude:
+        type: integer
+      include:
+        type: integer
+      unmatched:
+        type: integer
+    type: object
+  github_com_mantonx_volumeviz_internal_services_rules.ConditionResult:
+    properties:
+      error: {}
+      field_name:
+        type: string
+      matched:
+        type: boolean
+      operator:
+        type: string
+      value:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_services_rules.ConflictAnalysis:
+    properties:
+      conflicting_rules:
+        items:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RuleConflict'
+        type: array
+      has_conflicts:
+        type: boolean
+      resolution:
+        description: how conflicts are resolved
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_services_rules.MountPreview:
+    properties:
+      action_changed:
+        description: whether action would change
+        type: boolean
+      all_matches:
+        description: all matching rules (if detailed)
+        items:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RuleMatchSummary'
+        type: array
+      conflict_details:
+        allOf:
+        - $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.ConflictAnalysis'
+        description: rule conflicts if any
+      current_action:
+        description: current tracking status
+        type: string
+      mount:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.MountSummary'
+      preview_action:
+        description: predicted action based on rules
+        type: string
+      winning_rule:
+        allOf:
+        - $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RuleMatchSummary'
+        description: highest priority matching rule
+    type: object
+  github_com_mantonx_volumeviz_internal_services_rules.MountSummary:
+    properties:
+      compose_project:
+        type: string
+      compose_services:
+        items:
+          type: string
+        type: array
+      container_count:
+        type: integer
+      id:
+        type: integer
+      is_orphaned:
+        type: boolean
+      is_tracked:
+        type: boolean
+      mount_id:
+        type: string
+      mount_type:
+        type: string
+      source_path:
+        type: string
+      volume_name:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_services_rules.PreviewRequest:
+    properties:
+      dry_run:
+        description: DryRun mode - if true, doesn't create evaluation records
+        type: boolean
+      include_rule_details:
+        description: IncludeRuleDetails whether to include detailed rule condition
+          matching info
+        type: boolean
+      include_unmatched:
+        description: IncludeUnmatched whether to include mounts that don't match any
+          rules
+        type: boolean
+      mount_ids:
+        description: MountIDs to limit preview to specific mounts (if empty, all mounts
+          are evaluated)
+        items:
+          type: string
+        type: array
+      rule_ids:
+        description: RuleIDs to include in preview (if empty, all enabled rules are
+          used)
+        items:
+          type: integer
+        type: array
+    type: object
+  github_com_mantonx_volumeviz_internal_services_rules.PreviewResponse:
+    properties:
+      completed_at:
+        type: string
+      errors:
+        items:
+          type: string
+        type: array
+      execution_time_ms:
+        type: integer
+      mount_previews:
+        items:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.MountPreview'
+        type: array
+      preview_id:
+        type: string
+      requested_at:
+        type: string
+      rule_performance:
+        items:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RulePerformanceResult'
+        type: array
+      summary:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.PreviewSummary'
+      warnings:
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_mantonx_volumeviz_internal_services_rules.PreviewSummary:
+    properties:
+      action_breakdown:
+        additionalProperties:
+          format: int32
+          type: integer
+        type: object
+      mounts_evaluated:
+        type: integer
+      mounts_excluded:
+        type: integer
+      mounts_included:
+        type: integer
+      mounts_matched:
+        type: integer
+      mounts_unmatched:
+        type: integer
+      project_breakdown:
+        additionalProperties:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.ActionBreakdown'
+        type: object
+      rules_evaluated:
+        type: integer
+      total_mounts:
+        type: integer
+      type_breakdown:
+        additionalProperties:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.ActionBreakdown'
+        type: object
+    type: object
+  github_com_mantonx_volumeviz_internal_services_rules.RuleConflict:
+    properties:
+      conflict:
+        description: description of the conflict
+        type: string
+      rule1:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RuleMatchSummary'
+      rule2:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.RuleMatchSummary'
+    type: object
+  github_com_mantonx_volumeviz_internal_services_rules.RuleMatchSummary:
+    properties:
+      action:
+        type: string
+      execution_time_ms:
+        type: integer
+      match_confidence:
+        description: 0.0-1.0 based on condition matches
+        type: number
+      matched:
+        type: boolean
+      matched_conditions:
+        items:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.ConditionResult'
+        type: array
+      priority:
+        type: integer
+      rule_id:
+        type: integer
+      rule_name:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_services_rules.RulePerformanceResult:
+    properties:
+      avg_execution_time_ms:
+        type: integer
+      mounts_evaluated:
+        type: integer
+      mounts_matched:
+        type: integer
+      rule_id:
+        type: integer
+      rule_name:
+        type: string
+      total_execution_time_ms:
+        type: integer
+    type: object
+  internal_api_v1_auth.AcceptInvitationRequest:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
+  internal_api_v1_auth.AuthResponse:
+    properties:
+      expires_at:
+        type: string
+      refresh_token:
+        type: string
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/internal_api_v1_auth.UserProfile'
+    type: object
+  internal_api_v1_auth.ForcePasswordChangeRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  internal_api_v1_auth.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  internal_api_v1_auth.PasswordChangeRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  internal_api_v1_auth.PasswordResetRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  internal_api_v1_auth.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  internal_api_v1_auth.RegisterRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      role:
+        description: Only admin can set role
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  internal_api_v1_auth.RegisterWithInvitationRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      token:
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - token
+    - username
+    type: object
+  internal_api_v1_auth.UserProfile:
+    properties:
+      created_at:
+        type: string
+      display_name:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_login_at:
+        type: string
+      last_name:
+        type: string
+      organization_id:
+        type: integer
+      role:
+        type: string
+      status:
+        type: string
+      timezone:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_api_v1_diag.RealtimeDiagnostics:
+    properties:
+      active_connections:
+        type: integer
+      features:
+        items:
+          type: string
+        type: array
+      mode:
+        $ref: '#/definitions/internal_api_v1_diag.RealtimeMode'
+      polling_enabled:
+        type: boolean
+      polling_interval_ms:
+        type: integer
+      sse_enabled:
+        type: boolean
+      websocket_enabled:
+        type: boolean
+      websocket_url:
+        type: string
+    type: object
+  internal_api_v1_diag.RealtimeMode:
+    enum:
+    - ws
+    - polling
+    - sse
+    type: string
+    x-enum-varnames:
+    - ModeWebSocket
+    - ModePolling
+    - ModeSSE
+  internal_api_v1_explorer.AppliedFilters:
+    description: Applied filters for the file query
+    properties:
+      file_type:
+        example: pdf
+        type: string
+      max_size:
+        example: 10485760
+        type: integer
+      mime_type:
+        example: application/pdf
+        type: string
+      min_size:
+        example: 1024
+        type: integer
+    type: object
+  internal_api_v1_explorer.EnhancedFileItem:
+    description: Enhanced file item with performance and metadata information
+    properties:
+      disk_usage:
+        example: 1024000
+        type: integer
+      extension:
+        example: pdf
+        type: string
+      id:
+        example: 123
+        type: integer
+      is_directory:
+        example: false
+        type: boolean
+      media_kind:
+        example: document
+        type: string
+      media_type:
+        example: application/pdf
+        type: string
+      modified_time:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      name:
+        example: document.pdf
+        type: string
+      path:
+        example: /home/user/documents/document.pdf
+        type: string
+      size:
+        example: 1024000
+        type: integer
+    type: object
+  internal_api_v1_explorer.FileInfo:
+    description: File or directory information for explorer browsing
+    properties:
+      extension:
+        example: pdf
+        type: string
+      is_directory:
+        example: false
+        type: boolean
+      media_type:
+        example: application/pdf
+        type: string
+      modified_time:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      name:
+        example: document.pdf
+        type: string
+      path:
+        example: /home/user/documents/document.pdf
+        type: string
+      size:
+        example: 1024000
+        type: integer
+    type: object
+  internal_api_v1_explorer.FolderBrowsingItem:
+    description: A folder item with parent/child relationship information
+    properties:
+      file_count:
+        example: 42
+        type: integer
+      folder_count:
+        example: 5
+        type: integer
+      has_children:
+        example: true
+        type: boolean
+      id:
+        example: 123
+        type: integer
+      is_directory:
+        example: true
+        type: boolean
+      name:
+        example: documents
+        type: string
+      path:
+        example: /home/user/documents
+        type: string
+      total_size:
+        example: 1073741824
+        type: integer
+    type: object
+  internal_api_v1_explorer.FolderBrowsingResponse:
+    description: Response containing folder hierarchy with parent/child relationships
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/internal_api_v1_explorer.FolderBrowsingItem'
+        type: array
+      current:
+        $ref: '#/definitions/internal_api_v1_explorer.FolderBrowsingItem'
+      current_path:
+        example: /home/user/documents
+        type: string
+      limit:
+        example: 100
+        type: integer
+      page:
+        example: 1
+        type: integer
+      parent:
+        $ref: '#/definitions/internal_api_v1_explorer.FolderBrowsingItem'
+      total_children:
+        example: 15
+        type: integer
+      total_pages:
+        example: 2
+        type: integer
+      volume_id:
+        example: vol_123
+        type: string
+    type: object
+  internal_api_v1_explorer.FolderNode:
+    description: A node in the hierarchical folder structure
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/internal_api_v1_explorer.FolderNode'
+        type: array
+      file_count:
+        example: 15
+        type: integer
+      folder_count:
+        example: 3
+        type: integer
+      name:
+        example: documents
+        type: string
+      path:
+        example: /home/user/documents
+        type: string
+      total_size:
+        example: 52428800
+        type: integer
+    type: object
+  internal_api_v1_explorer.GetFilesByFolderResponse:
+    description: Response containing files in a folder with pagination
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/internal_api_v1_explorer.FileInfo'
+        type: array
+      limit:
+        example: 100
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total_count:
+        example: 250
+        type: integer
+      total_pages:
+        example: 3
+        type: integer
+    type: object
+  internal_api_v1_explorer.GetFolderTreeResponse:
+    description: Response containing hierarchical folder structure
+    properties:
+      tree:
+        items:
+          $ref: '#/definitions/internal_api_v1_explorer.FolderNode'
+        type: array
+    type: object
+  internal_api_v1_explorer.GetTreeChildrenResponse:
+    description: Response containing immediate children of a path
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/internal_api_v1_explorer.TreeChildItem'
+        type: array
+      limit:
+        example: 100
+        type: integer
+      page:
+        example: 1
+        type: integer
+      parent_path:
+        example: /home/user
+        type: string
+      total_count:
+        example: 25
+        type: integer
+      total_pages:
+        example: 1
+        type: integer
+    type: object
+  internal_api_v1_explorer.PaginatedFileResponse:
+    description: Enhanced response for paginated file listing with performance metadata
+    properties:
+      cache_hit:
+        example: false
+        type: boolean
+      files:
+        items:
+          $ref: '#/definitions/internal_api_v1_explorer.EnhancedFileItem'
+        type: array
+      filters:
+        $ref: '#/definitions/internal_api_v1_explorer.AppliedFilters'
+      has_more:
+        example: true
+        type: boolean
+      limit:
+        example: 50
+        type: integer
+      page:
+        example: 1
+        type: integer
+      query_time_ms:
+        example: 45
+        type: integer
+      sort_by:
+        example: name
+        type: string
+      sort_order:
+        example: asc
+        type: string
+      total_count:
+        example: 1250
+        type: integer
+      total_pages:
+        example: 25
+        type: integer
+    type: object
+  internal_api_v1_explorer.TreeChildItem:
+    description: A child file or folder in tree navigation
+    properties:
+      extension:
+        example: pdf
+        type: string
+      has_children:
+        example: true
+        type: boolean
+      is_directory:
+        example: true
+        type: boolean
+      media_type:
+        example: application/pdf
+        type: string
+      name:
+        example: documents
+        type: string
+      path:
+        example: /home/user/documents
+        type: string
+      size:
+        example: 1024000
+        type: integer
+    type: object
+  internal_api_v1_metadata.FileDurationItem:
+    properties:
+      duration_seconds:
+        type: integer
+      id:
+        type: integer
+      media_type:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+      size:
+        type: integer
+    type: object
+  internal_api_v1_metadata.FileLocationItem:
+    properties:
+      id:
+        type: integer
+      latitude:
+        type: number
+      longitude:
+        type: number
+      media_type:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+      size:
+        type: integer
+    type: object
+  internal_api_v1_metadata.FileResolutionItem:
+    properties:
+      height:
+        type: integer
+      id:
+        type: integer
+      media_type:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+      size:
+        type: integer
+      width:
+        type: integer
+    type: object
+  internal_api_v1_metadata.GetFilesByDurationResponse:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/internal_api_v1_metadata.FileDurationItem'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  internal_api_v1_metadata.GetFilesByLocationResponse:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/internal_api_v1_metadata.FileLocationItem'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  internal_api_v1_metadata.GetFilesByResolutionResponse:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/internal_api_v1_metadata.FileResolutionItem'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  internal_api_v1_mounts.DiscoverMountsRequest:
     properties:
       force:
         example: false
         type: boolean
     type: object
-  mounts.DiscoverMountsResponse:
+  internal_api_v1_mounts.DiscoverMountsResponse:
     properties:
       message:
         example: Mount discovery completed successfully
@@ -1381,7 +1739,7 @@ definitions:
         example: true
         type: boolean
     type: object
-  mounts.MountCatalogResponse:
+  internal_api_v1_mounts.MountCatalogResponse:
     properties:
       compose_project:
         example: myapp
@@ -1457,7 +1815,7 @@ definitions:
         example: local
         type: string
     type: object
-  mounts.MountCatalogSummaryResponse:
+  internal_api_v1_mounts.MountCatalogSummaryResponse:
     properties:
       bind_mounts:
         example: 8
@@ -1481,7 +1839,159 @@ definitions:
         example: 15
         type: integer
     type: object
-  previews.PreviewResponse:
+  internal_api_v1_organizations.OrganizationLimits:
+    properties:
+      max_storage_gb:
+        example: 1000
+        type: integer
+      max_users:
+        example: 50
+        type: integer
+      max_volumes:
+        example: 100
+        type: integer
+      storage_left_gb:
+        example: 499.5
+        type: number
+      storage_used_gb:
+        example: 500.5
+        type: number
+      users_left:
+        example: 25
+        type: integer
+      users_used:
+        example: 25
+        type: integer
+      volumes_left:
+        example: 25
+        type: integer
+      volumes_used:
+        example: 75
+        type: integer
+    type: object
+  internal_api_v1_organizations.OrganizationResponse:
+    properties:
+      created_at:
+        example: "2024-01-01T12:00:00Z"
+        type: string
+      description:
+        example: A leading technology company
+        type: string
+      display_name:
+        example: ACME Corporation
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      max_storage_gb:
+        example: 1000
+        type: integer
+      max_users:
+        example: 50
+        type: integer
+      max_volumes:
+        example: 100
+        type: integer
+      name:
+        example: acme-corp
+        type: string
+      plan_type:
+        example: pro
+        type: string
+      subdomain:
+        example: acme
+        type: string
+      updated_at:
+        example: "2024-01-01T14:30:00Z"
+        type: string
+    type: object
+  internal_api_v1_organizations.OrganizationStatsResponse:
+    properties:
+      storage_usage_bytes:
+        example: 536870912000
+        type: integer
+      user_count:
+        example: 25
+        type: integer
+      volume_count:
+        example: 75
+        type: integer
+    type: object
+  internal_api_v1_organizations.OrganizationWithStatsResponse:
+    properties:
+      limits:
+        $ref: '#/definitions/internal_api_v1_organizations.OrganizationLimits'
+      organization:
+        $ref: '#/definitions/internal_api_v1_organizations.OrganizationResponse'
+      stats:
+        $ref: '#/definitions/internal_api_v1_organizations.OrganizationStatsResponse'
+    type: object
+  internal_api_v1_organizations.UpdateOrganizationRequest:
+    properties:
+      description:
+        example: A leading technology company
+        type: string
+      display_name:
+        example: ACME Corporation
+        minLength: 3
+        type: string
+      max_storage_gb:
+        example: 1000
+        type: integer
+      max_users:
+        example: 50
+        type: integer
+      max_volumes:
+        example: 100
+        type: integer
+      plan_type:
+        enum:
+        - free
+        - pro
+        - enterprise
+        example: pro
+        type: string
+      subdomain:
+        example: acme
+        type: string
+    required:
+    - display_name
+    type: object
+  internal_api_v1_previews.PreviewRequest:
+    properties:
+      file_hash:
+        type: string
+      file_id:
+        type: integer
+      file_path:
+        type: string
+      mime_type:
+        type: string
+      size:
+        enum:
+        - small
+        - medium
+        - large
+        type: string
+      time_offset:
+        type: string
+      type:
+        enum:
+        - thumbnail
+        - poster
+        - cover
+        type: string
+    required:
+    - file_id
+    - file_path
+    - mime_type
+    - size
+    - type
+    type: object
+  internal_api_v1_previews.PreviewResponse:
     properties:
       cache_hit:
         type: boolean
@@ -1510,34 +2020,25 @@ definitions:
       width:
         type: integer
     type: object
-  rules.ActionBreakdown:
-    properties:
-      exclude:
-        type: integer
-      include:
-        type: integer
-      unmatched:
-        type: integer
-    type: object
-  rules.ApplyTrackingRulesRequest:
+  internal_api_v1_rules.ApplyTrackingRulesRequest:
     properties:
       dry_run:
         type: boolean
     type: object
-  rules.ApplyTrackingRulesResponse:
+  internal_api_v1_rules.ApplyTrackingRulesResponse:
     properties:
       applied_at:
         type: string
       changes:
         items:
-          $ref: '#/definitions/rules.TrackingChange'
+          $ref: '#/definitions/internal_api_v1_rules.TrackingChange'
         type: array
       changes_count:
         type: integer
       dry_run:
         type: boolean
     type: object
-  rules.ConditionRequest:
+  internal_api_v1_rules.ConditionRequest:
     properties:
       field_name:
         enum:
@@ -1585,31 +2086,7 @@ definitions:
     - field_name
     - operator
     type: object
-  rules.ConditionResult:
-    properties:
-      error: {}
-      field_name:
-        type: string
-      matched:
-        type: boolean
-      operator:
-        type: string
-      value:
-        type: string
-    type: object
-  rules.ConflictAnalysis:
-    properties:
-      conflicting_rules:
-        items:
-          $ref: '#/definitions/rules.RuleConflict'
-        type: array
-      has_conflicts:
-        type: boolean
-      resolution:
-        description: how conflicts are resolved
-        type: string
-    type: object
-  rules.CreateMountOverrideRequest:
+  internal_api_v1_rules.CreateMountOverrideRequest:
     properties:
       action:
         enum:
@@ -1626,7 +2103,7 @@ definitions:
     - action
     - mount_id
     type: object
-  rules.CreateRuleRequest:
+  internal_api_v1_rules.CreateRuleRequest:
     properties:
       action:
         enum:
@@ -1636,7 +2113,7 @@ definitions:
         type: string
       conditions:
         items:
-          $ref: '#/definitions/rules.ConditionRequest'
+          $ref: '#/definitions/internal_api_v1_rules.ConditionRequest'
         minItems: 1
         type: array
       created_by:
@@ -1661,34 +2138,34 @@ definitions:
     - conditions
     - name
     type: object
-  rules.ListMountOverridesResponse:
+  internal_api_v1_rules.ListMountOverridesResponse:
     properties:
       overrides:
         items:
-          $ref: '#/definitions/rules.MountOverrideResponse'
+          $ref: '#/definitions/internal_api_v1_rules.MountOverrideResponse'
         type: array
       total:
         type: integer
     type: object
-  rules.ListRuleTemplatesResponse:
+  internal_api_v1_rules.ListRuleTemplatesResponse:
     properties:
       templates:
         items:
-          $ref: '#/definitions/rules.RuleTemplate'
+          $ref: '#/definitions/internal_api_v1_rules.RuleTemplate'
         type: array
       total:
         type: integer
     type: object
-  rules.ListRulesResponse:
+  internal_api_v1_rules.ListRulesResponse:
     properties:
       rules:
         items:
-          $ref: '#/definitions/rules.RuleResponse'
+          $ref: '#/definitions/internal_api_v1_rules.RuleResponse'
         type: array
       total:
         type: integer
     type: object
-  rules.MountOverrideResponse:
+  internal_api_v1_rules.MountOverrideResponse:
     properties:
       action:
         type: string
@@ -1705,144 +2182,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  rules.MountPreview:
-    properties:
-      action_changed:
-        description: whether action would change
-        type: boolean
-      all_matches:
-        description: all matching rules (if detailed)
-        items:
-          $ref: '#/definitions/rules.RuleMatchSummary'
-        type: array
-      conflict_details:
-        allOf:
-        - $ref: '#/definitions/rules.ConflictAnalysis'
-        description: rule conflicts if any
-      current_action:
-        description: current tracking status
-        type: string
-      mount:
-        $ref: '#/definitions/rules.MountSummary'
-      preview_action:
-        description: predicted action based on rules
-        type: string
-      winning_rule:
-        allOf:
-        - $ref: '#/definitions/rules.RuleMatchSummary'
-        description: highest priority matching rule
-    type: object
-  rules.MountSummary:
-    properties:
-      compose_project:
-        type: string
-      compose_services:
-        items:
-          type: string
-        type: array
-      container_count:
-        type: integer
-      id:
-        type: integer
-      is_orphaned:
-        type: boolean
-      is_tracked:
-        type: boolean
-      mount_id:
-        type: string
-      mount_type:
-        type: string
-      source_path:
-        type: string
-      volume_name:
-        type: string
-    type: object
-  rules.PreviewRequest:
-    properties:
-      dry_run:
-        description: DryRun mode - if true, doesn't create evaluation records
-        type: boolean
-      include_rule_details:
-        description: IncludeRuleDetails whether to include detailed rule condition
-          matching info
-        type: boolean
-      include_unmatched:
-        description: IncludeUnmatched whether to include mounts that don't match any
-          rules
-        type: boolean
-      mount_ids:
-        description: MountIDs to limit preview to specific mounts (if empty, all mounts
-          are evaluated)
-        items:
-          type: string
-        type: array
-      rule_ids:
-        description: RuleIDs to include in preview (if empty, all enabled rules are
-          used)
-        items:
-          type: integer
-        type: array
-    type: object
-  rules.PreviewResponse:
-    properties:
-      completed_at:
-        type: string
-      errors:
-        items:
-          type: string
-        type: array
-      execution_time_ms:
-        type: integer
-      mount_previews:
-        items:
-          $ref: '#/definitions/rules.MountPreview'
-        type: array
-      preview_id:
-        type: string
-      requested_at:
-        type: string
-      rule_performance:
-        items:
-          $ref: '#/definitions/rules.RulePerformanceResult'
-        type: array
-      summary:
-        $ref: '#/definitions/rules.PreviewSummary'
-      warnings:
-        items:
-          type: string
-        type: array
-    type: object
-  rules.PreviewSummary:
-    properties:
-      action_breakdown:
-        additionalProperties:
-          format: int32
-          type: integer
-        type: object
-      mounts_evaluated:
-        type: integer
-      mounts_excluded:
-        type: integer
-      mounts_included:
-        type: integer
-      mounts_matched:
-        type: integer
-      mounts_unmatched:
-        type: integer
-      project_breakdown:
-        additionalProperties:
-          $ref: '#/definitions/rules.ActionBreakdown'
-        type: object
-      rules_evaluated:
-        type: integer
-      total_mounts:
-        type: integer
-      type_breakdown:
-        additionalProperties:
-          $ref: '#/definitions/rules.ActionBreakdown'
-        type: object
-    type: object
-  rules.RuleConfigUpdate:
+  internal_api_v1_rules.RuleConfigUpdate:
     properties:
       id:
         type: integer
@@ -1853,54 +2193,7 @@ definitions:
     required:
     - id
     type: object
-  rules.RuleConflict:
-    properties:
-      conflict:
-        description: description of the conflict
-        type: string
-      rule1:
-        $ref: '#/definitions/rules.RuleMatchSummary'
-      rule2:
-        $ref: '#/definitions/rules.RuleMatchSummary'
-    type: object
-  rules.RuleMatchSummary:
-    properties:
-      action:
-        type: string
-      execution_time_ms:
-        type: integer
-      match_confidence:
-        description: 0.0-1.0 based on condition matches
-        type: number
-      matched:
-        type: boolean
-      matched_conditions:
-        items:
-          $ref: '#/definitions/rules.ConditionResult'
-        type: array
-      priority:
-        type: integer
-      rule_id:
-        type: integer
-      rule_name:
-        type: string
-    type: object
-  rules.RulePerformanceResult:
-    properties:
-      avg_execution_time_ms:
-        type: integer
-      mounts_evaluated:
-        type: integer
-      mounts_matched:
-        type: integer
-      rule_id:
-        type: integer
-      rule_name:
-        type: string
-      total_execution_time_ms:
-        type: integer
-    type: object
-  rules.RuleResponse:
+  internal_api_v1_rules.RuleResponse:
     properties:
       action:
         enum:
@@ -1910,7 +2203,7 @@ definitions:
         type: string
       conditions:
         items:
-          $ref: '#/definitions/rules.ConditionRequest'
+          $ref: '#/definitions/internal_api_v1_rules.ConditionRequest'
         type: array
       created_at:
         format: date-time
@@ -1948,7 +2241,7 @@ definitions:
         format: date-time
         type: string
     type: object
-  rules.RuleTemplate:
+  internal_api_v1_rules.RuleTemplate:
     properties:
       category:
         type: string
@@ -1976,7 +2269,7 @@ definitions:
       usage_count:
         type: integer
     type: object
-  rules.TrackingChange:
+  internal_api_v1_rules.TrackingChange:
     properties:
       mount_id:
         type: string
@@ -1993,18 +2286,18 @@ definitions:
       rule_priority:
         type: integer
     type: object
-  rules.TrackingRulesConfigResponse:
+  internal_api_v1_rules.TrackingRulesConfigResponse:
     properties:
       enabled:
         type: integer
       rules:
         items:
-          $ref: '#/definitions/rules.RuleResponse'
+          $ref: '#/definitions/internal_api_v1_rules.RuleResponse'
         type: array
       total:
         type: integer
     type: object
-  rules.UpdateRuleRequest:
+  internal_api_v1_rules.UpdateRuleRequest:
     properties:
       action:
         enum:
@@ -2013,7 +2306,7 @@ definitions:
         type: string
       conditions:
         items:
-          $ref: '#/definitions/rules.ConditionRequest'
+          $ref: '#/definitions/internal_api_v1_rules.ConditionRequest'
         type: array
       description:
         type: string
@@ -2024,16 +2317,16 @@ definitions:
       priority:
         type: integer
     type: object
-  rules.UpdateTrackingRulesConfigRequest:
+  internal_api_v1_rules.UpdateTrackingRulesConfigRequest:
     properties:
       rules:
         items:
-          $ref: '#/definitions/rules.RuleConfigUpdate'
+          $ref: '#/definitions/internal_api_v1_rules.RuleConfigUpdate'
         type: array
     required:
     - rules
     type: object
-  search.CreateSavedSearchRequest:
+  internal_api_v1_search.CreateSavedSearchRequest:
     properties:
       description:
         type: string
@@ -2045,7 +2338,7 @@ definitions:
       name:
         type: string
       query:
-        $ref: '#/definitions/search.SearchFilesRequest'
+        $ref: '#/definitions/internal_api_v1_search.SearchFilesRequest'
       tags:
         items:
           type: string
@@ -2054,7 +2347,7 @@ definitions:
     - name
     - query
     type: object
-  search.FileResult:
+  internal_api_v1_search.FileResult:
     properties:
       audio_codec:
         type: string
@@ -2105,7 +2398,7 @@ definitions:
       width:
         type: integer
     type: object
-  search.ListSavedSearchesResponse:
+  internal_api_v1_search.ListSavedSearchesResponse:
     properties:
       page:
         type: integer
@@ -2113,12 +2406,12 @@ definitions:
         type: integer
       searches:
         items:
-          $ref: '#/definitions/search.SavedSearch'
+          $ref: '#/definitions/internal_api_v1_search.SavedSearch'
         type: array
       total_count:
         type: integer
     type: object
-  search.SavedSearch:
+  internal_api_v1_search.SavedSearch:
     properties:
       created_at:
         type: string
@@ -2136,7 +2429,7 @@ definitions:
       name:
         type: string
       query:
-        $ref: '#/definitions/search.SearchFilesRequest'
+        $ref: '#/definitions/internal_api_v1_search.SearchFilesRequest'
       run_count:
         type: integer
       tags:
@@ -2148,7 +2441,7 @@ definitions:
     required:
     - name
     type: object
-  search.SearchFilesRequest:
+  internal_api_v1_search.SearchFilesRequest:
     properties:
       durationFrom:
         description: Media metadata filters
@@ -2225,11 +2518,11 @@ definitions:
           media_kind'
         type: string
     type: object
-  search.SearchFilesResponse:
+  internal_api_v1_search.SearchFilesResponse:
     properties:
       files:
         items:
-          $ref: '#/definitions/search.FileResult'
+          $ref: '#/definitions/internal_api_v1_search.FileResult'
         type: array
       filters: {}
       page:
@@ -2243,7 +2536,7 @@ definitions:
       total_pages:
         type: integer
     type: object
-  search.SearchSuggestion:
+  internal_api_v1_search.SearchSuggestion:
     properties:
       count:
         description: Number of matching files
@@ -2258,16 +2551,16 @@ definitions:
         description: 'Type: "filename", "extension", "path", "recent"'
         type: string
     type: object
-  search.SearchSuggestionsResponse:
+  internal_api_v1_search.SearchSuggestionsResponse:
     properties:
       query_time_ms:
         type: integer
       suggestions:
         items:
-          $ref: '#/definitions/search.SearchSuggestion'
+          $ref: '#/definitions/internal_api_v1_search.SearchSuggestion'
         type: array
     type: object
-  search.UpdateSavedSearchRequest:
+  internal_api_v1_search.UpdateSavedSearchRequest:
     properties:
       description:
         type: string
@@ -2279,7 +2572,7 @@ definitions:
       name:
         type: string
       query:
-        $ref: '#/definitions/search.SearchFilesRequest'
+        $ref: '#/definitions/internal_api_v1_search.SearchFilesRequest'
       tags:
         items:
           type: string
@@ -2306,21 +2599,6 @@ definitions:
     - Second
     - Minute
     - Hour
-  utils.PagedResponse:
-    properties:
-      data: {}
-      filters:
-        additionalProperties: true
-        type: object
-      page:
-        type: integer
-      page_size:
-        type: integer
-      sort:
-        type: string
-      total:
-        type: integer
-    type: object
 host: localhost:8080
 info:
   contact:
@@ -2461,7 +2739,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Alert'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.Alert'
         "404":
           description: Not Found
           schema:
@@ -2555,14 +2833,14 @@ paths:
         name: destination
         required: true
         schema:
-          $ref: '#/definitions/models.CreateAlertDestinationParams'
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.CreateAlertDestinationParams'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.AlertDestination'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination'
         "400":
           description: Bad Request
           schema:
@@ -2617,7 +2895,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.AlertDestination'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination'
         "404":
           description: Not Found
           schema:
@@ -2644,7 +2922,7 @@ paths:
         name: destination
         required: true
         schema:
-          $ref: '#/definitions/models.UpdateAlertDestinationParams'
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.UpdateAlertDestinationParams'
       produces:
       - application/json
       responses:
@@ -2786,14 +3064,14 @@ paths:
         name: route
         required: true
         schema:
-          $ref: '#/definitions/models.CreateAlertRouteParams'
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.CreateAlertRouteParams'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.AlertRoute'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRoute'
         "400":
           description: Bad Request
           schema:
@@ -2848,7 +3126,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.AlertRoute'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRoute'
         "404":
           description: Not Found
           schema:
@@ -2875,7 +3153,7 @@ paths:
         name: route
         required: true
         schema:
-          $ref: '#/definitions/models.UpdateAlertRouteParams'
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.UpdateAlertRouteParams'
       produces:
       - application/json
       responses:
@@ -2940,14 +3218,14 @@ paths:
         name: rule
         required: true
         schema:
-          $ref: '#/definitions/models.CreateAlertRuleParams'
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.CreateAlertRuleParams'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.AlertRule'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule'
         "400":
           description: Bad Request
           schema:
@@ -3002,7 +3280,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.AlertRule'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule'
         "404":
           description: Not Found
           schema:
@@ -3029,7 +3307,7 @@ paths:
         name: rule
         required: true
         schema:
-          $ref: '#/definitions/models.UpdateAlertRuleParams'
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.UpdateAlertRuleParams'
       produces:
       - application/json
       responses:
@@ -3092,7 +3370,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diag.RealtimeDiagnostics'
+            $ref: '#/definitions/internal_api_v1_diag.RealtimeDiagnostics'
       summary: Get real-time diagnostics
       tags:
       - Diagnostics
@@ -3140,7 +3418,7 @@ paths:
         "200":
           description: Folder browsing data retrieved successfully
           schema:
-            $ref: '#/definitions/explorer.FolderBrowsingResponse'
+            $ref: '#/definitions/internal_api_v1_explorer.FolderBrowsingResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3218,7 +3496,7 @@ paths:
         "200":
           description: Files retrieved successfully
           schema:
-            $ref: '#/definitions/explorer.GetFilesByFolderResponse'
+            $ref: '#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3271,7 +3549,7 @@ paths:
         "200":
           description: Files retrieved successfully
           schema:
-            $ref: '#/definitions/explorer.GetFilesByFolderResponse'
+            $ref: '#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3325,7 +3603,7 @@ paths:
         "200":
           description: Files retrieved successfully
           schema:
-            $ref: '#/definitions/explorer.GetFilesByFolderResponse'
+            $ref: '#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3408,7 +3686,7 @@ paths:
         "200":
           description: Files retrieved successfully
           schema:
-            $ref: '#/definitions/explorer.PaginatedFileResponse'
+            $ref: '#/definitions/internal_api_v1_explorer.PaginatedFileResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3456,7 +3734,7 @@ paths:
         "200":
           description: Files retrieved successfully
           schema:
-            $ref: '#/definitions/explorer.GetFilesByFolderResponse'
+            $ref: '#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3504,7 +3782,7 @@ paths:
         "200":
           description: Files retrieved successfully
           schema:
-            $ref: '#/definitions/explorer.GetFilesByFolderResponse'
+            $ref: '#/definitions/internal_api_v1_explorer.GetFilesByFolderResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3557,7 +3835,7 @@ paths:
         "200":
           description: Folder tree retrieved successfully
           schema:
-            $ref: '#/definitions/explorer.GetFolderTreeResponse'
+            $ref: '#/definitions/internal_api_v1_explorer.GetFolderTreeResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3615,7 +3893,7 @@ paths:
         "200":
           description: Children retrieved successfully
           schema:
-            $ref: '#/definitions/explorer.GetTreeChildrenResponse'
+            $ref: '#/definitions/internal_api_v1_explorer.GetTreeChildrenResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3673,7 +3951,7 @@ paths:
         "200":
           description: Files retrieved successfully
           schema:
-            $ref: '#/definitions/metadata.GetFilesByDurationResponse'
+            $ref: '#/definitions/internal_api_v1_metadata.GetFilesByDurationResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3738,7 +4016,7 @@ paths:
         "200":
           description: Files retrieved successfully
           schema:
-            $ref: '#/definitions/metadata.GetFilesByLocationResponse'
+            $ref: '#/definitions/internal_api_v1_metadata.GetFilesByLocationResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3866,7 +4144,7 @@ paths:
         "200":
           description: Files retrieved successfully
           schema:
-            $ref: '#/definitions/metadata.GetFilesByResolutionResponse'
+            $ref: '#/definitions/internal_api_v1_metadata.GetFilesByResolutionResponse'
         "400":
           description: Invalid request parameters
           schema:
@@ -3987,18 +4265,7 @@ paths:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/gin.H'
-            - properties:
-                filters:
-                  type: object
-                mounts:
-                  items:
-                    $ref: '#/definitions/mounts.MountCatalogResponse'
-                  type: array
-                pagination:
-                  type: object
-              type: object
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -4027,7 +4294,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mounts.MountCatalogResponse'
+            $ref: '#/definitions/internal_api_v1_mounts.MountCatalogResponse'
         "400":
           description: Bad Request
           schema:
@@ -4061,19 +4328,14 @@ paths:
         name: request
         required: true
         schema:
-          allOf:
-          - $ref: '#/definitions/gin.H'
-          - properties:
-              is_tracked:
-                type: boolean
-            type: object
+          type: object
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mounts.MountCatalogResponse'
+            $ref: '#/definitions/internal_api_v1_mounts.MountCatalogResponse'
         "400":
           description: Bad Request
           schema:
@@ -4101,14 +4363,14 @@ paths:
         in: body
         name: request
         schema:
-          $ref: '#/definitions/mounts.DiscoverMountsRequest'
+          $ref: '#/definitions/internal_api_v1_mounts.DiscoverMountsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mounts.DiscoverMountsResponse'
+            $ref: '#/definitions/internal_api_v1_mounts.DiscoverMountsResponse'
         "400":
           description: Bad Request
           schema:
@@ -4130,7 +4392,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mounts.MountCatalogSummaryResponse'
+            $ref: '#/definitions/internal_api_v1_mounts.MountCatalogSummaryResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -4138,6 +4400,82 @@ paths:
       summary: Get mount catalog summary
       tags:
       - docker-mounts
+  /api/v1/organizations/me:
+    get:
+      consumes:
+      - application/json
+      description: Get the organization details for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization details with stats
+          schema:
+            $ref: '#/definitions/internal_api_v1_organizations.OrganizationWithStatsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Organization not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get current organization
+      tags:
+      - organizations
+    put:
+      consumes:
+      - application/json
+      description: Update organization details (admin only)
+      parameters:
+      - description: Organization update details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_organizations.UpdateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated organization details
+          schema:
+            $ref: '#/definitions/internal_api_v1_organizations.OrganizationResponse'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Organization not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update current organization
+      tags:
+      - organizations
   /api/v1/rules:
     get:
       description: Lists all tracking rules with optional filtering by enabled status
@@ -4157,7 +4495,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.ListRulesResponse'
+            $ref: '#/definitions/internal_api_v1_rules.ListRulesResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -4175,14 +4513,14 @@ paths:
         name: rule
         required: true
         schema:
-          $ref: '#/definitions/rules.CreateRuleRequest'
+          $ref: '#/definitions/internal_api_v1_rules.CreateRuleRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/rules.RuleResponse'
+            $ref: '#/definitions/internal_api_v1_rules.RuleResponse'
         "400":
           description: Bad Request
           schema:
@@ -4231,7 +4569,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.RuleResponse'
+            $ref: '#/definitions/internal_api_v1_rules.RuleResponse'
         "400":
           description: Bad Request
           schema:
@@ -4258,14 +4596,14 @@ paths:
         name: rule
         required: true
         schema:
-          $ref: '#/definitions/rules.UpdateRuleRequest'
+          $ref: '#/definitions/internal_api_v1_rules.UpdateRuleRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.RuleResponse'
+            $ref: '#/definitions/internal_api_v1_rules.RuleResponse'
         "400":
           description: Bad Request
           schema:
@@ -4296,7 +4634,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.RuleResponse'
+            $ref: '#/definitions/internal_api_v1_rules.RuleResponse'
         "400":
           description: Bad Request
           schema:
@@ -4327,7 +4665,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.RuleResponse'
+            $ref: '#/definitions/internal_api_v1_rules.RuleResponse'
         "400":
           description: Bad Request
           schema:
@@ -4361,7 +4699,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.ListRuleTemplatesResponse'
+            $ref: '#/definitions/internal_api_v1_rules.ListRuleTemplatesResponse'
       summary: Get rule templates
       tags:
       - tracking-rules
@@ -4472,7 +4810,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/search.SearchFilesResponse'
+            $ref: '#/definitions/internal_api_v1_search.SearchFilesResponse'
       summary: Search files with advanced filters
       tags:
       - Search
@@ -4503,7 +4841,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/search.ListSavedSearchesResponse'
+            $ref: '#/definitions/internal_api_v1_search.ListSavedSearchesResponse'
       summary: List saved searches
       tags:
       - Search
@@ -4517,14 +4855,14 @@ paths:
         name: search
         required: true
         schema:
-          $ref: '#/definitions/search.CreateSavedSearchRequest'
+          $ref: '#/definitions/internal_api_v1_search.CreateSavedSearchRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/search.SavedSearch'
+            $ref: '#/definitions/internal_api_v1_search.SavedSearch'
       summary: Create a saved search
       tags:
       - Search
@@ -4563,7 +4901,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/search.SavedSearch'
+            $ref: '#/definitions/internal_api_v1_search.SavedSearch'
       summary: Get a saved search
       tags:
       - Search
@@ -4582,14 +4920,14 @@ paths:
         name: search
         required: true
         schema:
-          $ref: '#/definitions/search.UpdateSavedSearchRequest'
+          $ref: '#/definitions/internal_api_v1_search.UpdateSavedSearchRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/search.SavedSearch'
+            $ref: '#/definitions/internal_api_v1_search.SavedSearch'
       summary: Update a saved search
       tags:
       - Search
@@ -4610,7 +4948,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/search.SearchFilesResponse'
+            $ref: '#/definitions/internal_api_v1_search.SearchFilesResponse'
       summary: Run a saved search
       tags:
       - Search
@@ -4640,7 +4978,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/search.SearchSuggestionsResponse'
+            $ref: '#/definitions/internal_api_v1_search.SearchSuggestionsResponse'
       summary: Get search suggestions
       tags:
       - Search
@@ -4654,14 +4992,14 @@ paths:
         in: body
         name: request
         schema:
-          $ref: '#/definitions/rules.ApplyTrackingRulesRequest'
+          $ref: '#/definitions/internal_api_v1_rules.ApplyTrackingRulesRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.ApplyTrackingRulesResponse'
+            $ref: '#/definitions/internal_api_v1_rules.ApplyTrackingRulesResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -4678,7 +5016,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.ListMountOverridesResponse'
+            $ref: '#/definitions/internal_api_v1_rules.ListMountOverridesResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -4697,14 +5035,14 @@ paths:
         name: override
         required: true
         schema:
-          $ref: '#/definitions/rules.CreateMountOverrideRequest'
+          $ref: '#/definitions/internal_api_v1_rules.CreateMountOverrideRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/rules.MountOverrideResponse'
+            $ref: '#/definitions/internal_api_v1_rules.MountOverrideResponse'
         "400":
           description: Bad Request
           schema:
@@ -4754,14 +5092,14 @@ paths:
         in: body
         name: request
         schema:
-          $ref: '#/definitions/rules.PreviewRequest'
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.PreviewRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.PreviewResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_rules.PreviewResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -4779,7 +5117,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.TrackingRulesConfigResponse'
+            $ref: '#/definitions/internal_api_v1_rules.TrackingRulesConfigResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -4798,14 +5136,14 @@ paths:
         name: config
         required: true
         schema:
-          $ref: '#/definitions/rules.UpdateTrackingRulesConfigRequest'
+          $ref: '#/definitions/internal_api_v1_rules.UpdateTrackingRulesConfigRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rules.TrackingRulesConfigResponse'
+            $ref: '#/definitions/internal_api_v1_rules.TrackingRulesConfigResponse'
         "400":
           description: Bad Request
           schema:
@@ -4817,6 +5155,324 @@ paths:
       summary: Update tracking rules configuration
       tags:
       - tracking-rules-config
+  /auth/accept-invitation:
+    post:
+      consumes:
+      - application/json
+      description: Accept an organization invitation for an existing user
+      parameters:
+      - description: Invitation acceptance
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.AcceptInvitationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Accept organization invitation
+      tags:
+      - auth
+  /auth/csrf:
+    get:
+      description: Get CSRF token for state-changing operations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get CSRF token
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: User login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Logout user and revoke session
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Logout
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Get authenticated user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_auth.UserProfile'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get current user profile
+      tags:
+      - auth
+  /auth/password/change:
+    post:
+      consumes:
+      - application/json
+      description: Change authenticated user's password
+      parameters:
+      - description: Password change request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.PasswordChangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Change password
+      tags:
+      - auth
+  /auth/password/force-change:
+    post:
+      consumes:
+      - application/json
+      description: Change default admin password (requires current default password)
+      parameters:
+      - description: Forced password change request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.ForcePasswordChangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Force password change for default admin
+      tags:
+      - auth
+  /auth/password/reset:
+    post:
+      consumes:
+      - application/json
+      description: Request password reset email
+      parameters:
+      - description: Password reset request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.PasswordResetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Request password reset
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access token using refresh token
+      parameters:
+      - description: Refresh token request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account
+      parameters:
+      - description: Registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: User registration
+      tags:
+      - auth
+  /auth/register/invitation:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with an organization invitation token
+      parameters:
+      - description: Registration with invitation
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.RegisterWithInvitationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Register with invitation token
+      tags:
+      - auth
   /files/{file_id}/preview:
     get:
       consumes:
@@ -5067,14 +5723,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_api_v1_previews.PreviewRequest'
+          $ref: '#/definitions/internal_api_v1_previews.PreviewRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Preview generated successfully
           schema:
-            $ref: '#/definitions/previews.PreviewResponse'
+            $ref: '#/definitions/internal_api_v1_previews.PreviewResponse'
         "400":
           description: Bad request
           schema:
@@ -5246,7 +5902,7 @@ paths:
         "200":
           description: Paginated list of orphaned volumes
           schema:
-            $ref: '#/definitions/utils.PagedResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse'
         "400":
           description: Bad request
           schema:
@@ -5345,8 +6001,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get comprehensive progress information including phases, items,
-        and errors
+      description: Get comprehensive progress information including phases, sub-phases,
+        items, errors, and confidence indicators
       parameters:
       - description: Scan ID
         in: path
@@ -5357,7 +6013,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Comprehensive scan progress
+          description: Comprehensive scan progress with sub-phase details
           schema:
             additionalProperties: true
             type: object
@@ -5369,7 +6025,7 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/ErrorResponse'
-      summary: Get detailed scan progress
+      summary: Get detailed scan progress with sub-phase information
       tags:
       - scan
   /scans/active:
@@ -5921,7 +6577,7 @@ paths:
         "200":
           description: Paginated list of volumes
           schema:
-            $ref: '#/definitions/utils.PagedResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse'
         "400":
           description: Bad request
           schema:
@@ -6187,7 +6843,7 @@ paths:
         "200":
           description: List of container attachments
           schema:
-            $ref: '#/definitions/utils.PagedResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse'
         "400":
           description: Bad request
           schema:
@@ -6244,7 +6900,7 @@ paths:
       parameters:
       - description: Volume ID
         in: path
-        name: id
+        name: volumeId
         required: true
         type: string
       produces:

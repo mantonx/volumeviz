@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/mantonx/volumeviz/internal/api/middleware"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	apiutils "github.com/mantonx/volumeviz/internal/api/utils"
 	"github.com/mantonx/volumeviz/internal/config"
@@ -171,14 +173,35 @@ func (h *Handler) volumePassesFilters(vol models.VolumeV1, filters *apiutils.Vol
 
 // getVolumesFromDocker retrieves volumes from Docker API with filtering
 func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils.PaginationParams, sortParams []apiutils.SortParam, filters *apiutils.VolumeFilters) ([]models.VolumeV1, int64, error) {
+	// Get organization ID from context
+	orgID, hasOrg := middleware.GetOrganizationID(ctx)
+	
 	// Get all volumes from Docker
 	volumes, err := h.dockerService.ListVolumes(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Apply filters
+	// Apply basic filters first
 	filtered := h.filterVolumes(volumes, filters)
+
+	// Filter by organization if organization context is available
+	if hasOrg && h.store != nil {
+		orgFiltered := make([]coremodels.Volume, 0)
+		for _, vol := range filtered {
+			// Check if volume belongs to this organization
+			if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, vol.VolumeID); err == nil {
+				if dbVol.OrganizationID != nil && *dbVol.OrganizationID == orgID {
+					orgFiltered = append(orgFiltered, vol)
+				}
+			} else {
+				// If volume not in database yet, we may want to consider it as unassigned
+				// For now, skip volumes not in the database when org context is required
+				continue
+			}
+		}
+		filtered = orgFiltered
+	}
 
 	// Convert to API format and enhance with VolumeViz scanner data
 	apiVolumes := make([]models.VolumeV1, 0, len(filtered))
@@ -201,17 +224,28 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 			}
 
 			// Get last scan timestamp from database
-			if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, vol.VolumeID); err == nil && dbVol.LastScanned != nil {
-				apiVol.LastScanAt = dbVol.LastScanned
+			if hasOrg {
+				if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, vol.VolumeID); err == nil && dbVol.LastScanned != nil {
+					apiVol.LastScanAt = dbVol.LastScanned
+				}
+			} else {
+				// Without organization context, we can't query volume-specific data
+				// This should rarely happen as we filter by organization above
 			}
 
 			// Get latest scan status and progress
 			if queries, ok := h.store.Queries().(*sqlc.Queries); ok {
-				if latestScan, err := queries.GetLatestScanJobByVolumeID(ctx, vol.VolumeID); err == nil {
+				if latestScans, err := queries.ListScanJobsByVolume(ctx, sqlc.ListScanJobsByVolumeParams{
+					VolumeID: pgtype.Text{String: vol.VolumeID, Valid: true},
+					Limit:    1,
+					Offset:   0,
+				}); err == nil && len(latestScans) > 0 {
+					latestScan := latestScans[0]
 					apiVol.ScanStatus = &latestScan.Status
 					apiVol.LastScanID = &latestScan.ScanID
-					if latestScan.Progress.Valid {
-						progress := int(latestScan.Progress.Int32)
+					// Calculate progress from scanned/total files
+					if latestScan.TotalFiles.Valid && latestScan.ScannedFiles.Valid && latestScan.TotalFiles.Int64 > 0 {
+						progress := int((latestScan.ScannedFiles.Int64 * 100) / latestScan.TotalFiles.Int64)
 						apiVol.ScanProgress = &progress
 					}
 				}
@@ -662,6 +696,20 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		return
 	}
 
+	// Check organization access if organization context is available
+	if orgID, hasOrg := middleware.GetOrganizationID(ctx); hasOrg && h.store != nil {
+		if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, volumeName); err == nil {
+			if dbVol.OrganizationID == nil || *dbVol.OrganizationID != orgID {
+				apiutils.RespondWithNotFound(c, fmt.Sprintf("Volume '%s' not found", volumeName))
+				return
+			}
+		} else {
+			// Volume not in database, deny access when organization context is required
+			apiutils.RespondWithNotFound(c, fmt.Sprintf("Volume '%s' not found", volumeName))
+			return
+		}
+	}
+
 	// Get container attachments
 	containers, err := h.dockerService.GetVolumeContainers(ctx, volumeName)
 	if err != nil {
@@ -704,17 +752,25 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		}
 
 		// Get last scan timestamp from database
-		if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, volumeName); err == nil && dbVol.LastScanned != nil {
-			lastScanAt = dbVol.LastScanned
+		if orgID, hasOrg := middleware.GetOrganizationID(ctx); hasOrg {
+			if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, volumeName); err == nil && dbVol.LastScanned != nil {
+				lastScanAt = dbVol.LastScanned
+			}
 		}
 
 		// Get latest scan status and progress
 		if queries, ok := h.store.Queries().(*sqlc.Queries); ok {
-			if latestScan, err := queries.GetLatestScanJobByVolumeID(ctx, volumeName); err == nil {
+			if latestScans, err := queries.ListScanJobsByVolume(ctx, sqlc.ListScanJobsByVolumeParams{
+				VolumeID: pgtype.Text{String: volumeName, Valid: true},
+				Limit:    1,
+				Offset:   0,
+			}); err == nil && len(latestScans) > 0 {
+				latestScan := latestScans[0]
 				scanStatus = &latestScan.Status
 				lastScanID = &latestScan.ScanID
-				if latestScan.Progress.Valid {
-					progress := int(latestScan.Progress.Int32)
+				// Calculate progress from scanned/total files
+				if latestScan.TotalFiles.Valid && latestScan.ScannedFiles.Valid && latestScan.TotalFiles.Int64 > 0 {
+					progress := int((latestScan.ScannedFiles.Int64 * 100) / latestScan.TotalFiles.Int64)
 					scanProgress = &progress
 				}
 			}
@@ -799,6 +855,20 @@ func (h *Handler) GetVolumeAttachments(c *gin.Context) {
 		return
 	}
 
+	// Check organization access if organization context is available
+	if orgID, hasOrg := middleware.GetOrganizationID(ctx); hasOrg && h.store != nil {
+		if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, volumeName); err == nil {
+			if dbVol.OrganizationID == nil || *dbVol.OrganizationID != orgID {
+				apiutils.RespondWithNotFound(c, fmt.Sprintf("Volume '%s' not found", volumeName))
+				return
+			}
+		} else {
+			// Volume not in database, deny access when organization context is required
+			apiutils.RespondWithNotFound(c, fmt.Sprintf("Volume '%s' not found", volumeName))
+			return
+		}
+	}
+
 	// Get containers using this volume
 	containers, err := h.dockerService.GetVolumeContainers(ctx, volumeName)
 	if err != nil {
@@ -868,6 +938,28 @@ func (h *Handler) GetVolumeStats(c *gin.Context) {
 			Details: map[string]any{"error": err.Error()},
 		})
 		return
+	}
+
+	// Check organization access if organization context is available
+	if orgID, hasOrg := middleware.GetOrganizationID(ctx); hasOrg && h.store != nil {
+		if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, volumeID); err == nil {
+			if dbVol.OrganizationID == nil || *dbVol.OrganizationID != orgID {
+				c.JSON(http.StatusNotFound, models.ErrorResponse{
+					Error:   "Volume not found",
+					Code:    "VOLUME_NOT_FOUND",
+					Details: map[string]any{"volume_id": volumeID},
+				})
+				return
+			}
+		} else {
+			// Volume not in database, deny access when organization context is required
+			c.JSON(http.StatusNotFound, models.ErrorResponse{
+				Error:   "Volume not found",
+				Code:    "VOLUME_NOT_FOUND",
+				Details: map[string]any{"volume_id": volumeID},
+			})
+			return
+		}
 	}
 
 	// Get containers using this volume for additional stats

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/db/sqlc"
+	sqlcSQLite "github.com/mantonx/volumeviz/internal/db/sqlc-sqlite"
 	"github.com/mantonx/volumeviz/internal/repo"
 	"github.com/mantonx/volumeviz/internal/store"
 )
@@ -260,75 +262,33 @@ func (h *Handler) executeRepoSearch(ctx context.Context, params repo.SearchFiles
 	}
 
 	// Execute search
-	files, err := searchRepo.SearchFiles(ctx, params)
+	filesInterface, err := searchRepo.SearchFiles(ctx, params)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to execute search: %w", err)
 	}
 
-	// Convert to FileResult
+	// Convert to FileResult based on database type
 	var results []FileResult
-	for _, file := range files {
-		r := FileResult{
-			ID:           file.ID,
-			VolumeID:     file.VolumeID,
-			Path:         file.Path,
-			Name:         file.Name,
-			Size:         file.SizeBytes,
-			DiskUsage:    file.DiskUsageBytes,
-			ModifiedTime: &file.Mtime,
-			CreatedTime:  &file.Ctime,
-		}
+	if filesInterface == nil {
+		return results, totalCount, nil
+	}
 
-		// Handle nullable fields
-		if file.Extension.Valid {
-			r.Extension = file.Extension.String
+	// Type assertion based on the database type
+	switch files := filesInterface.(type) {
+	case []sqlc.SearchFilesRow:
+		// PostgreSQL results
+		results = make([]FileResult, len(files))
+		for i, file := range files {
+			results[i] = h.convertPostgreSQLFileRow(file)
 		}
-		if file.Mime.Valid {
-			r.MimeType = file.Mime.String
+	case []sqlcSQLite.SearchFilesRow:
+		// SQLite results
+		results = make([]FileResult, len(files))
+		for i, file := range files {
+			results[i] = h.convertSQLiteFileRow(file)
 		}
-		if file.MediaKind.Valid {
-			r.MediaKind = file.MediaKind.String
-		}
-		if file.DurationMs.Valid {
-			r.Duration = &file.DurationMs.Int64
-		}
-		if file.Width.Valid {
-			r.Width = &file.Width.Int32
-		}
-		if file.Height.Valid {
-			r.Height = &file.Height.Int32
-		}
-		if file.VideoCodec.Valid {
-			r.VideoCodec = &file.VideoCodec.String
-		}
-		if file.AudioCodec.Valid {
-			r.AudioCodec = &file.AudioCodec.String
-		}
-		if file.GpsLatitude.Valid && file.GpsLongitude.Valid {
-			r.HasGPS = true
-			// Convert pgtype.Numeric to float64
-			latFloat, err := file.GpsLatitude.Float64Value()
-			if err == nil {
-				r.GPSLat = &latFloat.Float64
-			}
-			lonFloat, err := file.GpsLongitude.Float64Value()
-			if err == nil {
-				r.GPSLon = &lonFloat.Float64
-			}
-		}
-		if file.CameraModel.Valid {
-			r.CameraModel = &file.CameraModel.String
-		}
-		if file.CaptureDatetime.Valid {
-			r.CaptureDate = &file.CaptureDatetime.Time
-		}
-
-		// Add preview URL if the file type supports previews
-		if h.canGeneratePreview(r.MimeType) {
-			r.PreviewURL = fmt.Sprintf("/api/v1/previews/%d", file.ID)
-		}
-
-		results = append(results, r)
+	default:
+		return nil, 0, fmt.Errorf("unexpected search result type: %T", filesInterface)
 	}
 
 	return results, totalCount, nil
@@ -406,4 +366,83 @@ func (h *Handler) getActiveFilters(req SearchFilesRequest) map[string]interface{
 	}
 
 	return filters
+}
+
+// convertPostgreSQLFileRow converts PostgreSQL SearchFilesRow to FileResult
+func (h *Handler) convertPostgreSQLFileRow(row sqlc.SearchFilesRow) FileResult {
+	result := FileResult{
+		ID:        row.ID,
+		VolumeID:  row.VolumeID,
+		Path:      row.Path,
+		Name:      row.Name,
+		Size:      row.SizeBytes,
+		DiskUsage: row.SizeBytes, // Assume disk usage equals file size for now
+	}
+
+	// Handle optional fields
+	if row.Extension.Valid {
+		result.Extension = row.Extension.String
+	}
+	if row.Mime.Valid {
+		result.MimeType = row.Mime.String
+	}
+	if row.MediaKind.Valid {
+		result.MediaKind = row.MediaKind.String
+	}
+
+	// Time fields
+	result.CreatedTime = &row.CreatedAt
+	if row.ModifiedAt.Valid {
+		result.ModifiedTime = &row.ModifiedAt.Time
+	}
+	if row.AccessedAt.Valid {
+		result.CreatedTime = &row.AccessedAt.Time
+	}
+
+	// Generate preview URL if applicable
+	if h.canGeneratePreview(result.MimeType) {
+		result.PreviewURL = fmt.Sprintf("/api/v1/files/%d/preview", result.ID)
+	}
+
+	return result
+}
+
+// convertSQLiteFileRow converts SQLite SearchFilesRow to FileResult
+func (h *Handler) convertSQLiteFileRow(row sqlcSQLite.SearchFilesRow) FileResult {
+	result := FileResult{
+		ID:        row.ID,
+		VolumeID:  row.VolumeID,
+		Path:      row.Path,
+		Name:      row.Name,
+		Size:      row.SizeBytes,
+		DiskUsage: row.SizeBytes, // Assume disk usage equals file size for now
+	}
+
+	// Handle optional fields
+	if row.Extension.Valid {
+		result.Extension = row.Extension.String
+	}
+	if row.Mime.Valid {
+		result.MimeType = row.Mime.String
+	}
+	if row.MediaKind.Valid {
+		result.MediaKind = row.MediaKind.String
+	}
+
+	// Time fields
+	result.CreatedTime = &row.CreatedAt
+	// Note: SQLite has modified_at and accessed_at as strings, need to parse
+	if row.ModifiedAt.Valid {
+		if t, err := time.Parse(time.RFC3339, row.ModifiedAt.String); err == nil {
+			result.ModifiedTime = &t
+		}
+	}
+	// Note: Accessed time would need similar parsing but the FileResult doesn't have it
+
+	// Generate preview URL if applicable
+	if h.canGeneratePreview(result.MimeType) {
+		result.PreviewURL = fmt.Sprintf("/api/v1/files/%d/preview", result.ID)
+	}
+
+	return result
 }

@@ -479,7 +479,7 @@ func (ts *TestStore) Close() error {
 // TestVolumesRepo implements VolumesRepository for testing
 type TestVolumesRepo struct{}
 
-func (tr *TestVolumesRepo) UpdateLastScanned(ctx context.Context, volumeID string, lastScanned time.Time) error {
+func (tr *TestVolumesRepo) UpdateLastScanned(ctx context.Context, organizationID int64, volumeID string, lastScanned time.Time) error {
 	return nil
 }
 

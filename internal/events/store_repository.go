@@ -34,24 +34,41 @@ func (r *storeRepository) UpsertVolume(ctx context.Context, volume *models.Volum
 		IsActive:   volume.IsActive,
 	}
 
-	_, err := r.store.Volumes().UpsertVolume(ctx, params)
+	// Determine organization ID for volume upsert (events are system-level operations)
+	organizationID := int64(1) // Default organization
+	
+	// Try to get existing volume to preserve organization assignment  
+	if existingVolume, err := r.store.Volumes().GetVolumeByVolumeIDSystemLevel(ctx, volume.VolumeID); err == nil {
+		if existingVolume.OrganizationID != nil {
+			organizationID = *existingVolume.OrganizationID
+		}
+	}
+	// Note: Could add organization detection logic based on volume labels/properties here
+
+	_, err := r.store.Volumes().UpsertVolume(ctx, organizationID, params)
 	return err
 }
 
 func (r *storeRepository) DeleteVolume(ctx context.Context, volumeID string) error {
-	// First get the volume by VolumeID to get the internal ID
-	volume, err := r.store.Volumes().GetVolumeByVolumeID(ctx, volumeID)
+	// Events service operates at system level - get volume first to determine organization
+	volume, err := r.store.Volumes().GetVolumeByVolumeIDSystemLevel(ctx, volumeID)
 	if err != nil {
 		return err
 	}
-
-	// Then soft delete using the internal ID
-	return r.store.Volumes().SoftDeleteVolume(ctx, volume.ID)
+	
+	organizationID := int64(1) // Default fallback
+	if volume.OrganizationID != nil {
+		organizationID = *volume.OrganizationID
+	}
+	
+	// Soft delete the volume by volumeID
+	return r.store.Volumes().SoftDeleteVolume(ctx, organizationID, volumeID)
 }
 
 func (r *storeRepository) GetVolumeByName(ctx context.Context, name string) (*models.Volume, error) {
 	// Our repository uses VolumeID (which is the Docker volume name)
-	return r.store.Volumes().GetVolumeByVolumeID(ctx, name)
+	// Events service operates at system level - use system-level lookup
+	return r.store.Volumes().GetVolumeByVolumeIDSystemLevel(ctx, name)
 }
 
 // Container operations - delegate to store.Volumes() repository (which handles containers too)
@@ -162,8 +179,8 @@ func (r *storeRepository) DeactivateVolumeMounts(ctx context.Context, containerI
 
 // Bulk operations for reconciliation - delegate to store.Volumes() repository
 func (r *storeRepository) ListAllVolumes(ctx context.Context) ([]*models.Volume, error) {
-	// Use a large limit for "all" - in production this might need pagination
-	return r.store.Volumes().ListVolumes(ctx, 10000, 0)
+	// Use a large limit for "all" - events service operates at system level across orgs
+	return r.store.Volumes().ListAllVolumes(ctx, 10000, 0)
 }
 
 func (r *storeRepository) ListAllContainers(ctx context.Context) ([]*models.Container, error) {

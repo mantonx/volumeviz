@@ -86,7 +86,8 @@ func (r *StoreBasedRepository) GetActiveScanRuns(ctx context.Context) ([]*models
 
 // Volume operations
 func (r *StoreBasedRepository) ListVolumes(ctx context.Context) ([]*models.Volume, error) {
-	return r.store.Volumes().ListVolumes(ctx, 1000, 0)
+	// Scheduler lists volumes across all organizations (system-level operation)
+	return r.store.Volumes().ListAllVolumes(ctx, 1000, 0)
 }
 
 func (r *StoreBasedRepository) UpsertVolume(ctx context.Context, volume *models.Volume) error {
@@ -103,7 +104,18 @@ func (r *StoreBasedRepository) UpsertVolume(ctx context.Context, volume *models.
 		IsActive:   volume.IsActive,
 	}
 
-	_, err := r.store.Volumes().UpsertVolume(ctx, params)
+	// Determine organization ID for volume upsert
+	organizationID := int64(1) // Default organization
+	
+	// Try to get existing volume to preserve organization assignment
+	if existingVolume, err := r.store.Volumes().GetVolumeByVolumeIDSystemLevel(ctx, volume.VolumeID); err == nil {
+		if existingVolume.OrganizationID != nil {
+			organizationID = *existingVolume.OrganizationID
+		}
+	}
+	// Note: Could add organization detection logic based on volume labels/properties here
+
+	_, err := r.store.Volumes().UpsertVolume(ctx, organizationID, params)
 	return err
 }
 

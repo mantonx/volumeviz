@@ -105,7 +105,8 @@ func (vs *VolumeScanner) getVolumePath(volumeID string) (string, error) {
 
 	// Second priority: Check database for custom mountpoint (for backwards compatibility)
 	if vs.store != nil {
-		if dbVolume, err := vs.store.Volumes().GetVolumeByVolumeID(ctx, volumeID); err == nil && dbVolume != nil {
+		// Scanner operates at system level - use system-level volume lookup
+		if dbVolume, err := vs.store.Volumes().GetVolumeByVolumeIDSystemLevel(ctx, volumeID); err == nil && dbVolume != nil {
 			if dbVolume.Mountpoint != "" {
 				// Skip Docker default paths - these are handled by Docker volume info
 				if !strings.HasPrefix(dbVolume.Mountpoint, "/var/lib/docker/volumes/") {

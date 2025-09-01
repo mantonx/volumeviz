@@ -2,9 +2,13 @@ package organizations
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mantonx/volumeviz/internal/audit"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
 )
@@ -119,40 +123,369 @@ func NewService(queries *sqlc.Queries, auditLogger audit.Logger) Service {
 	}
 }
 
-// Stub implementations - TODO: Replace with actual SQLC-generated methods
+// SQLC-based implementations
 
 func (s *DefaultService) CreateOrganization(ctx context.Context, req CreateOrganizationRequest) (*Organization, error) {
-	return nil, fmt.Errorf("CreateOrganization not implemented yet - waiting for SQLC generation")
+	// Serialize settings to JSON
+	settingsBytes, err := json.Marshal(req.Settings)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize settings: %w", err)
+	}
+	
+	// Set default values
+	maxUsers := int32(100)
+	maxVolumes := int32(1000)
+	maxStorageGB := int64(1000)
+	planType := "basic"
+	
+	if req.MaxUsers != nil {
+		maxUsers = *req.MaxUsers
+	}
+	if req.MaxVolumes != nil {
+		maxVolumes = *req.MaxVolumes
+	}
+	if req.MaxStorageGB != nil {
+		maxStorageGB = *req.MaxStorageGB
+	}
+	if req.PlanType != nil {
+		planType = *req.PlanType
+	}
+	
+	// Create organization
+	orgRecord, err := s.queries.CreateOrganization(ctx, sqlc.CreateOrganizationParams{
+		Name:         req.Name,
+		DisplayName:  req.DisplayName,
+		Description:  pgtype.Text{String: getStringValue(req.Description), Valid: req.Description != nil},
+		Subdomain:    pgtype.Text{String: getStringValue(req.Subdomain), Valid: req.Subdomain != nil},
+		Settings:     settingsBytes,
+		MaxUsers:     pgtype.Int4{Int32: maxUsers, Valid: true},
+		MaxVolumes:   pgtype.Int4{Int32: maxVolumes, Valid: true},
+		MaxStorageGb: pgtype.Int8{Int64: maxStorageGB, Valid: true},
+		PlanType:     pgtype.Text{String: planType, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create organization: %w", err)
+	}
+	
+	// Convert to service type
+	org := convertSQLCOrganization(orgRecord)
+	
+	// Log audit event
+	s.auditLogger.LogEvent(ctx, audit.Event{
+		Action:       "organization.created",
+		ResourceType: "organization",
+		ResourceID:   fmt.Sprintf("%d", org.ID),
+		Details:      fmt.Sprintf("Organization '%s' created", org.Name),
+	})
+	
+	return org, nil
 }
 
 func (s *DefaultService) GetOrganization(ctx context.Context, orgID int64) (*Organization, error) {
-	return nil, fmt.Errorf("GetOrganization not implemented yet - waiting for SQLC generation")
+	orgRecord, err := s.queries.GetOrganizationByID(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization: %w", err)
+	}
+	
+	return convertSQLCOrganization(orgRecord), nil
 }
 
 func (s *DefaultService) UpdateOrganization(ctx context.Context, orgID int64, req UpdateOrganizationRequest) (*Organization, error) {
-	return nil, fmt.Errorf("UpdateOrganization not implemented yet - waiting for SQLC generation")
+	// Get current organization to preserve existing values
+	currentOrg, err := s.queries.GetOrganizationByID(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current organization: %w", err)
+	}
+	
+	// Prepare update parameters with coalescing
+	displayName := currentOrg.DisplayName
+	if req.DisplayName != nil {
+		displayName = *req.DisplayName
+	}
+	
+	description := currentOrg.Description
+	if req.Description != nil {
+		description = pgtype.Text{String: *req.Description, Valid: true}
+	}
+	
+	subdomain := currentOrg.Subdomain
+	if req.Subdomain != nil {
+		subdomain = pgtype.Text{String: *req.Subdomain, Valid: true}
+	}
+	
+	// Handle settings merge
+	settingsBytes := currentOrg.Settings
+	if req.Settings != nil {
+		settingsBytes, err = json.Marshal(req.Settings)
+		if err != nil {
+			return nil, fmt.Errorf("failed to serialize settings: %w", err)
+		}
+	}
+	
+	maxUsers := currentOrg.MaxUsers
+	if req.MaxUsers != nil {
+		maxUsers = pgtype.Int4{Int32: *req.MaxUsers, Valid: true}
+	}
+	
+	maxVolumes := currentOrg.MaxVolumes
+	if req.MaxVolumes != nil {
+		maxVolumes = pgtype.Int4{Int32: *req.MaxVolumes, Valid: true}
+	}
+	
+	maxStorageGb := currentOrg.MaxStorageGb
+	if req.MaxStorageGB != nil {
+		maxStorageGb = pgtype.Int8{Int64: *req.MaxStorageGB, Valid: true}
+	}
+	
+	planType := currentOrg.PlanType
+	if req.PlanType != nil {
+		planType = pgtype.Text{String: *req.PlanType, Valid: true}
+	}
+	
+	// Update organization
+	orgRecord, err := s.queries.UpdateOrganization(ctx, sqlc.UpdateOrganizationParams{
+		ID:           orgID,
+		DisplayName:  displayName,
+		Description:  description,
+		Subdomain:    subdomain,
+		Settings:     settingsBytes,
+		MaxUsers:     maxUsers,
+		MaxVolumes:   maxVolumes,
+		MaxStorageGb: maxStorageGb,
+		PlanType:     planType,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update organization: %w", err)
+	}
+	
+	org := convertSQLCOrganization(orgRecord)
+	
+	// Log audit event
+	s.auditLogger.LogEvent(ctx, audit.Event{
+		Action:       "organization.updated",
+		ResourceType: "organization",
+		ResourceID:   fmt.Sprintf("%d", org.ID),
+		Details:      fmt.Sprintf("Organization '%s' updated", org.Name),
+	})
+	
+	return org, nil
 }
 
 func (s *DefaultService) DeactivateOrganization(ctx context.Context, orgID int64) error {
-	return fmt.Errorf("DeactivateOrganization not implemented yet - waiting for SQLC generation")
+	err := s.queries.DeactivateOrganization(ctx, orgID)
+	if err != nil {
+		return fmt.Errorf("failed to deactivate organization: %w", err)
+	}
+	
+	// Log audit event
+	s.auditLogger.LogEvent(ctx, audit.Event{
+		Action:       "organization.deactivated",
+		ResourceType: "organization",
+		ResourceID:   fmt.Sprintf("%d", orgID),
+		Details:      fmt.Sprintf("Organization %d deactivated", orgID),
+	})
+	
+	return nil
 }
 
 func (s *DefaultService) ListOrganizations(ctx context.Context, limit, offset int32) ([]*Organization, error) {
-	return nil, fmt.Errorf("ListOrganizations not implemented yet - waiting for SQLC generation")
+	orgRecords, err := s.queries.ListOrganizations(ctx, sqlc.ListOrganizationsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list organizations: %w", err)
+	}
+	
+	orgs := make([]*Organization, 0, len(orgRecords))
+	for _, orgRecord := range orgRecords {
+		orgs = append(orgs, convertSQLCOrganization(orgRecord))
+	}
+	
+	return orgs, nil
 }
 
 func (s *DefaultService) InviteUser(ctx context.Context, req InviteUserRequest) (*OrganizationInvitation, error) {
-	return nil, fmt.Errorf("InviteUser not implemented yet - waiting for SQLC generation")
+	// Generate invitation token
+	token, err := generateInvitationToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate invitation token: %w", err)
+	}
+	
+	// Set expiration time (7 days from now)
+	expiresAt := time.Now().Add(7 * 24 * time.Hour)
+	
+	// Create invitation
+	invitationRecord, err := s.queries.CreateOrganizationInvitation(ctx, sqlc.CreateOrganizationInvitationParams{
+		OrganizationID: req.OrganizationID,
+		Email:          req.Email,
+		Role:           req.Role,
+		Token:          token,
+		InvitedBy:      pgtype.Int8{Int64: req.InvitedBy, Valid: true},
+		Message:        pgtype.Text{String: getStringValue(req.Message), Valid: req.Message != nil},
+		ExpiresAt:      pgtype.Timestamptz{Time: expiresAt, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create invitation: %w", err)
+	}
+	
+	invitation := convertSQLCInvitation(invitationRecord)
+	
+	// Log audit event
+	s.auditLogger.LogEvent(ctx, audit.Event{
+		Action:       "organization.user_invited",
+		ResourceType: "organization",
+		ResourceID:   fmt.Sprintf("%d", req.OrganizationID),
+		Details:      fmt.Sprintf("User %s invited to organization %d", req.Email, req.OrganizationID),
+	})
+	
+	return invitation, nil
 }
 
 func (s *DefaultService) AcceptInvitation(ctx context.Context, token string, userID int64) error {
-	return fmt.Errorf("AcceptInvitation not implemented yet - waiting for SQLC generation")
+	// Get invitation by token
+	invitationRecord, err := s.queries.GetOrganizationInvitationByToken(ctx, token)
+	if err != nil {
+		return fmt.Errorf("invalid or expired invitation token: %w", err)
+	}
+	
+	// Accept the invitation
+	err = s.queries.AcceptOrganizationInvitation(ctx, sqlc.AcceptOrganizationInvitationParams{
+		ID:         invitationRecord.ID,
+		AcceptedBy: pgtype.Int8{Int64: userID, Valid: true},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to accept invitation: %w", err)
+	}
+	
+	// Log audit event
+	s.auditLogger.LogEvent(ctx, audit.Event{
+		Action:       "organization.invitation_accepted",
+		ResourceType: "organization",
+		ResourceID:   fmt.Sprintf("%d", invitationRecord.OrganizationID),
+		Details:      fmt.Sprintf("Invitation %d accepted by user %d", invitationRecord.ID, userID),
+	})
+	
+	return nil
 }
 
 func (s *DefaultService) CancelInvitation(ctx context.Context, invitationID int64) error {
-	return fmt.Errorf("CancelInvitation not implemented yet - waiting for SQLC generation")
+	err := s.queries.CancelOrganizationInvitation(ctx, invitationID)
+	if err != nil {
+		return fmt.Errorf("failed to cancel invitation: %w", err)
+	}
+	
+	// Log audit event
+	s.auditLogger.LogEvent(ctx, audit.Event{
+		Action:       "organization.invitation_cancelled",
+		ResourceType: "organization",
+		ResourceID:   fmt.Sprintf("%d", invitationID),
+		Details:      fmt.Sprintf("Invitation %d cancelled", invitationID),
+	})
+	
+	return nil
 }
 
 func (s *DefaultService) ListInvitations(ctx context.Context, orgID int64, limit, offset int32) ([]*OrganizationInvitation, error) {
-	return nil, fmt.Errorf("ListInvitations not implemented yet - waiting for SQLC generation")
+	invitationRecords, err := s.queries.ListOrganizationInvitations(ctx, sqlc.ListOrganizationInvitationsParams{
+		OrganizationID: orgID,
+		Limit:          limit,
+		Offset:         offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list invitations: %w", err)
+	}
+	
+	invitations := make([]*OrganizationInvitation, 0, len(invitationRecords))
+	for _, invitationRecord := range invitationRecords {
+		invitations = append(invitations, convertSQLCInvitation(invitationRecord))
+	}
+	
+	return invitations, nil
+}
+
+// Helper functions
+
+// getStringValue safely gets the value from a string pointer
+func getStringValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// generateInvitationToken generates a secure random token for invitations
+func generateInvitationToken() (string, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
+}
+
+// convertSQLCOrganization converts a SQLC organization record to a service organization
+func convertSQLCOrganization(orgRecord sqlc.Organizations) *Organization {
+	var settings map[string]interface{}
+	if len(orgRecord.Settings) > 0 {
+		json.Unmarshal(orgRecord.Settings, &settings)
+	}
+	
+	return &Organization{
+		ID:           orgRecord.ID,
+		Name:         orgRecord.Name,
+		DisplayName:  orgRecord.DisplayName,
+		Description:  getOptionalString(orgRecord.Description),
+		Subdomain:    getOptionalString(orgRecord.Subdomain),
+		Settings:     settings,
+		IsActive:     orgRecord.IsActive.Bool,
+		MaxUsers:     orgRecord.MaxUsers.Int32,
+		MaxVolumes:   orgRecord.MaxVolumes.Int32,
+		MaxStorageGB: orgRecord.MaxStorageGb.Int64,
+		PlanType:     orgRecord.PlanType.String,
+		CreatedAt:    orgRecord.CreatedAt,
+		UpdatedAt:    orgRecord.UpdatedAt,
+	}
+}
+
+// convertSQLCInvitation converts a SQLC invitation record to a service invitation
+func convertSQLCInvitation(invitationRecord sqlc.OrganizationInvitations) *OrganizationInvitation {
+	return &OrganizationInvitation{
+		ID:             invitationRecord.ID,
+		OrganizationID: invitationRecord.OrganizationID,
+		Email:          invitationRecord.Email,
+		Role:           invitationRecord.Role,
+		Token:          invitationRecord.Token,
+		InvitedBy:      getOptionalInt64(invitationRecord.InvitedBy),
+		Message:        getOptionalString(invitationRecord.Message),
+		Status:         invitationRecord.Status,
+		AcceptedAt:     getOptionalTime(invitationRecord.AcceptedAt),
+		AcceptedBy:     getOptionalInt64(invitationRecord.AcceptedBy),
+		ExpiresAt:      invitationRecord.ExpiresAt.Time,
+		CreatedAt:      invitationRecord.CreatedAt,
+		UpdatedAt:      invitationRecord.UpdatedAt,
+	}
+}
+
+// getOptionalString safely extracts a string from pgtype.Text
+func getOptionalString(text pgtype.Text) *string {
+	if !text.Valid {
+		return nil
+	}
+	return &text.String
+}
+
+// getOptionalInt64 safely extracts an int64 from pgtype.Int8
+func getOptionalInt64(val pgtype.Int8) *int64 {
+	if !val.Valid {
+		return nil
+	}
+	return &val.Int64
+}
+
+// getOptionalTime safely extracts a time from pgtype.Timestamptz
+func getOptionalTime(ts pgtype.Timestamptz) *time.Time {
+	if !ts.Valid {
+		return nil
+	}
+	return &ts.Time
 }

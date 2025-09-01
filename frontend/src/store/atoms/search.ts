@@ -1,169 +1,198 @@
 /**
- * Search State Management with Jotai
- *
- * Atoms for managing file search and saved search state
+ * Search state atoms
+ * 
+ * Jotai atoms for managing search queries, filters, results, and search history.
  */
 
 import { atom } from 'jotai';
-import type {
-  SearchFilesRequest,
-  FileSearchResult,
-  SavedSearch,
-} from '@/api/search';
 
-// Search query state
-export const searchQueryAtom = atom<SearchFilesRequest>({
-  page: 1,
-  perPage: 20,
-  sort: 'name',
-  order: 'asc',
-});
+// Advanced search filters interface
+export interface AdvancedFilters {
+  fileType?: string[];
+  sizeRange?: {
+    min?: number;
+    max?: number;
+  };
+  dateRange?: {
+    from?: Date;
+    to?: Date;
+  };
+  location?: string[];
+  owner?: string[];
+  permissions?: string[];
+  tags?: string[];
+}
 
-// Search results state
-export const searchResultsAtom = atom<FileSearchResult[]>([]);
-export const searchTotalCountAtom = atom<number>(0);
-export const searchTotalPagesAtom = atom<number>(0);
-export const searchQueryTimeAtom = atom<number>(0);
-export const searchActiveFiltersAtom = atom<Record<string, any>>({});
+// Search result interface
+export interface SearchResult {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  type: 'file' | 'directory';
+  modified: Date;
+  matched_content?: string;
+  highlight_ranges?: Array<{ start: number; end: number }>;
+  score?: number;
+}
 
-// Search loading and error state
+// Search pagination interface
+export interface SearchPagination {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+// Search query atom
+export const searchQueryAtom = atom<string>('');
+
+// Advanced filters atom
+export const advancedFiltersAtom = atom<AdvancedFilters>({});
+
+// Search results atom
+export const searchResultsAtom = atom<SearchResult[]>([]);
+
+// Search loading state
 export const searchLoadingAtom = atom<boolean>(false);
+
+// Search error state
 export const searchErrorAtom = atom<string | null>(null);
 
-// Search pagination state
-export const searchCurrentPageAtom = atom<number>(1);
-export const searchPerPageAtom = atom<number>(20);
-
-// Search sorting state
-export const searchSortFieldAtom = atom<string>('name');
-export const searchSortOrderAtom = atom<'asc' | 'desc'>('asc');
-
-// Derived atom for search metadata
-export const searchMetadataAtom = atom((get) => ({
-  totalCount: get(searchTotalCountAtom),
-  totalPages: get(searchTotalPagesAtom),
-  currentPage: get(searchCurrentPageAtom),
-  perPage: get(searchPerPageAtom),
-  queryTime: get(searchQueryTimeAtom),
-  activeFilters: get(searchActiveFiltersAtom),
-}));
-
-// Saved searches state
-export const savedSearchesAtom = atom<SavedSearch[]>([]);
-export const savedSearchesTotalCountAtom = atom<number>(0);
-export const savedSearchesLoadingAtom = atom<boolean>(false);
-export const savedSearchesErrorAtom = atom<string | null>(null);
-
-// Current saved search being viewed/edited
-export const currentSavedSearchAtom = atom<SavedSearch | null>(null);
-
-// Search UI state
-export const searchPanelOpenAtom = atom<boolean>(false);
-export const savedSearchesPanelOpenAtom = atom<boolean>(false);
-export const searchFiltersExpandedAtom = atom<boolean>(false);
-
-// Advanced search filters state
-export const advancedFiltersAtom = atom<{
-  mediaKind?: string;
-  mimeTypes: string[];
-  sizeRange: { min?: number; max?: number };
-  timeRange: { from?: string; to?: string };
-  durationRange: { min?: number; max?: number };
-  dimensionsRange: {
-    width: { min?: number; max?: number };
-    height: { min?: number; max?: number };
-  };
-  booleanFilters: {
-    hasGps?: boolean;
-    hasSubs?: boolean;
-    hashPresent?: boolean;
-  };
-}>({
-  mimeTypes: [],
-  sizeRange: {},
-  timeRange: {},
-  durationRange: {},
-  dimensionsRange: { width: {}, height: {} },
-  booleanFilters: {},
+// Search pagination atom
+export const searchPaginationAtom = atom<SearchPagination>({
+  page: 1,
+  pageSize: 20,
+  totalCount: 0,
+  totalPages: 0,
+  hasNextPage: false,
+  hasPreviousPage: false,
 });
 
-// Search history (recent searches)
-export const searchHistoryAtom = atom<SearchFilesRequest[]>([]);
+// Search history atom (recent searches)
+export const searchHistoryAtom = atom<string[]>([]);
 
-// Selected files for bulk operations
-export const selectedFilesAtom = atom<FileSearchResult[]>([]);
+// Search suggestions atom
+export const searchSuggestionsAtom = atom<string[]>([]);
 
-// Search preferences
-export const searchPreferencesAtom = atom<{
-  defaultSort: string;
-  defaultOrder: 'asc' | 'desc';
-  defaultPerPage: number;
-  rememberFilters: boolean;
-  enableAutoComplete: boolean;
-}>({
-  defaultSort: 'name',
-  defaultOrder: 'asc',
-  defaultPerPage: 20,
-  rememberFilters: true,
-  enableAutoComplete: true,
+// Selected search results (for bulk operations)
+export const selectedSearchResultsAtom = atom<string[]>([]);
+
+// Search view mode (list, grid, table)
+export const searchViewModeAtom = atom<'list' | 'grid' | 'table'>('list');
+
+// Search sort options
+export interface SearchSortOption {
+  field: 'relevance' | 'name' | 'size' | 'modified' | 'path';
+  direction: 'asc' | 'desc';
+}
+
+export const searchSortAtom = atom<SearchSortOption>({
+  field: 'relevance',
+  direction: 'desc',
 });
 
-// Virtual scrolling state for large result sets
-export const virtualScrollStateAtom = atom<{
-  startIndex: number;
-  endIndex: number;
-  overscan: number;
-}>({
-  startIndex: 0,
-  endIndex: 50,
-  overscan: 10,
-});
+// Search filters panel visibility
+export const filtersVisibleAtom = atom<boolean>(false);
 
-// Export commonly used derived atoms
-export const hasSearchResultsAtom = atom(
-  (get) => get(searchResultsAtom).length > 0,
-);
-export const hasActiveFiltersAtom = atom(
-  (get) => Object.keys(get(searchActiveFiltersAtom)).length > 0,
-);
-export const isSearchingAtom = atom((get) => get(searchLoadingAtom));
-export const hasSearchErrorAtom = atom((get) => get(searchErrorAtom) !== null);
+// Computed atoms
 
-// Actions atoms (write-only atoms for state updates)
-export const clearSearchResultsAtom = atom(null, (_get, set) => {
-  set(searchResultsAtom, []);
-  set(searchTotalCountAtom, 0);
-  set(searchTotalPagesAtom, 0);
-  set(searchQueryTimeAtom, 0);
-  set(searchActiveFiltersAtom, {});
-  set(searchErrorAtom, null);
-});
-
-export const clearSearchFiltersAtom = atom(null, (get, set) => {
-  set(advancedFiltersAtom, {
-    mimeTypes: [],
-    sizeRange: {},
-    timeRange: {},
-    durationRange: {},
-    dimensionsRange: { width: {}, height: {} },
-    booleanFilters: {},
-  });
-  set(searchQueryAtom, {
-    page: 1,
-    perPage: get(searchPerPageAtom),
-    sort: 'name',
-    order: 'asc',
+// Has active filters atom
+export const hasActiveFiltersAtom = atom((get) => {
+  const filters = get(advancedFiltersAtom);
+  return Object.values(filters).some(value => {
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+    if (typeof value === 'object' && value !== null) {
+      return Object.values(value).some(v => v !== undefined && v !== null);
+    }
+    return value !== undefined && value !== null && value !== '';
   });
 });
 
-export const addToSearchHistoryAtom = atom(
+// Search stats atom
+export const searchStatsAtom = atom((get) => {
+  const results = get(searchResultsAtom);
+  const pagination = get(searchPaginationAtom);
+  
+  return {
+    totalResults: pagination.totalCount,
+    currentPageResults: results.length,
+    filesCount: results.filter(r => r.type === 'file').length,
+    directoriesCount: results.filter(r => r.type === 'directory').length,
+  };
+});
+
+// Filtered and sorted results atom (applies local sorting/filtering on top of API results)
+export const filteredSearchResultsAtom = atom((get) => {
+  const results = get(searchResultsAtom);
+  const sortOption = get(searchSortAtom);
+  
+  // Apply sorting if not relevance-based (API handles relevance sorting)
+  if (sortOption.field !== 'relevance') {
+    const sorted = [...results].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortOption.field) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'size':
+          comparison = a.size - b.size;
+          break;
+        case 'modified':
+          comparison = a.modified.getTime() - b.modified.getTime();
+          break;
+        case 'path':
+          comparison = a.path.localeCompare(b.path);
+          break;
+        default:
+          return results; // Return unsorted for relevance
+      }
+      
+      return sortOption.direction === 'asc' ? comparison : -comparison;
+    });
+    
+    return sorted;
+  }
+  
+  return results;
+});
+
+// Clear search results action atom
+export const clearSearchResultsAtom = atom(
   null,
-  (get, set, query: SearchFilesRequest) => {
-    const history = get(searchHistoryAtom);
-    const newHistory = [
-      query,
-      ...history.filter((q) => JSON.stringify(q) !== JSON.stringify(query)),
-    ].slice(0, 10); // Keep only last 10 searches
-    set(searchHistoryAtom, newHistory);
-  },
+  (get, set) => {
+    set(searchResultsAtom, []);
+    set(searchErrorAtom, null);
+    set(searchLoadingAtom, false);
+    set(selectedSearchResultsAtom, []);
+    set(searchPaginationAtom, {
+      page: 1,
+      pageSize: 20,
+      totalCount: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    });
+  }
 );
+
+// Reset all search state action atom
+export const resetSearchStateAtom = atom(
+  null,
+  (get, set) => {
+    set(searchQueryAtom, '');
+    set(advancedFiltersAtom, {});
+    set(clearSearchResultsAtom);
+  }
+);
+
+// Legacy compatibility alias
+export const searchTotalCountAtom = atom((get) => {
+  const pagination = get(searchPaginationAtom);
+  return pagination.totalCount;
+});

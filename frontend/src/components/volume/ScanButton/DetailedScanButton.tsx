@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Scan, Loader2, Play, Pause } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useVolumeScanning } from '../../../api/services';
+import { useVolumeOperations } from '@/hooks/api/useVolumeOperations';
 import { useToast } from '../../ui/Toast/ToastProvider';
 import { useMultiPhaseScanProgress } from '../../../hooks/useMultiPhaseScanProgress';
 import { ProgressBar } from '../../ui/ProgressBar';
@@ -62,7 +62,7 @@ export const DetailedScanButton: React.FC<DetailedScanButtonProps> = ({
   console.log(
     `[DetailedScanButton] Component rendered for volume: ${volumeId}, variant: ${variant}, autoStartPolling: ${autoStartPolling}`,
   );
-  const { scanVolume, scanLoading } = useVolumeScanning();
+  const { scanVolume } = useVolumeOperations();
   const { success, error: showError, info } = useToast();
   const {
     progress,

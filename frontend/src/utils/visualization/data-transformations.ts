@@ -2,17 +2,17 @@
  * Utility functions for visualization data transformations
  */
 
-import type { VolumeResponse, ScanResponse } from '../../api/client';
+import type { VolumeResponse, ScanResponse } from '@/api/client';
 import type {
   VolumeChartData,
   SystemStorageData,
   TopVolumeData,
-} from '../../hooks/useVisualizationData/useVisualizationData.types';
+} from '@/hooks/useVisualizationData/useVisualizationData.types';
 import {
   getVolumeColor,
   getDriverColor,
   getSizeRangeColor,
-} from '../../utils/colors';
+} from '@/utils/colors';
 
 /**
  * Size ranges for categorizing volumes

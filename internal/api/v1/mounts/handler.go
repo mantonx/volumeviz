@@ -199,7 +199,6 @@ func (h *Handler) ListMountCatalog(c *gin.Context) {
 		// Use simple list
 		mounts, err = h.mountCatalogService.ListMountCatalogEntries(
 			c.Request.Context(),
-			req.Sort,
 			int32(req.PageSize),
 			int32(offset),
 		)
@@ -303,8 +302,17 @@ func (h *Handler) GetMountDetails(c *gin.Context) {
 		return
 	}
 
+	// Convert mountID to int64
+	mountIDInt, err := strconv.ParseInt(mountID, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid mount ID format",
+		})
+		return
+	}
+
 	// Get mount details from database
-	mount, err := h.mountCatalogService.GetMountDetails(c.Request.Context(), mountID)
+	mount, err := h.mountCatalogService.GetMountDetails(c.Request.Context(), mountIDInt)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			c.JSON(http.StatusInternalServerError, gin.H{
