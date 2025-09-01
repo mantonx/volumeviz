@@ -26,6 +26,18 @@ export const viewPreferencesAtom = atom({
   sortOrder: 'asc' as 'asc' | 'desc',
 });
 
+// Derived atom for volumes view mode specifically
+export const volumesViewModeAtom = atom(
+  (get) => get(viewPreferencesAtom).volumeView,
+  (get, set, newViewMode: 'grid' | 'list') => {
+    const currentPrefs = get(viewPreferencesAtom);
+    set(viewPreferencesAtom, {
+      ...currentPrefs,
+      volumeView: newViewMode,
+    });
+  }
+);
+
 interface Notification {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';

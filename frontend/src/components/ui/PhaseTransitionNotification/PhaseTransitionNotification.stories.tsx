@@ -62,7 +62,6 @@ Perfect for keeping users informed about scan progress transitions.
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Helper to create mock transitions
 const createMockTransition = (
   fromPhase: string | null,
   toPhase: string,
@@ -93,7 +92,6 @@ const createMockTransition = (
   });
 };
 
-// Starting volume scan
 export const StartingVolumeScan: Story = {
   args: {
     transition: createMockTransition(null, 'volume_scan', {
@@ -107,7 +105,6 @@ export const StartingVolumeScan: Story = {
   },
 };
 
-// Volume scan to filesystem indexing transition
 export const VolumeToFilesystemTransition: Story = {
   args: {
     transition: createMockTransition('volume_scan', 'filesystem_indexing', {
@@ -123,7 +120,6 @@ export const VolumeToFilesystemTransition: Story = {
   },
 };
 
-// Filesystem to media enrichment transition
 export const FilesystemToMediaTransition: Story = {
   args: {
     transition: createMockTransition(
@@ -146,7 +142,6 @@ export const FilesystemToMediaTransition: Story = {
   },
 };
 
-// Fast volume scan completion
 export const FastVolumeCompletion: Story = {
   args: {
     transition: createMockTransition('volume_scan', 'filesystem_indexing', {
@@ -162,7 +157,6 @@ export const FastVolumeCompletion: Story = {
   },
 };
 
-// Large media library transition
 export const LargeMediaLibraryTransition: Story = {
   args: {
     transition: createMockTransition(
@@ -184,7 +178,6 @@ export const LargeMediaLibraryTransition: Story = {
   },
 };
 
-// Transition with errors
 export const TransitionWithErrors: Story = {
   args: {
     transition: createMockTransition('volume_scan', 'filesystem_indexing', {
@@ -201,7 +194,6 @@ export const TransitionWithErrors: Story = {
   },
 };
 
-// Compact notification
 export const CompactNotification: Story = {
   args: {
     transition: createMockTransition(
@@ -222,7 +214,6 @@ export const CompactNotification: Story = {
   },
 };
 
-// Auto-dismissing toast
 export const AutoDismissingToast: Story = {
   args: {
     transition: createMockTransition('volume_scan', 'filesystem_indexing'),
@@ -240,7 +231,6 @@ export const AutoDismissingToast: Story = {
   },
 };
 
-// Modal-style notification
 export const ModalStyleNotification: Story = {
   args: {
     transition: createMockTransition(
@@ -266,7 +256,6 @@ export const ModalStyleNotification: Story = {
   },
 };
 
-// Perfect scan (no errors)
 export const PerfectScanTransition: Story = {
   args: {
     transition: createMockTransition(

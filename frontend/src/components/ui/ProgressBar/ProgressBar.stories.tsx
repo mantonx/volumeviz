@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { useRef, useState } from 'react';
 import { ProgressBar } from './ProgressBar';
 import type { ProgressBarProps, ProgressBarRef } from './ProgressBar.types';
@@ -76,7 +77,6 @@ scan progress monitoring, file operations, and general loading states.
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Basic Examples
 export const Default: Story = {
   args: {
     value: 50,
@@ -107,7 +107,6 @@ export const Indeterminate: Story = {
   },
 };
 
-// Variant Examples
 export const AllVariants: Story = {
   render: () => (
     <div className="space-y-4">
@@ -149,7 +148,6 @@ export const AllVariants: Story = {
   },
 };
 
-// Size Examples
 export const AllSizes: Story = {
   render: () => (
     <div className="space-y-4">
@@ -184,7 +182,6 @@ export const AllSizes: Story = {
   },
 };
 
-// Animation Examples
 export const AnimatedStriped: Story = {
   args: {
     value: 70,
@@ -222,7 +219,6 @@ export const StripedOnly: Story = {
   },
 };
 
-// Interactive Example
 export const Interactive: Story = {
   render: () => {
     const [value, setValue] = useState(30);
@@ -325,7 +321,6 @@ export const Interactive: Story = {
   },
 };
 
-// Scan Progress Examples
 export const ScanProgressExamples: Story = {
   render: () => (
     <div className="space-y-6">
@@ -442,7 +437,6 @@ export const ScanProgressExamples: Story = {
   },
 };
 
-// Edge Cases
 export const EdgeCases: Story = {
   render: () => (
     <div className="space-y-4">
@@ -497,7 +491,6 @@ export const EdgeCases: Story = {
   },
 };
 
-// Accessibility Example
 export const AccessibilityFeatures: Story = {
   render: () => (
     <div className="space-y-6">

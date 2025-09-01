@@ -1,1 +1,0 @@
-export { OrganizationSettings } from './OrganizationSettings';

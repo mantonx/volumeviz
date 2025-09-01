@@ -1,9 +1,7 @@
-import { ApiHealthChecker } from '@/components/ApiHealthChecker';
+import { ApiHealthChecker } from '@/components/application';
 import { Layout } from '@/components/layout/Layout';
 import { ToastProvider } from '@/components/ui';
 // Lazy load visualization components
-const RealTimeDashboard = React.lazy(() => import('@/components/visualization/RealTimeDashboard'));
-const HistoricalDataDashboard = React.lazy(() => import('@/components/visualization/HistoricalDataDashboard'));
 // Lazy load pages for better code splitting
 const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
 const VolumesPage = React.lazy(() => import('@/pages/VolumesPage'));  
@@ -148,10 +146,10 @@ const App: React.FC = () => {
                 <Route path="/search" element={<SearchPage />} />
 
                 {/* Visualization Routes */}
-                <Route path="/realtime" element={<RealTimeDashboard />} />
+                <Route path="/realtime" element={<div>Real-time features coming soon</div>} />
                 <Route
                   path="/historical"
-                  element={<HistoricalDataDashboard />}
+                  element={<div>Historical data features coming soon</div>}
                 />
 
                 {/* Alerts Routes */}

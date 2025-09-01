@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { useState, useRef } from 'react';
 import {
   CheckCircle,
@@ -88,7 +89,6 @@ accessibility features for comprehensive status communication.
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Basic Examples
 export const Default: Story = {
   args: {
     children: 'Default Status',
@@ -126,7 +126,6 @@ export const Clickable: Story = {
   },
 };
 
-// Variant Examples
 export const AllVariants: Story = {
   render: () => (
     <div className="space-y-4">
@@ -175,7 +174,6 @@ export const AllVariants: Story = {
   },
 };
 
-// Size Examples
 export const AllSizes: Story = {
   render: () => (
     <div className="space-y-4">
@@ -214,7 +212,6 @@ export const AllSizes: Story = {
   },
 };
 
-// Animation Examples
 export const AnimatedStates: Story = {
   render: () => (
     <div className="space-y-4">
@@ -254,7 +251,6 @@ export const AnimatedStates: Story = {
   },
 };
 
-// Interactive Example
 export const Interactive: Story = {
   render: () => {
     const [status, setStatus] =
@@ -364,7 +360,6 @@ export const Interactive: Story = {
   },
 };
 
-// Scan Status Examples
 export const ScanStatusExamples: Story = {
   render: () => (
     <div className="space-y-6">
@@ -494,7 +489,6 @@ export const ScanStatusExamples: Story = {
   },
 };
 
-// Dot Position Examples
 export const DotPositions: Story = {
   render: () => (
     <div className="space-y-4">
@@ -539,7 +533,6 @@ export const DotPositions: Story = {
   },
 };
 
-// Shape Examples
 export const ShapeVariations: Story = {
   render: () => (
     <div className="space-y-4">
@@ -578,7 +571,6 @@ export const ShapeVariations: Story = {
   },
 };
 
-// Accessibility Example
 export const AccessibilityFeatures: Story = {
   render: () => (
     <div className="space-y-6">

@@ -56,11 +56,11 @@ export const featureFlagsAtom = atomWithStorage<FeatureFlags>('feature-flags', {
 
 // Environment information
 export const environmentAtom = atom<Environment>({
-  nodeEnv: process.env.NODE_ENV || 'development',
-  isDevelopment: process.env.NODE_ENV === 'development',
-  isProduction: process.env.NODE_ENV === 'production',
-  version: process.env.VITE_APP_VERSION || '0.1.0',
-  buildTime: process.env.VITE_BUILD_TIME,
+  nodeEnv: import.meta.env.MODE || 'development',
+  isDevelopment: import.meta.env.MODE === 'development',
+  isProduction: import.meta.env.MODE === 'production',
+  version: import.meta.env.VITE_APP_VERSION || '0.1.0',
+  buildTime: import.meta.env.VITE_BUILD_TIME,
 });
 
 // Computed settings atoms

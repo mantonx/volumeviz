@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TableSkeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/Skeleton';
 import type {
   InternalApiV1MountsMountCatalogResponse as MountCatalogEntry,
   InternalApiV1MountsMountCatalogSummaryResponse as MountCatalogSummary,

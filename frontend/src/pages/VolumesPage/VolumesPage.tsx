@@ -1,4 +1,4 @@
-import { VolumesList } from '@/components/volumes/VolumesList';
+import { VolumesList } from '@/components/domain/volumes';
 import React from 'react';
 
 /**

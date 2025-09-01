@@ -9,7 +9,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import type { VolumeMount } from '../useVolumesAndMounts';
-import { useToast } from '@/components/ui/Toast/ToastProvider';
+import { useToast } from '@/components/ui';
 import { usePostVolumesBulkScan } from '@/api/orval-generated/api';
 
 export interface BulkAction {

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { Badge } from './Badge';
 
 const meta: Meta<typeof Badge> = {
@@ -43,7 +44,6 @@ Badge component for status indicators and labels throughout VolumeViz.
 export default meta;
 type Story = StoryObj<typeof Badge>;
 
-// Volume status examples
 export const VolumeActive: Story = {
   args: {
     variant: 'success',
@@ -58,7 +58,6 @@ export const VolumeInactive: Story = {
   },
 };
 
-// Container health examples
 export const ContainerHealthy: Story = {
   args: {
     variant: 'success',
@@ -73,7 +72,6 @@ export const ContainerUnhealthy: Story = {
   },
 };
 
-// Scan status examples
 export const ScanScanning: Story = {
   args: {
     variant: 'warning',
@@ -95,7 +93,6 @@ export const ScanFailed: Story = {
   },
 };
 
-// Docker driver examples
 export const DriverLocal: Story = {
   args: {
     variant: 'secondary',
@@ -110,7 +107,6 @@ export const DriverNFS: Story = {
   },
 };
 
-// API status examples
 export const ApiConnected: Story = {
   args: {
     variant: 'success',
@@ -125,7 +121,6 @@ export const ApiDisconnected: Story = {
   },
 };
 
-// All variants showcase
 export const AllVariants: Story = {
   render: () => (
     <div className="space-x-2">

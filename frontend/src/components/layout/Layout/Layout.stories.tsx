@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { Provider } from 'jotai';
-import { Layout } from './Layout';
+import { MockLayout as Layout } from '../../../../.storybook/components/MockLayout';
 
 const meta: Meta<typeof Layout> = {
   title: 'Layout/Layout',
@@ -43,7 +44,6 @@ Used as the wrapper for all authenticated application pages.
 export default meta;
 type Story = StoryObj<typeof Layout>;
 
-// Dashboard page example
 export const DashboardPage: Story = {
   render: () => (
     <Layout>
@@ -94,7 +94,6 @@ export const DashboardPage: Story = {
   ),
 };
 
-// Volumes page example
 export const VolumesPage: Story = {
   render: () => (
     <Layout>
@@ -147,7 +146,6 @@ export const VolumesPage: Story = {
   ),
 };
 
-// Settings page example
 export const SettingsPage: Story = {
   render: () => (
     <Layout>
@@ -233,7 +231,6 @@ export const SettingsPage: Story = {
   ),
 };
 
-// Custom content spacing example
 export const CustomSpacing: Story = {
   render: () => (
     <Layout className="py-12">

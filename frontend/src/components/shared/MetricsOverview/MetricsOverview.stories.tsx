@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { useState, useMemo } from 'react';
-import { action } from '@storybook/addon-actions';
+
 import {
   Activity,
   Database,
@@ -22,7 +23,8 @@ import {
 } from 'lucide-react';
 
 import { MetricsOverview } from './MetricsOverview';
-import { ToastProvider } from '../../ui/Toast';
+import { ToastProvider } from '@/components/ui';
+import { action } from '@/utils/storybook-utils';
 import type {
   MetricsOverviewProps,
   OverviewMetric,
@@ -79,9 +81,7 @@ const meta: Meta<typeof MetricsOverview> = {
 export default meta;
 type Story = StoryObj<typeof MetricsOverview>;
 
-// Sample data generators
 const generateScanMetrics = (): OverviewMetric[] => [
-  // Performance metrics
   {
     id: 'scan-throughput',
     label: 'Scan Throughput',
@@ -144,7 +144,6 @@ const generateScanMetrics = (): OverviewMetric[] => [
     alertThreshold: { warning: 5, critical: 10 },
   },
 
-  // Capacity metrics
   {
     id: 'volume-count',
     label: 'Total Volumes',
@@ -200,7 +199,6 @@ const generateScanMetrics = (): OverviewMetric[] => [
     alertThreshold: { warning: 80, critical: 90 },
   },
 
-  // System health metrics
   {
     id: 'cpu-usage',
     label: 'CPU Usage',
@@ -265,7 +263,6 @@ const generateScanMetrics = (): OverviewMetric[] => [
     tags: ['uptime', 'availability'],
   },
 
-  // Quality metrics
   {
     id: 'duplicate-files',
     label: 'Duplicate Files',
@@ -387,7 +384,6 @@ const generateAlerts = (): MetricAlert[] => [
   },
 ];
 
-// Default story
 export const Default: Story = {
   render: () => {
     const metrics = useMemo(() => generateScanMetrics(), []);
@@ -414,7 +410,6 @@ export const Default: Story = {
   },
 };
 
-// Different layouts
 export const Layouts: Story = {
   render: () => {
     const metrics = useMemo(() => generateScanMetrics().slice(0, 8), []);
@@ -457,7 +452,6 @@ export const Layouts: Story = {
   },
 };
 
-// Different groupings
 export const Groupings: Story = {
   render: () => {
     const metrics = useMemo(() => generateScanMetrics(), []);
@@ -499,7 +493,6 @@ export const Groupings: Story = {
   },
 };
 
-// Loading and error states
 export const LoadingAndError: Story = {
   render: () => {
     const metrics = useMemo(() => generateScanMetrics(), []);
@@ -540,7 +533,6 @@ export const LoadingAndError: Story = {
   },
 };
 
-// With alerts
 export const WithAlerts: Story = {
   render: () => {
     const metrics = useMemo(() => generateScanMetrics(), []);
@@ -561,18 +553,15 @@ export const WithAlerts: Story = {
   },
 };
 
-// Real-time simulation
 export const RealTimeSimulation: Story = {
   render: () => {
     const [metrics, setMetrics] = useState(() => generateScanMetrics());
     const categories = useMemo(() => generateCategories(), []);
     const [alerts, setAlerts] = useState(() => generateAlerts());
 
-    // Simulate real-time updates
     const simulateUpdates = () => {
       setMetrics((prev) =>
         prev.map((metric) => {
-          // Randomly update some metrics
           if (Math.random() < 0.3) {
             let newValue = metric.value as number;
 
@@ -630,7 +619,6 @@ export const RealTimeSimulation: Story = {
   },
 };
 
-// Filtering and searching
 export const FilteringAndSearching: Story = {
   render: () => {
     const metrics = useMemo(() => generateScanMetrics(), []);
@@ -729,7 +717,6 @@ export const FilteringAndSearching: Story = {
   },
 };
 
-// Performance dashboard
 export const PerformanceDashboard: Story = {
   render: () => {
     const performanceMetrics = useMemo(
@@ -780,7 +767,6 @@ export const PerformanceDashboard: Story = {
   },
 };
 
-// Interactive playground
 export const Interactive: Story = {
   render: () => {
     const [config, setConfig] = useState({
@@ -798,7 +784,6 @@ export const Interactive: Story = {
 
     return (
       <div className="p-4 space-y-6">
-        {/* Controls */}
         <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
           <div>
             <label className="block text-sm font-medium mb-1">Layout</label>
@@ -908,7 +893,6 @@ export const Interactive: Story = {
           </div>
         </div>
 
-        {/* MetricsOverview */}
         <MetricsOverview
           metrics={metrics}
           categories={categories}

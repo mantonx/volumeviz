@@ -1,1 +1,0 @@
-export { VolumeDetails } from './VolumeDetails';

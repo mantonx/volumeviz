@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { useState } from 'react';
-import { action } from '@storybook/addon-actions';
+
 import {
   Search,
   Database,
@@ -12,6 +13,7 @@ import {
 
 import { PhaseIndicator } from './PhaseIndicator';
 import type { Phase, PhaseStatus } from './PhaseIndicator.types';
+import { action } from '@/utils/storybook-utils';
 
 const meta: Meta<typeof PhaseIndicator> = {
   title: 'UI/PhaseIndicator',
@@ -55,7 +57,6 @@ const meta: Meta<typeof PhaseIndicator> = {
 export default meta;
 type Story = StoryObj<typeof PhaseIndicator>;
 
-// Sample phases for scan monitoring
 const createScanPhases = (activePhaseIndex: number = 1): Phase[] => [
   {
     id: 'prepare',
@@ -128,7 +129,6 @@ const createScanPhases = (activePhaseIndex: number = 1): Phase[] => [
   },
 ];
 
-// Default story
 export const Default: Story = {
   args: {
     phases: createScanPhases(1),
@@ -144,7 +144,6 @@ export const Default: Story = {
   },
 };
 
-// Different sizes
 export const Sizes: Story = {
   render: () => (
     <div className="space-y-8">
@@ -170,7 +169,6 @@ export const Sizes: Story = {
   ),
 };
 
-// Orientations
 export const Orientations: Story = {
   render: () => (
     <div className="flex gap-12">
@@ -187,7 +185,6 @@ export const Orientations: Story = {
   ),
 };
 
-// Different statuses
 export const Statuses: Story = {
   render: () => {
     const statusPhases: Phase[] = [
@@ -239,7 +236,6 @@ export const Statuses: Story = {
   },
 };
 
-// Interactive example
 export const Interactive: Story = {
   render: () => {
     const [activePhaseIndex, setActivePhaseIndex] = useState(1);
@@ -325,7 +321,6 @@ export const Interactive: Story = {
   },
 };
 
-// Compact version
 export const Compact: Story = {
   args: {
     phases: createScanPhases(2),
@@ -337,7 +332,6 @@ export const Compact: Story = {
   },
 };
 
-// Minimal version
 export const Minimal: Story = {
   args: {
     phases: createScanPhases(2),
@@ -349,7 +343,6 @@ export const Minimal: Story = {
   },
 };
 
-// With custom icons
 export const WithCustomIcons: Story = {
   args: {
     phases: [
@@ -379,7 +372,6 @@ export const WithCustomIcons: Story = {
   },
 };
 
-// Error handling
 export const WithErrors: Story = {
   render: () => {
     const errorPhases: Phase[] = [

@@ -1,6 +1,8 @@
+import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import { action } from '@storybook/addon-actions';
+import { action } from '@/utils/storybook-utils';
+
 import {
   CheckCircle,
   AlertTriangle,
@@ -14,8 +16,8 @@ import {
   Loader2,
 } from 'lucide-react';
 
-import { Toast, ToastProvider, useToast } from './';
-import { Button } from '../Button';
+import { Toast, ToastProvider, useToast } from './index';
+import { Button } from '../Button/Button';
 import type {
   ToastProps,
   ToastVariant,
@@ -70,7 +72,6 @@ const meta: Meta<typeof Toast> = {
 export default meta;
 type Story = StoryObj<typeof Toast>;
 
-// Helper component for stories
 const ToastDemo = ({
   children,
   buttonText = 'Show Toast',
@@ -104,8 +105,7 @@ const ToastDemo = ({
   );
 };
 
-// Toast Provider demo component
-const ToastProviderDemo = ({
+const ToastProviderDemoComponent = ({
   position = 'top-right',
 }: {
   position?: ToastPosition;
@@ -183,7 +183,6 @@ const ToastProviderDemo = ({
   );
 };
 
-// Default story
 export const Default: Story = {
   render: () => (
     <ToastDemo
@@ -194,7 +193,6 @@ export const Default: Story = {
   ),
 };
 
-// Different variants
 export const Variants: Story = {
   render: () => (
     <div className="space-y-4">
@@ -229,7 +227,6 @@ export const Variants: Story = {
   ),
 };
 
-// Different sizes
 export const Sizes: Story = {
   render: () => (
     <div className="space-y-4">
@@ -260,7 +257,6 @@ export const Sizes: Story = {
   ),
 };
 
-// With actions
 export const WithActions: Story = {
   render: () => (
     <div className="space-y-4">
@@ -289,7 +285,6 @@ export const WithActions: Story = {
   ),
 };
 
-// Custom icons
 export const CustomIcons: Story = {
   render: () => (
     <div className="space-y-4">
@@ -328,7 +323,6 @@ export const CustomIcons: Story = {
   ),
 };
 
-// Persistent toasts
 export const Persistent: Story = {
   render: () => (
     <div className="space-y-4">
@@ -352,16 +346,14 @@ export const Persistent: Story = {
   ),
 };
 
-// Toast Provider examples
-export const ToastProvider: Story = {
+export const ToastProviderDemo: Story = {
   render: () => (
     <ToastProvider defaultPosition="top-right" maxToasts={3}>
-      <ToastProviderDemo />
+      <ToastProviderDemoComponent />
     </ToastProvider>
   ),
 };
 
-// Different positions
 export const Positions: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-4">
@@ -380,7 +372,7 @@ export const Positions: Story = {
             <h3 className="font-medium mb-2 capitalize">
               {position.replace('-', ' ')}
             </h3>
-            <ToastProviderDemo position={position} />
+            <ToastProviderDemoComponent position={position} />
           </div>
         </ToastProvider>
       ))}
@@ -388,7 +380,6 @@ export const Positions: Story = {
   ),
 };
 
-// Scan monitoring example
 export const ScanMonitoring: Story = {
   render: () => (
     <ToastProvider defaultPosition="bottom-right" maxToasts={5}>
@@ -412,7 +403,6 @@ const ScanMonitoringDemo = () => {
     });
     setScanId(id);
 
-    // Simulate scan progress
     setTimeout(() => {
       toast.updateToast(id, {
         message: 'Filesystem indexing in progress... (45%)',
@@ -509,7 +499,6 @@ const ScanMonitoringDemo = () => {
   );
 };
 
-// Interactive playground
 export const Interactive: Story = {
   render: () => {
     const [config, setConfig] = useState({
@@ -527,7 +516,6 @@ export const Interactive: Story = {
     return (
       <ToastProvider defaultPosition={config.position} maxToasts={3}>
         <div className="space-y-6">
-          {/* Controls */}
           <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded">
             <div>
               <label className="block text-sm font-medium mb-1">Variant</label>
@@ -676,7 +664,6 @@ export const Interactive: Story = {
             </div>
           </div>
 
-          {/* Demo */}
           <InteractiveToastDemo config={config} />
         </div>
       </ToastProvider>

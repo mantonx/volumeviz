@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { useState, useRef } from 'react';
 import { Search, FolderOpen, Image, Video, CheckCircle } from 'lucide-react';
 import { ProcessTimeline } from './ProcessTimeline';
@@ -87,7 +88,6 @@ to provide detailed progress tracking with phase-by-phase visibility.
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Sample data
 const createSamplePhases = (
   scenario: 'idle' | 'running' | 'completed' | 'failed',
 ): ProcessTimelinePhase[] => {
@@ -231,7 +231,6 @@ const createSamplePhases = (
   }
 };
 
-// Basic Examples
 export const Default: Story = {
   args: {
     phases: createSamplePhases('idle'),
@@ -280,7 +279,6 @@ export const Failed: Story = {
   },
 };
 
-// Orientation Examples
 export const OrientationComparison: Story = {
   render: () => {
     const phases = createSamplePhases('running');
@@ -325,7 +323,6 @@ export const OrientationComparison: Story = {
   },
 };
 
-// Size Examples
 export const AllSizes: Story = {
   render: () => {
     const phases = createSamplePhases('running').slice(0, 3);
@@ -376,7 +373,6 @@ export const AllSizes: Story = {
   },
 };
 
-// Interactive Example
 export const Interactive: Story = {
   render: () => {
     const [currentScenario, setCurrentScenario] = useState<
@@ -517,13 +513,11 @@ export const Interactive: Story = {
   },
 };
 
-// Real Scan Data Example
 export const RealScanExample: Story = {
   render: () => {
     const [progress, setProgress] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
 
-    // Simulate real scan progress
     const scanProgressData = [
       {
         phase: 'discovery',
@@ -636,7 +630,6 @@ export const RealScanExample: Story = {
   },
 };
 
-// Error Handling Example
 export const ErrorHandling: Story = {
   render: () => {
     const [phases, setPhases] = useState(createSamplePhases('failed'));
@@ -650,7 +643,6 @@ export const ErrorHandling: Story = {
         ),
       );
 
-      // Simulate progress
       setTimeout(() => {
         setPhases((prev) =>
           prev.map((p) =>
@@ -698,7 +690,6 @@ export const ErrorHandling: Story = {
   },
 };
 
-// Compact Timeline
 export const CompactTimeline: Story = {
   args: {
     phases: createSamplePhases('running').slice(0, 4),

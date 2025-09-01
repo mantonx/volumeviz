@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { ViewToggle, ViewType } from './ViewToggle';
 import { useState } from 'react';
 

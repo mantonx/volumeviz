@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { PerformanceDashboard } from './PerformanceDashboard';
 import type {
@@ -84,7 +85,6 @@ components to provide detailed performance monitoring capabilities.
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Sample metrics data
 const createSampleMetrics = (
   scenario: 'excellent' | 'mixed' | 'critical',
 ): PerformanceMetric[] => {
@@ -208,7 +208,6 @@ const createSampleMetrics = (
     });
   }
 
-  // Critical scenario
   return excellentMetrics.map((metric, index) => {
     if (index === 0) {
       return {
@@ -262,7 +261,6 @@ const createSampleMetrics = (
   });
 };
 
-// Basic Examples
 export const Default: Story = {
   args: {
     metrics: createSampleMetrics('mixed'),
@@ -298,7 +296,6 @@ export const Critical: Story = {
   },
 };
 
-// Layout Examples
 export const LayoutComparison: Story = {
   render: () => {
     const metrics = createSampleMetrics('mixed').slice(0, 4);
@@ -353,7 +350,6 @@ export const LayoutComparison: Story = {
   },
 };
 
-// Size Examples
 export const AllSizes: Story = {
   render: () => {
     const metrics = createSampleMetrics('mixed').slice(0, 3);
@@ -408,7 +404,6 @@ export const AllSizes: Story = {
   },
 };
 
-// Interactive Example
 export const Interactive: Story = {
   render: () => {
     const [scenario, setScenario] = useState<
@@ -433,7 +428,6 @@ export const Interactive: Story = {
     };
 
     const handleRefresh = () => {
-      // Simulate refresh with random variations
       setScenario((prev) => {
         const scenarios: Array<'excellent' | 'mixed' | 'critical'> = [
           'excellent',
@@ -571,7 +565,6 @@ export const Interactive: Story = {
   },
 };
 
-// Real-time Simulation
 export const RealTimeSimulation: Story = {
   render: () => {
     const [isRunning, setIsRunning] = useState(false);
@@ -636,7 +629,6 @@ export const RealTimeSimulation: Story = {
     };
 
     const handleRefresh = () => {
-      // Simulate data refresh
       setScanData((prev) => ({
         ...prev,
         filesPerSecond: 750 + Math.random() * 500,
@@ -706,7 +698,6 @@ export const RealTimeSimulation: Story = {
   },
 };
 
-// Loading and Error States
 export const StateExamples: Story = {
   render: () => {
     const [currentState, setCurrentState] = useState<
@@ -775,7 +766,6 @@ export const StateExamples: Story = {
   },
 };
 
-// Filtering Example
 export const FilteringExample: Story = {
   render: () => {
     const [filter, setFilter] = useState<

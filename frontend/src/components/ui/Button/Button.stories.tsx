@@ -1,11 +1,8 @@
+import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
 import { Button } from './Button';
 import { Play, Download, Heart } from 'lucide-react';
-
-/**
- * Button component stories and documentation.
- */
+import { action } from '@/utils/storybook-utils';
 const meta: Meta<typeof Button> = {
   title: 'Components/UI/Button',
   component: Button,
@@ -27,6 +24,7 @@ A flexible button component with multiple variants, sizes, and states.
 ## Usage
 \`\`\`tsx
 import { Button } from '@/components/ui/Button';
+import { action } from '@/utils/storybook-utils';
 
 <Button variant="primary" size="md" onClick={handleClick}>
   Click me
@@ -73,18 +71,12 @@ import { Button } from '@/components/ui/Button';
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default button with primary variant and medium size
- */
 export const Default: Story = {
   args: {
     children: 'Button',
   },
 };
 
-/**
- * All button variants displayed in a grid
- */
 export const Variants: Story = {
   render: () => (
     <div className="flex flex-wrap gap-4">
@@ -105,9 +97,6 @@ export const Variants: Story = {
   },
 };
 
-/**
- * All button sizes displayed in a row
- */
 export const Sizes: Story = {
   render: () => (
     <div className="flex items-center gap-4">
@@ -125,9 +114,6 @@ export const Sizes: Story = {
   },
 };
 
-/**
- * Button in loading state with spinner
- */
 export const Loading: Story = {
   args: {
     loading: true,
@@ -143,9 +129,6 @@ export const Loading: Story = {
   },
 };
 
-/**
- * Disabled button state
- */
 export const Disabled: Story = {
   args: {
     disabled: true,
@@ -160,9 +143,6 @@ export const Disabled: Story = {
   },
 };
 
-/**
- * Button with left icon
- */
 export const WithLeftIcon: Story = {
   args: {
     leftIcon: <Play size={16} />,
@@ -177,9 +157,6 @@ export const WithLeftIcon: Story = {
   },
 };
 
-/**
- * Button with right icon
- */
 export const WithRightIcon: Story = {
   args: {
     rightIcon: <Download size={16} />,
@@ -194,9 +171,6 @@ export const WithRightIcon: Story = {
   },
 };
 
-/**
- * Button with both left and right icons
- */
 export const WithBothIcons: Story = {
   args: {
     leftIcon: <Heart size={16} />,
@@ -212,9 +186,6 @@ export const WithBothIcons: Story = {
   },
 };
 
-/**
- * Icon-only button (no text)
- */
 export const IconOnly: Story = {
   args: {
     leftIcon: <Heart size={16} />,
@@ -230,9 +201,6 @@ export const IconOnly: Story = {
   },
 };
 
-/**
- * Loading button with icon (icon is hidden during loading)
- */
 export const LoadingWithIcon: Story = {
   args: {
     loading: true,
@@ -249,9 +217,6 @@ export const LoadingWithIcon: Story = {
   },
 };
 
-/**
- * Interactive demo showing all states
- */
 export const Interactive: Story = {
   args: {
     children: 'Interactive Button',
@@ -267,9 +232,6 @@ export const Interactive: Story = {
   },
 };
 
-/**
- * Button variants with different themes (light/dark)
- */
 export const ThemeVariants: Story = {
   render: () => (
     <div className="space-y-8">

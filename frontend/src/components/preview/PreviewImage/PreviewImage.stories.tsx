@@ -1,6 +1,3 @@
-/**
- * PreviewImage Storybook Stories
- */
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { PreviewImage } from './PreviewImage';
@@ -119,7 +116,6 @@ export const WithLazyLoading: Story = {
   },
 };
 
-// Gallery example showing multiple previews
 export const Gallery: Story = {
   render: () => (
     <div className="grid grid-cols-4 gap-4 p-4">

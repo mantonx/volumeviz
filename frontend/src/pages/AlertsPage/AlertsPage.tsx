@@ -13,9 +13,9 @@ import {
   Send,
 } from 'lucide-react';
 import { cn } from '@/utils';
-import { AlertDestinations } from '@/components/alerts/AlertDestinations';
-import { AlertRules } from '@/components/alerts/AlertRules';
-import { AlertHistory } from '@/components/alerts/AlertHistory';
+import { AlertDestinations } from '@/components/domain/alerts';
+import { AlertRules } from '@/components/domain/alerts';
+import { AlertHistory } from '@/components/domain/alerts';
 
 export interface AlertsPageProps {
   className?: string;

@@ -28,10 +28,10 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
-import { MetricCard } from '../../ui/MetricCard';
-import { Button } from '../../ui/Button';
-import { Badge } from '../../ui/Badge';
-import { Toast, useToast } from '../../ui/Toast';
+import { MetricCard } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { Badge } from '@/components/ui';
+import { Toast, useToast } from '@/components/ui';
 import type {
   MetricsOverviewProps,
   MetricsOverviewRef,

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { Card } from './Card';
 import { Badge } from '../Badge';
 
@@ -29,7 +30,6 @@ All cards automatically adapt to light/dark themes and provide consistent elevat
 export default meta;
 type Story = StoryObj<typeof Card>;
 
-// Volume information card example
 export const VolumeCard: Story = {
   render: () => (
     <Card className="p-6 max-w-md">
@@ -55,7 +55,6 @@ export const VolumeCard: Story = {
   ),
 };
 
-// Dashboard metric widget
 export const MetricWidget: Story = {
   render: () => (
     <Card className="p-6 max-w-sm">
@@ -80,7 +79,6 @@ export const MetricWidget: Story = {
   ),
 };
 
-// Error state card
 export const ErrorCard: Story = {
   render: () => (
     <Card className="p-6 max-w-md border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
@@ -102,7 +100,6 @@ export const ErrorCard: Story = {
   ),
 };
 
-// Settings panel card
 export const SettingsPanel: Story = {
   render: () => (
     <Card className="p-6 max-w-lg">
@@ -135,7 +132,6 @@ export const SettingsPanel: Story = {
   ),
 };
 
-// Basic empty card
 export const Basic: Story = {
   args: {
     children: 'Basic card content',

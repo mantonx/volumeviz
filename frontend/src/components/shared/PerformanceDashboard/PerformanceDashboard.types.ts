@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from 'react';
-import type { ProgressBarProps } from '../../ui/ProgressBar';
-import type { StatusBadgeProps } from '../../ui/StatusBadge';
+import type { ProgressBarProps } from '@/components/ui';
+import type { StatusBadgeProps } from '@/components/ui';
 
 export interface PerformanceMetric {
   /** Unique identifier for the metric */

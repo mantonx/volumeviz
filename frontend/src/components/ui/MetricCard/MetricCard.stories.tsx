@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { useState, useEffect } from 'react';
-import { action } from '@storybook/addon-actions';
+import { action } from '@/utils/storybook-utils';
+
 import {
   Activity,
   Clock,
@@ -65,7 +67,6 @@ const meta: Meta<typeof MetricCard> = {
 export default meta;
 type Story = StoryObj<typeof MetricCard>;
 
-// Helper to create sample metrics
 const createMetric = (overrides: Partial<Metric> = {}): Metric => ({
   id: 'sample-metric',
   label: 'Files Processed',
@@ -78,7 +79,6 @@ const createMetric = (overrides: Partial<Metric> = {}): Metric => ({
   ...overrides,
 });
 
-// Sample trend data
 const generateTrendData = (points = 10, baseValue = 100, variance = 20) => {
   return Array.from({ length: points }, (_, i) => ({
     timestamp: Date.now() - (points - i) * 60000, // 1 minute intervals
@@ -86,7 +86,6 @@ const generateTrendData = (points = 10, baseValue = 100, variance = 20) => {
   }));
 };
 
-// Default story
 export const Default: Story = {
   args: {
     metric: createMetric({
@@ -103,7 +102,6 @@ export const Default: Story = {
   },
 };
 
-// Different sizes
 export const Sizes: Story = {
   render: () => (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -139,7 +137,6 @@ export const Sizes: Story = {
   ),
 };
 
-// Different layouts
 export const Layouts: Story = {
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -209,7 +206,6 @@ export const Layouts: Story = {
   ),
 };
 
-// Different metric types
 export const MetricTypes: Story = {
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -277,7 +273,6 @@ export const MetricTypes: Story = {
   ),
 };
 
-// Different statuses
 export const Statuses: Story = {
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -334,7 +329,6 @@ export const Statuses: Story = {
   ),
 };
 
-// Trend variations
 export const Trends: Story = {
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -379,7 +373,6 @@ export const Trends: Story = {
   ),
 };
 
-// With trend charts
 export const WithTrendCharts: Story = {
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -419,7 +412,6 @@ export const WithTrendCharts: Story = {
   ),
 };
 
-// Interactive example
 export const Interactive: Story = {
   render: () => {
     const [metrics, setMetrics] = useState([
@@ -511,7 +503,6 @@ export const Interactive: Story = {
   },
 };
 
-// Loading and error states
 export const LoadingAndErrors: Story = {
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -551,7 +542,6 @@ export const LoadingAndErrors: Story = {
   ),
 };
 
-// Scan monitoring specific metrics
 export const ScanMonitoring: Story = {
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

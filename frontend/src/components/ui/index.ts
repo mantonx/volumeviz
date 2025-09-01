@@ -52,33 +52,26 @@ export type {
   ModalHeader,
   ModalFooter,
 } from './Modal';
-export { DataGrid } from './DataGrid';
-export type {
-  DataGridProps,
-  DataGridRef,
-  DataGridColumn,
-  DataGridSize,
-  DataGridVariant,
-  SelectionMode,
-  SortDirection,
-  SortConfig,
-  SelectionState,
-  LoadingConfig,
-  EmptyStateConfig,
-  FileEntry,
-  ScanResult,
-} from './DataGrid';
 export { Checkbox } from './Checkbox';
 export { Input } from './Input';
 
 // Newly added generic components
 export { Pagination } from './Pagination';
 export type { PaginationProps } from './Pagination';
-export { ColumnConfig } from './ColumnConfig';
-export type { ColumnConfigProps, ColumnDefinition } from './ColumnConfig';
 export { ViewToggle } from './ViewToggle';
 export type { ViewToggleProps, ViewOption, ViewType } from './ViewToggle';
-export { SortSelector } from './SortSelector';
-export type { SortSelectorProps, SortOption } from './SortSelector';
-export { FilterChips } from './FilterChips';
-export type { FilterChipsProps, FilterChip } from './FilterChips';
+export { ProgressBar } from './ProgressBar';
+export type { ProgressBarProps } from './ProgressBar';
+export { StatusBadge } from './StatusBadge';
+export type { StatusBadgeProps } from './StatusBadge';
+
+// Additional UI components
+export { Dropdown } from './Dropdown';
+export type { DropdownProps } from './Dropdown';
+export { PhaseTransitionNotification } from './PhaseTransitionNotification';
+export { PhaseTransitionToast } from './PhaseTransitionToast';
+export { ContainerStatus } from './ContainerStatus';
+export { FreshnessIndicator } from './FreshnessIndicator';
+export { GrowthIndicator } from './GrowthIndicator';
+export { SizeVisualization } from './SizeVisualization';
+export { Skeleton } from './Skeleton';

@@ -1,6 +1,6 @@
 import { useGetVolumes, useGetVolumesIdScanStatus, usePostVolumesIdSizeRefresh } from '@/api/orval-generated/api';
-import { ExplorerView } from '@/components/explorer';
-import { FileMetadataView } from '@/components/explorer/FileMetadataView';
+import { ExplorerView } from '@/components/domain/explorer';
+import { FileMetadataView } from '@/components/domain/explorer/FileMetadataView';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';

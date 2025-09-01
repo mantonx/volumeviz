@@ -20,8 +20,8 @@ import {
   Cpu,
   RefreshCw,
 } from 'lucide-react';
-import { ProgressBar } from '../../ui/ProgressBar';
-import { StatusBadge } from '../../ui/StatusBadge';
+import { ProgressBar } from '@/components/ui';
+import { StatusBadge } from '@/components/ui';
 import type {
   PerformanceDashboardProps,
   PerformanceDashboardRef,

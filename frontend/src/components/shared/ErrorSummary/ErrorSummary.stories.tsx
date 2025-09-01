@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
 import { useState, useRef } from 'react';
 import { ErrorSummary } from './ErrorSummary';
 import type {
@@ -99,7 +100,6 @@ mechanisms, and acknowledgment workflows for effective error handling.
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Sample error data
 const createSampleErrors = (
   scenario: 'mixed' | 'critical' | 'resolved',
 ): ErrorSummaryItem[] => {
@@ -213,7 +213,6 @@ const createSampleErrors = (
     }));
   }
 
-  // resolved scenario
   return mixedErrors.map((error) => ({
     ...error,
     acknowledged: true,
@@ -221,7 +220,6 @@ const createSampleErrors = (
   }));
 };
 
-// Basic Examples
 export const Default: Story = {
   args: {
     errors: createSampleErrors('mixed'),
@@ -268,7 +266,6 @@ export const Compact: Story = {
   },
 };
 
-// Layout Examples
 export const LayoutComparison: Story = {
   render: () => {
     const errors = createSampleErrors('mixed').slice(0, 3);
@@ -323,7 +320,6 @@ export const LayoutComparison: Story = {
   },
 };
 
-// Size Examples
 export const AllSizes: Story = {
   render: () => {
     const errors = createSampleErrors('mixed').slice(0, 2);
@@ -372,7 +368,6 @@ export const AllSizes: Story = {
   },
 };
 
-// Interactive Example
 export const Interactive: Story = {
   render: () => {
     const [errors, setErrors] = useState(createSampleErrors('mixed'));
@@ -398,7 +393,6 @@ export const Interactive: Story = {
 
     const handleRetry = (error: ErrorSummaryItem) => {
       alert(`Retrying: ${error.message}`);
-      // Simulate retry success
       setErrors((prev) =>
         prev.map((e) => (e.id === error.id ? { ...e, resolved: true } : e)),
       );
@@ -557,7 +551,6 @@ export const Interactive: Story = {
   },
 };
 
-// Scan Error Example
 export const ScanErrorExample: Story = {
   render: () => {
     const [scanErrors, setScanErrors] = useState<ErrorSummaryItem[]>([]);
@@ -703,7 +696,6 @@ export const ScanErrorExample: Story = {
   },
 };
 
-// State Examples
 export const StateExamples: Story = {
   render: () => {
     const [currentState, setCurrentState] = useState<
@@ -765,7 +757,6 @@ export const StateExamples: Story = {
   },
 };
 
-// Filtering Example
 export const FilteringExample: Story = {
   render: () => {
     const [filter, setFilter] = useState<

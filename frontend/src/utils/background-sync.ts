@@ -1,4 +1,6 @@
 // Background sync utilities for offline operations
+import React from 'react';
+
 export interface PendingOperation {
   id: string;
   type: 'scan' | 'refresh' | 'update' | 'index';

@@ -1,6 +1,7 @@
+import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import { action } from '@storybook/addon-actions';
+
 import {
   Settings,
   User,
@@ -67,7 +68,6 @@ const meta: Meta<typeof Modal> = {
 export default meta;
 type Story = StoryObj<typeof Modal>;
 
-// Helper component for stories
 const ModalTrigger = ({
   children,
   buttonText = 'Open Modal',
@@ -88,7 +88,6 @@ const ModalTrigger = ({
   );
 };
 
-// Default story
 export const Default: Story = {
   render: () => (
     <ModalTrigger
@@ -115,7 +114,6 @@ export const Default: Story = {
   ),
 };
 
-// Different sizes
 export const Sizes: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
@@ -185,7 +183,6 @@ export const Sizes: Story = {
   ),
 };
 
-// Drawer variants
 export const Drawers: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
@@ -247,7 +244,6 @@ export const Drawers: Story = {
   ),
 };
 
-// Different animations
 export const Animations: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
@@ -286,7 +282,6 @@ export const Animations: Story = {
   ),
 };
 
-// Header configurations
 export const HeaderVariations: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
@@ -338,7 +333,6 @@ export const HeaderVariations: Story = {
   ),
 };
 
-// Footer configurations
 export const FooterVariations: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
@@ -393,7 +387,6 @@ export const FooterVariations: Story = {
   ),
 };
 
-// Scrollable content
 export const ScrollableContent: Story = {
   render: () => (
     <ModalTrigger
@@ -421,7 +414,6 @@ export const ScrollableContent: Story = {
   ),
 };
 
-// Loading and error states
 export const LoadingAndError: Story = {
   render: () => (
     <div className="flex gap-2">
@@ -444,7 +436,6 @@ export const LoadingAndError: Story = {
   ),
 };
 
-// Non-closable modal
 export const NonClosable: Story = {
   render: () => (
     <ModalTrigger
@@ -468,7 +459,6 @@ export const NonClosable: Story = {
   ),
 };
 
-// Scan progress modal example
 export const ScanProgressModal: Story = {
   render: () => {
     const [progress, setProgress] = useState(45);
@@ -505,7 +495,6 @@ export const ScanProgressModal: Story = {
         }}
       >
         <div className="space-y-6">
-          {/* Progress Overview */}
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Overall Progress</span>
@@ -519,7 +508,6 @@ export const ScanProgressModal: Story = {
             </div>
           </div>
 
-          {/* Current Phase */}
           <div className="space-y-3">
             <h4 className="font-medium">Current Phase: Filesystem Indexing</h4>
             <div className="flex items-center gap-3">
@@ -535,7 +523,6 @@ export const ScanProgressModal: Story = {
             </div>
           </div>
 
-          {/* Statistics */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-gray-50 p-3 rounded">
               <div className="text-lg font-semibold text-gray-900">1,247</div>
@@ -551,7 +538,6 @@ export const ScanProgressModal: Story = {
             </div>
           </div>
 
-          {/* Recent Activity */}
           <div>
             <h4 className="font-medium mb-2">Recent Activity</h4>
             <div className="space-y-1 text-sm">
@@ -575,7 +561,6 @@ export const ScanProgressModal: Story = {
   },
 };
 
-// Interactive example
 export const Interactive: Story = {
   render: () => {
     const [modalConfig, setModalConfig] = useState({

@@ -1,0 +1,1 @@
+export { GrowthIndicator } from './GrowthIndicator';

@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { SearchInterface } from '@/components/search';
+import { SearchInterface } from '@/components/domain/search';
 import type { SearchPageProps } from './SearchPage.types';
 
 export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {

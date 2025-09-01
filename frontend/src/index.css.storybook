@@ -1,0 +1,36 @@
+/* Storybook-safe CSS file - NO Tailwind processing */
+
+/* Basic reset and typography */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+/* Custom animations for progress indicators (from original) */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Safe static styles - no color functions */
+.text-blue-600 { color: #2563eb; }
+.text-gray-600 { color: #4b5563; }
+.bg-white { background-color: #ffffff; }
+.bg-gray-50 { background-color: #f9fafb; }
+.p-4 { padding: 1rem; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.rounded-lg { border-radius: 0.5rem; }
+.border { border: 1px solid #e5e7eb; }

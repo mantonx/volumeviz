@@ -24,7 +24,7 @@ import {
   Trash2,
   Lightbulb,
 } from 'lucide-react';
-import { StatusBadge } from '../../ui/StatusBadge';
+import { StatusBadge } from '@/components/ui';
 import {
   formatScanErrorForDisplay,
   type ScanError,

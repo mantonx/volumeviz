@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { useGetVolumes } from '@/api/orval-generated/api';
 import { useGetApiV1OrganizationsMe } from '@/api/orval-generated/api';
 import { formatBytes } from '@/utils/formatters';
-import { SyncStatusBadge } from '@/components/common/SyncStatusIndicator';
+import { SyncStatusBadge } from '@/components/shared/SyncStatusIndicator';
 
 /**
  * Modern Dashboard page component providing an overview of VolumeViz system status.

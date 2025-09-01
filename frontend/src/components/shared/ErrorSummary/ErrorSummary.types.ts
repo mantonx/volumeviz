@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from 'react';
-import type { StatusBadgeProps } from '../../ui/StatusBadge';
+import type { StatusBadgeProps } from '@/components/ui';
 
 export interface ErrorSummaryItem {
   /** Unique identifier for the error */

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { MetricsOverview } from './MetricsOverview';
-import { ToastProvider } from '../../ui/Toast';
+import { ToastProvider } from '@/components/ui';
 import type {
   MetricsOverviewProps,
   OverviewMetric,
