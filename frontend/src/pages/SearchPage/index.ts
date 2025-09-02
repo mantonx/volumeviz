@@ -13,6 +13,7 @@
  * efficient querying across large file collections.
  */
 export { SearchPage } from './SearchPage';
+export { SearchPage as default } from './SearchPage';
 export type {
   SearchPageProps,
   SearchResult,

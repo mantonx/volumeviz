@@ -1,0 +1,398 @@
+import { selectedVolumeAtom } from '@/atoms/volumes';
+import { useVolumeOperations } from '@/hooks/api/useVolumeOperations';
+import { useVolumeBulkActions } from '@/hooks/volumes/useVolumeBulkActions';
+import { formatBytes } from '@/utils/formatters';
+import { cn } from '@/utils/ui';
+import { useSetAtom } from 'jotai';
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  HardDrive,
+  MoreVertical,
+} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { VolumeTableProps } from './VolumeTable.types';
+
+export const VolumeTable: React.FC<VolumeTableProps> = ({
+  volumes,
+  isLoading,
+  onVolumeSelect,
+  selectedVolumeIds = [],
+  onSelectionChange,
+  showBulkActions = true,
+  className,
+}) => {
+  const setSelectedVolume = useSetAtom(selectedVolumeAtom);
+  const { scanVolume, refreshVolumeSize } = useVolumeOperations();
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  // Convert selected volumes for bulk actions
+  const selectedVolumes = useMemo(
+    () =>
+      volumes
+        .filter((v) => selectedVolumeIds.includes(v.id))
+        .map((v) => ({ ...v, status: v.status as any })),
+    [volumes, selectedVolumeIds],
+  );
+
+  const bulkActions = useVolumeBulkActions(selectedVolumes, {
+    onActionComplete: (actionId, volumeIds) => {
+      console.log(`Bulk action ${actionId} completed for volumes:`, volumeIds);
+      // Clear selection after successful bulk action
+      onSelectionChange?.([]);
+    },
+  });
+
+  const handleSelectAll = () => {
+    if (selectedVolumeIds.length === volumes.length) {
+      onSelectionChange?.([]);
+    } else {
+      onSelectionChange?.(volumes.map((v) => v.id));
+    }
+  };
+
+  const handleRowSelect = (volumeId: string) => {
+    const newSelection = selectedVolumeIds.includes(volumeId)
+      ? selectedVolumeIds.filter((id) => id !== volumeId)
+      : [...selectedVolumeIds, volumeId];
+    onSelectionChange?.(newSelection);
+  };
+
+  const handleRowClick = (volume: any) => {
+    setSelectedVolume(volume.id);
+    onVolumeSelect?.(volume);
+  };
+
+  const toggleExpanded = (volumeId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(volumeId)) {
+      newExpanded.delete(volumeId);
+    } else {
+      newExpanded.add(volumeId);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+      case 'scanning':
+        return <Activity className="w-4 h-4 text-blue-600 animate-pulse" />;
+      case 'error':
+        return <AlertCircle className="w-4 h-4 text-red-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full';
+    switch (status) {
+      case 'active':
+        return `${baseClasses} bg-green-100 text-green-800`;
+      case 'scanning':
+        return `${baseClasses} bg-blue-100 text-blue-800`;
+      case 'error':
+        return `${baseClasses} bg-red-100 text-red-800`;
+      default:
+        return `${baseClasses} bg-gray-100 text-gray-800`;
+    }
+  };
+
+  const isAllSelected =
+    volumes.length > 0 && selectedVolumeIds.length === volumes.length;
+  const isPartiallySelected =
+    selectedVolumeIds.length > 0 && selectedVolumeIds.length < volumes.length;
+
+  if (isLoading) {
+    return (
+      <div
+        className={cn('bg-white rounded-lg border border-gray-200', className)}
+      >
+        <div className="p-6">
+          <div className="animate-pulse space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center space-x-4">
+                <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div className="w-20 h-4 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn('bg-white rounded-lg border border-gray-200', className)}
+    >
+      {/* Bulk Actions Bar */}
+      {showBulkActions && selectedVolumeIds.length > 0 && (
+        <div className="px-6 py-3 bg-blue-50 border-b border-blue-200">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-blue-900">
+              {selectedVolumeIds.length} volume
+              {selectedVolumeIds.length !== 1 ? 's' : ''} selected
+            </span>
+            <div className="flex items-center space-x-2">
+              {bulkActions
+                .filter(
+                  (action) =>
+                    !action.isEnabled || action.isEnabled(selectedVolumes),
+                )
+                .slice(0, 4) // Show first 4 actions
+                .map((action) => (
+                  <button
+                    key={action.id}
+                    onClick={() => action.action(selectedVolumeIds)}
+                    className={cn(
+                      'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium',
+                      action.variant === 'destructive'
+                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200',
+                    )}
+                    title={action.tooltip}
+                  >
+                    <action.icon className="w-4 h-4 mr-1" />
+                    {action.label}
+                  </button>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left">
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  checked={isAllSelected}
+                  ref={(input) => {
+                    if (input) input.indeterminate = isPartiallySelected;
+                  }}
+                  onChange={handleSelectAll}
+                />
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Volume
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Size
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Files
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Containers
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Last Scanned
+              </th>
+              <th className="relative px-6 py-3">
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {volumes.map((volume) => {
+              const isSelected = selectedVolumeIds.includes(volume.id);
+              const isExpanded = expandedRows.has(volume.id);
+              const sizePercentage = volume.quota_bytes
+                ? Math.min((volume.size_bytes / volume.quota_bytes) * 100, 100)
+                : 0;
+
+              return (
+                <React.Fragment key={volume.id}>
+                  <tr
+                    className={cn(
+                      'hover:bg-gray-50 cursor-pointer',
+                      isSelected && 'bg-blue-50',
+                    )}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={isSelected}
+                        onChange={() => handleRowSelect(volume.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
+
+                    <td
+                      className="px-6 py-4 whitespace-nowrap"
+                      onClick={() => handleRowClick(volume)}
+                    >
+                      <div className="flex items-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExpanded(volume.id);
+                          }}
+                          className="mr-2 p-1 hover:bg-gray-200 rounded"
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                        </button>
+                        <HardDrive className="w-5 h-5 text-gray-400 mr-3" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {volume.name}
+                          </div>
+                          <div
+                            className="text-sm text-gray-500 truncate max-w-xs"
+                            title={volume.path}
+                          >
+                            {volume.path}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {getStatusIcon(volume.status)}
+                        <span
+                          className={cn('ml-2', getStatusBadge(volume.status))}
+                        >
+                          {volume.status}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {formatBytes(volume.size_bytes)}
+                      </div>
+                      {volume.quota_bytes && (
+                        <div className="text-xs text-gray-500">
+                          {sizePercentage.toFixed(1)}% of{' '}
+                          {formatBytes(volume.quota_bytes)}
+                        </div>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {volume.file_count?.toLocaleString() || '—'}
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {volume.container_count || '—'}
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {volume.last_scanned_at
+                        ? new Date(volume.last_scanned_at).toLocaleDateString()
+                        : '—'}
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+
+                  {/* Expanded Row */}
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-4 bg-gray-50">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-gray-700">
+                              Created:
+                            </span>
+                            <div className="text-gray-600">
+                              {new Date(volume.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">
+                              Updated:
+                            </span>
+                            <div className="text-gray-600">
+                              {new Date(volume.updated_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                          {volume.quota_bytes && (
+                            <div>
+                              <span className="font-medium text-gray-700">
+                                Usage:
+                              </span>
+                              <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className={cn(
+                                    'h-2 rounded-full',
+                                    sizePercentage > 90
+                                      ? 'bg-red-500'
+                                      : sizePercentage > 75
+                                        ? 'bg-yellow-500'
+                                        : 'bg-blue-500',
+                                  )}
+                                  style={{
+                                    width: `${Math.min(sizePercentage, 100)}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          {volume.error_message && (
+                            <div>
+                              <span className="font-medium text-red-700">
+                                Error:
+                              </span>
+                              <div className="text-red-600 text-xs">
+                                {volume.error_message}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Empty State */}
+      {!isLoading && volumes.length === 0 && (
+        <div className="text-center py-12">
+          <HardDrive className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
+            No volumes found
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Get started by adding a new volume to track.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};

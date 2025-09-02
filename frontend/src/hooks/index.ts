@@ -15,3 +15,8 @@ export * from './useRealTimeScans';
 export * from './useVisualizationData';
 export * from './useAutoRefresh';
 export { useMultiPhaseScanProgress } from './useMultiPhaseScanProgress';
+
+// Performance and Web Worker hooks
+export * from './useWebWorker';
+export * from './usePrefetch';
+export * from './useAdaptiveLoading';

@@ -29,7 +29,7 @@ export const MockLayout: React.FC<LayoutProps> = ({ children }) => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <Sidebar />
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       </div>
 
       {/* Overlay for mobile */}

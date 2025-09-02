@@ -15,8 +15,6 @@ const HealthPage = React.lazy(() => import('@/pages/HealthPage'));
 const SettingsPage = React.lazy(() => import('@/pages/SettingsPage'));
 const OnboardingPage = React.lazy(() => import('@/pages/OnboardingPage'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
-const RealtimeTestPage = React.lazy(() => import('@/pages/RealtimeTestPage'));
-const WebSocketTestPage = React.lazy(() => import('@/pages/WebSocketTestPage'));
 import { RealtimeProvider } from '@/providers/realtime';
 import { backgroundSyncManager } from '@/utils/background-sync';
 import { serviceWorkerManager } from '@/utils/service-worker';
@@ -160,8 +158,6 @@ const App: React.FC = () => {
                 <Route path="/settings" element={<SettingsPage />} />
 
                 {/* Debug Routes */}
-                <Route path="/realtime-test" element={<RealtimeTestPage />} />
-                <Route path="/websocket-test" element={<WebSocketTestPage />} />
 
                 {/* 404 Route */}
                 <Route path="*" element={<NotFoundPage />} />

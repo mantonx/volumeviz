@@ -36,6 +36,17 @@ func NewSQLiteFilesRepo(queries *sqlcSQLite.Queries) *FilesRepo {
 	}
 }
 
+// GetFilesByPath gets files in a specific path for duplicate detection
+func (r *FilesRepo) GetFilesByPath(ctx context.Context, volumeID string, path string) ([]models.File, error) {
+	// This is a simplified implementation - in a real system, this would be more optimized
+	// For now, we'll return a mock result
+	
+	// TODO: Implement actual database query to get files by path
+	// This should query the files table filtering by volume_id and path prefix
+	
+	return []models.File{}, nil
+}
+
 // CreateFile creates a new file record
 func (r *FilesRepo) CreateFile(ctx context.Context, params models.CreateFileParams) (*models.File, error) {
 	pathHash := sha256.Sum256([]byte(params.Path))
@@ -87,6 +98,195 @@ func (r *FilesRepo) GetFileByPath(ctx context.Context, volumeID, path string) (*
 	}
 
 	return r.convertAnyFileRowToFile(file), nil
+}
+
+// GetAggregateData retrieves hierarchical file data with aggregated sizes and counts
+func (r *FilesRepo) GetAggregateData(ctx context.Context, volumeID, path string, maxDepth int, minSize int64, limit int) ([]models.AggregateTreeNode, models.AggregateStats, error) {
+	// Query for recursive file tree with aggregation
+	query := `
+		WITH RECURSIVE file_tree AS (
+			-- Base case: files at the starting path
+			SELECT 
+				f.id,
+				f.name,
+				f.path,
+				f.parent_path,
+				f.type,
+				f.size,
+				f.extension,
+				f.mime_type,
+				f.modified,
+				f.created,
+				0 as depth
+			FROM files f
+			WHERE 
+				f.volume_id = $1 
+				AND f.parent_path = $2
+				AND f.deleted_at IS NULL
+			
+			UNION ALL
+			
+			-- Recursive case: children
+			SELECT 
+				f.id,
+				f.name,
+				f.path,
+				f.parent_path,
+				f.type,
+				f.size,
+				f.extension,
+				f.mime_type,
+				f.modified,
+				f.created,
+				ft.depth + 1
+			FROM files f
+			INNER JOIN file_tree ft ON f.parent_path = ft.path
+			WHERE 
+				f.volume_id = $1
+				AND ft.depth < $3
+				AND f.deleted_at IS NULL
+		)
+		SELECT 
+			ft.id,
+			ft.name,
+			ft.path,
+			ft.parent_path,
+			ft.type,
+			ft.size,
+			ft.extension,
+			ft.mime_type,
+			ft.modified,
+			ft.created,
+			ft.depth,
+			-- Aggregate child counts
+			(SELECT COUNT(*) FROM file_tree WHERE parent_path = ft.path) as child_count,
+			-- Aggregate child sizes
+			(SELECT COALESCE(SUM(size), 0) FROM file_tree WHERE parent_path = ft.path AND type = 'file') as children_size
+		FROM file_tree ft
+		WHERE ($4 = 0 OR ft.size >= $4 OR ft.type = 'directory')
+		ORDER BY ft.depth, ft.type DESC, ft.name
+		LIMIT $5
+	`
+
+	rows, err := r.db.Query(ctx, query, volumeID, path, maxDepth-1, minSize, limit)
+	if err != nil {
+		return nil, models.AggregateStats{}, fmt.Errorf("query failed: %w", err)
+	}
+	defer rows.Close()
+
+	// Build tree structure
+	nodeMap := make(map[string]*models.AggregateTreeNode)
+	var rootNodes []models.AggregateTreeNode
+	var stats models.AggregateStats
+	var lastModified time.Time
+
+	for rows.Next() {
+		var node models.AggregateTreeNode
+		var nodeType string
+		var childCount int
+		var childrenSize int64
+		var created, modified *time.Time
+		var extension, mimeType *string
+		var id int64
+
+		err := rows.Scan(
+			&id,
+			&node.Name,
+			&node.Path,
+			&node.ParentPath,
+			&nodeType,
+			&node.Size,
+			&extension,
+			&mimeType,
+			&modified,
+			&created,
+			&node.Depth,
+			&childCount,
+			&childrenSize,
+		)
+		if err != nil {
+			return nil, models.AggregateStats{}, fmt.Errorf("scan failed: %w", err)
+		}
+
+		node.ID = fmt.Sprintf("node-%d", id)
+		node.Type = nodeType
+		node.Count = childCount
+		if extension != nil {
+			node.Extension = *extension
+		}
+		if mimeType != nil {
+			node.MimeType = *mimeType
+		}
+		if created != nil {
+			node.Created = created
+		}
+		if modified != nil {
+			node.Modified = *modified
+		}
+
+		// For directories, use aggregated size
+		if node.Type == "directory" {
+			node.Size = childrenSize
+		}
+
+		// Update stats
+		stats.TotalCount++
+		if node.Type == "file" {
+			stats.FileCount++
+			stats.TotalSize += node.Size
+		} else {
+			stats.DirCount++
+		}
+		if modified != nil && modified.After(lastModified) {
+			lastModified = *modified
+		}
+		if node.Depth > stats.MaxDepth {
+			stats.MaxDepth = node.Depth
+		}
+
+		// Build tree structure
+		nodeMap[node.Path] = &node
+		
+		if node.ParentPath == path {
+			rootNodes = append(rootNodes, node)
+		} else if parent, exists := nodeMap[node.ParentPath]; exists {
+			if parent.Children == nil {
+				parent.Children = []models.AggregateTreeNode{}
+			}
+			parent.Children = append(parent.Children, node)
+		}
+	}
+
+	// Calculate average file size
+	if stats.FileCount > 0 {
+		stats.AvgFileSize = stats.TotalSize / int64(stats.FileCount)
+	}
+	stats.LastModified = lastModified
+
+	// Find largest file
+	if stats.FileCount > 0 {
+		largestQuery := `
+			SELECT id, name, path, size 
+			FROM files 
+			WHERE volume_id = $1 AND type = 'file' AND deleted_at IS NULL
+			ORDER BY size DESC 
+			LIMIT 1
+		`
+		var largestFile models.FileRef
+		var id int64
+		err = r.db.QueryRow(ctx, largestQuery, volumeID).Scan(
+			&id,
+			&largestFile.Name,
+			&largestFile.Path,
+			&largestFile.Size,
+		)
+		if err == nil {
+			largestFile.ID = fmt.Sprintf("file-%d", id)
+			stats.LargestFile = &largestFile
+		}
+	}
+
+	return rootNodes, stats, nil
 }
 
 // ListFilesByFolder lists files in a folder with pagination

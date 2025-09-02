@@ -10,4 +10,5 @@
  * - Recent activity timeline (future feature)
  */
 export { Dashboard } from './Dashboard';
+export { Dashboard as default } from './Dashboard';
 export type { DashboardProps } from './Dashboard.types';

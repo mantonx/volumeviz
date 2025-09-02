@@ -13,6 +13,7 @@
  * to display discovered files and their metadata.
  */
 export { ExplorerPage } from './ExplorerPage';
+export { ExplorerPage as default } from './ExplorerPage';
 export type {
   ExplorerPageProps,
   FileItem,

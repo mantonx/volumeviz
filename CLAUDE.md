@@ -64,6 +64,28 @@ Claude AI serves as a development partner for VolumeViz, assisting with:
 - **Testing**: Writing unit tests, integration tests, and test scenarios
 - **Architecture**: Providing architectural guidance and design pattern recommendations
 
+### 🔧 Claude Auto-Linting Integration
+
+Claude AI automatically applies code formatting and linting after each code modification:
+
+```bash
+# Auto-lint specific file after changes
+./scripts/claude-lint-simple.sh src/path/to/modified/file.tsx
+
+# Auto-lint entire frontend after major changes  
+./scripts/claude-lint-simple.sh
+
+# Manual linting commands available
+docker-compose exec frontend npm run lint:fix
+docker-compose exec frontend npm run type-check
+```
+
+**Claude Workflow Integration:**
+- After each `Edit` or `Write` operation on TypeScript/TSX files, Claude runs auto-linting
+- Before completing features, Claude runs full project linting  
+- Type checking is performed alongside ESLint fixing
+- Ensures all code follows project standards automatically
+
 ### AI-Assisted Development Workflow
 
 #### 1. Feature Planning

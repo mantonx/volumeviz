@@ -29,10 +29,6 @@ export function calculateVolumePercentage(
     // Calculate THIS VOLUME's percentage of the total filesystem capacity
     const volumePercentOfTotal =
       (volumeSize / filesystemCapacity.total_bytes) * 100;
-    const totalFilesystemUsed =
-      filesystemCapacity.total_bytes -
-      (filesystemCapacity.available_bytes || 0);
-    const filesystemUsagePercent = filesystemCapacity.usage_percent || 0;
 
     return {
       percentage: volumePercentOfTotal,

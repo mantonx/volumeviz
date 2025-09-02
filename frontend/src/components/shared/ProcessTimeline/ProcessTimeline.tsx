@@ -7,7 +7,7 @@ import {
   RotateCcw,
   XCircle,
 } from 'lucide-react';
-import {
+import React, {
   forwardRef,
   useCallback,
   useImperativeHandle,
@@ -114,23 +114,27 @@ export const ProcessTimeline = forwardRef<
 
     // Phase status icons
     const getPhaseIcon = useCallback((phase: ProcessTimelinePhase) => {
-      if (phase.icon) return phase.icon;
+      const iconSize = size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
+      
+      if (phase.icon) {
+        return React.cloneElement(phase.icon as React.ReactElement, { className: iconSize });
+      }
 
       switch (phase.status) {
         case 'completed':
-          return <CheckCircle className="w-full h-full" />;
+          return <CheckCircle className={iconSize} />;
         case 'failed':
-          return <XCircle className="w-full h-full" />;
+          return <XCircle className={iconSize} />;
         case 'active':
-          return <Play className="w-full h-full" />;
+          return <Play className={iconSize} />;
         case 'pending':
-          return <Clock className="w-full h-full" />;
+          return <Clock className={iconSize} />;
         case 'skipped':
-          return <AlertTriangle className="w-full h-full" />;
+          return <AlertTriangle className={iconSize} />;
         default:
-          return <Clock className="w-full h-full" />;
+          return <Clock className={iconSize} />;
       }
-    }, []);
+    }, [size]);
 
     // Calculate overall progress
     const overallProgress = useMemo(() => {
@@ -155,19 +159,19 @@ export const ProcessTimeline = forwardRef<
     // Size classes
     const sizeClasses = {
       sm: {
-        spacing: orientation === 'horizontal' ? 'gap-3' : 'gap-2',
+        spacing: orientation === 'horizontal' ? 'gap-3' : 'gap-4',
         iconSize: 'w-6 h-6',
         fontSize: 'text-sm',
         connectorWidth: orientation === 'horizontal' ? 'w-8' : 'h-6',
       },
       md: {
-        spacing: orientation === 'horizontal' ? 'gap-4' : 'gap-3',
+        spacing: orientation === 'horizontal' ? 'gap-4' : 'gap-5',
         iconSize: 'w-8 h-8',
         fontSize: 'text-base',
         connectorWidth: orientation === 'horizontal' ? 'w-12' : 'h-8',
       },
       lg: {
-        spacing: orientation === 'horizontal' ? 'gap-6' : 'gap-4',
+        spacing: orientation === 'horizontal' ? 'gap-6' : 'gap-6',
         iconSize: 'w-10 h-10',
         fontSize: 'text-lg',
         connectorWidth: orientation === 'horizontal' ? 'w-16' : 'h-10',
@@ -240,7 +244,7 @@ export const ProcessTimeline = forwardRef<
 
       const contentClasses = clsx('process-timeline-phase-content', {
         'text-center': orientation === 'horizontal',
-        'flex items-start gap-3': orientation === 'vertical',
+        'flex items-start gap-4': orientation === 'vertical', // Increased gap from 3 to 4
       });
 
       const handlePhaseClick = useCallback(() => {
@@ -281,47 +285,43 @@ export const ProcessTimeline = forwardRef<
           <div className={contentClasses}>
             {/* Phase Icon/Badge */}
             <div className="flex-shrink-0">
-              <StatusBadge
-                variant={
-                  phase.status === 'completed'
-                    ? 'success'
-                    : phase.status === 'failed'
-                      ? 'error'
-                      : phase.status === 'active'
-                        ? 'info'
-                        : phase.status === 'skipped'
-                          ? 'warning'
-                          : 'pending'
-                }
-                size={size === 'sm' ? 'sm' : size === 'lg' ? 'lg' : 'md'}
-                icon={getPhaseIcon(phase)}
-                animated={phase.status === 'active' && animated}
-                showDot={phase.status === 'active'}
-                clickable={isClickable}
+              <div 
+                className={clsx(
+                  'rounded-full flex items-center justify-center',
+                  currentSize.iconSize,
+                  {
+                    'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400': phase.status === 'completed',
+                    'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400': phase.status === 'failed', 
+                    'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': phase.status === 'active',
+                    'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400': phase.status === 'skipped',
+                    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400': phase.status === 'pending',
+                    'cursor-pointer hover:scale-105 transition-transform': isClickable,
+                  }
+                )}
                 onClick={isClickable ? handlePhaseClick : undefined}
-                className={currentSize.iconSize}
               >
-                {orientation === 'horizontal' ? '' : phase.label}
-              </StatusBadge>
+                {getPhaseIcon(phase)}
+              </div>
             </div>
 
             {/* Phase Details */}
-            <div className="flex-1 min-w-0">
-              {/* Label for horizontal layout */}
-              {orientation === 'horizontal' && (
-                <div
-                  className={clsx(
-                    'font-medium text-gray-900 dark:text-white',
-                    currentSize.fontSize,
-                  )}
-                >
-                  {phase.label}
-                </div>
-              )}
+            <div className="flex-1 min-w-0 space-y-2">
+              {/* Phase Label */}
+              <div
+                className={clsx(
+                  'font-medium text-gray-900 dark:text-white leading-tight',
+                  currentSize.fontSize,
+                  {
+                    'text-center': orientation === 'horizontal',
+                  }
+                )}
+              >
+                {phase.label}
+              </div>
 
               {/* Description */}
               {showDescriptions && phase.description && (
-                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                   {phase.description}
                 </div>
               )}
@@ -344,14 +344,14 @@ export const ProcessTimeline = forwardRef<
 
               {/* Error Information */}
               {phase.status === 'failed' && phase.error && (
-                <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-md">
-                  <div className="text-sm text-red-800 dark:text-red-200">
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-md space-y-2">
+                  <div className="text-sm text-red-800 dark:text-red-200 leading-relaxed">
                     {phase.error.message}
                   </div>
                   {onRetryPhase && (
                     <button
                       onClick={() => onRetryPhase(phase)}
-                      className="mt-1 flex items-center gap-1 text-xs text-red-700 dark:text-red-300 hover:text-red-800 dark:hover:text-red-200"
+                      className="flex items-center gap-1 text-xs text-red-700 dark:text-red-300 hover:text-red-800 dark:hover:text-red-200 transition-colors"
                     >
                       <RotateCcw className="w-3 h-3" />
                       Retry
@@ -362,26 +362,26 @@ export const ProcessTimeline = forwardRef<
 
               {/* Timestamps and Duration */}
               {(showTimestamps || showDurations) && (
-                <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
                   {showTimestamps && phase.timestamps?.startedAt && (
-                    <span>
+                    <span className="whitespace-nowrap">
                       Started: {formatTimestamp(phase.timestamps.startedAt)}
                     </span>
                   )}
                   {showTimestamps && phase.timestamps?.completedAt && (
-                    <span>
+                    <span className="whitespace-nowrap">
                       Completed: {formatTimestamp(phase.timestamps.completedAt)}
                     </span>
                   )}
                   {showDurations && phase.duration?.actual && (
-                    <span>
+                    <span className="whitespace-nowrap">
                       Duration: {formatDuration(phase.duration.actual)}
                     </span>
                   )}
                   {showDurations &&
                     phase.duration?.estimated &&
                     !phase.duration.actual && (
-                      <span>
+                      <span className="whitespace-nowrap">
                         Est: {formatDuration(phase.duration.estimated)}
                       </span>
                     )}
@@ -390,7 +390,7 @@ export const ProcessTimeline = forwardRef<
 
               {/* Metadata Display */}
               {phase.metadata?.filesProcessed && (
-                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
                   {phase.metadata.filesProcessed.toLocaleString()} files
                   processed
                   {phase.metadata.totalFiles && (

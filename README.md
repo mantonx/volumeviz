@@ -4,35 +4,53 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](docker-compose.yml)
 
-**VolumeViz** is a comprehensive Docker volume analytics and filesystem monitoring platform that provides real-time insights into storage usage, file organization, and media content across your containerized infrastructure.
+**VolumeViz** is a modern Docker volume analytics platform with an intuitive web interface that provides comprehensive insights into storage usage, file organization, and media content across your containerized infrastructure.
 
-> 🚧 **Active Development**: Working on scan reliability improvements. See [WORK_TRACKER.md](WORK_TRACKER.md) for current progress.
+## 🎯 Core Features
 
-## 🚀 Core Features
+VolumeViz is built around 7 core features designed to provide a complete storage management experience:
 
-### Docker Volume Analytics
-- **Real-time Monitoring**: Track volume sizes, growth rates, and usage patterns
-- **Container Integration**: Monitor volume mounts and container relationships
-- **Performance Metrics**: Analyze I/O patterns and access frequencies
-- **Capacity Planning**: Forecast storage needs with trend analysis
+### 🚀 **Onboarding**
+- **Smart Setup**: Guided first-time configuration with intelligent defaults
+- **Volume Discovery**: Automatic Docker volume detection and registration
+- **Organization Setup**: Multi-tenant account configuration with role-based access
+- **Quick Start**: Interactive tutorials and sample data for immediate value
 
-### Filesystem Indexing
-- **Deep Scanning**: Recursive indexing of volume contents with configurable depth
-- **File Categorization**: Automatic classification by type, size, and age
-- **Duplicate Detection**: Identify redundant files across volumes
-- **Change Tracking**: Monitor file modifications and deletions
+### 📊 **Dashboard** 
+- **Real-time Metrics**: Live storage analytics with WebSocket updates
+- **Visual Insights**: Interactive charts showing usage patterns and trends
+- **System Health**: Container status, scan progress, and performance indicators
+- **Customizable Views**: User-configurable widgets and layout preferences
 
-### Scan Orchestration
-- **Intelligent Scheduling**: Adaptive scanning based on volume activity
-- **Parallel Processing**: Multi-worker architecture for efficient scanning
-- **Priority Queuing**: Smart prioritization of active volumes
-- **Resource Management**: Configurable CPU and memory limits
+### 💾 **Volumes**
+- **Volume Management**: CRUD operations with detailed metadata and relationships
+- **Container Integration**: Track volume mounts and container dependencies
+- **Capacity Planning**: Growth forecasting with trend analysis and alerts
+- **Performance Metrics**: I/O patterns, access frequencies, and bottleneck identification
 
-### Metadata Enrichers
-- **Media Analysis**: Extract metadata from images, videos, and audio files
-- **EXIF Processing**: Parse camera settings and location data from photos
-- **Video Transcoding**: Generate previews and extract frame information
-- **Subtitle Extraction**: Process embedded and external subtitle tracks
+### 🗂️ **Explorer**
+- **Visual Navigation**: Interactive treemap and sunburst visualizations for space usage
+- **File Browser**: Virtualized file/folder views with search and filtering
+- **Preview System**: Thumbnail generation and metadata extraction for media files
+- **Cleanup Tools**: Duplicate detection and bulk operations for storage optimization
+
+### 🔍 **Search**
+- **Advanced Queries**: Multi-criteria search across files, metadata, and content
+- **Real-time Results**: Instant search with intelligent ranking and relevance
+- **Saved Searches**: Bookmark complex queries for recurring analysis
+- **Export Capabilities**: CSV/JSON export of search results and analytics
+
+### 📈 **Trends**
+- **Growth Analysis**: Historical storage trends with predictive modeling
+- **Usage Patterns**: File type distribution, access patterns, and seasonal variations
+- **Performance Analytics**: Scan duration, error rates, and system efficiency metrics
+- **Comparative Views**: Cross-volume analysis and benchmark comparisons
+
+### ⚠️ **Alerts**
+- **Smart Notifications**: Configurable alerts for capacity, performance, and anomalies
+- **Multi-channel Delivery**: Email, Slack, webhook integrations with customizable templates
+- **Escalation Policies**: Tiered alerting with automatic escalation and acknowledgment workflows
+- **Alert Analytics**: Trending and analysis of alert patterns for proactive management
 
 ## 📦 Installation
 
@@ -63,13 +81,33 @@ kubectl apply -f deployments/kubernetes/
 
 ## 🏗️ Architecture
 
-VolumeViz follows a clean architecture pattern with clear separation of concerns:
+VolumeViz follows a modern, scalable architecture designed for performance and maintainability:
 
-- **Frontend**: React/TypeScript with real-time WebSocket updates
-- **Backend**: Go API server with gin framework
-- **Storage**: PostgreSQL or SQLite with SQLC for type-safe queries
-- **Monitoring**: Prometheus metrics and Grafana dashboards
-- **Processing**: Background workers for scanning and enrichment
+### 🎨 **Frontend Stack**
+- **React 19**: Modern component-based UI with concurrent features
+- **TypeScript**: Full type safety with strict configuration
+- **Jotai**: Atomic state management for reactive data flow
+- **TanStack Query**: Server state management with intelligent caching
+- **Tailwind CSS**: Utility-first styling with design system integration
+- **Vite**: Lightning-fast development and optimized production builds
+- **Storybook**: Component development and documentation platform
+
+### ⚙️ **Backend Stack** 
+- **Go 1.24**: High-performance API server with gin framework
+- **PostgreSQL**: Primary database with advanced query capabilities
+- **SQLC**: Type-safe SQL with code generation
+- **WebSocket**: Real-time updates using Gorilla WebSocket
+- **Docker SDK**: Native container integration and monitoring
+- **Prometheus**: Metrics collection and monitoring
+
+### 🔧 **Development Tools**
+- **OpenAPI/Swagger**: API-first development with automated client generation
+- **Orval**: TypeScript client generation from OpenAPI specs
+- **Docker Compose**: Consistent development environment
+- **Testing**: Comprehensive test suites with Vitest (frontend) and Go testing (backend)
+- **CI/CD**: Automated quality gates and deployment pipelines
+
+For detailed architectural decisions and implementation details, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## 🔧 Configuration
 
@@ -100,14 +138,21 @@ PREVIEW_ROOT_DIR=/data/previews
 
 ## 📊 API Documentation
 
-The VolumeViz API provides comprehensive endpoints for all functionality:
+The VolumeViz API provides comprehensive RESTful endpoints organized around our core features:
 
-- **Volumes**: CRUD operations and analytics
-- **Files**: Browse, search, and analyze file systems
-- **Scans**: Trigger and monitor scan operations
-- **Metadata**: Access enriched file information
-- **Alerts**: Configure monitoring and notifications
-- **WebSocket**: Real-time updates and events
+- **Organizations**: Multi-tenant account management and user access control
+- **Volumes**: CRUD operations, analytics, and container relationships  
+- **Explorer**: File system navigation, metadata, and visualization data
+- **Analytics**: Statistical insights, trends, and performance metrics
+- **Alerts**: Notification management and escalation policies
+- **System Health**: Service status, metrics, and diagnostic information
+- **WebSocket**: Real-time updates and event streaming
+
+The API is fully documented with OpenAPI/Swagger specifications and includes:
+- Interactive API explorer at `/swagger/index.html`
+- Auto-generated TypeScript clients via Orval
+- Comprehensive request/response examples
+- Authentication and error handling details
 
 See the [API Documentation](docs/api/README.md) for detailed endpoint information.
 
@@ -139,19 +184,39 @@ cd frontend && npm test
 
 ### Development Workflow
 
+VolumeViz uses Docker for consistent development across all platforms:
+
 ```bash
-# Start development environment with hot reload
-docker-compose -f docker-compose.dev.yml up
+# Start all services (backend, frontend, database)
+docker-compose -f docker-compose.dev.yml up --build
 
-# Run database migrations
-./vendor/bin/migrate -path migrations -database "$DATABASE_URL" up
+# Start individual services
+docker-compose -f docker-compose.dev.yml up frontend  # React dev server
+docker-compose -f docker-compose.dev.yml up backend   # Go API server
 
-# Generate SQLC models
-sqlc generate
+# Generate API client from OpenAPI spec
+cd frontend && npm run generate:api
+
+# Run database migrations (handled automatically by backend)
+# Manual migration: docker-compose exec backend migrate up
+
+# Generate SQLC models (backend)
+docker-compose exec backend sqlc generate
+
+# Run tests
+docker-compose exec backend go test ./...
+docker-compose exec frontend npm test
 
 # Run linters
-./scripts/lint.sh
+docker-compose exec backend golangci-lint run
+docker-compose exec frontend npm run lint
 ```
+
+### Service Access
+- **Frontend**: http://localhost:3000 (React development server)
+- **Backend API**: http://localhost:8080 (Go server with hot reload)
+- **API Documentation**: http://localhost:8080/swagger/index.html
+- **Database**: localhost:5432 (PostgreSQL with pgAdmin at http://localhost:5050)
 
 ## 📈 Monitoring
 

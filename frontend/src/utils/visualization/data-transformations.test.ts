@@ -2,6 +2,7 @@
  * Tests for visualization data transformation utilities
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   transformVolumesToChartData,
   generateSystemStorageData,
@@ -240,7 +241,7 @@ describe('data-transformations', () => {
     const originalNow = Date.now;
 
     beforeEach(() => {
-      Date.now = jest.fn(() => now.getTime());
+      Date.now = vi.fn(() => now.getTime());
     });
 
     afterEach(() => {

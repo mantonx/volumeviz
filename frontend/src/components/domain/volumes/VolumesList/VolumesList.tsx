@@ -1,58 +1,45 @@
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { Loader2, AlertCircle, RefreshCw, Plus, Search, Filter } from 'lucide-react';
-import React, { useEffect } from 'react';
-import { 
-  volumeFiltersAtom,
-  selectedVolumeAtom,
-  organizationIdAtom,
-  organizationStatsAtom,
-} from '@/atoms';
-import { useVolumesList } from '@/hooks/api/useVolumesList';
-import { useVolumeOperations } from '@/hooks/api/useVolumeOperations';
+import { organizationStatsAtom, volumeFiltersAtom } from '@/atoms';
 import { useOrganization } from '@/hooks/api/useOrganization';
+import { useVolumesList } from '@/hooks/api/useVolumesList';
+import { useAtom, useAtomValue } from 'jotai';
+import { Grid, List, Loader2, Plus, RefreshCw, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { VolumeCard } from '../VolumeCard';
+import { VolumeTable } from '../VolumeTable';
 
 interface VolumesListProps {
   className?: string;
 }
 
 export function VolumesList({ className = '' }: VolumesListProps) {
-  const { currentOrgId, organization, isLoading: orgLoading } = useOrganization();
+  const {
+    currentOrgId,
+    organization,
+    isLoading: orgLoading,
+  } = useOrganization();
   const [filters, setFilters] = useAtom(volumeFiltersAtom);
   const { data: orgStats } = useAtomValue(organizationStatsAtom);
-  const { refreshVolumes, bulkScan } = useVolumeOperations();
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [selectedVolumeIds, setSelectedVolumeIds] = useState<string[]>([]);
 
-  const {
-    volumes,
-    pagination,
-    isLoading,
-    error,
-    refetch,
-    isFetching,
-  } = useVolumesList({
-    page: 1,
-    pageSize: 25,
-  });
+  const { volumes, pagination, isLoading, refetch, isFetching } =
+    useVolumesList({
+      page: 1,
+      pageSize: 25,
+    });
 
   const handleSearchChange = (searchTerm: string) => {
-    setFilters(prev => ({ ...prev, searchTerm }));
+    setFilters((prev) => ({ ...prev, searchTerm }));
   };
 
   const handleFilterChange = (newFilters: Partial<typeof filters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  };
-
-  const handleBulkScan = async (volumeIds: string[]) => {
-    try {
-      await bulkScan.mutateAsync(volumeIds, { async: true });
-    } catch (error) {
-      console.error('Bulk scan failed:', error);
-    }
+    setFilters((prev) => ({ ...prev, ...newFilters }));
   };
 
   // Auto-sync organization filter
   useEffect(() => {
     if (currentOrgId && filters.organizationId !== currentOrgId) {
-      setFilters(prev => ({ ...prev, organizationId: currentOrgId }));
+      setFilters((prev) => ({ ...prev, organizationId: currentOrgId }));
     }
   }, [currentOrgId, filters.organizationId, setFilters]);
 
@@ -78,13 +65,41 @@ export function VolumesList({ className = '' }: VolumesListProps) {
             </p>
           )}
         </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4">
+        <div className="mt-4 flex items-center space-x-3 md:mt-0 md:ml-4">
+          {/* View Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`p-2 rounded-md transition-colors ${
+                viewMode === 'table'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              title="Table view"
+            >
+              <List className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-md transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              title="Grid view"
+            >
+              <Grid className="h-4 w-4" />
+            </button>
+          </div>
+
           <button
             onClick={() => refetch()}
             disabled={isFetching}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <RefreshCw className={`-ml-1 mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`-ml-1 mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`}
+            />
             {isFetching ? 'Refreshing...' : 'Refresh'}
           </button>
           <button
@@ -100,20 +115,20 @@ export function VolumesList({ className = '' }: VolumesListProps) {
       {/* Organization Stats */}
       {orgStats && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <StatsCard 
-            title="Total Volumes" 
+          <StatsCard
+            title="Total Volumes"
             value={orgStats.total_volumes || 0}
             icon="V"
             color="blue"
           />
-          <StatsCard 
-            title="Total Size" 
+          <StatsCard
+            title="Total Size"
             value={formatBytes(orgStats.total_size || 0)}
             icon="S"
             color="green"
           />
-          <StatsCard 
-            title="Active Users" 
+          <StatsCard
+            title="Active Users"
             value={orgStats.total_users || 0}
             icon="U"
             color="purple"
@@ -138,26 +153,30 @@ export function VolumesList({ className = '' }: VolumesListProps) {
               />
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             <select
               className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               value={filters.status}
-              onChange={(e) => handleFilterChange({ 
-                status: e.target.value as 'all' | 'active' | 'inactive' 
-              })}
+              onChange={(e) =>
+                handleFilterChange({
+                  status: e.target.value as 'all' | 'active' | 'inactive',
+                })
+              }
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
-            
+
             <select
               className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               value={filters.sortBy}
-              onChange={(e) => handleFilterChange({ 
-                sortBy: e.target.value as 'name' | 'size' | 'created' 
-              })}
+              onChange={(e) =>
+                handleFilterChange({
+                  sortBy: e.target.value as 'name' | 'size' | 'created',
+                })
+              }
             >
               <option value="name">Sort by Name</option>
               <option value="size">Sort by Size</option>
@@ -170,13 +189,13 @@ export function VolumesList({ className = '' }: VolumesListProps) {
         {(filters.searchTerm || filters.status !== 'all') && (
           <div className="mt-4 flex flex-wrap gap-2">
             {filters.searchTerm && (
-              <FilterChip 
+              <FilterChip
                 label={`Search: "${filters.searchTerm}"`}
                 onRemove={() => handleSearchChange('')}
               />
             )}
             {filters.status !== 'all' && (
-              <FilterChip 
+              <FilterChip
                 label={`Status: ${filters.status}`}
                 onRemove={() => handleFilterChange({ status: 'all' })}
               />
@@ -186,14 +205,71 @@ export function VolumesList({ className = '' }: VolumesListProps) {
       </div>
 
       {/* Volume List */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="text-center py-8">
-          <div className="text-gray-500">
-            <p>Volume list functionality is being refactored.</p>
-            <p className="text-sm mt-2">Individual volume components will be integrated here.</p>
-          </div>
+      {viewMode === 'table' ? (
+        <VolumeTable
+          volumes={volumes}
+          isLoading={isLoading}
+          selectedVolumeIds={selectedVolumeIds}
+          onSelectionChange={setSelectedVolumeIds}
+          onVolumeSelect={(volume) => {
+            // Handle volume selection for detailed view
+            console.log('Selected volume:', volume);
+          }}
+          showBulkActions={true}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {isLoading ? (
+            // Loading skeleton for grid view
+            [...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-lg border border-gray-200 p-6"
+              >
+                <div className="animate-pulse">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-gray-200 rounded-lg mr-3"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-3 bg-gray-200 rounded"></div>
+                    <div className="h-2 bg-gray-200 rounded"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : volumes.length > 0 ? (
+            volumes.map((volume) => (
+              <VolumeCard
+                key={volume.id}
+                volume={volume}
+                isSelected={selectedVolumeIds.includes(volume.id)}
+                onSelect={(volumeId) => {
+                  setSelectedVolumeIds((prev) =>
+                    prev.includes(volumeId)
+                      ? prev.filter((id) => id !== volumeId)
+                      : [...prev, volumeId],
+                  );
+                }}
+                showActions={true}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <div className="text-gray-500">
+                <p>No volumes found</p>
+                <p className="text-sm mt-2">
+                  Try adjusting your filters or add a new volume.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Pagination */}
       {pagination.total > pagination.pageSize && (
@@ -217,18 +293,24 @@ export function VolumesList({ className = '' }: VolumesListProps) {
               <p className="text-sm text-gray-700">
                 Showing{' '}
                 <span className="font-medium">
-                  {((pagination.page - 1) * pagination.pageSize) + 1}
+                  {(pagination.page - 1) * pagination.pageSize + 1}
                 </span>{' '}
                 to{' '}
                 <span className="font-medium">
-                  {Math.min(pagination.page * pagination.pageSize, pagination.total)}
+                  {Math.min(
+                    pagination.page * pagination.pageSize,
+                    pagination.total,
+                  )}
                 </span>{' '}
-                of{' '}
-                <span className="font-medium">{pagination.total}</span> results
+                of <span className="font-medium">{pagination.total}</span>{' '}
+                results
               </p>
             </div>
             <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <nav
+                className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                aria-label="Pagination"
+              >
                 {/* Pagination buttons would go here */}
               </nav>
             </div>
@@ -250,7 +332,7 @@ interface StatsCardProps {
 function StatsCard({ title, value, icon, color }: StatsCardProps) {
   const colorClasses = {
     blue: 'bg-blue-500',
-    green: 'bg-green-500', 
+    green: 'bg-green-500',
     purple: 'bg-purple-500',
   };
 
@@ -259,7 +341,9 @@ function StatsCard({ title, value, icon, color }: StatsCardProps) {
       <div className="p-5">
         <div className="flex items-center">
           <div className="flex-shrink-0">
-            <div className={`w-8 h-8 ${colorClasses[color]} rounded-md flex items-center justify-center`}>
+            <div
+              className={`w-8 h-8 ${colorClasses[color]} rounded-md flex items-center justify-center`}
+            >
               <span className="text-white text-sm font-medium">{icon}</span>
             </div>
           </div>
@@ -268,9 +352,7 @@ function StatsCard({ title, value, icon, color }: StatsCardProps) {
               <dt className="text-sm font-medium text-gray-500 truncate">
                 {title}
               </dt>
-              <dd className="text-lg font-medium text-gray-900">
-                {value}
-              </dd>
+              <dd className="text-lg font-medium text-gray-900">{value}</dd>
             </dl>
           </div>
         </div>
@@ -294,7 +376,12 @@ function FilterChip({ label, onRemove }: FilterChipProps) {
         onClick={onRemove}
       >
         <span className="sr-only">Remove filter</span>
-        <svg className="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
+        <svg
+          className="h-2 w-2"
+          stroke="currentColor"
+          fill="none"
+          viewBox="0 0 8 8"
+        >
           <path strokeLinecap="round" strokeWidth="1.5" d="m1 1 6 6m0-6-6 6" />
         </svg>
       </button>
@@ -307,11 +394,11 @@ function formatBytes(bytes: number): string {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let size = bytes;
   let unitIndex = 0;
-  
+
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024;
     unitIndex++;
   }
-  
+
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 }

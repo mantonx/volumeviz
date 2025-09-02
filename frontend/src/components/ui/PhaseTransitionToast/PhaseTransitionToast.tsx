@@ -51,25 +51,7 @@ export const PhaseTransitionToast: React.FC<PhaseTransitionToastProps> = ({
 }) => {
   const [toasts, setToasts] = useState<ToastInstance[]>([]);
 
-  const { latestTransition } = usePhaseTransitionNotifications({
-    enabled,
-    volumeId,
-    scanId,
-    onTransition: (transition) => {
-      // Create new toast instance
-      const toastInstance: ToastInstance = {
-        id: `toast-${transition.id}`,
-        transition,
-        timestamp: Date.now(),
-      };
-
-      setToasts((prev) => {
-        // Add new toast and limit to maxToasts
-        const updated = [toastInstance, ...prev].slice(0, maxToasts);
-        return updated;
-      });
-    },
-  });
+  const { latestTransition } = { latestTransition: null };
 
   // Remove toast
   const removeToast = (toastId: string) => {

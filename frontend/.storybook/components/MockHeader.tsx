@@ -46,7 +46,7 @@ export const MockHeader: React.FC<HeaderProps> = ({
 
   // Convert ReadyState to display format (copied from original Header)
   const wsStatus = React.useMemo(() => {
-    switch (wsReadyState) {
+    switch (wsReadyState as ReadyState) {
       case ReadyState.CONNECTING:
         return { text: 'Connecting...', color: 'text-yellow-600', icon: RefreshCw, spinning: true };
       case ReadyState.OPEN:
@@ -65,7 +65,7 @@ export const MockHeader: React.FC<HeaderProps> = ({
   const StatusIcon = wsStatus.icon;
 
   const toggleTheme = () => {
-    const themes = ['light', 'dark', 'auto'] as const;
+    const themes = ['light', 'dark', 'system'] as const;
     const currentIndex = themes.indexOf(theme);
     const nextTheme = themes[(currentIndex + 1) % themes.length];
     setTheme(nextTheme);
@@ -77,7 +77,7 @@ export const MockHeader: React.FC<HeaderProps> = ({
         return Sun;
       case 'dark':
         return Moon;
-      case 'auto':
+      case 'system':
         return Monitor;
       default:
         return Monitor;

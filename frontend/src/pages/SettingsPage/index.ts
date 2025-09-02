@@ -13,4 +13,5 @@
  * and apply immediately without requiring application restart.
  */
 export { SettingsPage } from './SettingsPage';
+export { SettingsPage as default } from './SettingsPage';
 export type { SettingsPageProps, ThemeOption } from './SettingsPage.types';

@@ -156,18 +156,18 @@ process.env.NODE_ENV = 'test';
 // Mock imported modules that cause issues in test environment
 jest.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => children,
-  BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
-  Bar: () => <div data-testid="bar" />,
-  XAxis: () => <div data-testid="x-axis" />,
-  YAxis: () => <div data-testid="y-axis" />,
-  CartesianGrid: () => <div data-testid="cartesian-grid" />,
-  Tooltip: () => <div data-testid="tooltip" />,
-  Legend: () => <div data-testid="legend" />,
-  PieChart: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-chart">{children}</div>,
-  Pie: () => <div data-testid="pie" />,
-  Cell: () => <div data-testid="cell" />,
-  LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
-  Line: () => <div data-testid="line" />,
+  BarChart: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'bar-chart' }, children),
+  Bar: () => React.createElement('div', { 'data-testid': 'bar' }),
+  XAxis: () => React.createElement('div', { 'data-testid': 'x-axis' }),
+  YAxis: () => React.createElement('div', { 'data-testid': 'y-axis' }),
+  CartesianGrid: () => React.createElement('div', { 'data-testid': 'cartesian-grid' }),
+  Tooltip: () => React.createElement('div', { 'data-testid': 'tooltip' }),
+  Legend: () => React.createElement('div', { 'data-testid': 'legend' }),
+  PieChart: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'pie-chart' }, children),
+  Pie: () => React.createElement('div', { 'data-testid': 'pie' }),
+  Cell: () => React.createElement('div', { 'data-testid': 'cell' }),
+  LineChart: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'line-chart' }, children),
+  Line: () => React.createElement('div', { 'data-testid': 'line' }),
 }));
 
 // Mock react-router-dom navigation

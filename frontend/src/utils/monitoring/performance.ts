@@ -347,7 +347,7 @@ export const withPerformanceTracking = <P extends object>(
       trackComponentRender(componentName, renderDuration);
     });
 
-    return <Component {...props} ref={ref} />;
+    return React.createElement(Component, { ...props, ref });
   });
 };
 

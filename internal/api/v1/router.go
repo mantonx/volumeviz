@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/middleware"
+	"github.com/mantonx/volumeviz/internal/api/v1/aggregate"
 	"github.com/mantonx/volumeviz/internal/api/v1/alerts"
 	"github.com/mantonx/volumeviz/internal/api/v1/auth"
 	"github.com/mantonx/volumeviz/internal/api/v1/diag"
@@ -593,6 +594,10 @@ func (r *Router) setupRoutes(config *config.Config) {
 
 			// Explorer router for directory browsing and file operations - organization scoped
 			explorer.RegisterRoutes(orgScopedRoutes, r.store)
+
+			// Aggregate router for visualization data - organization scoped
+			aggregateHandler := aggregate.NewHandler(r.store)
+			aggregateHandler.RegisterRoutes(orgScopedRoutes)
 
 			// File metadata router for detailed file information - organization scoped
 			metadata.RegisterRoutes(orgScopedRoutes, r.store)
