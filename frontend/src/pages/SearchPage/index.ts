@@ -20,4 +20,8 @@ export type {
   SearchFilters,
   SearchQuery,
   SavedSearch,
+  SearchState,
+  DuplicateDetectionOptions,
+  ExportFormat,
+  SearchStatistics,
 } from './SearchPage.types';

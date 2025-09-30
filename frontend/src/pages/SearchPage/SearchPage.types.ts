@@ -65,3 +65,42 @@ export interface SavedSearch {
   createdAt: string;
   updatedAt?: string;
 }
+
+/**
+ * Search page state
+ */
+export interface SearchState {
+  query: string;
+  filters: SearchFilters;
+  results: SearchResult[];
+  isSearching: boolean;
+  selectedResults: string[];
+  showDuplicates: boolean;
+  showHistory: boolean;
+}
+
+/**
+ * Duplicate detection options
+ */
+export interface DuplicateDetectionOptions {
+  byContentHash: boolean;
+  bySizeAndName: boolean;
+  fuzzyMatching: boolean;
+  minFileSize?: number;
+  excludePatterns?: string[];
+}
+
+/**
+ * Export format options
+ */
+export type ExportFormat = 'csv' | 'json' | 'excel';
+
+/**
+ * Search statistics
+ */
+export interface SearchStatistics {
+  totalResults: number;
+  potentialDuplicates: number;
+  totalSize: number;
+  recentSearches: number;
+}
