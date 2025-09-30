@@ -1,3 +1,9 @@
+import { ApiHealthChecker } from '@/components/application';
+import { Layout } from '@/components/layout/Layout';
+import { ToastProvider } from '@/components/ui';
+import { RealtimeProvider } from '@/providers/realtime';
+import { backgroundSyncManager } from '@/utils/background-sync';
+import { serviceWorkerManager } from '@/utils/service-worker';
 import React, { Suspense, useEffect, useState } from 'react';
 import {
   Navigate,
@@ -5,12 +11,6 @@ import {
   BrowserRouter as Router,
   Routes,
 } from 'react-router-dom';
-import { ApiHealthChecker } from '@/components/application';
-import { Layout } from '@/components/layout/Layout';
-import { ToastProvider } from '@/components/ui';
-import { RealtimeProvider } from '@/providers/realtime';
-import { backgroundSyncManager } from '@/utils/background-sync';
-import { serviceWorkerManager } from '@/utils/service-worker';
 
 // Lazy load pages for better code splitting
 const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
@@ -73,20 +73,22 @@ const App: React.FC = () => {
     };
 
     checkOnboardingStatus();
-    
+
     // Set up background sync event listener
     const handleBackgroundSync = () => {
       // Background sync triggered from service worker
       backgroundSyncManager.forcSync();
     };
-    
+
     window.addEventListener('sw-background-sync', handleBackgroundSync);
-    
+
+    // DISABLED: Service worker caching conflicts with Vite dev mode hot reload
+    // TODO: Re-enable in production builds only
     // Register for background sync if supported
-    if (serviceWorkerManager.isSupported()) {
-      serviceWorkerManager.registerBackgroundSync();
-    }
-    
+    // if (serviceWorkerManager.isSupported()) {
+    //   serviceWorkerManager.registerBackgroundSync();
+    // }
+
     return () => {
       window.removeEventListener('sw-background-sync', handleBackgroundSync);
     };
@@ -117,50 +119,59 @@ const App: React.FC = () => {
             <Layout>
               <Suspense fallback={<PageLoadingSpinner />}>
                 <Routes>
-                {/* Onboarding Route */}
-                <Route path="/onboarding" element={<OnboardingPage />} />
+                  {/* Onboarding Route */}
+                  <Route path="/onboarding" element={<OnboardingPage />} />
 
-                {/* Main Routes - redirect to onboarding if needed */}
-                <Route
-                  path="/"
-                  element={
-                    shouldRedirectToOnboarding ? (
-                      <Navigate to="/onboarding" replace />
-                    ) : (
-                      <Dashboard />
-                    )
-                  }
-                />
-                <Route path="/volumes" element={<VolumesPage />} />
-                <Route path="/volumes/:name" element={<VolumeDetailsPage />} />
-                <Route path="/mounts" element={<MountsPage />} />
-                <Route path="/rules" element={<RulesPage />} />
+                  {/* Main Routes - redirect to onboarding if needed */}
+                  <Route
+                    path="/"
+                    element={
+                      shouldRedirectToOnboarding ? (
+                        <Navigate to="/onboarding" replace />
+                      ) : (
+                        <Dashboard />
+                      )
+                    }
+                  />
+                  <Route path="/volumes" element={<VolumesPage />} />
+                  <Route
+                    path="/volumes/:name"
+                    element={<VolumeDetailsPage />}
+                  />
+                  <Route path="/mounts" element={<MountsPage />} />
+                  <Route path="/rules" element={<RulesPage />} />
 
-                {/* Explorer Routes */}
-                <Route path="/explorer" element={<ExplorerPage />} />
-                <Route path="/explorer/:volumeId" element={<ExplorerPage />} />
+                  {/* Explorer Routes */}
+                  <Route path="/explorer" element={<ExplorerPage />} />
+                  <Route
+                    path="/explorer/:volumeId"
+                    element={<ExplorerPage />}
+                  />
 
-                {/* Search Routes */}
-                <Route path="/search" element={<SearchPage />} />
+                  {/* Search Routes */}
+                  <Route path="/search" element={<SearchPage />} />
 
-                {/* Visualization Routes */}
-                <Route path="/realtime" element={<div>Real-time features coming soon</div>} />
-                <Route
-                  path="/historical"
-                  element={<div>Historical data features coming soon</div>}
-                />
+                  {/* Visualization Routes */}
+                  <Route
+                    path="/realtime"
+                    element={<div>Real-time features coming soon</div>}
+                  />
+                  <Route
+                    path="/historical"
+                    element={<div>Historical data features coming soon</div>}
+                  />
 
-                {/* Alerts Routes */}
-                <Route path="/alerts" element={<AlertsPage />} />
+                  {/* Alerts Routes */}
+                  <Route path="/alerts" element={<AlertsPage />} />
 
-                {/* System Routes */}
-                <Route path="/health" element={<HealthPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
+                  {/* System Routes */}
+                  <Route path="/health" element={<HealthPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
 
-                {/* Debug Routes */}
+                  {/* Debug Routes */}
 
-                {/* 404 Route */}
-                <Route path="*" element={<NotFoundPage />} />
+                  {/* 404 Route */}
+                  <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </Suspense>
             </Layout>

@@ -8,11 +8,12 @@
  * - Real-time updates via WebSocket
  */
 
+import React, { useCallback, useState, useEffect } from 'react';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useGetVolumes } from '@/api/orval-generated/api';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useRealtime } from '@/providers/realtime';
-import { useState } from 'react';
 import {
   FileIcon,
   FolderIcon,
@@ -20,8 +21,6 @@ import {
   Database,
   HardDrive,
 } from 'lucide-react';
-import React, { useCallback, useState, useEffect } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import type { ExplorerPageProps, FileItem } from './ExplorerPage.types';
 
 export function ExplorerPage({ className = '' }: ExplorerPageProps) {

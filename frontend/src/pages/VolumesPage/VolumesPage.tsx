@@ -1,9 +1,9 @@
+import React, { useState } from 'react';
 import { VolumesList } from '@/components/domain/volumes';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { usePostVolumesBulkScan } from '@/api/orval-generated/api';
-import React, { useState } from 'react';
 import {
   HardDrive,
   Plus,

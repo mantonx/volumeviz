@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Unregister Service Worker</title>
+</head>
+<body>
+    <h1>Unregistering Service Worker...</h1>
+    <p id="status">Processing...</p>
+    <script>
+        async function unregisterServiceWorkers() {
+            const statusEl = document.getElementById('status');
+
+            try {
+                // Unregister all service workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+
+                for (let registration of registrations) {
+                    await registration.unregister();
+                    console.log('Unregistered:', registration);
+                }
+
+                // Clear all caches
+                const cacheNames = await caches.keys();
+                for (let cacheName of cacheNames) {
+                    await caches.delete(cacheName);
+                    console.log('Deleted cache:', cacheName);
+                }
+
+                statusEl.innerHTML = `
+                    <h2 style="color: green;">✓ Success!</h2>
+                    <p>Unregistered ${registrations.length} service worker(s)</p>
+                    <p>Cleared ${cacheNames.length} cache(s)</p>
+                    <p><strong>Redirecting to home page in 2 seconds...</strong></p>
+                `;
+
+                // Redirect to home page
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+
+            } catch (error) {
+                statusEl.innerHTML = `
+                    <h2 style="color: red;">✗ Error</h2>
+                    <p>${error.message}</p>
+                    <p><a href="/">Go to Home Page</a></p>
+                `;
+                console.error('Error unregistering service workers:', error);
+            }
+        }
+
+        unregisterServiceWorkers();
+    </script>
+</body>
+</html>

@@ -20,9 +20,13 @@ export default defineConfig(({ mode }) => ({
       '@/styles': path.resolve(__dirname, './src/styles'),
       '@/test': path.resolve(__dirname, './src/test'),
     },
+    // Ensure single React instance
+    dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
     exclude: ['msw/node'],
+    // Force pre-bundle React to prevent multiple instances
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
   },
   server: {
     port: 5173,

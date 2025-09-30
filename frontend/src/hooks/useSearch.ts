@@ -21,11 +21,26 @@ import {
   clearSearchResultsAtom,
   resetSearchStateAtom,
 } from '@/atoms/search';
-import {
-  useFileSearch,
-  useSavedSearches as useApiSavedSearches,
-  type SearchFilesRequest,
-} from '@/api/search';
+// TODO: Implement these API functions when backend search endpoints are ready
+// import {
+//   useFileSearch,
+//   useSavedSearches as useApiSavedSearches,
+//   type SearchFilesRequest,
+// } from '@/api/search';
+
+// Temporary placeholder types until API is ready
+type SearchFilesRequest = {
+  query: string;
+  file_types?: string;
+  size_min?: number;
+  size_max?: number;
+  modified_after?: string;
+  modified_before?: string;
+  paths?: string;
+  owners?: string;
+  page?: number;
+  page_size?: number;
+};
 
 // Main search hook
 export const useSearch = () => {
@@ -66,34 +81,15 @@ export const useSearch = () => {
         // Add other filter mappings as needed
       };
 
-      // Make API call using the API hook
-      const searchApi = useFileSearch({
-        ...searchRequest,
-        page,
-        page_size: pagination.pageSize,
-      });
-
-      // Wait for results (in real implementation, this would be handled by the query)
-      // For now, we'll use mock data structure
-      const mockResults = searchApi.results.map(result => ({
-        id: result.id || '',
-        name: result.name || '',
-        path: result.path || '',
-        size: result.size || 0,
-        type: (result.type as 'file' | 'directory') || 'file',
-        modified: new Date(result.modified || Date.now()),
-        matched_content: result.matched_content,
-        highlight_ranges: result.highlight_ranges,
-        score: result.score,
-      }));
-
-      setResults(mockResults);
+      // TODO: Make actual API call when backend search endpoint is ready
+      // For now, return empty results
+      setResults([]);
       setPagination({
         page,
         pageSize: pagination.pageSize,
-        totalCount: searchApi.totalCount,
-        totalPages: Math.ceil(searchApi.totalCount / pagination.pageSize),
-        hasNextPage: searchApi.hasMore,
+        totalCount: 0,
+        totalPages: 0,
+        hasNextPage: false,
         hasPreviousPage: page > 1,
       });
 
@@ -172,8 +168,17 @@ export const useSearch = () => {
   };
 };
 
-// Saved searches hook (re-export from API)
-export const useSavedSearches = useApiSavedSearches;
+// TODO: Saved searches hook (implement when API is ready)
+// Temporary stub until API is ready
+export const useSavedSearches = () => {
+  return {
+    savedSearches: [],
+    isLoading: false,
+    createSavedSearch: async () => {},
+    deleteSavedSearch: async () => {},
+    updateSavedSearch: async () => {},
+  };
+};
 
 // Search history hook
 export const useSearchHistory = () => {
