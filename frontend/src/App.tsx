@@ -1,10 +1,20 @@
+import React, { Suspense, useEffect, useState } from 'react';
+import {
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+} from 'react-router-dom';
 import { ApiHealthChecker } from '@/components/application';
 import { Layout } from '@/components/layout/Layout';
 import { ToastProvider } from '@/components/ui';
-// Lazy load visualization components
+import { RealtimeProvider } from '@/providers/realtime';
+import { backgroundSyncManager } from '@/utils/background-sync';
+import { serviceWorkerManager } from '@/utils/service-worker';
+
 // Lazy load pages for better code splitting
 const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
-const VolumesPage = React.lazy(() => import('@/pages/VolumesPage'));  
+const VolumesPage = React.lazy(() => import('@/pages/VolumesPage'));
 const VolumeDetailsPage = React.lazy(() => import('@/pages/VolumeDetailsPage'));
 const MountsPage = React.lazy(() => import('@/pages/MountsPage'));
 const RulesPage = React.lazy(() => import('@/pages/RulesPage'));
@@ -15,16 +25,6 @@ const HealthPage = React.lazy(() => import('@/pages/HealthPage'));
 const SettingsPage = React.lazy(() => import('@/pages/SettingsPage'));
 const OnboardingPage = React.lazy(() => import('@/pages/OnboardingPage'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
-import { RealtimeProvider } from '@/providers/realtime';
-import { backgroundSyncManager } from '@/utils/background-sync';
-import { serviceWorkerManager } from '@/utils/service-worker';
-import React, { Suspense, useEffect, useState } from 'react';
-import {
-  Navigate,
-  Route,
-  BrowserRouter as Router,
-  Routes,
-} from 'react-router-dom';
 
 const PageLoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
