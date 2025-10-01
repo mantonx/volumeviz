@@ -51,7 +51,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
     console.log('Starting bulk scan for volumes:', volumeIds);
     if (volumeIds.length > 0) {
       try {
-        const result = await bulkScan.mutateAsync(volumeIds, { async: true });
+        const result = await bulkScan.mutateAsync(volumeIds, { async: true, method: 'du' });
         console.log('Bulk scan initiated:', result);
 
         // Poll for updates every 2 seconds for up to 30 seconds
