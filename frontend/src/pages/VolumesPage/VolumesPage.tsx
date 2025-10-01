@@ -101,9 +101,9 @@ export const VolumesPage: React.FC = () => {
 
         {/* Bulk Scan Confirmation Modal */}
         <Modal
-          isOpen={isBulkScanModalOpen}
+          open={isBulkScanModalOpen}
           onClose={() => setIsBulkScanModalOpen(false)}
-          title="Confirm Bulk Scan"
+          header={{ title: 'Confirm Bulk Scan' }}
         >
           <div className="space-y-4">
             <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
@@ -151,9 +151,9 @@ export const VolumesPage: React.FC = () => {
 
         {/* Delete Confirmation Modal */}
         <Modal
-          isOpen={isDeleteConfirmOpen}
+          open={isDeleteConfirmOpen}
           onClose={() => setIsDeleteConfirmOpen(false)}
-          title="Confirm Deletion"
+          header={{ title: 'Confirm Deletion' }}
         >
           <div className="space-y-4">
             <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
