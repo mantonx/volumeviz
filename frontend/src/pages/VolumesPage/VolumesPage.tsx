@@ -100,91 +100,95 @@ export const VolumesPage: React.FC = () => {
         <VolumesList />
 
         {/* Bulk Scan Confirmation Modal */}
-        <Modal
-          open={isBulkScanModalOpen}
-          onClose={() => setIsBulkScanModalOpen(false)}
-          header={{ title: 'Confirm Bulk Scan' }}
-        >
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
-              <Scan className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  Start scanning {selectedVolumes.length} volume
-                  {selectedVolumes.length > 1 ? 's' : ''}?
-                </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  This will perform a full file system scan for each selected
-                  volume. Large volumes may take several minutes to complete.
-                </p>
+        {isBulkScanModalOpen && (
+          <Modal
+            open={isBulkScanModalOpen}
+            onClose={() => setIsBulkScanModalOpen(false)}
+            header={{ title: 'Confirm Bulk Scan' }}
+          >
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
+                <Scan className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    Start scanning {selectedVolumes.length} volume
+                    {selectedVolumes.length > 1 ? 's' : ''}?
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    This will perform a full file system scan for each selected
+                    volume. Large volumes may take several minutes to complete.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsBulkScanModalOpen(false)}
+                  disabled={bulkScanMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleBulkScan}
+                  disabled={bulkScanMutation.isPending}
+                >
+                  {bulkScanMutation.isPending ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Starting Scan...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Start Scan
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
-
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setIsBulkScanModalOpen(false)}
-                disabled={bulkScanMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleBulkScan}
-                disabled={bulkScanMutation.isPending}
-              >
-                {bulkScanMutation.isPending ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Starting Scan...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Start Scan
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </Modal>
+          </Modal>
+        )}
 
         {/* Delete Confirmation Modal */}
-        <Modal
-          open={isDeleteConfirmOpen}
-          onClose={() => setIsDeleteConfirmOpen(false)}
-          header={{ title: 'Confirm Deletion' }}
-        >
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  Delete {selectedVolumes.length} volume
-                  {selectedVolumes.length > 1 ? 's' : ''}?
-                </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  This action cannot be undone. Volume data will be permanently
-                  removed from tracking (Docker volumes themselves will not be
-                  deleted).
-                </p>
+        {isDeleteConfirmOpen && (
+          <Modal
+            open={isDeleteConfirmOpen}
+            onClose={() => setIsDeleteConfirmOpen(false)}
+            header={{ title: 'Confirm Deletion' }}
+          >
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    Delete {selectedVolumes.length} volume
+                    {selectedVolumes.length > 1 ? 's' : ''}?
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    This action cannot be undone. Volume data will be permanently
+                    removed from tracking (Docker volumes themselves will not be
+                    deleted).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDeleteConfirmOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button variant="danger" onClick={handleBulkDelete}>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
               </div>
             </div>
-
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setIsDeleteConfirmOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button variant="danger" onClick={handleBulkDelete}>
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </Button>
-            </div>
-          </div>
-        </Modal>
+          </Modal>
+        )}
       </div>
     </div>
   );
