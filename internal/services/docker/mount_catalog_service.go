@@ -388,7 +388,7 @@ func (s *MountCatalogService) DiscoverOrganizationMounts(ctx context.Context, or
 	log.Printf("[MOUNT-CATALOG] Starting mount discovery for organization %d", organizationID)
 
 	// Get organization volumes only
-	volumes, err := s.store.Volumes().ListVolumesForOrganization(ctx, organizationID, 1000, 0)
+	volumes, err := s.store.Volumes().ListVolumes(ctx, organizationID, 1000, 0)
 	if err != nil {
 		return utils.WrapErrorf(err, "failed to list volumes for organization %d", organizationID)
 	}
@@ -412,10 +412,10 @@ func (s *MountCatalogService) DiscoverOrganizationMounts(ctx context.Context, or
 	for _, vol := range volumes {
 		// Find matching Docker volume
 		for _, dockerVol := range dockerVolumeResp.Volumes {
-			if dockerVol != nil && dockerVol.Name == vol.ID {
-				discoveredMountIDs[vol.ID] = true
+			if dockerVol != nil && dockerVol.Name == vol.VolumeID {
+				discoveredMountIDs[vol.VolumeID] = true
 				if err := s.processOrganizationVolume(ctx, *dockerVol, containers, organizationID); err != nil {
-					log.Printf("[MOUNT-CATALOG] Failed to process organization volume %s: %v", vol.ID, err)
+					log.Printf("[MOUNT-CATALOG] Failed to process organization volume %s: %v", vol.VolumeID, err)
 				}
 				break
 			}
@@ -439,7 +439,7 @@ func (s *MountCatalogService) GetOrganizationMountCatalogSummary(ctx context.Con
 	}
 
 	// Get organization volumes to filter mount catalog
-	volumes, err := s.store.Volumes().ListVolumesForOrganization(ctx, organizationID, 1000, 0)
+	volumes, err := s.store.Volumes().ListVolumes(ctx, organizationID, 1000, 0)
 	if err != nil {
 		return nil, utils.WrapErrorf(err, "failed to list volumes for organization %d", organizationID)
 	}
@@ -447,7 +447,7 @@ func (s *MountCatalogService) GetOrganizationMountCatalogSummary(ctx context.Con
 	// Create volume ID set for filtering
 	volumeIDs := make(map[string]bool)
 	for _, vol := range volumes {
-		volumeIDs[vol.ID] = true
+		volumeIDs[vol.VolumeID] = true
 	}
 
 	// Get all mount catalog entries and filter by organization volumes
@@ -501,7 +501,7 @@ func (s *MountCatalogService) ListOrganizationMountCatalogEntries(ctx context.Co
 	}
 
 	// Get organization volumes to filter mount catalog
-	volumes, err := s.store.Volumes().ListVolumesForOrganization(ctx, organizationID, 1000, 0)
+	volumes, err := s.store.Volumes().ListVolumes(ctx, organizationID, 1000, 0)
 	if err != nil {
 		return nil, utils.WrapErrorf(err, "failed to list volumes for organization %d", organizationID)
 	}
@@ -509,7 +509,7 @@ func (s *MountCatalogService) ListOrganizationMountCatalogEntries(ctx context.Co
 	// Create volume ID set for filtering
 	volumeIDs := make(map[string]bool)
 	for _, vol := range volumes {
-		volumeIDs[vol.ID] = true
+		volumeIDs[vol.VolumeID] = true
 	}
 
 	// Get all mount catalog entries and filter by organization volumes
@@ -538,13 +538,14 @@ func (s *MountCatalogService) ListOrganizationMountCatalogEntries(ctx context.Co
 // validateOrganizationAccess validates that the organization context is valid
 func (s *MountCatalogService) validateOrganizationAccess(ctx context.Context, organizationID int64) error {
 	// Get organization from store to validate it exists
-	org, err := s.store.Organizations().GetOrganization(ctx, organizationID)
+	org, err := s.store.Organizations().GetOrganizationByID(ctx, organizationID)
 	if err != nil {
 		return utils.WrapErrorf(err, "organization %d not found", organizationID)
 	}
 
-	if org == nil {
-		return utils.NewError("organization %d does not exist", organizationID)
+	// Check if org.ID is zero (empty struct indicates not found)
+	if org.ID == 0 {
+		return fmt.Errorf("organization %d does not exist", organizationID)
 	}
 
 	log.Printf("[MOUNT-CATALOG] Validated access to organization %d (%s)", organizationID, org.Name)

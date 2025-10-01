@@ -1,5 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { ExplorerWithExport, TreemapExplorerExample, SunburstExplorerExample, DataExplorerExample } from './ExplorerWithExport'
+import type { Meta, StoryObj } from '@storybook/react';
+import {
+  ExplorerWithExport,
+  TreemapExplorerExample,
+  SunburstExplorerExample,
+  DataExplorerExample,
+} from './ExplorerWithExport';
 
 const meta = {
   title: 'Domain/Explorer/ExplorerWithExport',
@@ -10,25 +15,28 @@ const meta = {
   tags: ['autodocs'],
   argTypes: {
     currentView: {
-      control: { type: 'select', options: ['list', 'grid', 'treemap', 'sunburst'] },
+      control: {
+        type: 'select',
+        options: ['list', 'grid', 'treemap', 'sunburst'],
+      },
     },
   },
-} satisfies Meta<typeof ExplorerWithExport>
+} satisfies Meta<typeof ExplorerWithExport>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const TreemapVisualization: Story = {
   render: () => <TreemapExplorerExample />,
-}
+};
 
 export const SunburstVisualization: Story = {
   render: () => <SunburstExplorerExample />,
-}
+};
 
 export const DataTable: Story = {
   render: () => <DataExplorerExample />,
-}
+};
 
 export const CustomContent: Story = {
   args: {
@@ -56,7 +64,7 @@ export const CustomContent: Story = {
       </div>
     ),
   },
-}
+};
 
 export const InteractiveDemo: Story = {
   render: () => (
@@ -90,8 +98,13 @@ export const InteractiveDemo: Story = {
       <div className="mt-8 p-4 bg-blue-50 rounded-lg">
         <h4 className="font-medium text-blue-900 mb-2">How to Use:</h4>
         <ul className="text-blue-800 text-sm space-y-1">
-          <li>• Click the download button in the top-right corner of each visualization</li>
-          <li>• Choose your preferred export format (PNG, PDF, SVG, CSV, JSON)</li>
+          <li>
+            • Click the download button in the top-right corner of each
+            visualization
+          </li>
+          <li>
+            • Choose your preferred export format (PNG, PDF, SVG, CSV, JSON)
+          </li>
           <li>• Adjust quality and size settings for image formats</li>
           <li>• Enable transparency or set background colors</li>
           <li>• Include metadata and raw data in your exports</li>
@@ -102,7 +115,7 @@ export const InteractiveDemo: Story = {
   parameters: {
     layout: 'padded',
   },
-}
+};
 
 export const AllFormatsSupported: Story = {
   args: {
@@ -136,7 +149,7 @@ export const AllFormatsSupported: Story = {
       </div>
     ),
   },
-}
+};
 
 export const HighQualityExport: Story = {
   args: {
@@ -163,9 +176,7 @@ export const HighQualityExport: Story = {
             <div className="absolute inset-8 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full"></div>
             <div className="absolute inset-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"></div>
           </div>
-          <h3 className="text-lg font-semibold">
-            High-Quality Export Ready
-          </h3>
+          <h3 className="text-lg font-semibold">High-Quality Export Ready</h3>
           <p className="text-gray-300 text-sm mt-2">
             Optimized for 4K resolution and print quality
           </p>
@@ -173,4 +184,4 @@ export const HighQualityExport: Story = {
       </div>
     ),
   },
-}
+};

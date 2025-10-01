@@ -50,20 +50,23 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
 
   // Handlers
   const handleSearch = useCallback((query: string) => {
-    setSearchState(prev => ({ ...prev, query, isSearching: true }));
+    setSearchState((prev) => ({ ...prev, query, isSearching: true }));
     // TODO: Implement actual search API call
     console.log('Searching for:', query);
 
     // Simulate API call
     setTimeout(() => {
-      setSearchState(prev => ({ ...prev, isSearching: false }));
+      setSearchState((prev) => ({ ...prev, isSearching: false }));
     }, 500);
   }, []);
 
-  const handleFileSelect = useCallback((fileId: string) => {
-    // Navigate to explorer with file selected
-    navigate(`/explorer?file=${fileId}`);
-  }, [navigate]);
+  const handleFileSelect = useCallback(
+    (fileId: string) => {
+      // Navigate to explorer with file selected
+      navigate(`/explorer?file=${fileId}`);
+    },
+    [navigate],
+  );
 
   const handleDuplicateDetection = useCallback(() => {
     setIsDuplicateModalOpen(true);
@@ -241,10 +244,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
               </label>
 
               <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300"
-                />
+                <input type="checkbox" className="rounded border-gray-300" />
                 <span className="text-sm text-gray-700">
                   Include similar filenames (fuzzy matching)
                 </span>
@@ -274,7 +274,8 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
         >
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Export {searchState.results.length} search results in your preferred format.
+              Export {searchState.results.length} search results in your
+              preferred format.
             </p>
 
             <div className="space-y-3">

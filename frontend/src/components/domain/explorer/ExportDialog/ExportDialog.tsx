@@ -92,9 +92,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   title = 'Export Visualization',
   description = 'Export your data visualization in various formats',
 }) => {
-  const [selectedFormat, setSelectedFormat] = useState<ExportOptions['format']>('png');
+  const [selectedFormat, setSelectedFormat] =
+    useState<ExportOptions['format']>('png');
   const [quality, setQuality] = useState<'low' | 'medium' | 'high'>('high');
-  const [size, setSize] = useState<'small' | 'medium' | 'large' | 'custom'>('medium');
+  const [size, setSize] = useState<'small' | 'medium' | 'large' | 'custom'>(
+    'medium',
+  );
   const [customWidth, setCustomWidth] = useState(1200);
   const [customHeight, setCustomHeight] = useState(900);
   const [includeData, setIncludeData] = useState(false);
@@ -128,7 +131,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 
       await onExport(exportOptions);
       setExportSuccess(true);
-      
+
       setTimeout(() => {
         onClose();
         setExportSuccess(false);
@@ -161,10 +164,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className={cn(
-        'bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden',
-        className,
-      )}>
+      <div
+        className={cn(
+          'bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden',
+          className,
+        )}
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -207,8 +212,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     <div className="flex items-center gap-3">
                       <Icon className="h-5 w-5 text-gray-600" />
                       <div>
-                        <div className="font-medium text-gray-900">{info.name}</div>
-                        <div className="text-xs text-gray-500">{info.description}</div>
+                        <div className="font-medium text-gray-900">
+                          {info.name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {info.description}
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -256,7 +265,11 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                       {Object.entries(sizePresets).map(([key, preset]) => (
                         <button
                           key={key}
-                          onClick={() => setSize(key as 'small' | 'medium' | 'large' | 'custom')}
+                          onClick={() =>
+                            setSize(
+                              key as 'small' | 'medium' | 'large' | 'custom',
+                            )
+                          }
                           className={cn(
                             'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                             size === key
@@ -272,11 +285,17 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     {size === 'custom' && (
                       <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-2">
-                          <label className="text-sm text-gray-600">Width:</label>
+                          <label className="text-sm text-gray-600">
+                            Width:
+                          </label>
                           <input
                             type="number"
                             value={customWidth}
-                            onChange={(e) => setCustomWidth(parseInt(e.target.value, 10) || 1200)}
+                            onChange={(e) =>
+                              setCustomWidth(
+                                parseInt(e.target.value, 10) || 1200,
+                              )
+                            }
                             className="w-20 px-2 py-1 text-sm border rounded"
                             min="100"
                             max="4000"
@@ -284,11 +303,17 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                           <span className="text-xs text-gray-500">px</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <label className="text-sm text-gray-600">Height:</label>
+                          <label className="text-sm text-gray-600">
+                            Height:
+                          </label>
                           <input
                             type="number"
                             value={customHeight}
-                            onChange={(e) => setCustomHeight(parseInt(e.target.value, 10) || 900)}
+                            onChange={(e) =>
+                              setCustomHeight(
+                                parseInt(e.target.value, 10) || 900,
+                              )
+                            }
                             className="w-20 px-2 py-1 text-sm border rounded"
                             min="100"
                             max="4000"
@@ -316,7 +341,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                           onChange={(e) => setTransparent(e.target.checked)}
                           className="rounded border-gray-300"
                         />
-                        <span className="text-sm text-gray-700">Transparent background</span>
+                        <span className="text-sm text-gray-700">
+                          Transparent background
+                        </span>
                       </label>
                     </div>
 
@@ -329,7 +356,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                           onChange={(e) => setBackgroundColor(e.target.value)}
                           className="w-8 h-8 rounded border border-gray-300"
                         />
-                        <span className="text-sm text-gray-500">{backgroundColor}</span>
+                        <span className="text-sm text-gray-500">
+                          {backgroundColor}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -352,7 +381,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     onChange={(e) => setIncludeData(e.target.checked)}
                     className="rounded border-gray-300"
                   />
-                  <span className="text-sm text-gray-700">Include raw data</span>
+                  <span className="text-sm text-gray-700">
+                    Include raw data
+                  </span>
                 </label>
               )}
               <label className="flex items-center gap-2 cursor-pointer">
@@ -385,8 +416,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
               <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
               <div>
-                <div className="font-medium text-green-900">Export Successful</div>
-                <div className="text-sm text-green-700">Your file has been downloaded</div>
+                <div className="font-medium text-green-900">
+                  Export Successful
+                </div>
+                <div className="text-sm text-green-700">
+                  Your file has been downloaded
+                </div>
               </div>
             </div>
           )}

@@ -128,7 +128,8 @@ export const WithSelection: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Volumes page with multiple volumes selected, showing bulk action options.',
+        story:
+          'Volumes page with multiple volumes selected, showing bulk action options.',
       },
     },
   },

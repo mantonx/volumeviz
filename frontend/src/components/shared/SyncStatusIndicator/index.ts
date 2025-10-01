@@ -1,5 +1,5 @@
-export { 
-  SyncStatusIndicator, 
-  SyncStatusBadge, 
-  SyncStatusPanel 
+export {
+  SyncStatusIndicator,
+  SyncStatusBadge,
+  SyncStatusPanel,
 } from './SyncStatusIndicator';

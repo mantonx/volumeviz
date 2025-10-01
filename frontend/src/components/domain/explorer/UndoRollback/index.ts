@@ -1,9 +1,9 @@
-export { UndoRollback } from './UndoRollback'
-export type { 
-  UndoRollbackProps, 
-  Operation, 
+export { UndoRollback } from './UndoRollback';
+export type {
+  UndoRollbackProps,
+  Operation,
   OperationAction,
   OperationMetadata,
   RollbackResponse,
-  RollbackFailure
-} from './UndoRollback'
+  RollbackFailure,
+} from './UndoRollback';

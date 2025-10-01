@@ -47,7 +47,11 @@ export interface AnimationContext {
     isTransitioning: boolean;
   };
   actions: {
-    zoomIn: (factor?: number, centerX?: number, centerY?: number) => Promise<void>;
+    zoomIn: (
+      factor?: number,
+      centerX?: number,
+      centerY?: number,
+    ) => Promise<void>;
     zoomOut: (factor?: number) => Promise<void>;
     resetZoom: () => Promise<void>;
     drillDown: (itemId: string) => Promise<void>;
@@ -99,7 +103,7 @@ export const AnimatedVisualization: React.FC<AnimatedVisualizationProps> = ({
       if (!enableWheelZoom || animations.isAnimating) return;
 
       event.preventDefault();
-      
+
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
 
@@ -107,7 +111,7 @@ export const AnimatedVisualization: React.FC<AnimatedVisualizationProps> = ({
       const centerY = event.clientY - rect.top - height / 2;
 
       const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
-      
+
       if (event.deltaY > 0) {
         animations.zoomOut(1 / zoomFactor);
       } else {
@@ -125,7 +129,7 @@ export const AnimatedVisualization: React.FC<AnimatedVisualizationProps> = ({
       isDragging.current = true;
       setIsPanning(true);
       lastMousePos.current = { x: event.clientX, y: event.clientY };
-      
+
       // Prevent text selection during drag
       event.preventDefault();
     },
@@ -146,7 +150,7 @@ export const AnimatedVisualization: React.FC<AnimatedVisualizationProps> = ({
       });
 
       lastMousePos.current = { x: event.clientX, y: event.clientY };
-      
+
       onPanChange?.(animations.zoomState.offsetX, animations.zoomState.offsetY);
     },
     [enablePan, animations],
@@ -163,7 +167,7 @@ export const AnimatedVisualization: React.FC<AnimatedVisualizationProps> = ({
     if (isPanning) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      
+
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -181,13 +185,10 @@ export const AnimatedVisualization: React.FC<AnimatedVisualizationProps> = ({
   );
 
   // Handle drill up with callback
-  const handleDrillUp = useCallback(
-    async () => {
-      await animations.drillUp();
-      onDrillUp?.();
-    },
-    [animations, onDrillUp],
-  );
+  const handleDrillUp = useCallback(async () => {
+    await animations.drillUp();
+    onDrillUp?.();
+  }, [animations, onDrillUp]);
 
   // Create context value
   const contextValue: AnimationContext = {
@@ -212,7 +213,9 @@ export const AnimatedVisualization: React.FC<AnimatedVisualizationProps> = ({
   const transformStyle = {
     transform: `translate(${animations.zoomState.offsetX}px, ${animations.zoomState.offsetY}px) scale(${animations.zoomState.scale})`,
     transformOrigin: 'center center',
-    transition: animations.zoomState.isAnimating ? 'transform 0.3s ease-out' : 'none',
+    transition: animations.zoomState.isAnimating
+      ? 'transform 0.3s ease-out'
+      : 'none',
   };
 
   return (
@@ -229,13 +232,10 @@ export const AnimatedVisualization: React.FC<AnimatedVisualizationProps> = ({
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
       >
-        <div
-          className="absolute inset-0 w-full h-full"
-          style={transformStyle}
-        >
+        <div className="absolute inset-0 w-full h-full" style={transformStyle}>
           {children}
         </div>
-        
+
         {/* Zoom controls */}
         {enableZoom && (
           <ZoomControls
@@ -247,7 +247,7 @@ export const AnimatedVisualization: React.FC<AnimatedVisualizationProps> = ({
             disabled={animations.isAnimating}
           />
         )}
-        
+
         {/* Drill controls */}
         {animations.canDrillUp && (
           <DrillControls
@@ -375,7 +375,9 @@ const DrillControls: React.FC<DrillControlsProps> = ({
 export function useAnimationContext(): AnimationContext {
   const context = React.useContext(AnimationContext);
   if (!context) {
-    throw new Error('useAnimationContext must be used within AnimatedVisualization');
+    throw new Error(
+      'useAnimationContext must be used within AnimatedVisualization',
+    );
   }
   return context;
 }

@@ -54,7 +54,9 @@ describe('OnboardingPage', () => {
 
     it('starts at discovery step', () => {
       render(<OnboardingPage />, { wrapper: createWrapper() });
-      expect(screen.getByText('Discovering Your Docker Mounts')).toBeInTheDocument();
+      expect(
+        screen.getByText('Discovering Your Docker Mounts'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -100,7 +102,7 @@ describe('OnboardingPage', () => {
 
       expect(global.fetch).toHaveBeenCalledWith(
         '/api/v1/mounts/discover',
-        expect.objectContaining({ method: 'POST' })
+        expect.objectContaining({ method: 'POST' }),
       );
     });
 
@@ -108,7 +110,9 @@ describe('OnboardingPage', () => {
       render(<OnboardingPage />, { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(screen.getByText(/No Docker Mounts Discovered/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/No Docker Mounts Discovered/),
+        ).toBeInTheDocument();
       });
     });
 
@@ -125,7 +129,9 @@ describe('OnboardingPage', () => {
 
       // Wait for discovery to load
       await waitFor(() => {
-        expect(screen.queryByText('Scanning Docker mounts...')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Scanning Docker mounts...'),
+        ).not.toBeInTheDocument();
       });
 
       // Navigate to preset step
@@ -134,7 +140,9 @@ describe('OnboardingPage', () => {
     });
 
     it('shows preset selection screen', () => {
-      expect(screen.getByText('Choose Your Tracking Strategy')).toBeInTheDocument();
+      expect(
+        screen.getByText('Choose Your Tracking Strategy'),
+      ).toBeInTheDocument();
     });
 
     it('displays all preset options', () => {
@@ -147,12 +155,16 @@ describe('OnboardingPage', () => {
       const serverPreset = screen.getByText('Server Default').closest('div');
       fireEvent.click(serverPreset!);
 
-      const checkmarks = document.querySelectorAll('[data-lucide="check-circle"]');
+      const checkmarks = document.querySelectorAll(
+        '[data-lucide="check-circle"]',
+      );
       expect(checkmarks.length).toBeGreaterThan(0);
     });
 
     it('shows preset descriptions', () => {
-      expect(screen.getByText(/Recommended for most server workloads/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Recommended for most server workloads/),
+      ).toBeInTheDocument();
     });
 
     it('disables next button when no preset selected', () => {
@@ -175,7 +187,9 @@ describe('OnboardingPage', () => {
 
       // Navigate through steps
       await waitFor(() => {
-        expect(screen.queryByText('Scanning Docker mounts...')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Scanning Docker mounts...'),
+        ).not.toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByText('Next')); // To preset step
@@ -189,7 +203,9 @@ describe('OnboardingPage', () => {
     });
 
     it('shows preview configuration screen', () => {
-      expect(screen.getByText('Preview Your Configuration')).toBeInTheDocument();
+      expect(
+        screen.getByText('Preview Your Configuration'),
+      ).toBeInTheDocument();
     });
 
     it('shows generate preview button', () => {
@@ -241,7 +257,9 @@ describe('OnboardingPage', () => {
 
       // Navigate through all steps
       await waitFor(() => {
-        expect(screen.queryByText('Scanning Docker mounts...')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Scanning Docker mounts...'),
+        ).not.toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByText('Next'));
@@ -282,7 +300,9 @@ describe('OnboardingPage', () => {
       fireEvent.click(completeButton);
 
       await waitFor(() => {
-        expect(localStorage.getItem('volumeviz_onboarding_complete')).toBe('true');
+        expect(localStorage.getItem('volumeviz_onboarding_complete')).toBe(
+          'true',
+        );
       });
     });
 
@@ -301,7 +321,9 @@ describe('OnboardingPage', () => {
       render(<OnboardingPage />, { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(screen.queryByText('Scanning Docker mounts...')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Scanning Docker mounts...'),
+        ).not.toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByText('Next'));
@@ -319,14 +341,20 @@ describe('OnboardingPage', () => {
       render(<OnboardingPage />, { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(screen.queryByText('Scanning Docker mounts...')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Scanning Docker mounts...'),
+        ).not.toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByText('Next'));
-      expect(screen.getByText('Choose Your Tracking Strategy')).toBeInTheDocument();
+      expect(
+        screen.getByText('Choose Your Tracking Strategy'),
+      ).toBeInTheDocument();
 
       fireEvent.click(screen.getByText('Previous'));
-      expect(screen.getByText('Discovering Your Docker Mounts')).toBeInTheDocument();
+      expect(
+        screen.getByText('Discovering Your Docker Mounts'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -335,7 +363,9 @@ describe('OnboardingPage', () => {
       render(<OnboardingPage />, { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(screen.queryByText('Scanning Docker mounts...')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Scanning Docker mounts...'),
+        ).not.toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByText('Next'));
@@ -353,12 +383,14 @@ describe('OnboardingPage', () => {
           currentStep: 1,
           selectedPreset: 'server',
           customRules: [],
-        })
+        }),
       );
 
       render(<OnboardingPage />, { wrapper: createWrapper() });
 
-      expect(screen.getByText('Choose Your Tracking Strategy')).toBeInTheDocument();
+      expect(
+        screen.getByText('Choose Your Tracking Strategy'),
+      ).toBeInTheDocument();
     });
 
     it('clears state after completion', async () => {
@@ -375,7 +407,9 @@ describe('OnboardingPage', () => {
       // In real scenario, would navigate through all steps
 
       await waitFor(() => {
-        expect(screen.queryByText('Scanning Docker mounts...')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Scanning Docker mounts...'),
+        ).not.toBeInTheDocument();
       });
     });
   });
@@ -393,14 +427,18 @@ describe('OnboardingPage', () => {
     });
 
     it('handles rule creation error', async () => {
-      (global.fetch as any).mockRejectedValueOnce(new Error('Failed to save rule'));
+      (global.fetch as any).mockRejectedValueOnce(
+        new Error('Failed to save rule'),
+      );
 
       const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
       render(<OnboardingPage />, { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(screen.queryByText('Scanning Docker mounts...')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Scanning Docker mounts...'),
+        ).not.toBeInTheDocument();
       });
 
       alertSpy.mockRestore();

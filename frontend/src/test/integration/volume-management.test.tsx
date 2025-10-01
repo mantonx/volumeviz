@@ -29,11 +29,9 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(
     <BrowserRouter>
       <JotaiProvider>
-        <QueryClientProvider client={queryClient}>
-          {ui}
-        </QueryClientProvider>
+        <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
       </JotaiProvider>
-    </BrowserRouter>
+    </BrowserRouter>,
   );
 }
 
@@ -64,9 +62,13 @@ describe('Volume Management Integration', () => {
       expect(screen.getByText('orphaned-volume')).toBeInTheDocument();
 
       // Verify volume details are shown
-      const productionVolume = screen.getByText('production-db-data').closest('[data-testid="volume-card"]');
+      const productionVolume = screen
+        .getByText('production-db-data')
+        .closest('[data-testid="volume-card"]');
       if (productionVolume) {
-        expect(within(productionVolume).getByText(/2\.00 GB/i)).toBeInTheDocument();
+        expect(
+          within(productionVolume).getByText(/2\.00 GB/i),
+        ).toBeInTheDocument();
       }
     });
 
@@ -86,7 +88,9 @@ describe('Volume Management Integration', () => {
       // Verify filtering
       await waitFor(() => {
         expect(screen.getByText('redis-cache-vol')).toBeInTheDocument();
-        expect(screen.queryByText('production-db-data')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('production-db-data'),
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -126,7 +130,9 @@ describe('Volume Management Integration', () => {
       });
 
       // Find scan button for specific volume
-      const volumeCard = screen.getByText('production-db-data').closest('[data-testid="volume-card"]');
+      const volumeCard = screen
+        .getByText('production-db-data')
+        .closest('[data-testid="volume-card"]');
       const scanButton = within(volumeCard!).getByTestId('scan-button');
 
       // Click scan button
@@ -143,15 +149,15 @@ describe('Volume Management Integration', () => {
 
     it('should handle scan errors gracefully', async () => {
       const user = userEvent.setup();
-      
+
       // Override handler to return error
       server.use(
         http.post('/api/v1/volumes/:volumeId/scan', () => {
           return HttpResponse.json(
             { error: 'Scan failed: Volume busy' },
-            { status: 503 }
+            { status: 503 },
           );
-        })
+        }),
       );
 
       renderWithProviders(<VolumesPage />);
@@ -160,7 +166,9 @@ describe('Volume Management Integration', () => {
         expect(screen.getByText('production-db-data')).toBeInTheDocument();
       });
 
-      const volumeCard = screen.getByText('production-db-data').closest('[data-testid="volume-card"]');
+      const volumeCard = screen
+        .getByText('production-db-data')
+        .closest('[data-testid="volume-card"]');
       const scanButton = within(volumeCard!).getByTestId('scan-button');
 
       await user.click(scanButton);
@@ -268,7 +276,7 @@ describe('Volume Management Integration', () => {
 
       // Simulate WebSocket message
       const messageHandler = mockWebSocket.addEventListener.mock.calls.find(
-        call => call[0] === 'message'
+        (call) => call[0] === 'message',
       )?.[1];
 
       if (messageHandler) {
@@ -278,9 +286,9 @@ describe('Volume Management Integration', () => {
             data: {
               volume_id: 'production-db-data',
               progress: 75,
-              status: 'running'
-            }
-          })
+              status: 'running',
+            },
+          }),
         });
       }
 
@@ -297,7 +305,9 @@ describe('Volume Management Integration', () => {
 
       // Verify organization context is applied
       await waitFor(() => {
-        expect(screen.getByText(/volumeviz demo organization/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/volumeviz demo organization/i),
+        ).toBeInTheDocument();
       });
 
       // Verify only org volumes are shown
@@ -324,7 +334,7 @@ describe('Volume Management Integration', () => {
       server.use(
         http.get('/api/v1/volumes', () => {
           return HttpResponse.error();
-        })
+        }),
       );
 
       renderWithProviders(<VolumesPage />);
@@ -335,7 +345,9 @@ describe('Volume Management Integration', () => {
       });
 
       // Verify retry button is available
-      expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /retry/i }),
+      ).toBeInTheDocument();
     });
 
     it('should retry failed requests', async () => {
@@ -351,9 +363,9 @@ describe('Volume Management Integration', () => {
           return HttpResponse.json({
             success: true,
             data: [],
-            pagination: { page: 1, page_size: 25, total: 0, has_more: false }
+            pagination: { page: 1, page_size: 25, total: 0, has_more: false },
           });
-        })
+        }),
       );
 
       renderWithProviders(<VolumesPage />);
@@ -369,7 +381,9 @@ describe('Volume Management Integration', () => {
 
       // Verify successful retry
       await waitFor(() => {
-        expect(screen.queryByText(/failed to load volumes/i)).not.toBeInTheDocument();
+        expect(
+          screen.queryByText(/failed to load volumes/i),
+        ).not.toBeInTheDocument();
       });
     });
   });
@@ -377,7 +391,7 @@ describe('Volume Management Integration', () => {
   describe('Offline Support', () => {
     it('should queue operations when offline', async () => {
       const user = userEvent.setup();
-      
+
       // Simulate offline state
       Object.defineProperty(navigator, 'onLine', {
         writable: true,
@@ -391,13 +405,17 @@ describe('Volume Management Integration', () => {
       });
 
       // Try to scan while offline
-      const volumeCard = screen.getByText('production-db-data').closest('[data-testid="volume-card"]');
+      const volumeCard = screen
+        .getByText('production-db-data')
+        .closest('[data-testid="volume-card"]');
       const scanButton = within(volumeCard!).getByTestId('scan-button');
       await user.click(scanButton);
 
       // Verify offline message
       await waitFor(() => {
-        expect(screen.getByText(/operation queued for sync/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/operation queued for sync/i),
+        ).toBeInTheDocument();
       });
 
       // Verify sync indicator

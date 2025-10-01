@@ -91,7 +91,11 @@ class PerformanceMonitor {
   /**
    * End timing and record the metric
    */
-  endTimer(name: string, category: string = 'custom', metadata?: Record<string, any>): number {
+  endTimer(
+    name: string,
+    category: string = 'custom',
+    metadata?: Record<string, any>,
+  ): number {
     const startTime = this.timers.get(name);
     if (!startTime) {
       console.warn(`Timer ${name} was not started`);
@@ -123,7 +127,10 @@ class PerformanceMonitor {
 
     // Log in development
     if (config.environment === 'development') {
-      console.log(`📊 Performance: ${metric.name} = ${metric.value}${metric.unit}`, metric.metadata);
+      console.log(
+        `📊 Performance: ${metric.name} = ${metric.value}${metric.unit}`,
+        metric.metadata,
+      );
     }
 
     // Send to analytics
@@ -194,12 +201,12 @@ class PerformanceMonitor {
    */
   getSummary(): Record<string, any> {
     const summary: Record<string, any> = {};
-    
+
     this.metrics.forEach((metric) => {
       if (!summary[metric.category]) {
         summary[metric.category] = {};
       }
-      
+
       if (!summary[metric.category][metric.name]) {
         summary[metric.category][metric.name] = {
           count: 0,
@@ -209,7 +216,7 @@ class PerformanceMonitor {
           avg: 0,
         };
       }
-      
+
       const stat = summary[metric.category][metric.name];
       stat.count++;
       stat.total += metric.value;
@@ -217,7 +224,7 @@ class PerformanceMonitor {
       stat.max = Math.max(stat.max, metric.value);
       stat.avg = stat.total / stat.count;
     });
-    
+
     return summary;
   }
 
@@ -233,7 +240,7 @@ class PerformanceMonitor {
    * Cleanup observers
    */
   cleanup(): void {
-    this.observers.forEach(observer => observer.disconnect());
+    this.observers.forEach((observer) => observer.disconnect());
     this.observers = [];
   }
 }
@@ -244,7 +251,11 @@ export const performanceMonitor = new PerformanceMonitor();
 /**
  * Track API call performance
  */
-export const trackApiCall = (endpoint: string, duration: number, status: number) => {
+export const trackApiCall = (
+  endpoint: string,
+  duration: number,
+  status: number,
+) => {
   performanceMonitor.recordMetric({
     name: `api_${endpoint.replace(/\//g, '_')}`,
     value: duration,
@@ -261,7 +272,11 @@ export const trackApiCall = (endpoint: string, duration: number, status: number)
 /**
  * Track React Query performance
  */
-export const trackQueryPerformance = (queryKey: string, duration: number, success: boolean) => {
+export const trackQueryPerformance = (
+  queryKey: string,
+  duration: number,
+  success: boolean,
+) => {
   performanceMonitor.recordMetric({
     name: `query_${queryKey}`,
     value: duration,
@@ -277,7 +292,10 @@ export const trackQueryPerformance = (queryKey: string, duration: number, succes
 /**
  * Track component render performance
  */
-export const trackComponentRender = (componentName: string, duration: number) => {
+export const trackComponentRender = (
+  componentName: string,
+  duration: number,
+) => {
   performanceMonitor.recordMetric({
     name: `render_${componentName}`,
     value: duration,
@@ -292,7 +310,11 @@ export const trackComponentRender = (componentName: string, duration: number) =>
 /**
  * Track user interactions
  */
-export const trackInteraction = (action: string, target: string, duration?: number) => {
+export const trackInteraction = (
+  action: string,
+  target: string,
+  duration?: number,
+) => {
   performanceMonitor.recordMetric({
     name: `interaction_${action}`,
     value: duration || 0,
@@ -316,18 +338,21 @@ export const usePerformanceTracking = (componentName: string) => {
     trackComponentRender(componentName, renderDuration);
   });
 
-  const trackAction = React.useCallback((action: string, metadata?: any) => {
-    trackInteraction(action, componentName, 0);
-    if (metadata) {
-      performanceMonitor.recordMetric({
-        name: `${componentName}_${action}`,
-        value: 1,
-        unit: 'count',
-        category: 'component-action',
-        metadata,
-      });
-    }
-  }, [componentName]);
+  const trackAction = React.useCallback(
+    (action: string, metadata?: any) => {
+      trackInteraction(action, componentName, 0);
+      if (metadata) {
+        performanceMonitor.recordMetric({
+          name: `${componentName}_${action}`,
+          value: 1,
+          unit: 'count',
+          category: 'component-action',
+          metadata,
+        });
+      }
+    },
+    [componentName],
+  );
 
   return { trackAction };
 };
@@ -337,7 +362,7 @@ export const usePerformanceTracking = (componentName: string) => {
  */
 export const withPerformanceTracking = <P extends object>(
   Component: React.ComponentType<P>,
-  componentName: string
+  componentName: string,
 ) => {
   return React.forwardRef<any, P>((props, ref) => {
     const renderStart = React.useRef(performance.now());
@@ -354,7 +379,11 @@ export const withPerformanceTracking = <P extends object>(
 /**
  * Track route changes
  */
-export const trackRouteChange = (from: string, to: string, duration: number) => {
+export const trackRouteChange = (
+  from: string,
+  to: string,
+  duration: number,
+) => {
   performanceMonitor.recordMetric({
     name: 'route_change',
     value: duration,
@@ -370,7 +399,11 @@ export const trackRouteChange = (from: string, to: string, duration: number) => 
 /**
  * Track WebSocket performance
  */
-export const trackWebSocketPerformance = (event: string, duration: number, success: boolean) => {
+export const trackWebSocketPerformance = (
+  event: string,
+  duration: number,
+  success: boolean,
+) => {
   performanceMonitor.recordMetric({
     name: `ws_${event}`,
     value: duration,
@@ -388,7 +421,7 @@ export const trackWebSocketPerformance = (event: string, duration: number, succe
  */
 function debounce<T extends (...args: any[]) => any>(
   func: T,
-  wait: number
+  wait: number,
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout;
   return (...args: Parameters<T>) => {
@@ -409,8 +442,10 @@ function getSessionId(): string {
 // Auto-track page load performance
 if (typeof window !== 'undefined') {
   window.addEventListener('load', () => {
-    const perfData = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-    
+    const perfData = performance.getEntriesByType(
+      'navigation',
+    )[0] as PerformanceNavigationTiming;
+
     if (perfData) {
       performanceMonitor.recordMetric({
         name: 'page_load_time',

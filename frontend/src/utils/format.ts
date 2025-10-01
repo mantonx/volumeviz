@@ -3,7 +3,11 @@ import { formatDistanceToNow, format } from 'date-fns';
 /**
  * Format bytes to human-readable string with appropriate units.
  */
-export const formatBytes = (bytes: number, decimals: number = 2): string => {
+export const formatBytes = (
+  bytes: number | null | undefined,
+  decimals: number = 2
+): string => {
+  if (bytes == null) return '—';
   if (bytes === 0) return '0 B';
 
   const k = 1024;

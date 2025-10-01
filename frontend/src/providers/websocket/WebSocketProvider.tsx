@@ -47,7 +47,7 @@ export function WebSocketProvider({
   const [, removeEventListenerAction] = useAtom(removeEventListenerAtom);
   const [, triggerEventListeners] = useAtom(triggerEventListenersAtom);
   const [, clearWebSocketData] = useAtom(clearWebSocketDataAtom);
-  
+
   // Local state to track connection for this component
   const [localConnectionState, setLocalConnectionState] = React.useState({
     isConnected: false,
@@ -63,7 +63,7 @@ export function WebSocketProvider({
     reconnectInterval: mergedConfig.reconnectInterval,
     reconnectAttempts: mergedConfig.reconnectAttempts,
   });
-  
+
   const { lastMessage, readyState, sendMessage, getWebSocket } = useWebSocket(
     config.url || '',
     {
@@ -88,42 +88,46 @@ export function WebSocketProvider({
   // Update connection state when status changes
   useEffect(() => {
     const isConnected = readyState === ReadyState.OPEN;
-    
+
     setLocalConnectionState((prev) => {
       const newState = {
         isConnected,
-        connectedAt: isConnected && !prev.isConnected ? new Date() : prev.connectedAt,
+        connectedAt:
+          isConnected && !prev.isConnected ? new Date() : prev.connectedAt,
         reconnectAttempts:
           readyState === ReadyState.CONNECTING && !prev.isConnected
             ? prev.reconnectAttempts + 1
             : readyState === ReadyState.OPEN
-            ? 0
-            : prev.reconnectAttempts,
+              ? 0
+              : prev.reconnectAttempts,
       };
-      
+
       // Only update Jotai atom if state actually changed
-      if (prev.isConnected !== newState.isConnected || 
-          prev.reconnectAttempts !== newState.reconnectAttempts) {
+      if (
+        prev.isConnected !== newState.isConnected ||
+        prev.reconnectAttempts !== newState.reconnectAttempts
+      ) {
         updateConnectionState({
           status: readyState,
           isConnected: newState.isConnected,
           connectedAt: newState.connectedAt,
           reconnectAttempts: newState.reconnectAttempts,
-          lastError: readyState === ReadyState.CLOSED ? 'Connection closed' : undefined,
+          lastError:
+            readyState === ReadyState.CLOSED ? 'Connection closed' : undefined,
         });
       }
-      
+
       // Clear data on disconnect
       if (readyState === ReadyState.CLOSED && prev.isConnected) {
         clearWebSocketData();
       }
-      
+
       console.log('[WebSocket] Connection state:', {
         readyState,
         isConnected: newState.isConnected,
-        reconnectAttempts: newState.reconnectAttempts
+        reconnectAttempts: newState.reconnectAttempts,
       });
-      
+
       return newState;
     });
   }, [readyState, updateConnectionState, clearWebSocketData]);
@@ -136,7 +140,7 @@ export function WebSocketProvider({
 
     try {
       const parsedMessage: WebSocketMessage = JSON.parse(lastMessage.data);
-      
+
       console.log('[WebSocket] Received message:', parsedMessage);
 
       // Add to message history
@@ -152,7 +156,10 @@ export function WebSocketProvider({
       mergedConfig.messageHandlers?.forEach((handler) => {
         if (handler.type === parsedMessage.type) {
           try {
-            console.log(`[WebSocket] Calling handler for ${handler.type}:`, parsedMessage.data);
+            console.log(
+              `[WebSocket] Calling handler for ${handler.type}:`,
+              parsedMessage.data,
+            );
             handler.handler(parsedMessage.data, parsedMessage);
           } catch (error) {
             console.error(
@@ -162,13 +169,18 @@ export function WebSocketProvider({
           }
         }
       });
-      
+
       // Handle system messages
       if (parsedMessage.type.startsWith('system.')) {
         console.log('[WebSocket] System message:', parsedMessage);
       }
     } catch (error) {
-      console.error('Failed to parse WebSocket message:', error, 'Raw:', lastMessage.data);
+      console.error(
+        'Failed to parse WebSocket message:',
+        error,
+        'Raw:',
+        lastMessage.data,
+      );
     }
   }, [
     lastMessage,
@@ -207,7 +219,10 @@ export function WebSocketProvider({
         addSubscription({ event, filters });
         return true;
       } else {
-        console.warn('[WebSocket] Cannot subscribe - connection not open:', readyState);
+        console.warn(
+          '[WebSocket] Cannot subscribe - connection not open:',
+          readyState,
+        );
         return false;
       }
     },
@@ -228,7 +243,10 @@ export function WebSocketProvider({
         removeSubscription(event);
         return true;
       } else {
-        console.warn('[WebSocket] Cannot unsubscribe - connection not open:', readyState);
+        console.warn(
+          '[WebSocket] Cannot unsubscribe - connection not open:',
+          readyState,
+        );
         return false;
       }
     },
@@ -281,7 +299,8 @@ export function WebSocketProvider({
       connectedAt: localConnectionState.connectedAt,
       reconnectAttempts: localConnectionState.reconnectAttempts,
       latency: null,
-      lastError: readyState === ReadyState.CLOSED ? 'Connection closed' : undefined,
+      lastError:
+        readyState === ReadyState.CLOSED ? 'Connection closed' : undefined,
     },
     isConnected: localConnectionState.isConnected,
 

@@ -1,2 +1,5 @@
-export { PrefetchedExplorer } from './PrefetchedExplorer'
-export type { PrefetchedExplorerProps, FileExplorerData } from './PrefetchedExplorer'
+export { PrefetchedExplorer } from './PrefetchedExplorer';
+export type {
+  PrefetchedExplorerProps,
+  FileExplorerData,
+} from './PrefetchedExplorer';

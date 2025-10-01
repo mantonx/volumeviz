@@ -58,7 +58,11 @@ class TreemapCalculator {
     this.minSize = minSize;
   }
 
-  calculate(nodes: TreemapNode[], width: number, height: number): TreemapRect[] {
+  calculate(
+    nodes: TreemapNode[],
+    width: number,
+    height: number,
+  ): TreemapRect[] {
     const rects: TreemapRect[] = [];
 
     // Calculate total value
@@ -72,17 +76,7 @@ class TreemapCalculator {
     const sortedNodes = [...nodes].sort((a, b) => b.value - a.value);
 
     // Apply squarified treemap algorithm
-    this.squarify(
-      sortedNodes,
-      [],
-      0,
-      0,
-      width,
-      height,
-      totalValue,
-      rects,
-      0
-    );
+    this.squarify(sortedNodes, [], 0, 0, width, height, totalValue, rects, 0);
 
     return rects;
   }
@@ -96,7 +90,7 @@ class TreemapCalculator {
     height: number,
     totalValue: number,
     rects: TreemapRect[],
-    depth: number
+    depth: number,
   ): void {
     if (children.length === 0) {
       this.layoutRow(row, x, y, width, height, totalValue, rects, depth);
@@ -105,16 +99,29 @@ class TreemapCalculator {
 
     const child = children[0];
     const newRow = [...row, child];
-    
+
     const remainingChildren = children.slice(1);
     const rowValue = newRow.reduce((sum, node) => sum + node.value, 0);
 
-    if (row.length === 0 || this.improveRatio(row, rowValue, width, height, totalValue)) {
-      this.squarify(remainingChildren, newRow, x, y, width, height, totalValue, rects, depth);
+    if (
+      row.length === 0 ||
+      this.improveRatio(row, rowValue, width, height, totalValue)
+    ) {
+      this.squarify(
+        remainingChildren,
+        newRow,
+        x,
+        y,
+        width,
+        height,
+        totalValue,
+        rects,
+        depth,
+      );
     } else {
       this.layoutRow(row, x, y, width, height, totalValue, rects, depth);
       const isHorizontal = width >= height;
-      
+
       if (isHorizontal) {
         const rowWidth = (rowValue / totalValue) * width;
         this.squarify(
@@ -126,7 +133,7 @@ class TreemapCalculator {
           height,
           totalValue - rowValue,
           rects,
-          depth
+          depth,
         );
       } else {
         const rowHeight = (rowValue / totalValue) * height;
@@ -139,7 +146,7 @@ class TreemapCalculator {
           height - rowHeight,
           totalValue - rowValue,
           rects,
-          depth
+          depth,
         );
       }
     }
@@ -153,18 +160,18 @@ class TreemapCalculator {
     height: number,
     totalValue: number,
     rects: TreemapRect[],
-    depth: number
+    depth: number,
   ): void {
     const rowValue = row.reduce((sum, node) => sum + node.value, 0);
     const isHorizontal = width >= height;
-    
+
     let offset = 0;
-    
+
     for (const node of row) {
       const ratio = node.value / rowValue;
-      
+
       let rectX, rectY, rectWidth, rectHeight;
-      
+
       if (isHorizontal) {
         rectWidth = (rowValue / totalValue) * width;
         rectHeight = ratio * height;
@@ -206,30 +213,36 @@ class TreemapCalculator {
     rowValue: number,
     width: number,
     height: number,
-    totalValue: number
+    totalValue: number,
   ): boolean {
     if (row.length === 0) return true;
 
     const isHorizontal = width >= height;
     const dimension = isHorizontal ? height : width;
-    const rowDimension = (rowValue / totalValue) * (isHorizontal ? width : height);
+    const rowDimension =
+      (rowValue / totalValue) * (isHorizontal ? width : height);
 
     const currentRatio = this.calculateWorstRatio(row, rowDimension, dimension);
-    
+
     // Calculate ratio if we add the new item
     const newRowValue = rowValue + row[row.length - 1].value;
-    const newRowDimension = (newRowValue / totalValue) * (isHorizontal ? width : height);
+    const newRowDimension =
+      (newRowValue / totalValue) * (isHorizontal ? width : height);
     const newRatio = this.calculateWorstRatio(row, newRowDimension, dimension);
 
     return newRatio <= currentRatio;
   }
 
-  private calculateWorstRatio(row: TreemapNode[], length: number, width: number): number {
+  private calculateWorstRatio(
+    row: TreemapNode[],
+    length: number,
+    width: number,
+  ): number {
     if (row.length === 0) return Infinity;
 
     const totalValue = row.reduce((sum, node) => sum + node.value, 0);
-    const minValue = Math.min(...row.map(node => node.value));
-    const maxValue = Math.max(...row.map(node => node.value));
+    const minValue = Math.min(...row.map((node) => node.value));
+    const maxValue = Math.max(...row.map((node) => node.value));
 
     const area = length * width;
     const normalizedMin = (minValue / totalValue) * area;
@@ -237,7 +250,7 @@ class TreemapCalculator {
 
     return Math.max(
       (width * width * maxValue) / (normalizedMax * normalizedMax),
-      (normalizedMin * normalizedMin) / (width * width * minValue)
+      (normalizedMin * normalizedMin) / (width * width * minValue),
     );
   }
 
@@ -259,31 +272,34 @@ class TreemapCalculator {
 // Web Worker message handling
 const calculator = new TreemapCalculator();
 
-self.addEventListener('message', (event: MessageEvent<TreemapWorkerMessage>) => {
-  const { type, payload } = event.data;
+self.addEventListener(
+  'message',
+  (event: MessageEvent<TreemapWorkerMessage>) => {
+    const { type, payload } = event.data;
 
-  if (type === 'CALCULATE_TREEMAP') {
-    const startTime = performance.now();
-    const { nodes, width, height, padding = 2, minSize = 10 } = payload;
+    if (type === 'CALCULATE_TREEMAP') {
+      const startTime = performance.now();
+      const { nodes, width, height, padding = 2, minSize = 10 } = payload;
 
-    calculator.padding = padding;
-    calculator.minSize = minSize;
+      calculator.padding = padding;
+      calculator.minSize = minSize;
 
-    const rects = calculator.calculate(nodes, width, height);
-    const totalValue = nodes.reduce((sum, node) => sum + node.value, 0);
-    const computeTime = performance.now() - startTime;
+      const rects = calculator.calculate(nodes, width, height);
+      const totalValue = nodes.reduce((sum, node) => sum + node.value, 0);
+      const computeTime = performance.now() - startTime;
 
-    const response: TreemapWorkerResponse = {
-      type: 'TREEMAP_CALCULATED',
-      payload: {
-        rects,
-        totalValue,
-        computeTime,
-      },
-    };
+      const response: TreemapWorkerResponse = {
+        type: 'TREEMAP_CALCULATED',
+        payload: {
+          rects,
+          totalValue,
+          computeTime,
+        },
+      };
 
-    self.postMessage(response);
-  }
-});
+      self.postMessage(response);
+    }
+  },
+);
 
 // Types are exported at interface declaration

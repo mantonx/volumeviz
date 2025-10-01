@@ -84,7 +84,8 @@ export const Indeterminate: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Indeterminate state is useful for "select all" checkboxes when only some items are selected.',
+        story:
+          'Indeterminate state is useful for "select all" checkboxes when only some items are selected.',
       },
     },
   },
@@ -140,7 +141,11 @@ export const AllStates: Story = {
         <h3 className="font-semibold">Disabled</h3>
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2">
-            <Checkbox disabled checked={false} aria-label="Unchecked disabled" />
+            <Checkbox
+              disabled
+              checked={false}
+              aria-label="Unchecked disabled"
+            />
             <span className="text-gray-500">Unchecked</span>
           </label>
           <label className="flex items-center gap-2">
@@ -148,7 +153,11 @@ export const AllStates: Story = {
             <span className="text-gray-500">Checked</span>
           </label>
           <label className="flex items-center gap-2">
-            <Checkbox disabled indeterminate aria-label="Indeterminate disabled" />
+            <Checkbox
+              disabled
+              indeterminate
+              aria-label="Indeterminate disabled"
+            />
             <span className="text-gray-500">Indeterminate</span>
           </label>
         </div>
@@ -167,21 +176,21 @@ export const AllStates: Story = {
 export const WithLabels: Story = {
   render: () => {
     const [checked, setChecked] = React.useState(false);
-    
+
     return (
       <div className="space-y-4">
         <label className="flex items-center gap-3 cursor-pointer">
-          <Checkbox 
-            checked={checked} 
+          <Checkbox
+            checked={checked}
             onChange={setChecked}
             aria-label="Accept terms and conditions"
           />
           <span>I accept the terms and conditions</span>
         </label>
-        
+
         <label className="flex items-start gap-3 cursor-pointer">
-          <Checkbox 
-            checked={checked} 
+          <Checkbox
+            checked={checked}
             onChange={setChecked}
             className="mt-1"
             aria-label="Subscribe to newsletter"

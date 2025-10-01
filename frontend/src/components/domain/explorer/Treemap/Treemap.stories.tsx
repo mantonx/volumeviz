@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { Treemap, TreemapItem, TreemapColorScheme } from './Treemap'
+import type { Meta, StoryObj } from '@storybook/react';
+import { Treemap, TreemapItem, TreemapColorScheme } from './Treemap';
 
 const meta = {
   title: 'Domain/Explorer/Treemap',
@@ -20,10 +20,10 @@ const meta = {
       options: ['fileSize', 'fileType', 'fileAge'] as TreemapColorScheme[],
     },
   },
-} satisfies Meta<typeof Treemap>
+} satisfies Meta<typeof Treemap>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 const sampleData: TreemapItem[] = [
   {
@@ -98,7 +98,7 @@ const sampleData: TreemapItem[] = [
     type: 'image',
     lastModified: new Date('2024-03-05'),
   },
-]
+];
 
 const largeDataset: TreemapItem[] = [
   ...sampleData,
@@ -138,7 +138,7 @@ const largeDataset: TreemapItem[] = [
     type: 'archive',
     lastModified: new Date('2024-01-12'),
   },
-]
+];
 
 export const Default: Story = {
   args: {
@@ -147,7 +147,7 @@ export const Default: Story = {
     height: 400,
     colorScheme: 'fileSize',
   },
-}
+};
 
 export const FileTypeColors: Story = {
   args: {
@@ -156,7 +156,7 @@ export const FileTypeColors: Story = {
     height: 400,
     colorScheme: 'fileType',
   },
-}
+};
 
 export const FileAgeColors: Story = {
   args: {
@@ -165,7 +165,7 @@ export const FileAgeColors: Story = {
     height: 400,
     colorScheme: 'fileAge',
   },
-}
+};
 
 export const LargeDataset: Story = {
   args: {
@@ -174,7 +174,7 @@ export const LargeDataset: Story = {
     height: 600,
     colorScheme: 'fileSize',
   },
-}
+};
 
 export const SmallSize: Story = {
   args: {
@@ -183,7 +183,7 @@ export const SmallSize: Story = {
     height: 200,
     colorScheme: 'fileType',
   },
-}
+};
 
 export const WithSelection: Story = {
   args: {
@@ -193,7 +193,7 @@ export const WithSelection: Story = {
     colorScheme: 'fileSize',
     selectedIds: new Set(['2', '5']),
   },
-}
+};
 
 export const Interactive: Story = {
   args: {
@@ -204,7 +204,7 @@ export const Interactive: Story = {
     onItemClick: (item) => console.log('Clicked:', item.name),
     onItemHover: (item) => console.log('Hovered:', item?.name || 'none'),
   },
-}
+};
 
 export const EmptyState: Story = {
   args: {
@@ -213,7 +213,7 @@ export const EmptyState: Story = {
     height: 400,
     colorScheme: 'fileSize',
   },
-}
+};
 
 export const SingleItem: Story = {
   args: {
@@ -222,4 +222,4 @@ export const SingleItem: Story = {
     height: 400,
     colorScheme: 'fileSize',
   },
-}
+};

@@ -1,7 +1,15 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { EmptyState } from './EmptyState';
-import { HardDrive, Search, Users, Mail, FileX, Folder, Database } from 'lucide-react';
+import {
+  HardDrive,
+  Search,
+  Users,
+  Mail,
+  FileX,
+  Folder,
+  Database,
+} from 'lucide-react';
 import { action } from '@/utils/storybook-utils';
 const meta: Meta<typeof EmptyState> = {
   title: 'Components/UI/EmptyState',
@@ -86,7 +94,8 @@ export const SearchResults: Story = {
   args: {
     icon: Search,
     title: 'No results found',
-    description: 'We couldn\'t find anything matching your search. Try different keywords or clear your filters.',
+    description:
+      "We couldn't find anything matching your search. Try different keywords or clear your filters.",
     actionLabel: 'Clear filters',
   },
   parameters: {
@@ -118,12 +127,14 @@ export const Inbox: Story = {
   args: {
     icon: Mail,
     title: 'All caught up!',
-    description: 'You have no new messages. Great work staying on top of your inbox.',
+    description:
+      'You have no new messages. Great work staying on top of your inbox.',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Empty state for an inbox or messages list with positive messaging.',
+        story:
+          'Empty state for an inbox or messages list with positive messaging.',
       },
     },
   },
@@ -149,12 +160,14 @@ export const WithoutAction: Story = {
   args: {
     icon: Database,
     title: 'No data available',
-    description: 'The system is currently processing data. Please check back later.',
+    description:
+      'The system is currently processing data. Please check back later.',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Empty state without an action button for situations where no action is needed.',
+        story:
+          'Empty state without an action button for situations where no action is needed.',
       },
     },
   },
@@ -164,7 +177,8 @@ export const WithCustomContent: Story = {
   args: {
     icon: Folder,
     title: 'Get started with your first project',
-    description: 'Projects help you organize your work and collaborate with your team.',
+    description:
+      'Projects help you organize your work and collaborate with your team.',
     children: (
       <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
         <div className="flex items-center justify-center gap-2">
@@ -186,7 +200,8 @@ export const WithCustomContent: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Empty state with custom content between description and action button.',
+        story:
+          'Empty state with custom content between description and action button.',
       },
     },
   },
@@ -234,7 +249,8 @@ export const Variations: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Various empty state designs showing different use cases and messaging.',
+        story:
+          'Various empty state designs showing different use cases and messaging.',
       },
     },
     layout: 'padded',

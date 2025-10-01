@@ -40,14 +40,13 @@ class ServiceWorkerManager {
     try {
       this.registration = await navigator.serviceWorker.register('/sw.js');
       logger.debug('Service Worker registered:', this.registration);
-      
+
       this.notifyListeners();
-      
+
       // Check for updates periodically
       setInterval(() => {
         this.checkForUpdates();
       }, 60000); // Check every minute
-
     } catch (error) {
       console.error('Service Worker registration failed:', error);
       throw error;
@@ -85,12 +84,14 @@ class ServiceWorkerManager {
   private setupMessageHandling(): void {
     navigator.serviceWorker.addEventListener('message', (event) => {
       const { data } = event;
-      
+
       if (data.type === 'BACKGROUND_SYNC_TRIGGERED') {
         // Trigger background sync in the app
-        window.dispatchEvent(new CustomEvent('sw-background-sync', {
-          detail: { timestamp: data.timestamp }
-        }));
+        window.dispatchEvent(
+          new CustomEvent('sw-background-sync', {
+            detail: { timestamp: data.timestamp },
+          }),
+        );
       }
     });
   }
@@ -141,10 +142,10 @@ class ServiceWorkerManager {
 
   onStatusChange(callback: (status: ServiceWorkerStatus) => void): () => void {
     this.listeners.push(callback);
-    
+
     // Call immediately with current status
     callback(this.getStatus());
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.listeners.indexOf(callback);
@@ -156,7 +157,7 @@ class ServiceWorkerManager {
 
   private notifyListeners(): void {
     const status = this.getStatus();
-    this.listeners.forEach(callback => callback(status));
+    this.listeners.forEach((callback) => callback(status));
   }
 
   // Cache management methods
@@ -187,7 +188,7 @@ class ServiceWorkerManager {
 
     try {
       const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map(name => caches.delete(name)));
+      await Promise.all(cacheNames.map((name) => caches.delete(name)));
       logger.debug('All caches cleared');
     } catch (error) {
       console.error('Failed to clear cache:', error);
@@ -197,7 +198,10 @@ class ServiceWorkerManager {
 
   // Background sync methods
   async registerBackgroundSync(): Promise<void> {
-    if (!this.registration || !('sync' in window.ServiceWorkerRegistration.prototype)) {
+    if (
+      !this.registration ||
+      !('sync' in window.ServiceWorkerRegistration.prototype)
+    ) {
       console.warn('Background sync not supported');
       return;
     }
@@ -218,7 +222,7 @@ export const serviceWorkerManager = new ServiceWorkerManager();
 // React hook for service worker status
 export function useServiceWorker() {
   const [status, setStatus] = React.useState<ServiceWorkerStatus>(
-    serviceWorkerManager.getStatus()
+    serviceWorkerManager.getStatus(),
   );
   const [hasUpdate, setHasUpdate] = React.useState(false);
 
@@ -235,18 +239,22 @@ export function useServiceWorker() {
     ...status,
     hasUpdate,
     skipWaiting: serviceWorkerManager.skipWaiting.bind(serviceWorkerManager),
-    checkForUpdates: serviceWorkerManager.checkForUpdates.bind(serviceWorkerManager),
+    checkForUpdates:
+      serviceWorkerManager.checkForUpdates.bind(serviceWorkerManager),
     unregister: serviceWorkerManager.unregister.bind(serviceWorkerManager),
     clearCache: serviceWorkerManager.clearCache.bind(serviceWorkerManager),
-    getCacheStatus: serviceWorkerManager.getCacheStatus.bind(serviceWorkerManager),
+    getCacheStatus:
+      serviceWorkerManager.getCacheStatus.bind(serviceWorkerManager),
   };
 }
 
 // Utility to check if app is running standalone (PWA)
 export function isPWA(): boolean {
-  return window.matchMedia('(display-mode: standalone)').matches ||
-         window.navigator.standalone === true ||
-         document.referrer.includes('android-app://');
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true ||
+    document.referrer.includes('android-app://')
+  );
 }
 
 // Install prompt handling
@@ -284,7 +292,7 @@ export class InstallPromptManager {
     try {
       this.deferredPrompt.prompt();
       const choiceResult = await this.deferredPrompt.userChoice;
-      
+
       if (choiceResult.outcome === 'accepted') {
         logger.debug('User accepted install prompt');
       } else {
@@ -308,10 +316,10 @@ export class InstallPromptManager {
 
   onInstallabilityChange(callback: (installable: boolean) => void): () => void {
     this.listeners.push(callback);
-    
+
     // Call immediately with current status
     callback(this.isInstallPromptAvailable());
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.listeners.indexOf(callback);
@@ -323,7 +331,7 @@ export class InstallPromptManager {
 
   private notifyListeners(): void {
     const installable = this.isInstallPromptAvailable();
-    this.listeners.forEach(callback => callback(installable));
+    this.listeners.forEach((callback) => callback(installable));
   }
 }
 

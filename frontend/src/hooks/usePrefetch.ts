@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PrefetchService, PrefetchItem, PrefetchConfig } from '@/services/prefetch/PrefetchService';
+import {
+  PrefetchService,
+  PrefetchItem,
+  PrefetchConfig,
+} from '@/services/prefetch/PrefetchService';
 
 export interface UsePrefetchOptions {
   config?: Partial<PrefetchConfig>;
@@ -26,7 +30,9 @@ export interface UsePrefetchReturn {
   error: string | null;
 }
 
-export function usePrefetch(options: UsePrefetchOptions = {}): UsePrefetchReturn {
+export function usePrefetch(
+  options: UsePrefetchOptions = {},
+): UsePrefetchReturn {
   const {
     config = {},
     autoStart = true,
@@ -48,25 +54,25 @@ export function usePrefetch(options: UsePrefetchOptions = {}): UsePrefetchReturn
   useEffect(() => {
     if (!serviceRef.current && autoStart) {
       serviceRef.current = new PrefetchService(config);
-      
+
       // Set up event listeners
       serviceRef.current.on('fetch-start', () => setIsLoading(true));
-      
+
       serviceRef.current.on('fetch-success', () => {
         setIsLoading(false);
         setError(null);
         updateStats();
       });
-      
+
       serviceRef.current.on('fetch-error', ({ error: fetchError }) => {
         setIsLoading(false);
         setError(fetchError.message || 'Prefetch failed');
       });
-      
+
       serviceRef.current.on('cache-cleanup', () => {
         updateStats();
       });
-      
+
       updateStats();
     }
   }, [config, autoStart]);
@@ -77,24 +83,27 @@ export function usePrefetch(options: UsePrefetchOptions = {}): UsePrefetchReturn
     }
   }, []);
 
-  const prefetch = useCallback(async (url: string, options: Partial<PrefetchItem> = {}) => {
-    if (!serviceRef.current) {
-      throw new Error('Prefetch service not initialized');
-    }
-    
-    try {
-      const result = await serviceRef.current.prefetch(url, options);
-      updateStats();
-      return result;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Prefetch failed');
-      throw err;
-    }
-  }, [updateStats]);
+  const prefetch = useCallback(
+    async (url: string, options: Partial<PrefetchItem> = {}) => {
+      if (!serviceRef.current) {
+        throw new Error('Prefetch service not initialized');
+      }
+
+      try {
+        const result = await serviceRef.current.prefetch(url, options);
+        updateStats();
+        return result;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Prefetch failed');
+        throw err;
+      }
+    },
+    [updateStats],
+  );
 
   const get = useCallback((id: string) => {
     if (!serviceRef.current) return null;
-    
+
     const item = serviceRef.current.get(id);
     return item?.data || null;
   }, []);
@@ -106,33 +115,41 @@ export function usePrefetch(options: UsePrefetchOptions = {}): UsePrefetchReturn
 
   const clear = useCallback(() => {
     if (!serviceRef.current) return;
-    
+
     serviceRef.current.clear();
     updateStats();
     setError(null);
   }, [updateStats]);
 
-  const recordNavigation = useCallback((path: string, timeSpent?: number) => {
-    if (!serviceRef.current || !trackNavigation) return;
-    
-    serviceRef.current.recordNavigation(path, timeSpent);
-  }, [trackNavigation]);
+  const recordNavigation = useCallback(
+    (path: string, timeSpent?: number) => {
+      if (!serviceRef.current || !trackNavigation) return;
+
+      serviceRef.current.recordNavigation(path, timeSpent);
+    },
+    [trackNavigation],
+  );
 
   const getPredictions = useCallback((currentPath: string, limit?: number) => {
     if (!serviceRef.current) return [];
     return serviceRef.current.getPredictions(currentPath, limit);
   }, []);
 
-  const prefetchPredictions = useCallback(async (currentPath: string) => {
-    if (!serviceRef.current || !enablePredictions) return;
-    
-    try {
-      await serviceRef.current.prefetchPredictions(currentPath);
-      updateStats();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Prediction prefetch failed');
-    }
-  }, [enablePredictions, updateStats]);
+  const prefetchPredictions = useCallback(
+    async (currentPath: string) => {
+      if (!serviceRef.current || !enablePredictions) return;
+
+      try {
+        await serviceRef.current.prefetchPredictions(currentPath);
+        updateStats();
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Prediction prefetch failed',
+        );
+      }
+    },
+    [enablePredictions, updateStats],
+  );
 
   return {
     prefetch,

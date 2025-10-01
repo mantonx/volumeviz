@@ -35,7 +35,7 @@ export const initErrorTracking = () => {
             useLocation,
             useNavigationType,
             createRoutesFromChildren,
-            matchRoutes
+            matchRoutes,
           ),
         }),
         new Sentry.Replay({
@@ -58,24 +58,28 @@ export const initErrorTracking = () => {
         // Filter out certain errors
         if (event.exception) {
           const error = hint.originalException;
-          
+
           // Don't send network errors in development
-          if (isDevelopment && error instanceof TypeError && error.message.includes('fetch')) {
+          if (
+            isDevelopment &&
+            error instanceof TypeError &&
+            error.message.includes('fetch')
+          ) {
             return null;
           }
-          
+
           // Don't send canceled requests
           if (error?.name === 'AbortError') {
             return null;
           }
         }
-        
+
         // Add user context
         const user = getUserContext();
         if (user) {
           event.user = user;
         }
-        
+
         // Add custom context
         event.contexts = {
           ...event.contexts,
@@ -85,7 +89,7 @@ export const initErrorTracking = () => {
             environment: config.environment,
           },
         };
-        
+
         return event;
       },
       // Ignore certain errors
@@ -126,7 +130,7 @@ export const withErrorBoundary = Sentry.withErrorBoundary;
  */
 export const captureError = (error: Error, context?: Record<string, any>) => {
   console.error('Error captured:', error);
-  
+
   if (config.monitoring.enableErrorTracking && config.monitoring.sentryDsn) {
     Sentry.captureException(error, {
       contexts: {
@@ -134,7 +138,7 @@ export const captureError = (error: Error, context?: Record<string, any>) => {
       },
     });
   }
-  
+
   // Log to console in development
   if (isDevelopment) {
     console.error('Error context:', context);
@@ -145,9 +149,9 @@ export const captureError = (error: Error, context?: Record<string, any>) => {
  * Capture custom messages
  */
 export const captureMessage = (
-  message: string, 
+  message: string,
   level: Sentry.SeverityLevel = 'info',
-  context?: Record<string, any>
+  context?: Record<string, any>,
 ) => {
   if (config.monitoring.enableErrorTracking && config.monitoring.sentryDsn) {
     Sentry.captureMessage(message, {
@@ -157,9 +161,10 @@ export const captureMessage = (
       },
     });
   }
-  
+
   // Log to console based on level
-  const logMethod = level === 'error' ? 'error' : level === 'warning' ? 'warn' : 'log';
+  const logMethod =
+    level === 'error' ? 'error' : level === 'warning' ? 'warn' : 'log';
   console[logMethod](message, context);
 };
 
@@ -198,7 +203,7 @@ const getUserContext = () => {
   // Get from your auth state
   const token = localStorage.getItem('auth_token');
   if (!token) return null;
-  
+
   try {
     // Decode JWT to get user info (simplified)
     const payload = JSON.parse(atob(token.split('.')[1]));
@@ -236,7 +241,10 @@ export const addBreadcrumb = (breadcrumb: {
  * Performance monitoring transaction
  */
 export const startTransaction = (name: string, op: string = 'navigation') => {
-  if (config.monitoring.enablePerformanceTracking && config.monitoring.sentryDsn) {
+  if (
+    config.monitoring.enablePerformanceTracking &&
+    config.monitoring.sentryDsn
+  ) {
     return Sentry.startTransaction({
       name,
       op,
@@ -257,7 +265,7 @@ export const queryErrorHandler = (error: unknown) => {
       });
       return;
     }
-    
+
     // API errors
     if ('status' in error) {
       const apiError = error as any;
@@ -292,7 +300,7 @@ export const setupGlobalErrorHandlers = () => {
       promise: event.promise,
     });
   });
-  
+
   // Global errors
   window.addEventListener('error', (event) => {
     if (event.error) {
@@ -314,21 +322,21 @@ export const errorHandlers = {
       endpoint,
     });
   },
-  
+
   validation: (error: Error, data?: any) => {
     captureMessage('Validation error', 'warning', {
       error: error.message,
       data,
     });
   },
-  
+
   permission: (error: Error, resource?: string) => {
     captureMessage('Permission denied', 'warning', {
       resource,
       error: error.message,
     });
   },
-  
+
   timeout: (operation: string, duration: number) => {
     captureMessage('Operation timeout', 'warning', {
       operation,

@@ -36,17 +36,42 @@ func (r *storeRepository) UpsertVolume(ctx context.Context, volume *models.Volum
 
 	// Determine organization ID for volume upsert (events are system-level operations)
 	organizationID := int64(1) // Default organization
-	
-	// Try to get existing volume to preserve organization assignment  
+
+	// Try to get existing volume to preserve organization assignment and scan data
 	if existingVolume, err := r.store.Volumes().GetVolumeByVolumeIDSystemLevel(ctx, volume.VolumeID); err == nil {
 		if existingVolume.OrganizationID != nil {
 			organizationID = *existingVolume.OrganizationID
 		}
+		// Preserve scan data from volume parameter if set, otherwise from existing volume
+		if volume.UsageData != nil {
+			// New scan data provided - use it
+		} else if existingVolume.UsageData != nil {
+			// No new scan data - preserve existing
+			volume.UsageData = existingVolume.UsageData
+		}
+		if volume.LastScanned != nil {
+			// New scan timestamp provided - use it
+		} else if existingVolume.LastScanned != nil {
+			// No new scan timestamp - preserve existing
+			volume.LastScanned = existingVolume.LastScanned
+		}
 	}
 	// Note: Could add organization detection logic based on volume labels/properties here
 
-	_, err := r.store.Volumes().UpsertVolume(ctx, organizationID, params)
-	return err
+	// Upsert the volume through the standard repo method
+	// Note: This will not preserve scan data as CreateVolumeParams doesn't include it
+	// We need to update the scan data separately if it was provided
+	upsertedVol, err := r.store.Volumes().UpsertVolume(ctx, organizationID, params)
+	if err != nil {
+		return err
+	}
+
+	// Note: Scan data preservation is now handled by the COALESCE in the UpsertVolume SQL query
+	// The query will preserve existing total_size_bytes, last_scan_at, etc. if new values are NULL
+	// This prevents reconciliation from overwriting scan results
+
+	_ = upsertedVol
+	return nil
 }
 
 func (r *storeRepository) DeleteVolume(ctx context.Context, volumeID string) error {

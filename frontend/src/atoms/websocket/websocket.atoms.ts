@@ -1,5 +1,9 @@
 import { atom } from 'jotai';
-import type { WebSocketStatus, WebSocketState, ConnectionStatus } from './websocket.types';
+import type {
+  WebSocketStatus,
+  WebSocketState,
+  ConnectionStatus,
+} from './websocket.types';
 
 // WebSocket connection state atom
 export const websocketStateAtom = atom<WebSocketState>({
@@ -18,7 +22,6 @@ export const websocketStatusAtom = atom<WebSocketStatus>((get) => {
 
 // WebSocket enabled feature flag atom
 export const websocketEnabledAtom = atom<boolean>(false);
-
 
 // Combined status atom for the header component
 export const connectionStatusAtom = atom<ConnectionStatus>((get) => {

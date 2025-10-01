@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VolumeViz Integration Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .test-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #374151;
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .endpoint {
+            font-family: 'Courier New', monospace;
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .token-display {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 12px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 VolumeViz Integration Test</h1>
+        <p>Test the frontend-backend API integration with real authentication.</p>
+
+        <div class="test-section">
+            <h3>Step 1: Set JWT Token</h3>
+            <p>Click the button below to set the authentication token in localStorage.</p>
+            <button onclick="setToken()">Set Auth Token</button>
+            <div id="tokenStatus"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Step 2: Test API Endpoints</h3>
+            <p>Test each API endpoint to verify the integration is working.</p>
+
+            <button onclick="testVolumes()">Test /volumes</button>
+            <button onclick="testSearch()">Test /search/files</button>
+            <button onclick="testSuggestions()">Test /search/suggestions</button>
+            <button onclick="testTrendsSummary()">Test /trends/summary</button>
+            <button onclick="testAll()">Test All Endpoints</button>
+
+            <div id="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Step 3: Open VolumeViz Frontend</h3>
+            <p>Click below to automatically set the token and open the frontend (authenticated).</p>
+            <button onclick="openFrontendWithAuth()">Set Token & Open Frontend</button>
+            <div class="status info" style="margin-top: 15px;">
+                <strong>Note:</strong> This will redirect you to the frontend with authentication already configured. You'll be automatically logged in.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMSIsInVzZXJuYW1lIjoiMSIsInJvbGUiOiJhZG1pbiIsInRva2VuX3R5cGUiOiJhY2Nlc3MiLCJzZXNzaW9uX2lkIjoiand0LWdlbiIsImlzcyI6InZvbHVtZXZpeiIsInN1YiI6IjEiLCJleHAiOjE3NTkzNTM2NjksIm5iZiI6MTc1OTI2NzI2OSwiaWF0IjoxNzU5MjY3MjY5LCJqdGkiOiJjNThiODM3YTAyMzIyY2Q2NmFlODI3MGY1MmRiZDhlOSJ9.O7Ep6DEvZdz9_bozO6T1iFcNrZUiNDr_UKmowe_Y_3g';
+        const API_BASE = 'http://localhost:8080/api/v1';
+
+        function setToken() {
+            localStorage.setItem('auth_token', JWT_TOKEN);
+            // Also set user object for authentication
+            const user = {
+                id: '1',
+                email: 'admin@volumeviz.local',
+                role: 'admin',
+                username: 'admin',
+                display_name: 'Admin'
+            };
+            localStorage.setItem('user', JSON.stringify(user));
+
+            const statusDiv = document.getElementById('tokenStatus');
+            statusDiv.innerHTML = `
+                <div class="status success">
+                    ✅ Token and user info set successfully in localStorage
+                </div>
+                <div class="token-display">
+                    <strong>Token (first 50 chars):</strong> ${JWT_TOKEN.substring(0, 50)}...
+                </div>
+            `;
+        }
+
+        function openFrontendWithAuth() {
+            // Set token and user in this window
+            setToken();
+            // Redirect to frontend
+            setTimeout(() => {
+                window.location.href = 'http://localhost:5173';
+            }, 500);
+        }
+
+        async function testEndpoint(name, url, expectedFields = []) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML += `<div class="status info">Testing ${name}...</div>`;
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    throw new Error('No auth token found. Please set token first.');
+                }
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP ${response.status}: ${errorData.error || errorData.message}`);
+                }
+
+                const data = await response.json();
+
+                let fieldCheck = '';
+                if (expectedFields.length > 0) {
+                    const missingFields = expectedFields.filter(field => !(field in data));
+                    if (missingFields.length > 0) {
+                        fieldCheck = ` (Missing fields: ${missingFields.join(', ')})`;
+                    }
+                }
+
+                resultsDiv.innerHTML += `
+                    <div class="status success">
+                        ✅ ${name} - SUCCESS${fieldCheck}
+                        <div class="endpoint">${url}</div>
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2).substring(0, 500)}${JSON.stringify(data, null, 2).length > 500 ? '...' : ''}</pre>
+                `;
+                return true;
+            } catch (error) {
+                resultsDiv.innerHTML += `
+                    <div class="status error">
+                        ❌ ${name} - FAILED
+                        <div class="endpoint">${url}</div>
+                        <div style="margin-top: 8px;">${error.message}</div>
+                    </div>
+                `;
+                return false;
+            }
+        }
+
+        async function testVolumes() {
+            document.getElementById('results').innerHTML = '';
+            await testEndpoint('Volumes API', `${API_BASE}/volumes`, ['data', 'page', 'page_size', 'total']);
+        }
+
+        async function testSearch() {
+            document.getElementById('results').innerHTML = '';
+            await testEndpoint('Search API', `${API_BASE}/search/files?q=test&page=1&perPage=5`, ['files', 'total_count', 'page']);
+        }
+
+        async function testSuggestions() {
+            document.getElementById('results').innerHTML = '';
+            await testEndpoint('Search Suggestions', `${API_BASE}/search/suggestions?q=test&limit=10`, ['suggestions']);
+        }
+
+        async function testTrendsSummary() {
+            document.getElementById('results').innerHTML = '';
+            await testEndpoint('Trends Summary', `${API_BASE}/trends/summary`, ['data', 'meta']);
+        }
+
+        async function testAll() {
+            document.getElementById('results').innerHTML = '<h4>Running all tests...</h4>';
+
+            const tests = [
+                { name: 'Volumes API', url: `${API_BASE}/volumes`, fields: ['data', 'page'] },
+                { name: 'Search Files', url: `${API_BASE}/search/files?q=test&page=1&perPage=5`, fields: ['files', 'total_count'] },
+                { name: 'Search Suggestions', url: `${API_BASE}/search/suggestions?q=test&limit=10`, fields: ['suggestions'] },
+                { name: 'Trends Summary', url: `${API_BASE}/trends/summary`, fields: ['data'] }
+            ];
+
+            let passed = 0;
+            let failed = 0;
+
+            for (const test of tests) {
+                const success = await testEndpoint(test.name, test.url, test.fields);
+                if (success) passed++;
+                else failed++;
+            }
+
+            document.getElementById('results').innerHTML += `
+                <div class="status ${failed === 0 ? 'success' : 'error'}">
+                    <strong>Test Summary:</strong> ${passed} passed, ${failed} failed out of ${tests.length} tests
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

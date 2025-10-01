@@ -83,7 +83,11 @@ export const Sunburst: React.FC<SunburstProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoveredItem, setHoveredItem] = useState<SunburstSlice | null>(null);
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; item: SunburstSlice } | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    x: number;
+    y: number;
+    item: SunburstSlice;
+  } | null>(null);
 
   const radius = Math.min(width, height) / 2;
   const centerX = width / 2;
@@ -94,7 +98,7 @@ export const Sunburst: React.FC<SunburstProps> = ({
     if (!data.length) return [];
 
     // Find focused item or use root
-    const focusedItem = focusedItemId 
+    const focusedItem = focusedItemId
       ? findItemById(data, focusedItemId)
       : null;
 
@@ -118,7 +122,8 @@ export const Sunburst: React.FC<SunburstProps> = ({
       const slices: SunburstSlice[] = [];
 
       items.forEach((item) => {
-        const proportion = totalSize > 0 ? item.size / totalSize : 1 / items.length;
+        const proportion =
+          totalSize > 0 ? item.size / totalSize : 1 / items.length;
         const sliceAngle = angleRange * proportion;
         const sliceEndAngle = currentAngle + sliceAngle;
 
@@ -353,7 +358,7 @@ const SunburstSliceComponent: React.FC<SunburstSliceComponentProps> = ({
       className={cn(
         enableAnimations && 'transition-all duration-200',
         isHovered && 'brightness-110 stroke-2',
-        isSelected && 'stroke-primary stroke-2'
+        isSelected && 'stroke-primary stroke-2',
       )}
       style={{
         opacity: isHovered ? 0.9 : 0.8,

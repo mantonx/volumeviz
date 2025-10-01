@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { TopNAnalysis } from './TopNAnalysis'
+import type { Meta, StoryObj } from '@storybook/react';
+import { TopNAnalysis } from './TopNAnalysis';
 
 const meta = {
   title: 'Domain/Explorer/TopNAnalysis',
@@ -22,10 +22,10 @@ const meta = {
       control: { type: 'number', min: 5, max: 50 },
     },
   },
-} satisfies Meta<typeof TopNAnalysis>
+} satisfies Meta<typeof TopNAnalysis>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -34,10 +34,11 @@ export const Default: Story = {
     path: '/workspace',
     topN: 10,
     onClose: () => console.log('Close Top-N analysis'),
-    onItemClick: (item, category) => console.log('Item clicked:', { item, category }),
+    onItemClick: (item, category) =>
+      console.log('Item clicked:', { item, category }),
     onRefresh: () => console.log('Refresh analysis'),
   },
-}
+};
 
 export const MediaLibrary: Story = {
   args: {
@@ -46,10 +47,11 @@ export const MediaLibrary: Story = {
     path: '/photos-videos',
     topN: 15,
     onClose: () => console.log('Close Top-N analysis'),
-    onItemClick: (item, category) => console.log('Item clicked:', { item, category }),
+    onItemClick: (item, category) =>
+      console.log('Item clicked:', { item, category }),
     onRefresh: () => console.log('Refresh analysis'),
   },
-}
+};
 
 export const DocumentStorage: Story = {
   args: {
@@ -58,10 +60,11 @@ export const DocumentStorage: Story = {
     path: '/company-docs',
     topN: 20,
     onClose: () => console.log('Close Top-N analysis'),
-    onItemClick: (item, category) => console.log('Item clicked:', { item, category }),
+    onItemClick: (item, category) =>
+      console.log('Item clicked:', { item, category }),
     onRefresh: () => console.log('Refresh analysis'),
   },
-}
+};
 
 export const BackupAnalysis: Story = {
   args: {
@@ -70,10 +73,11 @@ export const BackupAnalysis: Story = {
     path: '/',
     topN: 25,
     onClose: () => console.log('Close Top-N analysis'),
-    onItemClick: (item, category) => console.log('Item clicked:', { item, category }),
+    onItemClick: (item, category) =>
+      console.log('Item clicked:', { item, category }),
     onRefresh: () => console.log('Refresh analysis'),
   },
-}
+};
 
 export const ServerLogs: Story = {
   args: {
@@ -82,10 +86,11 @@ export const ServerLogs: Story = {
     path: '/var/log',
     topN: 30,
     onClose: () => console.log('Close Top-N analysis'),
-    onItemClick: (item, category) => console.log('Item clicked:', { item, category }),
+    onItemClick: (item, category) =>
+      console.log('Item clicked:', { item, category }),
     onRefresh: () => console.log('Refresh analysis'),
   },
-}
+};
 
 export const CloudSync: Story = {
   args: {
@@ -94,10 +99,11 @@ export const CloudSync: Story = {
     path: '/synced-folders',
     topN: 12,
     onClose: () => console.log('Close Top-N analysis'),
-    onItemClick: (item, category) => console.log('Item clicked:', { item, category }),
+    onItemClick: (item, category) =>
+      console.log('Item clicked:', { item, category }),
     onRefresh: () => console.log('Refresh analysis'),
   },
-}
+};
 
 export const SmallDataset: Story = {
   args: {
@@ -106,10 +112,11 @@ export const SmallDataset: Story = {
     path: '/tmp',
     topN: 5,
     onClose: () => console.log('Close Top-N analysis'),
-    onItemClick: (item, category) => console.log('Item clicked:', { item, category }),
+    onItemClick: (item, category) =>
+      console.log('Item clicked:', { item, category }),
     onRefresh: () => console.log('Refresh analysis'),
   },
-}
+};
 
 export const LargeDataset: Story = {
   args: {
@@ -118,10 +125,11 @@ export const LargeDataset: Story = {
     path: '/data',
     topN: 50,
     onClose: () => console.log('Close Top-N analysis'),
-    onItemClick: (item, category) => console.log('Item clicked:', { item, category }),
+    onItemClick: (item, category) =>
+      console.log('Item clicked:', { item, category }),
     onRefresh: () => console.log('Refresh analysis'),
   },
-}
+};
 
 export const Hidden: Story = {
   args: {
@@ -130,10 +138,11 @@ export const Hidden: Story = {
     path: '/workspace',
     topN: 10,
     onClose: () => console.log('Close Top-N analysis'),
-    onItemClick: (item, category) => console.log('Item clicked:', { item, category }),
+    onItemClick: (item, category) =>
+      console.log('Item clicked:', { item, category }),
     onRefresh: () => console.log('Refresh analysis'),
   },
-}
+};
 
 export const InteractiveDemo: Story = {
   args: {
@@ -167,11 +176,12 @@ export const InteractiveDemo: Story = {
       <div className="h-screen">
         <div className="p-4 bg-muted/50 text-center">
           <p className="text-sm text-muted-foreground">
-            Interactive Top-N analysis - try switching between overview and detailed views
+            Interactive Top-N analysis - try switching between overview and
+            detailed views
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};

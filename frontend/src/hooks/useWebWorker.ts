@@ -16,13 +16,13 @@ export interface UseWebWorkerOptions {
 
 export function useWebWorker<TMessage = any, TResponse = any>(
   workerFactory: () => Worker,
-  options: UseWebWorkerOptions = {}
+  options: UseWebWorkerOptions = {},
 ): WebWorkerHook<TMessage, TResponse> {
   const { onMessage, onError, timeout = 30000 } = options;
-  
+
   const workerRef = useRef<Worker | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const [isSupported] = useState(() => typeof Worker !== 'undefined');
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export function useWebWorker<TMessage = any, TResponse = any>(
       workerRef.current.addEventListener('message', (event) => {
         setIsWorking(false);
         setError(null);
-        
+
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
@@ -52,7 +52,7 @@ export function useWebWorker<TMessage = any, TResponse = any>(
         setIsWorking(false);
         const errorMessage = `Worker error: ${event.message}`;
         setError(errorMessage);
-        
+
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
@@ -62,9 +62,9 @@ export function useWebWorker<TMessage = any, TResponse = any>(
           onError(errorMessage);
         }
       });
-
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create worker';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create worker';
       setError(errorMessage);
       if (onError) {
         onError(errorMessage);
@@ -83,50 +83,54 @@ export function useWebWorker<TMessage = any, TResponse = any>(
     };
   }, [isSupported, onMessage, onError, workerFactory]);
 
-  const postMessage = useCallback((message: TMessage) => {
-    if (!workerRef.current || !isSupported) {
-      const errorMessage = 'Worker not available';
-      setError(errorMessage);
-      if (onError) {
-        onError(errorMessage);
+  const postMessage = useCallback(
+    (message: TMessage) => {
+      if (!workerRef.current || !isSupported) {
+        const errorMessage = 'Worker not available';
+        setError(errorMessage);
+        if (onError) {
+          onError(errorMessage);
+        }
+        return;
       }
-      return;
-    }
 
-    setIsWorking(true);
-    setError(null);
+      setIsWorking(true);
+      setError(null);
 
-    // Set timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    timeoutRef.current = setTimeout(() => {
-      setIsWorking(false);
-      const errorMessage = `Worker timeout after ${timeout}ms`;
-      setError(errorMessage);
-      if (onError) {
-        onError(errorMessage);
-      }
-    }, timeout);
-
-    try {
-      workerRef.current.postMessage(message);
-    } catch (err) {
-      setIsWorking(false);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to post message';
-      setError(errorMessage);
-      
+      // Set timeout
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
       }
-      
-      if (onError) {
-        onError(errorMessage);
+
+      timeoutRef.current = setTimeout(() => {
+        setIsWorking(false);
+        const errorMessage = `Worker timeout after ${timeout}ms`;
+        setError(errorMessage);
+        if (onError) {
+          onError(errorMessage);
+        }
+      }, timeout);
+
+      try {
+        workerRef.current.postMessage(message);
+      } catch (err) {
+        setIsWorking(false);
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to post message';
+        setError(errorMessage);
+
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+
+        if (onError) {
+          onError(errorMessage);
+        }
       }
-    }
-  }, [isSupported, timeout, onError]);
+    },
+    [isSupported, timeout, onError],
+  );
 
   const terminate = useCallback(() => {
     if (workerRef.current) {
@@ -154,22 +158,28 @@ export function useWebWorker<TMessage = any, TResponse = any>(
 
 export function useTreemapWorker(options: UseWebWorkerOptions = {}) {
   return useWebWorker(
-    () => new Worker(new URL('../workers/treemap.worker.ts', import.meta.url), { type: 'module' }),
-    options
+    () =>
+      new Worker(new URL('../workers/treemap.worker.ts', import.meta.url), {
+        type: 'module',
+      }),
+    options,
   );
 }
 
 export function useAggregationWorker(options: UseWebWorkerOptions = {}) {
   return useWebWorker(
-    () => new Worker(new URL('../workers/aggregation.worker.ts', import.meta.url), { type: 'module' }),
-    options
+    () =>
+      new Worker(new URL('../workers/aggregation.worker.ts', import.meta.url), {
+        type: 'module',
+      }),
+    options,
   );
 }
 
 // Promise-based worker interface for easier usage
 export function usePromiseWorker<TMessage, TResponse>(
   workerFactory: () => Worker,
-  options: Omit<UseWebWorkerOptions, 'onMessage' | 'onError'> = {}
+  options: Omit<UseWebWorkerOptions, 'onMessage' | 'onError'> = {},
 ) {
   const [results, setResults] = useState<TResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -189,39 +199,42 @@ export function usePromiseWorker<TMessage, TResponse>(
     },
   });
 
-  const execute = useCallback((message: TMessage): Promise<TResponse> => {
-    return new Promise((resolve, reject) => {
-      if (!worker.isSupported) {
-        reject(new Error('Web Workers not supported'));
-        return;
-      }
+  const execute = useCallback(
+    (message: TMessage): Promise<TResponse> => {
+      return new Promise((resolve, reject) => {
+        if (!worker.isSupported) {
+          reject(new Error('Web Workers not supported'));
+          return;
+        }
 
-      setLoading(true);
-      setError(null);
-      setResults(null);
+        setLoading(true);
+        setError(null);
+        setResults(null);
 
-      // Set up one-time listeners
-      const handleMessage = (data: TResponse) => {
-        setResults(data);
-        setLoading(false);
-        resolve(data);
-      };
+        // Set up one-time listeners
+        const handleMessage = (data: TResponse) => {
+          setResults(data);
+          setLoading(false);
+          resolve(data);
+        };
 
-      const handleError = (err: string) => {
-        setError(err);
-        setLoading(false);
-        reject(new Error(err));
-      };
+        const handleError = (err: string) => {
+          setError(err);
+          setLoading(false);
+          reject(new Error(err));
+        };
 
-      // Update worker options temporarily
-      const originalOnMessage = options.onMessage;
-      const originalOnError = options.onError;
+        // Update worker options temporarily
+        const originalOnMessage = options.onMessage;
+        const originalOnError = options.onError;
 
-      // This is a simplified approach - in a real implementation,
-      // you'd want to manage the event listeners more carefully
-      worker.postMessage(message);
-    });
-  }, [worker, options]);
+        // This is a simplified approach - in a real implementation,
+        // you'd want to manage the event listeners more carefully
+        worker.postMessage(message);
+      });
+    },
+    [worker, options],
+  );
 
   return {
     execute,
@@ -236,14 +249,20 @@ export function usePromiseWorker<TMessage, TResponse>(
 // Specialized promise-based hooks
 export function useTreemapWorkerPromise(options: UseWebWorkerOptions = {}) {
   return usePromiseWorker(
-    () => new Worker(new URL('../workers/treemap.worker.ts', import.meta.url), { type: 'module' }),
-    options
+    () =>
+      new Worker(new URL('../workers/treemap.worker.ts', import.meta.url), {
+        type: 'module',
+      }),
+    options,
   );
 }
 
 export function useAggregationWorkerPromise(options: UseWebWorkerOptions = {}) {
   return usePromiseWorker(
-    () => new Worker(new URL('../workers/aggregation.worker.ts', import.meta.url), { type: 'module' }),
-    options
+    () =>
+      new Worker(new URL('../workers/aggregation.worker.ts', import.meta.url), {
+        type: 'module',
+      }),
+    options,
   );
 }

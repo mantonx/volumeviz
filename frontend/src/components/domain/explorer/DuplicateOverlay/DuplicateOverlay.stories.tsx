@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { DuplicateOverlay } from './DuplicateOverlay'
+import type { Meta, StoryObj } from '@storybook/react';
+import { DuplicateOverlay } from './DuplicateOverlay';
 
 const meta = {
   title: 'Domain/Explorer/DuplicateOverlay',
@@ -28,10 +28,10 @@ const meta = {
       control: { type: 'boolean' },
     },
   },
-} satisfies Meta<typeof DuplicateOverlay>
+} satisfies Meta<typeof DuplicateOverlay>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -44,7 +44,7 @@ export const Default: Story = {
     onClose: () => console.log('Close overlay'),
     onFileAction: (action, files) => console.log(`Action: ${action}`, files),
   },
-}
+};
 
 export const LargeVolume: Story = {
   args: {
@@ -57,7 +57,7 @@ export const LargeVolume: Story = {
     onClose: () => console.log('Close overlay'),
     onFileAction: (action, files) => console.log(`Action: ${action}`, files),
   },
-}
+};
 
 export const PhotoLibrary: Story = {
   args: {
@@ -70,7 +70,7 @@ export const PhotoLibrary: Story = {
     onClose: () => console.log('Close overlay'),
     onFileAction: (action, files) => console.log(`Action: ${action}`, files),
   },
-}
+};
 
 export const VideoCollection: Story = {
   args: {
@@ -83,7 +83,7 @@ export const VideoCollection: Story = {
     onClose: () => console.log('Close overlay'),
     onFileAction: (action, files) => console.log(`Action: ${action}`, files),
   },
-}
+};
 
 export const IncludeEmptyFiles: Story = {
   args: {
@@ -96,7 +96,7 @@ export const IncludeEmptyFiles: Story = {
     onClose: () => console.log('Close overlay'),
     onFileAction: (action, files) => console.log(`Action: ${action}`, files),
   },
-}
+};
 
 export const DocumentLibrary: Story = {
   args: {
@@ -109,7 +109,7 @@ export const DocumentLibrary: Story = {
     onClose: () => console.log('Close overlay'),
     onFileAction: (action, files) => console.log(`Action: ${action}`, files),
   },
-}
+};
 
 export const Hidden: Story = {
   args: {
@@ -119,7 +119,7 @@ export const Hidden: Story = {
     onClose: () => console.log('Close overlay'),
     onFileAction: (action, files) => console.log(`Action: ${action}`, files),
   },
-}
+};
 
 export const InteractiveDemo: Story = {
   args: {
@@ -135,7 +135,10 @@ export const InteractiveDemo: Story = {
     },
     onFileAction: (action, files) => {
       console.log(`File action requested: ${action}`);
-      console.log('Selected files:', files.map(f => f.path));
+      console.log(
+        'Selected files:',
+        files.map((f) => f.path),
+      );
       // In a real app, this would trigger the appropriate file operations
     },
   },
@@ -144,11 +147,12 @@ export const InteractiveDemo: Story = {
       <div className="h-screen">
         <div className="p-4 bg-muted/50 text-center">
           <p className="text-sm text-muted-foreground">
-            Interactive duplicate detection overlay - check the console for action logs
+            Interactive duplicate detection overlay - check the console for
+            action logs
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};

@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Clock, Calendar, TrendingUp, Filter, X, Play, Pause, SkipBack, SkipForward } from 'lucide-react';
+import {
+  Clock,
+  Calendar,
+  TrendingUp,
+  Filter,
+  X,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+} from 'lucide-react';
 import { cn } from '@/utils/class-names/cn';
 
 export interface TimelineEvent {
@@ -83,28 +93,52 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
 
   // Mock data generation
   const generateMockEvents = useCallback(() => {
-    const eventTypes: TimelineEvent['type'][] = ['created', 'modified', 'accessed', 'deleted'];
+    const eventTypes: TimelineEvent['type'][] = [
+      'created',
+      'modified',
+      'accessed',
+      'deleted',
+    ];
     const mockEvents: TimelineEvent[] = [];
     const now = new Date();
-    const startDate = new Date(now.getTime() - timeRangeDays * 24 * 60 * 60 * 1000);
+    const startDate = new Date(
+      now.getTime() - timeRangeDays * 24 * 60 * 60 * 1000,
+    );
 
     // Generate 200-500 events over the time range
     const eventCount = 200 + Math.random() * 300;
-    
+
     for (let i = 0; i < eventCount; i++) {
       const timestamp = new Date(
-        startDate.getTime() + Math.random() * (now.getTime() - startDate.getTime())
+        startDate.getTime() +
+          Math.random() * (now.getTime() - startDate.getTime()),
       );
-      
+
       const type = eventTypes[Math.floor(Math.random() * eventTypes.length)];
       const fileId = `file-${Math.floor(Math.random() * 1000)}`;
-      
+
       // Generate realistic file names based on type
-      const extensions = ['.jpg', '.mp4', '.pdf', '.docx', '.txt', '.zip', '.json'];
-      const names = ['document', 'image', 'video', 'report', 'backup', 'config', 'data'];
+      const extensions = [
+        '.jpg',
+        '.mp4',
+        '.pdf',
+        '.docx',
+        '.txt',
+        '.zip',
+        '.json',
+      ];
+      const names = [
+        'document',
+        'image',
+        'video',
+        'report',
+        'backup',
+        'config',
+        'data',
+      ];
       const fileName = `${names[Math.floor(Math.random() * names.length)]}_${Math.floor(Math.random() * 100)}${extensions[Math.floor(Math.random() * extensions.length)]}`;
       const filePath = `${path}/${fileName}`;
-      
+
       const fileSize = Math.floor(Math.random() * 100000000); // Up to 100MB
 
       mockEvents.push({
@@ -119,53 +153,58 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
       });
     }
 
-    return mockEvents.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    return mockEvents.sort(
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+    );
   }, [timeRangeDays, path]);
 
-  const generateMockStats = useCallback((events: TimelineEvent[]): TimelineStats => {
-    const eventTypeBreakdown: Record<string, number> = {};
-    const activityByHour: Record<number, number> = {};
-    
-    // Initialize counters
-    ['created', 'modified', 'accessed', 'deleted'].forEach(type => {
-      eventTypeBreakdown[type] = 0;
-    });
-    
-    for (let hour = 0; hour < 24; hour++) {
-      activityByHour[hour] = 0;
-    }
+  const generateMockStats = useCallback(
+    (events: TimelineEvent[]): TimelineStats => {
+      const eventTypeBreakdown: Record<string, number> = {};
+      const activityByHour: Record<number, number> = {};
 
-    events.forEach(event => {
-      eventTypeBreakdown[event.type]++;
-      activityByHour[event.timestamp.getHours()]++;
-    });
+      // Initialize counters
+      ['created', 'modified', 'accessed', 'deleted'].forEach((type) => {
+        eventTypeBreakdown[type] = 0;
+      });
 
-    const sortedBySize = [...events].sort((a, b) => b.fileSize - a.fileSize);
-    
-    return {
-      totalEvents: events.length,
-      filesCounted: new Set(events.map(e => e.fileId)).size,
-      dateRange: {
-        start: events[0]?.timestamp || new Date(),
-        end: events[events.length - 1]?.timestamp || new Date(),
-      },
-      eventTypeBreakdown,
-      activityByHour,
-      largestFiles: sortedBySize.slice(0, 10),
-    };
-  }, []);
+      for (let hour = 0; hour < 24; hour++) {
+        activityByHour[hour] = 0;
+      }
+
+      events.forEach((event) => {
+        eventTypeBreakdown[event.type]++;
+        activityByHour[event.timestamp.getHours()]++;
+      });
+
+      const sortedBySize = [...events].sort((a, b) => b.fileSize - a.fileSize);
+
+      return {
+        totalEvents: events.length,
+        filesCounted: new Set(events.map((e) => e.fileId)).size,
+        dateRange: {
+          start: events[0]?.timestamp || new Date(),
+          end: events[events.length - 1]?.timestamp || new Date(),
+        },
+        eventTypeBreakdown,
+        activityByHour,
+        largestFiles: sortedBySize.slice(0, 10),
+      };
+    },
+    [],
+  );
 
   // Load timeline data
   const loadTimelineData = useCallback(async () => {
     setIsLoading(true);
-    
+
     try {
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       const mockEvents = generateMockEvents();
       const mockStats = generateMockStats(mockEvents);
-      
+
       setEvents(mockEvents);
       setStats(mockStats);
     } catch (error) {
@@ -177,14 +216,18 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
 
   // Filter events based on current filters
   const filteredEvents = useMemo(() => {
-    return events.filter(event => {
-      if (filters.startDate && event.timestamp < filters.startDate) return false;
+    return events.filter((event) => {
+      if (filters.startDate && event.timestamp < filters.startDate)
+        return false;
       if (filters.endDate && event.timestamp > filters.endDate) return false;
       if (!filters.eventTypes.has(event.type)) return false;
-      if (filters.minFileSize > 0 && event.fileSize < filters.minFileSize) return false;
-      if (filters.maxFileSize > 0 && event.fileSize > filters.maxFileSize) return false;
-      if (filters.pathPattern && !event.filePath.includes(filters.pathPattern)) return false;
-      
+      if (filters.minFileSize > 0 && event.fileSize < filters.minFileSize)
+        return false;
+      if (filters.maxFileSize > 0 && event.fileSize > filters.maxFileSize)
+        return false;
+      if (filters.pathPattern && !event.filePath.includes(filters.pathPattern))
+        return false;
+
       return true;
     });
   }, [events, filters]);
@@ -194,7 +237,7 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
     if (!isPlaying || filteredEvents.length === 0) return;
 
     const interval = setInterval(() => {
-      setCurrentTimeIndex(prev => {
+      setCurrentTimeIndex((prev) => {
         const next = prev + 1;
         if (next >= filteredEvents.length) {
           setIsPlaying(false);
@@ -287,11 +330,13 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
           <div className="flex items-center gap-4">
             {/* View Toggle */}
             <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-              {([
-                ['timeline', 'Timeline'],
-                ['heatmap', 'Heatmap'],
-                ['stats', 'Stats'],
-              ] as const).map(([view, label]) => (
+              {(
+                [
+                  ['timeline', 'Timeline'],
+                  ['heatmap', 'Heatmap'],
+                  ['stats', 'Stats'],
+                ] as const
+              ).map(([view, label]) => (
                 <button
                   key={view}
                   type="button"
@@ -300,7 +345,7 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
                     'px-3 py-1 text-sm rounded',
                     currentView === view
                       ? 'bg-background shadow-sm'
-                      : 'hover:bg-background/50'
+                      : 'hover:bg-background/50',
                   )}
                 >
                   {label}
@@ -325,7 +370,11 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
                   className="p-2 hover:bg-muted rounded"
                   title={isPlaying ? 'Pause' : 'Play'}
                 >
-                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  {isPlaying ? (
+                    <Pause className="h-4 w-4" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
                 </button>
                 <button
                   type="button"
@@ -385,10 +434,7 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
               )}
 
               {currentView === 'heatmap' && (
-                <HeatmapView
-                  stats={stats}
-                  events={filteredEvents}
-                />
+                <HeatmapView stats={stats} events={filteredEvents} />
               )}
 
               {currentView === 'stats' && (
@@ -434,24 +480,31 @@ const TimelineView: React.FC<TimelineViewProps> = ({
             className={cn(
               'flex items-start gap-4 p-3 rounded-lg border transition-all duration-300',
               index === currentIndex && 'ring-2 ring-primary bg-primary/5',
-              onEventClick && 'cursor-pointer hover:bg-muted/50'
+              onEventClick && 'cursor-pointer hover:bg-muted/50',
             )}
             onClick={() => onEventClick?.(event)}
           >
-            <div className={cn('w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold', getEventColor(event.type))}>
+            <div
+              className={cn(
+                'w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold',
+                getEventColor(event.type),
+              )}
+            >
               {getEventIcon(event.type)}
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-medium">{event.fileName}</span>
-                <span className="text-xs text-muted-foreground capitalize">{event.type}</span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {event.type}
+                </span>
               </div>
-              
+
               <div className="text-sm text-muted-foreground truncate">
                 {event.filePath}
               </div>
-              
+
               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                 <span>{event.timestamp.toLocaleString()}</span>
                 <span>{formatFileSize(event.fileSize)}</span>
@@ -478,7 +531,7 @@ interface HeatmapViewProps {
 
 const HeatmapView: React.FC<HeatmapViewProps> = ({ stats }) => {
   const maxActivity = Math.max(...Object.values(stats.activityByHour));
-  
+
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="space-y-6">
@@ -488,7 +541,7 @@ const HeatmapView: React.FC<HeatmapViewProps> = ({ stats }) => {
             {Array.from({ length: 24 }, (_, hour) => {
               const activity = stats.activityByHour[hour] || 0;
               const intensity = activity / maxActivity;
-              
+
               return (
                 <div
                   key={hour}
@@ -507,11 +560,13 @@ const HeatmapView: React.FC<HeatmapViewProps> = ({ stats }) => {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-4">Event Type Distribution</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Event Type Distribution
+          </h3>
           <div className="space-y-2">
             {Object.entries(stats.eventTypeBreakdown).map(([type, count]) => {
               const percentage = (count / stats.totalEvents) * 100;
-              
+
               return (
                 <div key={type} className="flex items-center gap-4">
                   <span className="w-20 text-sm capitalize">{type}</span>
@@ -538,29 +593,49 @@ interface StatsViewProps {
   onEventClick?: (event: TimelineEvent) => void;
 }
 
-const StatsView: React.FC<StatsViewProps> = ({ stats, formatFileSize, onEventClick }) => {
+const StatsView: React.FC<StatsViewProps> = ({
+  stats,
+  formatFileSize,
+  onEventClick,
+}) => {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="space-y-6">
         {/* Overview Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-4 border rounded-lg">
-            <div className="text-2xl font-bold text-primary">{stats.totalEvents}</div>
+            <div className="text-2xl font-bold text-primary">
+              {stats.totalEvents}
+            </div>
             <div className="text-sm text-muted-foreground">Total Events</div>
           </div>
           <div className="text-center p-4 border rounded-lg">
-            <div className="text-2xl font-bold text-blue-500">{stats.filesCounted}</div>
+            <div className="text-2xl font-bold text-blue-500">
+              {stats.filesCounted}
+            </div>
             <div className="text-sm text-muted-foreground">Files Affected</div>
           </div>
           <div className="text-center p-4 border rounded-lg">
             <div className="text-2xl font-bold text-green-500">
-              {Math.round((stats.dateRange.end.getTime() - stats.dateRange.start.getTime()) / (1000 * 60 * 60 * 24))}
+              {Math.round(
+                (stats.dateRange.end.getTime() -
+                  stats.dateRange.start.getTime()) /
+                  (1000 * 60 * 60 * 24),
+              )}
             </div>
             <div className="text-sm text-muted-foreground">Days Analyzed</div>
           </div>
           <div className="text-center p-4 border rounded-lg">
             <div className="text-2xl font-bold text-orange-500">
-              {Math.round(stats.totalEvents / Math.max(1, (stats.dateRange.end.getTime() - stats.dateRange.start.getTime()) / (1000 * 60 * 60 * 24)))}
+              {Math.round(
+                stats.totalEvents /
+                  Math.max(
+                    1,
+                    (stats.dateRange.end.getTime() -
+                      stats.dateRange.start.getTime()) /
+                      (1000 * 60 * 60 * 24),
+                  ),
+              )}
             </div>
             <div className="text-sm text-muted-foreground">Events/Day</div>
           </div>
@@ -568,24 +643,32 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, formatFileSize, onEventCli
 
         {/* Largest Files */}
         <div>
-          <h3 className="text-lg font-semibold mb-4">Largest Files in Timeline</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Largest Files in Timeline
+          </h3>
           <div className="space-y-2">
             {stats.largestFiles.slice(0, 10).map((event) => (
               <div
                 key={event.id}
                 className={cn(
                   'flex items-center justify-between p-3 border rounded-lg',
-                  onEventClick && 'cursor-pointer hover:bg-muted/50'
+                  onEventClick && 'cursor-pointer hover:bg-muted/50',
                 )}
                 onClick={() => onEventClick?.(event)}
               >
                 <div className="min-w-0 flex-1">
                   <div className="font-medium truncate">{event.fileName}</div>
-                  <div className="text-sm text-muted-foreground truncate">{event.filePath}</div>
+                  <div className="text-sm text-muted-foreground truncate">
+                    {event.filePath}
+                  </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-medium">{formatFileSize(event.fileSize)}</div>
-                  <div className="text-sm text-muted-foreground capitalize">{event.type}</div>
+                  <div className="font-medium">
+                    {formatFileSize(event.fileSize)}
+                  </div>
+                  <div className="text-sm text-muted-foreground capitalize">
+                    {event.type}
+                  </div>
                 </div>
               </div>
             ))}

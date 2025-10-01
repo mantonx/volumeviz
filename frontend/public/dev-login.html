@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VolumeViz - Dev Login Helper</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2d3748;
+            margin-top: 0;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .info {
+            background: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔐 VolumeViz Dev Login</h1>
+        <p>Quick authentication helper for development.</p>
+
+        <div class="info">
+            <strong>ℹ️ Dev Mode Only</strong><br>
+            This page sets a pre-generated JWT token for development testing.
+            User: <code>admin@volumeviz.local</code>
+        </div>
+
+        <button onclick="setAuthAndRedirect()">
+            🚀 Set Token & Go to Dashboard
+        </button>
+
+        <div id="success" class="success">
+            ✅ Authentication set! Redirecting...
+        </div>
+    </div>
+
+    <script>
+        const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMSIsInVzZXJuYW1lIjoiMSIsInJvbGUiOiJhZG1pbiIsInRva2VuX3R5cGUiOiJhY2Nlc3MiLCJzZXNzaW9uX2lkIjoiand0LWdlbiIsImlzcyI6InZvbHVtZXZpeiIsInN1YiI6IjEiLCJleHAiOjE3NTkzNTM2NjksIm5iZiI6MTc1OTI2NzI2OSwiaWF0IjoxNzU5MjY3MjY5LCJqdGkiOiJjNThiODM3YTAyMzIyY2Q2NmFlODI3MGY1MmRiZDhlOSJ9.O7Ep6DEvZdz9_bozO6T1iFcNrZUiNDr_UKmowe_Y_3g';
+
+        function setAuthAndRedirect() {
+            // Set JWT token
+            localStorage.setItem('auth_token', JWT_TOKEN);
+
+            // Set user object
+            const user = {
+                id: '1',
+                email: 'admin@volumeviz.local',
+                role: 'admin',
+                username: 'admin',
+                display_name: 'Admin'
+            };
+            localStorage.setItem('user', JSON.stringify(user));
+
+            // Show success message
+            document.getElementById('success').style.display = 'block';
+
+            // Redirect to app root
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 800);
+        }
+
+        // Auto-check if already authenticated
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                const infoDiv = document.querySelector('.info');
+                infoDiv.innerHTML = '<strong>✅ Already Authenticated</strong><br>You can click the button to refresh your session or navigate to the app.';
+            }
+        });
+    </script>
+</body>
+</html>

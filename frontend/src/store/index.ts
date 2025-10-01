@@ -13,9 +13,7 @@ export {
 } from '@/atoms/volumes';
 
 // UI atoms (moved to /src/atoms/ui/)
-export {
-  volumesViewModeAtom,
-} from '@/atoms/ui';
+export { volumesViewModeAtom } from '@/atoms/ui';
 
 // WebSocket atoms (migrated to /src/atoms/websocket/)
 export {

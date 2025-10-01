@@ -3,7 +3,11 @@ import { Download } from 'lucide-react';
 import { ExportDialog, ExportOptions } from '../ExportDialog';
 import { UndoRollback } from '../UndoRollback';
 import { useExplorerNavigation } from '@/hooks/useExplorerNavigation';
-import { useTreemapExport, useSunburstExport, useDataExport } from '@/hooks/useExport';
+import {
+  useTreemapExport,
+  useSunburstExport,
+  useDataExport,
+} from '@/hooks/useExport';
 import { cn } from '@/utils/class-names/cn';
 
 export interface ExplorerWithExportProps {
@@ -47,82 +51,85 @@ export const ExplorerWithExport: React.FC<ExplorerWithExportProps> = ({
     onError: (error) => console.error('Export failed:', error),
   });
 
-  const handleExport = useCallback(async (options: ExportOptions) => {
-    if (!contentRef.current || !volumeId) {
-      throw new Error('Unable to export: missing content or volume');
-    }
+  const handleExport = useCallback(
+    async (options: ExportOptions) => {
+      if (!contentRef.current || !volumeId) {
+        throw new Error('Unable to export: missing content or volume');
+      }
 
-    const exportMetadata = {
-      volumeId,
-      view: currentView,
-      exportedAt: new Date().toISOString(),
-      ...metadata,
-    };
+      const exportMetadata = {
+        volumeId,
+        view: currentView,
+        exportedAt: new Date().toISOString(),
+        ...metadata,
+      };
 
-    // Choose appropriate export method based on current view
-    switch (currentView) {
-      case 'treemap':
-        // Find treemap SVG element
-        const treemapSvg = contentRef.current.querySelector('svg');
-        if (treemapSvg) {
-          await treemapExport.exportTreemap(options, treemapSvg, data);
-        } else {
-          // Fallback to element export
-          await treemapExport.exportVisualization(options, {
-            element: contentRef.current,
-            data,
-            metadata: exportMetadata,
-          });
-        }
-        break;
+      // Choose appropriate export method based on current view
+      switch (currentView) {
+        case 'treemap':
+          // Find treemap SVG element
+          const treemapSvg = contentRef.current.querySelector('svg');
+          if (treemapSvg) {
+            await treemapExport.exportTreemap(options, treemapSvg, data);
+          } else {
+            // Fallback to element export
+            await treemapExport.exportVisualization(options, {
+              element: contentRef.current,
+              data,
+              metadata: exportMetadata,
+            });
+          }
+          break;
 
-      case 'sunburst':
-        // Find sunburst SVG element
-        const sunburstSvg = contentRef.current.querySelector('svg');
-        if (sunburstSvg) {
-          await sunburstExport.exportSunburst(options, sunburstSvg, data);
-        } else {
-          // Fallback to element export
-          await sunburstExport.exportVisualization(options, {
-            element: contentRef.current,
-            data,
-            metadata: exportMetadata,
-          });
-        }
-        break;
+        case 'sunburst':
+          // Find sunburst SVG element
+          const sunburstSvg = contentRef.current.querySelector('svg');
+          if (sunburstSvg) {
+            await sunburstExport.exportSunburst(options, sunburstSvg, data);
+          } else {
+            // Fallback to element export
+            await sunburstExport.exportVisualization(options, {
+              element: contentRef.current,
+              data,
+              metadata: exportMetadata,
+            });
+          }
+          break;
 
-      case 'list':
-      case 'grid':
-        // For data formats, export the underlying data
-        if (['csv', 'json'].includes(options.format)) {
-          await dataExport.exportData(options, data, exportMetadata);
-        } else {
-          // For image formats, export the visual content
+        case 'list':
+        case 'grid':
+          // For data formats, export the underlying data
+          if (['csv', 'json'].includes(options.format)) {
+            await dataExport.exportData(options, data, exportMetadata);
+          } else {
+            // For image formats, export the visual content
+            await dataExport.exportVisualization(options, {
+              element: contentRef.current,
+              data,
+              metadata: exportMetadata,
+            });
+          }
+          break;
+
+        default:
+          // Generic export using the main content element
           await dataExport.exportVisualization(options, {
             element: contentRef.current,
             data,
             metadata: exportMetadata,
           });
-        }
-        break;
-
-      default:
-        // Generic export using the main content element
-        await dataExport.exportVisualization(options, {
-          element: contentRef.current,
-          data,
-          metadata: exportMetadata,
-        });
-    }
-  }, [
-    volumeId,
-    currentView,
-    data,
-    metadata,
-    treemapExport,
-    sunburstExport,
-    dataExport,
-  ]);
+      }
+    },
+    [
+      volumeId,
+      currentView,
+      data,
+      metadata,
+      treemapExport,
+      sunburstExport,
+      dataExport,
+    ],
+  );
 
   const handleRollback = useCallback((operationId: string, response: any) => {
     console.log('Operation rolled back:', { operationId, response });
@@ -130,13 +137,18 @@ export const ExplorerWithExport: React.FC<ExplorerWithExportProps> = ({
   }, []);
 
   const getSupportedFormats = useCallback(() => {
-    const baseFormats: ('png' | 'pdf' | 'svg' | 'csv' | 'json')[] = ['png', 'pdf', 'csv', 'json'];
-    
+    const baseFormats: ('png' | 'pdf' | 'svg' | 'csv' | 'json')[] = [
+      'png',
+      'pdf',
+      'csv',
+      'json',
+    ];
+
     // SVG is better supported for vector-based visualizations
     if (['treemap', 'sunburst'].includes(currentView)) {
       return ['svg', ...baseFormats];
     }
-    
+
     return baseFormats;
   }, [currentView]);
 
@@ -214,9 +226,30 @@ export const TreemapExplorerExample: React.FC = () => {
     >
       <div className="h-96 bg-gray-100 flex items-center justify-center">
         <svg width="400" height="300" className="border">
-          <rect x="0" y="0" width="200" height="150" fill="#3b82f6" opacity="0.7" />
-          <rect x="200" y="0" width="200" height="100" fill="#ef4444" opacity="0.7" />
-          <rect x="200" y="100" width="200" height="50" fill="#10b981" opacity="0.7" />
+          <rect
+            x="0"
+            y="0"
+            width="200"
+            height="150"
+            fill="#3b82f6"
+            opacity="0.7"
+          />
+          <rect
+            x="200"
+            y="0"
+            width="200"
+            height="100"
+            fill="#ef4444"
+            opacity="0.7"
+          />
+          <rect
+            x="200"
+            y="100"
+            width="200"
+            height="50"
+            fill="#10b981"
+            opacity="0.7"
+          />
           <text x="100" y="75" textAnchor="middle" fill="white" fontSize="14">
             Documents
           </text>
@@ -285,7 +318,9 @@ export const DataExplorerExample: React.FC = () => {
             {mockTableData.map((item, index) => (
               <tr key={index} className="border-b">
                 <td className="p-2">{item.name}</td>
-                <td className="p-2">{(item.size / 1024 / 1024).toFixed(1)} MB</td>
+                <td className="p-2">
+                  {(item.size / 1024 / 1024).toFixed(1)} MB
+                </td>
                 <td className="p-2">{item.modified}</td>
               </tr>
             ))}

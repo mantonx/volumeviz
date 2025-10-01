@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { ExportDialog } from './ExportDialog'
+import type { Meta, StoryObj } from '@storybook/react';
+import { ExportDialog } from './ExportDialog';
 
 const meta = {
   title: 'Domain/Explorer/ExportDialog',
@@ -16,10 +16,10 @@ const meta = {
       control: { type: 'check', options: ['png', 'pdf', 'svg', 'csv', 'json'] },
     },
   },
-} satisfies Meta<typeof ExportDialog>
+} satisfies Meta<typeof ExportDialog>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -29,12 +29,12 @@ export const Default: Story = {
     supportedFormats: ['png', 'pdf', 'svg', 'csv', 'json'],
     onClose: () => console.log('Export dialog closed'),
     onExport: async (options) => {
-      console.log('Export options:', options)
+      console.log('Export options:', options);
       // Simulate export delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     },
   },
-}
+};
 
 export const ImageFormatsOnly: Story = {
   args: {
@@ -44,11 +44,11 @@ export const ImageFormatsOnly: Story = {
     supportedFormats: ['png', 'pdf', 'svg'],
     onClose: () => console.log('Export dialog closed'),
     onExport: async (options) => {
-      console.log('Export options:', options)
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      console.log('Export options:', options);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
     },
   },
-}
+};
 
 export const DataFormatsOnly: Story = {
   args: {
@@ -58,11 +58,11 @@ export const DataFormatsOnly: Story = {
     supportedFormats: ['csv', 'json'],
     onClose: () => console.log('Export dialog closed'),
     onExport: async (options) => {
-      console.log('Export options:', options)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      console.log('Export options:', options);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     },
   },
-}
+};
 
 export const TreemapExport: Story = {
   args: {
@@ -72,11 +72,11 @@ export const TreemapExport: Story = {
     supportedFormats: ['png', 'svg', 'pdf'],
     onClose: () => console.log('Export dialog closed'),
     onExport: async (options) => {
-      console.log('Treemap export options:', options)
-      await new Promise(resolve => setTimeout(resolve, 2500))
+      console.log('Treemap export options:', options);
+      await new Promise((resolve) => setTimeout(resolve, 2500));
     },
   },
-}
+};
 
 export const SunburstExport: Story = {
   args: {
@@ -86,11 +86,11 @@ export const SunburstExport: Story = {
     supportedFormats: ['png', 'svg', 'pdf'],
     onClose: () => console.log('Export dialog closed'),
     onExport: async (options) => {
-      console.log('Sunburst export options:', options)
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      console.log('Sunburst export options:', options);
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     },
   },
-}
+};
 
 export const ExportWithError: Story = {
   args: {
@@ -100,12 +100,12 @@ export const ExportWithError: Story = {
     supportedFormats: ['png', 'pdf', 'svg', 'csv', 'json'],
     onClose: () => console.log('Export dialog closed'),
     onExport: async (options) => {
-      console.log('Export options:', options)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      throw new Error('Failed to generate export file. Please try again.')
+      console.log('Export options:', options);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      throw new Error('Failed to generate export file. Please try again.');
     },
   },
-}
+};
 
 export const QuickPNGExport: Story = {
   args: {
@@ -115,11 +115,11 @@ export const QuickPNGExport: Story = {
     supportedFormats: ['png'],
     onClose: () => console.log('Export dialog closed'),
     onExport: async (options) => {
-      console.log('Quick PNG export:', options)
-      await new Promise(resolve => setTimeout(resolve, 800))
+      console.log('Quick PNG export:', options);
+      await new Promise((resolve) => setTimeout(resolve, 800));
     },
   },
-}
+};
 
 export const InteractiveDemo: Story = {
   args: {
@@ -128,7 +128,7 @@ export const InteractiveDemo: Story = {
     description: 'Try different export formats and options',
     supportedFormats: ['png', 'pdf', 'svg', 'csv', 'json'],
     onClose: () => {
-      console.log('Export dialog closed')
+      console.log('Export dialog closed');
       // In a real app, this would update state to hide the dialog
     },
     onExport: async (options) => {
@@ -136,13 +136,16 @@ export const InteractiveDemo: Story = {
         format: options.format,
         quality: options.quality,
         size: options.size,
-        dimensions: options.width && options.height ? `${options.width}×${options.height}` : undefined,
+        dimensions:
+          options.width && options.height
+            ? `${options.width}×${options.height}`
+            : undefined,
         includeData: options.includeData,
         includeMetadata: options.includeMetadata,
         backgroundColor: options.backgroundColor,
         transparent: options.transparent,
-      })
-      
+      });
+
       // Simulate different export times based on format
       const exportTimes = {
         png: 1500,
@@ -150,11 +153,13 @@ export const InteractiveDemo: Story = {
         svg: 800,
         csv: 1000,
         json: 600,
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, exportTimes[options.format]))
-      
-      console.log('Export completed successfully')
+      };
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, exportTimes[options.format]),
+      );
+
+      console.log('Export completed successfully');
       // In a real app, this would trigger file download
     },
   },
@@ -170,7 +175,7 @@ export const InteractiveDemo: Story = {
       </div>
     ),
   ],
-}
+};
 
 export const Hidden: Story = {
   args: {
@@ -180,8 +185,8 @@ export const Hidden: Story = {
     supportedFormats: ['png', 'pdf', 'svg', 'csv', 'json'],
     onClose: () => console.log('Export dialog closed'),
     onExport: async (options) => {
-      console.log('Export options:', options)
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      console.log('Export options:', options);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     },
   },
-}
+};

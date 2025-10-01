@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import { Loader2, Zap, AlertCircle, RefreshCw } from 'lucide-react';
 import { useTreemapWorker } from '@/hooks/useWebWorker';
 import { useAdaptiveTreemap } from '@/hooks/useAdaptiveLoading';
@@ -75,10 +81,10 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
         setRects(response.payload.rects);
         setIsCalculating(false);
         setError(null);
-        
+
         // Record performance for adaptive learning
         recordPerformance('treemap_calculation', computeTime, true);
-        
+
         if (showPerformanceMetrics) {
           setPerformanceMetrics({
             computeTime: response.payload.computeTime,
@@ -91,10 +97,10 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
     onError: (err) => {
       setError(`Worker error: ${err}`);
       setIsCalculating(false);
-      
+
       // Record failure for adaptive learning
       recordPerformance('treemap_calculation', 0, false);
-      
+
       // Fallback to synchronous calculation
       if (fallbackToSync) {
         calculateSynchronously();
@@ -134,14 +140,14 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
     });
 
     const computeTime = performance.now() - startTime;
-    
+
     setTimeout(() => {
       setRects(syncRects);
       setIsCalculating(false);
-      
+
       // Record performance for adaptive learning
       recordPerformance('treemap_calculation_sync', computeTime, true);
-      
+
       if (showPerformanceMetrics) {
         setPerformanceMetrics({
           computeTime,
@@ -164,9 +170,16 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
     workerStartTime.current = performance.now();
 
     // Apply adaptive loading parameters
-    const adaptiveMinSize = loadingParams.renderQuality === 'low' ? minSize * 2 : 
-                          loadingParams.renderQuality === 'high' ? Math.max(minSize / 2, 5) : minSize;
-    const shouldUseWorker = loadingParams.workerThreads > 1 && treemapWorker.isSupported && !treemapWorker.error;
+    const adaptiveMinSize =
+      loadingParams.renderQuality === 'low'
+        ? minSize * 2
+        : loadingParams.renderQuality === 'high'
+          ? Math.max(minSize / 2, 5)
+          : minSize;
+    const shouldUseWorker =
+      loadingParams.workerThreads > 1 &&
+      treemapWorker.isSupported &&
+      !treemapWorker.error;
 
     if (shouldUseWorker) {
       // Use Web Worker for calculation
@@ -184,7 +197,16 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
       // Fallback to synchronous calculation
       calculateSynchronously();
     }
-  }, [data, width, height, padding, minSize, treemapWorker, calculateSynchronously, loadingParams]);
+  }, [
+    data,
+    width,
+    height,
+    padding,
+    minSize,
+    treemapWorker,
+    calculateSynchronously,
+    loadingParams,
+  ]);
 
   // Trigger calculation when data or dimensions change
   useEffect(() => {
@@ -192,12 +214,15 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
   }, [calculateTreemap]);
 
   // Handle node interactions
-  const handleMouseEnter = useCallback((rect: TreemapRect, event: React.MouseEvent) => {
-    setHoveredNode(rect);
-    if (onNodeHover) {
-      onNodeHover(rect);
-    }
-  }, [onNodeHover]);
+  const handleMouseEnter = useCallback(
+    (rect: TreemapRect, event: React.MouseEvent) => {
+      setHoveredNode(rect);
+      if (onNodeHover) {
+        onNodeHover(rect);
+      }
+    },
+    [onNodeHover],
+  );
 
   const handleMouseLeave = useCallback(() => {
     setHoveredNode(null);
@@ -206,18 +231,21 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
     }
   }, [onNodeHover]);
 
-  const handleClick = useCallback((rect: TreemapRect) => {
-    if (onNodeClick) {
-      onNodeClick(rect);
-    }
-  }, [onNodeClick]);
+  const handleClick = useCallback(
+    (rect: TreemapRect) => {
+      if (onNodeClick) {
+        onNodeClick(rect);
+      }
+    },
+    [onNodeClick],
+  );
 
   // Format file size for display
   const formatBytes = useCallback((bytes: number): string => {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     if (bytes === 0) return '0 B';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`;
+    return `${Math.round((bytes / Math.pow(1024, i)) * 100) / 100} ${sizes[i]}`;
   }, []);
 
   // Memoize the SVG elements for performance
@@ -239,7 +267,7 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
           onClick={() => handleClick(rect)}
           className="transition-opacity duration-200 hover:opacity-90"
         />
-        
+
         {/* Text label - only show if rect is large enough */}
         {rect.width > 50 && rect.height > 30 && (
           <text
@@ -256,7 +284,7 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
             {rect.name}
           </text>
         )}
-        
+
         {/* Size label */}
         {rect.width > 80 && rect.height > 50 && (
           <text
@@ -278,14 +306,21 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
   }, [rects, handleMouseEnter, handleMouseLeave, handleClick, formatBytes]);
 
   return (
-    <div className={cn('relative bg-gray-50 border rounded-lg overflow-hidden', className)}>
+    <div
+      className={cn(
+        'relative bg-gray-50 border rounded-lg overflow-hidden',
+        className,
+      )}
+    >
       {/* Loading Overlay */}
       {isCalculating && (
         <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
           <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-lg shadow-sm border">
             <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
             <span className="text-sm text-gray-700">
-              {treemapWorker.isSupported ? 'Calculating layout...' : 'Computing (fallback)...'}
+              {treemapWorker.isSupported
+                ? 'Calculating layout...'
+                : 'Computing (fallback)...'}
             </span>
           </div>
         </div>
@@ -296,7 +331,9 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
         <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-10">
           <div className="text-center px-4 py-6">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-3" />
-            <h3 className="font-medium text-gray-900 mb-2">Calculation Failed</h3>
+            <h3 className="font-medium text-gray-900 mb-2">
+              Calculation Failed
+            </h3>
             <p className="text-sm text-gray-600 mb-4">{error}</p>
             <button
               onClick={calculateTreemap}
@@ -315,8 +352,8 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
           <div className="flex items-center gap-2">
             <Zap className="h-3 w-3" />
             <span>
-              {performanceMetrics.computeTime.toFixed(1)}ms • 
-              {performanceMetrics.nodeCount} nodes • 
+              {performanceMetrics.computeTime.toFixed(1)}ms •
+              {performanceMetrics.nodeCount} nodes •
               {performanceMetrics.usingWorker ? 'Worker' : 'Sync'}
             </span>
           </div>

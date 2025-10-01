@@ -54,12 +54,32 @@ const MockSearchInterface: React.FC<MockSearchInterfaceProps> = ({
   onSearchChange = action('searchChange'),
 }) => {
   const [searchTerm, setSearchTerm] = useState(query.query);
-  
+
   const mockResults = results || {
     items: [
-      { id: '1', name: 'document.pdf', path: '/docs/document.pdf', type: 'file' as const, size: 1024000, modified: new Date() },
-      { id: '2', name: 'presentation.pptx', path: '/docs/presentation.pptx', type: 'file' as const, size: 2048000, modified: new Date() },
-      { id: '3', name: 'data', path: '/data', type: 'folder' as const, modified: new Date() },
+      {
+        id: '1',
+        name: 'document.pdf',
+        path: '/docs/document.pdf',
+        type: 'file' as const,
+        size: 1024000,
+        modified: new Date(),
+      },
+      {
+        id: '2',
+        name: 'presentation.pptx',
+        path: '/docs/presentation.pptx',
+        type: 'file' as const,
+        size: 2048000,
+        modified: new Date(),
+      },
+      {
+        id: '3',
+        name: 'data',
+        path: '/data',
+        type: 'folder' as const,
+        modified: new Date(),
+      },
     ],
     totalCount: 3,
     page: 1,
@@ -97,7 +117,7 @@ const MockSearchInterface: React.FC<MockSearchInterfaceProps> = ({
               className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          <button 
+          <button
             onClick={() => onSearch({ ...query, query: searchTerm })}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
             disabled={isSearching}
@@ -195,28 +215,26 @@ const MockSearchInterface: React.FC<MockSearchInterfaceProps> = ({
           <div className="bg-white rounded-lg border p-4 mb-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                {isSearching ? (
-                  'Searching...'
-                ) : results?.items.length ? (
-                  `${results.totalCount} results found in ${results.searchTime}ms`
-                ) : (
-                  'Enter a search term to begin'
-                )}
+                {isSearching
+                  ? 'Searching...'
+                  : results?.items.length
+                    ? `${results.totalCount} results found in ${results.searchTime}ms`
+                    : 'Enter a search term to begin'}
               </div>
               <div className="flex items-center space-x-2">
-                <button 
+                <button
                   className={`p-2 rounded ${resultsView === 'list' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
                   onClick={() => action('view-change')('list')}
                 >
                   <List className="w-4 h-4" />
                 </button>
-                <button 
+                <button
                   className={`p-2 rounded ${resultsView === 'grid' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
                   onClick={() => action('view-change')('grid')}
                 >
                   <Grid className="w-4 h-4" />
                 </button>
-                <button 
+                <button
                   className={`p-2 rounded ${resultsView === 'table' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
                   onClick={() => action('view-change')('table')}
                 >
@@ -235,25 +253,33 @@ const MockSearchInterface: React.FC<MockSearchInterfaceProps> = ({
             ) : results?.items.length ? (
               <div className="divide-y">
                 {mockResults.items.map((item) => (
-                  <div 
+                  <div
                     key={item.id}
                     className="p-4 hover:bg-gray-50 cursor-pointer"
                     onClick={() => action('result-click')(item)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          item.type === 'folder' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-                        }`}>
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            item.type === 'folder'
+                              ? 'bg-blue-100 text-blue-600'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
                           {item.type === 'folder' ? '📁' : '📄'}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{item.name}</p>
+                          <p className="font-medium text-gray-900">
+                            {item.name}
+                          </p>
                           <p className="text-sm text-gray-500">{item.path}</p>
                         </div>
                       </div>
                       <div className="text-right text-sm text-gray-500">
-                        {item.size && <p>{(item.size / 1024 / 1024).toFixed(1)} MB</p>}
+                        {item.size && (
+                          <p>{(item.size / 1024 / 1024).toFixed(1)} MB</p>
+                        )}
                         <p>{item.modified?.toLocaleDateString()}</p>
                       </div>
                     </div>
@@ -264,7 +290,9 @@ const MockSearchInterface: React.FC<MockSearchInterfaceProps> = ({
               <div className="p-8 text-center text-gray-500">
                 <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <p>No results found</p>
-                <p className="text-sm">Try adjusting your search terms or filters</p>
+                <p className="text-sm">
+                  Try adjusting your search terms or filters
+                </p>
               </div>
             )}
           </div>
@@ -365,9 +393,29 @@ export const WithResults: Story = {
     },
     results: {
       items: [
-        { id: '1', name: 'report.pdf', path: '/docs/report.pdf', type: 'file', size: 1024000, modified: new Date() },
-        { id: '2', name: 'presentation.pptx', path: '/docs/presentation.pptx', type: 'file', size: 2048000, modified: new Date() },
-        { id: '3', name: 'documents', path: '/documents', type: 'folder', modified: new Date() },
+        {
+          id: '1',
+          name: 'report.pdf',
+          path: '/docs/report.pdf',
+          type: 'file',
+          size: 1024000,
+          modified: new Date(),
+        },
+        {
+          id: '2',
+          name: 'presentation.pptx',
+          path: '/docs/presentation.pptx',
+          type: 'file',
+          size: 2048000,
+          modified: new Date(),
+        },
+        {
+          id: '3',
+          name: 'documents',
+          path: '/documents',
+          type: 'folder',
+          modified: new Date(),
+        },
       ],
       totalCount: 3,
       page: 1,
@@ -387,7 +435,8 @@ export const Loading: Story = {
 
 export const WithError: Story = {
   args: {
-    searchError: 'Search service temporarily unavailable. Please try again later.',
+    searchError:
+      'Search service temporarily unavailable. Please try again later.',
   },
 };
 
@@ -425,9 +474,30 @@ export const GridView: Story = {
     resultsView: 'grid',
     results: {
       items: [
-        { id: '1', name: 'image1.jpg', path: '/photos/image1.jpg', type: 'file', size: 512000, modified: new Date() },
-        { id: '2', name: 'image2.png', path: '/photos/image2.png', type: 'file', size: 1024000, modified: new Date() },
-        { id: '3', name: 'image3.gif', path: '/photos/image3.gif', type: 'file', size: 256000, modified: new Date() },
+        {
+          id: '1',
+          name: 'image1.jpg',
+          path: '/photos/image1.jpg',
+          type: 'file',
+          size: 512000,
+          modified: new Date(),
+        },
+        {
+          id: '2',
+          name: 'image2.png',
+          path: '/photos/image2.png',
+          type: 'file',
+          size: 1024000,
+          modified: new Date(),
+        },
+        {
+          id: '3',
+          name: 'image3.gif',
+          path: '/photos/image3.gif',
+          type: 'file',
+          size: 256000,
+          modified: new Date(),
+        },
       ],
       totalCount: 3,
       page: 1,

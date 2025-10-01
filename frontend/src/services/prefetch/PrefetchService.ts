@@ -37,7 +37,10 @@ export interface NavigationPattern {
 export interface PrefetchStrategy {
   name: string;
   predict: (currentPath: string, patterns: NavigationPattern[]) => string[];
-  priority: (path: string, context: any) => 'low' | 'medium' | 'high' | 'critical';
+  priority: (
+    path: string,
+    context: any,
+  ) => 'low' | 'medium' | 'high' | 'critical';
 }
 
 export class PrefetchService {
@@ -95,7 +98,7 @@ export class PrefetchService {
     // Add to queue
     this.requestQueue.push(item);
     this.sortQueue();
-    
+
     if (!this.isProcessing) {
       this.processQueue();
     }
@@ -149,7 +152,7 @@ export class PrefetchService {
     pattern.avgTimeSpent = (pattern.avgTimeSpent + timeSpent) / 2;
 
     this.navigationPatterns.set(path, pattern);
-    
+
     // Update next path predictions
     const previousPath = this.getPreviousPath();
     if (previousPath && previousPath !== path) {
@@ -166,22 +169,25 @@ export class PrefetchService {
   // Get predictions for next likely paths
   getPredictions(currentPath: string, limit: number = 5): string[] {
     const allPredictions = new Set<string>();
-    
+
     // Run all strategies
     for (const strategy of this.strategies) {
-      const predictions = strategy.predict(currentPath, Array.from(this.navigationPatterns.values()));
-      predictions.forEach(path => allPredictions.add(path));
+      const predictions = strategy.predict(
+        currentPath,
+        Array.from(this.navigationPatterns.values()),
+      );
+      predictions.forEach((path) => allPredictions.add(path));
     }
 
     // Sort by combined priority and frequency
     return Array.from(allPredictions)
-      .map(path => ({
+      .map((path) => ({
         path,
         score: this.calculatePredictionScore(path, currentPath),
       }))
       .sort((a, b) => b.score - a.score)
       .slice(0, limit)
-      .map(p => p.path);
+      .map((p) => p.path);
   }
 
   // Prefetch predictions automatically
@@ -194,7 +200,7 @@ export class PrefetchService {
     for (const path of predictions) {
       const url = this.pathToUrl(path);
       const priority = this.calculatePriorityForPath(path, currentPath);
-      
+
       promises.push(
         this.prefetch(url, {
           id: this.generateId(path),
@@ -204,9 +210,9 @@ export class PrefetchService {
             currentPath,
             predictedPath: path,
           },
-        }).catch(err => {
+        }).catch((err) => {
           console.warn('Prefetch prediction failed:', path, err);
-        })
+        }),
       );
     }
 
@@ -245,10 +251,10 @@ export class PrefetchService {
       name: 'frequency',
       predict: (currentPath, patterns) => {
         return patterns
-          .filter(p => p.frequency > 1)
+          .filter((p) => p.frequency > 1)
           .sort((a, b) => b.frequency - a.frequency)
           .slice(0, 3)
-          .map(p => p.path);
+          .map((p) => p.path);
       },
       priority: (path, context) => {
         const pattern = this.navigationPatterns.get(path);
@@ -261,7 +267,7 @@ export class PrefetchService {
     this.addStrategy({
       name: 'navigation-chain',
       predict: (currentPath, patterns) => {
-        const currentPattern = patterns.find(p => p.path === currentPath);
+        const currentPattern = patterns.find((p) => p.path === currentPath);
         if (!currentPattern) return [];
 
         return Object.entries(currentPattern.nextPaths)
@@ -272,7 +278,7 @@ export class PrefetchService {
       priority: (path, context) => {
         const currentPattern = this.navigationPatterns.get(context.currentPath);
         if (!currentPattern) return 'low';
-        
+
         const nextFreq = currentPattern.nextPaths[path] || 0;
         return nextFreq > 2 ? 'high' : 'medium';
       },
@@ -284,12 +290,14 @@ export class PrefetchService {
       predict: (currentPath, patterns) => {
         const pathSegments = currentPath.split('/');
         const parentPath = pathSegments.slice(0, -1).join('/');
-        
+
         return patterns
-          .filter(p => p.path.startsWith(parentPath) && p.path !== currentPath)
+          .filter(
+            (p) => p.path.startsWith(parentPath) && p.path !== currentPath,
+          )
           .sort((a, b) => b.frequency - a.frequency)
           .slice(0, 2)
-          .map(p => p.path);
+          .map((p) => p.path);
       },
       priority: () => 'medium',
     });
@@ -299,7 +307,7 @@ export class PrefetchService {
     if (this.isProcessing || this.requestQueue.length === 0) return;
 
     this.isProcessing = true;
-    
+
     try {
       while (this.requestQueue.length > 0) {
         // Check network conditions
@@ -319,7 +327,7 @@ export class PrefetchService {
   private async fetchItem(item: PrefetchItem): Promise<void> {
     try {
       this.emit('fetch-start', { item });
-      
+
       const response = await fetch(item.url);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -344,7 +352,7 @@ export class PrefetchService {
       }
     } catch (error) {
       this.emit('fetch-error', { item, error });
-      
+
       if (item.metadata?.reject) {
         item.metadata.reject(error);
       }
@@ -372,17 +380,23 @@ export class PrefetchService {
       .map(([id, item]) => ({ id, item }))
       .sort((a, b) => {
         // Sort by priority first, then by timestamp
-        const priorityDiff = this.config.priorityWeights[b.item.priority] - 
-                           this.config.priorityWeights[a.item.priority];
-        return priorityDiff !== 0 ? priorityDiff : b.item.timestamp - a.item.timestamp;
+        const priorityDiff =
+          this.config.priorityWeights[b.item.priority] -
+          this.config.priorityWeights[a.item.priority];
+        return priorityDiff !== 0
+          ? priorityDiff
+          : b.item.timestamp - a.item.timestamp;
       });
 
-    let currentMemory = items.reduce((sum, { item }) => sum + (item.size || 0), 0);
+    let currentMemory = items.reduce(
+      (sum, { item }) => sum + (item.size || 0),
+      0,
+    );
 
     // Remove least important items until within limits
     while (
-      (this.cache.size > this.config.maxItems || 
-       currentMemory > this.config.maxCacheSize) &&
+      (this.cache.size > this.config.maxItems ||
+        currentMemory > this.config.maxCacheSize) &&
       items.length > 0
     ) {
       const toRemove = items.pop()!;
@@ -393,10 +407,12 @@ export class PrefetchService {
 
   private shouldThrottleRequests(): boolean {
     if (!this.config.networkThrottling || !this.networkInfo) return false;
-    
+
     // Throttle on slow connections
-    return this.networkInfo.effectiveType === 'slow-2g' || 
-           this.networkInfo.effectiveType === '2g';
+    return (
+      this.networkInfo.effectiveType === 'slow-2g' ||
+      this.networkInfo.effectiveType === '2g'
+    );
   }
 
   private setupNetworkMonitoring(): void {
@@ -409,15 +425,15 @@ export class PrefetchService {
     setInterval(() => {
       const now = Date.now();
       const expired: string[] = [];
-      
+
       for (const [id, item] of this.cache.entries()) {
         if (item.expiresAt < now) {
           expired.push(id);
         }
       }
-      
-      expired.forEach(id => this.cache.delete(id));
-      
+
+      expired.forEach((id) => this.cache.delete(id));
+
       if (expired.length > 0) {
         this.emit('cache-cleanup', { expired: expired.length });
       }
@@ -429,24 +445,28 @@ export class PrefetchService {
     if (!pattern) return 0;
 
     let score = pattern.frequency * 10;
-    
+
     // Boost recent paths
     const timeSinceVisit = Date.now() - pattern.lastVisited;
-    if (timeSinceVisit < 60000) score += 50; // Last minute
+    if (timeSinceVisit < 60000)
+      score += 50; // Last minute
     else if (timeSinceVisit < 300000) score += 25; // Last 5 minutes
-    
+
     // Boost paths that are often visited after current path
     const currentPattern = this.navigationPatterns.get(currentPath);
     if (currentPattern && currentPattern.nextPaths[path]) {
       score += currentPattern.nextPaths[path] * 20;
     }
-    
+
     return score;
   }
 
-  private calculatePriorityForPath(path: string, currentPath: string): 'low' | 'medium' | 'high' | 'critical' {
+  private calculatePriorityForPath(
+    path: string,
+    currentPath: string,
+  ): 'low' | 'medium' | 'high' | 'critical' {
     const score = this.calculatePredictionScore(path, currentPath);
-    
+
     if (score > 100) return 'high';
     if (score > 50) return 'medium';
     return 'low';
@@ -463,7 +483,9 @@ export class PrefetchService {
   }
 
   private generateId(input: string): string {
-    return btoa(input).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+    return btoa(input)
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .substring(0, 16);
   }
 
   private getPreviousPath(): string | null {
@@ -475,11 +497,11 @@ export class PrefetchService {
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private emit(event: string, data: any): void {
-    this.observers.forEach(callback => {
+    this.observers.forEach((callback) => {
       try {
         callback(event, data);
       } catch (error) {

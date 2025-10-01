@@ -1,6 +1,6 @@
 /**
  * Example integration of the new AppProvider with TanStack Query and Jotai
- * 
+ *
  * To use this, rename your current main.tsx to main-backup.tsx
  * and rename this file to main.tsx
  */
@@ -16,5 +16,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <AppProvider>
       <App />
     </AppProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

@@ -151,7 +151,10 @@ export const FormValidation: Story = {
   render: () => {
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
-    const [errors, setErrors] = React.useState<{email?: boolean, password?: boolean}>({});
+    const [errors, setErrors] = React.useState<{
+      email?: boolean;
+      password?: boolean;
+    }>({});
 
     const validateEmail = (email: string) => {
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -164,13 +167,19 @@ export const FormValidation: Story = {
     const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setEmail(value);
-      setErrors(prev => ({ ...prev, email: value ? !validateEmail(value) : false }));
+      setErrors((prev) => ({
+        ...prev,
+        email: value ? !validateEmail(value) : false,
+      }));
     };
 
     const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setPassword(value);
-      setErrors(prev => ({ ...prev, password: value ? !validatePassword(value) : false }));
+      setErrors((prev) => ({
+        ...prev,
+        password: value ? !validatePassword(value) : false,
+      }));
     };
 
     return (
@@ -187,12 +196,15 @@ export const FormValidation: Story = {
             error={errors.email}
           />
           {errors.email && (
-            <p className="text-sm text-red-500 mt-1">Please enter a valid email address</p>
+            <p className="text-sm text-red-500 mt-1">
+              Please enter a valid email address
+            </p>
           )}
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">
-            Password {errors.password && <span className="text-red-500">*</span>}
+            Password{' '}
+            {errors.password && <span className="text-red-500">*</span>}
           </label>
           <Input
             type="password"
@@ -202,7 +214,9 @@ export const FormValidation: Story = {
             error={errors.password}
           />
           {errors.password && (
-            <p className="text-sm text-red-500 mt-1">Password must be at least 8 characters long</p>
+            <p className="text-sm text-red-500 mt-1">
+              Password must be at least 8 characters long
+            </p>
           )}
         </div>
       </div>
@@ -211,7 +225,8 @@ export const FormValidation: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Interactive form validation example showing error states and feedback.',
+        story:
+          'Interactive form validation example showing error states and feedback.',
       },
     },
   },
@@ -222,34 +237,23 @@ export const CustomStyling: Story = {
     <div className="space-y-4 w-80">
       <div>
         <label className="block text-sm font-medium mb-1">Small Input</label>
-        <Input 
-          placeholder="Small input"
-          className="h-8 text-xs"
-        />
+        <Input placeholder="Small input" className="h-8 text-xs" />
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Default Input</label>
-        <Input 
-          placeholder="Default input"
-        />
+        <Input placeholder="Default input" />
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Large Input</label>
-        <Input 
-          placeholder="Large input"
-          className="h-12 text-base"
-        />
+        <Input placeholder="Large input" className="h-12 text-base" />
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Full Width</label>
-        <Input 
-          placeholder="Full width input"
-          className="w-full"
-        />
+        <Input placeholder="Full width input" className="w-full" />
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Custom Border</label>
-        <Input 
+        <Input
           placeholder="Custom styling"
           className="border-2 border-blue-300 rounded-lg"
         />
@@ -259,7 +263,8 @@ export const CustomStyling: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Examples of custom styling and different sizes using className prop.',
+        story:
+          'Examples of custom styling and different sizes using className prop.',
       },
     },
   },

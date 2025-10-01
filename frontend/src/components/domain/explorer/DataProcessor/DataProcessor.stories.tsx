@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { DataProcessor } from './DataProcessor'
+import type { Meta, StoryObj } from '@storybook/react';
+import { DataProcessor } from './DataProcessor';
 
 const meta = {
   title: 'Domain/Explorer/DataProcessor',
@@ -19,13 +19,19 @@ const meta = {
       control: { type: 'boolean' },
     },
   },
-} satisfies Meta<typeof DataProcessor>
+} satisfies Meta<typeof DataProcessor>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 // Mock data for stories
-const createMockFile = (id: string, name: string, size: number, type: 'file' | 'directory', extension?: string) => ({
+const createMockFile = (
+  id: string,
+  name: string,
+  size: number,
+  type: 'file' | 'directory',
+  extension?: string,
+) => ({
   id,
   name,
   path: `/mock/path/${name}`,
@@ -34,7 +40,7 @@ const createMockFile = (id: string, name: string, size: number, type: 'file' | '
   modified: '2024-01-15T10:30:00Z',
   extension,
   mimeType: extension ? `application/${extension}` : undefined,
-})
+});
 
 const smallDataset = [
   createMockFile('1', 'document.pdf', 1024000, 'file', 'pdf'),
@@ -42,37 +48,39 @@ const smallDataset = [
   createMockFile('3', 'video.mp4', 4096000, 'file', 'mp4'),
   createMockFile('4', 'Documents', 0, 'directory'),
   createMockFile('5', 'Photos', 0, 'directory'),
-]
+];
 
 const mediumDataset = [
-  ...Array.from({ length: 50 }, (_, i) => 
+  ...Array.from({ length: 50 }, (_, i) =>
     createMockFile(
       `file-${i}`,
       `file-${i}.txt`,
       Math.floor(Math.random() * 5000000) + 100000,
       'file',
-      ['txt', 'pdf', 'jpg', 'png', 'mp4', 'mp3', 'doc', 'xlsx'][Math.floor(Math.random() * 8)]
-    )
+      ['txt', 'pdf', 'jpg', 'png', 'mp4', 'mp3', 'doc', 'xlsx'][
+        Math.floor(Math.random() * 8)
+      ],
+    ),
   ),
-  ...Array.from({ length: 10 }, (_, i) => 
-    createMockFile(`dir-${i}`, `Directory ${i}`, 0, 'directory')
+  ...Array.from({ length: 10 }, (_, i) =>
+    createMockFile(`dir-${i}`, `Directory ${i}`, 0, 'directory'),
   ),
-]
+];
 
 const largeDataset = [
-  ...Array.from({ length: 500 }, (_, i) => 
+  ...Array.from({ length: 500 }, (_, i) =>
     createMockFile(
       `large-file-${i}`,
       `large-file-${i}.dat`,
       Math.floor(Math.random() * 10000000) + 500000,
       'file',
-      ['dat', 'bin', 'log', 'tmp'][Math.floor(Math.random() * 4)]
-    )
+      ['dat', 'bin', 'log', 'tmp'][Math.floor(Math.random() * 4)],
+    ),
   ),
-  ...Array.from({ length: 50 }, (_, i) => 
-    createMockFile(`large-dir-${i}`, `Large Directory ${i}`, 0, 'directory')
+  ...Array.from({ length: 50 }, (_, i) =>
+    createMockFile(`large-dir-${i}`, `Large Directory ${i}`, 0, 'directory'),
   ),
-]
+];
 
 export const Default: Story = {
   args: {
@@ -86,7 +94,7 @@ export const Default: Story = {
       console.error('Processing error:', error);
     },
   },
-}
+};
 
 export const SmallDataset: Story = {
   args: {
@@ -95,7 +103,7 @@ export const SmallDataset: Story = {
     showProgress: true,
     showMetrics: true,
   },
-}
+};
 
 export const MediumDataset: Story = {
   args: {
@@ -111,7 +119,7 @@ export const MediumDataset: Story = {
       });
     },
   },
-}
+};
 
 export const LargeDataset: Story = {
   args: {
@@ -126,7 +134,7 @@ export const LargeDataset: Story = {
       });
     },
   },
-}
+};
 
 export const AutoProcess: Story = {
   args: {
@@ -135,7 +143,7 @@ export const AutoProcess: Story = {
     showProgress: true,
     showMetrics: true,
   },
-}
+};
 
 export const MinimalUI: Story = {
   args: {
@@ -143,10 +151,14 @@ export const MinimalUI: Story = {
     showProgress: false,
     showMetrics: false,
     onProcessingComplete: (result) => {
-      console.log('Minimal UI processing completed:', result.totalCount, 'items');
+      console.log(
+        'Minimal UI processing completed:',
+        result.totalCount,
+        'items',
+      );
     },
   },
-}
+};
 
 export const PerformanceDemo: Story = {
   render: () => (
@@ -169,7 +181,10 @@ export const PerformanceDemo: Story = {
               showProgress={true}
               showMetrics={true}
               onProcessingComplete={(result) => {
-                console.log('Small dataset:', result.processingTime.toFixed(1) + 'ms');
+                console.log(
+                  'Small dataset:',
+                  result.processingTime.toFixed(1) + 'ms',
+                );
               }}
             />
           </div>
@@ -183,7 +198,10 @@ export const PerformanceDemo: Story = {
               showProgress={true}
               showMetrics={true}
               onProcessingComplete={(result) => {
-                console.log('Medium dataset:', result.processingTime.toFixed(1) + 'ms');
+                console.log(
+                  'Medium dataset:',
+                  result.processingTime.toFixed(1) + 'ms',
+                );
               }}
             />
           </div>
@@ -197,7 +215,10 @@ export const PerformanceDemo: Story = {
               showProgress={true}
               showMetrics={true}
               onProcessingComplete={(result) => {
-                console.log('Large dataset:', result.processingTime.toFixed(1) + 'ms');
+                console.log(
+                  'Large dataset:',
+                  result.processingTime.toFixed(1) + 'ms',
+                );
               }}
             />
           </div>
@@ -218,7 +239,7 @@ export const PerformanceDemo: Story = {
   parameters: {
     layout: 'padded',
   },
-}
+};
 
 export const InteractiveDemo: Story = {
   args: {
@@ -232,7 +253,9 @@ export const InteractiveDemo: Story = {
         time: `Processing time: ${result.processingTime.toFixed(1)}ms`,
         extensions: `File types: ${Object.keys(result.extensionStats).length}`,
         duplicates: `Duplicate groups: ${result.duplicates.length}`,
-        largest: result.largestFile ? `Largest file: ${result.largestFile.name}` : 'No files',
+        largest: result.largestFile
+          ? `Largest file: ${result.largestFile.name}`
+          : 'No files',
       });
     },
     onError: (error) => {
@@ -247,15 +270,15 @@ export const InteractiveDemo: Story = {
             Interactive Data Processing Demo
           </h3>
           <p className="text-green-700 text-sm">
-            Click "Process Data" to analyze the dataset. 
-            Check browser console for detailed results.
+            Click "Process Data" to analyze the dataset. Check browser console
+            for detailed results.
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};
 
 export const EmptyState: Story = {
   args: {
@@ -263,7 +286,7 @@ export const EmptyState: Story = {
     showProgress: true,
     showMetrics: true,
   },
-}
+};
 
 export const ErrorHandling: Story = {
   args: {
@@ -274,4 +297,4 @@ export const ErrorHandling: Story = {
       console.log('Error handling demo:', error);
     },
   },
-}
+};

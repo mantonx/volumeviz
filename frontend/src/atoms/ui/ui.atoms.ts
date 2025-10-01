@@ -35,7 +35,7 @@ export const volumesViewModeAtom = atom(
       ...currentPrefs,
       volumeView: newViewMode,
     });
-  }
+  },
 );
 
 interface Notification {

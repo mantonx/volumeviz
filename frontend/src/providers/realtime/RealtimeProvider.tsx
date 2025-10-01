@@ -133,7 +133,10 @@ const createVolumeVizMessageHandlers = (
             is_active: data.is_active,
           },
         };
-        logger.debug('[RealtimeProvider] Calling updateScanProgress with:', { volumeId: data.volume_id, progress: progressData });
+        logger.debug('[RealtimeProvider] Calling updateScanProgress with:', {
+          volumeId: data.volume_id,
+          progress: progressData,
+        });
         updateScanProgress({
           volumeId: data.volume_id,
           progress: progressData,
@@ -164,7 +167,10 @@ const createVolumeVizMessageHandlers = (
             is_active: data.is_active,
           },
         };
-        logger.debug('[RealtimeProvider] Calling updateScanProgress with:', { volumeId: data.volume_id, progress: progressData });
+        logger.debug('[RealtimeProvider] Calling updateScanProgress with:', {
+          volumeId: data.volume_id,
+          progress: progressData,
+        });
         updateScanProgress({
           volumeId: data.volume_id,
           progress: progressData,
@@ -522,14 +528,15 @@ export function RealtimeProvider({
 
   // Memoize message handlers to prevent recreating on every render
   const messageHandlers = React.useMemo(
-    () => createVolumeVizMessageHandlers(
-      addHistoricalUpdate,
-      updateSystemStatistics,
-      updateSystemHealth,
-      addErrorEvent,
-      updateScanProgress,
-      addCapacityAlert,
-    ),
+    () =>
+      createVolumeVizMessageHandlers(
+        addHistoricalUpdate,
+        updateSystemStatistics,
+        updateSystemHealth,
+        addErrorEvent,
+        updateScanProgress,
+        addCapacityAlert,
+      ),
     [
       addHistoricalUpdate,
       updateSystemStatistics,

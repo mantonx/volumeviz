@@ -143,7 +143,8 @@ export const Sizes: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Different size variants affecting the preview image resolution.',
+        story:
+          'Different size variants affecting the preview image resolution.',
       },
     },
   },
@@ -187,7 +188,8 @@ export const Contexts: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Different display contexts with varying dimensions and responsive behavior.',
+        story:
+          'Different display contexts with varying dimensions and responsive behavior.',
       },
     },
     layout: 'padded',
@@ -300,7 +302,8 @@ export const FileTypeFallbacks: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Fallback icons for different file types when previews are not available.',
+        story:
+          'Fallback icons for different file types when previews are not available.',
       },
     },
   },
@@ -346,17 +349,20 @@ export const Interactive: Story = {
           />
         </div>
       </div>
-      
+
       <div className="text-sm text-gray-600">
         <p>Click on any thumbnail to trigger the onClick handler.</p>
-        <p>Thumbnails are keyboard accessible - try using Tab and Enter/Space.</p>
+        <p>
+          Thumbnails are keyboard accessible - try using Tab and Enter/Space.
+        </p>
       </div>
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story: 'Interactive thumbnails with click handlers and keyboard accessibility.',
+        story:
+          'Interactive thumbnails with click handlers and keyboard accessibility.',
       },
     },
   },
@@ -403,16 +409,20 @@ export const MediaIndicators: Story = {
           </div>
         </div>
       </div>
-      
+
       <div className="text-sm text-gray-600">
-        <p>Video and audio files show small indicators in the top-right corner when previews are available.</p>
+        <p>
+          Video and audio files show small indicators in the top-right corner
+          when previews are available.
+        </p>
       </div>
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story: 'Media type indicators that appear on video and audio thumbnails.',
+        story:
+          'Media type indicators that appear on video and audio thumbnails.',
       },
     },
   },
@@ -450,16 +460,20 @@ export const LoadingStates: Story = {
           </div>
         </div>
       </div>
-      
+
       <div className="text-sm text-gray-600">
-        <p>Different states during the loading process: spinner → blur placeholder → final image or fallback icon.</p>
+        <p>
+          Different states during the loading process: spinner → blur
+          placeholder → final image or fallback icon.
+        </p>
       </div>
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story: 'Visual representation of different loading states and transitions.',
+        story:
+          'Visual representation of different loading states and transitions.',
       },
     },
   },
@@ -471,10 +485,20 @@ export const GridLayout: Story = {
       { id: 1, name: 'photo1.jpg', type: 'image/jpeg', kind: 'image' },
       { id: 2, name: 'photo2.jpg', type: 'image/jpeg', kind: 'image' },
       { id: 0, name: 'video.mp4', type: 'video/mp4', kind: 'video' },
-      { id: 0, name: 'document.pdf', type: 'application/pdf', kind: 'document' },
+      {
+        id: 0,
+        name: 'document.pdf',
+        type: 'application/pdf',
+        kind: 'document',
+      },
       { id: 0, name: 'music.mp3', type: 'audio/mpeg', kind: 'audio' },
       { id: 0, name: 'archive.zip', type: 'application/zip', kind: 'archive' },
-      { id: 0, name: 'spreadsheet.xlsx', type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', kind: 'spreadsheet' },
+      {
+        id: 0,
+        name: 'spreadsheet.xlsx',
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        kind: 'spreadsheet',
+      },
       { id: 0, name: 'code.js', type: 'text/javascript', kind: 'code' },
     ];
 
@@ -494,7 +518,9 @@ export const GridLayout: Story = {
                   onClick={action(`clicked-${file.name}`)}
                   lazy={false}
                 />
-                <p className="text-xs text-gray-500 mt-2 truncate">{file.name}</p>
+                <p className="text-xs text-gray-500 mt-2 truncate">
+                  {file.name}
+                </p>
               </div>
             ))}
           </div>

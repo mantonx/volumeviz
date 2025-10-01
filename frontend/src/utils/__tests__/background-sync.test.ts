@@ -9,7 +9,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 // Mock localStorage
 const mockLocalStorage = (() => {
   let store: Record<string, string> = {};
-  
+
   return {
     getItem: (key: string) => store[key] || null,
     setItem: (key: string, value: string) => {
@@ -71,9 +71,9 @@ const triggerNetworkEvent = (type: 'online' | 'offline') => {
   Object.defineProperty(navigator, 'onLine', {
     value: type === 'online',
   });
-  
+
   if (mockEventListeners[type]) {
-    mockEventListeners[type].forEach(callback => callback());
+    mockEventListeners[type].forEach((callback) => callback());
   }
 };
 
@@ -84,10 +84,10 @@ describe('BackgroundSyncManager', () => {
     jest.clearAllMocks();
     mockLocalStorage.clear();
     syncManager = new BackgroundSyncManager();
-    
+
     // Mock auth token
     mockLocalStorage.setItem('auth_token', 'test-token');
-    
+
     // Default to online
     Object.defineProperty(navigator, 'onLine', { value: true });
   });
@@ -95,15 +95,21 @@ describe('BackgroundSyncManager', () => {
   describe('initialization', () => {
     it('should initialize with correct default state', () => {
       const status = syncManager.getSyncStatus();
-      
+
       expect(status.isOnline).toBe(true);
       expect(status.pendingCount).toBe(0);
       expect(status.syncInProgress).toBe(false);
     });
 
     it('should set up event listeners for online/offline events', () => {
-      expect(window.addEventListener).toHaveBeenCalledWith('online', expect.any(Function));
-      expect(window.addEventListener).toHaveBeenCalledWith('offline', expect.any(Function));
+      expect(window.addEventListener).toHaveBeenCalledWith(
+        'online',
+        expect.any(Function),
+      );
+      expect(window.addEventListener).toHaveBeenCalledWith(
+        'offline',
+        expect.any(Function),
+      );
     });
   });
 
@@ -116,7 +122,7 @@ describe('BackgroundSyncManager', () => {
       });
 
       expect(operationId).toMatch(/^\d+-[a-z0-9]+$/);
-      
+
       const pending = syncManager.getPendingOperations();
       expect(pending).toHaveLength(1);
       expect(pending[0]).toMatchObject({
@@ -137,7 +143,7 @@ describe('BackgroundSyncManager', () => {
 
       const stored = mockLocalStorage.getItem('volumeviz-pending-operations');
       expect(stored).toBeTruthy();
-      
+
       const operations = JSON.parse(stored!);
       expect(operations).toHaveLength(1);
       expect(operations[0].type).toBe('refresh');
@@ -145,7 +151,7 @@ describe('BackgroundSyncManager', () => {
 
     it('should trigger sync if online', async () => {
       const syncSpy = jest.spyOn(syncManager, 'syncPendingOperations');
-      
+
       syncManager.addPendingOperation({
         type: 'scan',
         volumeId: 'test-volume',
@@ -178,9 +184,9 @@ describe('BackgroundSyncManager', () => {
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
-            'Authorization': 'Bearer test-token',
+            Authorization: 'Bearer test-token',
           }),
-        })
+        }),
       );
     });
 
@@ -197,7 +203,7 @@ describe('BackgroundSyncManager', () => {
         '/api/v1/volumes/test-volume/size/refresh',
         expect.objectContaining({
           method: 'POST',
-        })
+        }),
       );
     });
 
@@ -214,13 +220,13 @@ describe('BackgroundSyncManager', () => {
         '/api/v1/volumes/test-volume/filesystem/index',
         expect.objectContaining({
           method: 'POST',
-        })
+        }),
       );
     });
 
     it('should execute update operations', async () => {
       const updateData = { name: 'updated-volume' };
-      
+
       syncManager.addPendingOperation({
         type: 'update',
         volumeId: 'test-volume',
@@ -235,7 +241,7 @@ describe('BackgroundSyncManager', () => {
         expect.objectContaining({
           method: 'PUT',
           body: JSON.stringify(updateData),
-        })
+        }),
       );
     });
 
@@ -265,7 +271,7 @@ describe('BackgroundSyncManager', () => {
       await syncManager.syncPendingOperations();
 
       const pending = syncManager.getPendingOperations();
-      const operation = pending.find(op => op.id === operationId);
+      const operation = pending.find((op) => op.id === operationId);
       expect(operation?.retryCount).toBe(1);
     });
 
@@ -306,7 +312,9 @@ describe('BackgroundSyncManager', () => {
     });
 
     it('should not sync when already in progress', async () => {
-      mockFetch.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+      mockFetch.mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 100)),
+      );
 
       syncManager.addPendingOperation({
         type: 'scan',
@@ -316,7 +324,7 @@ describe('BackgroundSyncManager', () => {
 
       // Start first sync (won't complete immediately)
       const firstSync = syncManager.syncPendingOperations();
-      
+
       // Try to start second sync
       await syncManager.syncPendingOperations();
 
@@ -332,7 +340,7 @@ describe('BackgroundSyncManager', () => {
     it('should update online status when going online', () => {
       Object.defineProperty(navigator, 'onLine', { value: false });
       syncManager = new BackgroundSyncManager();
-      
+
       expect(syncManager.getSyncStatus().isOnline).toBe(false);
 
       triggerNetworkEvent('online');
@@ -350,7 +358,7 @@ describe('BackgroundSyncManager', () => {
 
     it('should trigger sync when coming back online', async () => {
       const syncSpy = jest.spyOn(syncManager, 'syncPendingOperations');
-      
+
       triggerNetworkEvent('online');
 
       expect(syncSpy).toHaveBeenCalled();
@@ -364,7 +372,7 @@ describe('BackgroundSyncManager', () => {
         volumeId: 'test-volume-1',
         maxRetries: 3,
       });
-      
+
       syncManager.addPendingOperation({
         type: 'refresh',
         volumeId: 'test-volume-2',
@@ -382,7 +390,7 @@ describe('BackgroundSyncManager', () => {
   describe('error handling', () => {
     it('should handle localStorage errors gracefully', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
+
       // Mock localStorage error
       jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
         throw new Error('LocalStorage error');
@@ -468,7 +476,7 @@ describe('useBackgroundSync hook', () => {
 
   it('should cleanup interval on unmount', () => {
     const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-    
+
     const { unmount } = renderHook(() => useBackgroundSync());
 
     unmount();

@@ -523,6 +523,13 @@ func (r *volumesRepo) convertRowToVolume(row interface{}) (*models.Volume, error
 			volume.OrganizationID = &v.OrganizationID.Int64
 		}
 
+		// Handle size fields
+		if v.TotalSizeBytes.Valid {
+			volume.UsageData = &models.VolumeUsage{
+				Size: v.TotalSizeBytes.Int64,
+			}
+		}
+
 		// Note: Labels, Options, Driver, Scope, Status not in current schema
 
 	default:

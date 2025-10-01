@@ -1,5 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Loader2, Zap, AlertCircle, CheckCircle, Database, Filter } from 'lucide-react';
+import {
+  Loader2,
+  Zap,
+  AlertCircle,
+  CheckCircle,
+  Database,
+  Filter,
+} from 'lucide-react';
 import { useAggregationWorker } from '@/hooks/useWebWorker';
 import { cn } from '@/utils/class-names/cn';
 
@@ -69,7 +76,7 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
           setIsProcessing(false);
           setProgress(100);
           setCurrentTask('Complete');
-          
+
           if (onProcessingComplete) {
             onProcessingComplete(aggregationResult);
           }
@@ -113,9 +120,9 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
       // Simulate progressive updates for better UX
       setProgress(10);
       setCurrentTask('Analyzing file structure...');
-      
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       setProgress(30);
       setCurrentTask('Calculating aggregations...');
 
@@ -125,24 +132,33 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
           type: 'AGGREGATE_DATA',
           payload: { files: data },
         });
-        
+
         setProgress(50);
         setCurrentTask('Processing in background...');
       } else {
         // Fallback to synchronous processing
-        throw new Error('Web Workers not supported - falling back to synchronous processing');
+        throw new Error(
+          'Web Workers not supported - falling back to synchronous processing',
+        );
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Processing failed';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Processing failed';
       setError(errorMessage);
       setIsProcessing(false);
       setCurrentTask('');
-      
+
       if (onError) {
         onError(errorMessage);
       }
     }
-  }, [data, aggregationWorker, onProcessingComplete, onError, processingStartTime]);
+  }, [
+    data,
+    aggregationWorker,
+    onProcessingComplete,
+    onError,
+    processingStartTime,
+  ]);
 
   // Auto-process when data changes
   useEffect(() => {
@@ -166,7 +182,7 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     if (bytes === 0) return '0 B';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`;
+    return `${Math.round((bytes / Math.pow(1024, i)) * 100) / 100} ${sizes[i]}`;
   }, []);
 
   return (
@@ -182,7 +198,7 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           {showMetrics && aggregationWorker.isSupported && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -190,15 +206,15 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
               Web Worker
             </div>
           )}
-          
+
           <button
             onClick={processData}
             disabled={isProcessing || data.length === 0}
             className={cn(
-              "px-4 py-2 rounded-lg font-medium transition-colors",
+              'px-4 py-2 rounded-lg font-medium transition-colors',
               isProcessing || data.length === 0
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700',
             )}
           >
             {isProcessing ? (
@@ -220,7 +236,9 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
       {showProgress && isProcessing && (
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-blue-900">{currentTask}</span>
+            <span className="text-sm font-medium text-blue-900">
+              {currentTask}
+            </span>
             <span className="text-sm text-blue-700">{progress}%</span>
           </div>
           <div className="w-full bg-blue-200 rounded-full h-2">
@@ -252,9 +270,12 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
           <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
             <CheckCircle className="h-5 w-5 text-green-500" />
             <div>
-              <h4 className="font-medium text-green-900">Processing Complete</h4>
+              <h4 className="font-medium text-green-900">
+                Processing Complete
+              </h4>
               <p className="text-sm text-green-700">
-                Analyzed {formatNumber(result.totalCount)} items in {result.processingTime.toFixed(0)}ms
+                Analyzed {formatNumber(result.totalCount)} items in{' '}
+                {result.processingTime.toFixed(0)}ms
               </p>
             </div>
           </div>
@@ -296,10 +317,13 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
               <h4 className="font-medium text-gray-900 mb-3">Top File Types</h4>
               <div className="space-y-2">
                 {Object.entries(result.extensionStats)
-                  .sort(([,a], [,b]) => b.totalSize - a.totalSize)
+                  .sort(([, a], [, b]) => b.totalSize - a.totalSize)
                   .slice(0, 5)
                   .map(([ext, stats]) => (
-                    <div key={ext} className="flex items-center justify-between">
+                    <div
+                      key={ext}
+                      className="flex items-center justify-between"
+                    >
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
                           {ext.toUpperCase()}
@@ -320,13 +344,20 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
           {/* Size Distribution */}
           {result.sizeDistribution.length > 0 && (
             <div className="p-4 bg-white border rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-3">Size Distribution</h4>
+              <h4 className="font-medium text-gray-900 mb-3">
+                Size Distribution
+              </h4>
               <div className="space-y-2">
                 {result.sizeDistribution
-                  .filter(dist => dist.count > 0)
+                  .filter((dist) => dist.count > 0)
                   .map((dist) => (
-                    <div key={dist.range} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">{dist.range}</span>
+                    <div
+                      key={dist.range}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-sm text-gray-600">
+                        {dist.range}
+                      </span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-900">
                           {formatNumber(dist.count)} files
@@ -347,8 +378,12 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
               <h4 className="font-medium text-gray-900 mb-2">Largest File</h4>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-gray-900">{result.largestFile.name}</div>
-                  <div className="text-sm text-gray-600">{result.largestFile.path}</div>
+                  <div className="font-medium text-gray-900">
+                    {result.largestFile.name}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {result.largestFile.path}
+                  </div>
                 </div>
                 <div className="text-lg font-bold text-gray-900">
                   {formatBytes(result.largestFile.size)}

@@ -10,18 +10,22 @@ interface ScanProgressBarProps {
 /**
  * Simple progress bar that appears as a bottom border on volume rows during scanning
  */
-export function ScanProgressBar({ volumeId, className, volumeStatus }: ScanProgressBarProps) {
+export function ScanProgressBar({
+  volumeId,
+  className,
+  volumeStatus,
+}: ScanProgressBarProps) {
   const { progress, isScanning } = useScanProgress(volumeId);
-  
+
   // Temporary debug logging to help verify progress data
   console.log(`[ScanProgressBar] ${volumeId}: `, {
     progress: (progress as any)?.overall_progress,
     status: (progress as any)?.overall_status,
     isScanning,
     hasProgress: !!progress,
-    fullProgress: progress
+    fullProgress: progress,
   });
-  
+
   try {
     // Handle both normalized progress (ScanProgress) and raw realtime data (ScanProgressData)
     const effectiveProgress =
@@ -32,20 +36,20 @@ export function ScanProgressBar({ volumeId, className, volumeStatus }: ScanProgr
       (progress as any)?.overall_status ?? (progress as any)?.status;
 
     // Show progress bar when we have any progress data from WebSocket
-    const shouldShow = progress && (
-      isScanning ||
-      effectiveStatus === 'running' ||
-      effectiveStatus === 'completed' ||
-      effectiveStatus === 'failed' ||
-      effectiveStatus === 'idle' ||
-      effectiveStatus === 'active' // Show for active volumes (WebSocket continuous updates)
-    );
+    const shouldShow =
+      progress &&
+      (isScanning ||
+        effectiveStatus === 'running' ||
+        effectiveStatus === 'completed' ||
+        effectiveStatus === 'failed' ||
+        effectiveStatus === 'idle' ||
+        effectiveStatus === 'active'); // Show for active volumes (WebSocket continuous updates)
 
     if (!progress || volumeStatus === 'untracked') {
       // No progress data or volume is untracked - don't show progress bar
       return null;
     }
-    
+
     if (!shouldShow) {
       // For debugging: show a yellow bar if we have progress but shouldShow is false
       return (

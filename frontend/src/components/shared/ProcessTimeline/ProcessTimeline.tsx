@@ -113,28 +113,34 @@ export const ProcessTimeline = forwardRef<
     }));
 
     // Phase status icons
-    const getPhaseIcon = useCallback((phase: ProcessTimelinePhase) => {
-      const iconSize = size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
-      
-      if (phase.icon) {
-        return React.cloneElement(phase.icon as React.ReactElement, { className: iconSize });
-      }
+    const getPhaseIcon = useCallback(
+      (phase: ProcessTimelinePhase) => {
+        const iconSize =
+          size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
 
-      switch (phase.status) {
-        case 'completed':
-          return <CheckCircle className={iconSize} />;
-        case 'failed':
-          return <XCircle className={iconSize} />;
-        case 'active':
-          return <Play className={iconSize} />;
-        case 'pending':
-          return <Clock className={iconSize} />;
-        case 'skipped':
-          return <AlertTriangle className={iconSize} />;
-        default:
-          return <Clock className={iconSize} />;
-      }
-    }, [size]);
+        if (phase.icon) {
+          return React.cloneElement(phase.icon as React.ReactElement, {
+            className: iconSize,
+          });
+        }
+
+        switch (phase.status) {
+          case 'completed':
+            return <CheckCircle className={iconSize} />;
+          case 'failed':
+            return <XCircle className={iconSize} />;
+          case 'active':
+            return <Play className={iconSize} />;
+          case 'pending':
+            return <Clock className={iconSize} />;
+          case 'skipped':
+            return <AlertTriangle className={iconSize} />;
+          default:
+            return <Clock className={iconSize} />;
+        }
+      },
+      [size],
+    );
 
     // Calculate overall progress
     const overallProgress = useMemo(() => {
@@ -285,18 +291,24 @@ export const ProcessTimeline = forwardRef<
           <div className={contentClasses}>
             {/* Phase Icon/Badge */}
             <div className="flex-shrink-0">
-              <div 
+              <div
                 className={clsx(
                   'rounded-full flex items-center justify-center',
                   currentSize.iconSize,
                   {
-                    'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400': phase.status === 'completed',
-                    'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400': phase.status === 'failed', 
-                    'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': phase.status === 'active',
-                    'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400': phase.status === 'skipped',
-                    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400': phase.status === 'pending',
-                    'cursor-pointer hover:scale-105 transition-transform': isClickable,
-                  }
+                    'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400':
+                      phase.status === 'completed',
+                    'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400':
+                      phase.status === 'failed',
+                    'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400':
+                      phase.status === 'active',
+                    'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400':
+                      phase.status === 'skipped',
+                    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400':
+                      phase.status === 'pending',
+                    'cursor-pointer hover:scale-105 transition-transform':
+                      isClickable,
+                  },
                 )}
                 onClick={isClickable ? handlePhaseClick : undefined}
               >
@@ -313,7 +325,7 @@ export const ProcessTimeline = forwardRef<
                   currentSize.fontSize,
                   {
                     'text-center': orientation === 'horizontal',
-                  }
+                  },
                 )}
               >
                 {phase.label}

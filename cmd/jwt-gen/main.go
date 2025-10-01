@@ -14,6 +14,7 @@ func main() {
 	var (
 		userID   = flag.String("user", "dev-user", "User ID for the token")
 		role     = flag.String("role", "viewer", "User role (viewer, operator, admin)")
+		orgID    = flag.Int64("org", 1, "Organization ID")
 		secret   = flag.String("secret", "", "JWT secret (or use AUTH_HS256_SECRET env var)")
 		duration = flag.Duration("duration", 24*time.Hour, "Token validity duration")
 	)
@@ -53,9 +54,9 @@ func main() {
 	
 	// Convert role to string
 	roleStr := *role
-	
+
 	// Generate JWT token with organization context
-	token, _, err := jwtManager.GenerateAccessToken(*userID, *userID, "", roleStr, "jwt-gen", nil)
+	token, _, err := jwtManager.GenerateAccessToken(*userID, *userID, "", roleStr, "jwt-gen", orgID)
 	if err != nil {
 		log.Fatalf("Failed to generate JWT token: %v", err)
 	}
@@ -64,6 +65,7 @@ func main() {
 	fmt.Println("================================")
 	fmt.Printf("User ID: %s\n", *userID)
 	fmt.Printf("Role: %s\n", *role)
+	fmt.Printf("Organization ID: %d\n", *orgID)
 	fmt.Printf("Expires: %s\n", time.Now().Add(*duration).Format(time.RFC3339))
 	fmt.Println()
 	fmt.Println("Token:")

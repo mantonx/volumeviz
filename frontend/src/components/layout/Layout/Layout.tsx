@@ -53,7 +53,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
           <div className="px-4 sm:px-6 lg:px-8">{children}</div>
         </main>
       </div>
-
     </div>
   );
 };

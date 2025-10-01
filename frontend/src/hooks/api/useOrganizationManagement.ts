@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSetAtom } from 'jotai';
-import { 
+import {
   useGetApiV1OrganizationsMe,
   usePutApiV1OrganizationsMe,
-  InternalApiV1OrganizationsUpdateOrganizationRequest 
+  InternalApiV1OrganizationsUpdateOrganizationRequest,
 } from '@/api/orval-generated/api';
 import { organizationIdAtom } from '@/atoms/organization';
 
@@ -15,23 +15,27 @@ export interface UseOrganizationManagementReturn {
   isLoading: boolean;
   error: any;
   refetch: () => void;
-  
+
   // Organization mutations
   updateOrganization: {
-    mutateAsync: (data: InternalApiV1OrganizationsUpdateOrganizationRequest) => Promise<any>;
+    mutateAsync: (
+      data: InternalApiV1OrganizationsUpdateOrganizationRequest,
+    ) => Promise<any>;
     isLoading: boolean;
   };
 }
 
-export function useOrganizationManagement(organizationId?: string): UseOrganizationManagementReturn {
+export function useOrganizationManagement(
+  organizationId?: string,
+): UseOrganizationManagementReturn {
   const queryClient = useQueryClient();
-  
+
   // Fetch current organization data
-  const { 
-    data: orgData, 
-    isLoading, 
+  const {
+    data: orgData,
+    isLoading,
     error,
-    refetch 
+    refetch,
   } = useGetApiV1OrganizationsMe({
     query: {
       enabled: true,
@@ -44,7 +48,9 @@ export function useOrganizationManagement(organizationId?: string): UseOrganizat
     mutation: {
       onSuccess: (data) => {
         // Invalidate organization queries
-        queryClient.invalidateQueries({ queryKey: ['getApiV1OrganizationsMe'] });
+        queryClient.invalidateQueries({
+          queryKey: ['getApiV1OrganizationsMe'],
+        });
         queryClient.invalidateQueries({ queryKey: ['orgs'] });
       },
     },
@@ -58,10 +64,12 @@ export function useOrganizationManagement(organizationId?: string): UseOrganizat
     isLoading,
     error: error as Error | null,
     refetch,
-    
+
     // Mutations
     updateOrganization: {
-      mutateAsync: async (data: InternalApiV1OrganizationsUpdateOrganizationRequest) => {
+      mutateAsync: async (
+        data: InternalApiV1OrganizationsUpdateOrganizationRequest,
+      ) => {
         return updateOrgMutation.mutateAsync({ data });
       },
       isLoading: updateOrgMutation.isPending,

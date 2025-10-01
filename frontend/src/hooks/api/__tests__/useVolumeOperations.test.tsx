@@ -36,7 +36,7 @@ const server = setupServer(
       volume_id: volumeId,
       size_bytes: 1048576000, // 1GB
       file_count: 10000,
-      last_updated: new Date().toISOString()
+      last_updated: new Date().toISOString(),
     });
   }),
 
@@ -47,22 +47,26 @@ const server = setupServer(
       index_id: `index_${volumeId}_${Date.now()}`,
       status: 'started',
       volume_id: volumeId,
-      started_at: new Date().toISOString()
+      started_at: new Date().toISOString(),
     });
   }),
 
   // Bulk scan endpoint
   http.post('/api/v1/volumes/bulk-scan', async ({ request }) => {
-    const body = await request.json() as { volume_ids: string[]; async?: boolean; method?: string };
+    const body = (await request.json()) as {
+      volume_ids: string[];
+      async?: boolean;
+      method?: string;
+    };
     const { volume_ids } = body;
-    
+
     return HttpResponse.json({
-      results: volume_ids.map(id => ({
+      results: volume_ids.map((id) => ({
         volume_id: id,
         size_bytes: Math.floor(Math.random() * 2147483648),
         file_count: Math.floor(Math.random() * 50000),
-        last_updated: new Date().toISOString()
-      }))
+        last_updated: new Date().toISOString(),
+      })),
     });
   }),
 
@@ -70,9 +74,9 @@ const server = setupServer(
   http.post('/api/v1/volumes/error-test/size/refresh', () => {
     return HttpResponse.json(
       { error: 'Simulated server error' },
-      { status: 500 }
+      { status: 500 },
     );
-  })
+  }),
 );
 
 // Test wrapper component
@@ -86,9 +90,7 @@ function createTestWrapper() {
 
   return ({ children }: { children: ReactNode }) => (
     <JotaiProvider>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </JotaiProvider>
   );
 }
@@ -128,7 +130,7 @@ describe('useVolumeOperations', () => {
         volume_id: 'test-volume',
         size_bytes: 1048576000,
         file_count: 10000,
-        last_updated: expect.any(String)
+        last_updated: expect.any(String),
       });
 
       // Should no longer be loading
@@ -139,24 +141,27 @@ describe('useVolumeOperations', () => {
 
     it('should queue operation for background sync when offline', async () => {
       // Mock offline state
-      jest.mocked(require('@/utils/background-sync').useBackgroundSync).mockReturnValue({
-        isOnline: false,
-        pendingCount: 0,
-        syncInProgress: false,
-        addPendingOperation: jest.fn(),
-        forceSync: jest.fn(),
-        clearPending: jest.fn(),
-      });
+      jest
+        .mocked(require('@/utils/background-sync').useBackgroundSync)
+        .mockReturnValue({
+          isOnline: false,
+          pendingCount: 0,
+          syncInProgress: false,
+          addPendingOperation: jest.fn(),
+          forceSync: jest.fn(),
+          clearPending: jest.fn(),
+        });
 
       const { result } = renderHook(() => useVolumeOperations(), {
         wrapper: createTestWrapper(),
       });
 
-      const response = await result.current.scanVolume.mutateAsync('test-volume');
+      const response =
+        await result.current.scanVolume.mutateAsync('test-volume');
 
       expect(response).toEqual({
         queued: true,
-        offline: true
+        offline: true,
       });
 
       expect(backgroundSyncManager.addPendingOperation).toHaveBeenCalledWith({
@@ -172,7 +177,7 @@ describe('useVolumeOperations', () => {
       });
 
       await expect(
-        result.current.scanVolume.mutateAsync('error-test')
+        result.current.scanVolume.mutateAsync('error-test'),
       ).rejects.toThrow();
     });
   });
@@ -183,13 +188,14 @@ describe('useVolumeOperations', () => {
         wrapper: createTestWrapper(),
       });
 
-      const response = await result.current.refreshVolumeSize.mutateAsync('test-volume');
+      const response =
+        await result.current.refreshVolumeSize.mutateAsync('test-volume');
 
       expect(response).toEqual({
         volume_id: 'test-volume',
         size_bytes: 1048576000,
         file_count: 10000,
-        last_updated: expect.any(String)
+        last_updated: expect.any(String),
       });
     });
 
@@ -200,7 +206,8 @@ describe('useVolumeOperations', () => {
 
       expect(result.current.refreshVolumeSize.isLoading).toBe(false);
 
-      const promise = result.current.refreshVolumeSize.mutateAsync('test-volume');
+      const promise =
+        result.current.refreshVolumeSize.mutateAsync('test-volume');
       expect(result.current.refreshVolumeSize.isLoading).toBe(true);
 
       await promise;
@@ -217,36 +224,40 @@ describe('useVolumeOperations', () => {
         wrapper: createTestWrapper(),
       });
 
-      const response = await result.current.indexFilesystem.mutateAsync('test-volume');
+      const response =
+        await result.current.indexFilesystem.mutateAsync('test-volume');
 
       expect(response).toEqual({
         index_id: expect.stringMatching(/^index_test-volume_\d+$/),
         status: 'started',
         volume_id: 'test-volume',
-        started_at: expect.any(String)
+        started_at: expect.any(String),
       });
     });
 
     it('should queue filesystem indexing when offline with higher retry count', async () => {
       // Mock offline state
-      jest.mocked(require('@/utils/background-sync').useBackgroundSync).mockReturnValue({
-        isOnline: false,
-        pendingCount: 0,
-        syncInProgress: false,
-        addPendingOperation: jest.fn(),
-        forceSync: jest.fn(),
-        clearPending: jest.fn(),
-      });
+      jest
+        .mocked(require('@/utils/background-sync').useBackgroundSync)
+        .mockReturnValue({
+          isOnline: false,
+          pendingCount: 0,
+          syncInProgress: false,
+          addPendingOperation: jest.fn(),
+          forceSync: jest.fn(),
+          clearPending: jest.fn(),
+        });
 
       const { result } = renderHook(() => useVolumeOperations(), {
         wrapper: createTestWrapper(),
       });
 
-      const response = await result.current.indexFilesystem.mutateAsync('test-volume');
+      const response =
+        await result.current.indexFilesystem.mutateAsync('test-volume');
 
       expect(response).toEqual({
         queued: true,
-        offline: true
+        offline: true,
       });
 
       expect(backgroundSyncManager.addPendingOperation).toHaveBeenCalledWith({
@@ -266,7 +277,7 @@ describe('useVolumeOperations', () => {
       const volumeIds = ['vol1', 'vol2', 'vol3'];
       const response = await result.current.bulkScan.mutateAsync(volumeIds, {
         async: false,
-        method: 'du'
+        method: 'du',
       });
 
       expect(response).toEqual({
@@ -275,22 +286,24 @@ describe('useVolumeOperations', () => {
             volume_id: expect.any(String),
             size_bytes: expect.any(Number),
             file_count: expect.any(Number),
-            last_updated: expect.any(String)
-          })
-        ])
+            last_updated: expect.any(String),
+          }),
+        ]),
       });
     });
 
     it('should queue individual volumes when offline', async () => {
       // Mock offline state
-      jest.mocked(require('@/utils/background-sync').useBackgroundSync).mockReturnValue({
-        isOnline: false,
-        pendingCount: 0,
-        syncInProgress: false,
-        addPendingOperation: jest.fn(),
-        forceSync: jest.fn(),
-        clearPending: jest.fn(),
-      });
+      jest
+        .mocked(require('@/utils/background-sync').useBackgroundSync)
+        .mockReturnValue({
+          isOnline: false,
+          pendingCount: 0,
+          syncInProgress: false,
+          addPendingOperation: jest.fn(),
+          forceSync: jest.fn(),
+          clearPending: jest.fn(),
+        });
 
       const { result } = renderHook(() => useVolumeOperations(), {
         wrapper: createTestWrapper(),
@@ -302,11 +315,13 @@ describe('useVolumeOperations', () => {
       expect(response).toEqual({
         queued: true,
         offline: true,
-        count: 2
+        count: 2,
       });
 
       // Should queue each volume individually
-      expect(backgroundSyncManager.addPendingOperation).toHaveBeenCalledTimes(2);
+      expect(backgroundSyncManager.addPendingOperation).toHaveBeenCalledTimes(
+        2,
+      );
       expect(backgroundSyncManager.addPendingOperation).toHaveBeenCalledWith({
         type: 'scan',
         volumeId: 'vol1',
@@ -329,7 +344,7 @@ describe('useVolumeOperations', () => {
       // Test with custom options
       await result.current.bulkScan.mutateAsync(['vol1'], {
         async: true,
-        method: 'find'
+        method: 'find',
       });
 
       // Verify the request was made with correct options
@@ -344,7 +359,7 @@ describe('useVolumeOperations', () => {
       });
 
       expect(typeof result.current.refreshVolumes).toBe('function');
-      
+
       // This function should trigger query invalidation
       // In a real test, we'd verify the QueryClient invalidation
       expect(() => result.current.refreshVolumes()).not.toThrow();
@@ -357,7 +372,7 @@ describe('useVolumeOperations', () => {
       server.use(
         http.post('/api/v1/volumes/:volumeId/size/refresh', () => {
           return HttpResponse.error();
-        })
+        }),
       );
 
       const { result } = renderHook(() => useVolumeOperations(), {
@@ -365,7 +380,7 @@ describe('useVolumeOperations', () => {
       });
 
       await expect(
-        result.current.refreshVolumeSize.mutateAsync('test-volume')
+        result.current.refreshVolumeSize.mutateAsync('test-volume'),
       ).rejects.toThrow();
     });
 
@@ -375,9 +390,9 @@ describe('useVolumeOperations', () => {
         http.post('/api/v1/volumes/:volumeId/size/refresh', () => {
           return HttpResponse.json(
             { error: 'Volume not found' },
-            { status: 404 }
+            { status: 404 },
           );
-        })
+        }),
       );
 
       const { result } = renderHook(() => useVolumeOperations(), {
@@ -385,7 +400,7 @@ describe('useVolumeOperations', () => {
       });
 
       await expect(
-        result.current.refreshVolumeSize.mutateAsync('nonexistent-volume')
+        result.current.refreshVolumeSize.mutateAsync('nonexistent-volume'),
       ).rejects.toThrow();
     });
   });

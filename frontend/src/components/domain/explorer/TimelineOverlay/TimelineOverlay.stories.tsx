@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { TimelineOverlay } from './TimelineOverlay'
+import type { Meta, StoryObj } from '@storybook/react';
+import { TimelineOverlay } from './TimelineOverlay';
 
 const meta = {
   title: 'Domain/Explorer/TimelineOverlay',
@@ -22,10 +22,10 @@ const meta = {
       control: { type: 'number', min: 1, max: 365 },
     },
   },
-} satisfies Meta<typeof TimelineOverlay>
+} satisfies Meta<typeof TimelineOverlay>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -35,9 +35,10 @@ export const Default: Story = {
     timeRangeDays: 30,
     onClose: () => console.log('Close timeline'),
     onFileClick: (event) => console.log('File clicked:', event),
-    onTimeRangeChange: (start, end) => console.log('Time range changed:', { start, end }),
+    onTimeRangeChange: (start, end) =>
+      console.log('Time range changed:', { start, end }),
   },
-}
+};
 
 export const MediaLibrary: Story = {
   args: {
@@ -47,9 +48,10 @@ export const MediaLibrary: Story = {
     timeRangeDays: 90,
     onClose: () => console.log('Close timeline'),
     onFileClick: (event) => console.log('File clicked:', event),
-    onTimeRangeChange: (start, end) => console.log('Time range changed:', { start, end }),
+    onTimeRangeChange: (start, end) =>
+      console.log('Time range changed:', { start, end }),
   },
-}
+};
 
 export const DocumentStorage: Story = {
   args: {
@@ -59,9 +61,10 @@ export const DocumentStorage: Story = {
     timeRangeDays: 14,
     onClose: () => console.log('Close timeline'),
     onFileClick: (event) => console.log('File clicked:', event),
-    onTimeRangeChange: (start, end) => console.log('Time range changed:', { start, end }),
+    onTimeRangeChange: (start, end) =>
+      console.log('Time range changed:', { start, end }),
   },
-}
+};
 
 export const BackupDrive: Story = {
   args: {
@@ -71,9 +74,10 @@ export const BackupDrive: Story = {
     timeRangeDays: 180,
     onClose: () => console.log('Close timeline'),
     onFileClick: (event) => console.log('File clicked:', event),
-    onTimeRangeChange: (start, end) => console.log('Time range changed:', { start, end }),
+    onTimeRangeChange: (start, end) =>
+      console.log('Time range changed:', { start, end }),
   },
-}
+};
 
 export const RecentActivity: Story = {
   args: {
@@ -83,9 +87,10 @@ export const RecentActivity: Story = {
     timeRangeDays: 7,
     onClose: () => console.log('Close timeline'),
     onFileClick: (event) => console.log('File clicked:', event),
-    onTimeRangeChange: (start, end) => console.log('Time range changed:', { start, end }),
+    onTimeRangeChange: (start, end) =>
+      console.log('Time range changed:', { start, end }),
   },
-}
+};
 
 export const LongTermAnalysis: Story = {
   args: {
@@ -95,9 +100,10 @@ export const LongTermAnalysis: Story = {
     timeRangeDays: 365,
     onClose: () => console.log('Close timeline'),
     onFileClick: (event) => console.log('File clicked:', event),
-    onTimeRangeChange: (start, end) => console.log('Time range changed:', { start, end }),
+    onTimeRangeChange: (start, end) =>
+      console.log('Time range changed:', { start, end }),
   },
-}
+};
 
 export const TempFolder: Story = {
   args: {
@@ -107,9 +113,10 @@ export const TempFolder: Story = {
     timeRangeDays: 3,
     onClose: () => console.log('Close timeline'),
     onFileClick: (event) => console.log('File clicked:', event),
-    onTimeRangeChange: (start, end) => console.log('Time range changed:', { start, end }),
+    onTimeRangeChange: (start, end) =>
+      console.log('Time range changed:', { start, end }),
   },
-}
+};
 
 export const Hidden: Story = {
   args: {
@@ -119,9 +126,10 @@ export const Hidden: Story = {
     timeRangeDays: 30,
     onClose: () => console.log('Close timeline'),
     onFileClick: (event) => console.log('File clicked:', event),
-    onTimeRangeChange: (start, end) => console.log('Time range changed:', { start, end }),
+    onTimeRangeChange: (start, end) =>
+      console.log('Time range changed:', { start, end }),
   },
-}
+};
 
 export const InteractiveDemo: Story = {
   args: {
@@ -146,7 +154,9 @@ export const InteractiveDemo: Story = {
       console.log('Timeline range changed:', {
         start: start.toISOString(),
         end: end.toISOString(),
-        daysSpan: Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
+        daysSpan: Math.round(
+          (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+        ),
       });
       // In a real app, this would trigger data reload for the new range
     },
@@ -156,11 +166,12 @@ export const InteractiveDemo: Story = {
       <div className="h-screen">
         <div className="p-4 bg-muted/50 text-center">
           <p className="text-sm text-muted-foreground">
-            Interactive timeline overlay - try the playback controls and different views
+            Interactive timeline overlay - try the playback controls and
+            different views
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};

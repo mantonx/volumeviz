@@ -1,2 +1,2 @@
-export { AdaptiveExplorer } from './AdaptiveExplorer'
-export type { AdaptiveExplorerProps, FileSystemItem } from './AdaptiveExplorer'
+export { AdaptiveExplorer } from './AdaptiveExplorer';
+export type { AdaptiveExplorerProps, FileSystemItem } from './AdaptiveExplorer';

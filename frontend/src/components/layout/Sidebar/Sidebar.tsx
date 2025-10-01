@@ -43,56 +43,19 @@ const navigation: NavigationItem[] = [
     name: 'Volumes',
     href: '/volumes',
     icon: HardDrive,
-    description: 'Docker volume management',
+    description: 'Browse and manage Docker volumes',
   },
   {
-    name: 'Explorer',
-    href: '/explorer',
+    name: 'Files',
+    href: '/files',
     icon: FolderOpen,
-    description: 'File system exploration & insights',
+    description: 'Explore and search files across volumes',
   },
   {
-    name: 'Search',
-    href: '/search',
-    icon: Search,
-    description: 'Global file search & advanced filtering',
-  },
-  {
-    name: 'Mounts',
-    href: '/mounts',
-    icon: Layers,
-    description: 'Docker mount catalog & metadata',
-  },
-  {
-    name: 'Rules',
-    href: '/rules',
-    icon: Shield,
-    description: 'Mount tracking rules & automation',
-  },
-  // Temporarily hidden - container management coming in future release
-  // {
-  //   name: 'Containers',
-  //   href: '/containers',
-  //   icon: Database,
-  //   description: 'Container monitoring',
-  // },
-  // {
-  //   name: 'Networks',
-  //   href: '/networks',
-  //   icon: Network,
-  //   description: 'Network configurations',
-  // },
-  {
-    name: 'Real-time',
-    href: '/realtime',
-    icon: Zap,
-    description: 'Live volume monitoring',
-  },
-  {
-    name: 'Analytics',
-    href: '/historical',
+    name: 'Trends',
+    href: '/trends',
     icon: TrendingUp,
-    description: 'Historical data & trends',
+    description: 'Storage trends & capacity planning',
   },
   {
     name: 'Alerts',
@@ -132,9 +95,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   const NavItem = ({ item }: { item: NavigationItem }) => {
     const isActive = location.pathname === item.href;
 
+    // Add data-tour attribute for specific navigation items
+    const getTourAttribute = (name: string) => {
+      switch (name) {
+        case 'Volumes':
+          return 'volumes-link';
+        case 'Files':
+          return 'files-link';
+        case 'Trends':
+          return 'trends-link';
+        default:
+          return undefined;
+      }
+    };
+
     return (
       <NavLink
         to={item.href}
+        data-tour={getTourAttribute(item.name)}
         className={({ isActive }) =>
           cn(
             'group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium transition-colors',
@@ -176,6 +154,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
 
       {/* Sidebar */}
       <div
+        data-tour="sidebar"
         className={cn(
           'fixed inset-y-0 left-0 z-50 w-72 overflow-y-auto bg-white dark:bg-gray-900 lg:z-40',
           'transition-transform duration-300 ease-in-out lg:translate-x-0',

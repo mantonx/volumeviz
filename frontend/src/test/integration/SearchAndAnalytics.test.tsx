@@ -82,28 +82,29 @@ const server = setupServer(
 
     // Filter by query
     if (query) {
-      results = results.filter(file => 
-        file.name.toLowerCase().includes(query.toLowerCase()) ||
-        file.path.toLowerCase().includes(query.toLowerCase())
+      results = results.filter(
+        (file) =>
+          file.name.toLowerCase().includes(query.toLowerCase()) ||
+          file.path.toLowerCase().includes(query.toLowerCase()),
       );
     }
 
     // Filter by volume
     if (volumeId) {
-      results = results.filter(file => file.volume_name === volumeId);
+      results = results.filter((file) => file.volume_name === volumeId);
     }
 
     // Filter by file type
     if (fileType) {
-      results = results.filter(file => file.type === fileType);
+      results = results.filter((file) => file.type === fileType);
     }
 
     // Filter by size
     if (minSize) {
-      results = results.filter(file => file.size >= parseInt(minSize));
+      results = results.filter((file) => file.size >= parseInt(minSize));
     }
     if (maxSize) {
-      results = results.filter(file => file.size <= parseInt(maxSize));
+      results = results.filter((file) => file.size <= parseInt(maxSize));
     }
 
     // Pagination
@@ -163,8 +164,8 @@ const server = setupServer(
 
   // Save search endpoint
   http.post('/api/v1/search/saved', async ({ request }) => {
-    const body = await request.json() as any;
-    
+    const body = (await request.json()) as any;
+
     return HttpResponse.json({
       id: `search-${Date.now()}`,
       name: body.name,
@@ -396,11 +397,13 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <SearchPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Find search input and enter query
-      const searchInput = screen.getByRole('textbox', { name: /search files/i });
+      const searchInput = screen.getByRole('textbox', {
+        name: /search files/i,
+      });
       await user.type(searchInput, 'config');
 
       // Submit search
@@ -425,7 +428,7 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <SearchPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Open advanced filters
@@ -441,7 +444,9 @@ describe('Search and Analytics Integration', () => {
       await user.type(minSizeInput, '1000000'); // 1MB
 
       // Apply filters and search
-      const searchInput = screen.getByRole('textbox', { name: /search files/i });
+      const searchInput = screen.getByRole('textbox', {
+        name: /search files/i,
+      });
       await user.type(searchInput, 'log');
 
       const searchButton = screen.getByRole('button', { name: /search/i });
@@ -464,11 +469,13 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <SearchPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Perform search that returns multiple pages
-      const searchInput = screen.getByRole('textbox', { name: /search files/i });
+      const searchInput = screen.getByRole('textbox', {
+        name: /search files/i,
+      });
       await user.type(searchInput, '*'); // Search all files
 
       const searchButton = screen.getByRole('button', { name: /search/i });
@@ -476,14 +483,16 @@ describe('Search and Analytics Integration', () => {
 
       // Wait for results
       await waitFor(() => {
-        expect(screen.getByText(/showing \d+-\d+ of \d+ results/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/showing \d+-\d+ of \d+ results/i),
+        ).toBeInTheDocument();
       });
 
       // Navigate to next page if pagination exists
       const nextButton = screen.queryByRole('button', { name: /next/i });
       if (nextButton) {
         await user.click(nextButton);
-        
+
         await waitFor(() => {
           expect(screen.getByText(/page 2/i)).toBeInTheDocument();
         });
@@ -497,11 +506,13 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <SearchPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Perform a search
-      const searchInput = screen.getByRole('textbox', { name: /search files/i });
+      const searchInput = screen.getByRole('textbox', {
+        name: /search files/i,
+      });
       await user.type(searchInput, 'important');
 
       const searchButton = screen.getByRole('button', { name: /search/i });
@@ -536,11 +547,13 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <SearchPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Open saved searches
-      const savedButton = screen.getByRole('button', { name: /saved searches/i });
+      const savedButton = screen.getByRole('button', {
+        name: /saved searches/i,
+      });
       await user.click(savedButton);
 
       // Wait for saved searches to load
@@ -550,12 +563,16 @@ describe('Search and Analytics Integration', () => {
       });
 
       // Execute a saved search
-      const executeButton = screen.getAllByRole('button', { name: /run search/i })[0];
+      const executeButton = screen.getAllByRole('button', {
+        name: /run search/i,
+      })[0];
       await user.click(executeButton);
 
       // Should execute the search and show results
       await waitFor(() => {
-        expect(screen.getByText(/results for.*large log files/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/results for.*large log files/i),
+        ).toBeInTheDocument();
       });
     });
 
@@ -566,11 +583,13 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <SearchPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Search for something that doesn't exist
-      const searchInput = screen.getByRole('textbox', { name: /search files/i });
+      const searchInput = screen.getByRole('textbox', {
+        name: /search files/i,
+      });
       await user.type(searchInput, 'nonexistentfile.xyz');
 
       const searchButton = screen.getByRole('button', { name: /search/i });
@@ -590,7 +609,7 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <AnalyticsDashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for analytics data to load
@@ -615,7 +634,7 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <AnalyticsDashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for file type data to load
@@ -640,7 +659,7 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <AnalyticsDashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for top files data to load
@@ -663,7 +682,7 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <AnalyticsDashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for growth trend data to load
@@ -683,7 +702,7 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <AnalyticsDashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for initial data to load
@@ -708,7 +727,7 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <AnalyticsDashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for volume data to load
@@ -717,7 +736,9 @@ describe('Search and Analytics Integration', () => {
       });
 
       // Click on a volume for detailed view
-      const volumeLink = screen.getByRole('button', { name: /view db-data details/i });
+      const volumeLink = screen.getByRole('button', {
+        name: /view db-data details/i,
+      });
       await user.click(volumeLink);
 
       // Should show volume-specific analytics
@@ -738,9 +759,9 @@ describe('Search and Analytics Integration', () => {
         http.get('/api/v1/search/files', () => {
           return HttpResponse.json(
             { error: 'Search service unavailable' },
-            { status: 503 }
+            { status: 503 },
           );
-        })
+        }),
       );
 
       const user = userEvent.setup();
@@ -749,11 +770,13 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <SearchPage />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Perform search
-      const searchInput = screen.getByRole('textbox', { name: /search files/i });
+      const searchInput = screen.getByRole('textbox', {
+        name: /search files/i,
+      });
       await user.type(searchInput, 'test');
 
       const searchButton = screen.getByRole('button', { name: /search/i });
@@ -770,7 +793,7 @@ describe('Search and Analytics Integration', () => {
       server.use(
         http.get('/api/v1/analytics/storage', () => {
           return HttpResponse.error();
-        })
+        }),
       );
 
       const TestWrapper = createTestWrapper();
@@ -778,18 +801,20 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <AnalyticsDashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Should show error state for storage analytics
       await waitFor(() => {
-        expect(screen.getByText(/error loading.*analytics/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/error loading.*analytics/i),
+        ).toBeInTheDocument();
       });
     });
 
     it('should provide retry functionality on errors', async () => {
       let callCount = 0;
-      
+
       // Mock failing request that succeeds on retry
       server.use(
         http.get('/api/v1/analytics/storage', () => {
@@ -804,7 +829,7 @@ describe('Search and Analytics Integration', () => {
             storage_by_volume: [],
             growth_trend: [],
           });
-        })
+        }),
       );
 
       const user = userEvent.setup();
@@ -813,7 +838,7 @@ describe('Search and Analytics Integration', () => {
       render(
         <TestWrapper>
           <AnalyticsDashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Should show error state

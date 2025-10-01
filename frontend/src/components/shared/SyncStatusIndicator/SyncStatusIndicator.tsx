@@ -8,10 +8,10 @@ interface SyncStatusIndicatorProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export function SyncStatusIndicator({ 
-  className, 
+export function SyncStatusIndicator({
+  className,
   showLabel = true,
-  size = 'md' 
+  size = 'md',
 }: SyncStatusIndicatorProps) {
   const { isOnline, pendingCount, syncInProgress } = useBackgroundSync();
 
@@ -72,12 +72,12 @@ export function SyncStatusIndicator({
 
   if (!showLabel) {
     return (
-      <div 
+      <div
         className={cn(
           'flex items-center justify-center rounded-full p-1 border',
           statusInfo.bgColor,
           statusInfo.borderColor,
-          className
+          className,
         )}
         title={statusInfo.label}
       >
@@ -87,16 +87,18 @@ export function SyncStatusIndicator({
   }
 
   return (
-    <div 
+    <div
       className={cn(
         'flex items-center gap-2 px-3 py-2 rounded-lg border',
         statusInfo.bgColor,
         statusInfo.borderColor,
-        className
+        className,
       )}
     >
       <Icon className={cn(sizeClasses[size], statusInfo.color)} />
-      <span className={cn(textSizeClasses[size], 'font-medium', statusInfo.color)}>
+      <span
+        className={cn(textSizeClasses[size], 'font-medium', statusInfo.color)}
+      >
         {statusInfo.label}
       </span>
     </div>
@@ -122,7 +124,8 @@ export function SyncStatusBadge({ className }: { className?: string }) {
 
 // Detailed sync status panel for settings/debug
 export function SyncStatusPanel() {
-  const { isOnline, pendingCount, syncInProgress, forceSync, clearPending } = useBackgroundSync();
+  const { isOnline, pendingCount, syncInProgress, forceSync, clearPending } =
+    useBackgroundSync();
 
   return (
     <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
@@ -143,13 +146,15 @@ export function SyncStatusPanel() {
               {isOnline ? 'Online' : 'Offline'}
             </span>
           </div>
-          
+
           <div className="text-sm text-gray-600">
-            Pending operations: <span className="font-medium">{pendingCount}</span>
+            Pending operations:{' '}
+            <span className="font-medium">{pendingCount}</span>
           </div>
-          
+
           <div className="text-sm text-gray-600">
-            Sync in progress: <span className="font-medium">{syncInProgress ? 'Yes' : 'No'}</span>
+            Sync in progress:{' '}
+            <span className="font-medium">{syncInProgress ? 'Yes' : 'No'}</span>
           </div>
         </div>
 
@@ -161,7 +166,7 @@ export function SyncStatusPanel() {
           >
             Force Sync
           </button>
-          
+
           <button
             onClick={() => clearPending()}
             disabled={pendingCount === 0}
@@ -175,7 +180,8 @@ export function SyncStatusPanel() {
       {!isOnline && (
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
           <p className="text-sm text-amber-800">
-            You're currently offline. Operations will be queued and executed when connection is restored.
+            You're currently offline. Operations will be queued and executed
+            when connection is restored.
           </p>
         </div>
       )}

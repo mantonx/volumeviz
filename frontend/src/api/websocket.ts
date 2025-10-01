@@ -8,7 +8,8 @@
 import { useRealtime } from '@/providers/realtime';
 
 export const useWebSocketAPI = () => {
-  const { isConnected, sendMessage, onScanProgress, onScanEvent } = useRealtime();
+  const { isConnected, sendMessage, onScanProgress, onScanEvent } =
+    useRealtime();
 
   // WebSocket integration for live updates
   const subscribeToVolumeUpdates = (

@@ -53,7 +53,8 @@ export const GrowthTrends: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Displays historical storage growth with area chart visualization.',
+        story:
+          'Displays historical storage growth with area chart visualization.',
       },
     },
   },

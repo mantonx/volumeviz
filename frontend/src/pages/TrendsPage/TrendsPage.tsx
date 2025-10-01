@@ -11,7 +11,7 @@
  * - Export functionality for trend data
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -45,6 +45,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { formatBytes } from '@/utils/formatters';
+import { useTrends } from '@/hooks/useTrends';
 import type {
   TrendsPageProps,
   TrendFilters,
@@ -81,92 +82,66 @@ export const TrendsPage: React.FC<TrendsPageProps> = ({ className = '' }) => {
     aggregation: 'day',
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  // Use the real API hook
+  const { data: trendsData, isLoading, error, refresh } = useTrends();
 
-  // Mock data - TODO: Replace with actual API calls
-  const storageGrowthData: StorageGrowthDataPoint[] = useMemo(() => {
-    const now = new Date();
-    const data: StorageGrowthDataPoint[] = [];
+  // Extract data from API response with fallbacks
+  const storageGrowthData: StorageGrowthDataPoint[] =
+    trendsData.storageGrowthData.length > 0 ? trendsData.storageGrowthData : [];
 
-    for (let i = 30; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
+  const fileTypeData: FileTypeDistribution[] =
+    trendsData.fileTypeData.length > 0
+      ? trendsData.fileTypeData
+      : [
+          // Fallback mock data if file type data not yet implemented
+          {
+            type: 'Video',
+            count: 0,
+            totalSize: 0,
+            percentage: 0,
+            color: COLORS.primary,
+          },
+          {
+            type: 'Images',
+            count: 0,
+            totalSize: 0,
+            percentage: 0,
+            color: COLORS.success,
+          },
+          {
+            type: 'Documents',
+            count: 0,
+            totalSize: 0,
+            percentage: 0,
+            color: COLORS.warning,
+          },
+          {
+            type: 'Audio',
+            count: 0,
+            totalSize: 0,
+            percentage: 0,
+            color: COLORS.purple,
+          },
+          {
+            type: 'Archives',
+            count: 0,
+            totalSize: 0,
+            percentage: 0,
+            color: COLORS.pink,
+          },
+          {
+            type: 'Other',
+            count: 0,
+            totalSize: 0,
+            percentage: 0,
+            color: '#94a3b8',
+          },
+        ];
 
-      data.push({
-        timestamp: date,
-        totalSize: 1000000000 + i * 50000000 + Math.random() * 100000000,
-        volumeCount: 10 + Math.floor(i / 5),
-        fileCount: 5000 + i * 200,
-      });
-    }
+  const capacityForecast: CapacityForecast[] =
+    trendsData.capacityForecast.length > 0 ? trendsData.capacityForecast : [];
 
-    return data;
-  }, []);
-
-  const fileTypeData: FileTypeDistribution[] = useMemo(
-    () => [
-      { type: 'Video', count: 1250, totalSize: 5000000000, percentage: 45, color: COLORS.primary },
-      { type: 'Images', count: 3500, totalSize: 2500000000, percentage: 22, color: COLORS.success },
-      { type: 'Documents', count: 2800, totalSize: 1500000000, percentage: 13, color: COLORS.warning },
-      { type: 'Audio', count: 950, totalSize: 1000000000, percentage: 9, color: COLORS.purple },
-      { type: 'Archives', count: 420, totalSize: 800000000, percentage: 7, color: COLORS.pink },
-      { type: 'Other', count: 1890, totalSize: 400000000, percentage: 4, color: '#94a3b8' },
-    ],
-    []
-  );
-
-  const capacityForecast: CapacityForecast[] = useMemo(() => {
-    const now = new Date();
-    const forecast: CapacityForecast[] = [];
-
-    for (let i = 0; i <= 90; i += 7) {
-      const date = new Date(now);
-      date.setDate(date.getDate() + i);
-
-      const predicted = 5000000000 + i * 80000000;
-      forecast.push({
-        date,
-        predictedSize: predicted,
-        confidenceInterval: {
-          lower: predicted * 0.9,
-          upper: predicted * 1.1,
-        },
-        capacityThreshold: 15000000000,
-      });
-    }
-
-    return forecast;
-  }, []);
-
-  const trendStats: TrendStats = useMemo(() => {
-    if (storageGrowthData.length < 2) {
-      return {
-        totalGrowth: 0,
-        growthRate: 0,
-        averageSize: 0,
-        topGrowingVolumes: [],
-      };
-    }
-
-    const firstPoint = storageGrowthData[0];
-    const lastPoint = storageGrowthData[storageGrowthData.length - 1];
-    const totalGrowth = lastPoint.totalSize - firstPoint.totalSize;
-    const growthRate = (totalGrowth / firstPoint.totalSize) * 100;
-    const averageSize =
-      storageGrowthData.reduce((sum, point) => sum + point.totalSize, 0) /
-      storageGrowthData.length;
-
-    return {
-      totalGrowth,
-      growthRate,
-      averageSize,
-      topGrowingVolumes: [
-        { id: '1', name: 'media-storage', growthRate: 45.2 },
-        { id: '2', name: 'database-backups', growthRate: 32.8 },
-        { id: '3', name: 'logs', growthRate: 28.5 },
-      ],
-    };
-  }, [storageGrowthData]);
+  const trendStats: TrendStats = trendsData.trendStats;
 
   const handleExport = (format: 'csv' | 'json') => {
     console.log(`Exporting trends data as ${format}`);
@@ -174,25 +149,31 @@ export const TrendsPage: React.FC<TrendsPageProps> = ({ className = '' }) => {
   };
 
   const handleRefresh = () => {
-    setIsLoading(true);
-    // TODO: Implement data refresh
-    setTimeout(() => setIsLoading(false), 1000);
+    refresh();
   };
 
   // Format data for charts
   const chartData = storageGrowthData.map((point) => ({
-    date: point.timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: point.timestamp.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    }),
     size: point.totalSize / 1000000000, // Convert to GB
     volumes: point.volumeCount,
     files: point.fileCount / 1000, // Convert to thousands
   }));
 
   const forecastChartData = capacityForecast.map((point) => ({
-    date: point.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: point.date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    }),
     predicted: point.predictedSize / 1000000000,
     lower: point.confidenceInterval.lower / 1000000000,
     upper: point.confidenceInterval.upper / 1000000000,
-    threshold: point.capacityThreshold ? point.capacityThreshold / 1000000000 : null,
+    threshold: point.capacityThreshold
+      ? point.capacityThreshold / 1000000000
+      : null,
   }));
 
   return (
@@ -238,16 +219,20 @@ export const TrendsPage: React.FC<TrendsPageProps> = ({ className = '' }) => {
           <div className="flex items-center gap-4">
             <Calendar className="w-5 h-5 text-gray-500" />
             <div className="flex gap-2">
-              {(['day', 'week', 'month', 'quarter', 'year'] as const).map((range) => (
-                <Button
-                  key={range}
-                  variant={filters.timeRange === range ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilters({ ...filters, timeRange: range })}
-                >
-                  {range.charAt(0).toUpperCase() + range.slice(1)}
-                </Button>
-              ))}
+              {(['day', 'week', 'month', 'quarter', 'year'] as const).map(
+                (range) => (
+                  <Button
+                    key={range}
+                    variant={
+                      filters.timeRange === range ? 'primary' : 'outline'
+                    }
+                    size="sm"
+                    onClick={() => setFilters({ ...filters, timeRange: range })}
+                  >
+                    {range.charAt(0).toUpperCase() + range.slice(1)}
+                  </Button>
+                ),
+              )}
             </div>
             <div className="ml-auto flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
@@ -275,7 +260,9 @@ export const TrendsPage: React.FC<TrendsPageProps> = ({ className = '' }) => {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Growth</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Total Growth
+                </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
                   {formatBytes(trendStats.totalGrowth)}
                 </p>
@@ -296,7 +283,9 @@ export const TrendsPage: React.FC<TrendsPageProps> = ({ className = '' }) => {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Average Size</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Average Size
+                </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
                   {formatBytes(trendStats.averageSize)}
                 </p>
@@ -351,12 +340,24 @@ export const TrendsPage: React.FC<TrendsPageProps> = ({ className = '' }) => {
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorSize" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
+                  <stop
+                    offset="5%"
+                    stopColor={COLORS.primary}
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor={COLORS.primary}
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+              <XAxis
+                dataKey="date"
+                stroke="#6b7280"
+                style={{ fontSize: '12px' }}
+              />
               <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
               <Tooltip
                 contentStyle={{
@@ -401,7 +402,10 @@ export const TrendsPage: React.FC<TrendsPageProps> = ({ className = '' }) => {
                   {fileTypeData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={entry.color || FILE_TYPE_COLORS[index % FILE_TYPE_COLORS.length]}
+                      fill={
+                        entry.color ||
+                        FILE_TYPE_COLORS[index % FILE_TYPE_COLORS.length]
+                      }
                     />
                   ))}
                 </Pie>
@@ -426,7 +430,11 @@ export const TrendsPage: React.FC<TrendsPageProps> = ({ className = '' }) => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData.slice(-7)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <XAxis
+                  dataKey="date"
+                  stroke="#6b7280"
+                  style={{ fontSize: '12px' }}
+                />
                 <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
                 <Tooltip
                   contentStyle={{
@@ -452,7 +460,11 @@ export const TrendsPage: React.FC<TrendsPageProps> = ({ className = '' }) => {
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={forecastChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+              <XAxis
+                dataKey="date"
+                stroke="#6b7280"
+                style={{ fontSize: '12px' }}
+              />
               <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
               <Tooltip
                 contentStyle={{

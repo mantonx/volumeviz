@@ -19,14 +19,14 @@ export const selectedVolumeAtom = atom<string | null>(null);
 export const volumesAtom = atomWithQuery((get) => {
   const filters = get(volumeFiltersAtom);
   const orgId = get(organizationIdAtom);
-  
+
   return {
     queryKey: ['volumes', 'list', { ...filters, organization_id: orgId }],
     queryFn: async () => {
       if (!orgId) return [];
       return customFetchClient<{ data: Volume[] }>('/volumes', {
         params: { ...filters, organization_id: orgId },
-      }).then(res => res.data);
+      }).then((res) => res.data);
     },
     enabled: !!orgId,
   };
@@ -36,14 +36,14 @@ export const volumesAtom = atomWithQuery((get) => {
 export const volumesListAtom = atomWithQuery((get) => {
   const filters = get(volumeFiltersAtom);
   const orgId = get(organizationIdAtom);
-  
+
   return {
     queryKey: ['volumes', 'list', { ...filters, organization_id: orgId }],
     queryFn: async () => {
       if (!orgId) return [];
       return customFetchClient<{ data: Volume[] }>('/volumes', {
         params: { ...filters, organization_id: orgId },
-      }).then(res => res.data);
+      }).then((res) => res.data);
     },
     enabled: !!orgId,
   };
@@ -52,7 +52,7 @@ export const volumesListAtom = atomWithQuery((get) => {
 // Volume details atom
 export const volumeDetailsAtom = atomWithQuery((get) => {
   const volumeId = get(selectedVolumeAtom);
-  
+
   return {
     queryKey: ['volumes', 'detail', volumeId],
     queryFn: async () => {
@@ -66,7 +66,7 @@ export const volumeDetailsAtom = atomWithQuery((get) => {
 // Volume stats atom
 export const volumeStatsAtom = atomWithQuery((get) => {
   const volumeId = get(selectedVolumeAtom);
-  
+
   return {
     queryKey: ['volumes', 'stats', volumeId],
     queryFn: async () => {

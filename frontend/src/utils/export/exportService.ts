@@ -7,7 +7,10 @@ export interface ExportContext {
 }
 
 export class ExportService {
-  async exportVisualization(options: ExportOptions, context: ExportContext): Promise<void> {
+  async exportVisualization(
+    options: ExportOptions,
+    context: ExportContext,
+  ): Promise<void> {
     switch (options.format) {
       case 'png':
         return this.exportToPNG(options, context);
@@ -24,9 +27,12 @@ export class ExportService {
     }
   }
 
-  private async exportToPNG(options: ExportOptions, context: ExportContext): Promise<void> {
+  private async exportToPNG(
+    options: ExportOptions,
+    context: ExportContext,
+  ): Promise<void> {
     const { default: html2canvas } = await import('html2canvas');
-    
+
     const canvas = await html2canvas(context.element as HTMLElement, {
       backgroundColor: options.transparent ? null : options.backgroundColor,
       width: options.width,
@@ -39,7 +45,10 @@ export class ExportService {
     this.downloadBlob(blob, 'export.png');
   }
 
-  private async exportToPDF(options: ExportOptions, context: ExportContext): Promise<void> {
+  private async exportToPDF(
+    options: ExportOptions,
+    context: ExportContext,
+  ): Promise<void> {
     const { default: html2canvas } = await import('html2canvas');
     const { jsPDF } = await import('jspdf');
 
@@ -59,16 +68,23 @@ export class ExportService {
     });
 
     pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-    
+
     if (options.includeMetadata && context.metadata) {
       pdf.setFontSize(10);
-      pdf.text(`Generated: ${new Date().toISOString()}`, 10, canvas.height - 20);
+      pdf.text(
+        `Generated: ${new Date().toISOString()}`,
+        10,
+        canvas.height - 20,
+      );
     }
 
     pdf.save('export.pdf');
   }
 
-  private async exportToSVG(options: ExportOptions, context: ExportContext): Promise<void> {
+  private async exportToSVG(
+    options: ExportOptions,
+    context: ExportContext,
+  ): Promise<void> {
     let svgElement: SVGElement;
 
     if (context.element instanceof SVGElement) {
@@ -76,23 +92,29 @@ export class ExportService {
     } else {
       // Convert HTML to SVG using foreignObject
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-      
+      const foreignObject = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'foreignObject',
+      );
+
       svg.setAttribute('width', String(options.width || 1200));
       svg.setAttribute('height', String(options.height || 900));
       svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      
+
       foreignObject.setAttribute('width', '100%');
       foreignObject.setAttribute('height', '100%');
       foreignObject.appendChild(context.element.cloneNode(true));
-      
+
       svg.appendChild(foreignObject);
       svgElement = svg;
     }
 
     // Add background if not transparent
     if (!options.transparent && options.backgroundColor) {
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      const rect = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'rect',
+      );
       rect.setAttribute('width', '100%');
       rect.setAttribute('height', '100%');
       rect.setAttribute('fill', options.backgroundColor);
@@ -104,7 +126,10 @@ export class ExportService {
     this.downloadBlob(blob, 'export.svg');
   }
 
-  private async exportToCSV(options: ExportOptions, context: ExportContext): Promise<void> {
+  private async exportToCSV(
+    options: ExportOptions,
+    context: ExportContext,
+  ): Promise<void> {
     if (!context.data) {
       throw new Error('No data available for CSV export');
     }
@@ -118,11 +143,14 @@ export class ExportService {
         csvContent += headers.join(',') + '\n';
 
         // Add data rows
-        context.data.forEach(row => {
-          const values = headers.map(header => {
+        context.data.forEach((row) => {
+          const values = headers.map((header) => {
             const value = row[header];
             // Escape commas and quotes
-            if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+            if (
+              typeof value === 'string' &&
+              (value.includes(',') || value.includes('"'))
+            ) {
               return `"${value.replace(/"/g, '""')}"`;
             }
             return value;
@@ -149,7 +177,10 @@ export class ExportService {
     this.downloadBlob(blob, 'export.csv');
   }
 
-  private async exportToJSON(options: ExportOptions, context: ExportContext): Promise<void> {
+  private async exportToJSON(
+    options: ExportOptions,
+    context: ExportContext,
+  ): Promise<void> {
     const exportData: any = {};
 
     if (context.data) {

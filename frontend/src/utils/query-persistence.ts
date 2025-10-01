@@ -12,7 +12,10 @@ export class QueryPersister {
   private storageKey: string;
   private maxAge: number;
 
-  constructor(storageKey = 'volumeviz-query-cache', maxAge = 1000 * 60 * 60 * 24) {
+  constructor(
+    storageKey = 'volumeviz-query-cache',
+    maxAge = 1000 * 60 * 60 * 24,
+  ) {
     this.storageKey = storageKey;
     this.maxAge = maxAge;
   }
@@ -28,7 +31,10 @@ export class QueryPersister {
       };
 
       const key = this.getKeyFromQueryKey(queryKey);
-      localStorage.setItem(`${this.storageKey}:${key}`, JSON.stringify(persistedQuery));
+      localStorage.setItem(
+        `${this.storageKey}:${key}`,
+        JSON.stringify(persistedQuery),
+      );
     } catch (error) {
       console.warn('Failed to persist query:', error);
     }
@@ -39,11 +45,11 @@ export class QueryPersister {
     try {
       const key = this.getKeyFromQueryKey(queryKey);
       const stored = localStorage.getItem(`${this.storageKey}:${key}`);
-      
+
       if (!stored) return null;
 
       const persisted: PersistedQuery = JSON.parse(stored);
-      
+
       // Check if data is expired
       const age = Date.now() - persisted.timestamp;
       if (age > this.maxAge) {
@@ -67,7 +73,7 @@ export class QueryPersister {
   clearAll() {
     try {
       const keys = Object.keys(localStorage);
-      keys.forEach(key => {
+      keys.forEach((key) => {
         if (key.startsWith(this.storageKey)) {
           localStorage.removeItem(key);
         }
@@ -83,14 +89,14 @@ export class QueryPersister {
       const keys = Object.keys(localStorage);
       const now = Date.now();
 
-      keys.forEach(key => {
+      keys.forEach((key) => {
         if (key.startsWith(this.storageKey)) {
           try {
             const stored = localStorage.getItem(key);
             if (stored) {
               const persisted: PersistedQuery = JSON.parse(stored);
               const age = now - persisted.timestamp;
-              
+
               if (age > this.maxAge) {
                 localStorage.removeItem(key);
               }
@@ -122,7 +128,7 @@ export function createPersistedQueryClient(options: {
     storageKey = 'volumeviz-query-cache',
     maxAge = 1000 * 60 * 60 * 24, // 24 hours
     staleTime = 1000 * 60 * 5, // 5 minutes
-    gcTime = 1000 * 60 * 60 * 24 // 24 hours
+    gcTime = 1000 * 60 * 60 * 24, // 24 hours
   } = options;
 
   const persister = new QueryPersister(storageKey, maxAge);
@@ -162,7 +168,7 @@ export function createPersistedQueryClient(options: {
       if (event.type === 'added' || event.type === 'updated') {
         const { query } = event;
         const { queryKey, data, meta } = query.state;
-        
+
         // Only persist queries that have meta.persist = true
         if (meta?.persist && data && query.state.status === 'success') {
           persister.persistQuery(queryKey, data, query.options.staleTime);
@@ -171,9 +177,12 @@ export function createPersistedQueryClient(options: {
     });
 
     // Set up periodic cleanup
-    const cleanupInterval = setInterval(() => {
-      persister.cleanupExpired();
-    }, 1000 * 60 * 60); // Every hour
+    const cleanupInterval = setInterval(
+      () => {
+        persister.cleanupExpired();
+      },
+      1000 * 60 * 60,
+    ); // Every hour
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {

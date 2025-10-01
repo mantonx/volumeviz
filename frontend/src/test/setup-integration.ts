@@ -65,7 +65,7 @@ window.location = {
 // Mock localStorage for state persistence tests
 const mockLocalStorage = (() => {
   let store: Record<string, string> = {};
-  
+
   return {
     getItem: (key: string) => store[key] || null,
     setItem: (key: string, value: string) => {
@@ -113,10 +113,7 @@ beforeAll(() => {
       return;
     }
     // Suppress MSW warnings in test environment
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('[MSW]')
-    ) {
+    if (typeof args[0] === 'string' && args[0].includes('[MSW]')) {
       return;
     }
     originalConsoleError(...args);
@@ -127,7 +124,7 @@ beforeAll(() => {
     if (
       typeof args[0] === 'string' &&
       (args[0].includes('React Hook useEffect') ||
-       args[0].includes('componentWillReceiveProps'))
+        args[0].includes('componentWillReceiveProps'))
     ) {
       return;
     }
@@ -155,18 +152,23 @@ process.env.NODE_ENV = 'test';
 
 // Mock imported modules that cause issues in test environment
 jest.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => children,
-  BarChart: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'bar-chart' }, children),
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) =>
+    children,
+  BarChart: ({ children }: { children: React.ReactNode }) =>
+    React.createElement('div', { 'data-testid': 'bar-chart' }, children),
   Bar: () => React.createElement('div', { 'data-testid': 'bar' }),
   XAxis: () => React.createElement('div', { 'data-testid': 'x-axis' }),
   YAxis: () => React.createElement('div', { 'data-testid': 'y-axis' }),
-  CartesianGrid: () => React.createElement('div', { 'data-testid': 'cartesian-grid' }),
+  CartesianGrid: () =>
+    React.createElement('div', { 'data-testid': 'cartesian-grid' }),
   Tooltip: () => React.createElement('div', { 'data-testid': 'tooltip' }),
   Legend: () => React.createElement('div', { 'data-testid': 'legend' }),
-  PieChart: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'pie-chart' }, children),
+  PieChart: ({ children }: { children: React.ReactNode }) =>
+    React.createElement('div', { 'data-testid': 'pie-chart' }, children),
   Pie: () => React.createElement('div', { 'data-testid': 'pie' }),
   Cell: () => React.createElement('div', { 'data-testid': 'cell' }),
-  LineChart: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'line-chart' }, children),
+  LineChart: ({ children }: { children: React.ReactNode }) =>
+    React.createElement('div', { 'data-testid': 'line-chart' }, children),
   Line: () => React.createElement('div', { 'data-testid': 'line' }),
 }));
 
@@ -198,18 +200,26 @@ global.FileReader = class FileReader {
   removeEventListener = jest.fn();
   dispatchEvent = jest.fn();
   abort = jest.fn();
-  
+
   result: string | ArrayBuffer | null = null;
   error: DOMException | null = null;
   readyState: number = 0;
-  
-  onabort: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
-  onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
-  onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
-  onloadend: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
-  onloadstart: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
-  onprogress: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
-  
+
+  onabort: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null =
+    null;
+  onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null =
+    null;
+  onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null =
+    null;
+  onloadend: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null =
+    null;
+  onloadstart:
+    | ((this: FileReader, ev: ProgressEvent<FileReader>) => any)
+    | null = null;
+  onprogress:
+    | ((this: FileReader, ev: ProgressEvent<FileReader>) => any)
+    | null = null;
+
   static readonly EMPTY = 0;
   static readonly LOADING = 1;
   static readonly DONE = 2;
@@ -218,7 +228,8 @@ global.FileReader = class FileReader {
 // Mock crypto for ID generation
 Object.defineProperty(global, 'crypto', {
   value: {
-    randomUUID: () => 'mock-uuid-' + Math.random().toString(36).substring(2, 15),
+    randomUUID: () =>
+      'mock-uuid-' + Math.random().toString(36).substring(2, 15),
     getRandomValues: (array: any) => {
       for (let i = 0; i < array.length; i++) {
         array[i] = Math.floor(Math.random() * 256);
@@ -231,7 +242,7 @@ Object.defineProperty(global, 'crypto', {
 // Export test utilities
 export const testUtils = {
   mockLocalStorage,
-  
+
   // Helper to mock successful API responses
   mockApiSuccess: (data: any) => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -244,7 +255,7 @@ export const testUtils = {
       statusText: 'OK',
     });
   },
-  
+
   // Helper to mock API errors
   mockApiError: (status: number, error: any) => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -257,18 +268,18 @@ export const testUtils = {
       statusText: status === 404 ? 'Not Found' : 'Error',
     });
   },
-  
+
   // Helper to mock network failures
   mockNetworkError: () => {
     (global.fetch as jest.Mock).mockRejectedValueOnce(
-      new Error('Network request failed')
+      new Error('Network request failed'),
     );
   },
-  
+
   // Helper to wait for async operations
-  waitForAsync: (ms: number = 0) => 
-    new Promise(resolve => setTimeout(resolve, ms)),
-    
+  waitForAsync: (ms: number = 0) =>
+    new Promise((resolve) => setTimeout(resolve, ms)),
+
   // Helper to trigger resize events
   triggerResize: (width: number, height: number) => {
     Object.defineProperty(window, 'innerWidth', {
@@ -283,13 +294,13 @@ export const testUtils = {
     });
     window.dispatchEvent(new Event('resize'));
   },
-  
+
   // Helper to mock user media permissions
   mockUserMedia: (granted: boolean) => {
     Object.defineProperty(navigator, 'mediaDevices', {
       value: {
-        getUserMedia: granted 
-          ? jest.fn().mockResolvedValue({}) 
+        getUserMedia: granted
+          ? jest.fn().mockResolvedValue({})
           : jest.fn().mockRejectedValue(new Error('Permission denied')),
       },
     });

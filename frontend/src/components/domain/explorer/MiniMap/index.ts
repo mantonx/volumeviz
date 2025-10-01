@@ -1,2 +1,2 @@
-export { MiniMap } from './MiniMap'
-export type { MiniMapProps, MiniMapItem, MiniMapViewport } from './MiniMap'
+export { MiniMap } from './MiniMap';
+export type { MiniMapProps, MiniMapItem, MiniMapViewport } from './MiniMap';

@@ -275,7 +275,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({
               )}
               onClick={(e) => handleItemClick(item, e)}
             />
-            
+
             {/* Item labels */}
             {showLabels && item.width > 20 && item.height > 10 && (
               <text

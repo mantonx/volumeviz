@@ -23,7 +23,9 @@ export class BackgroundSyncManager {
   }
 
   // Add operation to pending queue
-  addPendingOperation(operation: Omit<PendingOperation, 'id' | 'timestamp' | 'retryCount'>): string {
+  addPendingOperation(
+    operation: Omit<PendingOperation, 'id' | 'timestamp' | 'retryCount'>,
+  ): string {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const pendingOperation: PendingOperation = {
       ...operation,
@@ -67,14 +69,14 @@ export class BackgroundSyncManager {
   // Remove operation from pending queue
   private removePendingOperation(id: string): void {
     const pending = this.getPendingOperations();
-    const filtered = pending.filter(op => op.id !== id);
+    const filtered = pending.filter((op) => op.id !== id);
     this.savePendingOperations(filtered);
   }
 
   // Update retry count for operation
   private updateRetryCount(id: string): void {
     const pending = this.getPendingOperations();
-    const operation = pending.find(op => op.id === id);
+    const operation = pending.find((op) => op.id === id);
     if (operation) {
       operation.retryCount++;
       this.savePendingOperations(pending);
@@ -102,7 +104,7 @@ export class BackgroundSyncManager {
 
     this.syncInProgress = true;
     const pending = this.getPendingOperations();
-    
+
     console.log(`Syncing ${pending.length} pending operations`);
 
     for (const operation of pending) {
@@ -112,13 +114,15 @@ export class BackgroundSyncManager {
         console.log(`Successfully synced operation ${operation.id}`);
       } catch (error) {
         console.error(`Failed to sync operation ${operation.id}:`, error);
-        
+
         // Update retry count
         this.updateRetryCount(operation.id);
-        
+
         // Remove if max retries exceeded
         if (operation.retryCount >= operation.maxRetries) {
-          console.warn(`Removing operation ${operation.id} after ${operation.maxRetries} failed attempts`);
+          console.warn(
+            `Removing operation ${operation.id} after ${operation.maxRetries} failed attempts`,
+          );
           this.removePendingOperation(operation.id);
         }
       }
@@ -128,14 +132,16 @@ export class BackgroundSyncManager {
   }
 
   // Execute a pending operation
-  private async executePendingOperation(operation: PendingOperation): Promise<void> {
+  private async executePendingOperation(
+    operation: PendingOperation,
+  ): Promise<void> {
     const token = localStorage.getItem('auth_token');
     if (!token) {
       throw new Error('No auth token available');
     }
 
     const headers = {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
 
@@ -149,7 +155,8 @@ export class BackgroundSyncManager {
         break;
 
       case 'refresh':
-        if (!operation.volumeId) throw new Error('Volume ID required for refresh');
+        if (!operation.volumeId)
+          throw new Error('Volume ID required for refresh');
         await fetch(`/api/v1/volumes/${operation.volumeId}/size/refresh`, {
           method: 'POST',
           headers,
@@ -168,7 +175,8 @@ export class BackgroundSyncManager {
         break;
 
       case 'index':
-        if (!operation.volumeId) throw new Error('Volume ID required for filesystem index');
+        if (!operation.volumeId)
+          throw new Error('Volume ID required for filesystem index');
         await fetch(`/api/v1/volumes/${operation.volumeId}/filesystem/index`, {
           method: 'POST',
           headers,
@@ -209,7 +217,9 @@ export const backgroundSyncManager = new BackgroundSyncManager();
 
 // React hook for background sync status
 export function useBackgroundSync() {
-  const [status, setStatus] = React.useState(backgroundSyncManager.getSyncStatus());
+  const [status, setStatus] = React.useState(
+    backgroundSyncManager.getSyncStatus(),
+  );
 
   React.useEffect(() => {
     const updateStatus = () => {
@@ -232,9 +242,13 @@ export function useBackgroundSync() {
 
   return {
     ...status,
-    addPendingOperation: backgroundSyncManager.addPendingOperation.bind(backgroundSyncManager),
+    addPendingOperation: backgroundSyncManager.addPendingOperation.bind(
+      backgroundSyncManager,
+    ),
     forceSync: backgroundSyncManager.forcSync.bind(backgroundSyncManager),
-    clearPending: backgroundSyncManager.clearPendingOperations.bind(backgroundSyncManager),
+    clearPending: backgroundSyncManager.clearPendingOperations.bind(
+      backgroundSyncManager,
+    ),
   };
 }
 
@@ -247,7 +261,7 @@ export function createOfflineVolumeOperations() {
         return fetch(`/api/v1/volumes/${volumeId}/scan`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
             'Content-Type': 'application/json',
           },
         });
@@ -267,7 +281,7 @@ export function createOfflineVolumeOperations() {
         return fetch(`/api/v1/volumes/${volumeId}/size/refresh`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
             'Content-Type': 'application/json',
           },
         });
@@ -286,7 +300,7 @@ export function createOfflineVolumeOperations() {
         return fetch(`/api/v1/volumes/${volumeId}/filesystem/index`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
             'Content-Type': 'application/json',
           },
         });
@@ -305,7 +319,7 @@ export function createOfflineVolumeOperations() {
         return fetch(`/api/v1/volumes/${volumeId}`, {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(data),

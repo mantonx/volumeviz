@@ -46,12 +46,37 @@ const MockVolumeExplorerPanel: React.FC<MockVolumeExplorerPanelProps> = ({
   sidebarContent,
   toolbarActions,
 }) => {
-  const mockItems = items.length > 0 ? items : [
-    { id: '1', name: 'Documents', type: 'folder' as const, modified: new Date() },
-    { id: '2', name: 'Images', type: 'folder' as const, modified: new Date() },
-    { id: '3', name: 'report.pdf', type: 'file' as const, size: 1024000, modified: new Date() },
-    { id: '4', name: 'data.xlsx', type: 'file' as const, size: 512000, modified: new Date() },
-  ];
+  const mockItems =
+    items.length > 0
+      ? items
+      : [
+          {
+            id: '1',
+            name: 'Documents',
+            type: 'folder' as const,
+            modified: new Date(),
+          },
+          {
+            id: '2',
+            name: 'Images',
+            type: 'folder' as const,
+            modified: new Date(),
+          },
+          {
+            id: '3',
+            name: 'report.pdf',
+            type: 'file' as const,
+            size: 1024000,
+            modified: new Date(),
+          },
+          {
+            id: '4',
+            name: 'data.xlsx',
+            type: 'file' as const,
+            size: 512000,
+            modified: new Date(),
+          },
+        ];
 
   if (error) {
     return (
@@ -84,7 +109,7 @@ const MockVolumeExplorerPanel: React.FC<MockVolumeExplorerPanelProps> = ({
           </div>
         </div>
       )}
-      
+
       {showToolbar && (
         <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -94,9 +119,9 @@ const MockVolumeExplorerPanel: React.FC<MockVolumeExplorerPanelProps> = ({
               <option value="tree">Tree</option>
               <option value="columns">Columns</option>
             </select>
-            <input 
-              type="text" 
-              placeholder="Search files..." 
+            <input
+              type="text"
+              placeholder="Search files..."
               className="border rounded px-3 py-1 text-sm w-64"
             />
           </div>
@@ -106,11 +131,13 @@ const MockVolumeExplorerPanel: React.FC<MockVolumeExplorerPanelProps> = ({
 
       <div className="flex-1 flex">
         <div className="flex-1 p-4">
-          <div className={`grid ${
-            viewMode === 'grid' ? 'grid-cols-6 gap-4' : 'grid-cols-1 gap-2'
-          }`}>
+          <div
+            className={`grid ${
+              viewMode === 'grid' ? 'grid-cols-6 gap-4' : 'grid-cols-1 gap-2'
+            }`}
+          >
             {mockItems.map((item) => (
-              <div 
+              <div
                 key={item.id}
                 className="p-3 bg-white rounded-lg border hover:shadow-md cursor-pointer transition-shadow"
                 onClick={() => action('item-click')(item)}
@@ -134,14 +161,12 @@ const MockVolumeExplorerPanel: React.FC<MockVolumeExplorerPanelProps> = ({
             ))}
           </div>
         </div>
-        
+
         {showSidebar && sidebarContent && (
-          <div className="w-80 bg-white border-l">
-            {sidebarContent}
-          </div>
+          <div className="w-80 bg-white border-l">{sidebarContent}</div>
         )}
       </div>
-      
+
       {showStatusBar && (
         <div className="bg-white border-t px-4 py-2 text-xs text-gray-500">
           {mockItems.length} items • Volume: {volumeId} • Path: {currentPath}
@@ -284,7 +309,8 @@ export const Loading: Story = {
 
 export const Error: Story = {
   args: {
-    error: 'Failed to load volume contents. Please check your connection and try again.',
+    error:
+      'Failed to load volume contents. Please check your connection and try again.',
   },
 };
 

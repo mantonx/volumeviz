@@ -927,13 +927,14 @@ INSERT INTO volumes (
     mount_point = EXCLUDED.mount_point,
     container_names = EXCLUDED.container_names,
     is_active = EXCLUDED.is_active,
-    total_size_bytes = EXCLUDED.total_size_bytes,
-    used_size_bytes = EXCLUDED.used_size_bytes,
-    free_size_bytes = EXCLUDED.free_size_bytes,
-    filesystem_type = EXCLUDED.filesystem_type,
-    container_count = EXCLUDED.container_count,
-    last_scan_at = EXCLUDED.last_scan_at,
-    last_modified_at = EXCLUDED.last_modified_at,
+    -- Preserve existing scan data if new values are NULL (reconciliation shouldn't overwrite scan results)
+    total_size_bytes = COALESCE(EXCLUDED.total_size_bytes, volumes.total_size_bytes),
+    used_size_bytes = COALESCE(EXCLUDED.used_size_bytes, volumes.used_size_bytes),
+    free_size_bytes = COALESCE(EXCLUDED.free_size_bytes, volumes.free_size_bytes),
+    filesystem_type = COALESCE(EXCLUDED.filesystem_type, volumes.filesystem_type),
+    container_count = COALESCE(EXCLUDED.container_count, volumes.container_count),
+    last_scan_at = COALESCE(EXCLUDED.last_scan_at, volumes.last_scan_at),
+    last_modified_at = COALESCE(EXCLUDED.last_modified_at, volumes.last_modified_at),
     updated_at = NOW()
 RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id
 `

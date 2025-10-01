@@ -25,7 +25,9 @@ const generateMockFiles = (count: number): FileItem[] => {
       path: `/data/folder-${i + 1}`,
       size: 0,
       type: 'directory',
-      modified: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
+      modified: new Date(
+        Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000,
+      ),
     });
   }
 
@@ -33,14 +35,16 @@ const generateMockFiles = (count: number): FileItem[] => {
   for (let i = 0; i < count - files.length; i++) {
     const fileType = fileTypes[Math.floor(Math.random() * fileTypes.length)];
     const size = Math.floor(Math.random() * 100 * 1024 * 1024); // 0-100MB
-    
+
     files.push({
       id: `file-${i}`,
       name: `file-${i + 1}.${fileType.ext}`,
       path: `/data/file-${i + 1}.${fileType.ext}`,
       size,
       type: 'file',
-      modified: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
+      modified: new Date(
+        Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000,
+      ),
       extension: fileType.ext,
       mimeType: fileType.mime,
     });
@@ -56,7 +60,8 @@ const meta: Meta<typeof VirtualizedFileList> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'High-performance virtualized file list component with multi-select, sorting, and keyboard navigation.',
+        component:
+          'High-performance virtualized file list component with multi-select, sorting, and keyboard navigation.',
       },
     },
   },
@@ -126,7 +131,8 @@ export const LargeDataset: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates virtualization with 10,000 items. Scrolling should remain smooth.',
+        story:
+          'Demonstrates virtualization with 10,000 items. Scrolling should remain smooth.',
       },
     },
   },
@@ -142,13 +148,15 @@ export const Interactive: Story = {
       <div className="p-4">
         <div className="mb-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Selected: {selectedIds.size} files | Sort: {sortBy} ({sortDirection})
+            Selected: {selectedIds.size} files | Sort: {sortBy} ({sortDirection}
+            )
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            Use Cmd/Ctrl+Click for multi-select, Shift+Click for range select, Arrow keys for navigation
+            Use Cmd/Ctrl+Click for multi-select, Shift+Click for range select,
+            Arrow keys for navigation
           </p>
         </div>
-        
+
         <VirtualizedFileList
           {...args}
           selectedIds={selectedIds}
@@ -178,7 +186,8 @@ export const Interactive: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Interactive example with selection state, sorting, and actions.',
+        story:
+          'Interactive example with selection state, sorting, and actions.',
       },
     },
   },
@@ -194,7 +203,8 @@ export const SortedBySize: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Files sorted by size (largest first). Directories always appear at the top.',
+        story:
+          'Files sorted by size (largest first). Directories always appear at the top.',
       },
     },
   },

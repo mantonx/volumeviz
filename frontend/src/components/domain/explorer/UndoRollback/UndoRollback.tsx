@@ -1,68 +1,80 @@
-import React, { useState, useCallback, useEffect } from 'react'
-import { AlertCircle, RotateCcw, Trash2, Clock, CheckCircle, XCircle, ChevronDown, ChevronRight } from 'lucide-react'
-import { cn } from '@/utils/class-names/cn'
+import React, { useState, useCallback, useEffect } from 'react';
+import {
+  AlertCircle,
+  RotateCcw,
+  Trash2,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
+import { cn } from '@/utils/class-names/cn';
 
 export interface Operation {
-  id: string
-  type: 'delete' | 'move' | 'copy' | 'rename'
-  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'rolled_back'
-  volumeId: string
-  description: string
-  createdAt: string
-  completedAt?: string
-  actions: OperationAction[]
-  metadata: OperationMetadata
+  id: string;
+  type: 'delete' | 'move' | 'copy' | 'rename';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'rolled_back';
+  volumeId: string;
+  description: string;
+  createdAt: string;
+  completedAt?: string;
+  actions: OperationAction[];
+  metadata: OperationMetadata;
 }
 
 export interface OperationAction {
-  id: string
-  type: 'delete' | 'move' | 'copy' | 'rename'
-  sourcePath: string
-  targetPath?: string
-  fileSize: number
-  status: string
-  executedAt?: string
-  backupPath?: string
-  errorMessage?: string
+  id: string;
+  type: 'delete' | 'move' | 'copy' | 'rename';
+  sourcePath: string;
+  targetPath?: string;
+  fileSize: number;
+  status: string;
+  executedAt?: string;
+  backupPath?: string;
+  errorMessage?: string;
 }
 
 export interface OperationMetadata {
-  totalFiles: number
-  processedFiles: number
-  totalSizeBytes: number
-  savedSpaceBytes?: number
-  workflowId?: string
-  riskLevel?: string
+  totalFiles: number;
+  processedFiles: number;
+  totalSizeBytes: number;
+  savedSpaceBytes?: number;
+  workflowId?: string;
+  riskLevel?: string;
 }
 
 export interface RollbackResponse {
-  success: boolean
-  rolledBack: string[]
-  failed: RollbackFailure[]
-  operationId: string
-  completedAt: string
+  success: boolean;
+  rolledBack: string[];
+  failed: RollbackFailure[];
+  operationId: string;
+  completedAt: string;
 }
 
 export interface RollbackFailure {
-  actionId: string
-  errorMessage: string
-  reason: string
+  actionId: string;
+  errorMessage: string;
+  reason: string;
 }
 
 export interface UndoRollbackProps {
-  className?: string
-  volumeId: string
-  isVisible: boolean
-  onClose: () => void
-  onOperationRollback?: (operationId: string, response: RollbackResponse) => void
+  className?: string;
+  volumeId: string;
+  isVisible: boolean;
+  onClose: () => void;
+  onOperationRollback?: (
+    operationId: string,
+    response: RollbackResponse,
+  ) => void;
 }
 
 const formatBytes = (bytes: number): string => {
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  if (bytes === 0) return '0 B'
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`
-}
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  if (bytes === 0) return '0 B';
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${Math.round((bytes / Math.pow(1024, i)) * 100) / 100} ${sizes[i]}`;
+};
 
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -71,36 +83,36 @@ const formatDate = (dateString: string): string => {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  })
-}
+  });
+};
 
 const getStatusIcon = (status: string) => {
   switch (status) {
     case 'completed':
-      return <CheckCircle className="h-4 w-4 text-green-500" />
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
     case 'failed':
-      return <XCircle className="h-4 w-4 text-red-500" />
+      return <XCircle className="h-4 w-4 text-red-500" />;
     case 'in_progress':
-      return <Clock className="h-4 w-4 text-blue-500 animate-spin" />
+      return <Clock className="h-4 w-4 text-blue-500 animate-spin" />;
     case 'rolled_back':
-      return <RotateCcw className="h-4 w-4 text-orange-500" />
+      return <RotateCcw className="h-4 w-4 text-orange-500" />;
     default:
-      return <Clock className="h-4 w-4 text-gray-400" />
+      return <Clock className="h-4 w-4 text-gray-400" />;
   }
-}
+};
 
 const getRiskColor = (riskLevel?: string) => {
   switch (riskLevel) {
     case 'high':
-      return 'text-red-600 bg-red-50'
+      return 'text-red-600 bg-red-50';
     case 'medium':
-      return 'text-yellow-600 bg-yellow-50'
+      return 'text-yellow-600 bg-yellow-50';
     case 'low':
-      return 'text-green-600 bg-green-50'
+      return 'text-green-600 bg-green-50';
     default:
-      return 'text-gray-600 bg-gray-50'
+      return 'text-gray-600 bg-gray-50';
   }
-}
+};
 
 export const UndoRollback: React.FC<UndoRollbackProps> = ({
   className,
@@ -109,18 +121,24 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
   onClose,
   onOperationRollback,
 }) => {
-  const [operations, setOperations] = useState<Operation[]>([])
-  const [loading, setLoading] = useState(false)
-  const [selectedOperation, setSelectedOperation] = useState<string | null>(null)
-  const [expandedOperations, setExpandedOperations] = useState<Set<string>>(new Set())
-  const [rollbackLoading, setRollbackLoading] = useState<Set<string>>(new Set())
-  const [page, setPage] = useState(1)
+  const [operations, setOperations] = useState<Operation[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedOperation, setSelectedOperation] = useState<string | null>(
+    null,
+  );
+  const [expandedOperations, setExpandedOperations] = useState<Set<string>>(
+    new Set(),
+  );
+  const [rollbackLoading, setRollbackLoading] = useState<Set<string>>(
+    new Set(),
+  );
+  const [page, setPage] = useState(1);
 
   // Load operations history
   const loadOperations = useCallback(async () => {
-    if (!isVisible) return
-    
-    setLoading(true)
+    if (!isVisible) return;
+
+    setLoading(true);
     try {
       // Simulate API call - replace with actual API integration
       const mockOperations: Operation[] = [
@@ -187,77 +205,82 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
             riskLevel: 'low',
           },
         },
-      ]
+      ];
 
-      setOperations(mockOperations)
+      setOperations(mockOperations);
     } catch (error) {
-      console.error('Failed to load operations:', error)
+      console.error('Failed to load operations:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [isVisible, volumeId])
+  }, [isVisible, volumeId]);
 
   // Handle rollback operation
-  const handleRollback = useCallback(async (operationId: string, actionIds?: string[]) => {
-    setRollbackLoading(prev => new Set([...prev, operationId]))
+  const handleRollback = useCallback(
+    async (operationId: string, actionIds?: string[]) => {
+      setRollbackLoading((prev) => new Set([...prev, operationId]));
 
-    try {
-      // Simulate API call - replace with actual API integration
-      const rollbackResponse: RollbackResponse = {
-        success: true,
-        rolledBack: actionIds || ['action-1', 'action-2'],
-        failed: [],
-        operationId: `rollback-${operationId}`,
-        completedAt: new Date().toISOString(),
+      try {
+        // Simulate API call - replace with actual API integration
+        const rollbackResponse: RollbackResponse = {
+          success: true,
+          rolledBack: actionIds || ['action-1', 'action-2'],
+          failed: [],
+          operationId: `rollback-${operationId}`,
+          completedAt: new Date().toISOString(),
+        };
+
+        // Update operation status
+        setOperations((prev) =>
+          prev.map((op) =>
+            op.id === operationId
+              ? { ...op, status: 'rolled_back' as const }
+              : op,
+          ),
+        );
+
+        if (onOperationRollback) {
+          onOperationRollback(operationId, rollbackResponse);
+        }
+      } catch (error) {
+        console.error('Failed to rollback operation:', error);
+      } finally {
+        setRollbackLoading((prev) => {
+          const next = new Set(prev);
+          next.delete(operationId);
+          return next;
+        });
       }
-
-      // Update operation status
-      setOperations(prev => 
-        prev.map(op => 
-          op.id === operationId 
-            ? { ...op, status: 'rolled_back' as const }
-            : op
-        )
-      )
-
-      if (onOperationRollback) {
-        onOperationRollback(operationId, rollbackResponse)
-      }
-    } catch (error) {
-      console.error('Failed to rollback operation:', error)
-    } finally {
-      setRollbackLoading(prev => {
-        const next = new Set(prev)
-        next.delete(operationId)
-        return next
-      })
-    }
-  }, [onOperationRollback])
+    },
+    [onOperationRollback],
+  );
 
   // Toggle operation expansion
   const toggleExpanded = useCallback((operationId: string) => {
-    setExpandedOperations(prev => {
-      const next = new Set(prev)
+    setExpandedOperations((prev) => {
+      const next = new Set(prev);
       if (next.has(operationId)) {
-        next.delete(operationId)
+        next.delete(operationId);
       } else {
-        next.add(operationId)
+        next.add(operationId);
       }
-      return next
-    })
-  }, [])
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
-    loadOperations()
-  }, [loadOperations])
+    loadOperations();
+  }, [loadOperations]);
 
-  if (!isVisible) return null
+  if (!isVisible) return null;
 
   return (
-    <div className={cn(
-      "fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4",
-      className
-    )}>
+    <div
+      className={cn(
+        'fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4',
+        className,
+      )}
+    >
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -295,9 +318,9 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
           ) : (
             <div className="space-y-4">
               {operations.map((operation) => {
-                const isExpanded = expandedOperations.has(operation.id)
-                const isRollbackLoading = rollbackLoading.has(operation.id)
-                const canRollback = operation.status === 'completed'
+                const isExpanded = expandedOperations.has(operation.id);
+                const isRollbackLoading = rollbackLoading.has(operation.id);
+                const canRollback = operation.status === 'completed';
 
                 return (
                   <div
@@ -324,19 +347,28 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
                               {operation.description}
                             </h3>
                             <p className="text-sm text-gray-600">
-                              {formatDate(operation.createdAt)} • {operation.metadata.totalFiles} files
+                              {formatDate(operation.createdAt)} •{' '}
+                              {operation.metadata.totalFiles} files
                               {operation.metadata.savedSpaceBytes && (
-                                <> • Saved {formatBytes(operation.metadata.savedSpaceBytes)}</>
+                                <>
+                                  {' '}
+                                  • Saved{' '}
+                                  {formatBytes(
+                                    operation.metadata.savedSpaceBytes,
+                                  )}
+                                </>
                               )}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           {operation.metadata.riskLevel && (
-                            <span className={cn(
-                              "px-2 py-1 rounded-full text-xs font-medium",
-                              getRiskColor(operation.metadata.riskLevel)
-                            )}>
+                            <span
+                              className={cn(
+                                'px-2 py-1 rounded-full text-xs font-medium',
+                                getRiskColor(operation.metadata.riskLevel),
+                              )}
+                            >
                               {operation.metadata.riskLevel} risk
                             </span>
                           )}
@@ -345,10 +377,10 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
                               onClick={() => handleRollback(operation.id)}
                               disabled={isRollbackLoading}
                               className={cn(
-                                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                                'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                                 isRollbackLoading
-                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                  : "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'bg-orange-100 text-orange-700 hover:bg-orange-200',
                               )}
                             >
                               {isRollbackLoading ? (
@@ -386,11 +418,13 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
                                     {getStatusIcon(action.status)}
                                     <div>
                                       <p className="font-medium text-gray-900">
-                                        {action.type.charAt(0).toUpperCase() + action.type.slice(1)}
+                                        {action.type.charAt(0).toUpperCase() +
+                                          action.type.slice(1)}
                                       </p>
                                       <p className="text-sm text-gray-600">
                                         {action.sourcePath}
-                                        {action.targetPath && ` → ${action.targetPath}`}
+                                        {action.targetPath &&
+                                          ` → ${action.targetPath}`}
                                       </p>
                                       {action.errorMessage && (
                                         <p className="text-sm text-red-600 mt-1">
@@ -417,7 +451,9 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
 
                         {/* Operation Metadata */}
                         <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                          <h4 className="font-medium text-blue-900 mb-2">Operation Details</h4>
+                          <h4 className="font-medium text-blue-900 mb-2">
+                            Operation Details
+                          </h4>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <span className="text-blue-700">Total Size:</span>
@@ -428,7 +464,8 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
                             <div>
                               <span className="text-blue-700">Progress:</span>
                               <span className="ml-2 text-blue-900 font-medium">
-                                {operation.metadata.processedFiles}/{operation.metadata.totalFiles} files
+                                {operation.metadata.processedFiles}/
+                                {operation.metadata.totalFiles} files
                               </span>
                             </div>
                             {operation.metadata.workflowId && (
@@ -450,7 +487,7 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
                       </div>
                     )}
                   </div>
-                )
+                );
               })}
             </div>
           )}
@@ -460,7 +497,9 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <AlertCircle className="h-4 w-4" />
-            <span>Rollback operations will restore files from backup when possible</span>
+            <span>
+              Rollback operations will restore files from backup when possible
+            </span>
           </div>
           <button
             onClick={onClose}
@@ -471,5 +510,5 @@ export const UndoRollback: React.FC<UndoRollbackProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

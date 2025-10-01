@@ -12,12 +12,12 @@ export type StandardSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 /**
  * Standard semantic variants used across components
  */
-export type StandardVariant = 
-  | 'default' 
-  | 'primary' 
-  | 'secondary' 
-  | 'success' 
-  | 'warning' 
+export type StandardVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'warning'
   | 'error'
   | 'info';
 
@@ -76,12 +76,12 @@ export interface IconProps {
 /**
  * Base props that most interactive components should have
  */
-export interface BaseComponentProps 
-  extends ClassNameProps, 
-          SizeProps, 
-          VariantProps, 
-          LoadingProps, 
-          DisabledProps {
+export interface BaseComponentProps
+  extends ClassNameProps,
+    SizeProps,
+    VariantProps,
+    LoadingProps,
+    DisabledProps {
   /** Unique identifier for the component */
   id?: string;
   /** Test identifier for automated testing */
@@ -101,13 +101,13 @@ export interface PolymorphicProps<T extends React.ElementType = 'div'> {
  */
 export type PolymorphicComponentProps<
   T extends React.ElementType,
-  Props = {}
-> = Props & 
-  PolymorphicProps<T> & 
+  Props = {},
+> = Props &
+  PolymorphicProps<T> &
   Omit<React.ComponentPropsWithoutRef<T>, keyof Props | 'as'>;
 
 /**
  * Ref type for polymorphic components
  */
-export type PolymorphicRef<T extends React.ElementType> = 
+export type PolymorphicRef<T extends React.ElementType> =
   React.ComponentPropsWithRef<T>['ref'];

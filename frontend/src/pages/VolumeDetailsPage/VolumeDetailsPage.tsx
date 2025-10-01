@@ -1,4 +1,8 @@
-import { useGetVolumes, useGetVolumesIdScanStatus, usePostVolumesIdSizeRefresh } from '@/api/orval-generated/api';
+import {
+  useGetVolumes,
+  useGetVolumesIdScanStatus,
+  usePostVolumesIdSizeRefresh,
+} from '@/api/orval-generated/api';
 import { ExplorerView } from '@/components/domain/explorer';
 import { FileMetadataView } from '@/components/domain/explorer/FileMetadataView';
 import { Badge } from '@/components/ui/Badge';
@@ -23,9 +27,17 @@ import { useNavigate, useParams } from 'react-router-dom';
 const VolumeDetailsPage: React.FC = () => {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
-  const { data: volumesData, isLoading: volumesLoading, error: volumesError } = useGetVolumes({});
-  const { data: scanStatus, isLoading: scanLoading, error: scanError } = useGetVolumesIdScanStatus(name || '', {
-    query: { enabled: !!name }
+  const {
+    data: volumesData,
+    isLoading: volumesLoading,
+    error: volumesError,
+  } = useGetVolumes({});
+  const {
+    data: scanStatus,
+    isLoading: scanLoading,
+    error: scanError,
+  } = useGetVolumesIdScanStatus(name || '', {
+    query: { enabled: !!name },
   });
   const sizeRefreshMutation = usePostVolumesIdSizeRefresh();
 
@@ -55,7 +67,7 @@ const VolumeDetailsPage: React.FC = () => {
         setError('Volume not found');
       }
     }
-    
+
     setLoading(false);
   }, [name, volumesData, volumesLoading, volumesError]);
 
@@ -65,7 +77,7 @@ const VolumeDetailsPage: React.FC = () => {
     try {
       await sizeRefreshMutation.mutateAsync({
         id: name,
-        data: { method: 'du', async: false }
+        data: { method: 'du', async: false },
       });
     } catch (error) {
       console.error('Failed to refresh volume size:', error);

@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { PrefetchedExplorer } from './PrefetchedExplorer'
+import type { Meta, StoryObj } from '@storybook/react';
+import { PrefetchedExplorer } from './PrefetchedExplorer';
 
 const meta = {
   title: 'Domain/Explorer/PrefetchedExplorer',
@@ -22,10 +22,10 @@ const meta = {
       control: { type: 'boolean' },
     },
   },
-} satisfies Meta<typeof PrefetchedExplorer>
+} satisfies Meta<typeof PrefetchedExplorer>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -35,7 +35,7 @@ export const Default: Story = {
     enableOptimizations: true,
     onPathChange: (path) => console.log('Path changed:', path),
   },
-}
+};
 
 export const WithoutStats: Story = {
   args: {
@@ -44,7 +44,7 @@ export const WithoutStats: Story = {
     showPredictions: true,
     enableOptimizations: true,
   },
-}
+};
 
 export const WithoutPredictions: Story = {
   args: {
@@ -53,7 +53,7 @@ export const WithoutPredictions: Story = {
     showPredictions: false,
     enableOptimizations: true,
   },
-}
+};
 
 export const BasicMode: Story = {
   args: {
@@ -62,7 +62,7 @@ export const BasicMode: Story = {
     showPredictions: false,
     enableOptimizations: false,
   },
-}
+};
 
 export const PerformanceDemo: Story = {
   render: () => (
@@ -119,7 +119,7 @@ export const PerformanceDemo: Story = {
   parameters: {
     layout: 'padded',
   },
-}
+};
 
 export const InteractiveDemo: Story = {
   args: {
@@ -140,15 +140,15 @@ export const InteractiveDemo: Story = {
             Interactive Prefetch Demo
           </h3>
           <p className="text-green-700 text-sm">
-            Navigate between paths to see prefetching in action. 
-            Green buttons indicate prefetched data ready for instant access.
+            Navigate between paths to see prefetching in action. Green buttons
+            indicate prefetched data ready for instant access.
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};
 
 export const LearningBehavior: Story = {
   render: () => {
@@ -159,7 +159,8 @@ export const LearningBehavior: Story = {
             Adaptive Learning Demo
           </h2>
           <p className="text-gray-600 mb-4">
-            The system learns your navigation patterns and improves predictions over time
+            The system learns your navigation patterns and improves predictions
+            over time
           </p>
         </div>
 
@@ -176,11 +177,26 @@ export const LearningBehavior: Story = {
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <h4 className="font-medium text-yellow-900 mb-2">How It Learns:</h4>
           <div className="text-yellow-800 text-sm space-y-2">
-            <div>• <strong>Frequency Analysis:</strong> Tracks how often you visit each path</div>
-            <div>• <strong>Navigation Chains:</strong> Learns which paths you typically visit after others</div>
-            <div>• <strong>Time Patterns:</strong> Records how long you spend in different locations</div>
-            <div>• <strong>Sibling Prediction:</strong> Anticipates exploration of related directories</div>
-            <div>• <strong>Recency Boost:</strong> Prioritizes recently visited locations</div>
+            <div>
+              • <strong>Frequency Analysis:</strong> Tracks how often you visit
+              each path
+            </div>
+            <div>
+              • <strong>Navigation Chains:</strong> Learns which paths you
+              typically visit after others
+            </div>
+            <div>
+              • <strong>Time Patterns:</strong> Records how long you spend in
+              different locations
+            </div>
+            <div>
+              • <strong>Sibling Prediction:</strong> Anticipates exploration of
+              related directories
+            </div>
+            <div>
+              • <strong>Recency Boost:</strong> Prioritizes recently visited
+              locations
+            </div>
           </div>
         </div>
       </div>
@@ -189,7 +205,7 @@ export const LearningBehavior: Story = {
   parameters: {
     layout: 'padded',
   },
-}
+};
 
 export const MemoryOptimized: Story = {
   args: {
@@ -206,15 +222,16 @@ export const MemoryOptimized: Story = {
             Memory-Optimized Prefetching
           </h3>
           <p className="text-purple-700 text-sm">
-            Watch the cache statistics to see intelligent memory management in action.
-            The system automatically evicts old data to stay within memory limits.
+            Watch the cache statistics to see intelligent memory management in
+            action. The system automatically evicts old data to stay within
+            memory limits.
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};
 
 export const NetworkAware: Story = {
   args: {
@@ -231,15 +248,15 @@ export const NetworkAware: Story = {
             Network-Aware Prefetching
           </h3>
           <p className="text-indigo-700 text-sm">
-            The system adapts to network conditions, reducing prefetching on slow connections
-            and being more aggressive on fast connections.
+            The system adapts to network conditions, reducing prefetching on
+            slow connections and being more aggressive on fast connections.
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};
 
 export const DeepNavigation: Story = {
   args: {
@@ -248,4 +265,4 @@ export const DeepNavigation: Story = {
     showPredictions: true,
     enableOptimizations: true,
   },
-}
+};

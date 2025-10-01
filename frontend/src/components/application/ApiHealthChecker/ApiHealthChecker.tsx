@@ -6,7 +6,11 @@ import { logger } from '@/utils/logger';
  * Component that checks API health on mount and periodically
  */
 export function ApiHealthChecker() {
-  const { data: healthData, error, refetch } = useGetHealthDatabase({
+  const {
+    data: healthData,
+    error,
+    refetch,
+  } = useGetHealthDatabase({
     query: {
       refetchInterval: 10000, // Check every 10 seconds
       retry: (failureCount, error) => {
@@ -19,11 +23,14 @@ export function ApiHealthChecker() {
 
   useEffect(() => {
     logger.debug('[ApiHealthChecker] Starting health checks');
-    
+
     if (healthData) {
-      logger.info('[ApiHealthChecker] Health check completed:', healthData.status);
+      logger.info(
+        '[ApiHealthChecker] Health check completed:',
+        healthData.status,
+      );
     }
-    
+
     if (error) {
       logger.error('[ApiHealthChecker] Health check failed:', error);
     }

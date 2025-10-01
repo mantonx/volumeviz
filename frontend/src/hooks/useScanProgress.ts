@@ -31,16 +31,16 @@ export interface ScanProgress {
 
 /**
  * Hook to track scan progress for a specific volume via WebSocket
- * 
+ *
  * @param volumeId - The ID of the volume to track scan progress for
  * @returns Object containing scan progress data and scanning status
  */
 export function useScanProgress(volumeId: string) {
   const { sendMessage, isConnected } = useRealtime();
-  
+
   // Get realtime progress data from WebSocket via Jotai atom
   const progress = useAtomValue(getScanProgressForVolumeAtom(volumeId));
-  
+
   // Debug logging for all progress data
   console.log(`[useScanProgress] ${volumeId} progress:`, progress);
 

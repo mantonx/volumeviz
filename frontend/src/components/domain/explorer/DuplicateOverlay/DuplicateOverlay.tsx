@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FileX, Copy, Archive, AlertTriangle, ChevronDown, ChevronRight, X } from 'lucide-react';
+import {
+  FileX,
+  Copy,
+  Archive,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  X,
+} from 'lucide-react';
 import { cn } from '@/utils/class-names/cn';
 
 export interface DuplicateFile {
@@ -50,7 +58,10 @@ export interface DuplicateOverlayProps {
   /** Include empty files */
   includeEmpty?: boolean;
   /** Called when file is selected for action */
-  onFileAction?: (action: 'delete' | 'move' | 'keep', files: DuplicateFile[]) => void;
+  onFileAction?: (
+    action: 'delete' | 'move' | 'keep',
+    files: DuplicateFile[],
+  ) => void;
 }
 
 /**
@@ -73,126 +84,143 @@ export const DuplicateOverlay: React.FC<DuplicateOverlayProps> = ({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [detectionMode, setDetectionMode] = useState<'hash' | 'size'>('size');
-  const [verifyingGroups, setVerifyingGroups] = useState<Set<string>>(new Set());
+  const [verifyingGroups, setVerifyingGroups] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Mock API functions - in real implementation, these would call actual APIs
-  const detectDuplicates = useCallback(async (mode: 'hash' | 'size') => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock duplicate detection result
-      const mockGroups: DuplicateGroup[] = [
-        {
-          id: 'dup-1',
-          hash: mode === 'hash' ? 'd41d8cd98f00b204e9800998ecf8427e' : undefined,
-          size: 2048000,
-          count: 3,
-          wastedSpace: 4096000,
-          createdAt: new Date(),
-          files: [
-            {
-              id: 'file-1',
-              path: '/media/photos/img1.jpg',
-              name: 'img1.jpg',
-              size: 2048000,
-              modifiedTime: new Date('2024-01-15'),
-              volumeId,
-            },
-            {
-              id: 'file-2',
-              path: '/media/backup/img1_copy.jpg',
-              name: 'img1_copy.jpg',
-              size: 2048000,
-              modifiedTime: new Date('2024-01-16'),
-              volumeId,
-            },
-            {
-              id: 'file-3',
-              path: '/media/old/img1_backup.jpg',
-              name: 'img1_backup.jpg',
-              size: 2048000,
-              modifiedTime: new Date('2024-01-10'),
-              volumeId,
-            },
-          ],
-        },
-        {
-          id: 'dup-2',
-          hash: mode === 'hash' ? 'e99a18c428cb38d5f260853678922e03' : undefined,
-          size: 5242880,
-          count: 2,
-          wastedSpace: 5242880,
-          createdAt: new Date(),
-          files: [
-            {
-              id: 'file-4',
-              path: '/media/videos/movie.mp4',
-              name: 'movie.mp4',
-              size: 5242880,
-              modifiedTime: new Date('2024-02-01'),
-              volumeId,
-            },
-            {
-              id: 'file-5',
-              path: '/media/downloads/movie_download.mp4',
-              name: 'movie_download.mp4',
-              size: 5242880,
-              modifiedTime: new Date('2024-02-02'),
-              volumeId,
-            },
-          ],
-        },
-      ];
+  const detectDuplicates = useCallback(
+    async (mode: 'hash' | 'size') => {
+      setIsLoading(true);
+      setError(null);
 
-      const mockSummary: DuplicateSummary = {
-        totalGroups: mockGroups.length,
-        totalDuplicates: mockGroups.reduce((sum, g) => sum + g.count - 1, 0),
-        totalWastedSpace: mockGroups.reduce((sum, g) => sum + g.wastedSpace, 0),
-        processedFiles: 10000,
-        largestGroup: {
-          id: 'dup-1',
-          count: 3,
-          wastedSpace: 4096000,
-        },
-      };
+      try {
+        // Simulate API delay
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      setDuplicateGroups(mockGroups);
-      setSummary(mockSummary);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to detect duplicates');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [volumeId]);
+        // Mock duplicate detection result
+        const mockGroups: DuplicateGroup[] = [
+          {
+            id: 'dup-1',
+            hash:
+              mode === 'hash' ? 'd41d8cd98f00b204e9800998ecf8427e' : undefined,
+            size: 2048000,
+            count: 3,
+            wastedSpace: 4096000,
+            createdAt: new Date(),
+            files: [
+              {
+                id: 'file-1',
+                path: '/media/photos/img1.jpg',
+                name: 'img1.jpg',
+                size: 2048000,
+                modifiedTime: new Date('2024-01-15'),
+                volumeId,
+              },
+              {
+                id: 'file-2',
+                path: '/media/backup/img1_copy.jpg',
+                name: 'img1_copy.jpg',
+                size: 2048000,
+                modifiedTime: new Date('2024-01-16'),
+                volumeId,
+              },
+              {
+                id: 'file-3',
+                path: '/media/old/img1_backup.jpg',
+                name: 'img1_backup.jpg',
+                size: 2048000,
+                modifiedTime: new Date('2024-01-10'),
+                volumeId,
+              },
+            ],
+          },
+          {
+            id: 'dup-2',
+            hash:
+              mode === 'hash' ? 'e99a18c428cb38d5f260853678922e03' : undefined,
+            size: 5242880,
+            count: 2,
+            wastedSpace: 5242880,
+            createdAt: new Date(),
+            files: [
+              {
+                id: 'file-4',
+                path: '/media/videos/movie.mp4',
+                name: 'movie.mp4',
+                size: 5242880,
+                modifiedTime: new Date('2024-02-01'),
+                volumeId,
+              },
+              {
+                id: 'file-5',
+                path: '/media/downloads/movie_download.mp4',
+                name: 'movie_download.mp4',
+                size: 5242880,
+                modifiedTime: new Date('2024-02-02'),
+                volumeId,
+              },
+            ],
+          },
+        ];
+
+        const mockSummary: DuplicateSummary = {
+          totalGroups: mockGroups.length,
+          totalDuplicates: mockGroups.reduce((sum, g) => sum + g.count - 1, 0),
+          totalWastedSpace: mockGroups.reduce(
+            (sum, g) => sum + g.wastedSpace,
+            0,
+          ),
+          processedFiles: 10000,
+          largestGroup: {
+            id: 'dup-1',
+            count: 3,
+            wastedSpace: 4096000,
+          },
+        };
+
+        setDuplicateGroups(mockGroups);
+        setSummary(mockSummary);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Failed to detect duplicates',
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [volumeId],
+  );
 
   const verifyGroup = useCallback(async (groupId: string) => {
-    setVerifyingGroups(prev => new Set([...prev, groupId]));
-    
+    setVerifyingGroups((prev) => new Set([...prev, groupId]));
+
     try {
       // Simulate API delay for verification
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       // Mock verification - assume 80% of files are actually duplicates
-      setDuplicateGroups(prev => prev.map(group => {
-        if (group.id === groupId) {
-          const actualDuplicates = Math.max(1, Math.floor(group.files.length * 0.8));
-          return {
-            ...group,
-            id: group.id + '-verified',
-            count: actualDuplicates,
-            files: group.files.slice(0, actualDuplicates),
-            wastedSpace: group.size * (actualDuplicates - 1),
-            hash: 'd41d8cd98f00b204e9800998ecf8427e', // Add actual hash
-          };
-        }
-        return group;
-      }));
+      setDuplicateGroups((prev) =>
+        prev.map((group) => {
+          if (group.id === groupId) {
+            const actualDuplicates = Math.max(
+              1,
+              Math.floor(group.files.length * 0.8),
+            );
+            return {
+              ...group,
+              id: group.id + '-verified',
+              count: actualDuplicates,
+              files: group.files.slice(0, actualDuplicates),
+              wastedSpace: group.size * (actualDuplicates - 1),
+              hash: 'd41d8cd98f00b204e9800998ecf8427e', // Add actual hash
+            };
+          }
+          return group;
+        }),
+      );
     } finally {
-      setVerifyingGroups(prev => {
+      setVerifyingGroups((prev) => {
         const next = new Set(prev);
         next.delete(groupId);
         return next;
@@ -208,7 +236,7 @@ export const DuplicateOverlay: React.FC<DuplicateOverlayProps> = ({
   }, [isVisible, detectionMode, detectDuplicates]);
 
   const toggleGroupExpanded = useCallback((groupId: string) => {
-    setExpandedGroups(prev => {
+    setExpandedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(groupId)) {
         next.delete(groupId);
@@ -220,7 +248,7 @@ export const DuplicateOverlay: React.FC<DuplicateOverlayProps> = ({
   }, []);
 
   const toggleFileSelected = useCallback((fileId: string) => {
-    setSelectedFiles(prev => {
+    setSelectedFiles((prev) => {
       const next = new Set(prev);
       if (next.has(fileId)) {
         next.delete(fileId);
@@ -233,8 +261,8 @@ export const DuplicateOverlay: React.FC<DuplicateOverlayProps> = ({
 
   const getSelectedFiles = useCallback(() => {
     const selected: DuplicateFile[] = [];
-    duplicateGroups.forEach(group => {
-      group.files.forEach(file => {
+    duplicateGroups.forEach((group) => {
+      group.files.forEach((file) => {
         if (selectedFiles.has(file.id)) {
           selected.push(file);
         }
@@ -265,7 +293,9 @@ export const DuplicateOverlay: React.FC<DuplicateOverlayProps> = ({
           <div className="flex items-center gap-3">
             <Copy className="h-5 w-5 text-primary" />
             <div>
-              <h2 className="text-lg font-semibold">Duplicate File Detection</h2>
+              <h2 className="text-lg font-semibold">
+                Duplicate File Detection
+              </h2>
               <p className="text-sm text-muted-foreground">
                 Analyzing {volumeId} • {path}
               </p>
@@ -288,7 +318,9 @@ export const DuplicateOverlay: React.FC<DuplicateOverlayProps> = ({
               <label className="text-sm font-medium">Detection Mode:</label>
               <select
                 value={detectionMode}
-                onChange={(e) => setDetectionMode(e.target.value as 'hash' | 'size')}
+                onChange={(e) =>
+                  setDetectionMode(e.target.value as 'hash' | 'size')
+                }
                 disabled={isLoading}
                 className="px-3 py-1 border border-border rounded text-sm"
               >
@@ -355,22 +387,36 @@ export const DuplicateOverlay: React.FC<DuplicateOverlayProps> = ({
               <div className="p-4 border-b border-border">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{summary.totalGroups}</div>
-                    <div className="text-sm text-muted-foreground">Duplicate Groups</div>
+                    <div className="text-2xl font-bold text-primary">
+                      {summary.totalGroups}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Duplicate Groups
+                    </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-500">{summary.totalDuplicates}</div>
-                    <div className="text-sm text-muted-foreground">Duplicate Files</div>
+                    <div className="text-2xl font-bold text-orange-500">
+                      {summary.totalDuplicates}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Duplicate Files
+                    </div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-red-500">
                       {formatFileSize(summary.totalWastedSpace)}
                     </div>
-                    <div className="text-sm text-muted-foreground">Wasted Space</div>
+                    <div className="text-sm text-muted-foreground">
+                      Wasted Space
+                    </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-500">{summary.processedFiles}</div>
-                    <div className="text-sm text-muted-foreground">Files Analyzed</div>
+                    <div className="text-2xl font-bold text-green-500">
+                      {summary.processedFiles}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Files Analyzed
+                    </div>
                   </div>
                 </div>
               </div>
@@ -474,7 +520,9 @@ const DuplicateGroupCard: React.FC<DuplicateGroupCardProps> = ({
             </button>
           )}
           <div className="text-right text-sm">
-            <div className="font-medium text-red-500">-{formatFileSize(group.wastedSpace)}</div>
+            <div className="font-medium text-red-500">
+              -{formatFileSize(group.wastedSpace)}
+            </div>
             <div className="text-muted-foreground">{group.count} files</div>
           </div>
         </div>
@@ -506,7 +554,7 @@ const DuplicateGroupCard: React.FC<DuplicateGroupCardProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               <div className="text-right text-sm">
                 <div>{formatFileSize(file.size)}</div>
                 <div className="text-muted-foreground">

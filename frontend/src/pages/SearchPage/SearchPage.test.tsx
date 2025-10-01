@@ -36,9 +36,7 @@ const createWrapper = () => {
     return (
       <QueryClientProvider client={queryClient}>
         <JotaiProvider>
-          <BrowserRouter>
-            {children}
-          </BrowserRouter>
+          <BrowserRouter>{children}</BrowserRouter>
         </JotaiProvider>
       </QueryClientProvider>
     );
@@ -56,7 +54,9 @@ describe('SearchPage', () => {
 
       expect(screen.getByText('Search & Discovery')).toBeInTheDocument();
       expect(
-        screen.getByText('Find files, detect duplicates, and analyze your storage')
+        screen.getByText(
+          'Find files, detect duplicates, and analyze your storage',
+        ),
       ).toBeInTheDocument();
     });
 
@@ -64,10 +64,10 @@ describe('SearchPage', () => {
       render(<SearchPage />, { wrapper: createWrapper() });
 
       expect(
-        screen.getByRole('button', { name: /export results/i })
+        screen.getByRole('button', { name: /export results/i }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole('button', { name: /find duplicates/i })
+        screen.getByRole('button', { name: /find duplicates/i }),
       ).toBeInTheDocument();
     });
 
@@ -80,7 +80,9 @@ describe('SearchPage', () => {
     it('export button is disabled when no results', () => {
       render(<SearchPage />, { wrapper: createWrapper() });
 
-      const exportButton = screen.getByRole('button', { name: /export results/i });
+      const exportButton = screen.getByRole('button', {
+        name: /export results/i,
+      });
       expect(exportButton).toBeDisabled();
     });
   });
@@ -96,7 +98,9 @@ describe('SearchPage', () => {
       await user.click(duplicatesButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Duplicate File Detection')).toBeInTheDocument();
+        expect(
+          screen.getByText('Duplicate File Detection'),
+        ).toBeInTheDocument();
       });
     });
 
@@ -111,13 +115,13 @@ describe('SearchPage', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/compare by content hash/i)
+          screen.getByText(/compare by content hash/i),
         ).toBeInTheDocument();
         expect(
-          screen.getByText(/compare by file size and name/i)
+          screen.getByText(/compare by file size and name/i),
         ).toBeInTheDocument();
         expect(
-          screen.getByText(/include similar filenames/i)
+          screen.getByText(/include similar filenames/i),
         ).toBeInTheDocument();
       });
     });
@@ -149,7 +153,9 @@ describe('SearchPage', () => {
       await user.click(duplicatesButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Duplicate File Detection')).toBeInTheDocument();
+        expect(
+          screen.getByText('Duplicate File Detection'),
+        ).toBeInTheDocument();
       });
 
       const cancelButton = screen.getByRole('button', { name: /^cancel$/i });
@@ -157,7 +163,7 @@ describe('SearchPage', () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText('Duplicate File Detection')
+          screen.queryByText('Duplicate File Detection'),
         ).not.toBeInTheDocument();
       });
     });
@@ -193,7 +199,10 @@ describe('SearchPage', () => {
       await user.click(mockSearchButton);
 
       await waitFor(() => {
-        expect(consoleLogSpy).toHaveBeenCalledWith('Searching for:', 'test query');
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          'Searching for:',
+          'test query',
+        );
       });
 
       consoleLogSpy.mockRestore();
@@ -203,7 +212,9 @@ describe('SearchPage', () => {
       render(<SearchPage />, { wrapper: createWrapper() });
 
       expect(screen.queryByText('Results Found')).not.toBeInTheDocument();
-      expect(screen.queryByText('Potential Duplicates')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Potential Duplicates'),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -225,7 +236,7 @@ describe('SearchPage', () => {
       render(<SearchPage />, { wrapper: createWrapper() });
 
       expect(
-        screen.queryByRole('button', { name: /delete selected/i })
+        screen.queryByRole('button', { name: /delete selected/i }),
       ).not.toBeInTheDocument();
     });
 
@@ -249,10 +260,10 @@ describe('SearchPage', () => {
       render(<SearchPage />, { wrapper: createWrapper() });
 
       expect(
-        screen.getByRole('button', { name: /export results/i })
+        screen.getByRole('button', { name: /export results/i }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole('button', { name: /find duplicates/i })
+        screen.getByRole('button', { name: /find duplicates/i }),
       ).toBeInTheDocument();
     });
 
@@ -301,7 +312,9 @@ describe('SearchPage', () => {
       render(<SearchPage />, { wrapper: createWrapper() });
 
       // Check that responsive classes are applied
-      const mainContainer = screen.getByText('Search & Discovery').closest('div');
+      const mainContainer = screen
+        .getByText('Search & Discovery')
+        .closest('div');
       expect(mainContainer).toHaveClass('flex', 'items-center');
     });
   });
@@ -329,7 +342,9 @@ describe('SearchPage', () => {
       await user.click(duplicatesButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Duplicate File Detection')).toBeInTheDocument();
+        expect(
+          screen.getByText('Duplicate File Detection'),
+        ).toBeInTheDocument();
       });
 
       // Close modal
@@ -338,7 +353,7 @@ describe('SearchPage', () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText('Duplicate File Detection')
+          screen.queryByText('Duplicate File Detection'),
         ).not.toBeInTheDocument();
       });
     });

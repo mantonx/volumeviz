@@ -7,10 +7,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
+import { volumesAtom } from '@/atoms/volumes';
 import {
-  volumesAtom,
-} from '@/atoms/volumes';
-import { useGetVolumes, usePostVolumesIdSizeRefresh } from '@/api/orval-generated/api';
+  useGetVolumes,
+  usePostVolumesIdSizeRefresh,
+} from '@/api/orval-generated/api';
 import type { VolumeResponse, ScanResponse } from '../../api/client';
 import type {
   RealTimeScanOptions,

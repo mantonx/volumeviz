@@ -23,7 +23,14 @@ interface Confetti {
   delay: number;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const COLORS = [
+  '#3b82f6',
+  '#10b981',
+  '#f59e0b',
+  '#ef4444',
+  '#8b5cf6',
+  '#ec4899',
+];
 
 export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
   mountsTracked,
@@ -136,7 +143,9 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
           <ul className="space-y-3 text-gray-700 dark:text-gray-300">
             <li className="flex items-start">
               <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-              <span>View your volumes and their storage usage on the Dashboard</span>
+              <span>
+                View your volumes and their storage usage on the Dashboard
+              </span>
             </li>
             <li className="flex items-start">
               <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />

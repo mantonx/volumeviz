@@ -1,11 +1,11 @@
 import { http, HttpResponse } from 'msw';
-import type { 
-  Volume, 
-  Organization, 
+import type {
+  Volume,
+  Organization,
   VolumeSize,
   ScanStatus,
   FileListResponse,
-  HealthCheckResponse 
+  HealthCheckResponse,
 } from '@/api/orval-generated/api';
 
 // Mock volume data using modern Orval types
@@ -80,16 +80,16 @@ const mockVolumes: Volume[] = [
     is_system: false,
     labels: {
       'com.docker.compose.project': 'production',
-      'com.docker.compose.service': 'database'
+      'com.docker.compose.service': 'database',
     },
     last_scan_at: '2024-12-15T14:20:00Z',
     scan_status: 'completed',
     filesystem_capacity: {
       total: 107374182400, // 100GB
-      used: 21474836480,   // 20GB
+      used: 21474836480, // 20GB
       available: 85899345920, // 80GB
-      percentage: 20
-    }
+      percentage: 20,
+    },
   },
   {
     name: 'redis-cache-vol',
@@ -102,10 +102,10 @@ const mockVolumes: Volume[] = [
     is_system: false,
     labels: {
       'com.docker.compose.project': 'cache',
-      'com.docker.compose.service': 'redis'
+      'com.docker.compose.service': 'redis',
     },
     last_scan_at: '2024-12-15T13:45:00Z',
-    scan_status: 'completed'
+    scan_status: 'completed',
   },
   {
     name: 'orphaned-volume',
@@ -117,8 +117,8 @@ const mockVolumes: Volume[] = [
     is_orphaned: true,
     is_system: false,
     labels: {},
-    scan_status: 'pending'
-  }
+    scan_status: 'pending',
+  },
 ];
 
 const mockOrganization: Organization = {
@@ -126,7 +126,7 @@ const mockOrganization: Organization = {
   name: 'VolumeViz Demo Organization',
   description: 'Demo organization for VolumeViz testing and development',
   created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-12-15T12:00:00Z'
+  updated_at: '2024-12-15T12:00:00Z',
 };
 
 const mockFiles = [
@@ -136,7 +136,7 @@ const mockFiles = [
     type: 'file' as const,
     size: 1024,
     modified_at: '2024-12-15T10:00:00Z',
-    is_directory: false
+    is_directory: false,
   },
   {
     name: 'logs',
@@ -145,7 +145,7 @@ const mockFiles = [
     size: 0,
     modified_at: '2024-12-15T11:30:00Z',
     is_directory: true,
-    children_count: 15
+    children_count: 15,
   },
   {
     name: 'data.db',
@@ -153,8 +153,8 @@ const mockFiles = [
     type: 'file' as const,
     size: 2147483648, // 2GB
     modified_at: '2024-12-15T14:20:00Z',
-    is_directory: false
-  }
+    is_directory: false,
+  },
 ];
 
 const mockAlerts: MockAlert[] = [
@@ -191,10 +191,10 @@ export const handlers = [
       checks: {
         database: { status: 'healthy' },
         filesystem: { status: 'healthy' },
-        docker: { status: 'healthy' }
-      }
+        docker: { status: 'healthy' },
+      },
     };
-    
+
     return HttpResponse.json(healthResponse);
   }),
 
@@ -235,16 +235,16 @@ export const handlers = [
 
     // Apply search filter
     if (search) {
-      filteredVolumes = filteredVolumes.filter(vol => 
-        vol.name.toLowerCase().includes(search.toLowerCase())
+      filteredVolumes = filteredVolumes.filter((vol) =>
+        vol.name.toLowerCase().includes(search.toLowerCase()),
       );
     }
 
     // Apply orphaned filter
     if (orphaned === 'true') {
-      filteredVolumes = filteredVolumes.filter(vol => vol.is_orphaned);
+      filteredVolumes = filteredVolumes.filter((vol) => vol.is_orphaned);
     } else if (orphaned === 'false') {
-      filteredVolumes = filteredVolumes.filter(vol => !vol.is_orphaned);
+      filteredVolumes = filteredVolumes.filter((vol) => !vol.is_orphaned);
     }
 
     // Pagination
@@ -258,28 +258,25 @@ export const handlers = [
         page,
         page_size: pageSize,
         total: filteredVolumes.length,
-        has_more: start + pageSize < filteredVolumes.length
-      }
+        has_more: start + pageSize < filteredVolumes.length,
+      },
     });
   }),
 
   // Volume Size
   http.get('/api/v1/volumes/:volumeId/size', ({ params }) => {
     const volumeId = params.volumeId as string;
-    const volume = mockVolumes.find(v => v.name === volumeId);
-    
+    const volume = mockVolumes.find((v) => v.name === volumeId);
+
     if (!volume) {
-      return HttpResponse.json(
-        { error: 'Volume not found' },
-        { status: 404 }
-      );
+      return HttpResponse.json({ error: 'Volume not found' }, { status: 404 });
     }
 
     const sizeResponse: VolumeSize = {
       volume_id: volumeId,
       size_bytes: volume.size_bytes || 0,
       file_count: Math.floor((volume.size_bytes || 0) / 10000), // Mock file count
-      last_updated: volume.last_scan_at || new Date().toISOString()
+      last_updated: volume.last_scan_at || new Date().toISOString(),
     };
 
     return HttpResponse.json(sizeResponse);
@@ -317,35 +314,33 @@ export const handlers = [
   http.post('/api/v1/volumes/:volumeId/scan', ({ params }) => {
     const volumeId = params.volumeId as string;
     const scanId = `scan_${volumeId}_${Date.now()}`;
-    
+
     return HttpResponse.json({
       scan_id: scanId,
       status: 'started',
       volume_id: volumeId,
-      started_at: new Date().toISOString()
+      started_at: new Date().toISOString(),
     });
   }),
 
   // Volume Size Refresh
   http.post('/api/v1/volumes/:volumeId/size/refresh', ({ params }) => {
     const volumeId = params.volumeId as string;
-    const volume = mockVolumes.find(v => v.name === volumeId);
-    
+    const volume = mockVolumes.find((v) => v.name === volumeId);
+
     if (!volume) {
-      return HttpResponse.json(
-        { error: 'Volume not found' },
-        { status: 404 }
-      );
+      return HttpResponse.json({ error: 'Volume not found' }, { status: 404 });
     }
 
     // Simulate slight size change
-    const newSize = (volume.size_bytes || 0) + Math.floor(Math.random() * 1000000);
-    
+    const newSize =
+      (volume.size_bytes || 0) + Math.floor(Math.random() * 1000000);
+
     return HttpResponse.json({
       volume_id: volumeId,
       size_bytes: newSize,
       file_count: Math.floor(newSize / 10000),
-      last_updated: new Date().toISOString()
+      last_updated: new Date().toISOString(),
     });
   }),
 
@@ -353,12 +348,12 @@ export const handlers = [
   http.post('/api/v1/volumes/:volumeId/filesystem/index', ({ params }) => {
     const volumeId = params.volumeId as string;
     const indexId = `index_${volumeId}_${Date.now()}`;
-    
+
     return HttpResponse.json({
       index_id: indexId,
       status: 'started',
       volume_id: volumeId,
-      started_at: new Date().toISOString()
+      started_at: new Date().toISOString(),
     });
   }),
 
@@ -376,7 +371,7 @@ export const handlers = [
     if (!volumeId) {
       return HttpResponse.json(
         { error: 'volume_id is required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -390,16 +385,16 @@ export const handlers = [
           type: 'file' as const,
           size: 1048576, // 1MB
           modified_at: '2024-12-15T14:00:00Z',
-          is_directory: false
+          is_directory: false,
         },
         {
           name: 'error.log',
-          path: '/logs/error.log', 
+          path: '/logs/error.log',
           type: 'file' as const,
           size: 524288, // 512KB
           modified_at: '2024-12-15T13:30:00Z',
-          is_directory: false
-        }
+          is_directory: false,
+        },
       ];
     }
 
@@ -407,7 +402,7 @@ export const handlers = [
       path,
       volume_id: volumeId,
       files,
-      total_count: files.length
+      total_count: files.length,
     };
 
     return HttpResponse.json(response);
@@ -416,17 +411,19 @@ export const handlers = [
   // Scan Status
   http.get('/api/v1/scans/:scanId/status', ({ params }) => {
     const scanId = params.scanId as string;
-    
+
     // Simulate different scan states
     const states = ['running', 'completed', 'failed'];
     const randomState = states[Math.floor(Math.random() * states.length)];
-    
+
     const scanStatus: ScanStatus = {
       scan_id: scanId,
       status: randomState,
-      progress: randomState === 'running' ? Math.floor(Math.random() * 90) + 10 : 100,
+      progress:
+        randomState === 'running' ? Math.floor(Math.random() * 90) + 10 : 100,
       started_at: new Date(Date.now() - 30000).toISOString(), // 30 seconds ago
-      completed_at: randomState !== 'running' ? new Date().toISOString() : undefined
+      completed_at:
+        randomState !== 'running' ? new Date().toISOString() : undefined,
     };
 
     return HttpResponse.json(scanStatus);
@@ -434,26 +431,30 @@ export const handlers = [
 
   // Bulk Operations
   http.post('/api/v1/volumes/bulk-scan', async ({ request }) => {
-    const body = await request.json() as { volume_ids: string[]; async?: boolean; method?: string };
+    const body = (await request.json()) as {
+      volume_ids: string[];
+      async?: boolean;
+      method?: string;
+    };
     const { volume_ids, async = false } = body;
-    
+
     if (async) {
       // Return scan IDs for async operations
-      const scanIds = volume_ids.map(id => `bulk_scan_${id}_${Date.now()}`);
+      const scanIds = volume_ids.map((id) => `bulk_scan_${id}_${Date.now()}`);
       return HttpResponse.json({
         scan_ids: scanIds,
         status: 'started',
-        async: true
+        async: true,
       });
     } else {
       // Return immediate results for sync operations
-      const results = volume_ids.map(id => ({
+      const results = volume_ids.map((id) => ({
         volume_id: id,
         size_bytes: Math.floor(Math.random() * 2147483648),
         file_count: Math.floor(Math.random() * 50000),
-        last_updated: new Date().toISOString()
+        last_updated: new Date().toISOString(),
       }));
-      
+
       return HttpResponse.json({ results });
     }
   }),
@@ -635,7 +636,7 @@ export const handlers = [
   http.get('/api/v1/volumes/error-test', () => {
     return HttpResponse.json(
       { error: 'Simulated server error for testing' },
-      { status: 500 }
+      { status: 500 },
     );
   }),
 

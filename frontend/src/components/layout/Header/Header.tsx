@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import {
   Menu,
@@ -14,14 +14,14 @@ import {
   WifiOff,
   AlertTriangle,
   RefreshCw,
+  LogOut,
+  UserCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useRealtime } from '@/providers/realtime';
 import { ReadyState } from 'react-use-websocket';
-import {
-  themeAtom,
-  websocketEnabledAtom,
-} from '@/store';
+import { useAuth } from '@/hooks/useAuth';
+import { themeAtom, websocketEnabledAtom } from '@/store';
 import { cn } from '@/utils';
 import type { HeaderProps, ThemeOption, ApiStatus } from './Header.types';
 import type { WebSocketStatus } from '@/atoms/websocket';
@@ -135,6 +135,10 @@ export const Header: React.FC<HeaderProps> = ({
   setSidebarOpen,
 }) => {
   const [theme, setTheme] = useAtom(themeAtom);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const { user, logout } = useAuth();
+
   // API status is now handled by TanStack Query - using placeholder values
   const requestCount = 0;
   const apiStatus: ApiStatus = 'online';
@@ -144,6 +148,21 @@ export const Header: React.FC<HeaderProps> = ({
     latency,
     reconnectAttempts,
   } = useRealtime();
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Convert ReadyState to display format (no legacy compatibility in provider)
   const wsStatus = React.useMemo(() => {
@@ -370,15 +389,50 @@ export const Header: React.FC<HeaderProps> = ({
           </Button>
 
           {/* User Menu */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            title="User menu"
-            aria-label="Open user menu"
-          >
-            <User className="h-4 w-4" />
-          </Button>
+          <div className="relative" ref={userMenuRef} data-tour="user-menu">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              title="User menu"
+              aria-label="Open user menu"
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            >
+              <User className="h-4 w-4" />
+            </Button>
+
+            {/* Dropdown Menu */}
+            {isUserMenuOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                {/* User Info */}
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <UserCircle className="h-8 w-8 text-gray-400" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        {user?.display_name ||
+                          user?.username ||
+                          user?.email ||
+                          'User'}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Menu Items */}
+                <button
+                  onClick={logout}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Help */}
           <Button

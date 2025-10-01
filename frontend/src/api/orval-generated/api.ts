@@ -207,7 +207,6 @@ export interface FilesystemCapacity {
 export type FilesystemIndexingResponseStatus =
   (typeof FilesystemIndexingResponseStatus)[keyof typeof FilesystemIndexingResponseStatus];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const FilesystemIndexingResponseStatus = {
   pending: 'pending',
   running: 'running',
@@ -261,7 +260,6 @@ export interface MediaCapabilitiesResponse {
 export type MediaEnrichmentResponseStatus =
   (typeof MediaEnrichmentResponseStatus)[keyof typeof MediaEnrichmentResponseStatus];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const MediaEnrichmentResponseStatus = {
   pending: 'pending',
   running: 'running',
@@ -286,7 +284,6 @@ export interface MediaEnrichmentResponse {
 export type MediaEnrichmentStatusResponseStatus =
   (typeof MediaEnrichmentStatusResponseStatus)[keyof typeof MediaEnrichmentStatusResponseStatus];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const MediaEnrichmentStatusResponseStatus = {
   pending: 'pending',
   running: 'running',
@@ -345,7 +342,6 @@ export interface ScanResult {
 export type StatsSummaryGrowthTrend =
   (typeof StatsSummaryGrowthTrend)[keyof typeof StatsSummaryGrowthTrend];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const StatsSummaryGrowthTrend = {
   increasing: 'increasing',
   decreasing: 'decreasing',
@@ -368,7 +364,6 @@ export interface TopFoldersResponse {
 export type VolumeStatsResponsePeriod =
   (typeof VolumeStatsResponsePeriod)[keyof typeof VolumeStatsResponsePeriod];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const VolumeStatsResponsePeriod = {
   '7d': '7d',
   '30d': '30d',
@@ -528,7 +523,6 @@ export type GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParamsC
 export type GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParamsType =
   (typeof GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParamsType)[keyof typeof GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParamsType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParamsType =
   {
     webhook: 'webhook',
@@ -566,7 +560,6 @@ export interface GithubComMantonxVolumevizInternalModelsCreateAlertRouteParams {
 export type GithubComMantonxVolumevizInternalModelsCreateAlertRuleParamsCondition =
   (typeof GithubComMantonxVolumevizInternalModelsCreateAlertRuleParamsCondition)[keyof typeof GithubComMantonxVolumevizInternalModelsCreateAlertRuleParamsCondition];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GithubComMantonxVolumevizInternalModelsCreateAlertRuleParamsCondition =
   {
     gt: 'gt',
@@ -616,7 +609,6 @@ export type GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParamsC
 export type GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParamsType =
   (typeof GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParamsType)[keyof typeof GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParamsType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParamsType =
   {
     webhook: 'webhook',
@@ -656,7 +648,6 @@ export interface GithubComMantonxVolumevizInternalModelsUpdateAlertRouteParams {
 export type GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParamsCondition =
   (typeof GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParamsCondition)[keyof typeof GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParamsCondition];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParamsCondition =
   {
     gt: 'gt',
@@ -916,7 +907,6 @@ export interface InternalApiV1DiagRealtimeDiagnostics {
 export type InternalApiV1DiagRealtimeMode =
   (typeof InternalApiV1DiagRealtimeMode)[keyof typeof InternalApiV1DiagRealtimeMode];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1DiagRealtimeMode = {
   ModeWebSocket: 'ws',
   ModePolling: 'polling',
@@ -1128,7 +1118,6 @@ export interface InternalApiV1MountsDiscoverMountsResponse {
 export type InternalApiV1MountsMountCatalogResponseMountType =
   (typeof InternalApiV1MountsMountCatalogResponseMountType)[keyof typeof InternalApiV1MountsMountCatalogResponseMountType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1MountsMountCatalogResponseMountType = {
   volume: 'volume',
   bind: 'bind',
@@ -1210,7 +1199,6 @@ export interface InternalApiV1OrganizationsOrganizationWithStatsResponse {
 export type InternalApiV1OrganizationsUpdateOrganizationRequestPlanType =
   (typeof InternalApiV1OrganizationsUpdateOrganizationRequestPlanType)[keyof typeof InternalApiV1OrganizationsUpdateOrganizationRequestPlanType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1OrganizationsUpdateOrganizationRequestPlanType = {
   free: 'free',
   pro: 'pro',
@@ -1231,7 +1219,6 @@ export interface InternalApiV1OrganizationsUpdateOrganizationRequest {
 export type InternalApiV1PreviewsPreviewRequestSize =
   (typeof InternalApiV1PreviewsPreviewRequestSize)[keyof typeof InternalApiV1PreviewsPreviewRequestSize];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1PreviewsPreviewRequestSize = {
   small: 'small',
   medium: 'medium',
@@ -1241,7 +1228,6 @@ export const InternalApiV1PreviewsPreviewRequestSize = {
 export type InternalApiV1PreviewsPreviewRequestType =
   (typeof InternalApiV1PreviewsPreviewRequestType)[keyof typeof InternalApiV1PreviewsPreviewRequestType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1PreviewsPreviewRequestType = {
   thumbnail: 'thumbnail',
   poster: 'poster',
@@ -1288,7 +1274,6 @@ export interface InternalApiV1RulesApplyTrackingRulesResponse {
 export type InternalApiV1RulesConditionRequestFieldName =
   (typeof InternalApiV1RulesConditionRequestFieldName)[keyof typeof InternalApiV1RulesConditionRequestFieldName];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1RulesConditionRequestFieldName = {
   source_type: 'source_type',
   docker_volume_name: 'docker_volume_name',
@@ -1305,7 +1290,6 @@ export const InternalApiV1RulesConditionRequestFieldName = {
 export type InternalApiV1RulesConditionRequestOperator =
   (typeof InternalApiV1RulesConditionRequestOperator)[keyof typeof InternalApiV1RulesConditionRequestOperator];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1RulesConditionRequestOperator = {
   equals: 'equals',
   not_equals: 'not_equals',
@@ -1331,7 +1315,6 @@ export interface InternalApiV1RulesConditionRequest {
 export type InternalApiV1RulesCreateMountOverrideRequestAction =
   (typeof InternalApiV1RulesCreateMountOverrideRequestAction)[keyof typeof InternalApiV1RulesCreateMountOverrideRequestAction];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1RulesCreateMountOverrideRequestAction = {
   include: 'include',
   exclude: 'exclude',
@@ -1347,7 +1330,6 @@ export interface InternalApiV1RulesCreateMountOverrideRequest {
 export type InternalApiV1RulesCreateRuleRequestAction =
   (typeof InternalApiV1RulesCreateRuleRequestAction)[keyof typeof InternalApiV1RulesCreateRuleRequestAction];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1RulesCreateRuleRequestAction = {
   include: 'include',
   exclude: 'exclude',
@@ -1402,7 +1384,6 @@ export interface InternalApiV1RulesRuleConfigUpdate {
 export type InternalApiV1RulesRuleResponseAction =
   (typeof InternalApiV1RulesRuleResponseAction)[keyof typeof InternalApiV1RulesRuleResponseAction];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1RulesRuleResponseAction = {
   include: 'include',
   exclude: 'exclude',
@@ -1465,7 +1446,6 @@ export interface InternalApiV1RulesTrackingRulesConfigResponse {
 export type InternalApiV1RulesUpdateRuleRequestAction =
   (typeof InternalApiV1RulesUpdateRuleRequestAction)[keyof typeof InternalApiV1RulesUpdateRuleRequestAction];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const InternalApiV1RulesUpdateRuleRequestAction = {
   include: 'include',
   exclude: 'exclude',
@@ -1645,7 +1625,6 @@ export interface InternalApiV1SearchUpdateSavedSearchRequest {
 
 export type TimeDuration = (typeof TimeDuration)[keyof typeof TimeDuration];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const TimeDuration = {
   minDuration: -9223372036854776000,
   maxDuration: 9223372036854776000,
@@ -2208,7 +2187,6 @@ export type GetApiV1MountsParams = {
 export type GetApiV1MountsType =
   (typeof GetApiV1MountsType)[keyof typeof GetApiV1MountsType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetApiV1MountsType = {
   volume: 'volume',
   bind: 'bind',
@@ -2218,7 +2196,6 @@ export const GetApiV1MountsType = {
 export type GetApiV1MountsStatus =
   (typeof GetApiV1MountsStatus)[keyof typeof GetApiV1MountsStatus];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetApiV1MountsStatus = {
   orphaned: 'orphaned',
   active: 'active',
@@ -2227,7 +2204,6 @@ export const GetApiV1MountsStatus = {
 export type GetApiV1MountsIsOrphaned =
   (typeof GetApiV1MountsIsOrphaned)[keyof typeof GetApiV1MountsIsOrphaned];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetApiV1MountsIsOrphaned = {
   true: 'true',
   false: 'false',
@@ -2236,7 +2212,6 @@ export const GetApiV1MountsIsOrphaned = {
 export type GetApiV1MountsIsTracked =
   (typeof GetApiV1MountsIsTracked)[keyof typeof GetApiV1MountsIsTracked];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetApiV1MountsIsTracked = {
   true: 'true',
   false: 'false',
@@ -2461,7 +2436,6 @@ export type GetFilesFileIdPreviewParams = {
 export type GetFilesFileIdPreviewType =
   (typeof GetFilesFileIdPreviewType)[keyof typeof GetFilesFileIdPreviewType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetFilesFileIdPreviewType = {
   thumbnail: 'thumbnail',
   poster: 'poster',
@@ -2471,7 +2445,6 @@ export const GetFilesFileIdPreviewType = {
 export type GetFilesFileIdPreviewSize =
   (typeof GetFilesFileIdPreviewSize)[keyof typeof GetFilesFileIdPreviewSize];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetFilesFileIdPreviewSize = {
   small: 'small',
   medium: 'medium',
@@ -2494,7 +2467,6 @@ export type GetFilesIdMetadataParams = {
 export type GetFilesIdMetadataKind =
   (typeof GetFilesIdMetadataKind)[keyof typeof GetFilesIdMetadataKind];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetFilesIdMetadataKind = {
   media: 'media',
   exif: 'exif',
@@ -2529,7 +2501,6 @@ export type GetPreviewsFileIdParams = {
 export type GetPreviewsFileIdType =
   (typeof GetPreviewsFileIdType)[keyof typeof GetPreviewsFileIdType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetPreviewsFileIdType = {
   thumbnail: 'thumbnail',
   poster: 'poster',
@@ -2539,7 +2510,6 @@ export const GetPreviewsFileIdType = {
 export type GetPreviewsFileIdSize =
   (typeof GetPreviewsFileIdSize)[keyof typeof GetPreviewsFileIdSize];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetPreviewsFileIdSize = {
   small: 'small',
   medium: 'medium',
@@ -2808,7 +2778,6 @@ export type GetVolumesParams = {
 export type GetVolumesDriver =
   (typeof GetVolumesDriver)[keyof typeof GetVolumesDriver];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetVolumesDriver = {
   local: 'local',
   nfs: 'nfs',

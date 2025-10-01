@@ -83,8 +83,8 @@ const server = setupServer(
 
   // Update organization settings
   http.put('/api/v1/organizations/me', async ({ request }) => {
-    const body = await request.json() as any;
-    
+    const body = (await request.json()) as any;
+
     return HttpResponse.json({
       id: 'org-123',
       name: body.name || 'Acme Corporation',
@@ -99,8 +99,12 @@ const server = setupServer(
 
   // Create user invitation
   http.post('/api/v1/organizations/me/invitations', async ({ request }) => {
-    const body = await request.json() as { email: string; role: string; name?: string };
-    
+    const body = (await request.json()) as {
+      email: string;
+      role: string;
+      name?: string;
+    };
+
     return HttpResponse.json({
       id: `inv-${Date.now()}`,
       email: body.email,
@@ -122,7 +126,9 @@ const server = setupServer(
           role: 'editor',
           name: 'Pending User',
           status: 'pending',
-          expires_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+          expires_at: new Date(
+            Date.now() + 5 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
           created_at: '2024-01-18T00:00:00Z',
         },
       ],
@@ -130,20 +136,23 @@ const server = setupServer(
   }),
 
   // Update user role
-  http.put('/api/v1/organizations/me/users/:userId', async ({ params, request }) => {
-    const userId = params.userId as string;
-    const body = await request.json() as { role: string; status?: string };
-    
-    return HttpResponse.json({
-      id: userId,
-      email: 'updated@example.com',
-      name: 'Updated User',
-      role: body.role,
-      status: body.status || 'active',
-      created_at: '2024-01-01T00:00:00Z',
-      last_login: new Date().toISOString(),
-    });
-  }),
+  http.put(
+    '/api/v1/organizations/me/users/:userId',
+    async ({ params, request }) => {
+      const userId = params.userId as string;
+      const body = (await request.json()) as { role: string; status?: string };
+
+      return HttpResponse.json({
+        id: userId,
+        email: 'updated@example.com',
+        name: 'Updated User',
+        role: body.role,
+        status: body.status || 'active',
+        created_at: '2024-01-01T00:00:00Z',
+        last_login: new Date().toISOString(),
+      });
+    },
+  ),
 
   // Remove user
   http.delete('/api/v1/organizations/me/users/:userId', ({ params }) => {
@@ -152,10 +161,13 @@ const server = setupServer(
   }),
 
   // Revoke invitation
-  http.delete('/api/v1/organizations/me/invitations/:invitationId', ({ params }) => {
-    const invitationId = params.invitationId as string;
-    return HttpResponse.json({ success: true });
-  }),
+  http.delete(
+    '/api/v1/organizations/me/invitations/:invitationId',
+    ({ params }) => {
+      const invitationId = params.invitationId as string;
+      return HttpResponse.json({ success: true });
+    },
+  ),
 
   // Get organization usage statistics
   http.get('/api/v1/organizations/me/usage', () => {
@@ -172,16 +184,13 @@ const server = setupServer(
   http.put('/api/v1/organizations/me/error-test', () => {
     return HttpResponse.json(
       { error: 'Validation failed: Name is required' },
-      { status: 400 }
+      { status: 400 },
     );
   }),
 
   http.post('/api/v1/organizations/me/invitations/error-test', () => {
-    return HttpResponse.json(
-      { error: 'User already exists' },
-      { status: 409 }
-    );
-  })
+    return HttpResponse.json({ error: 'User already exists' }, { status: 409 });
+  }),
 );
 
 // Test wrapper component
@@ -225,12 +234,14 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for organization data to load
       await waitFor(() => {
-        expect(screen.getByDisplayValue('Acme Corporation')).toBeInTheDocument();
+        expect(
+          screen.getByDisplayValue('Acme Corporation'),
+        ).toBeInTheDocument();
       });
 
       // Verify settings are displayed
@@ -248,7 +259,7 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for users to load
@@ -278,7 +289,7 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for usage data to load
@@ -300,12 +311,14 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for form to load
       await waitFor(() => {
-        expect(screen.getByDisplayValue('Acme Corporation')).toBeInTheDocument();
+        expect(
+          screen.getByDisplayValue('Acme Corporation'),
+        ).toBeInTheDocument();
       });
 
       // Update organization name
@@ -336,7 +349,9 @@ describe('Organization Management Integration', () => {
       });
 
       // Verify updated values persist
-      expect(screen.getByDisplayValue('Updated Corporation')).toBeInTheDocument();
+      expect(
+        screen.getByDisplayValue('Updated Corporation'),
+      ).toBeInTheDocument();
       expect(screen.getByDisplayValue('60')).toBeInTheDocument();
       expect(screen.getByDisplayValue('2000')).toBeInTheDocument();
     });
@@ -347,9 +362,9 @@ describe('Organization Management Integration', () => {
         http.put('/api/v1/organizations/me', () => {
           return HttpResponse.json(
             { error: 'Validation failed: Name is required' },
-            { status: 400 }
+            { status: 400 },
           );
-        })
+        }),
       );
 
       const user = userEvent.setup();
@@ -358,12 +373,14 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for form to load
       await waitFor(() => {
-        expect(screen.getByDisplayValue('Acme Corporation')).toBeInTheDocument();
+        expect(
+          screen.getByDisplayValue('Acme Corporation'),
+        ).toBeInTheDocument();
       });
 
       // Clear name field (invalid)
@@ -389,7 +406,7 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for page to load
@@ -402,7 +419,9 @@ describe('Organization Management Integration', () => {
       await user.click(inviteButton);
 
       // Should show invite modal/form
-      expect(screen.getByRole('dialog', { name: /invite user/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: /invite user/i }),
+      ).toBeInTheDocument();
 
       // Fill in invitation details
       const emailInput = screen.getByLabelText(/email/i);
@@ -414,7 +433,9 @@ describe('Organization Management Integration', () => {
       await user.selectOptions(roleSelect, 'editor');
 
       // Send invitation
-      const sendButton = screen.getByRole('button', { name: /send invitation/i });
+      const sendButton = screen.getByRole('button', {
+        name: /send invitation/i,
+      });
       await user.click(sendButton);
 
       // Should show success message
@@ -423,7 +444,9 @@ describe('Organization Management Integration', () => {
       });
 
       // Modal should close
-      expect(screen.queryByRole('dialog', { name: /invite user/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('dialog', { name: /invite user/i }),
+      ).not.toBeInTheDocument();
     });
 
     it('should handle duplicate user invitation error', async () => {
@@ -432,9 +455,9 @@ describe('Organization Management Integration', () => {
         http.post('/api/v1/organizations/me/invitations', () => {
           return HttpResponse.json(
             { error: 'User already exists' },
-            { status: 409 }
+            { status: 409 },
           );
-        })
+        }),
       );
 
       const user = userEvent.setup();
@@ -443,7 +466,7 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Open invite modal
@@ -455,7 +478,9 @@ describe('Organization Management Integration', () => {
       await user.type(emailInput, 'admin@example.com');
 
       // Try to send invitation
-      const sendButton = screen.getByRole('button', { name: /send invitation/i });
+      const sendButton = screen.getByRole('button', {
+        name: /send invitation/i,
+      });
       await user.click(sendButton);
 
       // Should show error message
@@ -471,7 +496,7 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for users to load
@@ -484,7 +509,9 @@ describe('Organization Management Integration', () => {
       await user.click(editButtons[1]); // Second user (viewer)
 
       // Should show edit modal
-      expect(screen.getByRole('dialog', { name: /edit user/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: /edit user/i }),
+      ).toBeInTheDocument();
 
       // Change role from viewer to editor
       const roleSelect = screen.getByLabelText(/role/i);
@@ -500,7 +527,9 @@ describe('Organization Management Integration', () => {
       });
 
       // Modal should close and role should be updated
-      expect(screen.queryByRole('dialog', { name: /edit user/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('dialog', { name: /edit user/i }),
+      ).not.toBeInTheDocument();
     });
 
     it('should successfully remove a user', async () => {
@@ -510,7 +539,7 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for users to load
@@ -519,11 +548,15 @@ describe('Organization Management Integration', () => {
       });
 
       // Find remove button for inactive user
-      const removeButtons = screen.getAllByRole('button', { name: /remove user/i });
+      const removeButtons = screen.getAllByRole('button', {
+        name: /remove user/i,
+      });
       await user.click(removeButtons[2]); // Third user (inactive)
 
       // Should show confirmation dialog
-      expect(screen.getByRole('dialog', { name: /confirm removal/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: /confirm removal/i }),
+      ).toBeInTheDocument();
 
       // Confirm removal
       const confirmButton = screen.getByRole('button', { name: /confirm/i });
@@ -535,7 +568,9 @@ describe('Organization Management Integration', () => {
       });
 
       // User should be removed from the list
-      expect(screen.queryByText('inactive@example.com')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('inactive@example.com'),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -546,7 +581,7 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for invitations to load
@@ -567,7 +602,7 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for invitations to load
@@ -576,11 +611,15 @@ describe('Organization Management Integration', () => {
       });
 
       // Find revoke button
-      const revokeButton = screen.getByRole('button', { name: /revoke invitation/i });
+      const revokeButton = screen.getByRole('button', {
+        name: /revoke invitation/i,
+      });
       await user.click(revokeButton);
 
       // Should show confirmation dialog
-      expect(screen.getByRole('dialog', { name: /confirm revocation/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: /confirm revocation/i }),
+      ).toBeInTheDocument();
 
       // Confirm revocation
       const confirmButton = screen.getByRole('button', { name: /confirm/i });
@@ -602,14 +641,14 @@ describe('Organization Management Integration', () => {
       server.use(
         http.get('/api/v1/organizations/me', () => {
           return HttpResponse.error();
-        })
+        }),
       );
 
       const TestWrapper = createTestWrapper();
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Should handle the error gracefully without crashing
@@ -620,7 +659,7 @@ describe('Organization Management Integration', () => {
 
     it('should provide retry functionality on errors', async () => {
       let callCount = 0;
-      
+
       // Mock failing request that succeeds on retry
       server.use(
         http.get('/api/v1/organizations/me', () => {
@@ -636,7 +675,7 @@ describe('Organization Management Integration', () => {
             settings: {},
             users: [],
           });
-        })
+        }),
       );
 
       const user = userEvent.setup();
@@ -645,7 +684,7 @@ describe('Organization Management Integration', () => {
       render(
         <TestWrapper>
           <OrganizationSettings />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Should show error state
@@ -659,7 +698,9 @@ describe('Organization Management Integration', () => {
 
       // Should successfully load on retry
       await waitFor(() => {
-        expect(screen.getByDisplayValue('Acme Corporation')).toBeInTheDocument();
+        expect(
+          screen.getByDisplayValue('Acme Corporation'),
+        ).toBeInTheDocument();
       });
     });
   });

@@ -69,7 +69,8 @@ export const SidebarOpen: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Header state when sidebar is open, showing the close (X) icon instead of hamburger menu.',
+        story:
+          'Header state when sidebar is open, showing the close (X) icon instead of hamburger menu.',
       },
     },
   },
@@ -85,7 +86,8 @@ export const Mobile: Story = {
     },
     docs: {
       description: {
-        story: 'Header layout optimized for mobile devices with responsive behavior.',
+        story:
+          'Header layout optimized for mobile devices with responsive behavior.',
       },
     },
   },
@@ -117,7 +119,8 @@ export const Desktop: Story = {
     },
     docs: {
       description: {
-        story: 'Header layout on desktop screens where hamburger menu is hidden.',
+        story:
+          'Header layout on desktop screens where hamburger menu is hidden.',
       },
     },
   },
@@ -131,7 +134,8 @@ export const DarkTheme: Story = {
     backgrounds: { default: 'dark' },
     docs: {
       description: {
-        story: 'Header appearance in dark theme with appropriate color adjustments.',
+        story:
+          'Header appearance in dark theme with appropriate color adjustments.',
       },
     },
   },
@@ -147,13 +151,10 @@ export const DarkTheme: Story = {
 export const Interactive: Story = {
   render: () => {
     const [sidebarOpen, setSidebarOpen] = React.useState(false);
-    
+
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header 
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <div className="p-8">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -161,11 +162,17 @@ export const Interactive: Story = {
             </h2>
             <div className="space-y-4 text-gray-600 dark:text-gray-400">
               <p>
-                This is an interactive demo of the header component. Try the following:
+                This is an interactive demo of the header component. Try the
+                following:
               </p>
               <ul className="list-disc list-inside space-y-2">
-                <li>Click the hamburger menu (on mobile) to toggle the sidebar</li>
-                <li>Click the theme toggle to switch between light/dark/system themes</li>
+                <li>
+                  Click the hamburger menu (on mobile) to toggle the sidebar
+                </li>
+                <li>
+                  Click the theme toggle to switch between light/dark/system
+                  themes
+                </li>
                 <li>Observe the API connection status indicator</li>
                 <li>Notice how the layout adapts to different screen sizes</li>
               </ul>
@@ -181,7 +188,8 @@ export const Interactive: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Fully interactive header with real sidebar toggle and theme switching functionality.',
+        story:
+          'Fully interactive header with real sidebar toggle and theme switching functionality.',
       },
     },
   },
@@ -194,14 +202,36 @@ export const StatusVariations: Story = {
         <h3 className="text-lg font-semibold mb-2">Online Status</h3>
         <Header sidebarOpen={false} setSidebarOpen={() => {}} />
       </div>
-      
+
       <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-        <p><strong>Status Indicators:</strong></p>
+        <p>
+          <strong>Status Indicators:</strong>
+        </p>
         <ul className="list-disc list-inside space-y-1">
-          <li><span className="inline-flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full"></span>Green</span> - Connected/Online</li>
-          <li><span className="inline-flex items-center gap-1"><span className="w-2 h-2 bg-yellow-500 rounded-full"></span>Yellow</span> - Connecting/Loading</li>
-          <li><span className="inline-flex items-center gap-1"><span className="w-2 h-2 bg-red-500 rounded-full"></span>Red</span> - Disconnected/Error</li>
-          <li><span className="inline-flex items-center gap-1"><span className="w-2 h-2 bg-gray-400 rounded-full"></span>Gray</span> - Unknown/Inactive</li>
+          <li>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>Green
+            </span>{' '}
+            - Connected/Online
+          </li>
+          <li>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>Yellow
+            </span>{' '}
+            - Connecting/Loading
+          </li>
+          <li>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 bg-red-500 rounded-full"></span>Red
+            </span>{' '}
+            - Disconnected/Error
+          </li>
+          <li>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>Gray
+            </span>{' '}
+            - Unknown/Inactive
+          </li>
         </ul>
       </div>
     </div>
@@ -209,7 +239,8 @@ export const StatusVariations: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Different status indicator states for API and WebSocket connections.',
+        story:
+          'Different status indicator states for API and WebSocket connections.',
       },
     },
   },
@@ -246,7 +277,8 @@ export const ResponsiveBehavior: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates responsive behavior differences between desktop and mobile viewports.',
+        story:
+          'Demonstrates responsive behavior differences between desktop and mobile viewports.',
       },
     },
   },

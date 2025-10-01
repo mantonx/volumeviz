@@ -54,51 +54,53 @@ const LoadingSpinner: React.FC = () => (
 /**
  * Flexible button component with variants, sizes, and loading states.
  */
-export const Button: React.FC<ButtonProps> = React.memo(({
-  children,
-  variant = 'primary',
-  size = 'md',
-  loading = false,
-  leftIcon,
-  rightIcon,
-  className,
-  disabled,
-  ...props
-}) => {
-  const isDisabled = disabled || loading;
+export const Button: React.FC<ButtonProps> = React.memo(
+  ({
+    children,
+    variant = 'primary',
+    size = 'md',
+    loading = false,
+    leftIcon,
+    rightIcon,
+    className,
+    disabled,
+    ...props
+  }) => {
+    const isDisabled = disabled || loading;
 
-  return (
-    <button
-      className={cn(
-        // Base styles
-        'inline-flex items-center justify-center font-medium rounded-md transition-colors',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
-        // Variant styles
-        buttonVariants[variant],
-        // Size styles
-        buttonSizes[size],
-        // Custom styles
-        className,
-      )}
-      disabled={isDisabled}
-      aria-disabled={isDisabled}
-      {...props}
-    >
-      {loading && <LoadingSpinner />}
-      {leftIcon && !loading && (
-        <span className="mr-2" aria-hidden="true">
-          {leftIcon}
-        </span>
-      )}
-      {children}
-      {rightIcon && (
-        <span className="ml-2" aria-hidden="true">
-          {rightIcon}
-        </span>
-      )}
-    </button>
-  );
-});
+    return (
+      <button
+        className={cn(
+          // Base styles
+          'inline-flex items-center justify-center font-medium rounded-md transition-colors',
+          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          // Variant styles
+          buttonVariants[variant],
+          // Size styles
+          buttonSizes[size],
+          // Custom styles
+          className,
+        )}
+        disabled={isDisabled}
+        aria-disabled={isDisabled}
+        {...props}
+      >
+        {loading && <LoadingSpinner />}
+        {leftIcon && !loading && (
+          <span className="mr-2" aria-hidden="true">
+            {leftIcon}
+          </span>
+        )}
+        {children}
+        {rightIcon && (
+          <span className="ml-2" aria-hidden="true">
+            {rightIcon}
+          </span>
+        )}
+      </button>
+    );
+  },
+);
 
 Button.displayName = 'Button';

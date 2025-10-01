@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Activity, 
-  AlertTriangle, 
-  Clock, 
-  Database, 
-  Memory, 
+import {
+  Activity,
+  AlertTriangle,
+  Clock,
+  Database,
+  Memory,
   Monitor,
   TrendingUp,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { usePerformanceData, usePerformanceAlerts } from '@/hooks/usePerformanceMonitoring';
+import {
+  usePerformanceData,
+  usePerformanceAlerts,
+} from '@/hooks/usePerformanceMonitoring';
 
 export interface PerformanceMonitorProps {
   /** Whether to show the monitor */
@@ -37,7 +40,7 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAlerts, setShowAlerts] = useState(true);
-  
+
   const {
     isEnabled,
     setIsEnabled,
@@ -45,17 +48,14 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     getComponentBreakdown,
     clearEntries,
   } = usePerformanceData();
-  
-  const {
-    alerts,
-    dismissAlert,
-    hasAlerts,
-    errorCount,
-    warningCount,
-  } = usePerformanceAlerts();
+
+  const { alerts, dismissAlert, hasAlerts, errorCount, warningCount } =
+    usePerformanceAlerts();
 
   const [metrics, setMetrics] = useState(() => getAggregatedMetrics());
-  const [componentBreakdown, setComponentBreakdown] = useState(() => getComponentBreakdown());
+  const [componentBreakdown, setComponentBreakdown] = useState(() =>
+    getComponentBreakdown(),
+  );
 
   // Update metrics periodically
   useEffect(() => {
@@ -79,12 +79,14 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   };
 
   return (
-    <div className={cn(
-      'fixed z-50 bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg',
-      'transition-all duration-200 ease-in-out',
-      positionClasses[position],
-      isExpanded ? 'w-80' : 'w-64'
-    )}>
+    <div
+      className={cn(
+        'fixed z-50 bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg',
+        'transition-all duration-200 ease-in-out',
+        positionClasses[position],
+        isExpanded ? 'w-80' : 'w-64',
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-border">
         <div className="flex items-center gap-2">
@@ -139,7 +141,13 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             icon={<Database className="h-3 w-3" />}
             label="API"
             value={`${metrics.api.avg.toFixed(0)}ms`}
-            trend={metrics.api.avg > 1000 ? 'error' : metrics.api.avg > 500 ? 'warning' : 'good'}
+            trend={
+              metrics.api.avg > 1000
+                ? 'error'
+                : metrics.api.avg > 500
+                  ? 'warning'
+                  : 'good'
+            }
           />
         </div>
 
@@ -177,7 +185,7 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                   Clear
                 </button>
               </div>
-              
+
               <div className="space-y-1">
                 <DetailedMetric
                   label="Render Times"
@@ -212,16 +220,20 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 <div className="font-medium">Component Performance</div>
                 <div className="space-y-1">
                   {Object.entries(componentBreakdown)
-                    .sort(([,a], [,b]) => b.avgRenderTime - a.avgRenderTime)
+                    .sort(([, a], [, b]) => b.avgRenderTime - a.avgRenderTime)
                     .slice(0, 5)
                     .map(([component, data]) => (
                       <div key={component} className="flex justify-between">
                         <span className="truncate">{component}</span>
-                        <span className={cn(
-                          data.avgRenderTime > 16 ? 'text-red-500' : 
-                          data.avgRenderTime > 8 ? 'text-yellow-500' : 
-                          'text-green-500'
-                        )}>
+                        <span
+                          className={cn(
+                            data.avgRenderTime > 16
+                              ? 'text-red-500'
+                              : data.avgRenderTime > 8
+                                ? 'text-yellow-500'
+                                : 'text-green-500',
+                          )}
+                        >
                           {data.avgRenderTime.toFixed(1)}ms
                         </span>
                       </div>
@@ -249,7 +261,9 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               onClick={() => setShowAlerts(!showAlerts)}
               className={cn(
                 'p-1 rounded text-xs',
-                showAlerts ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                showAlerts
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground',
               )}
               title="Toggle alerts"
             >
@@ -269,7 +283,12 @@ interface MetricCardProps {
   trend: 'good' | 'warning' | 'error';
 }
 
-const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, trend }) => {
+const MetricCard: React.FC<MetricCardProps> = ({
+  icon,
+  label,
+  value,
+  trend,
+}) => {
   const trendColors = {
     good: 'text-green-500',
     warning: 'text-yellow-500',
@@ -278,9 +297,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, trend }) =>
 
   return (
     <div className="flex items-center gap-2 p-2 bg-muted/50 rounded">
-      <div className={cn('flex-shrink-0', trendColors[trend])}>
-        {icon}
-      </div>
+      <div className={cn('flex-shrink-0', trendColors[trend])}>{icon}</div>
       <div>
         <div className="font-medium">{value}</div>
         <div className="text-muted-foreground">{label}</div>
@@ -307,7 +324,12 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onDismiss }) => {
   };
 
   return (
-    <div className={cn('flex items-start gap-2 p-2 border rounded text-xs', typeColors[alert.type])}>
+    <div
+      className={cn(
+        'flex items-start gap-2 p-2 border rounded text-xs',
+        typeColors[alert.type],
+      )}
+    >
       <AlertTriangle className="h-3 w-3 flex-shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">{alert.message}</div>
@@ -335,12 +357,22 @@ interface DetailedMetricProps {
   unit: string;
 }
 
-const DetailedMetric: React.FC<DetailedMetricProps> = ({ label, avg, min, max, count, unit }) => {
+const DetailedMetric: React.FC<DetailedMetricProps> = ({
+  label,
+  avg,
+  min,
+  max,
+  count,
+  unit,
+}) => {
   return (
     <div className="flex justify-between">
-      <span className="text-muted-foreground">{label} ({count})</span>
+      <span className="text-muted-foreground">
+        {label} ({count})
+      </span>
       <span>
-        {avg.toFixed(1)}{unit} ({min.toFixed(1)}-{max.toFixed(1)})
+        {avg.toFixed(1)}
+        {unit} ({min.toFixed(1)}-{max.toFixed(1)})
       </span>
     </div>
   );

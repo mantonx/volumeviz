@@ -1,6 +1,6 @@
 /**
  * VirtualizedFileList Component
- * 
+ *
  * High-performance virtualized file list with advanced features:
  * - Virtualization for 50k+ items
  * - Multi-select with keyboard support
@@ -9,12 +9,18 @@
  * - Loading states
  */
 
-import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+} from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { useResizeObserver } from '@/hooks/useResizeObserver';
 import { cn } from '@/utils';
-import { 
-  ChevronDownIcon, 
+import {
+  ChevronDownIcon,
   ChevronUpIcon,
   FolderIcon,
   FileIcon,
@@ -23,7 +29,7 @@ import {
   VideoIcon,
   MusicIcon,
   DownloadIcon,
-  MoreHorizontalIcon 
+  MoreHorizontalIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -110,41 +116,45 @@ interface FileRowProps {
 }
 
 const FileRow: React.FC<FileRowProps> = ({ index, style, data }) => {
-  const { files, selectedIds, onSelectionChange, onFileOpen, onFileAction } = data;
+  const { files, selectedIds, onSelectionChange, onFileOpen, onFileAction } =
+    data;
   const file = files[index];
   const isSelected = selectedIds.has(file.id);
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
 
-    if (e.metaKey || e.ctrlKey) {
-      // Multi-select
-      const newSelection = new Set(selectedIds);
-      if (isSelected) {
-        newSelection.delete(file.id);
-      } else {
-        newSelection.add(file.id);
-      }
-      onSelectionChange(newSelection);
-    } else if (e.shiftKey && selectedIds.size > 0) {
-      // Range select
-      const lastSelectedIndex = files.findIndex(f => selectedIds.has(f.id));
-      if (lastSelectedIndex !== -1) {
-        const start = Math.min(lastSelectedIndex, index);
-        const end = Math.max(lastSelectedIndex, index);
+      if (e.metaKey || e.ctrlKey) {
+        // Multi-select
         const newSelection = new Set(selectedIds);
-        for (let i = start; i <= end; i++) {
-          newSelection.add(files[i].id);
+        if (isSelected) {
+          newSelection.delete(file.id);
+        } else {
+          newSelection.add(file.id);
         }
         onSelectionChange(newSelection);
+      } else if (e.shiftKey && selectedIds.size > 0) {
+        // Range select
+        const lastSelectedIndex = files.findIndex((f) => selectedIds.has(f.id));
+        if (lastSelectedIndex !== -1) {
+          const start = Math.min(lastSelectedIndex, index);
+          const end = Math.max(lastSelectedIndex, index);
+          const newSelection = new Set(selectedIds);
+          for (let i = start; i <= end; i++) {
+            newSelection.add(files[i].id);
+          }
+          onSelectionChange(newSelection);
+        } else {
+          onSelectionChange(new Set([file.id]));
+        }
       } else {
+        // Single select
         onSelectionChange(new Set([file.id]));
       }
-    } else {
-      // Single select
-      onSelectionChange(new Set([file.id]));
-    }
-  }, [file, files, index, isSelected, selectedIds, onSelectionChange]);
+    },
+    [file, files, index, isSelected, selectedIds, onSelectionChange],
+  );
 
   const handleDoubleClick = useCallback(() => {
     onFileOpen(file);
@@ -155,7 +165,7 @@ const FileRow: React.FC<FileRowProps> = ({ index, style, data }) => {
       style={style}
       className={cn(
         'flex items-center px-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer',
-        isSelected && 'bg-blue-50 dark:bg-blue-900/20'
+        isSelected && 'bg-blue-50 dark:bg-blue-900/20',
       )}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
@@ -239,16 +249,22 @@ const TableHeader: React.FC<TableHeaderProps> = ({
   sortDirection,
   onSortChange,
 }) => {
-  const handleSort = useCallback((field: keyof FileItem) => {
-    const newDirection = sortBy === field && sortDirection === 'asc' ? 'desc' : 'asc';
-    onSortChange?.(field, newDirection);
-  }, [sortBy, sortDirection, onSortChange]);
+  const handleSort = useCallback(
+    (field: keyof FileItem) => {
+      const newDirection =
+        sortBy === field && sortDirection === 'asc' ? 'desc' : 'asc';
+      onSortChange?.(field, newDirection);
+    },
+    [sortBy, sortDirection, onSortChange],
+  );
 
   const SortIcon = ({ field }: { field: keyof FileItem }) => {
     if (sortBy !== field) return null;
-    return sortDirection === 'asc' ? 
-      <ChevronUpIcon className="w-4 h-4 ml-1" /> : 
-      <ChevronDownIcon className="w-4 h-4 ml-1" />;
+    return sortDirection === 'asc' ? (
+      <ChevronUpIcon className="w-4 h-4 ml-1" />
+    ) : (
+      <ChevronDownIcon className="w-4 h-4 ml-1" />
+    );
   };
 
   return (
@@ -266,7 +282,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
       </div>
 
       {/* Name */}
-      <div 
+      <div
         className="flex items-center min-w-0 flex-1 mr-4 cursor-pointer hover:text-blue-600"
         onClick={() => handleSort('name')}
       >
@@ -277,7 +293,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
       </div>
 
       {/* Size */}
-      <div 
+      <div
         className="w-20 text-right mr-4 cursor-pointer hover:text-blue-600 flex items-center justify-end"
         onClick={() => handleSort('size')}
       >
@@ -288,7 +304,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
       </div>
 
       {/* Modified */}
-      <div 
+      <div
         className="w-32 text-right mr-4 cursor-pointer hover:text-blue-600 flex items-center justify-end"
         onClick={() => handleSort('modified')}
       >
@@ -350,7 +366,7 @@ export const VirtualizedFileList: React.FC<VirtualizedFileListProps> = ({
       if (sortBy && a[sortBy] !== undefined && b[sortBy] !== undefined) {
         const aVal = a[sortBy];
         const bVal = b[sortBy];
-        
+
         if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
         if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
       }
@@ -365,12 +381,17 @@ export const VirtualizedFileList: React.FC<VirtualizedFileListProps> = ({
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedIds.size || !containerRef.current?.contains(document.activeElement)) {
+      if (
+        !selectedIds.size ||
+        !containerRef.current?.contains(document.activeElement)
+      ) {
         return;
       }
 
       const selectedArray = Array.from(selectedIds);
-      const currentIndex = sortedFiles.findIndex(f => f.id === selectedArray[selectedArray.length - 1]);
+      const currentIndex = sortedFiles.findIndex(
+        (f) => f.id === selectedArray[selectedArray.length - 1],
+      );
 
       if (currentIndex === -1) return;
 
@@ -418,7 +439,10 @@ export const VirtualizedFileList: React.FC<VirtualizedFileListProps> = ({
 
   if (isLoading) {
     return (
-      <div className={cn('flex items-center justify-center', className)} style={{ height }}>
+      <div
+        className={cn('flex items-center justify-center', className)}
+        style={{ height }}
+      >
         <div className="flex flex-col items-center space-y-2">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
           <p className="text-sm text-gray-500">Loading files...</p>
@@ -429,7 +453,10 @@ export const VirtualizedFileList: React.FC<VirtualizedFileListProps> = ({
 
   if (!sortedFiles.length) {
     return (
-      <div className={cn('flex items-center justify-center', className)} style={{ height }}>
+      <div
+        className={cn('flex items-center justify-center', className)}
+        style={{ height }}
+      >
         <div className="text-center">
           <FolderIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500">No files found</p>
@@ -447,9 +474,12 @@ export const VirtualizedFileList: React.FC<VirtualizedFileListProps> = ({
   };
 
   return (
-    <div 
+    <div
       ref={containerRef}
-      className={cn('border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden', className)}
+      className={cn(
+        'border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden',
+        className,
+      )}
       style={{ height }}
       tabIndex={0}
     >
@@ -458,7 +488,7 @@ export const VirtualizedFileList: React.FC<VirtualizedFileListProps> = ({
         sortDirection={sortDirection}
         onSortChange={onSortChange}
       />
-      
+
       <List
         height={height - HEADER_HEIGHT}
         itemCount={sortedFiles.length}

@@ -22,9 +22,7 @@ const createWrapper = () => {
     return (
       <QueryClientProvider client={queryClient}>
         <JotaiProvider>
-          <BrowserRouter>
-            {children}
-          </BrowserRouter>
+          <BrowserRouter>{children}</BrowserRouter>
         </JotaiProvider>
       </QueryClientProvider>
     );
@@ -41,7 +39,9 @@ describe('VolumesPage', () => {
       render(<VolumesPage />, { wrapper: createWrapper() });
 
       expect(screen.getByText('Volumes')).toBeInTheDocument();
-      expect(screen.getByText('Manage and analyze your Docker volumes')).toBeInTheDocument();
+      expect(
+        screen.getByText('Manage and analyze your Docker volumes'),
+      ).toBeInTheDocument();
     });
 
     it('renders the Add Volume button', () => {
@@ -62,7 +62,9 @@ describe('VolumesPage', () => {
       render(<VolumesPage />, { wrapper: createWrapper() });
 
       // VolumesList should be rendered (check for its characteristic elements)
-      expect(screen.getByRole('heading', { name: 'Volumes' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Volumes' }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -111,7 +113,9 @@ describe('VolumesPage', () => {
         expect(screen.getByLabelText(/volume name/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/mount path/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/automatically scan/i)).toBeInTheDocument();
+        expect(
+          screen.getByLabelText(/automatically scan/i),
+        ).toBeInTheDocument();
       });
     });
 
@@ -136,7 +140,9 @@ describe('VolumesPage', () => {
       await user.click(addButton);
 
       await waitFor(() => {
-        const autoScanCheckbox = screen.getByLabelText(/automatically scan/i) as HTMLInputElement;
+        const autoScanCheckbox = screen.getByLabelText(
+          /automatically scan/i,
+        ) as HTMLInputElement;
         expect(autoScanCheckbox.checked).toBe(true);
       });
     });
@@ -170,15 +176,22 @@ describe('VolumesPage', () => {
     it('has proper heading hierarchy', () => {
       render(<VolumesPage />, { wrapper: createWrapper() });
 
-      const mainHeading = screen.getByRole('heading', { level: 1, name: /volumes/i });
+      const mainHeading = screen.getByRole('heading', {
+        level: 1,
+        name: /volumes/i,
+      });
       expect(mainHeading).toBeInTheDocument();
     });
 
     it('buttons have accessible names', () => {
       render(<VolumesPage />, { wrapper: createWrapper() });
 
-      expect(screen.getByRole('button', { name: /add volume/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /export/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /add volume/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /export/i }),
+      ).toBeInTheDocument();
     });
 
     it('modal has proper ARIA attributes', async () => {
@@ -217,7 +230,7 @@ describe('VolumesPage', () => {
       // consoleLogSpy should not be called
       expect(consoleLogSpy).not.toHaveBeenCalledWith(
         'Create volume:',
-        expect.anything()
+        expect.anything(),
       );
 
       consoleLogSpy.mockRestore();
@@ -230,7 +243,9 @@ describe('VolumesPage', () => {
 
       // Check that VolumesList is rendered by looking for its elements
       // This is a basic integration check
-      expect(screen.getByRole('heading', { name: /volumes/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /volumes/i }),
+      ).toBeInTheDocument();
     });
   });
 });

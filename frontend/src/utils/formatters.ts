@@ -1,10 +1,14 @@
 /**
  * Formats bytes into human-readable format.
- * @param bytes - Number of bytes
+ * @param bytes - Number of bytes (or null/undefined for unscanned volumes)
  * @param decimals - Number of decimal places (default: 2)
- * @returns Formatted string (e.g., "1.50 GB")
+ * @returns Formatted string (e.g., "1.50 GB") or "—" if bytes is null/undefined
  */
-export function formatBytes(bytes: number, decimals = 2): string {
+export function formatBytes(
+  bytes: number | null | undefined,
+  decimals = 2,
+): string {
+  if (bytes == null) return '—';
   if (bytes === 0) return '0 B';
 
   const k = 1024;

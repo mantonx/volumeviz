@@ -42,7 +42,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
 
     // Calculate how many middle items we can fit
     const availableForMiddle = maxVisibleItems - 2; // Reserve space for first and last
-    
+
     if (middleItems.length <= availableForMiddle) {
       return { visibleItems: items, overflowItems: [] };
     }
@@ -88,7 +88,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
       ref={containerRef}
       className={cn(
         'flex items-center space-x-1 text-sm text-muted-foreground overflow-hidden',
-        className
+        className,
       )}
       aria-label="Breadcrumb navigation"
     >
@@ -105,13 +105,13 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
               <ChevronRight className="h-4 w-4 flex-shrink-0" />
             </>
           )}
-          
+
           <BreadcrumbItemComponent
             item={item}
             isLast={index === visibleItems.length - 1}
             onClick={() => handleItemClick(item)}
           />
-          
+
           {index < visibleItems.length - 1 && (
             <ChevronRight className="h-4 w-4 flex-shrink-0" />
           )}
@@ -133,13 +133,13 @@ const BreadcrumbItemComponent: React.FC<BreadcrumbItemComponentProps> = ({
   onClick,
 }) => {
   const isRoot = item.path === '/';
-  
+
   return (
     <span
       className={cn(
         'flex items-center gap-1 truncate',
         item.isClickable && !isLast && 'hover:text-foreground cursor-pointer',
-        isLast && 'text-foreground font-medium'
+        isLast && 'text-foreground font-medium',
       )}
       onClick={item.isClickable && !isLast ? onClick : undefined}
       title={item.name}
@@ -171,7 +171,10 @@ const BreadcrumbOverflowButton: React.FC<BreadcrumbOverflowButtonProps> = ({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         onToggle();
       }
     };
@@ -198,7 +201,7 @@ const BreadcrumbOverflowButton: React.FC<BreadcrumbOverflowButtonProps> = ({
         type="button"
         className={cn(
           'flex items-center justify-center w-8 h-8 rounded hover:bg-muted',
-          isOpen && 'bg-muted'
+          isOpen && 'bg-muted',
         )}
         onClick={onToggle}
         aria-label={`Show ${items.length} hidden breadcrumb items`}
@@ -207,7 +210,7 @@ const BreadcrumbOverflowButton: React.FC<BreadcrumbOverflowButtonProps> = ({
       >
         <MoreHorizontal className="h-4 w-4" />
       </button>
-      
+
       {isOpen && (
         <div className="absolute top-full left-0 z-50 mt-1 py-1 bg-popover border border-border rounded-md shadow-md min-w-[200px] max-w-[300px]">
           {items.map((item, index) => (
@@ -217,7 +220,7 @@ const BreadcrumbOverflowButton: React.FC<BreadcrumbOverflowButtonProps> = ({
               className={cn(
                 'w-full px-3 py-2 text-left text-sm hover:bg-muted truncate',
                 item.isClickable && 'hover:text-foreground',
-                !item.isClickable && 'cursor-default text-muted-foreground'
+                !item.isClickable && 'cursor-default text-muted-foreground',
               )}
               onClick={() => handleItemClick(item)}
               disabled={!item.isClickable}

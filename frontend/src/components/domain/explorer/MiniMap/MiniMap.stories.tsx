@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { MiniMap, MiniMapItem, MiniMapViewport } from './MiniMap'
+import type { Meta, StoryObj } from '@storybook/react';
+import { MiniMap, MiniMapItem, MiniMapViewport } from './MiniMap';
 
 const meta = {
   title: 'Domain/Explorer/MiniMap',
@@ -25,10 +25,10 @@ const meta = {
       control: { type: 'boolean' },
     },
   },
-} satisfies Meta<typeof MiniMap>
+} satisfies Meta<typeof MiniMap>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 // Sample data for mini-map
 const sampleItems: MiniMapItem[] = [
@@ -116,14 +116,14 @@ const sampleItems: MiniMapItem[] = [
     color: 'hsl(10, 70%, 60%)',
     isVisible: true,
   },
-]
+];
 
 const contentBounds = {
   x: -50,
   y: -50,
   width: 750,
   height: 470,
-}
+};
 
 const defaultViewport: MiniMapViewport = {
   x: 100,
@@ -131,7 +131,7 @@ const defaultViewport: MiniMapViewport = {
   width: 300,
   height: 200,
   scale: 1,
-}
+};
 
 const zoomedInViewport: MiniMapViewport = {
   x: 200,
@@ -139,7 +139,7 @@ const zoomedInViewport: MiniMapViewport = {
   width: 150,
   height: 100,
   scale: 2,
-}
+};
 
 const zoomedOutViewport: MiniMapViewport = {
   x: -25,
@@ -147,7 +147,7 @@ const zoomedOutViewport: MiniMapViewport = {
   width: 600,
   height: 400,
   scale: 0.5,
-}
+};
 
 export const Default: Story = {
   args: {
@@ -160,7 +160,7 @@ export const Default: Story = {
     showViewport: true,
     enablePan: true,
   },
-}
+};
 
 export const WithLabels: Story = {
   args: {
@@ -173,7 +173,7 @@ export const WithLabels: Story = {
     showViewport: true,
     enablePan: true,
   },
-}
+};
 
 export const ZoomedIn: Story = {
   args: {
@@ -186,7 +186,7 @@ export const ZoomedIn: Story = {
     showViewport: true,
     enablePan: true,
   },
-}
+};
 
 export const ZoomedOut: Story = {
   args: {
@@ -199,7 +199,7 @@ export const ZoomedOut: Story = {
     showViewport: true,
     enablePan: true,
   },
-}
+};
 
 export const LargeSize: Story = {
   args: {
@@ -212,7 +212,7 @@ export const LargeSize: Story = {
     showViewport: true,
     enablePan: true,
   },
-}
+};
 
 export const SmallSize: Story = {
   args: {
@@ -225,7 +225,7 @@ export const SmallSize: Story = {
     showViewport: true,
     enablePan: true,
   },
-}
+};
 
 export const NoViewportIndicator: Story = {
   args: {
@@ -238,7 +238,7 @@ export const NoViewportIndicator: Story = {
     showViewport: false,
     enablePan: false,
   },
-}
+};
 
 export const DisabledInteraction: Story = {
   args: {
@@ -251,7 +251,7 @@ export const DisabledInteraction: Story = {
     showViewport: true,
     enablePan: false,
   },
-}
+};
 
 export const Interactive: Story = {
   args: {
@@ -266,7 +266,7 @@ export const Interactive: Story = {
     onViewportChange: (viewport) => console.log('Viewport changed:', viewport),
     onItemClick: (item) => console.log('Item clicked:', item.name),
   },
-}
+};
 
 export const ManyItems: Story = {
   args: {
@@ -280,7 +280,8 @@ export const ManyItems: Story = {
         y: Math.random() * 400,
         width: 20 + Math.random() * 80,
         height: 20 + Math.random() * 60,
-        type: Math.random() > 0.5 ? 'directory' : 'file' as 'directory' | 'file',
+        type:
+          Math.random() > 0.5 ? 'directory' : ('file' as 'directory' | 'file'),
         size: Math.random() * 1000000,
         color: `hsl(${Math.random() * 360}, 70%, 60%)`,
         isVisible: Math.random() > 0.2,
@@ -294,7 +295,7 @@ export const ManyItems: Story = {
     showViewport: true,
     enablePan: true,
   },
-}
+};
 
 export const EmptyMiniMap: Story = {
   args: {
@@ -307,7 +308,7 @@ export const EmptyMiniMap: Story = {
     showViewport: true,
     enablePan: true,
   },
-}
+};
 
 export const SingleItem: Story = {
   args: {
@@ -331,4 +332,4 @@ export const SingleItem: Story = {
     showViewport: true,
     enablePan: true,
   },
-}
+};

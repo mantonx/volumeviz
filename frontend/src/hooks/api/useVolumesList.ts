@@ -11,7 +11,7 @@ export interface UseVolumesListOptions {
 
 export function useVolumesList(options: UseVolumesListOptions = {}) {
   const { enabled = true, page = 1, pageSize = 25 } = options;
-  
+
   const orgId = useAtomValue(organizationIdAtom);
   const filters = useAtomValue(volumeFiltersAtom);
 
@@ -55,20 +55,14 @@ export function useVolumesList(options: UseVolumesListOptions = {}) {
   }, [page, pageSize, filters, orgId]);
 
   // Use the generated hook
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-    isFetching,
-    isRefetching,
-  } = useGetVolumes(queryParams, {
-    query: {
-      enabled: enabled && !!orgId, // Only fetch if org is selected
-      staleTime: 30 * 1000, // 30 seconds
-      refetchOnWindowFocus: false,
-    },
-  });
+  const { data, isLoading, error, refetch, isFetching, isRefetching } =
+    useGetVolumes(queryParams, {
+      query: {
+        enabled: enabled, // Fetch volumes regardless of org (backend handles filtering)
+        staleTime: 30 * 1000, // 30 seconds
+        refetchOnWindowFocus: false,
+      },
+    });
 
   // Transform data to match expected format
   const volumes = useMemo(() => {

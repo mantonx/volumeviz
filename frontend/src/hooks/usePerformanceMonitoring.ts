@@ -61,7 +61,11 @@ export function usePerformanceMonitoring({
 
   // Record performance entry
   const recordEntry = useCallback(
-    (operation: string, metrics: PerformanceMetrics, metadata?: Record<string, any>) => {
+    (
+      operation: string,
+      metrics: PerformanceMetrics,
+      metadata?: Record<string, any>,
+    ) => {
       if (!isEnabled) return;
 
       const entry: PerformanceEntry = {
@@ -79,7 +83,7 @@ export function usePerformanceMonitoring({
           : newEntries;
       });
     },
-    [component, isEnabled, maxEntries, setEntries]
+    [component, isEnabled, maxEntries, setEntries],
   );
 
   // Render time measurement
@@ -115,18 +119,22 @@ export function usePerformanceMonitoring({
           const apiResponseTime = performance.now() - startTime;
           apiStartTimes.current.delete(operationId);
 
-          recordEntry('api-call', {
-            renderTime: 0,
-            apiResponseTime,
-            processingTime: 0,
-            memoryUsage: getMemoryUsage(),
-            itemCount,
-            timestamp: Date.now(),
-          }, metadata);
+          recordEntry(
+            'api-call',
+            {
+              renderTime: 0,
+              apiResponseTime,
+              processingTime: 0,
+              memoryUsage: getMemoryUsage(),
+              itemCount,
+              timestamp: Date.now(),
+            },
+            metadata,
+          );
         },
       };
     },
-    [isEnabled, recordEntry]
+    [isEnabled, recordEntry],
   );
 
   // Data processing measurement
@@ -145,18 +153,22 @@ export function usePerformanceMonitoring({
           const processingTime = performance.now() - startTime;
           processingStartTimes.current.delete(operationId);
 
-          recordEntry('data-processing', {
-            renderTime: 0,
-            apiResponseTime: 0,
-            processingTime,
-            memoryUsage: getMemoryUsage(),
-            itemCount,
-            timestamp: Date.now(),
-          }, metadata);
+          recordEntry(
+            'data-processing',
+            {
+              renderTime: 0,
+              apiResponseTime: 0,
+              processingTime,
+              memoryUsage: getMemoryUsage(),
+              itemCount,
+              timestamp: Date.now(),
+            },
+            metadata,
+          );
         },
       };
     },
-    [isEnabled, recordEntry]
+    [isEnabled, recordEntry],
   );
 
   // Get component-specific metrics
@@ -165,12 +177,16 @@ export function usePerformanceMonitoring({
   }, [entries, component]);
 
   // Get recent metrics
-  const getRecentMetrics = useCallback((minutes = 5) => {
-    const cutoff = Date.now() - minutes * 60 * 1000;
-    return entries.filter(
-      (entry) => entry.component === component && entry.metrics.timestamp > cutoff
-    );
-  }, [entries, component]);
+  const getRecentMetrics = useCallback(
+    (minutes = 5) => {
+      const cutoff = Date.now() - minutes * 60 * 1000;
+      return entries.filter(
+        (entry) =>
+          entry.component === component && entry.metrics.timestamp > cutoff,
+      );
+    },
+    [entries, component],
+  );
 
   return {
     measureRender,
@@ -198,7 +214,7 @@ export function usePerformanceData() {
   // Get aggregated metrics
   const getAggregatedMetrics = useCallback(() => {
     const recent = entries.filter(
-      (entry) => entry.metrics.timestamp > Date.now() - 5 * 60 * 1000
+      (entry) => entry.metrics.timestamp > Date.now() - 5 * 60 * 1000,
     );
 
     const renderTimes = recent
@@ -239,7 +255,8 @@ export function usePerformanceData() {
 
   // Get component breakdown
   const getComponentBreakdown = useCallback(() => {
-    const breakdown: Record<string, { count: number; avgRenderTime: number }> = {};
+    const breakdown: Record<string, { count: number; avgRenderTime: number }> =
+      {};
 
     entries
       .filter((entry) => entry.operation === 'render')
@@ -284,13 +301,15 @@ export function usePerformanceAlerts() {
       .filter((entry) => entry.operation === 'render')
       .filter((entry) => entry.metrics.timestamp > Date.now() - 30 * 1000);
 
-    const slowRenders = recentRenders.filter((entry) => entry.metrics.renderTime > 16);
+    const slowRenders = recentRenders.filter(
+      (entry) => entry.metrics.renderTime > 16,
+    );
     if (slowRenders.length > 0) {
       newAlerts.push({
         id: 'slow-renders',
         type: 'warning',
         message: `${slowRenders.length} slow renders detected in the last 30 seconds`,
-        details: `Components: ${[...new Set(slowRenders.map(e => e.component))].join(', ')}`,
+        details: `Components: ${[...new Set(slowRenders.map((e) => e.component))].join(', ')}`,
         timestamp: Date.now(),
       });
     }
@@ -300,13 +319,15 @@ export function usePerformanceAlerts() {
       .filter((entry) => entry.operation === 'api-call')
       .filter((entry) => entry.metrics.timestamp > Date.now() - 60 * 1000);
 
-    const slowApiCalls = recentApiCalls.filter((entry) => entry.metrics.apiResponseTime > 1000);
+    const slowApiCalls = recentApiCalls.filter(
+      (entry) => entry.metrics.apiResponseTime > 1000,
+    );
     if (slowApiCalls.length > 0) {
       newAlerts.push({
         id: 'slow-api-calls',
         type: 'error',
         message: `${slowApiCalls.length} slow API calls detected in the last minute`,
-        details: `Avg time: ${average(slowApiCalls.map(e => e.metrics.apiResponseTime)).toFixed(0)}ms`,
+        details: `Avg time: ${average(slowApiCalls.map((e) => e.metrics.apiResponseTime)).toFixed(0)}ms`,
         timestamp: Date.now(),
       });
     }
@@ -318,7 +339,8 @@ export function usePerformanceAlerts() {
       .filter((usage) => usage > 0);
 
     const avgMemoryUsage = average(recentMemoryUsage);
-    if (avgMemoryUsage > 50) { // Arbitrary threshold for demo
+    if (avgMemoryUsage > 50) {
+      // Arbitrary threshold for demo
       newAlerts.push({
         id: 'high-memory-usage',
         type: 'warning',

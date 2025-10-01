@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { WebWorkerTreemap } from './WebWorkerTreemap'
+import type { Meta, StoryObj } from '@storybook/react';
+import { WebWorkerTreemap } from './WebWorkerTreemap';
 
 const meta = {
   title: 'Domain/Explorer/WebWorkerTreemap',
@@ -25,10 +25,10 @@ const meta = {
       control: { type: 'boolean' },
     },
   },
-} satisfies Meta<typeof WebWorkerTreemap>
+} satisfies Meta<typeof WebWorkerTreemap>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 // Mock data for stories
 const smallDataset = [
@@ -36,7 +36,7 @@ const smallDataset = [
   { id: '2', name: 'Images', value: 2048000 },
   { id: '3', name: 'Videos', value: 4096000 },
   { id: '4', name: 'Music', value: 512000 },
-]
+];
 
 const mediumDataset = [
   { id: '1', name: 'System Files', value: 8192000 },
@@ -49,13 +49,13 @@ const mediumDataset = [
   { id: '8', name: 'Videos', value: 15360000 },
   { id: '9', name: 'Music', value: 2048000 },
   { id: '10', name: 'Temp Files', value: 1536000 },
-]
+];
 
 const largeDataset = Array.from({ length: 50 }, (_, i) => ({
   id: `file-${i}`,
   name: `File ${i + 1}`,
   value: Math.floor(Math.random() * 10000000) + 100000,
-}))
+}));
 
 export const Default: Story = {
   args: {
@@ -66,7 +66,7 @@ export const Default: Story = {
     onNodeClick: (node) => console.log('Node clicked:', node),
     onNodeHover: (node) => console.log('Node hovered:', node),
   },
-}
+};
 
 export const SmallDataset: Story = {
   args: {
@@ -76,7 +76,7 @@ export const SmallDataset: Story = {
     showPerformanceMetrics: true,
     fallbackToSync: true,
   },
-}
+};
 
 export const MediumDataset: Story = {
   args: {
@@ -85,9 +85,10 @@ export const MediumDataset: Story = {
     height: 600,
     padding: 3,
     showPerformanceMetrics: true,
-    onNodeClick: (node) => console.log('Medium dataset - Node clicked:', node.name, node.value),
+    onNodeClick: (node) =>
+      console.log('Medium dataset - Node clicked:', node.name, node.value),
   },
-}
+};
 
 export const LargeDataset: Story = {
   args: {
@@ -99,7 +100,7 @@ export const LargeDataset: Story = {
     showPerformanceMetrics: true,
     onNodeClick: (node) => console.log('Large dataset - Node clicked:', node),
   },
-}
+};
 
 export const CustomStyling: Story = {
   args: {
@@ -111,7 +112,7 @@ export const CustomStyling: Story = {
     showPerformanceMetrics: true,
     className: 'border-4 border-blue-500 rounded-xl shadow-lg',
   },
-}
+};
 
 export const WithFallback: Story = {
   args: {
@@ -121,7 +122,7 @@ export const WithFallback: Story = {
     showPerformanceMetrics: true,
     fallbackToSync: true,
   },
-}
+};
 
 export const PerformanceComparison: Story = {
   render: () => (
@@ -137,7 +138,9 @@ export const PerformanceComparison: Story = {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
-          <h3 className="text-lg font-semibold mb-4">Web Worker (Non-blocking)</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Web Worker (Non-blocking)
+          </h3>
           <WebWorkerTreemap
             data={largeDataset}
             width={500}
@@ -156,16 +159,22 @@ export const PerformanceComparison: Story = {
             height={400}
             showPerformanceMetrics={true}
             fallbackToSync={true}
-            onNodeClick={(node) => console.log('Fallback - Clicked:', node.name)}
+            onNodeClick={(node) =>
+              console.log('Fallback - Clicked:', node.name)
+            }
           />
         </div>
       </div>
 
       <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-        <h4 className="font-medium text-blue-900 mb-2">Performance Benefits:</h4>
+        <h4 className="font-medium text-blue-900 mb-2">
+          Performance Benefits:
+        </h4>
         <ul className="text-blue-800 text-sm space-y-1">
           <li>• Web Workers prevent UI blocking during complex calculations</li>
-          <li>• Automatic fallback ensures compatibility across all browsers</li>
+          <li>
+            • Automatic fallback ensures compatibility across all browsers
+          </li>
           <li>• Performance metrics help monitor calculation efficiency</li>
           <li>• Large datasets benefit most from worker-based processing</li>
         </ul>
@@ -175,7 +184,7 @@ export const PerformanceComparison: Story = {
   parameters: {
     layout: 'padded',
   },
-}
+};
 
 export const InteractiveDemo: Story = {
   args: {
@@ -206,15 +215,15 @@ export const InteractiveDemo: Story = {
             Interactive Web Worker Treemap
           </h3>
           <p className="text-green-700 text-sm">
-            Click on rectangles to see detailed information. 
-            Check browser console for click/hover events.
+            Click on rectangles to see detailed information. Check browser
+            console for click/hover events.
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};
 
 export const EmptyState: Story = {
   args: {
@@ -223,7 +232,7 @@ export const EmptyState: Story = {
     height: 400,
     showPerformanceMetrics: true,
   },
-}
+};
 
 export const ErrorHandling: Story = {
   args: {
@@ -233,4 +242,4 @@ export const ErrorHandling: Story = {
     showPerformanceMetrics: true,
     fallbackToSync: false, // Force potential worker errors
   },
-}
+};

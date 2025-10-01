@@ -1,4 +1,6 @@
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL as string) || 'http://localhost:8080';
+// Use relative URL in development (Vite proxy handles it), absolute in production
+const API_BASE_URL =
+  (import.meta.env?.VITE_API_BASE_URL as string) || '';
 
 interface FetchConfig extends RequestInit {
   params?: Record<string, any>;
@@ -8,7 +10,7 @@ interface FetchConfig extends RequestInit {
 export class FetchError extends Error {
   status: number;
   data: any;
-  
+
   constructor(message: string, status: number, data: any) {
     super(message);
     this.name = 'FetchError';
@@ -19,12 +21,24 @@ export class FetchError extends Error {
 
 export const customFetchClient = async <T = any>(
   url: string,
-  config?: FetchConfig
+  config?: FetchConfig,
 ): Promise<T> => {
   const { params, timeout = 30000, ...fetchConfig } = config || {};
-  
+
   // Build URL with query params
-  const fullUrl = new URL(url, `${API_BASE_URL}/api/v1`);
+  // The url parameter may already include query params from Orval, so we need to parse it
+  const [pathname, existingQuery] = url.split('?');
+  const baseUrl = API_BASE_URL ? `${API_BASE_URL}/api/v1` : '/api/v1';
+  const fullUrl = new URL(`${baseUrl}${pathname}`, window.location.origin);
+
+  // Add existing query params from the url
+  if (existingQuery) {
+    new URLSearchParams(existingQuery).forEach((value, key) => {
+      fullUrl.searchParams.append(key, value);
+    });
+  }
+
+  // Add additional params from config
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -63,12 +77,12 @@ export const customFetchClient = async <T = any>(
         localStorage.removeItem('auth_token');
         window.location.href = '/login';
       }
-      
+
       const errorData = await response.json().catch(() => ({}));
       throw new FetchError(
         errorData.message || `HTTP ${response.status}`,
         response.status,
-        errorData
+        errorData,
       );
     }
 
@@ -77,7 +91,7 @@ export const customFetchClient = async <T = any>(
     if (contentType?.includes('application/json')) {
       return await response.json();
     }
-    
+
     // For non-JSON responses, return the response itself
     return response as any;
   } catch (error: any) {

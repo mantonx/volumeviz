@@ -351,26 +351,31 @@ func (s *StatsService) GetOrganizationStats(ctx context.Context, organizationID 
 	volumeStats := make([]*models.VolumeStatsInfo, 0, len(volumes))
 	
 	for _, volume := range volumes {
-		// Get latest stats for this volume
-		latestStats, err := s.statsRepo.GetLatestVolumeStats(ctx, volume.VolumeID)
-		if err != nil {
+		// Get latest daily stats for this volume (last 1 day to get most recent)
+		endDate := time.Now()
+		startDate := endDate.AddDate(0, 0, -1)
+		dailyStats, err := s.statsRepo.GetDailyStats(ctx, volume.VolumeID, startDate, endDate)
+		if err != nil || len(dailyStats) == 0 {
 			// Skip volumes without stats rather than failing
 			if s.logger != nil {
 				s.logger.Printf("No stats found for volume %s: %v", volume.VolumeID, err)
 			}
 			continue
 		}
-		
+
+		// Use the latest stat
+		latestStats := dailyStats[len(dailyStats)-1]
+
 		// Aggregate totals
-		totalSize += int64(latestStats.TotalSize)
-		totalFiles += int64(latestStats.FileCount)
-		
+		totalSize += latestStats.TotalBytes
+		totalFiles += latestStats.FilesCount
+
 		// Add to volume stats info
 		volumeStats = append(volumeStats, &models.VolumeStatsInfo{
 			VolumeID:    volume.VolumeID,
 			VolumeName:  volume.Name,
-			TotalSize:   int64(latestStats.TotalSize),
-			FileCount:   int64(latestStats.FileCount),
+			TotalSize:   latestStats.TotalBytes,
+			FileCount:   latestStats.FilesCount,
 			LastScanned: volume.LastScanned,
 		})
 	}
@@ -414,16 +419,16 @@ func (s *StatsService) GetOrganizationGrowthTrends(ctx context.Context, organiza
 		// Calculate growth trend for this volume
 		firstStat := statsHistory[0]
 		lastStat := statsHistory[len(statsHistory)-1]
-		
-		if firstStat.TotalSizeBytes > 0 {
-			growthPercent := float64(lastStat.TotalSizeBytes-firstStat.TotalSizeBytes) / float64(firstStat.TotalSizeBytes) * 100
-			
+
+		if firstStat.TotalBytes > 0 {
+			growthPercent := float64(lastStat.TotalBytes-firstStat.TotalBytes) / float64(firstStat.TotalBytes) * 100
+
 			growthTrends = append(growthTrends, &models.OrganizationGrowthTrend{
 				VolumeID:      volume.VolumeID,
 				VolumeName:    volume.Name,
-				StartSize:     firstStat.TotalSizeBytes,
-				EndSize:       lastStat.TotalSizeBytes,
-				SizeChange:    lastStat.TotalSizeBytes - firstStat.TotalSizeBytes,
+				StartSize:     firstStat.TotalBytes,
+				EndSize:       lastStat.TotalBytes,
+				SizeChange:    lastStat.TotalBytes - firstStat.TotalBytes,
 				GrowthPercent: growthPercent,
 				DaysPeriod:    int32(sinceDays),
 			})
@@ -466,8 +471,8 @@ func (s *StatsService) GetOrganizationTopFiles(ctx context.Context, organization
 				VolumeID:   volume.VolumeID,
 				VolumeName: volume.Name,
 				FilePath:   file.Path,
-				Size:       file.Size,
-				ModTime:    file.ModTime,
+				Size:       file.SizeBytes,
+				ModTime:    *file.Mtime, // Dereference pointer
 			})
 		}
 	}

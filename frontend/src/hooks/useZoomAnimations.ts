@@ -35,7 +35,11 @@ export interface UseZoomAnimationsReturn {
   /** Reset zoom to initial state */
   resetZoom: (duration?: number) => Promise<void>;
   /** Zoom in by a factor */
-  zoomIn: (factor?: number, centerX?: number, centerY?: number) => Promise<void>;
+  zoomIn: (
+    factor?: number,
+    centerX?: number,
+    centerY?: number,
+  ) => Promise<void>;
   /** Zoom out by a factor */
   zoomOut: (factor?: number) => Promise<void>;
   /** Set zoom immediately without animation */
@@ -67,9 +71,12 @@ export function useZoomAnimations({
   const animationRef = useRef<number>();
   const startTimeRef = useRef<number>();
 
-  const clampScale = useCallback((scale: number) => {
-    return Math.max(minScale, Math.min(maxScale, scale));
-  }, [minScale, maxScale]);
+  const clampScale = useCallback(
+    (scale: number) => {
+      return Math.max(minScale, Math.min(maxScale, scale));
+    },
+    [minScale, maxScale],
+  );
 
   const animateToZoom = useCallback(
     (target: ZoomTarget): Promise<void> => {
@@ -85,13 +92,16 @@ export function useZoomAnimations({
 
           const elapsed = currentTime - startTimeRef.current;
           const progress = Math.min(elapsed / duration, 1);
-          
+
           // Easing function (ease-out cubic)
           const eased = 1 - Math.pow(1 - progress, 3);
 
-          const currentScale = startState.scale + (targetScale - startState.scale) * eased;
-          const currentOffsetX = startState.offsetX + (target.offsetX - startState.offsetX) * eased;
-          const currentOffsetY = startState.offsetY + (target.offsetY - startState.offsetY) * eased;
+          const currentScale =
+            startState.scale + (targetScale - startState.scale) * eased;
+          const currentOffsetX =
+            startState.offsetX + (target.offsetX - startState.offsetX) * eased;
+          const currentOffsetY =
+            startState.offsetY + (target.offsetY - startState.offsetY) * eased;
 
           const newState: ZoomState = {
             scale: currentScale,
@@ -111,7 +121,7 @@ export function useZoomAnimations({
           }
         };
 
-        setZoomState(prev => ({ ...prev, isAnimating: true }));
+        setZoomState((prev) => ({ ...prev, isAnimating: true }));
         animationRef.current = requestAnimationFrame(animate);
       });
     },
@@ -151,7 +161,7 @@ export function useZoomAnimations({
   const zoomOut = useCallback(
     (factor = 2): Promise<void> => {
       const newScale = clampScale(zoomState.scale / factor);
-      
+
       return animateToZoom({
         scale: newScale,
         offsetX: zoomState.offsetX,
@@ -161,15 +171,19 @@ export function useZoomAnimations({
     [animateToZoom, clampScale, zoomState],
   );
 
-  const setZoom = useCallback((target: Partial<ZoomTarget>) => {
-    setZoomState(prev => ({
-      ...prev,
-      scale: target.scale !== undefined ? clampScale(target.scale) : prev.scale,
-      offsetX: target.offsetX !== undefined ? target.offsetX : prev.offsetX,
-      offsetY: target.offsetY !== undefined ? target.offsetY : prev.offsetY,
-      isAnimating: false,
-    }));
-  }, [clampScale]);
+  const setZoom = useCallback(
+    (target: Partial<ZoomTarget>) => {
+      setZoomState((prev) => ({
+        ...prev,
+        scale:
+          target.scale !== undefined ? clampScale(target.scale) : prev.scale,
+        offsetX: target.offsetX !== undefined ? target.offsetX : prev.offsetX,
+        offsetY: target.offsetY !== undefined ? target.offsetY : prev.offsetY,
+        isAnimating: false,
+      }));
+    },
+    [clampScale],
+  );
 
   // Cleanup animation on unmount
   const cleanup = useCallback(() => {
@@ -205,13 +219,13 @@ export function useDrillAnimations() {
   const drillDown = useCallback(
     async (itemId: string, animationDuration = 500): Promise<void> => {
       setIsTransitioning(true);
-      
+
       // Add to drill stack
-      setDrillStack(prev => [...prev, itemId]);
-      
+      setDrillStack((prev) => [...prev, itemId]);
+
       // Simulate animation duration
-      await new Promise(resolve => setTimeout(resolve, animationDuration));
-      
+      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+
       setIsTransitioning(false);
     },
     [],
@@ -222,13 +236,13 @@ export function useDrillAnimations() {
       if (drillStack.length === 0) return;
 
       setIsTransitioning(true);
-      
+
       // Remove from drill stack
-      setDrillStack(prev => prev.slice(0, -1));
-      
+      setDrillStack((prev) => prev.slice(0, -1));
+
       // Simulate animation duration
-      await new Promise(resolve => setTimeout(resolve, animationDuration));
-      
+      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+
       setIsTransitioning(false);
     },
     [drillStack.length],
@@ -239,13 +253,13 @@ export function useDrillAnimations() {
       if (drillStack.length === 0) return;
 
       setIsTransitioning(true);
-      
+
       // Clear drill stack
       setDrillStack([]);
-      
+
       // Simulate animation duration
-      await new Promise(resolve => setTimeout(resolve, animationDuration));
-      
+      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+
       setIsTransitioning(false);
     },
     [drillStack.length],
@@ -270,7 +284,9 @@ export function useDrillAnimations() {
 /**
  * Hook for coordinating zoom and drill animations
  */
-export function useVisualizationAnimations(options: UseZoomAnimationsOptions = {}) {
+export function useVisualizationAnimations(
+  options: UseZoomAnimationsOptions = {},
+) {
   const zoomAnimations = useZoomAnimations(options);
   const drillAnimations = useDrillAnimations();
 
@@ -282,8 +298,11 @@ export function useVisualizationAnimations(options: UseZoomAnimationsOptions = {
     ): Promise<void> => {
       // Start both animations simultaneously
       const drillPromise = drillAnimations.drillDown(itemId, animationDuration);
-      const zoomPromise = zoomTarget 
-        ? zoomAnimations.animateToZoom({ ...zoomTarget, duration: animationDuration })
+      const zoomPromise = zoomTarget
+        ? zoomAnimations.animateToZoom({
+            ...zoomTarget,
+            duration: animationDuration,
+          })
         : Promise.resolve();
 
       await Promise.all([drillPromise, zoomPromise]);
@@ -292,14 +311,14 @@ export function useVisualizationAnimations(options: UseZoomAnimationsOptions = {
   );
 
   const drillUpWithZoom = useCallback(
-    async (
-      zoomTarget?: ZoomTarget,
-      animationDuration = 500,
-    ): Promise<void> => {
-      // Start both animations simultaneously  
+    async (zoomTarget?: ZoomTarget, animationDuration = 500): Promise<void> => {
+      // Start both animations simultaneously
       const drillPromise = drillAnimations.drillUp(animationDuration);
       const zoomPromise = zoomTarget
-        ? zoomAnimations.animateToZoom({ ...zoomTarget, duration: animationDuration })
+        ? zoomAnimations.animateToZoom({
+            ...zoomTarget,
+            duration: animationDuration,
+          })
         : zoomAnimations.resetZoom(animationDuration);
 
       await Promise.all([drillPromise, zoomPromise]);
@@ -307,7 +326,8 @@ export function useVisualizationAnimations(options: UseZoomAnimationsOptions = {
     [drillAnimations, zoomAnimations],
   );
 
-  const isAnimating = zoomAnimations.zoomState.isAnimating || drillAnimations.isTransitioning;
+  const isAnimating =
+    zoomAnimations.zoomState.isAnimating || drillAnimations.isTransitioning;
 
   return {
     ...zoomAnimations,

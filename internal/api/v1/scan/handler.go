@@ -192,6 +192,17 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 		return
 	}
 
+	// Update database with scan results
+	if h.store != nil {
+		// Update the volume record with scan results
+		// Using LastScanned field which corresponds to last_scan_at in database
+		updateErr := h.updateVolumeAfterScan(c.Request.Context(), volumeID, result.TotalSize, result.ScannedAt)
+		if updateErr != nil {
+			// Log but don't fail - scan was successful even if DB update failed
+			fmt.Printf("[WARN] Failed to update volume size in database for %s: %v\n", volumeID, updateErr)
+		}
+	}
+
 	// Broadcast scan completion via realtime publisher
 	if h.realtimePublisher != nil {
 		completeData := realtime.ScanCompleteData{
@@ -1642,4 +1653,20 @@ func (h *Handler) GetMediaEnrichmentCapabilities(c *gin.Context) {
 			"hashing_enabled":        false,
 		},
 	})
+}
+
+// updateVolumeAfterScan updates the volume record with scan results
+func (h *Handler) updateVolumeAfterScan(ctx context.Context, volumeID string, totalSize int64, scannedAt time.Time) error {
+	// Update volume using the UpdateLastScanned method which exists
+	volumesRepo := h.store.Volumes()
+	if volumesRepo != nil {
+		// First update the last_scanned timestamp
+		if err := volumesRepo.UpdateLastScanned(ctx, 1, volumeID, scannedAt); err != nil {
+			return fmt.Errorf("failed to update last_scanned: %w", err)
+		}
+	}
+
+	// For now, we'll rely on the scanner's cache and metrics
+	// TODO: Add a proper UpdateVolumeSize method to the volumes repository
+	return nil
 }

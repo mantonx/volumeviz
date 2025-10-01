@@ -239,7 +239,14 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     <span className="font-medium">Path:</span> {currentPath}
                   </div>
-                  <ViewToggle value={viewMode} onChange={setViewMode} options={[{id: 'list', label: 'List', icon: null}, {id: 'grid', label: 'Grid', icon: null}]} />
+                  <ViewToggle
+                    value={viewMode}
+                    onChange={setViewMode}
+                    options={[
+                      { id: 'list', label: 'List', icon: null },
+                      { id: 'grid', label: 'Grid', icon: null },
+                    ]}
+                  />
                 </div>
 
                 <div className="relative">

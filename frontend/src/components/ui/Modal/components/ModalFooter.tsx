@@ -34,7 +34,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
         'px-6 py-4 border-t border-neutral-200 dark:border-neutral-700',
         'bg-neutral-50 dark:bg-neutral-800',
         alignmentClasses[align],
-        className
+        className,
       )}
       {...props}
     >

@@ -14,7 +14,7 @@ export interface ResizeObserverEntry {
 
 export const useResizeObserver = (
   target: React.RefObject<Element>,
-  callback: (entry: ResizeObserverEntry) => void
+  callback: (entry: ResizeObserverEntry) => void,
 ) => {
   const callbackRef = useRef(callback);
   callbackRef.current = callback;

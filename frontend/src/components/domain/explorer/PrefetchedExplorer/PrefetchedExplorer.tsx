@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  Zap, 
-  TrendingUp, 
-  Clock, 
-  HardDrive, 
-  Wifi, 
+import {
+  Zap,
+  TrendingUp,
+  Clock,
+  HardDrive,
+  Wifi,
   WifiOff,
   BarChart3,
   Eye,
@@ -46,11 +46,13 @@ export const PrefetchedExplorer: React.FC<PrefetchedExplorerProps> = ({
   enableOptimizations = true,
 }) => {
   const [currentPath, setCurrentPath] = useState(initialPath);
-  const [explorerData, setExplorerData] = useState<FileExplorerData | null>(null);
+  const [explorerData, setExplorerData] = useState<FileExplorerData | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [navigationTime, setNavigationTime] = useState<number>(0);
   const [loadSource, setLoadSource] = useState<'api' | 'cache'>('api');
-  
+
   const navigationStartTime = useRef<number>(0);
   const visitStartTime = useRef<number>(Date.now());
 
@@ -59,90 +61,95 @@ export const PrefetchedExplorer: React.FC<PrefetchedExplorerProps> = ({
   const dataPrefetch = useDataPrefetch();
 
   // Navigate to a new path
-  const navigateToPath = useCallback(async (newPath: string) => {
-    // Record time spent on current path
-    const timeSpent = Date.now() - visitStartTime.current;
-    navigationPrefetch.recordNavigation(currentPath, timeSpent);
+  const navigateToPath = useCallback(
+    async (newPath: string) => {
+      // Record time spent on current path
+      const timeSpent = Date.now() - visitStartTime.current;
+      navigationPrefetch.recordNavigation(currentPath, timeSpent);
 
-    // Start navigation timing
-    navigationStartTime.current = performance.now();
-    setLoading(true);
-    setLoadSource('api');
+      // Start navigation timing
+      navigationStartTime.current = performance.now();
+      setLoading(true);
+      setLoadSource('api');
 
-    try {
-      // Check if data is already prefetched
-      const cacheKey = `explorer_${btoa(newPath).replace(/[^a-zA-Z0-9]/g, '')}`;
-      let data = navigationPrefetch.get(cacheKey);
-      
-      if (data) {
-        setLoadSource('cache');
-      } else {
-        // Fetch from API
-        data = await fetchExplorerData(newPath);
-        
-        // Cache the result
-        await dataPrefetch.prefetch(
-          `/api/v1/explorer${newPath}`,
-          {
+      try {
+        // Check if data is already prefetched
+        const cacheKey = `explorer_${btoa(newPath).replace(/[^a-zA-Z0-9]/g, '')}`;
+        let data = navigationPrefetch.get(cacheKey);
+
+        if (data) {
+          setLoadSource('cache');
+        } else {
+          // Fetch from API
+          data = await fetchExplorerData(newPath);
+
+          // Cache the result
+          await dataPrefetch.prefetch(`/api/v1/explorer${newPath}`, {
             id: cacheKey,
             data,
             priority: 'high',
             metadata: {
               ttl: 10 * 60 * 1000, // 10 minutes
             },
-          }
-        );
-      }
+          });
+        }
 
-      setExplorerData(data);
-      setCurrentPath(newPath);
-      visitStartTime.current = Date.now();
+        setExplorerData(data);
+        setCurrentPath(newPath);
+        visitStartTime.current = Date.now();
 
-      if (onPathChange) {
-        onPathChange(newPath);
-      }
+        if (onPathChange) {
+          onPathChange(newPath);
+        }
 
-      // Trigger predictive prefetching for next likely paths
-      if (enableOptimizations) {
-        setTimeout(() => {
-          navigationPrefetch.prefetchPredictions(newPath);
-        }, 100);
+        // Trigger predictive prefetching for next likely paths
+        if (enableOptimizations) {
+          setTimeout(() => {
+            navigationPrefetch.prefetchPredictions(newPath);
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Navigation failed:', error);
+      } finally {
+        const endTime = performance.now();
+        setNavigationTime(endTime - navigationStartTime.current);
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Navigation failed:', error);
-    } finally {
-      const endTime = performance.now();
-      setNavigationTime(endTime - navigationStartTime.current);
-      setLoading(false);
-    }
-  }, [
-    currentPath,
-    navigationPrefetch,
-    dataPrefetch,
-    onPathChange,
-    enableOptimizations,
-  ]);
+    },
+    [
+      currentPath,
+      navigationPrefetch,
+      dataPrefetch,
+      onPathChange,
+      enableOptimizations,
+    ],
+  );
 
   // Prefetch likely next paths when hovering
-  const handleDirectoryHover = useCallback((path: string) => {
-    if (!enableOptimizations) return;
-    
-    const cacheKey = `explorer_${btoa(path).replace(/[^a-zA-Z0-9]/g, '')}`;
-    
-    if (!navigationPrefetch.has(cacheKey)) {
-      // Prefetch with low priority on hover
-      dataPrefetch.prefetch(`/api/v1/explorer${path}`, {
-        id: cacheKey,
-        priority: 'low',
-        metadata: {
-          source: 'hover',
-          ttl: 5 * 60 * 1000, // 5 minutes
-        },
-      }).catch(() => {
-        // Ignore hover prefetch errors
-      });
-    }
-  }, [enableOptimizations, navigationPrefetch, dataPrefetch]);
+  const handleDirectoryHover = useCallback(
+    (path: string) => {
+      if (!enableOptimizations) return;
+
+      const cacheKey = `explorer_${btoa(path).replace(/[^a-zA-Z0-9]/g, '')}`;
+
+      if (!navigationPrefetch.has(cacheKey)) {
+        // Prefetch with low priority on hover
+        dataPrefetch
+          .prefetch(`/api/v1/explorer${path}`, {
+            id: cacheKey,
+            priority: 'low',
+            metadata: {
+              source: 'hover',
+              ttl: 5 * 60 * 1000, // 5 minutes
+            },
+          })
+          .catch(() => {
+            // Ignore hover prefetch errors
+          });
+      }
+    },
+    [enableOptimizations, navigationPrefetch, dataPrefetch],
+  );
 
   // Initialize with initial path
   useEffect(() => {
@@ -152,19 +159,26 @@ export const PrefetchedExplorer: React.FC<PrefetchedExplorerProps> = ({
   // Mock API call - replace with actual API integration
   const fetchExplorerData = async (path: string): Promise<FileExplorerData> => {
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
-    
+    await new Promise((resolve) =>
+      setTimeout(resolve, 200 + Math.random() * 300),
+    );
+
     // Generate mock data based on path
     const pathSegments = path.split('/').filter(Boolean);
     const depth = pathSegments.length;
-    
-    const mockFiles = Array.from({ length: 5 + Math.floor(Math.random() * 10) }, (_, i) => ({
-      id: `${path}_file_${i}`,
-      name: `${pathSegments[pathSegments.length - 1] || 'root'}_item_${i + 1}`,
-      size: Math.floor(Math.random() * 10000000) + 1000,
-      type: Math.random() > 0.7 ? 'directory' as const : 'file' as const,
-      modified: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-    }));
+
+    const mockFiles = Array.from(
+      { length: 5 + Math.floor(Math.random() * 10) },
+      (_, i) => ({
+        id: `${path}_file_${i}`,
+        name: `${pathSegments[pathSegments.length - 1] || 'root'}_item_${i + 1}`,
+        size: Math.floor(Math.random() * 10000000) + 1000,
+        type: Math.random() > 0.7 ? ('directory' as const) : ('file' as const),
+        modified: new Date(
+          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+      }),
+    );
 
     return {
       path,
@@ -181,10 +195,10 @@ export const PrefetchedExplorer: React.FC<PrefetchedExplorerProps> = ({
     const sizes = ['B', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 B';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`;
+    return `${Math.round((bytes / Math.pow(1024, i)) * 100) / 100} ${sizes[i]}`;
   };
 
-  const predictions = showPredictions 
+  const predictions = showPredictions
     ? navigationPrefetch.getPredictions(currentPath, 3)
     : [];
 
@@ -227,14 +241,16 @@ export const PrefetchedExplorer: React.FC<PrefetchedExplorerProps> = ({
             <div className="text-lg font-semibold text-gray-900">
               {(navigationPrefetch.stats.hitRate * 100).toFixed(0)}%
             </div>
-            <div className="text-xs text-gray-500">
-              Cache efficiency
-            </div>
+            <div className="text-xs text-gray-500">Cache efficiency</div>
           </div>
 
           <div className="p-4 bg-white border rounded-lg">
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              {loadSource === 'cache' ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+              {loadSource === 'cache' ? (
+                <Wifi className="h-4 w-4" />
+              ) : (
+                <WifiOff className="h-4 w-4" />
+              )}
               Status
             </div>
             <div className="text-lg font-semibold text-gray-900">
@@ -253,9 +269,11 @@ export const PrefetchedExplorer: React.FC<PrefetchedExplorerProps> = ({
           <div className="flex items-center gap-2">
             <Eye className="h-5 w-5 text-gray-600" />
             <h2 className="font-medium text-gray-900">Current Path:</h2>
-            <code className="px-2 py-1 bg-gray-100 rounded text-sm">{currentPath}</code>
+            <code className="px-2 py-1 bg-gray-100 rounded text-sm">
+              {currentPath}
+            </code>
           </div>
-          
+
           {enableOptimizations && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Zap className="h-3 w-3" />
@@ -266,23 +284,25 @@ export const PrefetchedExplorer: React.FC<PrefetchedExplorerProps> = ({
 
         {/* Quick Navigation */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {['/home', '/documents', '/downloads', '/media', '/projects'].map(path => (
-            <button
-              key={path}
-              onClick={() => navigateToPath(path)}
-              disabled={loading || path === currentPath}
-              className={cn(
-                "px-3 py-1 rounded-lg text-sm transition-colors",
-                path === currentPath
-                  ? "bg-blue-100 text-blue-700 cursor-default"
-                  : loading
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              )}
-            >
-              {path}
-            </button>
-          ))}
+          {['/home', '/documents', '/downloads', '/media', '/projects'].map(
+            (path) => (
+              <button
+                key={path}
+                onClick={() => navigateToPath(path)}
+                disabled={loading || path === currentPath}
+                className={cn(
+                  'px-3 py-1 rounded-lg text-sm transition-colors',
+                  path === currentPath
+                    ? 'bg-blue-100 text-blue-700 cursor-default'
+                    : loading
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                )}
+              >
+                {path}
+              </button>
+            ),
+          )}
         </div>
 
         {/* Predictions */}
@@ -293,23 +313,23 @@ export const PrefetchedExplorer: React.FC<PrefetchedExplorerProps> = ({
               Predicted Next Paths
             </div>
             <div className="flex flex-wrap gap-2">
-              {predictions.map(path => {
+              {predictions.map((path) => {
                 const isPrefetched = navigationPrefetch.has(
-                  `explorer_${btoa(path).replace(/[^a-zA-Z0-9]/g, '')}`
+                  `explorer_${btoa(path).replace(/[^a-zA-Z0-9]/g, '')}`,
                 );
-                
+
                 return (
                   <button
                     key={path}
                     onClick={() => navigateToPath(path)}
                     disabled={loading}
                     className={cn(
-                      "px-2 py-1 rounded text-xs transition-colors flex items-center gap-1",
+                      'px-2 py-1 rounded text-xs transition-colors flex items-center gap-1',
                       loading
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         : isPrefetched
-                        ? "bg-green-100 text-green-700 hover:bg-green-200"
-                        : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-blue-100 text-blue-700 hover:bg-blue-200',
                     )}
                   >
                     {isPrefetched && <Zap className="h-3 w-3" />}
@@ -347,14 +367,14 @@ export const PrefetchedExplorer: React.FC<PrefetchedExplorerProps> = ({
             </div>
 
             <div className="space-y-2">
-              {explorerData.files.map(file => (
+              {explorerData.files.map((file) => (
                 <div
                   key={file.id}
                   className={cn(
-                    "flex items-center justify-between p-3 rounded-lg transition-colors",
-                    file.type === 'directory' 
-                      ? "hover:bg-blue-50 cursor-pointer" 
-                      : "hover:bg-gray-50"
+                    'flex items-center justify-between p-3 rounded-lg transition-colors',
+                    file.type === 'directory'
+                      ? 'hover:bg-blue-50 cursor-pointer'
+                      : 'hover:bg-gray-50',
                   )}
                   onClick={() => {
                     if (file.type === 'directory') {
@@ -368,12 +388,18 @@ export const PrefetchedExplorer: React.FC<PrefetchedExplorerProps> = ({
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "w-2 h-2 rounded-full",
-                      file.type === 'directory' ? "bg-blue-500" : "bg-gray-400"
-                    )} />
+                    <div
+                      className={cn(
+                        'w-2 h-2 rounded-full',
+                        file.type === 'directory'
+                          ? 'bg-blue-500'
+                          : 'bg-gray-400',
+                      )}
+                    />
                     <div>
-                      <div className="font-medium text-gray-900">{file.name}</div>
+                      <div className="font-medium text-gray-900">
+                        {file.name}
+                      </div>
                       <div className="text-sm text-gray-600">
                         {new Date(file.modified).toLocaleDateString()}
                       </div>

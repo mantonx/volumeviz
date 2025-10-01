@@ -1,12 +1,15 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useSetAtom } from 'jotai';
-import { 
+import {
   usePostVolumesIdSizeRefresh,
   usePostVolumesIdFilesystemIndex,
-  usePostVolumesBulkScan 
+  usePostVolumesBulkScan,
 } from '@/api/orval-generated/api';
 import { lastRefreshAtom } from '@/atoms/volumes';
-import { backgroundSyncManager, useBackgroundSync } from '@/utils/background-sync';
+import {
+  backgroundSyncManager,
+  useBackgroundSync,
+} from '@/utils/background-sync';
 
 export interface UseVolumeOperationsReturn {
   scanVolume: {
@@ -22,7 +25,10 @@ export interface UseVolumeOperationsReturn {
     isLoading: boolean;
   };
   bulkScan: {
-    mutateAsync: (volumeIds: string[], options?: { async?: boolean; method?: string }) => Promise<any>;
+    mutateAsync: (
+      volumeIds: string[],
+      options?: { async?: boolean; method?: string },
+    ) => Promise<any>;
     isLoading: boolean;
   };
   refreshVolumes: () => void;
@@ -45,12 +51,14 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
     },
   });
 
-  // Filesystem indexing mutation  
+  // Filesystem indexing mutation
   const filesystemIndexMutation = usePostVolumesIdFilesystemIndex({
     mutation: {
       onSuccess: (data, { id }) => {
         queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
-        queryClient.invalidateQueries({ queryKey: ['getVolumesIdFilesystemStatus'] });
+        queryClient.invalidateQueries({
+          queryKey: ['getVolumesIdFilesystemStatus'],
+        });
         setLastRefresh(Date.now());
       },
     },
@@ -126,13 +134,15 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
         const { async = false, method = 'du' } = options;
         if (isOnline) {
           return bulkScanMutation.mutateAsync({
-            async,
-            method,
-            volume_ids: volumeIds,
+            data: {
+              async,
+              method,
+              volume_ids: volumeIds,
+            },
           });
         } else {
           // Queue each volume for background sync when offline
-          volumeIds.forEach(volumeId => {
+          volumeIds.forEach((volumeId) => {
             addPendingOperation({
               type: 'scan',
               volumeId,
@@ -140,7 +150,11 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
               maxRetries: 3,
             });
           });
-          return Promise.resolve({ queued: true, offline: true, count: volumeIds.length });
+          return Promise.resolve({
+            queued: true,
+            offline: true,
+            count: volumeIds.length,
+          });
         }
       },
       isLoading: bulkScanMutation.isPending,

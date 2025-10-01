@@ -1,6 +1,6 @@
 /**
  * Alert management hooks
- * 
+ *
  * Provides centralized hooks for managing alerts, alert rules, and alert destinations
  * using the modern Orval-generated API hooks.
  */

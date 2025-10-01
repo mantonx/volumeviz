@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { AdaptiveExplorer } from './AdaptiveExplorer'
+import type { Meta, StoryObj } from '@storybook/react';
+import { AdaptiveExplorer } from './AdaptiveExplorer';
 
 const meta = {
   title: 'Domain/Explorer/AdaptiveExplorer',
@@ -22,10 +22,10 @@ const meta = {
       control: { type: 'boolean' },
     },
   },
-} satisfies Meta<typeof AdaptiveExplorer>
+} satisfies Meta<typeof AdaptiveExplorer>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -35,7 +35,7 @@ export const Default: Story = {
     enablePerformanceMonitoring: true,
     onPathChange: (path) => console.log('Path changed:', path),
   },
-}
+};
 
 export const HighEndDevice: Story = {
   args: {
@@ -52,15 +52,17 @@ export const HighEndDevice: Story = {
             High-End Device Simulation
           </h3>
           <p className="text-green-700 text-sm">
-            This demo simulates a high-end device with fast network, high memory, and multiple CPU cores.
-            The system will use the "high-performance" strategy with larger chunks and higher quality rendering.
+            This demo simulates a high-end device with fast network, high
+            memory, and multiple CPU cores. The system will use the
+            "high-performance" strategy with larger chunks and higher quality
+            rendering.
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};
 
 export const LowEndDevice: Story = {
   args: {
@@ -77,15 +79,16 @@ export const LowEndDevice: Story = {
             Low-End Device Simulation
           </h3>
           <p className="text-orange-700 text-sm">
-            This demo simulates a low-end device with slow network and limited resources.
-            The system will use the "low-resource" strategy with smaller chunks and reduced quality.
+            This demo simulates a low-end device with slow network and limited
+            resources. The system will use the "low-resource" strategy with
+            smaller chunks and reduced quality.
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};
 
 export const BatterySaverMode: Story = {
   args: {
@@ -102,15 +105,16 @@ export const BatterySaverMode: Story = {
             Battery Saver Mode
           </h3>
           <p className="text-yellow-700 text-sm">
-            This demo simulates a device with low battery level.
-            The system will automatically switch to the "battery-saver" strategy to conserve energy.
+            This demo simulates a device with low battery level. The system will
+            automatically switch to the "battery-saver" strategy to conserve
+            energy.
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};
 
 export const AdaptationComparison: Story = {
   render: () => (
@@ -126,7 +130,9 @@ export const AdaptationComparison: Story = {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
-          <h3 className="text-lg font-semibold mb-4">High Performance Device</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            High Performance Device
+          </h3>
           <div className="border rounded-lg">
             <AdaptiveExplorer
               initialPath="/high-performance"
@@ -138,7 +144,9 @@ export const AdaptationComparison: Story = {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-4">Resource-Constrained Device</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Resource-Constrained Device
+          </h3>
           <div className="border rounded-lg">
             <AdaptiveExplorer
               initialPath="/low-resource"
@@ -178,7 +186,7 @@ export const AdaptationComparison: Story = {
   parameters: {
     layout: 'padded',
   },
-}
+};
 
 export const PerformanceMonitoring: Story = {
   args: {
@@ -195,21 +203,33 @@ export const PerformanceMonitoring: Story = {
             Performance Monitoring Demo
           </h3>
           <p className="text-purple-700 text-sm mb-3">
-            This demo showcases real-time performance monitoring and adaptive learning.
-            Navigate between different paths to see how the system learns and adapts.
+            This demo showcases real-time performance monitoring and adaptive
+            learning. Navigate between different paths to see how the system
+            learns and adapts.
           </p>
           <div className="text-purple-800 text-sm space-y-1">
-            <div>• <strong>Navigation Tracking:</strong> Records time spent and success rates</div>
-            <div>• <strong>Chunk Loading:</strong> Monitors rendering performance</div>
-            <div>• <strong>Strategy Learning:</strong> Automatically switches to better strategies</div>
-            <div>• <strong>Real-time Metrics:</strong> Shows performance statistics as you use the interface</div>
+            <div>
+              • <strong>Navigation Tracking:</strong> Records time spent and
+              success rates
+            </div>
+            <div>
+              • <strong>Chunk Loading:</strong> Monitors rendering performance
+            </div>
+            <div>
+              • <strong>Strategy Learning:</strong> Automatically switches to
+              better strategies
+            </div>
+            <div>
+              • <strong>Real-time Metrics:</strong> Shows performance statistics
+              as you use the interface
+            </div>
           </div>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};
 
 export const MinimalView: Story = {
   args: {
@@ -218,7 +238,7 @@ export const MinimalView: Story = {
     showDeviceInfo: false,
     enablePerformanceMonitoring: false,
   },
-}
+};
 
 export const LearningBehavior: Story = {
   render: () => {
@@ -229,7 +249,8 @@ export const LearningBehavior: Story = {
             Adaptive Learning Demo
           </h2>
           <p className="text-gray-600 mb-4">
-            The system learns from your usage patterns and device characteristics to optimize performance
+            The system learns from your usage patterns and device
+            characteristics to optimize performance
           </p>
         </div>
 
@@ -241,17 +262,37 @@ export const LearningBehavior: Story = {
         />
 
         <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-          <h4 className="font-medium text-indigo-900 mb-2">Learning Mechanisms:</h4>
+          <h4 className="font-medium text-indigo-900 mb-2">
+            Learning Mechanisms:
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-indigo-800 text-sm">
             <div>
-              <div>• <strong>Device Detection:</strong> Automatically detects CPU, memory, and network capabilities</div>
-              <div>• <strong>Usage Patterns:</strong> Tracks navigation frequency and visualization preferences</div>
-              <div>• <strong>Performance History:</strong> Records operation success rates and durations</div>
+              <div>
+                • <strong>Device Detection:</strong> Automatically detects CPU,
+                memory, and network capabilities
+              </div>
+              <div>
+                • <strong>Usage Patterns:</strong> Tracks navigation frequency
+                and visualization preferences
+              </div>
+              <div>
+                • <strong>Performance History:</strong> Records operation
+                success rates and durations
+              </div>
             </div>
             <div>
-              <div>• <strong>Strategy Selection:</strong> Chooses optimal loading strategy based on all factors</div>
-              <div>• <strong>Real-time Adaptation:</strong> Switches strategies if performance degrades</div>
-              <div>• <strong>Continuous Learning:</strong> Improves predictions with more usage data</div>
+              <div>
+                • <strong>Strategy Selection:</strong> Chooses optimal loading
+                strategy based on all factors
+              </div>
+              <div>
+                • <strong>Real-time Adaptation:</strong> Switches strategies if
+                performance degrades
+              </div>
+              <div>
+                • <strong>Continuous Learning:</strong> Improves predictions
+                with more usage data
+              </div>
             </div>
           </div>
         </div>
@@ -261,7 +302,7 @@ export const LearningBehavior: Story = {
   parameters: {
     layout: 'padded',
   },
-}
+};
 
 export const NetworkAware: Story = {
   args: {
@@ -278,12 +319,13 @@ export const NetworkAware: Story = {
             Network-Aware Loading
           </h3>
           <p className="text-cyan-700 text-sm">
-            The system detects network conditions and adjusts loading behavior accordingly.
-            On slow connections, it reduces chunk sizes and prefetching to improve responsiveness.
+            The system detects network conditions and adjusts loading behavior
+            accordingly. On slow connections, it reduces chunk sizes and
+            prefetching to improve responsiveness.
           </p>
         </div>
         <Story />
       </div>
     ),
   ],
-}
+};

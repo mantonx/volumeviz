@@ -67,7 +67,8 @@ export const FeatureTour: React.FC<FeatureTourProps> = ({
   };
 
   const getTooltipPosition = () => {
-    if (!targetRect) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    if (!targetRect)
+      return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
 
     const placement = step.placement || 'bottom';
     const padding = 16;
@@ -110,7 +111,10 @@ export const FeatureTour: React.FC<FeatureTourProps> = ({
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={onSkip} />
+      <div
+        className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+        onClick={onSkip}
+      />
 
       {/* Spotlight */}
       {targetRect && (
@@ -128,10 +132,7 @@ export const FeatureTour: React.FC<FeatureTourProps> = ({
       )}
 
       {/* Tooltip */}
-      <div
-        className="fixed z-50 max-w-md w-full"
-        style={getTooltipPosition()}
-      >
+      <div className="fixed z-50 max-w-md w-full" style={getTooltipPosition()}>
         <div className="bg-white rounded-lg shadow-2xl p-6 relative">
           {/* Close button */}
           {showSkip && (

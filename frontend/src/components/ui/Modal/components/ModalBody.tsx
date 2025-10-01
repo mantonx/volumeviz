@@ -29,7 +29,7 @@ export const ModalBody: React.FC<ModalBodyProps> = ({
         'flex-1',
         !noPadding && 'px-6 py-4',
         scrollable && 'overflow-y-auto',
-        className
+        className,
       )}
       {...props}
     >

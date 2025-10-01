@@ -110,7 +110,15 @@ func (r *StatsRepo) GetVolumeFilesystemCapacity(ctx context.Context, volumeID st
 
 // GetLatestVolumeTotalSize retrieves the latest volume scan size from the database
 func (r *StatsRepo) GetLatestVolumeTotalSize(ctx context.Context, volumeID string) (*int64, error) {
+	// First try to get from volume_sizes table (legacy scan results)
 	volumeSize, err := r.queries.GetLatestVolumeSize(ctx, volumeID)
+	if err == nil && volumeSize.TotalSize > 0 {
+		return &volumeSize.TotalSize, nil
+	}
+
+	// If not in volume_sizes, try the volumes table (new scan results)
+	// Use system-level query since we don't have organization context here
+	volume, err := r.queries.GetVolumeSystemLevel(ctx, volumeID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -118,7 +126,11 @@ func (r *StatsRepo) GetLatestVolumeTotalSize(ctx context.Context, volumeID strin
 		return nil, err
 	}
 
-	return &volumeSize.TotalSize, nil
+	if !volume.TotalSizeBytes.Valid || volume.TotalSizeBytes.Int64 == 0 {
+		return nil, nil
+	}
+
+	return &volume.TotalSizeBytes.Int64, nil
 }
 
 // GetVolumeGrowthInfo retrieves volume size growth information

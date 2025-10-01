@@ -1,5 +1,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Trash2, Archive, Move, CheckSquare, Square, AlertTriangle, Clock, X, Play, Pause, RotateCcw } from 'lucide-react';
+import {
+  Trash2,
+  Archive,
+  Move,
+  CheckSquare,
+  Square,
+  AlertTriangle,
+  Clock,
+  X,
+  Play,
+  Pause,
+  RotateCcw,
+} from 'lucide-react';
 import { cn } from '@/utils/class-names/cn';
 
 export interface CleanupItem {
@@ -71,7 +83,9 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('scan');
   const [cleanupItems, setCleanupItems] = useState<CleanupItem[]>(initialItems);
   const [isScanning, setIsScanning] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<CleanupCategory | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<
+    CleanupCategory | 'all'
+  >('all');
   const [actions, setActions] = useState<CleanupAction[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
@@ -89,10 +103,13 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
 
     categories.forEach(({ type, count, sizeRange }) => {
       for (let i = 0; i < count; i++) {
-        const size = Math.floor(Math.random() * (sizeRange[1] - sizeRange[0]) + sizeRange[0]);
-        const risk = Math.random() < 0.3 ? 'high' : Math.random() < 0.6 ? 'medium' : 'low';
+        const size = Math.floor(
+          Math.random() * (sizeRange[1] - sizeRange[0]) + sizeRange[0],
+        );
+        const risk =
+          Math.random() < 0.3 ? 'high' : Math.random() < 0.6 ? 'medium' : 'low';
         const isDirectory = Math.random() < 0.3;
-        
+
         const item: CleanupItem = {
           id: `${type}-${i}`,
           name: `${type}_file_${i + 1}${isDirectory ? '' : getRandomExtension()}`,
@@ -101,8 +118,12 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
           type: isDirectory ? 'directory' : 'file',
           reason: getReasonForType(type),
           risk,
-          lastAccessed: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
-          lastModified: new Date(Date.now() - Math.random() * 180 * 24 * 60 * 60 * 1000),
+          lastAccessed: new Date(
+            Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000,
+          ),
+          lastModified: new Date(
+            Date.now() - Math.random() * 180 * 24 * 60 * 60 * 1000,
+          ),
           isSelected: false,
           canDelete: risk !== 'high' || type === 'temporary',
           canMove: true,
@@ -111,7 +132,9 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
             isDuplicate: type === 'duplicates',
             isEmpty: type === 'empty',
             isTemporary: type === 'temporary',
-            extensions: isDirectory ? undefined : [getRandomExtension().slice(1)],
+            extensions: isDirectory
+              ? undefined
+              : [getRandomExtension().slice(1)],
           },
         };
 
@@ -126,11 +149,11 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
   const startScan = useCallback(async () => {
     setIsScanning(true);
     setCurrentStep('scan');
-    
+
     try {
       // Simulate scanning delay
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
       const items = generateMockCleanupItems();
       setCleanupItems(items);
       setCurrentStep('review');
@@ -142,38 +165,45 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
   }, [generateMockCleanupItems]);
 
   // Toggle item selection
-  const toggleItemSelection = useCallback((itemId: string) => {
-    setCleanupItems(prev => {
-      const updated = prev.map(item => 
-        item.id === itemId ? { ...item, isSelected: !item.isSelected } : item
-      );
-      
-      const selectedItems = updated.filter(item => item.isSelected);
-      onSelectionChange?.(selectedItems);
-      
-      return updated;
-    });
-  }, [onSelectionChange]);
+  const toggleItemSelection = useCallback(
+    (itemId: string) => {
+      setCleanupItems((prev) => {
+        const updated = prev.map((item) =>
+          item.id === itemId ? { ...item, isSelected: !item.isSelected } : item,
+        );
+
+        const selectedItems = updated.filter((item) => item.isSelected);
+        onSelectionChange?.(selectedItems);
+
+        return updated;
+      });
+    },
+    [onSelectionChange],
+  );
 
   // Select all items in category
-  const selectAllInCategory = useCallback((category: CleanupCategory | 'all') => {
-    setCleanupItems(prev => {
-      const updated = prev.map(item => ({
-        ...item,
-        isSelected: category === 'all' || getCategoryForItem(item) === category,
-      }));
-      
-      const selectedItems = updated.filter(item => item.isSelected);
-      onSelectionChange?.(selectedItems);
-      
-      return updated;
-    });
-  }, [onSelectionChange]);
+  const selectAllInCategory = useCallback(
+    (category: CleanupCategory | 'all') => {
+      setCleanupItems((prev) => {
+        const updated = prev.map((item) => ({
+          ...item,
+          isSelected:
+            category === 'all' || getCategoryForItem(item) === category,
+        }));
+
+        const selectedItems = updated.filter((item) => item.isSelected);
+        onSelectionChange?.(selectedItems);
+
+        return updated;
+      });
+    },
+    [onSelectionChange],
+  );
 
   // Deselect all items
   const deselectAll = useCallback(() => {
-    setCleanupItems(prev => {
-      const updated = prev.map(item => ({ ...item, isSelected: false }));
+    setCleanupItems((prev) => {
+      const updated = prev.map((item) => ({ ...item, isSelected: false }));
       onSelectionChange?.([]);
       return updated;
     });
@@ -181,13 +211,15 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
 
   // Create cleanup actions
   const createCleanupActions = useCallback(() => {
-    const selectedItems = cleanupItems.filter(item => item.isSelected);
+    const selectedItems = cleanupItems.filter((item) => item.isSelected);
     const newActions: CleanupAction[] = [];
 
     // Group by action type
-    const deleteItems = selectedItems.filter(item => item.canDelete);
-    const archiveItems = selectedItems.filter(item => item.canArchive && !deleteItems.includes(item));
-    
+    const deleteItems = selectedItems.filter((item) => item.canDelete);
+    const archiveItems = selectedItems.filter(
+      (item) => item.canArchive && !deleteItems.includes(item),
+    );
+
     if (deleteItems.length > 0) {
       newActions.push({
         id: 'delete-action',
@@ -224,21 +256,27 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
     try {
       // Execute each action
       for (const action of actions) {
-        setActions(prev => prev.map(a => 
-          a.id === action.id ? { ...a, status: 'running' } : a
-        ));
+        setActions((prev) =>
+          prev.map((a) =>
+            a.id === action.id ? { ...a, status: 'running' } : a,
+          ),
+        );
 
         // Simulate action execution with progress updates
         for (let progress = 0; progress <= 100; progress += 10) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          setActions(prev => prev.map(a => 
-            a.id === action.id ? { ...a, progress } : a
-          ));
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          setActions((prev) =>
+            prev.map((a) => (a.id === action.id ? { ...a, progress } : a)),
+          );
         }
 
-        setActions(prev => prev.map(a => 
-          a.id === action.id ? { ...a, status: 'completed', progress: 100 } : a
-        ));
+        setActions((prev) =>
+          prev.map((a) =>
+            a.id === action.id
+              ? { ...a, status: 'completed', progress: 100 }
+              : a,
+          ),
+        );
       }
 
       if (onExecuteCleanup) {
@@ -249,7 +287,9 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
       setCanUndo(true);
     } catch (error) {
       console.error('Cleanup execution failed:', error);
-      setActions(prev => prev.map(a => ({ ...a, status: 'failed', error: 'Cleanup failed' })));
+      setActions((prev) =>
+        prev.map((a) => ({ ...a, status: 'failed', error: 'Cleanup failed' })),
+      );
     } finally {
       setIsExecuting(false);
     }
@@ -258,17 +298,19 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
   // Filter items by category
   const filteredItems = useMemo(() => {
     if (selectedCategory === 'all') return cleanupItems;
-    return cleanupItems.filter(item => getCategoryForItem(item) === selectedCategory);
+    return cleanupItems.filter(
+      (item) => getCategoryForItem(item) === selectedCategory,
+    );
   }, [cleanupItems, selectedCategory]);
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const selectedItems = cleanupItems.filter(item => item.isSelected);
+    const selectedItems = cleanupItems.filter((item) => item.isSelected);
     const totalSize = selectedItems.reduce((sum, item) => sum + item.size, 0);
     const riskBreakdown = {
-      low: selectedItems.filter(item => item.risk === 'low').length,
-      medium: selectedItems.filter(item => item.risk === 'medium').length,
-      high: selectedItems.filter(item => item.risk === 'high').length,
+      low: selectedItems.filter((item) => item.risk === 'low').length,
+      medium: selectedItems.filter((item) => item.risk === 'medium').length,
+      high: selectedItems.filter((item) => item.risk === 'high').length,
     };
 
     return {
@@ -296,10 +338,14 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'high': return 'text-red-500';
-      case 'medium': return 'text-yellow-500';
-      case 'low': return 'text-green-500';
-      default: return 'text-muted-foreground';
+      case 'high':
+        return 'text-red-500';
+      case 'medium':
+        return 'text-yellow-500';
+      case 'low':
+        return 'text-green-500';
+      default:
+        return 'text-muted-foreground';
     }
   };
 
@@ -343,27 +389,41 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
         {/* Progress Steps */}
         <div className="flex items-center justify-center p-4 border-b border-border">
           <div className="flex items-center gap-4">
-            {(['scan', 'review', 'confirm', 'execute', 'complete'] as const).map((step, index) => (
+            {(
+              ['scan', 'review', 'confirm', 'execute', 'complete'] as const
+            ).map((step, index) => (
               <div key={step} className="flex items-center gap-2">
-                <div className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
-                  getCurrentStepIndex(currentStep) > index ? 'bg-green-500 text-white' :
-                  getCurrentStepIndex(currentStep) === index ? 'bg-primary text-primary-foreground' :
-                  'bg-muted text-muted-foreground'
-                )}>
+                <div
+                  className={cn(
+                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
+                    getCurrentStepIndex(currentStep) > index
+                      ? 'bg-green-500 text-white'
+                      : getCurrentStepIndex(currentStep) === index
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground',
+                  )}
+                >
                   {index + 1}
                 </div>
-                <span className={cn(
-                  'text-sm capitalize',
-                  getCurrentStepIndex(currentStep) >= index ? 'text-foreground' : 'text-muted-foreground'
-                )}>
+                <span
+                  className={cn(
+                    'text-sm capitalize',
+                    getCurrentStepIndex(currentStep) >= index
+                      ? 'text-foreground'
+                      : 'text-muted-foreground',
+                  )}
+                >
                   {step}
                 </span>
                 {index < 4 && (
-                  <div className={cn(
-                    'w-8 h-px',
-                    getCurrentStepIndex(currentStep) > index ? 'bg-green-500' : 'bg-muted'
-                  )} />
+                  <div
+                    className={cn(
+                      'w-8 h-px',
+                      getCurrentStepIndex(currentStep) > index
+                        ? 'bg-green-500'
+                        : 'bg-muted',
+                    )}
+                  />
                 )}
               </div>
             ))}
@@ -373,8 +433,8 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-hidden">
           {currentStep === 'scan' && (
-            <ScanStep 
-              isScanning={isScanning} 
+            <ScanStep
+              isScanning={isScanning}
               onStartScan={startScan}
               volumeId={volumeId}
               path={path}
@@ -439,7 +499,18 @@ export const CleanupWorkflow: React.FC<CleanupWorkflowProps> = ({
 
 // Helper functions
 const getRandomExtension = (): string => {
-  const extensions = ['.tmp', '.log', '.cache', '.bak', '.old', '.jpg', '.mp4', '.pdf', '.docx', '.zip'];
+  const extensions = [
+    '.tmp',
+    '.log',
+    '.cache',
+    '.bak',
+    '.old',
+    '.jpg',
+    '.mp4',
+    '.pdf',
+    '.docx',
+    '.zip',
+  ];
   return extensions[Math.floor(Math.random() * extensions.length)];
 };
 
@@ -475,23 +546,34 @@ interface ScanStepProps {
   path: string;
 }
 
-const ScanStep: React.FC<ScanStepProps> = ({ isScanning, onStartScan, volumeId, path }) => (
+const ScanStep: React.FC<ScanStepProps> = ({
+  isScanning,
+  onStartScan,
+  volumeId,
+  path,
+}) => (
   <div className="h-full flex items-center justify-center">
     <div className="text-center max-w-md">
       {isScanning ? (
         <>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-6" />
-          <h3 className="text-lg font-semibold mb-2">Scanning for cleanup candidates...</h3>
+          <h3 className="text-lg font-semibold mb-2">
+            Scanning for cleanup candidates...
+          </h3>
           <p className="text-muted-foreground mb-4">
-            Analyzing {volumeId} at {path} for files and folders that can be cleaned up
+            Analyzing {volumeId} at {path} for files and folders that can be
+            cleaned up
           </p>
         </>
       ) : (
         <>
           <Trash2 className="h-12 w-12 text-primary mx-auto mb-6" />
-          <h3 className="text-lg font-semibold mb-2">Ready to scan for cleanup opportunities</h3>
+          <h3 className="text-lg font-semibold mb-2">
+            Ready to scan for cleanup opportunities
+          </h3>
           <p className="text-muted-foreground mb-6">
-            We'll identify duplicates, temporary files, empty directories, and other cleanup candidates
+            We'll identify duplicates, temporary files, empty directories, and
+            other cleanup candidates
           </p>
           <button
             type="button"
@@ -520,8 +602,16 @@ interface ReviewStepProps {
 }
 
 const ReviewStep: React.FC<ReviewStepProps> = ({
-  items, selectedCategory, stats, onCategoryChange, onItemToggle, 
-  onSelectAll, onDeselectAll, onNext, formatFileSize, getRiskColor
+  items,
+  selectedCategory,
+  stats,
+  onCategoryChange,
+  onItemToggle,
+  onSelectAll,
+  onDeselectAll,
+  onNext,
+  formatFileSize,
+  getRiskColor,
 }) => (
   <div className="h-full flex flex-col">
     {/* Controls */}
@@ -529,7 +619,9 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
       <div className="flex items-center gap-4">
         <select
           value={selectedCategory}
-          onChange={(e) => onCategoryChange(e.target.value as CleanupCategory | 'all')}
+          onChange={(e) =>
+            onCategoryChange(e.target.value as CleanupCategory | 'all')
+          }
           className="px-3 py-1 border border-border rounded text-sm"
         >
           <option value="all">All Categories</option>
@@ -560,7 +652,8 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
 
       <div className="flex items-center gap-4">
         <div className="text-sm">
-          <span className="font-medium">{stats.selectedItems}</span> of {stats.totalItems} selected
+          <span className="font-medium">{stats.selectedItems}</span> of{' '}
+          {stats.totalItems} selected
           <span className="ml-2">({formatFileSize(stats.totalSize)})</span>
         </div>
         <button
@@ -571,7 +664,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
             'px-4 py-2 rounded-lg',
             stats.selectedItems > 0
               ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-              : 'bg-muted text-muted-foreground cursor-not-allowed'
+              : 'bg-muted text-muted-foreground cursor-not-allowed',
           )}
         >
           Continue
@@ -587,7 +680,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
             key={item.id}
             className={cn(
               'flex items-center gap-4 p-3 hover:bg-muted/50 cursor-pointer border-b border-border',
-              item.isSelected && 'bg-primary/5 border-primary/20'
+              item.isSelected && 'bg-primary/5 border-primary/20',
             )}
             onClick={() => onItemToggle(item.id)}
           >
@@ -602,11 +695,18 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-medium truncate">{item.name}</span>
-                <span className={cn('text-xs px-2 py-1 rounded-full', getRiskColor(item.risk))}>
+                <span
+                  className={cn(
+                    'text-xs px-2 py-1 rounded-full',
+                    getRiskColor(item.risk),
+                  )}
+                >
                   {item.risk} risk
                 </span>
               </div>
-              <div className="text-sm text-muted-foreground truncate">{item.path}</div>
+              <div className="text-sm text-muted-foreground truncate">
+                {item.path}
+              </div>
               <div className="text-xs text-muted-foreground">{item.reason}</div>
             </div>
 
@@ -629,21 +729,33 @@ interface ConfirmStepProps {
   formatFileSize: (bytes: number) => string;
 }
 
-const ConfirmStep: React.FC<ConfirmStepProps> = ({ actions, stats, onConfirm, onBack, formatFileSize }) => (
+const ConfirmStep: React.FC<ConfirmStepProps> = ({
+  actions,
+  stats,
+  onConfirm,
+  onBack,
+  formatFileSize,
+}) => (
   <div className="h-full flex items-center justify-center">
     <div className="text-center max-w-2xl">
       <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-6" />
       <h3 className="text-lg font-semibold mb-4">Confirm Cleanup Actions</h3>
-      
+
       <div className="space-y-4 mb-8">
         {actions.map((action) => (
           <div key={action.id} className="p-4 border border-border rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-medium capitalize">{action.type} {action.items.length} items</span>
-              <span>{formatFileSize(action.spaceReclaimed || 0)} reclaimed</span>
+              <span className="font-medium capitalize">
+                {action.type} {action.items.length} items
+              </span>
+              <span>
+                {formatFileSize(action.spaceReclaimed || 0)} reclaimed
+              </span>
             </div>
             {action.destination && (
-              <div className="text-sm text-muted-foreground">Destination: {action.destination}</div>
+              <div className="text-sm text-muted-foreground">
+                Destination: {action.destination}
+              </div>
             )}
           </div>
         ))}
@@ -675,24 +787,34 @@ interface ExecuteStepProps {
   formatFileSize: (bytes: number) => string;
 }
 
-const ExecuteStep: React.FC<ExecuteStepProps> = ({ actions, isExecuting, formatFileSize }) => (
+const ExecuteStep: React.FC<ExecuteStepProps> = ({
+  actions,
+  isExecuting,
+  formatFileSize,
+}) => (
   <div className="h-full flex items-center justify-center">
     <div className="text-center max-w-md">
       <Clock className="h-12 w-12 text-primary mx-auto mb-6" />
       <h3 className="text-lg font-semibold mb-6">Executing Cleanup...</h3>
-      
+
       <div className="space-y-4">
         {actions.map((action) => (
           <div key={action.id} className="p-4 border border-border rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <span className="capitalize">{action.type} ({action.items.length} items)</span>
-              <span className={cn(
-                'text-sm px-2 py-1 rounded-full',
-                action.status === 'completed' && 'bg-green-100 text-green-700',
-                action.status === 'running' && 'bg-blue-100 text-blue-700',
-                action.status === 'pending' && 'bg-yellow-100 text-yellow-700',
-                action.status === 'failed' && 'bg-red-100 text-red-700'
-              )}>
+              <span className="capitalize">
+                {action.type} ({action.items.length} items)
+              </span>
+              <span
+                className={cn(
+                  'text-sm px-2 py-1 rounded-full',
+                  action.status === 'completed' &&
+                    'bg-green-100 text-green-700',
+                  action.status === 'running' && 'bg-blue-100 text-blue-700',
+                  action.status === 'pending' &&
+                    'bg-yellow-100 text-yellow-700',
+                  action.status === 'failed' && 'bg-red-100 text-red-700',
+                )}
+              >
                 {action.status}
               </span>
             </div>
@@ -719,9 +841,21 @@ interface CompleteStepProps {
   formatFileSize: (bytes: number) => string;
 }
 
-const CompleteStep: React.FC<CompleteStepProps> = ({ actions, stats, onClose, onStartNew, formatFileSize }) => {
-  const totalReclaimed = actions.reduce((sum, action) => sum + (action.spaceReclaimed || 0), 0);
-  const totalProcessed = actions.reduce((sum, action) => sum + action.items.length, 0);
+const CompleteStep: React.FC<CompleteStepProps> = ({
+  actions,
+  stats,
+  onClose,
+  onStartNew,
+  formatFileSize,
+}) => {
+  const totalReclaimed = actions.reduce(
+    (sum, action) => sum + (action.spaceReclaimed || 0),
+    0,
+  );
+  const totalProcessed = actions.reduce(
+    (sum, action) => sum + action.items.length,
+    0,
+  );
 
   return (
     <div className="h-full flex items-center justify-center">
@@ -730,10 +864,19 @@ const CompleteStep: React.FC<CompleteStepProps> = ({ actions, stats, onClose, on
           <CheckSquare className="h-8 w-8 text-green-600" />
         </div>
         <h3 className="text-lg font-semibold mb-4">Cleanup Complete!</h3>
-        
+
         <div className="space-y-2 mb-8 text-sm">
-          <div>Processed <span className="font-medium">{totalProcessed}</span> items</div>
-          <div>Reclaimed <span className="font-medium">{formatFileSize(totalReclaimed)}</span> of space</div>
+          <div>
+            Processed <span className="font-medium">{totalProcessed}</span>{' '}
+            items
+          </div>
+          <div>
+            Reclaimed{' '}
+            <span className="font-medium">
+              {formatFileSize(totalReclaimed)}
+            </span>{' '}
+            of space
+          </div>
         </div>
 
         <div className="flex items-center justify-center gap-4">

@@ -1,6 +1,10 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { SyncStatusIndicator, SyncStatusBadge, SyncStatusPanel } from './SyncStatusIndicator';
+import {
+  SyncStatusIndicator,
+  SyncStatusBadge,
+  SyncStatusPanel,
+} from './SyncStatusIndicator';
 
 const meta: Meta<typeof SyncStatusIndicator> = {
   title: 'Components/Shared/SyncStatusIndicator',
@@ -123,38 +127,54 @@ export const StatusStates: Story = {
   render: () => (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Status Examples</h3>
+        <h3 className="text-sm font-medium text-gray-700 mb-2">
+          Status Examples
+        </h3>
         <div className="space-y-3">
           <div className="flex items-center gap-4 p-3 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-green-50 border-green-200">
               <div className="h-5 w-5 text-green-500">✓</div>
               <span className="text-sm font-medium text-green-500">Online</span>
             </div>
-            <span className="text-sm text-gray-600">Normal operation - all systems connected</span>
+            <span className="text-sm text-gray-600">
+              Normal operation - all systems connected
+            </span>
           </div>
 
           <div className="flex items-center gap-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-blue-50 border-blue-200">
               <div className="h-5 w-5 text-blue-500">⟳</div>
-              <span className="text-sm font-medium text-blue-500">Syncing...</span>
+              <span className="text-sm font-medium text-blue-500">
+                Syncing...
+              </span>
             </div>
-            <span className="text-sm text-gray-600">Currently synchronizing data with server</span>
+            <span className="text-sm text-gray-600">
+              Currently synchronizing data with server
+            </span>
           </div>
 
           <div className="flex items-center gap-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-orange-50 border-orange-200">
               <div className="h-5 w-5 text-orange-500">!</div>
-              <span className="text-sm font-medium text-orange-500">3 pending</span>
+              <span className="text-sm font-medium text-orange-500">
+                3 pending
+              </span>
             </div>
-            <span className="text-sm text-gray-600">Operations queued waiting for sync</span>
+            <span className="text-sm text-gray-600">
+              Operations queued waiting for sync
+            </span>
           </div>
 
           <div className="flex items-center gap-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-amber-50 border-amber-200">
               <div className="h-5 w-5 text-amber-500">⚠</div>
-              <span className="text-sm font-medium text-amber-500">Offline (5 queued)</span>
+              <span className="text-sm font-medium text-amber-500">
+                Offline (5 queued)
+              </span>
             </div>
-            <span className="text-sm text-gray-600">No connection - operations queued for later</span>
+            <span className="text-sm text-gray-600">
+              No connection - operations queued for later
+            </span>
           </div>
         </div>
       </div>
@@ -163,7 +183,8 @@ export const StatusStates: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Different status states the indicator can display based on connection and sync status.',
+        story:
+          'Different status states the indicator can display based on connection and sync status.',
       },
     },
   },
@@ -173,16 +194,21 @@ export const BadgeVariant: Story = {
   render: () => (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Sync Status Badge</h3>
+        <h3 className="text-sm font-medium text-gray-700 mb-2">
+          Sync Status Badge
+        </h3>
         <p className="text-xs text-gray-500 mb-4">
-          This badge only appears when there are issues (offline or pending operations).
-          It automatically hides when everything is online and synchronized.
+          This badge only appears when there are issues (offline or pending
+          operations). It automatically hides when everything is online and
+          synchronized.
         </p>
-        
+
         <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
           <span className="text-sm text-gray-600">Header/Toolbar:</span>
           <SyncStatusBadge />
-          <span className="text-xs text-gray-400">(Hidden when online with no pending operations)</span>
+          <span className="text-xs text-gray-400">
+            (Hidden when online with no pending operations)
+          </span>
         </div>
       </div>
     </div>
@@ -190,7 +216,8 @@ export const BadgeVariant: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Compact badge variant that only shows when there are sync issues.',
+        story:
+          'Compact badge variant that only shows when there are sync issues.',
       },
     },
   },
@@ -205,7 +232,8 @@ export const StatusPanel: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Detailed status panel with controls for debugging and manual sync operations.',
+        story:
+          'Detailed status panel with controls for debugging and manual sync operations.',
       },
     },
   },
@@ -215,9 +243,13 @@ export const LayoutIntegration: Story = {
   render: () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Header Integration</h3>
+        <h3 className="text-sm font-medium text-gray-700 mb-2">
+          Header Integration
+        </h3>
         <div className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
-          <h1 className="text-lg font-semibold text-gray-900">Application Header</h1>
+          <h1 className="text-lg font-semibold text-gray-900">
+            Application Header
+          </h1>
           <div className="flex items-center gap-3">
             <SyncStatusBadge />
             <button className="p-2 text-gray-500 hover:text-gray-700">
@@ -228,7 +260,9 @@ export const LayoutIntegration: Story = {
       </div>
 
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Sidebar Footer</h3>
+        <h3 className="text-sm font-medium text-gray-700 mb-2">
+          Sidebar Footer
+        </h3>
         <div className="w-64 bg-white border rounded-lg shadow-sm">
           <div className="p-4 border-b">
             <h2 className="font-medium text-gray-900">Navigation</h2>
@@ -255,7 +289,8 @@ export const LayoutIntegration: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Examples of how to integrate the sync status indicator into different UI layouts.',
+        story:
+          'Examples of how to integrate the sync status indicator into different UI layouts.',
       },
     },
     layout: 'padded',

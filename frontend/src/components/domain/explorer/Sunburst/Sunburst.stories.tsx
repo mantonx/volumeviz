@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { Sunburst, SunburstItem } from './Sunburst'
+import type { Meta, StoryObj } from '@storybook/react';
+import { Sunburst, SunburstItem } from './Sunburst';
 
 const meta = {
   title: 'Domain/Explorer/Sunburst',
@@ -26,10 +26,10 @@ const meta = {
       options: ['fileSize', 'fileType', 'depth'],
     },
   },
-} satisfies Meta<typeof Sunburst>
+} satisfies Meta<typeof Sunburst>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 const sampleHierarchicalData: SunburstItem[] = [
   {
@@ -252,14 +252,17 @@ const sampleHierarchicalData: SunburstItem[] = [
       },
     ],
   },
-]
+];
 
 // Calculate sizes for directories
 const calculateDirectorySizes = (items: SunburstItem[]): SunburstItem[] => {
-  return items.map(item => {
+  return items.map((item) => {
     if (item.children && item.children.length > 0) {
       const processedChildren = calculateDirectorySizes(item.children);
-      const totalSize = processedChildren.reduce((sum, child) => sum + child.size, 0);
+      const totalSize = processedChildren.reduce(
+        (sum, child) => sum + child.size,
+        0,
+      );
       return {
         ...item,
         size: totalSize,
@@ -336,7 +339,7 @@ const largeDataset: SunburstItem[] = [
       },
     ],
   },
-]
+];
 
 export const Default: Story = {
   args: {
@@ -347,7 +350,7 @@ export const Default: Story = {
     maxDepth: 4,
     colorScheme: 'fileSize',
   },
-}
+};
 
 export const FileSizeColoring: Story = {
   args: {
@@ -358,7 +361,7 @@ export const FileSizeColoring: Story = {
     maxDepth: 4,
     colorScheme: 'fileSize',
   },
-}
+};
 
 export const FileTypeColoring: Story = {
   args: {
@@ -369,7 +372,7 @@ export const FileTypeColoring: Story = {
     maxDepth: 4,
     colorScheme: 'fileType',
   },
-}
+};
 
 export const DepthColoring: Story = {
   args: {
@@ -380,7 +383,7 @@ export const DepthColoring: Story = {
     maxDepth: 4,
     colorScheme: 'depth',
   },
-}
+};
 
 export const LargeDataset: Story = {
   args: {
@@ -391,7 +394,7 @@ export const LargeDataset: Story = {
     maxDepth: 5,
     colorScheme: 'fileType',
   },
-}
+};
 
 export const SmallSize: Story = {
   args: {
@@ -402,7 +405,7 @@ export const SmallSize: Story = {
     maxDepth: 3,
     colorScheme: 'fileSize',
   },
-}
+};
 
 export const DeepHierarchy: Story = {
   args: {
@@ -413,7 +416,7 @@ export const DeepHierarchy: Story = {
     maxDepth: 6,
     colorScheme: 'depth',
   },
-}
+};
 
 export const WithSelection: Story = {
   args: {
@@ -425,7 +428,7 @@ export const WithSelection: Story = {
     colorScheme: 'fileSize',
     selectedIds: new Set(['10', '13', '20']),
   },
-}
+};
 
 export const Interactive: Story = {
   args: {
@@ -440,7 +443,7 @@ export const Interactive: Story = {
     onZoomIn: (item) => console.log('Zoom in:', item.name),
     onZoomOut: () => console.log('Zoom out'),
   },
-}
+};
 
 export const ZoomedIn: Story = {
   args: {
@@ -453,7 +456,7 @@ export const ZoomedIn: Story = {
     focusedItemId: '8', // Focus on Media directory
     onZoomOut: () => console.log('Zoom out'),
   },
-}
+};
 
 export const EmptyState: Story = {
   args: {
@@ -464,7 +467,7 @@ export const EmptyState: Story = {
     maxDepth: 4,
     colorScheme: 'fileSize',
   },
-}
+};
 
 export const SingleLevel: Story = {
   args: {
@@ -500,4 +503,4 @@ export const SingleLevel: Story = {
     maxDepth: 2,
     colorScheme: 'fileType',
   },
-}
+};

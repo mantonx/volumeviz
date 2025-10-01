@@ -313,7 +313,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 	// Initialize Docker mount catalog service
 	queries := storeInstance.Queries().(*sqlc.Queries)
 	dockerClient := dockerSvc.GetDockerClient()
-	mountCatalogService := dockerService.NewMountCatalogService(dockerClient, queries)
+	mountCatalogService := dockerService.NewMountCatalogService(dockerClient, queries, storeInstance)
 
 	// Initialize audit logger
 	auditLogger := audit.NewLogger(queries)
@@ -619,7 +619,7 @@ func (r *Router) setupRoutes(config *config.Config) {
 				"stats",
 				prometheus.Labels{"instance": "main"},
 			)
-			statsSvc := statsService.NewStatsService(statsRepo, metricsCollector, logger)
+			statsSvc := statsService.NewStatsService(statsRepo, r.store, metricsCollector, logger)
 
 			// Trends router with Store interface and StatsService - organization scoped
 			trendsRouter := trends.NewRouter(r.store, statsSvc)

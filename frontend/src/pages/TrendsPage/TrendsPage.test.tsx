@@ -29,13 +29,17 @@ describe('TrendsPage', () => {
   describe('Basic Rendering', () => {
     it('renders the page title', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
-      expect(screen.getByText('Storage Trends & Analytics')).toBeInTheDocument();
+      expect(
+        screen.getByText('Storage Trends & Analytics'),
+      ).toBeInTheDocument();
     });
 
     it('renders the subtitle', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       expect(
-        screen.getByText('Historical analysis and capacity planning for your volumes')
+        screen.getByText(
+          'Historical analysis and capacity planning for your volumes',
+        ),
       ).toBeInTheDocument();
     });
 
@@ -50,17 +54,23 @@ describe('TrendsPage', () => {
   describe('Header Actions', () => {
     it('renders refresh button', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
-      expect(screen.getByRole('button', { name: /refresh/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /refresh/i }),
+      ).toBeInTheDocument();
     });
 
     it('renders export CSV button', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
-      expect(screen.getByRole('button', { name: /export csv/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /export csv/i }),
+      ).toBeInTheDocument();
     });
 
     it('renders export JSON button', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
-      expect(screen.getByRole('button', { name: /export json/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /export json/i }),
+      ).toBeInTheDocument();
     });
 
     it('handles refresh button click', async () => {
@@ -88,7 +98,9 @@ describe('TrendsPage', () => {
       expect(screen.getByRole('button', { name: 'Day' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Week' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Month' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Quarter' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Quarter' }),
+      ).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Year' })).toBeInTheDocument();
     });
 
@@ -172,7 +184,7 @@ describe('TrendsPage', () => {
     it('renders capacity forecast chart', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       expect(
-        screen.getByText('Predictive Capacity Planning (90-Day Forecast)')
+        screen.getByText('Predictive Capacity Planning (90-Day Forecast)'),
       ).toBeInTheDocument();
     });
   });
@@ -209,7 +221,9 @@ describe('TrendsPage', () => {
 
     it('displays across all tracked volumes text', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
-      expect(screen.getByText('Across all tracked volumes')).toBeInTheDocument();
+      expect(
+        screen.getByText('Across all tracked volumes'),
+      ).toBeInTheDocument();
     });
 
     it('shows capacity threshold warning text', () => {
@@ -232,9 +246,15 @@ describe('TrendsPage', () => {
     it('buttons have accessible labels', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
 
-      expect(screen.getByRole('button', { name: /refresh/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /export csv/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /export json/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /refresh/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /export csv/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /export json/i }),
+      ).toBeInTheDocument();
     });
 
     it('has proper ARIA attributes on interactive elements', () => {
@@ -249,16 +269,24 @@ describe('TrendsPage', () => {
 
   describe('Responsive Behavior', () => {
     it('renders metrics grid', () => {
-      const { container } = render(<TrendsPage />, { wrapper: createWrapper() });
+      const { container } = render(<TrendsPage />, {
+        wrapper: createWrapper(),
+      });
 
-      const metricsGrid = container.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4');
+      const metricsGrid = container.querySelector(
+        '.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4',
+      );
       expect(metricsGrid).toBeInTheDocument();
     });
 
     it('renders charts grid', () => {
-      const { container } = render(<TrendsPage />, { wrapper: createWrapper() });
+      const { container } = render(<TrendsPage />, {
+        wrapper: createWrapper(),
+      });
 
-      const chartsGrid = container.querySelector('.grid.grid-cols-1.lg\\:grid-cols-2');
+      const chartsGrid = container.querySelector(
+        '.grid.grid-cols-1.lg\\:grid-cols-2',
+      );
       expect(chartsGrid).toBeInTheDocument();
     });
   });
@@ -272,7 +300,9 @@ describe('TrendsPage', () => {
     });
 
     it('renders with minimum viewport', () => {
-      const { container } = render(<TrendsPage />, { wrapper: createWrapper() });
+      const { container } = render(<TrendsPage />, {
+        wrapper: createWrapper(),
+      });
       expect(container.querySelector('.min-h-screen')).toBeInTheDocument();
     });
   });

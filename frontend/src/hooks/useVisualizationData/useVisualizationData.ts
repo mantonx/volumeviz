@@ -7,9 +7,7 @@
 
 import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useAtomValue } from 'jotai';
-import {
-  volumesAtom,
-} from '@/atoms/volumes';
+import { volumesAtom } from '@/atoms/volumes';
 import { useRealTimeScans } from '../useRealTimeScans';
 import type {
   VisualizationDataOptions,

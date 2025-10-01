@@ -1,6 +1,6 @@
 /**
  * Treemap Visualization Component
- * 
+ *
  * A high-performance treemap implementation for visualizing hierarchical file system data.
  * Features:
  * - Area-based size visualization
@@ -10,7 +10,13 @@
  * - Drill-down navigation
  */
 
-import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
 import { cn } from '@/utils';
 
 export interface TreeNode {
@@ -79,7 +85,7 @@ const treemap = (
   x0: number,
   y0: number,
   x1: number,
-  y1: number
+  y1: number,
 ) => {
   const totalValue = nodes.reduce((sum, node) => sum + node.value, 0);
   if (totalValue === 0) return;
@@ -87,12 +93,12 @@ const treemap = (
   const dx = x1 - x0;
   const dy = y1 - y0;
   const horizontal = dx >= dy;
-  
+
   let offset = horizontal ? x0 : y0;
-  
+
   for (const node of nodes) {
     const ratio = node.value / totalValue;
-    
+
     if (horizontal) {
       const width = dx * ratio;
       node.x0 = offset;
@@ -113,14 +119,19 @@ const treemap = (
 
 // Create hierarchy from flat tree structure
 const hierarchy = (data: TreeNode[], depth = 0): HierarchyNode[] => {
-  return data.map(node => {
+  return data.map((node) => {
     const hierarchyNode: HierarchyNode = {
       data: node,
       value: node.value || 0,
       depth,
-      height: node.children ? 1 + Math.max(...node.children.map(child => 
-        hierarchy([child], depth + 1)[0]?.height || 0
-      )) : 0,
+      height: node.children
+        ? 1 +
+          Math.max(
+            ...node.children.map(
+              (child) => hierarchy([child], depth + 1)[0]?.height || 0,
+            ),
+          )
+        : 0,
       x0: 0,
       y0: 0,
       x1: 0,
@@ -131,7 +142,10 @@ const hierarchy = (data: TreeNode[], depth = 0): HierarchyNode[] => {
       hierarchyNode.children = hierarchy(node.children, depth + 1);
       // For directories, use sum of children if no explicit value
       if (!node.value) {
-        hierarchyNode.value = hierarchyNode.children.reduce((sum, child) => sum + child.value, 0);
+        hierarchyNode.value = hierarchyNode.children.reduce(
+          (sum, child) => sum + child.value,
+          0,
+        );
       }
     }
 
@@ -146,11 +160,11 @@ const layoutTreemap = (
   y0: number,
   x1: number,
   y1: number,
-  rects: TreemapRect[] = []
+  rects: TreemapRect[] = [],
 ): TreemapRect[] => {
   // Layout current level
   treemap(nodes, x0, y0, x1, y1);
-  
+
   // Add rectangles and process children
   for (const node of nodes) {
     const rect: TreemapRect = {
@@ -165,14 +179,17 @@ const layoutTreemap = (
 
     // Recursively layout children with padding
     if (node.children && node.children.length > 0) {
-      const padding = Math.max(1, Math.min(4, rect.width / 20, rect.height / 20));
+      const padding = Math.max(
+        1,
+        Math.min(4, rect.width / 20, rect.height / 20),
+      );
       layoutTreemap(
         node.children,
         node.x0 + padding,
         node.y0 + padding,
         node.x1 - padding,
         node.y1 - padding,
-        rects
+        rects,
       );
     }
   }
@@ -185,23 +202,37 @@ const getNodeColor = (node: TreeNode, scheme: string): string => {
   switch (scheme) {
     case 'type': {
       if (node.type === 'directory') return TYPE_COLORS.directory;
-      
+
       if (node.mimeType) {
         if (node.mimeType.startsWith('image/')) return TYPE_COLORS.image;
         if (node.mimeType.startsWith('video/')) return TYPE_COLORS.video;
         if (node.mimeType.startsWith('audio/')) return TYPE_COLORS.audio;
         if (node.mimeType.startsWith('text/')) return TYPE_COLORS.text;
         if (node.mimeType.includes('document')) return TYPE_COLORS.document;
-        if (node.mimeType.includes('zip') || node.mimeType.includes('archive')) return TYPE_COLORS.archive;
+        if (node.mimeType.includes('zip') || node.mimeType.includes('archive'))
+          return TYPE_COLORS.archive;
       }
-      
+
       if (node.extension) {
         const ext = node.extension.toLowerCase();
-        if (['js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'go', 'rs'].includes(ext)) {
+        if (
+          [
+            'js',
+            'ts',
+            'jsx',
+            'tsx',
+            'py',
+            'java',
+            'cpp',
+            'c',
+            'go',
+            'rs',
+          ].includes(ext)
+        ) {
           return TYPE_COLORS.code;
         }
       }
-      
+
       return TYPE_COLORS.default;
     }
     case 'size': {
@@ -213,7 +244,8 @@ const getNodeColor = (node: TreeNode, scheme: string): string => {
     case 'age': {
       // Color by age (newer = warmer colors)
       if (!node.modified) return TYPE_COLORS.default;
-      const ageInDays = (Date.now() - node.modified.getTime()) / (1000 * 60 * 60 * 24);
+      const ageInDays =
+        (Date.now() - node.modified.getTime()) / (1000 * 60 * 60 * 24);
       const ageRatio = Math.min(ageInDays / 365, 1); // Normalize to 1 year
       const red = Math.floor(255 * (1 - ageRatio));
       const blue = Math.floor(255 * ageRatio);
@@ -248,30 +280,37 @@ export const Treemap: React.FC<TreemapProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoveredNode, setHoveredNode] = useState<TreeNode | null>(null);
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; node: TreeNode } | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    x: number;
+    y: number;
+    node: TreeNode;
+  } | null>(null);
 
   // Calculate treemap layout
   const rectangles = useMemo(() => {
     if (!data.length) return [];
-    
+
     const hierarchyNodes = hierarchy(data);
     return layoutTreemap(hierarchyNodes, 0, 0, width, height);
   }, [data, width, height]);
 
   // Handle mouse events
-  const handleMouseEnter = useCallback((rect: TreemapRect, event: React.MouseEvent) => {
-    setHoveredNode(rect.node);
-    onNodeHover?.(rect.node);
-    
-    const svgRect = svgRef.current?.getBoundingClientRect();
-    if (svgRect) {
-      setTooltip({
-        x: event.clientX - svgRect.left + 10,
-        y: event.clientY - svgRect.top - 10,
-        node: rect.node,
-      });
-    }
-  }, [onNodeHover]);
+  const handleMouseEnter = useCallback(
+    (rect: TreemapRect, event: React.MouseEvent) => {
+      setHoveredNode(rect.node);
+      onNodeHover?.(rect.node);
+
+      const svgRect = svgRef.current?.getBoundingClientRect();
+      if (svgRect) {
+        setTooltip({
+          x: event.clientX - svgRect.left + 10,
+          y: event.clientY - svgRect.top - 10,
+          node: rect.node,
+        });
+      }
+    },
+    [onNodeHover],
+  );
 
   const handleMouseLeave = useCallback(() => {
     setHoveredNode(null);
@@ -279,20 +318,26 @@ export const Treemap: React.FC<TreemapProps> = ({
     setTooltip(null);
   }, [onNodeHover]);
 
-  const handleClick = useCallback((rect: TreemapRect, event: React.MouseEvent) => {
-    onNodeClick?.(rect.node, event);
-  }, [onNodeClick]);
+  const handleClick = useCallback(
+    (rect: TreemapRect, event: React.MouseEvent) => {
+      onNodeClick?.(rect.node, event);
+    },
+    [onNodeClick],
+  );
 
   // Filter rectangles that are large enough to be meaningful
   const visibleRects = useMemo(() => {
     const minArea = width * height * 0.001; // 0.1% of total area
-    return rectangles.filter(rect => rect.width * rect.height >= minArea);
+    return rectangles.filter((rect) => rect.width * rect.height >= minArea);
   }, [rectangles, width, height]);
 
   if (!data.length) {
     return (
-      <div 
-        className={cn('flex items-center justify-center border border-gray-200 dark:border-gray-700 rounded-lg', className)}
+      <div
+        className={cn(
+          'flex items-center justify-center border border-gray-200 dark:border-gray-700 rounded-lg',
+          className,
+        )}
         style={{ width, height }}
       >
         <div className="text-center">
@@ -315,7 +360,8 @@ export const Treemap: React.FC<TreemapProps> = ({
           const isHighlighted = highlightedNodes.has(rect.node.id);
           const isHovered = hoveredNode?.id === rect.node.id;
           const color = getNodeColor(rect.node, colorScheme);
-          const shouldShowLabel = showLabels && 
+          const shouldShowLabel =
+            showLabels &&
             (rect.width * rect.height) / (width * height) > labelThreshold;
 
           return (
@@ -326,7 +372,9 @@ export const Treemap: React.FC<TreemapProps> = ({
                 width={rect.width}
                 height={rect.height}
                 fill={color}
-                stroke={isSelected ? '#3b82f6' : isHighlighted ? '#f59e0b' : '#ffffff'}
+                stroke={
+                  isSelected ? '#3b82f6' : isHighlighted ? '#f59e0b' : '#ffffff'
+                }
                 strokeWidth={isSelected ? 2 : isHighlighted ? 1.5 : 0.5}
                 opacity={isHovered ? 0.8 : isHighlighted ? 1 : 0.9}
                 className="cursor-pointer transition-opacity duration-150"
@@ -334,7 +382,7 @@ export const Treemap: React.FC<TreemapProps> = ({
                 onMouseLeave={handleMouseLeave}
                 onClick={(e) => handleClick(rect, e)}
               />
-              
+
               {shouldShowLabel && rect.width > 60 && rect.height > 20 && (
                 <text
                   x={rect.x + 4}
@@ -349,10 +397,17 @@ export const Treemap: React.FC<TreemapProps> = ({
                   className="font-medium"
                 >
                   <tspan className="truncate">
-                    {rect.node.name.length > 20 ? `${rect.node.name.slice(0, 20)}...` : rect.node.name}
+                    {rect.node.name.length > 20
+                      ? `${rect.node.name.slice(0, 20)}...`
+                      : rect.node.name}
                   </tspan>
                   {rect.height > 35 && (
-                    <tspan x={rect.x + 4} y={rect.y + 32} fontSize="10" opacity={0.9}>
+                    <tspan
+                      x={rect.x + 4}
+                      y={rect.y + 32}
+                      fontSize="10"
+                      opacity={0.9}
+                    >
                       {formatSize(rect.node.value)}
                     </tspan>
                   )}

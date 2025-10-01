@@ -45,7 +45,7 @@ export const useVolumeBulkActions = (
         await bulkScanMutation.mutateAsync({
           volume_ids: volumeIds,
           method: 'du',
-          async: false
+          async: false,
         });
         success(`Started scanning ${volumeIds.length} volume(s)`);
         onActionComplete?.('scan', volumeIds);

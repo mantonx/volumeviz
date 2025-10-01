@@ -1,4 +1,4 @@
-// File Explorer Components  
+// File Explorer Components
 export * from './ExplorerView';
 export * from './FileBrowser';
 export * from './FileTable';

@@ -1,4 +1,5 @@
 import { ApiHealthChecker } from '@/components/application';
+import { ProtectedRoute } from '@/components/auth';
 import { Layout } from '@/components/layout/Layout';
 import { ToastProvider } from '@/components/ui';
 import { RealtimeProvider } from '@/providers/realtime';
@@ -16,15 +17,20 @@ import {
 const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
 const VolumesPage = React.lazy(() => import('@/pages/VolumesPage'));
 const VolumeDetailsPage = React.lazy(() => import('@/pages/VolumeDetailsPage'));
-const MountsPage = React.lazy(() => import('@/pages/MountsPage'));
-const RulesPage = React.lazy(() => import('@/pages/RulesPage'));
-const ExplorerPage = React.lazy(() => import('@/pages/ExplorerPage'));
-const SearchPage = React.lazy(() => import('@/pages/SearchPage'));
+const FilesPage = React.lazy(() => import('@/pages/FilesPage'));
+const TrendsPage = React.lazy(() => import('@/pages/TrendsPage'));
 const AlertsPage = React.lazy(() => import('@/pages/AlertsPage'));
 const HealthPage = React.lazy(() => import('@/pages/HealthPage'));
 const SettingsPage = React.lazy(() => import('@/pages/SettingsPage'));
 const OnboardingPage = React.lazy(() => import('@/pages/OnboardingPage'));
+const LoginPage = React.lazy(() => import('@/pages/LoginPage'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
+
+// Legacy pages - kept for backward compatibility and Settings integration
+const ExplorerPage = React.lazy(() => import('@/pages/ExplorerPage'));
+const SearchPage = React.lazy(() => import('@/pages/SearchPage'));
+const MountsPage = React.lazy(() => import('@/pages/MountsPage'));
+const RulesPage = React.lazy(() => import('@/pages/RulesPage'));
 
 const PageLoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
@@ -116,65 +122,76 @@ const App: React.FC = () => {
         <RealtimeProvider>
           <ApiHealthChecker />
           <Router>
-            <Layout>
-              <Suspense fallback={<PageLoadingSpinner />}>
-                <Routes>
-                  {/* Onboarding Route */}
-                  <Route path="/onboarding" element={<OnboardingPage />} />
+            <Suspense fallback={<PageLoadingSpinner />}>
+              <Routes>
+                {/* Public Routes (no Layout) */}
+                <Route path="/login" element={<LoginPage />} />
 
-                  {/* Main Routes - redirect to onboarding if needed */}
-                  <Route
-                    path="/"
-                    element={
-                      shouldRedirectToOnboarding ? (
-                        <Navigate to="/onboarding" replace />
-                      ) : (
-                        <Dashboard />
-                      )
-                    }
-                  />
-                  <Route path="/volumes" element={<VolumesPage />} />
-                  <Route
-                    path="/volumes/:name"
-                    element={<VolumeDetailsPage />}
-                  />
-                  <Route path="/mounts" element={<MountsPage />} />
-                  <Route path="/rules" element={<RulesPage />} />
+                {/* Protected Routes (with Layout) */}
+                <Route
+                  path="/*"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Routes>
+                          {/* Onboarding Route */}
+                          <Route
+                            path="/onboarding"
+                            element={<OnboardingPage />}
+                          />
 
-                  {/* Explorer Routes */}
-                  <Route path="/explorer" element={<ExplorerPage />} />
-                  <Route
-                    path="/explorer/:volumeId"
-                    element={<ExplorerPage />}
-                  />
+                          {/* Main Routes - redirect to onboarding if needed */}
+                          <Route
+                            path="/"
+                            element={
+                              shouldRedirectToOnboarding ? (
+                                <Navigate to="/onboarding" replace />
+                              ) : (
+                                <Dashboard />
+                              )
+                            }
+                          />
+                          {/* Main Navigation Routes */}
+                          <Route path="/volumes" element={<VolumesPage />} />
+                          <Route
+                            path="/volumes/:name"
+                            element={<VolumeDetailsPage />}
+                          />
+                          <Route path="/files" element={<FilesPage />} />
+                          <Route path="/trends" element={<TrendsPage />} />
+                          <Route path="/alerts" element={<AlertsPage />} />
 
-                  {/* Search Routes */}
-                  <Route path="/search" element={<SearchPage />} />
+                          {/* Legacy Routes - redirect to new unified /files page */}
+                          <Route
+                            path="/explorer"
+                            element={<Navigate to="/files" replace />}
+                          />
+                          <Route
+                            path="/explorer/:volumeId"
+                            element={<Navigate to="/files" replace />}
+                          />
+                          <Route
+                            path="/search"
+                            element={<Navigate to="/files" replace />}
+                          />
 
-                  {/* Visualization Routes */}
-                  <Route
-                    path="/realtime"
-                    element={<div>Real-time features coming soon</div>}
-                  />
-                  <Route
-                    path="/historical"
-                    element={<div>Historical data features coming soon</div>}
-                  />
+                          {/* Advanced/Settings Routes */}
+                          <Route path="/mounts" element={<MountsPage />} />
+                          <Route path="/rules" element={<RulesPage />} />
 
-                  {/* Alerts Routes */}
-                  <Route path="/alerts" element={<AlertsPage />} />
+                          {/* System Routes */}
+                          <Route path="/health" element={<HealthPage />} />
+                          <Route path="/settings" element={<SettingsPage />} />
 
-                  {/* System Routes */}
-                  <Route path="/health" element={<HealthPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-
-                  {/* Debug Routes */}
-
-                  {/* 404 Route */}
-                  <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-              </Suspense>
-            </Layout>
+                          {/* 404 Route */}
+                          <Route path="*" element={<NotFoundPage />} />
+                        </Routes>
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </Suspense>
           </Router>
         </RealtimeProvider>
       </ToastProvider>

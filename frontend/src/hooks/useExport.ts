@@ -10,40 +10,44 @@ export interface UseExportOptions {
 export interface UseExportReturn {
   isExporting: boolean;
   exportError: string | null;
-  exportVisualization: (options: ExportOptions, context: ExportContext) => Promise<void>;
+  exportVisualization: (
+    options: ExportOptions,
+    context: ExportContext,
+  ) => Promise<void>;
   clearError: () => void;
 }
 
 export function useExport(options: UseExportOptions = {}): UseExportReturn {
   const { onSuccess, onError } = options;
-  
+
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  const exportVisualization = useCallback(async (
-    exportOptions: ExportOptions,
-    context: ExportContext
-  ) => {
-    setIsExporting(true);
-    setExportError(null);
+  const exportVisualization = useCallback(
+    async (exportOptions: ExportOptions, context: ExportContext) => {
+      setIsExporting(true);
+      setExportError(null);
 
-    try {
-      await exportService.exportVisualization(exportOptions, context);
-      
-      if (onSuccess) {
-        onSuccess(exportOptions.format);
+      try {
+        await exportService.exportVisualization(exportOptions, context);
+
+        if (onSuccess) {
+          onSuccess(exportOptions.format);
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Export failed';
+        setExportError(errorMessage);
+
+        if (onError) {
+          onError(errorMessage);
+        }
+      } finally {
+        setIsExporting(false);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Export failed';
-      setExportError(errorMessage);
-      
-      if (onError) {
-        onError(errorMessage);
-      }
-    } finally {
-      setIsExporting(false);
-    }
-  }, [onSuccess, onError]);
+    },
+    [onSuccess, onError],
+  );
 
   const clearError = useCallback(() => {
     setExportError(null);
@@ -62,23 +66,26 @@ export function useExport(options: UseExportOptions = {}): UseExportReturn {
 export function useTreemapExport(options: UseExportOptions = {}) {
   const exportHook = useExport(options);
 
-  const exportTreemap = useCallback(async (
-    exportOptions: ExportOptions,
-    treemapElement: HTMLElement | SVGElement,
-    data?: any
-  ) => {
-    const context: ExportContext = {
-      element: treemapElement,
-      data,
-      metadata: {
-        visualizationType: 'treemap',
-        generatedAt: new Date().toISOString(),
-        nodeCount: Array.isArray(data) ? data.length : 0,
-      },
-    };
+  const exportTreemap = useCallback(
+    async (
+      exportOptions: ExportOptions,
+      treemapElement: HTMLElement | SVGElement,
+      data?: any,
+    ) => {
+      const context: ExportContext = {
+        element: treemapElement,
+        data,
+        metadata: {
+          visualizationType: 'treemap',
+          generatedAt: new Date().toISOString(),
+          nodeCount: Array.isArray(data) ? data.length : 0,
+        },
+      };
 
-    return exportHook.exportVisualization(exportOptions, context);
-  }, [exportHook]);
+      return exportHook.exportVisualization(exportOptions, context);
+    },
+    [exportHook],
+  );
 
   return {
     ...exportHook,
@@ -89,23 +96,26 @@ export function useTreemapExport(options: UseExportOptions = {}) {
 export function useSunburstExport(options: UseExportOptions = {}) {
   const exportHook = useExport(options);
 
-  const exportSunburst = useCallback(async (
-    exportOptions: ExportOptions,
-    sunburstElement: HTMLElement | SVGElement,
-    data?: any
-  ) => {
-    const context: ExportContext = {
-      element: sunburstElement,
-      data,
-      metadata: {
-        visualizationType: 'sunburst',
-        generatedAt: new Date().toISOString(),
-        levels: data?.maxDepth || 0,
-      },
-    };
+  const exportSunburst = useCallback(
+    async (
+      exportOptions: ExportOptions,
+      sunburstElement: HTMLElement | SVGElement,
+      data?: any,
+    ) => {
+      const context: ExportContext = {
+        element: sunburstElement,
+        data,
+        metadata: {
+          visualizationType: 'sunburst',
+          generatedAt: new Date().toISOString(),
+          levels: data?.maxDepth || 0,
+        },
+      };
 
-    return exportHook.exportVisualization(exportOptions, context);
-  }, [exportHook]);
+      return exportHook.exportVisualization(exportOptions, context);
+    },
+    [exportHook],
+  );
 
   return {
     ...exportHook,
@@ -116,26 +126,29 @@ export function useSunburstExport(options: UseExportOptions = {}) {
 export function useDataExport(options: UseExportOptions = {}) {
   const exportHook = useExport(options);
 
-  const exportData = useCallback(async (
-    exportOptions: ExportOptions,
-    data: any,
-    metadata?: Record<string, any>
-  ) => {
-    // Create a dummy element for data-only exports
-    const dummyElement = document.createElement('div');
-    
-    const context: ExportContext = {
-      element: dummyElement,
-      data,
-      metadata: {
-        exportType: 'data',
-        recordCount: Array.isArray(data) ? data.length : 1,
-        ...metadata,
-      },
-    };
+  const exportData = useCallback(
+    async (
+      exportOptions: ExportOptions,
+      data: any,
+      metadata?: Record<string, any>,
+    ) => {
+      // Create a dummy element for data-only exports
+      const dummyElement = document.createElement('div');
 
-    return exportHook.exportVisualization(exportOptions, context);
-  }, [exportHook]);
+      const context: ExportContext = {
+        element: dummyElement,
+        data,
+        metadata: {
+          exportType: 'data',
+          recordCount: Array.isArray(data) ? data.length : 1,
+          ...metadata,
+        },
+      };
+
+      return exportHook.exportVisualization(exportOptions, context);
+    },
+    [exportHook],
+  );
 
   return {
     ...exportHook,

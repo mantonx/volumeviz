@@ -120,7 +120,8 @@ export function ScanProgressPanel({
           <div>
             <h3 className="font-semibold">Scan Progress</h3>
             <p className="text-sm text-gray-600">
-              Volume: {volumeId} • Scan ID: {progress.scan_id?.slice(0, 8) || 'N/A'}...
+              Volume: {volumeId} • Scan ID:{' '}
+              {progress.scan_id?.slice(0, 8) || 'N/A'}...
             </p>
           </div>
         </div>
@@ -170,19 +171,27 @@ export function ScanProgressPanel({
                 <span className="font-medium text-gray-600">Remaining:</span>
                 <div>
                   {formatDuration(
-                    progress.performance_stats.estimated_remaining_seconds * 1000,
+                    progress.performance_stats.estimated_remaining_seconds *
+                      1000,
                   )}
                 </div>
               </div>
             )}
             <div>
               <span className="font-medium text-gray-600">Items/sec:</span>
-              <div>{Math.round(progress.performance_stats.overall_items_per_second)}</div>
+              <div>
+                {Math.round(
+                  progress.performance_stats.overall_items_per_second,
+                )}
+              </div>
             </div>
             <div>
               <span className="font-medium text-gray-600">Data/sec:</span>
               <div>
-                {formatBytes(progress.performance_stats.overall_bytes_per_second)}/s
+                {formatBytes(
+                  progress.performance_stats.overall_bytes_per_second,
+                )}
+                /s
               </div>
             </div>
           </div>

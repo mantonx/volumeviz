@@ -92,14 +92,23 @@ const getMonitoringConfig = () => ({
 // API configuration
 const getApiConfig = () => ({
   timeout: parseInt(env.VITE_API_TIMEOUT || '30000', 10),
-  retryAttempts: parseInt(env.VITE_API_RETRY_ATTEMPTS || (isProd ? '3' : '1'), 10),
+  retryAttempts: parseInt(
+    env.VITE_API_RETRY_ATTEMPTS || (isProd ? '3' : '1'),
+    10,
+  ),
   retryDelay: parseInt(env.VITE_API_RETRY_DELAY || '1000', 10),
 });
 
 // React Query configuration
 const getQueryConfig = () => ({
-  staleTime: parseInt(env.VITE_QUERY_STALE_TIME || (isProd ? '60000' : '30000'), 10),
-  cacheTime: parseInt(env.VITE_QUERY_CACHE_TIME || (isProd ? '300000' : '120000'), 10),
+  staleTime: parseInt(
+    env.VITE_QUERY_STALE_TIME || (isProd ? '60000' : '30000'),
+    10,
+  ),
+  cacheTime: parseInt(
+    env.VITE_QUERY_CACHE_TIME || (isProd ? '300000' : '120000'),
+    10,
+  ),
   retry: parseInt(env.VITE_QUERY_RETRY || (isProd ? '3' : '1'), 10),
   refetchOnWindowFocus: env.VITE_QUERY_REFETCH_ON_FOCUS !== 'false' && !isProd,
   refetchOnReconnect: env.VITE_QUERY_REFETCH_ON_RECONNECT !== 'false',
@@ -124,7 +133,7 @@ const getCacheConfig = () => ({
 export const config: EnvironmentConfig = {
   apiBaseUrl: getApiUrl(),
   wsBaseUrl: getWsUrl(),
-  environment: env.MODE as any || 'development',
+  environment: (env.MODE as any) || 'development',
   version: getBuildInfo().version,
   buildId: getBuildInfo().buildId,
   features: getFeatureFlags(),
@@ -155,12 +164,14 @@ if (isDevelopment) {
 // Validate required configuration
 const validateConfig = () => {
   const required = ['apiBaseUrl', 'wsBaseUrl', 'environment'];
-  const missing = required.filter(key => !config[key as keyof EnvironmentConfig]);
-  
+  const missing = required.filter(
+    (key) => !config[key as keyof EnvironmentConfig],
+  );
+
   if (missing.length > 0) {
     throw new Error(`Missing required configuration: ${missing.join(', ')}`);
   }
-  
+
   // Validate URLs
   try {
     new URL(config.apiBaseUrl);

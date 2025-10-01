@@ -201,7 +201,7 @@ const server = setupServer(
       current_path: path,
       volume_name: volumeName,
     });
-  })
+  }),
 );
 
 // Test wrapper component
@@ -246,7 +246,7 @@ describe('Volume Management Integration', () => {
       render(
         <TestWrapper>
           <Dashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for organization data to load
@@ -291,19 +291,19 @@ describe('Volume Management Integration', () => {
                       total_items: 0,
                       total_pages: 0,
                     },
-                  })
+                  }),
                 ),
-              100
-            )
+              100,
+            ),
           );
-        })
+        }),
       );
 
       const TestWrapper = createTestWrapper();
       render(
         <TestWrapper>
           <Dashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Should show loading state
@@ -324,7 +324,7 @@ describe('Volume Management Integration', () => {
       render(
         <TestWrapper>
           <Dashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for volumes to load
@@ -336,7 +336,7 @@ describe('Volume Management Integration', () => {
       const refreshButton = screen.getByRole('button', {
         name: /refresh.*production-db-data/i,
       });
-      
+
       await user.click(refreshButton);
 
       // Should show loading state
@@ -358,7 +358,7 @@ describe('Volume Management Integration', () => {
       render(
         <TestWrapper>
           <Dashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for volumes to load
@@ -370,7 +370,7 @@ describe('Volume Management Integration', () => {
       const scanButton = screen.getByRole('button', {
         name: /scan.*production-db-data/i,
       });
-      
+
       await user.click(scanButton);
 
       // Should show loading state
@@ -384,14 +384,16 @@ describe('Volume Management Integration', () => {
 
     it('should handle offline operations by queuing them', async () => {
       // Mock offline state
-      jest.mocked(require('@/utils/background-sync').useBackgroundSync).mockReturnValue({
-        isOnline: false,
-        pendingCount: 0,
-        syncInProgress: false,
-        addPendingOperation: jest.fn(),
-        forceSync: jest.fn(),
-        clearPending: jest.fn(),
-      });
+      jest
+        .mocked(require('@/utils/background-sync').useBackgroundSync)
+        .mockReturnValue({
+          isOnline: false,
+          pendingCount: 0,
+          syncInProgress: false,
+          addPendingOperation: jest.fn(),
+          forceSync: jest.fn(),
+          clearPending: jest.fn(),
+        });
 
       const user = userEvent.setup();
       const TestWrapper = createTestWrapper();
@@ -399,7 +401,7 @@ describe('Volume Management Integration', () => {
       render(
         <TestWrapper>
           <Dashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for volumes to load
@@ -411,7 +413,7 @@ describe('Volume Management Integration', () => {
       const refreshButton = screen.getByRole('button', {
         name: /refresh.*production-db-data/i,
       });
-      
+
       await user.click(refreshButton);
 
       // Verify operation was queued
@@ -431,7 +433,7 @@ describe('Volume Management Integration', () => {
       render(
         <TestWrapper>
           <Dashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for volumes to load
@@ -443,7 +445,7 @@ describe('Volume Management Integration', () => {
       const browseButton = screen.getByRole('button', {
         name: /browse.*production-db-data/i,
       });
-      
+
       await user.click(browseButton);
 
       // Should navigate to file browser and show files
@@ -475,9 +477,9 @@ describe('Volume Management Integration', () => {
         http.post('/api/v1/volumes/:volumeName/size/refresh', () => {
           return HttpResponse.json(
             { error: 'Internal server error' },
-            { status: 500 }
+            { status: 500 },
           );
-        })
+        }),
       );
 
       const user = userEvent.setup();
@@ -486,7 +488,7 @@ describe('Volume Management Integration', () => {
       render(
         <TestWrapper>
           <Dashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for volumes to load
@@ -498,7 +500,7 @@ describe('Volume Management Integration', () => {
       const refreshButton = screen.getByRole('button', {
         name: /refresh.*production-db-data/i,
       });
-      
+
       await user.click(refreshButton);
 
       // Wait for error to be handled
@@ -515,20 +517,20 @@ describe('Volume Management Integration', () => {
       server.use(
         http.get('/api/v1/volumes', () => {
           return HttpResponse.error();
-        })
+        }),
       );
 
       const TestWrapper = createTestWrapper();
       render(
         <TestWrapper>
           <Dashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Should show error state or empty state
       await waitFor(() => {
         expect(
-          screen.queryByText('production-db-data')
+          screen.queryByText('production-db-data'),
         ).not.toBeInTheDocument();
       });
 
@@ -544,7 +546,7 @@ describe('Volume Management Integration', () => {
       render(
         <TestWrapper>
           <Dashboard />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Wait for volumes to load
@@ -568,7 +570,7 @@ describe('Volume Management Integration', () => {
       const bulkScanButton = screen.getByRole('button', {
         name: /bulk scan/i,
       });
-      
+
       await user.click(bulkScanButton);
 
       // Should show progress indicator

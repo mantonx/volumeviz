@@ -77,6 +77,9 @@ func (r *ReconcilerService) ReconcileVolumes(ctx context.Context) error {
 				updatedVol := r.convertDockerVolumeToModel(dockerVol, time.Now())
 				updatedVol.ID = dbVol.ID               // Preserve database ID
 				updatedVol.CreatedAt = dbVol.CreatedAt // Preserve original created time
+				// Preserve scan data - don't overwrite scan results during reconciliation
+				updatedVol.UsageData = dbVol.UsageData
+				updatedVol.LastScanned = dbVol.LastScanned
 
 				if err := r.repository.UpsertVolume(ctx, updatedVol); err != nil {
 					log.Printf("[WARN] Failed to update volume %s during reconciliation: %v", dockerVol.Name, err)

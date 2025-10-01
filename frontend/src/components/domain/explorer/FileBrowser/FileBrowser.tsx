@@ -1,10 +1,19 @@
 import { useAtomValue, useSetAtom } from 'jotai';
-import { Loader2, AlertCircle, FolderIcon, FileIcon, ArrowUpIcon, MoreVertical, Download, Eye } from 'lucide-react';
+import {
+  Loader2,
+  AlertCircle,
+  FolderIcon,
+  FileIcon,
+  ArrowUpIcon,
+  MoreVertical,
+  Download,
+  Eye,
+} from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { 
+import {
   useGetApiV1ExplorerBrowse,
-  GetApiV1ExplorerBrowseParams 
+  GetApiV1ExplorerBrowseParams,
 } from '@/api/orval-generated/api';
 import { selectedVolumeAtom } from '@/atoms/volumes';
 import { useFileOperations } from '@/hooks/api/useFileOperations';
@@ -28,33 +37,33 @@ interface FileItem {
   media_type?: string;
 }
 
-export function FileBrowser({ 
-  volumeId, 
-  initialPath = '/', 
+export function FileBrowser({
+  volumeId,
+  initialPath = '/',
   className = '',
   onFileSelect,
-  onFileDoubleClick
+  onFileDoubleClick,
 }: FileBrowserProps) {
   const selectedVolume = useAtomValue(selectedVolumeAtom);
   const currentVolumeId = volumeId || selectedVolume;
   const [currentPath, setCurrentPath] = useState(initialPath);
-  
+
   // File operations
   const { downloadFile, generatePreview } = useFileOperations();
-  
+
   // Fetch files for the current path
-  const { 
-    data: filesData, 
-    isLoading, 
+  const {
+    data: filesData,
+    isLoading,
     error,
-    refetch 
+    refetch,
   } = useGetApiV1ExplorerBrowse(
-    { 
+    {
       volume_id: currentVolumeId || '',
       path: currentPath,
       limit: 100,
       include_parent: true,
-      include_children: false
+      include_children: false,
     },
     {
       query: {
@@ -62,7 +71,7 @@ export function FileBrowser({
         refetchOnWindowFocus: false,
         staleTime: 30000, // 30 seconds
       },
-    }
+    },
   );
 
   const files: FileItem[] = useMemo(() => {
@@ -83,16 +92,16 @@ export function FileBrowser({
   const breadcrumbs = useMemo(() => {
     const parts = currentPath.split('/').filter(Boolean);
     const crumbs = [{ name: 'Root', path: '/' }];
-    
+
     let currentPathBuild = '';
-    parts.forEach(part => {
+    parts.forEach((part) => {
       currentPathBuild += `/${part}`;
       crumbs.push({
         name: part,
         path: currentPathBuild,
       });
     });
-    
+
     return crumbs;
   }, [currentPath]);
 
@@ -116,12 +125,12 @@ export function FileBrowser({
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let size = bytes;
     let unitIndex = 0;
-    
+
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
       unitIndex++;
     }
-    
+
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
 
@@ -159,7 +168,9 @@ export function FileBrowser({
       <div className={`flex items-center justify-center py-12 ${className}`}>
         <div className="text-center">
           <FolderIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No volume selected</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
+            No volume selected
+          </h3>
           <p className="mt-1 text-sm text-gray-500">
             Select a volume to browse its files.
           </p>
@@ -184,7 +195,9 @@ export function FileBrowser({
       <div className={`flex items-center justify-center py-12 ${className}`}>
         <div className="text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load files</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
+            Failed to load files
+          </h3>
           <p className="mt-1 text-sm text-gray-500">
             {error.message || 'An error occurred while loading files.'}
           </p>
@@ -209,8 +222,8 @@ export function FileBrowser({
             <button
               onClick={() => handleNavigateToPath(crumb.path)}
               className={`hover:text-gray-700 ${
-                index === breadcrumbs.length - 1 
-                  ? 'text-gray-900 font-medium' 
+                index === breadcrumbs.length - 1
+                  ? 'text-gray-900 font-medium'
                   : 'hover:underline'
               }`}
               disabled={index === breadcrumbs.length - 1}
@@ -231,7 +244,11 @@ export function FileBrowser({
             </h3>
             {currentPath !== '/' && (
               <button
-                onClick={() => handleNavigateToPath(breadcrumbs[breadcrumbs.length - 2]?.path || '/')}
+                onClick={() =>
+                  handleNavigateToPath(
+                    breadcrumbs[breadcrumbs.length - 2]?.path || '/',
+                  )
+                }
                 className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700"
               >
                 <ArrowUpIcon className="w-3 h-3 mr-1" />
@@ -297,7 +314,7 @@ export function FileBrowser({
                     <div className="flex items-center space-x-2">
                       {file.type === 'file' && (
                         <>
-                          <button 
+                          <button
                             className="text-gray-400 hover:text-gray-600"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -307,7 +324,7 @@ export function FileBrowser({
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button 
+                          <button
                             className="text-gray-400 hover:text-gray-600"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -334,7 +351,9 @@ export function FileBrowser({
         {files.length === 0 && (
           <div className="text-center py-12">
             <FolderIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No files found</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No files found
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
               This directory appears to be empty.
             </p>

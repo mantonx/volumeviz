@@ -32,7 +32,7 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
       className={clsx(
         'flex items-center justify-between',
         'px-6 py-4 border-b border-neutral-200 dark:border-neutral-700',
-        className
+        className,
       )}
       {...props}
     >
@@ -44,7 +44,7 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
         )}
         {children}
       </div>
-      
+
       {showCloseButton && (
         <button
           onClick={onClose}
@@ -53,7 +53,7 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
             'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300',
             'hover:bg-neutral-100 dark:hover:bg-neutral-800',
             'transition-colors duration-200',
-            'focus:outline-none focus:ring-2 focus:ring-brand-primary-500 focus:ring-offset-2'
+            'focus:outline-none focus:ring-2 focus:ring-brand-primary-500 focus:ring-offset-2',
           )}
           aria-label="Close modal"
         >
