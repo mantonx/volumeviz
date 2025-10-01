@@ -293,8 +293,8 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
                       )}
                     </td>
 
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {volume.file_count?.toLocaleString() || '—'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic">
+                      {volume.file_count ? volume.file_count.toLocaleString() : 'Not scanned'}
                     </td>
 
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
