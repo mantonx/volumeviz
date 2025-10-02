@@ -54,7 +54,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 				scanJob := coreModels.CreateScanJobParams{
 					ScanID:   scanID,
 					VolumeID: volumeID,
-					Status:   "running",
+					Status:   "pending", // Set to pending so workers can claim it
 					Method:   "async",
 				}
 				_, err := scansRepo.CreateScanJob(ctx, scanJob)

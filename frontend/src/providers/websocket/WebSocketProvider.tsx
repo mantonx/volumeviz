@@ -55,34 +55,34 @@ export function WebSocketProvider({
     reconnectAttempts: 0,
   });
 
-  // WebSocket connection with debug logging
-  console.log('[WebSocketProvider] Initializing with URL:', config.url);
-  console.log('[WebSocketProvider] Config:', {
-    url: config.url,
-    shouldReconnect: mergedConfig.shouldReconnect,
-    reconnectInterval: mergedConfig.reconnectInterval,
-    reconnectAttempts: mergedConfig.reconnectAttempts,
-  });
+  // Memoize WebSocket URL to prevent reconnections
+  const wsUrl = React.useMemo(() => config.url || '', [config.url]);
 
-  const { lastMessage, readyState, sendMessage, getWebSocket } = useWebSocket(
-    config.url || '',
-    {
+  // Memoize WebSocket options to prevent re-creating connection
+  const wsOptions = React.useMemo(
+    () => ({
       shouldReconnect:
         typeof mergedConfig.shouldReconnect === 'function'
           ? mergedConfig.shouldReconnect
           : () => !!mergedConfig.shouldReconnect,
       reconnectInterval: mergedConfig.reconnectInterval,
       reconnectAttempts: mergedConfig.reconnectAttempts,
-      onOpen: (event) => {
-        console.log('[WebSocket] Connection opened:', event);
+      onOpen: (event: WebSocketEventMap['open']) => {
+        console.log('[WebSocket] Connection opened');
       },
-      onClose: (event) => {
-        console.log('[WebSocket] Connection closed:', event.code, event.reason);
+      onClose: (event: WebSocketEventMap['close']) => {
+        console.log('[WebSocket] Connection closed:', event.code);
       },
-      onError: (event) => {
-        console.error('[WebSocket] Connection error:', event);
+      onError: (event: WebSocketEventMap['error']) => {
+        console.error('[WebSocket] Connection error');
       },
-    },
+    }),
+    [mergedConfig.shouldReconnect, mergedConfig.reconnectInterval, mergedConfig.reconnectAttempts],
+  );
+
+  const { lastMessage, readyState, sendMessage, getWebSocket } = useWebSocket(
+    wsUrl,
+    wsOptions,
   );
 
   // Update connection state when status changes
@@ -207,6 +207,12 @@ export function WebSocketProvider({
   // Subscription management
   const subscribe = useCallback(
     (event: string, filters?: Record<string, any>) => {
+      // Prevent subscribing with empty event name
+      if (!event || event.trim() === '') {
+        console.error('[WebSocket] Cannot subscribe with empty event name');
+        return false;
+      }
+
       if (readyState === ReadyState.OPEN) {
         const subscriptionRequest: SubscriptionRequest = {
           action: 'subscribe',
@@ -231,6 +237,12 @@ export function WebSocketProvider({
 
   const unsubscribe = useCallback(
     (event: string, filters?: Record<string, any>) => {
+      // Prevent unsubscribing with empty event name
+      if (!event || event.trim() === '') {
+        console.error('[WebSocket] Cannot unsubscribe with empty event name');
+        return false;
+      }
+
       if (readyState === ReadyState.OPEN) {
         const subscriptionRequest: SubscriptionRequest = {
           action: 'unsubscribe',
@@ -290,36 +302,54 @@ export function WebSocketProvider({
     clearWebSocketData();
   }, [getWebSocket, clearWebSocketData]);
 
-  // Context value - use local state for connection info
-  const contextValue: WebSocketContextValue = {
-    // Connection state
-    connectionState: {
-      status: readyState,
-      isConnected: localConnectionState.isConnected,
-      connectedAt: localConnectionState.connectedAt,
-      reconnectAttempts: localConnectionState.reconnectAttempts,
-      latency: null,
-      lastError:
-        readyState === ReadyState.CLOSED ? 'Connection closed' : undefined,
-    },
-    isConnected: localConnectionState.isConnected,
+  // Context value - MEMOIZE to prevent re-renders of all consumers!
+  // Destructure localConnectionState to avoid object reference issues
+  const { isConnected, connectedAt, reconnectAttempts } = localConnectionState;
 
-    // Message handling
-    lastMessage,
-    sendMessage: sendGenericMessage,
+  const contextValue: WebSocketContextValue = React.useMemo(
+    () => ({
+      // Connection state
+      connectionState: {
+        status: readyState,
+        isConnected,
+        connectedAt,
+        reconnectAttempts,
+        latency: null,
+        lastError:
+          readyState === ReadyState.CLOSED ? 'Connection closed' : undefined,
+      },
+      isConnected,
 
-    // Subscription management
-    subscribe,
-    unsubscribe,
+      // Message handling - lastMessage omitted to prevent re-renders on every message
+      lastMessage: null,
+      sendMessage: sendGenericMessage,
 
-    // Generic event listeners
-    addEventListener,
-    removeEventListener,
+      // Subscription management
+      subscribe,
+      unsubscribe,
 
-    // Utility methods
-    reconnect,
-    disconnect,
-  };
+      // Generic event listeners
+      addEventListener,
+      removeEventListener,
+
+      // Utility methods
+      reconnect,
+      disconnect,
+    }),
+    [
+      readyState,
+      isConnected,
+      connectedAt,
+      reconnectAttempts,
+      sendGenericMessage,
+      subscribe,
+      unsubscribe,
+      addEventListener,
+      removeEventListener,
+      reconnect,
+      disconnect,
+    ],
+  );
 
   return (
     <WebSocketContext.Provider value={contextValue}>

@@ -51,9 +51,35 @@ export const VolumesPage: React.FC = () => {
   };
 
   const handleBulkDelete = async () => {
-    // TODO: Implement bulk delete when API is available
-    console.log('Bulk delete:', selectedVolumes);
-    setIsDeleteConfirmOpen(false);
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const token = localStorage.getItem('auth_token');
+
+      const response = await fetch(`${baseUrl}/api/v1/volumes/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ volume_ids: selectedVolumes }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Bulk delete failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Bulk delete completed:', result);
+
+      setIsDeleteConfirmOpen(false);
+      setSelectedVolumes([]);
+
+      // Refresh the volume list
+      window.location.reload();
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+      // TODO: Show error notification to user
+    }
   };
 
   return (

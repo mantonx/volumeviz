@@ -68,6 +68,12 @@ func AuthMiddleware(config *AuthConfig) gin.HandlerFunc {
 	}
 
 	return gin.HandlerFunc(func(c *gin.Context) {
+		// Skip authentication for OPTIONS requests (CORS preflight)
+		if c.Request.Method == "OPTIONS" {
+			c.Next()
+			return
+		}
+
 		// Skip authentication for certain paths
 		for _, skipPath := range config.SkipPaths {
 			if strings.HasPrefix(c.Request.URL.Path, skipPath) {

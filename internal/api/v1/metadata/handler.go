@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mantonx/volumeviz/internal/api/utils"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/models"
@@ -392,36 +393,72 @@ func (h *Handler) GetFilesByResolution(c *gin.Context) {
 		req.Limit = 500
 	}
 
-	// Placeholder implementation - would integrate with media metadata
-	files := []*models.File{}
-	totalCount := 0
+	ctx := c.Request.Context()
+
+	// Get SQLC queries from store
+	queries, ok := h.store.Queries().(*sqlc.Queries)
+	if !ok {
+		utils.RespondWithInternalError(c, "Database queries not available", nil)
+		return
+	}
+
+	// Calculate offset
+	offset := int32((req.Page - 1) * req.Limit)
+
+	// Build query parameters with nullable values
+	params := sqlc.GetFilesByResolutionParams{
+		VolumeID:  req.VolumeID,
+		Limit:     int32(req.Limit),
+		Offset:    offset,
+		MinWidth:  pgtype.Int4{Valid: req.MinWidth != nil, Int32: getInt32Value(req.MinWidth)},
+		MaxWidth:  pgtype.Int4{Valid: req.MaxWidth != nil, Int32: getInt32Value(req.MaxWidth)},
+		MinHeight: pgtype.Int4{Valid: req.MinHeight != nil, Int32: getInt32Value(req.MinHeight)},
+		MaxHeight: pgtype.Int4{Valid: req.MaxHeight != nil, Int32: getInt32Value(req.MaxHeight)},
+	}
+
+	// Query files by resolution
+	rows, err := queries.GetFilesByResolution(ctx, params)
+	if err != nil {
+		utils.RespondWithInternalError(c, "Failed to query files by resolution", err)
+		return
+	}
+
+	// Get total count
+	countParams := sqlc.CountFilesByResolutionParams{
+		VolumeID:  req.VolumeID,
+		MinWidth:  params.MinWidth,
+		MaxWidth:  params.MaxWidth,
+		MinHeight: params.MinHeight,
+		MaxHeight: params.MaxHeight,
+	}
+	totalCount, err := queries.CountFilesByResolution(ctx, countParams)
+	if err != nil {
+		utils.RespondWithInternalError(c, "Failed to count files", err)
+		return
+	}
 
 	// Convert to response format
-	var fileItems []FileResolutionItem
-	for _, file := range files {
+	fileItems := make([]FileResolutionItem, 0, len(rows))
+	for _, row := range rows {
 		item := FileResolutionItem{
-			ID:   file.ID,
-			Name: file.Path,
-			Path: file.Path,
-			Size: file.SizeBytes,
+			ID:     row.ID,
+			Name:   row.Name,
+			Path:   row.Path,
+			Size:   row.SizeBytes,
+			Width:  int(row.Width),
+			Height: int(row.Height),
 		}
-
-		// In a real implementation, this would come from media metadata
-		item.Width = 1920  // Placeholder
-		item.Height = 1080 // Placeholder
-
-		if file.Mime != nil {
-			item.MediaType = *file.Mime
+		if row.Mime.Valid {
+			item.MediaType = row.Mime.String
 		}
-
 		fileItems = append(fileItems, item)
 	}
 
-	totalPages := (totalCount + req.Limit - 1) / req.Limit
+	totalPages := int((totalCount + int64(req.Limit) - 1) / int64(req.Limit))
 
 	response := GetFilesByResolutionResponse{
 		Files:      fileItems,
-		TotalCount: totalCount,
+		TotalCount: int(totalCount),
 		Page:       req.Page,
 		Limit:      req.Limit,
 		TotalPages: totalPages,
@@ -463,33 +500,67 @@ func (h *Handler) GetFilesByDuration(c *gin.Context) {
 		req.Limit = 500
 	}
 
-	// Placeholder implementation - would integrate with media metadata
-	files := []*models.File{}
-	totalCount := 0
+	ctx := c.Request.Context()
+
+	// Get SQLC queries from store
+	queries, ok := h.store.Queries().(*sqlc.Queries)
+	if !ok {
+		utils.RespondWithInternalError(c, "Database queries not available", nil)
+		return
+	}
+
+	// Calculate offset
+	offset := int32((req.Page - 1) * req.Limit)
+
+	// Build query parameters with nullable values
+	params := sqlc.GetFilesByDurationParams{
+		VolumeID:    req.VolumeID,
+		Limit:       int32(req.Limit),
+		Offset:      offset,
+		MinDuration: pgtype.Float8{Valid: req.MinDuration != nil, Float64: getFloat64FromInt(req.MinDuration)},
+		MaxDuration: pgtype.Float8{Valid: req.MaxDuration != nil, Float64: getFloat64FromInt(req.MaxDuration)},
+	}
+
+	// Query files by duration
+	rows, err := queries.GetFilesByDuration(ctx, params)
+	if err != nil {
+		utils.RespondWithInternalError(c, "Failed to query files by duration", err)
+		return
+	}
+
+	// Get total count
+	countParams := sqlc.CountFilesByDurationParams{
+		VolumeID:    req.VolumeID,
+		MinDuration: params.MinDuration,
+		MaxDuration: params.MaxDuration,
+	}
+	totalCount, err := queries.CountFilesByDuration(ctx, countParams)
+	if err != nil {
+		utils.RespondWithInternalError(c, "Failed to count files", err)
+		return
+	}
 
 	// Convert to response format
-	var fileItems []FileDurationItem
-	for _, file := range files {
+	fileItems := make([]FileDurationItem, 0, len(rows))
+	for _, row := range rows {
 		item := FileDurationItem{
-			ID:       file.ID,
-			Name:     file.Path,
-			Path:     file.Path,
-			Size:     file.SizeBytes,
-			Duration: 120, // Placeholder seconds
+			ID:       row.ID,
+			Name:     row.Name,
+			Path:     row.Path,
+			Size:     row.SizeBytes,
+			Duration: int(row.Duration), // Convert float64 to int seconds
 		}
-
-		if file.Mime != nil {
-			item.MediaType = *file.Mime
+		if row.Mime.Valid {
+			item.MediaType = row.Mime.String
 		}
-
 		fileItems = append(fileItems, item)
 	}
 
-	totalPages := (totalCount + req.Limit - 1) / req.Limit
+	totalPages := int((totalCount + int64(req.Limit) - 1) / int64(req.Limit))
 
 	response := GetFilesByDurationResponse{
 		Files:      fileItems,
-		TotalCount: totalCount,
+		TotalCount: int(totalCount),
 		Page:       req.Page,
 		Limit:      req.Limit,
 		TotalPages: totalPages,
@@ -533,34 +604,58 @@ func (h *Handler) GetFilesByLocation(c *gin.Context) {
 		req.Limit = 500
 	}
 
-	// Placeholder implementation - would integrate with EXIF metadata
-	files := []*models.File{}
-	totalCount := 0
+	ctx := c.Request.Context()
+
+	// Get SQLC queries from store
+	queries, ok := h.store.Queries().(*sqlc.Queries)
+	if !ok {
+		utils.RespondWithInternalError(c, "Database queries not available", nil)
+		return
+	}
+
+	// Calculate offset
+	offset := int32((req.Page - 1) * req.Limit)
+
+	// Query files by location
+	rows, err := queries.GetFilesByLocation(ctx, sqlc.GetFilesByLocationParams{
+		VolumeID: req.VolumeID,
+		Limit:    int32(req.Limit),
+		Offset:   offset,
+	})
+	if err != nil {
+		utils.RespondWithInternalError(c, "Failed to query files by location", err)
+		return
+	}
+
+	// Get total count
+	totalCount, err := queries.CountFilesByLocation(ctx, req.VolumeID)
+	if err != nil {
+		utils.RespondWithInternalError(c, "Failed to count files", err)
+		return
+	}
 
 	// Convert to response format
-	var fileItems []FileLocationItem
-	for _, file := range files {
+	fileItems := make([]FileLocationItem, 0, len(rows))
+	for _, row := range rows {
 		item := FileLocationItem{
-			ID:        file.ID,
-			Name:      file.Path,
-			Path:      file.Path,
-			Size:      file.SizeBytes,
-			Latitude:  &req.Latitude,  // Placeholder
-			Longitude: &req.Longitude, // Placeholder
+			ID:        row.ID,
+			Name:      row.Name,
+			Path:      row.Path,
+			Size:      row.SizeBytes,
+			Latitude:  &row.Latitude,
+			Longitude: &row.Longitude,
 		}
-
-		if file.Mime != nil {
-			item.MediaType = *file.Mime
+		if row.Mime.Valid {
+			item.MediaType = row.Mime.String
 		}
-
 		fileItems = append(fileItems, item)
 	}
 
-	totalPages := (totalCount + req.Limit - 1) / req.Limit
+	totalPages := int((totalCount + int64(req.Limit) - 1) / int64(req.Limit))
 
 	response := GetFilesByLocationResponse{
 		Files:      fileItems,
-		TotalCount: totalCount,
+		TotalCount: int(totalCount),
 		Page:       req.Page,
 		Limit:      req.Limit,
 		TotalPages: totalPages,
@@ -730,4 +825,28 @@ func capitalizeFirst(s string) string {
 		return s
 	}
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+// getInt32Value safely converts a nullable int pointer to int32
+func getInt32Value(ptr *int) int32 {
+	if ptr == nil {
+		return 0
+	}
+	return int32(*ptr)
+}
+
+// getFloat64Value safely converts a nullable float64 pointer to float64
+func getFloat64Value(ptr *float64) float64 {
+	if ptr == nil {
+		return 0
+	}
+	return *ptr
+}
+
+// getFloat64FromInt safely converts a nullable int pointer to float64
+func getFloat64FromInt(ptr *int) float64 {
+	if ptr == nil {
+		return 0
+	}
+	return float64(*ptr)
 }

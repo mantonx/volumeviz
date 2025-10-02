@@ -629,7 +629,7 @@ type Files struct {
 	Fps                    pgtype.Numeric     `json:"fps"`
 	ColorPrimaries         pgtype.Text        `json:"color_primaries"`
 	TransferCharacteristic pgtype.Text        `json:"transfer_characteristic"`
-	HdrFormat              string             `json:"hdr_format"`
+	HdrFormat              pgtype.Text        `json:"hdr_format"`
 	CaptureDatetime        pgtype.Timestamptz `json:"capture_datetime"`
 	CameraMake             pgtype.Text        `json:"camera_make"`
 	CameraModel            pgtype.Text        `json:"camera_model"`
@@ -826,6 +826,30 @@ type ScanPhases struct {
 	UpdatedAt             time.Time          `json:"updated_at"`
 }
 
+// Background jobs for statistics computation and analysis
+type StatsJobs struct {
+	ID int64 `json:"id"`
+	// Unique identifier for the job (UUID or generated string)
+	JobID string `json:"job_id"`
+	// Type of statistics job being executed
+	JobType string `json:"job_type"`
+	// Volume this job is processing (null for system-wide jobs)
+	VolumeID pgtype.Text `json:"volume_id"`
+	Status   string      `json:"status"`
+	// Job progress percentage (0-100)
+	Progress     pgtype.Int4        `json:"progress"`
+	ErrorMessage pgtype.Text        `json:"error_message"`
+	StartedAt    pgtype.Timestamptz `json:"started_at"`
+	CompletedAt  pgtype.Timestamptz `json:"completed_at"`
+	// Job execution duration in milliseconds
+	DurationMs pgtype.Int8 `json:"duration_ms"`
+	// Number of records/files processed by this job
+	RecordsProcessed pgtype.Int8 `json:"records_processed"`
+	OrganizationID   pgtype.Int8 `json:"organization_id"`
+	CreatedAt        time.Time   `json:"created_at"`
+	UpdatedAt        time.Time   `json:"updated_at"`
+}
+
 type TrackingRuleConditions struct {
 	ID              int64              `json:"id"`
 	RuleID          pgtype.Int8        `json:"rule_id"`
@@ -892,7 +916,7 @@ type TrackingRules struct {
 type UsageSnapshots struct {
 	ID               int64          `json:"id"`
 	VolumeID         string         `json:"volume_id"`
-	SnapshotDate     time.Time      `json:"snapshot_date"`
+	SnapshotDate     pgtype.Date    `json:"snapshot_date"`
 	TotalSizeBytes   int64          `json:"total_size_bytes"`
 	TotalFiles       int64          `json:"total_files"`
 	TotalDirectories int64          `json:"total_directories"`

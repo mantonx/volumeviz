@@ -154,6 +154,8 @@ type VolumeStats struct {
 	ScannedVolumes int64      `json:"scanned_volumes"`
 	NewestVolume   *time.Time `json:"newest_volume,omitempty"`
 	OldestVolume   *time.Time `json:"oldest_volume,omitempty"`
+	TotalBytes     int64      `json:"total_bytes,omitempty"`
+	TotalFiles     int64      `json:"total_files,omitempty"`
 }
 
 // CreateVolumeParams represents parameters for creating a volume
@@ -375,7 +377,7 @@ type File struct {
 	Encoding       *string    `json:"encoding,omitempty"`
 	HashAlgo       *string    `json:"hash_algo,omitempty"`
 	Hash           []byte     `json:"hash,omitempty"`
-	PathHash       []byte     `json:"path_hash"`
+	PathHash       string     `json:"path_hash"`  // Changed from []byte to string to force TEXT encoding
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 }
@@ -386,7 +388,7 @@ type CreateFolderParams struct {
 	VolumeID      string     `json:"volume_id"`
 	Name          string     `json:"name"`
 	Path          string     `json:"path"`
-	PathHash      []byte     `json:"path_hash"`
+	PathHash      string     `json:"path_hash"`  // Changed from []byte to string to force TEXT encoding
 	Depth         int32      `json:"depth"`
 	Mtime         *time.Time `json:"mtime,omitempty"`
 	Ctime         *time.Time `json:"ctime,omitempty"`
@@ -421,7 +423,7 @@ type CreateFileParams struct {
 	Encoding       *string    `json:"encoding,omitempty"`
 	HashAlgo       *string    `json:"hash_algo,omitempty"`
 	Hash           []byte     `json:"hash,omitempty"`
-	PathHash       []byte     `json:"path_hash"`
+	PathHash       string     `json:"path_hash"`  // Changed from []byte to string to force TEXT encoding
 }
 
 // FolderStats represents folder statistics

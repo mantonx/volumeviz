@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/utils/auth"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 )
@@ -28,20 +31,28 @@ type Hub struct {
 	// Configuration
 	pingInterval time.Duration
 	pongWait     time.Duration
-	
+
 	// Store for querying volume data
 	store store.Store
+
+	// JWT manager for authentication
+	jwtManager *auth.JWTManager
 }
 
 // Connection represents a WebSocket connection with metadata
 type Connection struct {
-	ID       string
-	WS       *websocket.Conn
-	Send     chan RealtimeMessage
-	Rooms    map[string]bool // rooms this connection is subscribed to
-	Context  context.Context
-	Cancel   context.CancelFunc
-	LastSeen time.Time
+	ID             string
+	WS             *websocket.Conn
+	Send           chan RealtimeMessage
+	Rooms          map[string]bool // rooms this connection is subscribed to
+	Context        context.Context
+	Cancel         context.CancelFunc
+	LastSeen       time.Time
+	// Authentication context
+	UserID          string
+	UserRole        string
+	OrganizationID  *int64 // Organization this connection belongs to (nil for system admin)
+	IsAuthenticated bool
 }
 
 // RealtimeMessage represents the standard message format for all WebSocket communication
@@ -69,6 +80,11 @@ type SubscriptionMessage struct {
 
 // NewHub creates a new WebSocket hub with clean architecture
 func NewHub(store store.Store) *Hub {
+	return NewHubWithAuth(store, nil)
+}
+
+// NewHubWithAuth creates a new WebSocket hub with JWT authentication support
+func NewHubWithAuth(store store.Store, jwtManager *auth.JWTManager) *Hub {
 	return &Hub{
 		connections:  make(map[string]*Connection),
 		rooms:        make(map[string]map[string]*Connection),
@@ -78,6 +94,7 @@ func NewHub(store store.Store) *Hub {
 		pingInterval: time.Second * 30,
 		pongWait:     time.Second * 60,
 		store:        store,
+		jwtManager:   jwtManager,
 	}
 }
 
@@ -358,21 +375,131 @@ func (h *Hub) broadcastCurrentVolumeStates() {
 	log.Printf("[WEBSOCKET-HUB] Broadcasting volume states to %d connected clients", totalConnections)
 
 	ctx := context.Background()
-	// TODO: CRITICAL SECURITY ISSUE - WebSocket realtime service leaks data between organizations
-	// This system needs complete redesign for multi-tenancy with proper authentication:
-	// 1. WebSocket connections must authenticate and maintain organization context
-	// 2. Room subscriptions must be organization-scoped
-	// 3. Volume broadcasts must filter by organization access
-	// 4. Currently all volumes are broadcast to all clients regardless of organization
-	// TEMPORARY FIX: Using system-level query to prevent compilation errors
-	volumes, err := h.store.Volumes().ListAllVolumes(ctx, 100, 0)
-	if err != nil {
-		log.Printf("[WEBSOCKET-HUB] Failed to query volumes for periodic broadcast: %v", err)
-		return
+
+	// SECURITY FIX: Broadcast volumes per organization to prevent data leaks
+	// Group connections by organization
+	orgConnections := make(map[int64][]*Connection)
+	var systemAdminConnections []*Connection
+
+	h.mutex.RLock()
+	for _, conn := range h.connections {
+		if !conn.IsAuthenticated {
+			continue // Skip unauthenticated connections
+		}
+		if conn.OrganizationID != nil {
+			orgID := *conn.OrganizationID
+			orgConnections[orgID] = append(orgConnections[orgID], conn)
+		} else {
+			// System admins see all volumes
+			systemAdminConnections = append(systemAdminConnections, conn)
+		}
+	}
+	h.mutex.RUnlock()
+
+	// Broadcast volumes to each organization separately
+	for orgID, conns := range orgConnections {
+		if len(conns) == 0 {
+			continue
+		}
+
+		// Query volumes for this specific organization
+		volumes, err := h.store.Volumes().ListVolumes(ctx, orgID, 100, 0)
+		if err != nil {
+			log.Printf("[WEBSOCKET-HUB] Failed to query volumes for org %d: %v", orgID, err)
+			continue
+		}
+
+		// Broadcast to volume.updates subscribers for this org
+		if hasVolumeUpdateSubs {
+			for _, volume := range volumes {
+				var totalSize int64
+				if volume.UsageData != nil {
+					totalSize = volume.UsageData.Size
+				}
+
+				volumeData := map[string]interface{}{
+					"volume_id":    volume.VolumeID,
+					"volume_name":  volume.Name,
+					"status":       volume.Status,
+					"last_scanned": volume.LastScanned,
+					"total_size":   totalSize,
+					"driver":       volume.Driver,
+					"mountpoint":   volume.Mountpoint,
+					"is_active":    volume.IsActive,
+					"created_at":   volume.CreatedAt,
+					"updated_at":   volume.UpdatedAt,
+					"message":      "Periodic volume state update",
+					"timestamp":    time.Now().Unix(),
+				}
+
+				// Send to each authenticated connection in this org
+				for _, conn := range conns {
+					if conn.Rooms["volume_updates"] {
+						select {
+						case conn.Send <- RealtimeMessage{
+							Type:      "volume.state",
+							Data:      volumeData,
+							Timestamp: time.Now(),
+							Room:      "volume_updates",
+						}:
+						default:
+							log.Printf("[WEBSOCKET-HUB] Failed to send to connection %s (buffer full)", conn.ID)
+						}
+					}
+				}
+			}
+		}
+
+		// Broadcast to scan.progress subscribers for this org
+		if hasScanProgressSubs {
+			for _, volume := range volumes {
+				var totalSize int64
+				if volume.UsageData != nil {
+					totalSize = volume.UsageData.Size
+				}
+
+				progressData := map[string]interface{}{
+					"volume_id":    volume.VolumeID,
+					"volume_name":  volume.Name,
+					"status":       volume.Status,
+					"last_scanned": volume.LastScanned,
+					"total_size":   totalSize,
+					"driver":       volume.Driver,
+					"mountpoint":   volume.Mountpoint,
+					"is_active":    volume.IsActive,
+					"message":      "Current volume status",
+					"timestamp":    time.Now().Unix(),
+					"progress":     100.0, // Not actively scanning, so 100%
+				}
+
+				// Send to each authenticated connection in this org
+				for _, conn := range conns {
+					if conn.Rooms["scan_progress_all"] {
+						select {
+						case conn.Send <- RealtimeMessage{
+							Type:      "scan.status",
+							Data:      progressData,
+							Timestamp: time.Now(),
+							Room:      "scan_progress_all",
+						}:
+						default:
+							log.Printf("[WEBSOCKET-HUB] Failed to send to connection %s (buffer full)", conn.ID)
+						}
+					}
+				}
+			}
+		}
 	}
 
-	// Broadcast to volume.updates subscribers
-	if hasVolumeUpdateSubs {
+	// Broadcast all volumes to system admins
+	if len(systemAdminConnections) > 0 {
+		volumes, err := h.store.Volumes().ListAllVolumes(ctx, 100, 0)
+		if err != nil {
+			log.Printf("[WEBSOCKET-HUB] Failed to query all volumes for system admins: %v", err)
+			return
+		}
+
+		// Send to system admin connections
 		for _, volume := range volumes {
 			var totalSize int64
 			if volume.UsageData != nil {
@@ -390,37 +517,36 @@ func (h *Hub) broadcastCurrentVolumeStates() {
 				"is_active":    volume.IsActive,
 				"created_at":   volume.CreatedAt,
 				"updated_at":   volume.UpdatedAt,
-				"message":      "Periodic volume state update",
+				"message":      "Periodic volume state update (system admin view)",
 				"timestamp":    time.Now().Unix(),
 			}
 
-			h.BroadcastToRoom("volume_updates", "volume.state", volumeData)
-		}
-	}
-
-	// Broadcast to scan.progress subscribers (for continuous progress monitoring)
-	if hasScanProgressSubs {
-		for _, volume := range volumes {
-			var totalSize int64
-			if volume.UsageData != nil {
-				totalSize = volume.UsageData.Size
+			for _, conn := range systemAdminConnections {
+				if hasVolumeUpdateSubs && conn.Rooms["volume_updates"] {
+					select {
+					case conn.Send <- RealtimeMessage{
+						Type:      "volume.state",
+						Data:      volumeData,
+						Timestamp: time.Now(),
+						Room:      "volume_updates",
+					}:
+					default:
+						log.Printf("[WEBSOCKET-HUB] Failed to send to system admin connection %s", conn.ID)
+					}
+				}
+				if hasScanProgressSubs && conn.Rooms["scan_progress_all"] {
+					select {
+					case conn.Send <- RealtimeMessage{
+						Type:      "scan.status",
+						Data:      volumeData,
+						Timestamp: time.Now(),
+						Room:      "scan_progress_all",
+					}:
+					default:
+						log.Printf("[WEBSOCKET-HUB] Failed to send to system admin connection %s", conn.ID)
+					}
+				}
 			}
-
-			progressData := map[string]interface{}{
-				"volume_id":    volume.VolumeID,
-				"volume_name":  volume.Name,
-				"status":       volume.Status,
-				"last_scanned": volume.LastScanned,
-				"total_size":   totalSize,
-				"driver":       volume.Driver,
-				"mountpoint":   volume.Mountpoint,
-				"is_active":    volume.IsActive,
-				"message":      "Current volume status",
-				"timestamp":    time.Now().Unix(),
-				"progress":     100.0, // Not actively scanning, so 100%
-			}
-
-			h.BroadcastToRoom("scan_progress_all", "scan.status", progressData)
 		}
 	}
 }
@@ -445,6 +571,50 @@ func (h *Hub) GetStats() map[string]interface{} {
 
 // HandleWebSocket handles HTTP upgrade to WebSocket
 func (h *Hub) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+	// Extract and validate JWT token before accepting WebSocket connection
+	var userID string
+	var userRole string
+	var organizationID *int64
+	isAuthenticated := false
+
+	if h.jwtManager != nil {
+		// Try to extract token from query parameter or Authorization header
+		token := r.URL.Query().Get("token")
+		if token == "" {
+			authHeader := r.Header.Get("Authorization")
+			if authHeader != "" {
+				parts := strings.SplitN(authHeader, " ", 2)
+				if len(parts) == 2 && parts[0] == "Bearer" {
+					token = parts[1]
+				}
+			}
+		}
+
+		// Validate token if provided
+		if token != "" {
+			claims, err := h.jwtManager.ValidateAccessToken(token)
+			if err != nil {
+				log.Printf("[WEBSOCKET-HUB] Authentication failed: %v", err)
+				http.Error(w, "Unauthorized: Invalid token", http.StatusUnauthorized)
+				return
+			}
+
+			userID = claims.UserID
+			userRole = claims.Role
+			organizationID = claims.OrganizationID
+			isAuthenticated = true
+			log.Printf("[WEBSOCKET-HUB] Authenticated user: %s (org: %v, role: %s)", userID, organizationID, userRole)
+		} else {
+			log.Printf("[WEBSOCKET-HUB] No authentication token provided")
+			http.Error(w, "Unauthorized: Authentication required", http.StatusUnauthorized)
+			return
+		}
+	} else {
+		// JWT manager not configured - allow unauthenticated connections (dev mode)
+		log.Printf("[WEBSOCKET-HUB] WARNING: JWT manager not configured, allowing unauthenticated connection")
+		isAuthenticated = false
+	}
+
 	// Accept WebSocket connection with proper options
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		OriginPatterns: []string{"*"}, // TODO: Configure proper origins for production
@@ -459,15 +629,19 @@ func (h *Hub) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Request context gets canceled after HTTP upgrade, but WebSocket needs long-lived context
 	ctx, cancel := context.WithCancel(context.Background())
 	connectionID := fmt.Sprintf("conn_%d", time.Now().UnixNano())
-	
+
 	connection := &Connection{
-		ID:       connectionID,
-		WS:       conn,
-		Send:     make(chan RealtimeMessage, 256),
-		Rooms:    make(map[string]bool),
-		Context:  ctx,
-		Cancel:   cancel,
-		LastSeen: time.Now(),
+		ID:              connectionID,
+		WS:              conn,
+		Send:            make(chan RealtimeMessage, 256),
+		Rooms:           make(map[string]bool),
+		Context:         ctx,
+		Cancel:          cancel,
+		LastSeen:        time.Now(),
+		UserID:          userID,
+		UserRole:        userRole,
+		OrganizationID:  organizationID,
+		IsAuthenticated: isAuthenticated,
 	}
 
 	// Register connection
@@ -618,61 +792,43 @@ func (h *Hub) determineRoom(event string, filters map[string]interface{}) string
 // sendInitialStateData sends current state data to newly subscribed clients
 func (h *Hub) sendInitialStateData(conn *Connection, event, room string) {
 	log.Printf("[WEBSOCKET-HUB] Sending initial state data for event '%s' to client %s", event, conn.ID)
-	
+
+	// Skip unauthenticated connections
+	if !conn.IsAuthenticated {
+		log.Printf("[WEBSOCKET-HUB] Skipping initial state for unauthenticated connection %s", conn.ID)
+		return
+	}
+
 	ctx := context.Background()
-	
+
 	switch event {
 	case "scan.progress":
-		// Query current volume states and scan progress
-		if h.store != nil {
-			// TODO: CRITICAL SECURITY ISSUE - WebSocket lacks organization-specific queries
-			// This sends volumes from ALL organizations to any connected client
-			// TEMPORARY FIX: Using system-level query to prevent compilation errors
-			volumes, err := h.store.Volumes().ListAllVolumes(ctx, 100, 0) // Get first 100 volumes
-			if err != nil {
-				log.Printf("[WEBSOCKET-HUB] Failed to query volumes for initial state: %v", err)
-			} else {
-				// Send current volume scan states
-				for _, volume := range volumes {
-					var totalSize int64
-					if volume.UsageData != nil {
-						totalSize = volume.UsageData.Size
-					}
-					
-					volumeData := map[string]interface{}{
-						"volume_id":    volume.VolumeID,
-						"volume_name":  volume.Name,
-						"status":       volume.Status,
-						"last_scanned": volume.LastScanned,
-						"total_size":   totalSize,
-						"driver":       volume.Driver,
-						"mountpoint":   volume.Mountpoint,
-						"is_active":    volume.IsActive,
-						"created_at":   volume.CreatedAt,
-						"updated_at":   volume.UpdatedAt,
-						"message":      "Current volume state",
-					}
-					
-					initialMsg := RealtimeMessage{
-						Type:      "scan.progress.initial",
-						Timestamp: time.Now(),
-						Data:      volumeData,
-					}
-					select {
-					case conn.Send <- initialMsg:
-					default:
-					}
-				}
-			}
-		}
-		
+		// FIXED: Only send initial state for volumes that are ACTUALLY scanning
+		// Don't spam the client with empty scan data for every volume
+		log.Printf("[WEBSOCKET-HUB] scan.progress subscription - sending initial state only for active scans")
+
+		// Note: Actual scan progress is sent via BroadcastScanProgress when scans are running
+		// We don't need to send anything here unless we want to query active scans from DB
+		// For now, just log and skip sending empty/bogus initial states
+
 	case "volume.updates":
 		// Query and send current volume states
 		if h.store != nil {
-			// TODO: CRITICAL SECURITY ISSUE - WebSocket lacks organization-specific queries
-			// This sends volumes from ALL organizations to any connected client
-			// TEMPORARY FIX: Using system-level query to prevent compilation errors
-			volumes, err := h.store.Volumes().ListAllVolumes(ctx, 100, 0) // Get first 100 volumes
+			// SECURITY FIX: Query volumes based on organization context
+			var volumes []*models.Volume
+			var err error
+
+			if conn.OrganizationID != nil {
+				// Organization user: get only their organization's volumes
+				volumes, err = h.store.Volumes().ListVolumes(ctx, *conn.OrganizationID, 100, 0)
+			} else if conn.UserRole == "system_admin" {
+				// System admin: get all volumes
+				volumes, err = h.store.Volumes().ListAllVolumes(ctx, 100, 0)
+			} else {
+				log.Printf("[WEBSOCKET-HUB] Connection %s has no organization and is not system admin", conn.ID)
+				return
+			}
+
 			if err != nil {
 				log.Printf("[WEBSOCKET-HUB] Failed to query volumes for initial state: %v", err)
 			} else {
@@ -682,7 +838,7 @@ func (h *Hub) sendInitialStateData(conn *Connection, event, room string) {
 					if volume.UsageData != nil {
 						totalSize = volume.UsageData.Size
 					}
-					
+
 					volumeData := map[string]interface{}{
 						"volume_id":    volume.VolumeID,
 						"volume_name":  volume.Name,
@@ -696,7 +852,7 @@ func (h *Hub) sendInitialStateData(conn *Connection, event, room string) {
 						"updated_at":   volume.UpdatedAt,
 						"message":      "Current volume state",
 					}
-					
+
 					initialMsg := RealtimeMessage{
 						Type:      "volume.updates.initial",
 						Timestamp: time.Now(),
@@ -709,7 +865,7 @@ func (h *Hub) sendInitialStateData(conn *Connection, event, room string) {
 				}
 			}
 		}
-		
+
 	case "system.events":
 		// Send current system state with basic stats
 		systemData := map[string]interface{}{
@@ -719,7 +875,7 @@ func (h *Hub) sendInitialStateData(conn *Connection, event, room string) {
 			"uptime_seconds":  time.Since(time.Now().Add(-time.Hour)).Seconds(), // Placeholder
 			"note":            "System events will appear here",
 		}
-		
+
 		initialMsg := RealtimeMessage{
 			Type:      "system.events.initial",
 			Timestamp: time.Now(),

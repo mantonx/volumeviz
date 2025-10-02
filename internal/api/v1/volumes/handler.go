@@ -203,10 +203,24 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 		filtered = orgFiltered
 	}
 
+	// Batch fetch container information for all volumes to avoid N+1 queries
+	volumeNames := make([]string, len(filtered))
+	for i, vol := range filtered {
+		volumeNames[i] = vol.VolumeID
+	}
+
+	containerMap, err := h.dockerService.GetVolumeContainersBatch(ctx, volumeNames)
+	if err != nil {
+		// Log error but continue with empty container map
+		containerMap = make(map[string][]coremodels.VolumeContainer)
+	}
+
 	// Convert to API format and enhance with VolumeViz scanner data
 	apiVolumes := make([]models.VolumeV1, 0, len(filtered))
 	for _, vol := range filtered {
-		apiVol := h.convertToAPIVolume(vol)
+		// Get containers for this volume from the batch result
+		volumeContainers := containerMap[vol.VolumeID]
+		apiVol := h.convertToAPIVolumeWithContainers(vol, volumeContainers)
 
 		// Enhance with database information if store is available
 		if h.store != nil {
@@ -248,6 +262,19 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 						progress := int((latestScan.ScannedFiles.Int64 * 100) / latestScan.TotalFiles.Int64)
 						apiVol.ScanProgress = &progress
 					}
+					// Update overall status based on scan status
+					apiVol.Status = computeVolumeStatus(&latestScan.Status, apiVol.IsOrphaned, apiVol.AttachmentsCount)
+				}
+
+				// Get file and folder counts from indexed files
+				fileCount, err := queries.CountFilesByVolume(ctx, vol.VolumeID)
+				if err == nil && fileCount > 0 {
+					apiVol.FileCount = &fileCount
+				}
+
+				folderCount, err := queries.CountFoldersByVolume(ctx, vol.VolumeID)
+				if err == nil && folderCount > 0 {
+					apiVol.FolderCount = &folderCount
 				}
 			}
 		}
@@ -358,13 +385,19 @@ func (h *Handler) filterVolumes(volumes []coremodels.Volume, filters *apiutils.V
 	return filtered
 }
 
-// convertToAPIVolume converts internal volume model to API format
+// convertToAPIVolume converts internal volume model to API format (legacy method)
+// This method fetches containers individually - use convertToAPIVolumeWithContainers for better performance
 func (h *Handler) convertToAPIVolume(vol coremodels.Volume) models.VolumeV1 {
 	// Get container information for attachments_count and container names
 	containers, err := h.dockerService.GetVolumeContainers(context.Background(), vol.VolumeID)
 	if err != nil {
 		containers = []coremodels.VolumeContainer{}
 	}
+	return h.convertToAPIVolumeWithContainers(vol, containers)
+}
+
+// convertToAPIVolumeWithContainers converts a core volume model to API format with pre-fetched containers
+func (h *Handler) convertToAPIVolumeWithContainers(vol coremodels.Volume, containers []coremodels.VolumeContainer) models.VolumeV1 {
 	attachmentsCount := len(containers)
 
 	// Extract container names
@@ -388,6 +421,8 @@ func (h *Handler) convertToAPIVolume(vol coremodels.Volume) models.VolumeV1 {
 		}
 	}
 
+	isOrphaned := attachmentsCount == 0
+
 	return models.VolumeV1{
 		Name:             vol.Name,
 		Driver:           vol.Driver,
@@ -400,7 +435,8 @@ func (h *Handler) convertToAPIVolume(vol coremodels.Volume) models.VolumeV1 {
 		AttachmentsCount: attachmentsCount,
 		ContainerNames:   containerNames,
 		IsSystem:         h.isSystemVolume(vol),
-		IsOrphaned:       attachmentsCount == 0,
+		IsOrphaned:       isOrphaned,
+		Status:           computeVolumeStatus(nil, isOrphaned, attachmentsCount), // Will be updated later with scan status
 	}
 }
 
@@ -417,6 +453,27 @@ func (h *Handler) isSystemVolume(vol coremodels.Volume) bool {
 	}
 
 	return false
+}
+
+// computeVolumeStatus computes the overall volume status from scan status and orphaned state
+func computeVolumeStatus(scanStatus *string, isOrphaned bool, attachmentsCount int) string {
+	// Priority order: scanning > error > inactive (orphaned with no containers) > active
+	if scanStatus != nil {
+		switch *scanStatus {
+		case "running", "pending":
+			return "scanning"
+		case "failed":
+			return "error"
+		}
+	}
+
+	// If orphaned (no containers attached), mark as inactive
+	if isOrphaned || attachmentsCount == 0 {
+		return "inactive"
+	}
+
+	// Default to active
+	return "active"
 }
 
 // volumeMatchesQuery checks if a volume matches the search query
@@ -1246,4 +1303,304 @@ func (h *Handler) sortOrphanedVolumes(volumes []models.OrphanedVolumeV1, sortPar
 			return volumes[i].SizeBytes > volumes[j].SizeBytes
 		})
 	}
+}
+
+// ExportVolumesCSV exports volumes list as CSV
+// @Summary Export volumes as CSV
+// @Description Export filtered and sorted volumes list in CSV format
+// @Tags volumes
+// @Accept json
+// @Produce text/csv
+// @Param page query int false "Page number for pagination (default: 1)"
+// @Param page_size query int false "Number of items per page (default: 1000, max: 10000 for exports)"
+// @Param sort query string false "Sort field and direction"
+// @Param q query string false "Search query to filter volumes by name"
+// @Param driver query string false "Filter by volume driver"
+// @Param orphaned query bool false "Filter orphaned volumes"
+// @Param system query bool false "Include system volumes"
+// @Success 200 {file} file "CSV file download"
+// @Failure 400 {object} models.ErrorResponse "Bad request"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /volumes/export/csv [get]
+func (h *Handler) ExportVolumesCSV(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	// Parse pagination params with higher limits for export
+	pagination := &apiutils.PaginationParams{
+		Page:     1,
+		PageSize: 1000,
+		Limit:    1000,
+		Offset:   0,
+	}
+	if page := c.Query("page"); page != "" {
+		fmt.Sscanf(page, "%d", &pagination.Page)
+	}
+	if pageSize := c.Query("page_size"); pageSize != "" {
+		fmt.Sscanf(pageSize, "%d", &pagination.PageSize)
+		if pagination.PageSize > 10000 {
+			pagination.PageSize = 10000
+		}
+	}
+	pagination.Limit = pagination.PageSize
+	pagination.Offset = (pagination.Page - 1) * pagination.PageSize
+
+	// Parse sort params
+	allowedSortFields := []string{"name", "driver", "created_at", "size_bytes", "type", "status", "compose_project", "containers", "readonly", "last_seen", "growth_rate"}
+	sortParams, err := apiutils.ParseSortParams(c, allowedSortFields)
+	if err != nil {
+		apiutils.RespondWithBadRequest(c, err.Error(), nil)
+		return
+	}
+
+	// Parse volume filters
+	filters, err := apiutils.ParseVolumeFilters(c)
+	if err != nil {
+		apiutils.RespondWithBadRequest(c, err.Error(), nil)
+		return
+	}
+
+	// Get volumes from Docker API (same as ListVolumes endpoint)
+	volumes, _, err := h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
+	if err != nil {
+		apiutils.RespondWithInternalError(c, "Failed to fetch volumes for export", err)
+		return
+	}
+
+	// Set CSV headers
+	timestamp := time.Now().Format("20060102_150405")
+	filename := fmt.Sprintf("volumes_export_%s.csv", timestamp)
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+
+	// Write CSV header
+	c.Writer.Write([]byte("Volume ID,Name,Driver,Mountpoint,Created At,Size (Bytes),Size (Human),Status\n"))
+
+	// Write CSV rows
+	for _, vol := range volumes {
+		createdAt := vol.CreatedAt.Format(time.RFC3339)
+
+		// Get size from SizeBytes field
+		sizeBytes := int64(0)
+		if vol.SizeBytes != nil {
+			sizeBytes = *vol.SizeBytes
+		}
+		sizeHuman := formatBytes(sizeBytes)
+
+		// Use Name as Volume ID since API doesn't return ID
+		volumeID := vol.Name
+
+		row := fmt.Sprintf("%s,%s,%s,%s,%s,%d,%s,%s\n",
+			escapeCSV(volumeID),
+			escapeCSV(vol.Name),
+			escapeCSV(vol.Driver),
+			escapeCSV(vol.Mountpoint),
+			createdAt,
+			sizeBytes,
+			sizeHuman,
+			escapeCSV(vol.Status),
+		)
+		c.Writer.Write([]byte(row))
+	}
+}
+
+// ExportVolumesJSON exports volumes list as JSON
+// @Summary Export volumes as JSON
+// @Description Export filtered and sorted volumes list in JSON format
+// @Tags volumes
+// @Accept json
+// @Produce application/json
+// @Param page query int false "Page number for pagination (default: 1)"
+// @Param page_size query int false "Number of items per page (default: 1000, max: 10000 for exports)"
+// @Param sort query string false "Sort field and direction"
+// @Param q query string false "Search query to filter volumes by name"
+// @Param driver query string false "Filter by volume driver"
+// @Param orphaned query bool false "Filter orphaned volumes"
+// @Param system query bool false "Include system volumes"
+// @Success 200 {object} map[string]interface{} "JSON export"
+// @Failure 400 {object} models.ErrorResponse "Bad request"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /volumes/export/json [get]
+func (h *Handler) ExportVolumesJSON(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	// Parse pagination params with higher limits for export
+	pagination := &apiutils.PaginationParams{
+		Page:     1,
+		PageSize: 1000,
+		Limit:    1000,
+		Offset:   0,
+	}
+	if page := c.Query("page"); page != "" {
+		fmt.Sscanf(page, "%d", &pagination.Page)
+	}
+	if pageSize := c.Query("page_size"); pageSize != "" {
+		fmt.Sscanf(pageSize, "%d", &pagination.PageSize)
+		if pagination.PageSize > 10000 {
+			pagination.PageSize = 10000
+		}
+	}
+	pagination.Limit = pagination.PageSize
+	pagination.Offset = (pagination.Page - 1) * pagination.PageSize
+
+	// Parse sort params
+	allowedSortFields := []string{"name", "driver", "created_at", "size_bytes", "type", "status", "compose_project", "containers", "readonly", "last_seen", "growth_rate"}
+	sortParams, err := apiutils.ParseSortParams(c, allowedSortFields)
+	if err != nil {
+		apiutils.RespondWithBadRequest(c, err.Error(), nil)
+		return
+	}
+
+	// Parse volume filters
+	filters, err := apiutils.ParseVolumeFilters(c)
+	if err != nil {
+		apiutils.RespondWithBadRequest(c, err.Error(), nil)
+		return
+	}
+
+	// Get volumes from Docker API (same as ListVolumes endpoint)
+	volumes, _, err := h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
+	if err != nil {
+		apiutils.RespondWithInternalError(c, "Failed to fetch volumes for export", err)
+		return
+	}
+
+	// Convert to export format
+	exportData := make([]map[string]interface{}, 0, len(volumes))
+	for _, vol := range volumes {
+		createdAt := vol.CreatedAt.Format(time.RFC3339)
+
+		// Get size from SizeBytes field
+		sizeBytes := int64(0)
+		if vol.SizeBytes != nil {
+			sizeBytes = *vol.SizeBytes
+		}
+
+		var lastScanned *string
+		if vol.LastScanAt != nil {
+			formatted := vol.LastScanAt.Format(time.RFC3339)
+			lastScanned = &formatted
+		}
+
+		item := map[string]interface{}{
+			"volume_id":    vol.Name, // Use Name as Volume ID since API doesn't return ID
+			"name":         vol.Name,
+			"driver":       vol.Driver,
+			"mountpoint":   vol.Mountpoint,
+			"created_at":   createdAt,
+			"size_bytes":   sizeBytes,
+			"size_human":   formatBytes(sizeBytes),
+			"status":       vol.Status,
+			"last_scanned": lastScanned,
+		}
+		exportData = append(exportData, item)
+	}
+
+	// Set JSON download headers
+	timestamp := time.Now().Format("20060102_150405")
+	filename := fmt.Sprintf("volumes_export_%s.json", timestamp)
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+
+	c.JSON(http.StatusOK, gin.H{
+		"exported_at": time.Now().Format(time.RFC3339),
+		"total_count": len(exportData),
+		"volumes":     exportData,
+	})
+}
+
+// escapeCSV escapes special characters in CSV fields
+func escapeCSV(field string) string {
+	// If field contains comma, quote, or newline, wrap in quotes and escape internal quotes
+	if strings.ContainsAny(field, ",\"\n\r") {
+		field = strings.ReplaceAll(field, "\"", "\"\"")
+		return fmt.Sprintf("\"%s\"", field)
+	}
+	return field
+}
+
+// BulkDeleteVolumes deletes multiple volumes
+// @Summary Bulk delete volumes
+// @Description Delete multiple Docker volumes by their IDs
+// @Tags volumes
+// @Accept json
+// @Produce json
+// @Param body body models.BulkDeleteVolumesRequest true "Volume IDs to delete"
+// @Success 200 {object} models.BulkDeleteVolumesResponse "Delete results"
+// @Failure 400 {object} models.ErrorResponse "Bad request"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /volumes/bulk-delete [post]
+func (h *Handler) BulkDeleteVolumes(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	// Get organization from context
+	orgID, _ := middleware.GetOrganizationID(c)
+
+	// Parse request body
+	var req models.BulkDeleteVolumesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apiutils.RespondWithBadRequest(c, "Invalid request body", nil)
+		return
+	}
+
+	// Validate request
+	if len(req.VolumeIDs) == 0 {
+		apiutils.RespondWithBadRequest(c, "No volume IDs provided", nil)
+		return
+	}
+
+	// Limit batch size
+	if len(req.VolumeIDs) > 100 {
+		apiutils.RespondWithBadRequest(c, "Maximum 100 volumes can be deleted at once", nil)
+		return
+	}
+
+	// Track results
+	results := make([]models.BulkDeleteResult, 0, len(req.VolumeIDs))
+	successCount := 0
+	failureCount := 0
+
+	// Mark each volume as inactive in database
+	// Note: This marks volumes as inactive rather than actually deleting Docker volumes
+	// Actual Docker volume deletion is dangerous and should be done through Docker CLI
+	for _, volumeID := range req.VolumeIDs {
+		result := models.BulkDeleteResult{
+			VolumeID: volumeID,
+		}
+
+		// Soft delete volume (marks as inactive)
+		err := h.store.Volumes().SoftDeleteVolume(ctx, orgID, volumeID)
+		if err != nil {
+			result.Success = false
+			result.Error = err.Error()
+			failureCount++
+		} else {
+			result.Success = true
+			successCount++
+		}
+
+		results = append(results, result)
+	}
+
+	// Prepare response
+	response := models.BulkDeleteVolumesResponse{
+		TotalRequested: len(req.VolumeIDs),
+		SuccessCount:   successCount,
+		FailureCount:   failureCount,
+		Results:        results,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// formatBytes formats bytes into human-readable format
+func formatBytes(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %ciB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }

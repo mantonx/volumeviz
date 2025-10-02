@@ -34,6 +34,13 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 		// List and filter volumes with pagination
 		volumes.GET("", r.handler.ListVolumes)
 
+		// Export endpoints
+		volumes.GET("/export/csv", r.handler.ExportVolumesCSV)
+		volumes.GET("/export/json", r.handler.ExportVolumesJSON)
+
+		// Bulk operations
+		volumes.POST("/bulk-delete", r.handler.BulkDeleteVolumes)
+
 		// Volume operations (using name instead of id)
 		volumes.GET("/:name", r.handler.GetVolume)
 		volumes.GET("/:name/attachments", r.handler.GetVolumeAttachments)

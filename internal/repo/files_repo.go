@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -49,13 +48,14 @@ func (r *FilesRepo) GetFilesByPath(ctx context.Context, volumeID string, path st
 
 // CreateFile creates a new file record
 func (r *FilesRepo) CreateFile(ctx context.Context, params models.CreateFileParams) (*models.File, error) {
-	pathHash := sha256.Sum256([]byte(params.Path))
+	// Use the pre-computed path hash from params (already hex-encoded)
+	// Don't recompute it here to avoid binary data in TEXT column
 
 	result, err := r.queries.CreateFile(ctx, sqlc.CreateFileParams{
 		VolumeID:    params.VolumeID,
 		FolderID:    pgtype.Int8{Int64: params.FolderID, Valid: true},
 		Path:        params.Path,
-		PathHash:    pathHash[:],
+		PathHash:    []byte(params.PathHash),  // Convert string to []byte for SQLC
 		Name:        params.Name,
 		Extension:   stringPtrToPgText(params.Extension),
 		Mime:        stringPtrToPgText(params.Mime),
@@ -74,7 +74,9 @@ func (r *FilesRepo) CreateFile(ctx context.Context, params models.CreateFilePara
 		return nil, err
 	}
 
-	return r.GetFileByID(ctx, result.ID)
+	// Don't call GetFileByID to avoid NULL scanning issues with SQLC
+	// Use convertToFile to construct the model from SQLC result
+	return r.convertToFile(result), nil
 }
 
 // GetFileByID retrieves a file by ID
@@ -488,13 +490,14 @@ func (r *FilesRepo) GetFilesBySize(ctx context.Context, volumeID string, minSize
 
 // UpsertFile creates or updates a file
 func (r *FilesRepo) UpsertFile(ctx context.Context, params models.CreateFileParams) (*models.File, error) {
-	pathHash := sha256.Sum256([]byte(params.Path))
+	// Use the pre-computed path hash from params (already hex-encoded)
+	// Don't recompute it here to avoid binary data in TEXT column
 
 	result, err := r.queries.UpsertFile(ctx, sqlc.UpsertFileParams{
 		VolumeID:    params.VolumeID,
 		FolderID:    pgtype.Int8{Int64: params.FolderID, Valid: true},
 		Path:        params.Path,
-		PathHash:    pathHash[:],
+		PathHash:    []byte(params.PathHash),  // Convert string to []byte for SQLC
 		Name:        params.Name,
 		Extension:   stringPtrToPgText(params.Extension),
 		Mime:        stringPtrToPgText(params.Mime),
@@ -719,12 +722,13 @@ func (r *FilesRepo) GetExtensionStats(ctx context.Context, volumeID string, limi
 func (r *FilesRepo) BulkInsertFiles(ctx context.Context, files []models.CreateFileParams) error {
 	rows := make([]sqlc.BulkInsertFilesParams, len(files))
 	for i, file := range files {
-		pathHash := sha256.Sum256([]byte(file.Path))
+		// Use the pre-computed path hash from params (already hex-encoded)
+		// Don't recompute it here to avoid binary data in TEXT column
 		rows[i] = sqlc.BulkInsertFilesParams{
 			VolumeID:    file.VolumeID,
 			FolderID:    pgtype.Int8{Int64: file.FolderID, Valid: true},
 			Path:        file.Path,
-			PathHash:    pathHash[:],
+			PathHash:    []byte(file.PathHash),  // Convert string to []byte for SQLC
 			Name:        file.Name,
 			Extension:   stringPtrToPgText(file.Extension),
 			Mime:        stringPtrToPgText(file.Mime),
@@ -771,7 +775,7 @@ func (r *FilesRepo) convertToFile(file sqlc.Files) *models.File {
 		Encoding:       nil, // Not stored in our schema
 		HashAlgo:       nil, // Not stored in our schema
 		Hash:           nil, // Content hash is stored as text, not bytes
-		PathHash:       file.PathHash,
+		PathHash:       string(file.PathHash),  // Convert []byte to string
 		CreatedAt:      file.CreatedAt,
 		UpdatedAt:      file.CreatedAt, // Use created_at as we don't have updated_at
 	}
@@ -845,7 +849,7 @@ func (r *FilesRepo) convertFileRowFields(
 		Encoding:       pgTextToStringPtr(encoding),
 		HashAlgo:       pgTextToStringPtr(hashAlgo),
 		Hash:           hash,
-		PathHash:       pathHash,
+		PathHash:       string(pathHash),  // Convert []byte to string
 		CreatedAt:      createdAt,
 		UpdatedAt:      updatedAt,
 	}

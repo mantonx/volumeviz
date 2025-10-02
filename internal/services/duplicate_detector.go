@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"sort"
 	"time"
 
@@ -130,30 +129,31 @@ func (d *DuplicateDetector) getFilesForDuplicateDetection(ctx context.Context, r
 
 	var filteredFiles []models.DuplicateFile
 	for _, file := range allFiles {
-		// Skip directories
-		if file.IsDirectory {
-			continue
-		}
-
+		// Files table doesn't have IsDirectory - files are always files (directories are in folders table)
 		// Apply size filters
-		if req.MinSize > 0 && file.Size < req.MinSize {
+		if req.MinSize > 0 && file.SizeBytes < req.MinSize {
 			continue
 		}
-		if req.MaxSize > 0 && file.Size > req.MaxSize {
+		if req.MaxSize > 0 && file.SizeBytes > req.MaxSize {
 			continue
 		}
 
 		// Skip empty files unless requested
-		if !req.IncludeEmpty && file.Size == 0 {
+		if !req.IncludeEmpty && file.SizeBytes == 0 {
 			continue
 		}
 
+		var modTime time.Time
+		if file.Mtime != nil {
+			modTime = *file.Mtime
+		}
+
 		duplicateFile := models.DuplicateFile{
-			ID:           file.ID,
+			ID:           fmt.Sprintf("%d", file.ID), // Convert int64 to string
 			Path:         file.Path,
 			Name:         file.Name,
-			Size:         file.Size,
-			ModifiedTime: file.ModifiedTime,
+			Size:         file.SizeBytes,
+			ModifiedTime: modTime,
 			VolumeID:     req.VolumeID,
 		}
 

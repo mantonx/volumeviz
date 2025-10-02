@@ -54,7 +54,7 @@ func (q *Queries) CountFilesByVolume(ctx context.Context, volumeID string) (int6
 }
 
 const countOldFiles = `-- name: CountOldFiles :one
-SELECT COUNT(*) FROM files 
+SELECT COUNT(*) FROM files
 WHERE last_scan_at < $1
   AND last_scan_at IS NOT NULL
 `
@@ -1986,7 +1986,7 @@ INSERT INTO files (
     $1, $2, $3, $4, $5, $6, $7, 
     $8, $9, $10, $11, $12, $13, 
     $14, $15, $16, $17, $18
-) ON CONFLICT (volume_id, path_hash) DO UPDATE SET
+) ON CONFLICT (path_hash) DO UPDATE SET
     folder_id = EXCLUDED.folder_id,
     name = EXCLUDED.name,
     extension = EXCLUDED.extension,

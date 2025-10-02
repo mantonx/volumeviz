@@ -2,6 +2,8 @@
  * Enhanced utility to calculate volume percentage and display text with filesystem capacity information
  */
 
+import { formatBytes } from './formatters';
+
 export interface FilesystemCapacity {
   total_bytes?: number;
   available_bytes?: number;
@@ -58,13 +60,4 @@ export function calculateVolumePercentage(
   }
 }
 
-/**
- * Format bytes to human readable format
- */
-function formatBytes(bytes?: number): string {
-  if (bytes === undefined || bytes === null) return 'Unknown';
-  if (bytes === 0) return '0 B';
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
-}
+// formatBytes is now imported from './formatters' at the top of the file

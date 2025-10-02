@@ -21,6 +21,7 @@ export interface VolumeFilters {
   organizationId: number | null;
   status: 'all' | 'active' | 'inactive';
   sortBy: 'name' | 'size' | 'created';
+  orphaned?: boolean;
 }
 
 export interface VolumeStats {

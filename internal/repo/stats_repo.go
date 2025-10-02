@@ -214,30 +214,110 @@ func (r *StatsRepo) GetVolumeStatsHistory(ctx context.Context, volumeID string, 
 
 // GetFolderGrowthTrends retrieves folder growth trends
 func (r *StatsRepo) GetFolderGrowthTrends(ctx context.Context, volumeID string, since time.Time, limit int32) ([]*models.FolderGrowthTrend, error) {
-	// TODO: Implement missing SQLC query GetFolderGrowthTrends
-	return []*models.FolderGrowthTrend{}, nil
+	rows, err := r.queries.GetFolderGrowthTrends(ctx, sqlc.GetFolderGrowthTrendsParams{
+		VolumeID:   volumeID,
+		ModifiedAt: pgtype.Timestamptz{Time: since, Valid: true},
+		Limit:      limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	trends := make([]*models.FolderGrowthTrend, len(rows))
+	for i, row := range rows {
+		trends[i] = &models.FolderGrowthTrend{
+			FolderID:     &row.ID,
+			FolderPath:   row.Path,
+			Date:         row.UpdatedAt.Time,
+			TotalBytes:   row.TotalSize.Int64,
+			FilesCount:   int64(row.FileCount.Int32),
+			AddedBytes:   int64(row.SizeChange),
+			RemovedBytes: 0, // Not tracked in this query
+		}
+	}
+
+	return trends, nil
 }
 
 // GetTopGrowingFolders retrieves top growing folders in a time period
 func (r *StatsRepo) GetTopGrowingFolders(ctx context.Context, volumeID string, since time.Time, limit int32) ([]*models.TopGrowingFolder, error) {
-	// TODO: Implement missing SQLC query GetTopGrowingFolders
-	return []*models.TopGrowingFolder{}, nil
+	rows, err := r.queries.GetTopGrowingFolders(ctx, sqlc.GetTopGrowingFoldersParams{
+		VolumeID:   volumeID,
+		ModifiedAt: pgtype.Timestamptz{Time: since, Valid: true},
+		Limit:      limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	folders := make([]*models.TopGrowingFolder, len(rows))
+	for i, row := range rows {
+		folders[i] = &models.TopGrowingFolder{
+			FolderID:        &row.ID,
+			FolderPath:      row.Path,
+			TotalAddedBytes: int64(row.SizeChange),
+			TotalAddedFiles: 0, // Not tracked in this query
+			DaysTracked:     1, // Simple implementation
+		}
+	}
+
+	return folders, nil
 }
 
 // GetMediaKindComposition retrieves media kind composition for a volume
-func (r *StatsRepo) GetMediaKindComposition(ctx context.Context, volumeID string) ([]*models.MediaKindStat, error) {
-	// TODO: Implement missing SQLC query GetMediaKindComposition
-	return []*models.MediaKindStat{}, nil
+func (r *StatsRepo) GetMediaKindComposition(ctx context.Context, volumeID string) ([]*models.MediaKindComposition, error) {
+	rows, err := r.queries.GetMediaKindComposition(ctx, volumeID)
+	if err != nil {
+		return nil, err
+	}
+
+	compositions := make([]*models.MediaKindComposition, len(rows))
+	for i, row := range rows {
+		mediaKind := ""
+		if mk, ok := row.MediaKind.(string); ok {
+			mediaKind = mk
+		}
+
+		compositions[i] = &models.MediaKindComposition{
+			MediaKind:  &mediaKind,
+			Date:       time.Now(),
+			FilesCount: row.FileCount,
+			TotalBytes: row.TotalBytes,
+		}
+	}
+
+	return compositions, nil
 }
 
 // GetTrendAnalysis retrieves trend analysis for a volume
 func (r *StatsRepo) GetTrendAnalysis(ctx context.Context, volumeID string, days int) (*models.TrendAnalysis, error) {
-	// TODO: Implement missing SQLC query GetTrendAnalysis
+	row, err := r.queries.GetTrendAnalysis(ctx, sqlc.GetTrendAnalysisParams{
+		VolumeID: volumeID,
+		Column2:  int32(days),
+	})
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return &models.TrendAnalysis{
+				VolumeID:   volumeID,
+				Date:       time.Now(),
+				FilesCount: 0,
+				TotalBytes: 0,
+				ComputedAt: time.Now(),
+			}, nil
+		}
+		return nil, err
+	}
+
+	latestDate := time.Now()
+	if ld, ok := row.LatestDate.(time.Time); ok {
+		latestDate = ld
+	}
+
 	return &models.TrendAnalysis{
 		VolumeID:   volumeID,
-		Date:       time.Now(),
-		FilesCount: 0,
-		TotalBytes: 0,
+		Date:       latestDate,
+		FilesCount: row.TotalFiles,
+		TotalBytes: row.TotalBytes,
 		ComputedAt: time.Now(),
 	}, nil
 }
@@ -246,77 +326,146 @@ func (r *StatsRepo) GetTrendAnalysis(ctx context.Context, volumeID string, days 
 
 // GetLatestVolumeStats retrieves the latest volume statistics
 func (r *StatsRepo) GetLatestVolumeStats(ctx context.Context, volumeID string) (*models.VolumeStats, error) {
-	// TODO: Implement missing SQLC query GetLatestVolumeStats
+	row, err := r.queries.GetLatestVolumeStats(ctx, volumeID)
+	if err != nil {
+		return nil, err
+	}
+
+	totalBytes := int64(0)
+	if tb, ok := row.TotalBytes.(int64); ok {
+		totalBytes = tb
+	}
+
+	totalFiles := int64(0)
+	if tf, ok := row.TotalFiles.(int64); ok {
+		totalFiles = tf
+	}
+
 	return &models.VolumeStats{
-		TotalVolumes:   1,
-		ActiveVolumes:  1,
-		ScannedVolumes: 1,
+		TotalVolumes:   row.TotalVolumes,
+		ActiveVolumes:  row.ActiveVolumes,
+		ScannedVolumes: row.ScannedVolumes,
+		TotalBytes:     totalBytes,
+		TotalFiles:     totalFiles,
 	}, nil
 }
 
 // ComputeVolumeDailyStats computes daily statistics for a volume
 func (r *StatsRepo) ComputeVolumeDailyStats(ctx context.Context, volumeID string, date time.Time) error {
-	// TODO: Implement missing SQLC query ComputeVolumeDailyStats
-	return nil
+	return r.queries.ComputeVolumeDailyStats(ctx, sqlc.ComputeVolumeDailyStatsParams{
+		Column1: volumeID,
+		Column2: pgtype.Date{Time: date, Valid: true},
+	})
 }
 
 // GetMissingStatsDates retrieves dates where stats are missing
 func (r *StatsRepo) GetMissingStatsDates(ctx context.Context, volumeID string, startDate, endDate time.Time) ([]time.Time, error) {
-	// TODO: Implement missing SQLC query GetMissingStatsDates
-	return []time.Time{}, nil
+	dates, err := r.queries.GetMissingStatsDates(ctx, sqlc.GetMissingStatsDatesParams{
+		VolumeID: volumeID,
+		Column2:  pgtype.Date{Time: startDate, Valid: true},
+		Column3:  pgtype.Date{Time: endDate, Valid: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	times := make([]time.Time, len(dates))
+	for i, date := range dates {
+		times[i] = date.Time
+	}
+
+	return times, nil
 }
 
 // DeleteStatsForDate deletes statistics for a specific date
 func (r *StatsRepo) DeleteStatsForDate(ctx context.Context, volumeID string, date time.Time) error {
-	// TODO: Implement missing SQLC query DeleteStatsForDate
-	return nil
+	return r.queries.DeleteStatsForDate(ctx, sqlc.DeleteStatsForDateParams{
+		VolumeID: volumeID,
+		Date:     pgtype.Date{Time: date, Valid: true},
+	})
 }
 
 // RefreshDailySummaryView refreshes the daily summary materialized view
 func (r *StatsRepo) RefreshDailySummaryView(ctx context.Context) error {
-	// TODO: Implement missing SQLC query RefreshDailySummaryView
-	return nil
+	return r.queries.RefreshDailySummaryView(ctx)
 }
 
 // Job Management Methods
 
 // CreateStatsJob creates a new statistics job
-func (r *StatsRepo) CreateStatsJob(ctx context.Context, jobType, volumeID string) (string, error) {
-	// TODO: Implement missing SQLC query CreateStatsJob
-	return fmt.Sprintf("job-%d", time.Now().Unix()), nil
+func (r *StatsRepo) CreateStatsJob(ctx context.Context, jobType, volumeID string, organizationID int64) (string, error) {
+	jobID := fmt.Sprintf("job-%d-%s", time.Now().UnixNano(), jobType)
+
+	_, err := r.queries.CreateStatsJob(ctx, sqlc.CreateStatsJobParams{
+		JobID:          jobID,
+		JobType:        jobType,
+		VolumeID:       pgtype.Text{String: volumeID, Valid: volumeID != ""},
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return jobID, nil
 }
 
 // UpdateStatsJob updates a statistics job status
 func (r *StatsRepo) UpdateStatsJob(ctx context.Context, jobID string, status string, progress int, errorMsg string) error {
-	// TODO: Implement missing SQLC query UpdateStatsJob
-	return nil
+	return r.queries.UpdateStatsJob(ctx, sqlc.UpdateStatsJobParams{
+		JobID:        jobID,
+		Status:       status,
+		Progress:     pgtype.Int4{Int32: int32(progress), Valid: true},
+		ErrorMessage: pgtype.Text{String: errorMsg, Valid: errorMsg != ""},
+	})
 }
 
 // GetJobStatus retrieves the status of a statistics job
 func (r *StatsRepo) GetJobStatus(ctx context.Context, jobID string) (*models.StatsJob, error) {
-	// TODO: Implement missing SQLC query GetJobStatus
-	return &models.StatsJob{
-		ID:        1, // Convert string to int64 for ID
-		JobType:   "stats",
-		Status:    "completed",
-		StartedAt: time.Now(),
-	}, nil
+	row, err := r.queries.GetJobStatus(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertStatsJobToModel(&row), nil
 }
 
 // GetRecentJobs retrieves recent statistics jobs
 func (r *StatsRepo) GetRecentJobs(ctx context.Context, limit int) ([]*models.StatsJob, error) {
-	// TODO: Implement missing SQLC query GetRecentJobs
-	return []*models.StatsJob{}, nil
+	rows, err := r.queries.GetRecentJobs(ctx, int32(limit))
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make([]*models.StatsJob, len(rows))
+	for i, row := range rows {
+		jobs[i] = convertStatsJobToModel(&row)
+	}
+
+	return jobs, nil
 }
 
 // GetJobMetrics retrieves metrics for completed jobs
 func (r *StatsRepo) GetJobMetrics(ctx context.Context, jobType string, sinceDays int) (*models.JobMetrics, error) {
-	// TODO: Implement missing SQLC query GetJobMetrics
-	return &models.JobMetrics{
-		TotalJobs:      0,
-		SuccessfulJobs: 0,
-		FailedJobs:     0,
-	}, nil
+	row, err := r.queries.GetJobMetrics(ctx, sqlc.GetJobMetricsParams{
+		JobType: jobType,
+		Column2: pgtype.Text{String: fmt.Sprintf("%d", sinceDays), Valid: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	metrics := &models.JobMetrics{
+		TotalJobs:      row.TotalJobs,
+		SuccessfulJobs: row.SuccessfulJobs,
+		FailedJobs:     row.FailedJobs,
+	}
+
+	if row.AvgDurationMs > 0 {
+		avgDurationStr := fmt.Sprintf("%d", row.AvgDurationMs)
+		metrics.AvgDurationMs = &avgDurationStr
+	}
+
+	return metrics, nil
 }
 
 // InsertVolumeStats inserts volume statistics
@@ -341,5 +490,40 @@ func (r *StatsRepo) GetVolumeStatsByName(ctx context.Context, volumeName string,
 func (r *StatsRepo) GetLatestVolumeStatsLegacy(ctx context.Context, volumeName string) (*models.DirRollup, error) {
 	// TODO: Implement using appropriate SQLC method when available
 	return &models.DirRollup{}, nil
+}
+
+// Helper Functions
+
+// convertStatsJobToModel converts a SQLC StatsJobs row to a models.StatsJob
+func convertStatsJobToModel(row *sqlc.StatsJobs) *models.StatsJob {
+	job := &models.StatsJob{
+		ID:        row.ID,
+		JobType:   row.JobType,
+		Status:    row.Status,
+		StartedAt: row.StartedAt.Time,
+	}
+
+	if row.VolumeID.Valid {
+		job.VolumeID = &row.VolumeID.String
+	}
+
+	if row.CompletedAt.Valid {
+		job.CompletedAt = &row.CompletedAt.Time
+	}
+
+	if row.DurationMs.Valid {
+		job.DurationMs = &row.DurationMs.Int64
+	}
+
+	if row.ErrorMessage.Valid {
+		job.ErrorMessage = &row.ErrorMessage.String
+	}
+
+	if row.RecordsProcessed.Valid {
+		recordsProcessed := int32(row.RecordsProcessed.Int64)
+		job.ProcessedDates = &recordsProcessed
+	}
+
+	return job
 }
 

@@ -21,6 +21,7 @@ type DockerService interface {
 	ListVolumes(ctx context.Context) ([]models.Volume, error)
 	GetVolume(ctx context.Context, volumeID string) (*models.Volume, error)
 	GetVolumeContainers(ctx context.Context, volumeName string) ([]models.VolumeContainer, error)
+	GetVolumeContainersBatch(ctx context.Context, volumeNames []string) (map[string][]models.VolumeContainer, error)
 	GetVolumesByDriver(ctx context.Context, driver string) ([]models.Volume, error)
 	GetVolumesByLabel(ctx context.Context, labelKey, labelValue string) ([]models.Volume, error)
 }

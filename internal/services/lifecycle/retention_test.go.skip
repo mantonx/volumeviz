@@ -36,41 +36,8 @@ func (m *mockStore) Retention() repo.RetentionRepo {
 	return args.Get(0).(repo.RetentionRepo)
 }
 
-// Implement other store interface methods as needed
-func (m *mockStore) CreateUsageSnapshot(ctx context.Context, params store.CreateUsageSnapshotParams) (*store.UsageSnapshot, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(*store.UsageSnapshot), args.Error(1)
-}
-
-func (m *mockStore) GetLatestSnapshot(ctx context.Context, volumeID, snapshotType string) (*store.UsageSnapshot, error) {
-	args := m.Called(ctx, volumeID, snapshotType)
-	return args.Get(0).(*store.UsageSnapshot), args.Error(1)
-}
-
-func (m *mockStore) Get7DayTrend(ctx context.Context, volumeID string) (*store.TrendData, error) {
-	args := m.Called(ctx, volumeID)
-	return args.Get(0).(*store.TrendData), args.Error(1)
-}
-
-func (m *mockStore) Get30DayTrend(ctx context.Context, volumeID string) (*store.TrendData, error) {
-	args := m.Called(ctx, volumeID)
-	return args.Get(0).(*store.TrendData), args.Error(1)
-}
-
-func (m *mockStore) GetVolumeStepSeries(ctx context.Context, params store.GetVolumeStepSeriesParams) ([]*store.StepSeriesPoint, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).([]*store.StepSeriesPoint), args.Error(1)
-}
-
-func (m *mockStore) GetTrendSlope(ctx context.Context, params store.GetTrendSlopeParams) (*store.TrendSlope, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(*store.TrendSlope), args.Error(1)
-}
-
-func (m *mockStore) GetGrowthDeltas(ctx context.Context, params store.GetGrowthDeltasParams) (*store.GrowthDeltas, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(*store.GrowthDeltas), args.Error(1)
-}
+// Note: Other store methods would go here if needed for tests
+// Currently only testing the retention functionality
 
 // Mock retention repo
 type mockRetentionRepo struct {

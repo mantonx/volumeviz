@@ -12,7 +12,7 @@ SELECT * FROM scan_jobs WHERE scan_id = $1;
 
 -- name: ListScanJobs :many
 SELECT * FROM scan_jobs
-ORDER BY started_at DESC
+ORDER BY COALESCE(started_at, created_at) DESC NULLS LAST
 LIMIT $1 OFFSET $2;
 
 -- name: ListScanJobsByOrganization :many
@@ -24,7 +24,7 @@ LIMIT $2 OFFSET $3;
 -- name: ListScanJobsByVolume :many
 SELECT * FROM scan_jobs
 WHERE volume_id = $1
-ORDER BY started_at DESC
+ORDER BY started_at DESC NULLS LAST
 LIMIT $2 OFFSET $3;
 
 -- name: ListScanJobsByVolumeAndOrganization :many
@@ -108,21 +108,51 @@ SELECT COUNT(*) FROM scan_jobs WHERE status = $1;
 
 -- name: MarkStaleScanJobsAsFailed :many
 UPDATE scan_jobs
-SET 
+SET
     status = 'failed',
-    error_message = 'Scan job marked as stale after timeout',
+    error_message = 'Scan job marked as stale after timeout (no heartbeat)',
     completed_at = CURRENT_TIMESTAMP,
     updated_at = CURRENT_TIMESTAMP
 WHERE status = 'running'
-  AND started_at < (CURRENT_TIMESTAMP - INTERVAL '1 second' * $1)
-  AND started_at IS NOT NULL
+  AND updated_at < (CURRENT_TIMESTAMP - INTERVAL '1 second' * $1)
 RETURNING scan_id;
 
 -- name: MarkInFlightJobsAsPaused :many
 UPDATE scan_jobs
-SET 
+SET
     status = 'paused',
     error_message = $1,
     updated_at = CURRENT_TIMESTAMP
 WHERE status IN ('running', 'pending')
 RETURNING scan_id;
+
+-- name: MarkInFlightJobsAsFailed :many
+UPDATE scan_jobs
+SET
+    status = 'failed',
+    error_message = $1,
+    completed_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
+WHERE status IN ('running', 'pending')
+RETURNING scan_id;
+
+-- name: ClaimNextScanJob :one
+UPDATE scan_jobs
+SET
+    status = 'running',
+    started_at = $1,
+    updated_at = CURRENT_TIMESTAMP
+WHERE scan_id = (
+    SELECT scan_id
+    FROM scan_jobs
+    WHERE status = 'pending'
+    ORDER BY started_at ASC NULLS FIRST, scan_id ASC
+    LIMIT 1
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING *;
+
+-- name: UpdateScanJobHeartbeat :exec
+UPDATE scan_jobs
+SET updated_at = CURRENT_TIMESTAMP
+WHERE scan_id = $1;

@@ -16,6 +16,7 @@ import {
   usePerformanceTracking,
 } from '@/hooks/useAdaptiveLoading';
 import { cn } from '@/utils/class-names/cn';
+import { formatBytes } from '@/utils';
 
 export interface FileSystemItem {
   id: string;
@@ -205,12 +206,7 @@ export const AdaptiveExplorer: React.FC<AdaptiveExplorerProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMoreChunks]);
 
-  const formatBytes = (bytes: number): string => {
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    if (bytes === 0) return '0 B';
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${Math.round((bytes / Math.pow(1024, i)) * 100) / 100} ${sizes[i]}`;
-  };
+  // formatBytes is now imported from @/utils
 
   const performanceStats = enablePerformanceMonitoring
     ? getPerformanceStats()

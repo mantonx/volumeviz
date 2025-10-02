@@ -8,7 +8,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { useAggregationWorker } from '@/hooks/useWebWorker';
-import { cn } from '@/utils/class-names/cn';
+import { cn, formatBytes } from '@/utils';
 
 export interface FileItem {
   id: string;
@@ -178,12 +178,7 @@ export const DataProcessor: React.FC<DataProcessorProps> = ({
     return num.toString();
   }, []);
 
-  const formatBytes = useCallback((bytes: number): string => {
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes === 0) return '0 B';
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${Math.round((bytes / Math.pow(1024, i)) * 100) / 100} ${sizes[i]}`;
-  }, []);
+  // formatBytes is now imported from @/utils
 
   return (
     <div className={cn('space-y-4', className)}>

@@ -32,8 +32,6 @@ func NewEventHandlerService(dockerClient interfaces.DockerClient, repository Rep
 
 // ProcessEvent routes events to appropriate handlers
 func (h *EventHandlerService) ProcessEvent(ctx context.Context, event *DockerEvent) error {
-	log.Printf("[DEBUG] Processing event: %s %s (%s)", event.Action, event.ID, event.Name)
-
 	switch event.Type {
 	case VolumeCreated:
 		return h.HandleVolumeCreate(ctx, event)
@@ -286,7 +284,6 @@ func (h *EventHandlerService) updateVolumeMounts(ctx context.Context, containerI
 			h.realtimePublisher.PublishVolumeUpdate(updateData)
 		}
 
-		log.Printf("[DEBUG] Volume mount updated: %s -> %s (%s, %s)", mount.Name, containerID, mount.Destination, accessMode)
 	}
 
 	return nil

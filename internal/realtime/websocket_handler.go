@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/utils/auth"
 )
 
 // RealtimeService provides WebSocket real-time communication
@@ -15,12 +16,18 @@ type RealtimeService struct {
 }
 
 // NewRealtimeService creates a new real-time service
-func NewRealtimeService(store store.Store) *RealtimeService {
-	hub := NewHub(store)
-	
+func NewRealtimeService(store store.Store, jwtManager *auth.JWTManager) *RealtimeService {
+	// Use NewHubWithAuth if JWT manager is provided, otherwise use NewHub
+	var hub *Hub
+	if jwtManager != nil {
+		hub = NewHubWithAuth(store, jwtManager)
+	} else {
+		hub = NewHub(store)
+	}
+
 	// Start hub in background
 	go hub.Run(context.Background())
-	
+
 	return &RealtimeService{
 		hub:   hub,
 		store: store,

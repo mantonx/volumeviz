@@ -19,25 +19,10 @@ sql:
           - column: '*.path_hash'
             go_type:
               type: '[]byte'
-          - column: '*.hdr_format'
-            go_type:
-              type: 'string'
           - column: '*.created_at'
             go_type:
               type: 'time.Time'
           - column: '*.updated_at'
-            go_type:
-              type: 'time.Time'
-          - column: '*.mtime'
-            go_type:
-              type: 'time.Time'
-          - column: '*.ctime'
-            go_type:
-              type: 'time.Time'
-          - column: '*.computed_at'
-            go_type:
-              type: 'time.Time'
-          - column: '*.snapshot_date'
             go_type:
               type: 'time.Time'
           - column: '*.mount_type'

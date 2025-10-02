@@ -7,6 +7,7 @@ package sqlc
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -630,6 +631,86 @@ func (q *Queries) ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Vol
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listVolumesWithCounts = `-- name: ListVolumesWithCounts :many
+SELECT
+    v.volume_id, v.display_name, v.mount_point, v.container_names, v.is_active, v.total_size_bytes, v.used_size_bytes, v.free_size_bytes, v.filesystem_type, v.container_count, v.first_seen_at, v.last_scan_at, v.last_modified_at, v.created_at, v.updated_at, v.organization_id,
+    COALESCE(COUNT(DISTINCT f.id), 0)::bigint as file_count,
+    COALESCE(COUNT(DISTINCT fo.id), 0)::bigint as folder_count
+FROM volumes v
+LEFT JOIN files f ON f.volume_id = v.volume_id
+LEFT JOIN folders fo ON fo.volume_id = v.volume_id
+WHERE v.organization_id = $1
+GROUP BY v.volume_id
+ORDER BY v.volume_id
+LIMIT $2 OFFSET $3
+`
+
+type ListVolumesWithCountsParams struct {
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	Limit          int32       `json:"limit"`
+	Offset         int32       `json:"offset"`
+}
+
+type ListVolumesWithCountsRow struct {
+	VolumeID       string             `json:"volume_id"`
+	DisplayName    pgtype.Text        `json:"display_name"`
+	MountPoint     string             `json:"mount_point"`
+	ContainerNames []string           `json:"container_names"`
+	IsActive       pgtype.Bool        `json:"is_active"`
+	TotalSizeBytes pgtype.Int8        `json:"total_size_bytes"`
+	UsedSizeBytes  pgtype.Int8        `json:"used_size_bytes"`
+	FreeSizeBytes  pgtype.Int8        `json:"free_size_bytes"`
+	FilesystemType pgtype.Text        `json:"filesystem_type"`
+	ContainerCount pgtype.Int4        `json:"container_count"`
+	FirstSeenAt    pgtype.Timestamptz `json:"first_seen_at"`
+	LastScanAt     pgtype.Timestamptz `json:"last_scan_at"`
+	LastModifiedAt pgtype.Timestamptz `json:"last_modified_at"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
+	OrganizationID pgtype.Int8        `json:"organization_id"`
+	FileCount      int64              `json:"file_count"`
+	FolderCount    int64              `json:"folder_count"`
+}
+
+func (q *Queries) ListVolumesWithCounts(ctx context.Context, arg ListVolumesWithCountsParams) ([]ListVolumesWithCountsRow, error) {
+	rows, err := q.db.Query(ctx, listVolumesWithCounts, arg.OrganizationID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListVolumesWithCountsRow{}
+	for rows.Next() {
+		var i ListVolumesWithCountsRow
+		if err := rows.Scan(
+			&i.VolumeID,
+			&i.DisplayName,
+			&i.MountPoint,
+			&i.ContainerNames,
+			&i.IsActive,
+			&i.TotalSizeBytes,
+			&i.UsedSizeBytes,
+			&i.FreeSizeBytes,
+			&i.FilesystemType,
+			&i.ContainerCount,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.LastModifiedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OrganizationID,
+			&i.FileCount,
+			&i.FolderCount,
 		); err != nil {
 			return nil, err
 		}

@@ -181,3 +181,16 @@ RETURNING *;
 
 -- name: GetVolumeMountsByVolume :many
 SELECT * FROM docker_mount_catalog WHERE volume_name = $1;
+
+-- name: ListVolumesWithCounts :many
+SELECT
+    v.*,
+    COALESCE(COUNT(DISTINCT f.id), 0)::bigint as file_count,
+    COALESCE(COUNT(DISTINCT fo.id), 0)::bigint as folder_count
+FROM volumes v
+LEFT JOIN files f ON f.volume_id = v.volume_id
+LEFT JOIN folders fo ON fo.volume_id = v.volume_id
+WHERE v.organization_id = $1
+GROUP BY v.volume_id
+ORDER BY v.volume_id
+LIMIT $2 OFFSET $3;

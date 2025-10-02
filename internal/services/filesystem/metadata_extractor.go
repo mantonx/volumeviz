@@ -3,6 +3,7 @@ package filesystem
 import (
 	"crypto/md5"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode/utf8"
 
 	"github.com/mantonx/volumeviz/internal/models"
 )
@@ -47,6 +49,10 @@ func (me *MetadataExtractor) ExtractFolderMetadata(volumeID, path string, info o
 		name = "/"
 	}
 
+	// Sanitize strings to ensure valid UTF-8
+	name = sanitizeUTF8(name)
+	path = sanitizeUTF8(path)
+
 	params := models.CreateFolderParams{
 		ParentID: parentID,
 		VolumeID: volumeID,
@@ -73,7 +79,8 @@ func (me *MetadataExtractor) ExtractFolderMetadata(volumeID, path string, info o
 	if info.Mode()&os.ModeSymlink != 0 {
 		params.IsSymlink = true
 		if target, err := os.Readlink(path); err == nil {
-			params.SymlinkTarget = &target
+			sanitizedTarget := sanitizeUTF8(target)
+			params.SymlinkTarget = &sanitizedTarget
 		}
 	}
 
@@ -85,6 +92,10 @@ func (me *MetadataExtractor) ExtractFileMetadata(volumeID, path string, info os.
 	pathHash := generatePathHash(path)
 	name := info.Name()
 	extension := extractFileExtension(name)
+
+	// Sanitize strings to ensure valid UTF-8
+	name = sanitizeUTF8(name)
+	path = sanitizeUTF8(path)
 
 	params := models.CreateFileParams{
 		FolderID:       folderID,
@@ -117,7 +128,8 @@ func (me *MetadataExtractor) ExtractFileMetadata(volumeID, path string, info os.
 	if info.Mode()&os.ModeSymlink != 0 {
 		params.IsSymlink = true
 		if target, err := os.Readlink(path); err == nil {
-			params.SymlinkTarget = &target
+			sanitizedTarget := sanitizeUTF8(target)
+			params.SymlinkTarget = &sanitizedTarget
 		}
 	}
 
@@ -162,6 +174,7 @@ func (me *MetadataExtractor) ShouldUpdateFolder(existing *models.Folder, new *mo
 }
 
 // computeFileHash calculates file hash for deduplication and integrity
+// Returns hex-encoded string to avoid UTF-8 encoding issues with TEXT columns
 func (me *MetadataExtractor) computeFileHash(path, algorithm string) []byte {
 	file, err := os.Open(path)
 	if err != nil {
@@ -169,28 +182,35 @@ func (me *MetadataExtractor) computeFileHash(path, algorithm string) []byte {
 	}
 	defer file.Close()
 
+	var hashBytes []byte
 	switch algorithm {
 	case "md5":
 		hasher := md5.New()
 		if _, err := io.Copy(hasher, file); err != nil {
 			return nil
 		}
-		return hasher.Sum(nil)
+		hashBytes = hasher.Sum(nil)
 	case "sha256":
 		hasher := sha256.New()
 		if _, err := io.Copy(hasher, file); err != nil {
 			return nil
 		}
-		return hasher.Sum(nil)
+		hashBytes = hasher.Sum(nil)
 	default:
 		return nil
 	}
+
+	// Encode as hex string for TEXT column compatibility
+	hexHash := hex.EncodeToString(hashBytes)
+	return []byte(hexHash)
 }
 
 // generatePathHash generates a consistent hash for a path
-func generatePathHash(path string) []byte {
+// Returns hex-encoded string as string type (not []byte) to force TEXT encoding in database
+func generatePathHash(path string) string {
 	hash := sha256.Sum256([]byte(path))
-	return hash[:]
+	hexHash := hex.EncodeToString(hash[:])
+	return hexHash
 }
 
 // getSystemStat extracts system-specific metadata from os.FileInfo
@@ -254,4 +274,26 @@ func extractFileExtension(filename string) *string {
 	}
 
 	return &ext
+}
+
+// sanitizeUTF8 ensures a string is valid UTF-8 by replacing invalid sequences
+func sanitizeUTF8(s string) string {
+	if utf8.ValidString(s) {
+		return s
+	}
+
+	// Convert to valid UTF-8 by replacing invalid sequences with replacement character
+	v := make([]rune, 0, len(s))
+	for i, r := range s {
+		if r == utf8.RuneError {
+			// Check if this is a real RuneError or just the replacement character
+			_, size := utf8.DecodeRuneInString(s[i:])
+			if size == 1 {
+				// This is an invalid UTF-8 sequence, skip it
+				continue
+			}
+		}
+		v = append(v, r)
+	}
+	return string(v)
 }

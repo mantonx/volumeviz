@@ -116,15 +116,11 @@ func (rm *ResumeManager) findPausedScans(ctx context.Context) ([]*PausedScanInfo
 	if err != nil {
 		return nil, fmt.Errorf("failed to list scan jobs: %w", err)
 	}
-	
-	log.Printf("[DEBUG] ResumeManager: Found %d total scan jobs to check", len(activeScanJobs))
-	
+
 	var pausedScans []*PausedScanInfo
-	
+
 	// Check each scan job for resumable phases
 	for _, scanJob := range activeScanJobs {
-		log.Printf("[DEBUG] ResumeManager: Checking scan job %s (volume: %s, status: %s)", 
-			scanJob.ScanID, scanJob.VolumeID, scanJob.Status)
 		if scanJob.Status == "paused" || scanJob.Status == "failed" {
 			phases, err := scanProgressRepo.GetScanPhases(ctx, scanJob.ScanID)
 			if err != nil {
@@ -160,31 +156,36 @@ func (rm *ResumeManager) findResumablePhase(phases []models.ScanPhase) *models.S
 	for _, phaseName := range phaseOrder {
 		for _, phase := range phases {
 			if phase.PhaseName == phaseName && phase.Status == "paused" {
-				log.Printf("[DEBUG] ResumeManager: Found explicitly paused phase: %s", phaseName)
 				return &phase
 			}
 		}
 	}
-	
-	// Second, look for incomplete phases that are marked as "completed" but shouldn't be
+
+	// Second, look for running phases (these were interrupted mid-execution)
+	for _, phaseName := range phaseOrder {
+		for _, phase := range phases {
+			if phase.PhaseName == phaseName && phase.Status == "running" {
+				return &phase
+			}
+		}
+	}
+
+	// Third, look for incomplete phases that are marked as "completed" but shouldn't be
 	for _, phaseName := range phaseOrder {
 		for _, phase := range phases {
 			if phase.PhaseName == phaseName && phase.Status == "completed" {
 				// Check if this phase is actually incomplete
 				if rm.isPhaseIncomplete(&phase) {
-					log.Printf("[DEBUG] ResumeManager: Found incomplete phase marked as completed: %s (%d/%d items)", 
-						phaseName, phase.ItemsProcessed, phase.ItemsTotal)
 					return &phase
 				}
 			}
 		}
 	}
-	
+
 	// Finally, look for failed phases
 	for _, phaseName := range phaseOrder {
 		for _, phase := range phases {
 			if phase.PhaseName == phaseName && phase.Status == "failed" {
-				log.Printf("[DEBUG] ResumeManager: Found failed phase: %s", phaseName)
 				return &phase
 			}
 		}
@@ -200,12 +201,10 @@ func (rm *ResumeManager) isPhaseIncomplete(phase *models.ScanPhase) bool {
 		// Consider it incomplete if less than 95% processed
 		completionRate := float64(phase.ItemsProcessed) / float64(phase.ItemsTotal)
 		if completionRate < 0.95 {
-			log.Printf("[DEBUG] ResumeManager: Phase %s only %.1f%% complete (%d/%d)", 
-				phase.PhaseName, completionRate*100, phase.ItemsProcessed, phase.ItemsTotal)
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -320,11 +319,10 @@ func (rm *ResumeManager) hasActiveScan(ctx context.Context, volumeID string) boo
 	// Check if any scan for this volume is currently running
 	for _, scanJob := range activeScanJobs {
 		if scanJob.VolumeID == volumeID && scanJob.Status == "running" {
-			log.Printf("[DEBUG] ResumeManager: Found active scan %s for volume %s", scanJob.ScanID, volumeID)
 			return true
 		}
 	}
-	
+
 	return false
 }
 

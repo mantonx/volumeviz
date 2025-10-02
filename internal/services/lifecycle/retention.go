@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/repo"
 	"github.com/mantonx/volumeviz/internal/store"
 )
@@ -151,7 +152,10 @@ func (s *Service) runOrganizationAwareRetention(ctx context.Context, retention r
 	log.Printf("retention: Running organization-aware retention mode")
 
 	// Get all organizations from the system
-	organizations, err := s.store.Organizations().ListOrganizations(ctx, 1000, 0)
+	organizations, err := s.store.Organizations().ListOrganizations(ctx, sqlc.ListOrganizationsParams{
+		Limit:  1000,
+		Offset: 0,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to get organizations: %w", err)
 	}

@@ -17,6 +17,7 @@ import {
 } from '@/api/orval-generated/api';
 import { selectedVolumeAtom } from '@/atoms/volumes';
 import { useFileOperations } from '@/hooks/api/useFileOperations';
+import { formatBytes } from '@/utils';
 
 interface FileBrowserProps {
   volumeId?: string;
@@ -120,19 +121,7 @@ export function FileBrowser({
     onFileDoubleClick?.(file);
   };
 
-  const formatBytes = (bytes?: number) => {
-    if (!bytes) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let size = bytes;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
-  };
+  // formatBytes is now imported from @/utils
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';

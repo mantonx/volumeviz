@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"volumeviz/internal/models"
-	"volumeviz/internal/services"
+	"github.com/mantonx/volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/services"
 )
 
 // Handler handles operation-related API endpoints

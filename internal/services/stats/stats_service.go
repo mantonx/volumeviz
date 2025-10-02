@@ -40,14 +40,20 @@ func NewStatsService(statsRepo *repo.StatsRepo, store store.Store, metrics inter
 // OnScanCompleted is called when a volume scan completes
 // This triggers daily stats computation for the current date with organization validation
 func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, scanID *string) error {
-	// Validate volume belongs to accessible organization
-	if err := s.validateVolumeAccess(ctx, volumeID); err != nil {
+	// Validate volume belongs to accessible organization and get its organizationID
+	volume, err := s.store.Volumes().GetVolumeByVolumeIDSystemLevel(ctx, volumeID)
+	if err != nil {
 		if s.logger != nil {
 			s.logger.Printf("Access denied for volume %s stats computation: %v", volumeID, err)
 		}
 		return fmt.Errorf("access denied for volume stats: %w", err)
 	}
-	
+
+	organizationID := int64(0)
+	if volume.OrganizationID != nil {
+		organizationID = *volume.OrganizationID
+	}
+
 	if s.logger != nil {
 		s.logger.Printf("Computing daily stats for volume %s after scan completion", volumeID)
 	}
@@ -61,7 +67,7 @@ func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, sca
 	}
 
 	// Create job record
-	jobID, err := s.statsRepo.CreateStatsJob(ctx, "scan_completion", volumeID)
+	jobID, err := s.statsRepo.CreateStatsJob(ctx, "scan_completion", volumeID, organizationID)
 	if err != nil {
 		if s.logger != nil {
 			s.logger.Printf("Failed to create stats job for volume %s: %v", volumeID, err)
@@ -121,6 +127,20 @@ func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, sca
 
 // ComputeHistoricalStats computes stats for a date range (used by nightly reconciliation)
 func (s *StatsService) ComputeHistoricalStats(ctx context.Context, volumeID string, startDate, endDate time.Time) error {
+	// Get volume organization ID
+	volume, err := s.store.Volumes().GetVolumeByVolumeIDSystemLevel(ctx, volumeID)
+	if err != nil {
+		if s.logger != nil {
+			s.logger.Printf("Failed to get volume %s: %v", volumeID, err)
+		}
+		return fmt.Errorf("volume not found: %w", err)
+	}
+
+	organizationID := int64(0)
+	if volume.OrganizationID != nil {
+		organizationID = *volume.OrganizationID
+	}
+
 	if s.logger != nil {
 		s.logger.Printf("Computing historical stats for volume %s from %v to %v", volumeID, startDate, endDate)
 	}
@@ -133,7 +153,7 @@ func (s *StatsService) ComputeHistoricalStats(ctx context.Context, volumeID stri
 	}
 
 	// Create job record
-	jobID, err := s.statsRepo.CreateStatsJob(ctx, "historical_compute", volumeID)
+	jobID, err := s.statsRepo.CreateStatsJob(ctx, "historical_compute", volumeID, organizationID)
 	if err != nil {
 		if s.metrics != nil {
 			s.metrics.StatsJobFailed("historical_compute", volumeID, time.Since(jobStartTime), "job_creation_failed")

@@ -73,8 +73,15 @@ export const customFetchClient = async <T = any>(
     // Handle non-2xx responses
     if (!response.ok) {
       if (response.status === 401) {
-        // Handle token expiration
+        // Handle token expiration - clear all auth data
+        console.error('[AUTH] 401 Unauthorized - clearing auth data and redirecting to login', {
+          url: fullUrl.toString(),
+          hasToken: !!token,
+          tokenPreview: token ? `${token.substring(0, 20)}...` : 'none'
+        });
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
         window.location.href = '/login';
       }
 

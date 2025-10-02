@@ -136,18 +136,19 @@
     </div>
 
     <script>
-        const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMSIsInVzZXJuYW1lIjoiMSIsInJvbGUiOiJhZG1pbiIsInRva2VuX3R5cGUiOiJhY2Nlc3MiLCJzZXNzaW9uX2lkIjoiand0LWdlbiIsImlzcyI6InZvbHVtZXZpeiIsInN1YiI6IjEiLCJleHAiOjE3NTkzNTM2NjksIm5iZiI6MTc1OTI2NzI2OSwiaWF0IjoxNzU5MjY3MjY5LCJqdGkiOiJjNThiODM3YTAyMzIyY2Q2NmFlODI3MGY1MmRiZDhlOSJ9.O7Ep6DEvZdz9_bozO6T1iFcNrZUiNDr_UKmowe_Y_3g';
+        const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMSIsInVzZXJuYW1lIjoiMSIsInJvbGUiOiJhZG1pbiIsIm9yZ19pZCI6MSwidG9rZW5fdHlwZSI6ImFjY2VzcyIsInNlc3Npb25faWQiOiJqd3QtZ2VuIiwiaXNzIjoidm9sdW1ldml6Iiwic3ViIjoiMSIsImV4cCI6MTc1OTQ1MTA1NywibmJmIjoxNzU5MzY0NjU3LCJpYXQiOjE3NTkzNjQ2NTcsImp0aSI6Ijk1Y2ExYjNhYWFkZjhjNGE4ZGRiYjZmOTQ3ZTdjYzg4In0.UgUIYMPb5jjvWW_ccYGg9fWVDnJ6nE1Xc4SyAtN8c_4';
         const API_BASE = 'http://localhost:8080/api/v1';
 
         function setToken() {
             localStorage.setItem('auth_token', JWT_TOKEN);
-            // Also set user object for authentication
+            // Also set user object for authentication (matching the JWT token claims)
             const user = {
                 id: '1',
                 email: 'admin@volumeviz.local',
                 role: 'admin',
-                username: 'admin',
-                display_name: 'Admin'
+                username: '1',
+                display_name: 'Admin',
+                organization_id: 1
             };
             localStorage.setItem('user', JSON.stringify(user));
 

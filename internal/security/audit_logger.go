@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"net/netip"
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/audit"
-	"github.com/mantonx/volumeviz/internal/models"
 )
 
 // SecurityAuditLogger handles security-specific audit logging with organization context
@@ -207,10 +207,12 @@ func (sal *SecurityAuditLogger) logSecurityEvent(ctx context.Context, event Secu
 		return
 	}
 
-	// Determine organization context for audit log
-	var auditOrgID *int64
-	if event.OrganizationID != nil {
-		auditOrgID = event.OrganizationID
+	// Parse IP address if present
+	var ipAddr *netip.Addr
+	if event.IPAddress != "" {
+		if addr, err := netip.ParseAddr(event.IPAddress); err == nil {
+			ipAddr = &addr
+		}
 	}
 
 	// Create audit log event
@@ -218,9 +220,9 @@ func (sal *SecurityAuditLogger) logSecurityEvent(ctx context.Context, event Secu
 		Action:       string(event.EventType),
 		ResourceType: event.ResourceType,
 		ResourceID:   event.ResourceID,
-		IPAddress:    event.IPAddress,
-		UserAgent:    event.UserAgent,
-		Details:      eventData,
+		IPAddress:    ipAddr,
+		UserAgent:    &event.UserAgent,
+		Details:      string(eventData),
 		Timestamp:    event.Timestamp,
 	}
 
@@ -228,9 +230,6 @@ func (sal *SecurityAuditLogger) logSecurityEvent(ctx context.Context, event Secu
 	if event.UserID != nil {
 		// Convert string to int64 for audit event (assuming UserID format)
 		auditEvent.UserID = nil // TODO: Fix user ID conversion
-	}
-	if auditOrgID != nil {
-		auditEvent.OrganizationID = auditOrgID
 	}
 
 	// Log using audit logger
@@ -246,8 +245,8 @@ func (sal *SecurityAuditLogger) logSecurityEvent(ctx context.Context, event Secu
 func (sal *SecurityAuditLogger) GetSecurityAuditLogs(ctx context.Context, limit int32, offset int32) ([]*audit.Event, error) {
 	// Use audit logger to get events
 	filters := audit.EventFilters{
-		Limit:  int(limit),
-		Offset: int(offset),
+		Limit:  int32(limit),
+		Offset: int32(offset),
 	}
 	
 	return sal.auditLogger.GetEvents(ctx, filters)

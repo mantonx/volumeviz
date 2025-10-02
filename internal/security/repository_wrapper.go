@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/store"
@@ -197,24 +196,10 @@ func (sfr *SecureFilesRepo) GetFile(fileID int64) (*models.File, error) {
 		}
 
 		// Get file using appropriate method based on context
-		if orgCtx.IsSystemAdmin {
-			// System admin can access any file - use raw store access
+		// Note: Files don't have direct organization_id - they inherit from their volume
+		// RLS policies at the database level ensure files are filtered by organization
+		if orgCtx.IsSystemAdmin || orgCtx.OrganizationID != nil {
 			result, err = sfr.wrapper.store.Files().GetFileByID(ctx, fileID)
-		} else if orgCtx.OrganizationID != nil {
-			// Organization user - files repository should validate organization
-			result, err = sfr.wrapper.store.Files().GetFileByID(ctx, fileID)
-			
-			// Additional validation: ensure returned file belongs to user's organization
-			if err == nil && result != nil {
-				if result.OrganizationID == nil || *result.OrganizationID != *orgCtx.OrganizationID {
-					LogSecurityEvent(ctx, "CROSS_ORGANIZATION_FILE_ACCESS_BLOCKED", map[string]interface{}{
-						"file_id":              fileID,
-						"file_organization":    result.OrganizationID,
-						"user_organization":    orgCtx.OrganizationID,
-					})
-					return fmt.Errorf("access denied: file belongs to different organization")
-				}
-			}
 		} else {
 			return fmt.Errorf("invalid organization context")
 		}

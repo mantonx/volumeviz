@@ -202,6 +202,70 @@ func (s *DockerService) GetVolumeContainers(ctx context.Context, volumeName stri
 	return volumeContainers, nil
 }
 
+// GetVolumeContainersBatch retrieves containers for multiple volumes in a single batch operation
+// This is much more efficient than calling GetVolumeContainers for each volume individually
+func (s *DockerService) GetVolumeContainersBatch(ctx context.Context, volumeNames []string) (map[string][]models.VolumeContainer, error) {
+	// List all containers once
+	containers, err := s.client.ListContainers(ctx, nil)
+	if err != nil {
+		return nil, utils.WrapError(err, "failed to list containers")
+	}
+
+	// Build a map of volume name -> containers
+	volumeContainerMap := make(map[string][]models.VolumeContainer)
+
+	// Initialize map with empty slices for all requested volumes
+	for _, volumeName := range volumeNames {
+		volumeContainerMap[volumeName] = []models.VolumeContainer{}
+	}
+
+	// Check each container for volume mounts
+	for _, container := range containers {
+		// Inspect container to get detailed mount information
+		containerInfo, err := s.client.InspectContainer(ctx, container.ID)
+		if err != nil {
+			// Skip this container if we can't inspect it
+			continue
+		}
+
+		// Check each mount point
+		for _, mount := range containerInfo.Mounts {
+			// For volumes, the mount name matches the volume name
+			if mount.Type == "volume" {
+				// Check if this volume is one we're interested in
+				for _, volumeName := range volumeNames {
+					if mount.Name == volumeName {
+						volumeContainer := models.VolumeContainer{
+							ID:          1, // Auto-increment ID
+							ContainerID: container.ID,
+							VolumeID:    volumeName,
+							Name:        containerInfo.Name,
+							Image:       containerInfo.Config.Image,
+							State:       container.State,
+							Status:      container.Status,
+							MountPath:   mount.Destination,
+							AccessMode:  "rw", // Default
+							IsActive:    container.State == "running",
+							CreatedAt:   time.Now(),
+							UpdatedAt:   time.Now(),
+						}
+
+						// Determine read/write permissions from mount
+						if !mount.RW {
+							volumeContainer.AccessMode = "ro"
+						}
+
+						volumeContainerMap[volumeName] = append(volumeContainerMap[volumeName], volumeContainer)
+						break // Found the volume, no need to check other mounts in this volume
+					}
+				}
+			}
+		}
+	}
+
+	return volumeContainerMap, nil
+}
+
 // convertToVolumeModel converts Docker API volume to our model
 func (s *DockerService) convertToVolumeModel(vol volume.Volume) models.Volume {
 	volume := models.Volume{

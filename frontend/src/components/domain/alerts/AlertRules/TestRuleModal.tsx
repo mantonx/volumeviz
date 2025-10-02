@@ -12,7 +12,7 @@ import {
   Activity,
   Send,
 } from 'lucide-react';
-import { cn } from '@/utils';
+import { cn, formatBytes } from '@/utils';
 import { useAlertRules } from '@/hooks/useAlerts';
 import type { AlertRule } from '@/api/alerts';
 
@@ -101,12 +101,7 @@ export const TestRuleModal: React.FC<TestRuleModalProps> = ({
     return JSON.stringify(condition);
   };
 
-  const formatBytes = (bytes: number) => {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes === 0) return '0 Bytes';
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
-  };
+  // formatBytes is now imported from @/utils
 
   if (!open) return null;
 

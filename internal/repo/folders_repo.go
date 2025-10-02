@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"crypto/sha256"
 	"path/filepath"
 	"strings"
 	"time"
@@ -38,14 +37,15 @@ func NewSQLiteFoldersRepo(queries *sqlcSQLite.Queries) *FoldersRepo {
 
 // CreateFolder creates a new folder record
 func (r *FoldersRepo) CreateFolder(ctx context.Context, params models.CreateFolderParams) (*models.Folder, error) {
-	pathHash := sha256.Sum256([]byte(params.Path))
+	// Use the pre-computed path hash from params (already hex-encoded)
+	// Don't recompute it here to avoid binary data in TEXT column
 
 	result, err := r.queries.CreateFolder(ctx, sqlc.CreateFolderParams{
 		VolumeID:           params.VolumeID,
 		ParentID:           int64PtrToPgInt8(params.ParentID),
 		Path:               params.Path,
 		Name:               params.Name,
-		PathHash:           pathHash[:],
+		PathHash:           []byte(params.PathHash),  // Convert string to []byte for SQLC
 		SizeBytes:          pgtype.Int8{Valid: false},
 		SizeBytesRecursive: pgtype.Int8{Valid: false},
 		FileCount:          pgtype.Int4{Valid: false},
@@ -179,14 +179,15 @@ func (r *FoldersRepo) GetFoldersWithMostFiles(ctx context.Context, volumeID stri
 
 // UpsertFolder creates or updates a folder
 func (r *FoldersRepo) UpsertFolder(ctx context.Context, params models.CreateFolderParams) (*models.Folder, error) {
-	pathHash := sha256.Sum256([]byte(params.Path))
+	// Use the pre-computed path hash from params (already hex-encoded)
+	// Don't recompute it here to avoid binary data in TEXT column
 
 	result, err := r.queries.UpsertFolder(ctx, sqlc.UpsertFolderParams{
 		VolumeID:           params.VolumeID,
 		ParentID:           int64PtrToPgInt8(params.ParentID),
 		Path:               params.Path,
 		Name:               params.Name,
-		PathHash:           pathHash[:],
+		PathHash:           []byte(params.PathHash),  // Convert string to []byte for SQLC
 		SizeBytes:          pgtype.Int8{Valid: false},
 		SizeBytesRecursive: pgtype.Int8{Valid: false},
 		FileCount:          pgtype.Int4{Valid: false},
@@ -337,13 +338,14 @@ func (r *FoldersRepo) UpdateFolderMetadata(ctx context.Context, id int64, mtime,
 // BulkInsertFolders inserts multiple folders efficiently
 func (r *FoldersRepo) BulkInsertFolders(ctx context.Context, folders []models.CreateFolderParams) error {
 	for _, folder := range folders {
-		pathHash := sha256.Sum256([]byte(folder.Path))
+		// Use the pre-computed path hash from params (already hex-encoded)
+		// Don't recompute it here to avoid binary data in TEXT column
 		_, err := r.queries.BulkInsertFolders(ctx, sqlc.BulkInsertFoldersParams{
 			VolumeID:           folder.VolumeID,
 			ParentID:           int64PtrToPgInt8(folder.ParentID),
 			Path:               folder.Path,
 			Name:               folder.Name,
-			PathHash:           pathHash[:],
+			PathHash:           []byte(folder.PathHash),  // Convert string to []byte for SQLC
 			SizeBytes:          pgtype.Int8{Valid: false},
 			SizeBytesRecursive: pgtype.Int8{Valid: false},
 			FileCount:          pgtype.Int4{Valid: false},

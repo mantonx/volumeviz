@@ -176,11 +176,16 @@ func (r *scansRepo) ListScanJobs(ctx context.Context, limit, offset int32) ([]*m
 // =============================================================================
 
 func (r *scansRepo) ClaimNextScanJob(ctx context.Context, startedAt time.Time) (*models.ScanJob, error) {
-	return nil, fmt.Errorf("ClaimNextScanJob not implemented - requires additional SQL query")
+	row, err := r.queries.ClaimNextScanJob(ctx, pgtype.Timestamptz{Time: startedAt, Valid: true})
+	if err != nil {
+		return nil, err
+	}
+
+	return r.convertScanJobToModel(row), nil
 }
 
 func (r *scansRepo) UpdateScanJobHeartbeat(ctx context.Context, scanID string, progress int32) error {
-	return fmt.Errorf("UpdateScanJobHeartbeat not implemented - requires additional SQL query")
+	return r.queries.UpdateScanJobHeartbeat(ctx, scanID)
 }
 
 func (r *scansRepo) MarkStaleScanJobsAsFailed(ctx context.Context, timeoutSeconds int) ([]string, error) {
@@ -192,7 +197,11 @@ func (r *scansRepo) MarkStaleScanJobsAsFailed(ctx context.Context, timeoutSecond
 }
 
 func (r *scansRepo) MarkInFlightJobsAsFailed(ctx context.Context, reason string) ([]string, error) {
-	return nil, fmt.Errorf("MarkInFlightJobsAsFailed not implemented - requires additional SQL query")
+	scanIDs, err := r.queries.MarkInFlightJobsAsFailed(ctx, pgtype.Text{String: reason, Valid: true})
+	if err != nil {
+		return nil, err
+	}
+	return scanIDs, nil
 }
 
 func (r *scansRepo) MarkInFlightJobsAsPaused(ctx context.Context, reason string) ([]string, error) {

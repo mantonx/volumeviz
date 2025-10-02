@@ -9,7 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
-import { cn } from '@/utils/class-names/cn';
+import { cn, formatBytes } from '@/utils';
 
 export interface Operation {
   id: string;
@@ -69,12 +69,7 @@ export interface UndoRollbackProps {
   ) => void;
 }
 
-const formatBytes = (bytes: number): string => {
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  if (bytes === 0) return '0 B';
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${Math.round((bytes / Math.pow(1024, i)) * 100) / 100} ${sizes[i]}`;
-};
+// formatBytes is now imported from @/utils
 
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleDateString('en-US', {

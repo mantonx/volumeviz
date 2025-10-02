@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/models"
 )
 
@@ -34,14 +36,15 @@ func NewResumeWalker(indexer *FilesystemIndexer, volumeID string) *ResumeWalker 
 func (rw *ResumeWalker) ResumeFromCheckpoint(ctx context.Context, mountpoint, scanID string) error {
 	fmt.Printf("Attempting to resume paused scan %s for volume %s\n", scanID, rw.volumeID)
 	
-	// Get the paused scan phase to understand where we left off
+	// Get the scan phase to understand where we left off
 	phase, err := rw.indexer.store.ScanProgress().GetScanPhase(ctx, scanID, "filesystem_indexing")
 	if err != nil {
-		return fmt.Errorf("failed to get paused scan phase: %w", err)
+		return fmt.Errorf("failed to get scan phase: %w", err)
 	}
-	
-	if phase.Status != "paused" {
-		return fmt.Errorf("scan %s is not paused (status: %s)", scanID, phase.Status)
+
+	// Allow resuming from "paused" or "running" status (running means it was interrupted mid-execution)
+	if phase.Status != "paused" && phase.Status != "running" {
+		return fmt.Errorf("scan %s cannot be resumed (status: %s, expected paused or running)", scanID, phase.Status)
 	}
 	
 	checkpointPath := phase.CurrentItem
@@ -53,6 +56,17 @@ func (rw *ResumeWalker) ResumeFromCheckpoint(ctx context.Context, mountpoint, sc
 
 	// Update database to mark phase as running again
 	go rw.indexer.progressTracker.UpdatePhaseStatus(context.Background(), scanID, "filesystem_indexing", "running", "")
+
+	// Update scan_jobs status from "paused" back to "running"
+	if queries, ok := rw.indexer.store.Queries().(*sqlc.Queries); ok {
+		if err := queries.UpdateScanJobStatus(ctx, sqlc.UpdateScanJobStatusParams{
+			ScanID: scanID,
+			Status: "running",
+			ErrorMessage: pgtype.Text{Valid: false}, // Clear error message
+		}); err != nil {
+			fmt.Printf("Warning: Failed to update scan_jobs status to running: %v\n", err)
+		}
+	}
 
 	// Setup cleanup
 	defer rw.cleanup(scanID)

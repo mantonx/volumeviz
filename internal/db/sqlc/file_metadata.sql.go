@@ -11,8 +11,83 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countFilesByDuration = `-- name: CountFilesByDuration :one
+SELECT COUNT(*)
+FROM files f
+INNER JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1
+  AND fm.raw_metadata ? 'duration'
+  AND ($2::float IS NULL OR (fm.raw_metadata->>'duration')::float >= $2::float)
+  AND ($3::float IS NULL OR (fm.raw_metadata->>'duration')::float <= $3::float)
+`
+
+type CountFilesByDurationParams struct {
+	VolumeID    string        `json:"volume_id"`
+	MinDuration pgtype.Float8 `json:"min_duration"`
+	MaxDuration pgtype.Float8 `json:"max_duration"`
+}
+
+func (q *Queries) CountFilesByDuration(ctx context.Context, arg CountFilesByDurationParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countFilesByDuration, arg.VolumeID, arg.MinDuration, arg.MaxDuration)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countFilesByLocation = `-- name: CountFilesByLocation :one
+SELECT COUNT(*)
+FROM files f
+INNER JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1
+  AND fm.raw_metadata ? 'latitude'
+  AND fm.raw_metadata ? 'longitude'
+  AND (fm.raw_metadata->>'latitude')::float IS NOT NULL
+  AND (fm.raw_metadata->>'longitude')::float IS NOT NULL
+`
+
+func (q *Queries) CountFilesByLocation(ctx context.Context, volumeID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countFilesByLocation, volumeID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countFilesByResolution = `-- name: CountFilesByResolution :one
+SELECT COUNT(*)
+FROM files f
+INNER JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1
+  AND fm.raw_metadata ? 'width'
+  AND fm.raw_metadata ? 'height'
+  AND ($2::int IS NULL OR (fm.raw_metadata->>'width')::int >= $2::int)
+  AND ($3::int IS NULL OR (fm.raw_metadata->>'width')::int <= $3::int)
+  AND ($4::int IS NULL OR (fm.raw_metadata->>'height')::int >= $4::int)
+  AND ($5::int IS NULL OR (fm.raw_metadata->>'height')::int <= $5::int)
+`
+
+type CountFilesByResolutionParams struct {
+	VolumeID  string      `json:"volume_id"`
+	MinWidth  pgtype.Int4 `json:"min_width"`
+	MaxWidth  pgtype.Int4 `json:"max_width"`
+	MinHeight pgtype.Int4 `json:"min_height"`
+	MaxHeight pgtype.Int4 `json:"max_height"`
+}
+
+func (q *Queries) CountFilesByResolution(ctx context.Context, arg CountFilesByResolutionParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countFilesByResolution,
+		arg.VolumeID,
+		arg.MinWidth,
+		arg.MaxWidth,
+		arg.MinHeight,
+		arg.MaxHeight,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countOldFileMetadata = `-- name: CountOldFileMetadata :one
-SELECT COUNT(*) FROM file_metadata 
+SELECT COUNT(*) FROM file_metadata
 WHERE extracted_at < $1
   AND extracted_at IS NOT NULL
 `
@@ -88,7 +163,7 @@ func (q *Queries) DeleteFileMetadataByVolume(ctx context.Context, volumeID strin
 }
 
 const deleteOldFileMetadata = `-- name: DeleteOldFileMetadata :exec
-DELETE FROM file_metadata 
+DELETE FROM file_metadata
 WHERE extracted_at < $1
   AND extracted_at IS NOT NULL
 `
@@ -158,6 +233,343 @@ func (q *Queries) GetFileMetadataWithFile(ctx context.Context, fileID int64) (Ge
 		&i.ModifiedAt,
 	)
 	return i, err
+}
+
+const getFilesByDuration = `-- name: GetFilesByDuration :many
+SELECT f.id, f.name, f.path, f.size_bytes, f.mime,
+       (fm.raw_metadata->>'duration')::float as duration
+FROM files f
+INNER JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1
+  AND fm.raw_metadata ? 'duration'
+  AND ($4::float IS NULL OR (fm.raw_metadata->>'duration')::float >= $4::float)
+  AND ($5::float IS NULL OR (fm.raw_metadata->>'duration')::float <= $5::float)
+ORDER BY (fm.raw_metadata->>'duration')::float DESC
+LIMIT $2 OFFSET $3
+`
+
+type GetFilesByDurationParams struct {
+	VolumeID    string        `json:"volume_id"`
+	Limit       int32         `json:"limit"`
+	Offset      int32         `json:"offset"`
+	MinDuration pgtype.Float8 `json:"min_duration"`
+	MaxDuration pgtype.Float8 `json:"max_duration"`
+}
+
+type GetFilesByDurationRow struct {
+	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
+	Path      string      `json:"path"`
+	SizeBytes int64       `json:"size_bytes"`
+	Mime      pgtype.Text `json:"mime"`
+	Duration  float64     `json:"duration"`
+}
+
+func (q *Queries) GetFilesByDuration(ctx context.Context, arg GetFilesByDurationParams) ([]GetFilesByDurationRow, error) {
+	rows, err := q.db.Query(ctx, getFilesByDuration,
+		arg.VolumeID,
+		arg.Limit,
+		arg.Offset,
+		arg.MinDuration,
+		arg.MaxDuration,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetFilesByDurationRow{}
+	for rows.Next() {
+		var i GetFilesByDurationRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Path,
+			&i.SizeBytes,
+			&i.Mime,
+			&i.Duration,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFilesByLocation = `-- name: GetFilesByLocation :many
+SELECT f.id, f.name, f.path, f.size_bytes, f.mime,
+       (fm.raw_metadata->>'latitude')::float as latitude,
+       (fm.raw_metadata->>'longitude')::float as longitude
+FROM files f
+INNER JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1
+  AND fm.raw_metadata ? 'latitude'
+  AND fm.raw_metadata ? 'longitude'
+  AND (fm.raw_metadata->>'latitude')::float IS NOT NULL
+  AND (fm.raw_metadata->>'longitude')::float IS NOT NULL
+ORDER BY f.path
+LIMIT $2 OFFSET $3
+`
+
+type GetFilesByLocationParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+type GetFilesByLocationRow struct {
+	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
+	Path      string      `json:"path"`
+	SizeBytes int64       `json:"size_bytes"`
+	Mime      pgtype.Text `json:"mime"`
+	Latitude  float64     `json:"latitude"`
+	Longitude float64     `json:"longitude"`
+}
+
+func (q *Queries) GetFilesByLocation(ctx context.Context, arg GetFilesByLocationParams) ([]GetFilesByLocationRow, error) {
+	rows, err := q.db.Query(ctx, getFilesByLocation, arg.VolumeID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetFilesByLocationRow{}
+	for rows.Next() {
+		var i GetFilesByLocationRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Path,
+			&i.SizeBytes,
+			&i.Mime,
+			&i.Latitude,
+			&i.Longitude,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFilesByResolution = `-- name: GetFilesByResolution :many
+SELECT f.id, f.name, f.path, f.size_bytes, f.mime,
+       (fm.raw_metadata->>'width')::int as width,
+       (fm.raw_metadata->>'height')::int as height
+FROM files f
+INNER JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1
+  AND fm.raw_metadata ? 'width'
+  AND fm.raw_metadata ? 'height'
+  AND ($4::int IS NULL OR (fm.raw_metadata->>'width')::int >= $4::int)
+  AND ($5::int IS NULL OR (fm.raw_metadata->>'width')::int <= $5::int)
+  AND ($6::int IS NULL OR (fm.raw_metadata->>'height')::int >= $6::int)
+  AND ($7::int IS NULL OR (fm.raw_metadata->>'height')::int <= $7::int)
+ORDER BY f.size_bytes DESC
+LIMIT $2 OFFSET $3
+`
+
+type GetFilesByResolutionParams struct {
+	VolumeID  string      `json:"volume_id"`
+	Limit     int32       `json:"limit"`
+	Offset    int32       `json:"offset"`
+	MinWidth  pgtype.Int4 `json:"min_width"`
+	MaxWidth  pgtype.Int4 `json:"max_width"`
+	MinHeight pgtype.Int4 `json:"min_height"`
+	MaxHeight pgtype.Int4 `json:"max_height"`
+}
+
+type GetFilesByResolutionRow struct {
+	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
+	Path      string      `json:"path"`
+	SizeBytes int64       `json:"size_bytes"`
+	Mime      pgtype.Text `json:"mime"`
+	Width     int32       `json:"width"`
+	Height    int32       `json:"height"`
+}
+
+// Metadata filtering queries
+func (q *Queries) GetFilesByResolution(ctx context.Context, arg GetFilesByResolutionParams) ([]GetFilesByResolutionRow, error) {
+	rows, err := q.db.Query(ctx, getFilesByResolution,
+		arg.VolumeID,
+		arg.Limit,
+		arg.Offset,
+		arg.MinWidth,
+		arg.MaxWidth,
+		arg.MinHeight,
+		arg.MaxHeight,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetFilesByResolutionRow{}
+	for rows.Next() {
+		var i GetFilesByResolutionRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Path,
+			&i.SizeBytes,
+			&i.Mime,
+			&i.Width,
+			&i.Height,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUnenrichedFileCount = `-- name: GetUnenrichedFileCount :one
+SELECT COUNT(*)
+FROM files f
+LEFT JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1
+  AND fm.id IS NULL
+  AND (
+    f.mime LIKE 'video/%' OR
+    f.mime LIKE 'audio/%' OR
+    f.mime LIKE 'image/%' OR
+    f.extension IN ('srt', 'vtt', 'ass', 'ssa', 'sub')
+  )
+`
+
+func (q *Queries) GetUnenrichedFileCount(ctx context.Context, volumeID string) (int64, error) {
+	row := q.db.QueryRow(ctx, getUnenrichedFileCount, volumeID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getUnenrichedFiles = `-- name: GetUnenrichedFiles :many
+SELECT f.id, f.volume_id, f.path, f.name, f.mime, f.size_bytes, f.modified_at
+FROM files f
+LEFT JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1
+  AND fm.id IS NULL
+  AND (
+    f.mime LIKE 'video/%' OR
+    f.mime LIKE 'audio/%' OR
+    f.mime LIKE 'image/%' OR
+    f.extension IN ('srt', 'vtt', 'ass', 'ssa', 'sub')
+  )
+ORDER BY f.path
+LIMIT $2
+`
+
+type GetUnenrichedFilesParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
+}
+
+type GetUnenrichedFilesRow struct {
+	ID         int64              `json:"id"`
+	VolumeID   string             `json:"volume_id"`
+	Path       string             `json:"path"`
+	Name       string             `json:"name"`
+	Mime       pgtype.Text        `json:"mime"`
+	SizeBytes  int64              `json:"size_bytes"`
+	ModifiedAt pgtype.Timestamptz `json:"modified_at"`
+}
+
+// Enrichment queries
+func (q *Queries) GetUnenrichedFiles(ctx context.Context, arg GetUnenrichedFilesParams) ([]GetUnenrichedFilesRow, error) {
+	rows, err := q.db.Query(ctx, getUnenrichedFiles, arg.VolumeID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUnenrichedFilesRow{}
+	for rows.Next() {
+		var i GetUnenrichedFilesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.VolumeID,
+			&i.Path,
+			&i.Name,
+			&i.Mime,
+			&i.SizeBytes,
+			&i.ModifiedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUnenrichedFilesPaginated = `-- name: GetUnenrichedFilesPaginated :many
+SELECT f.id, f.volume_id, f.path, f.name, f.mime, f.size_bytes, f.modified_at
+FROM files f
+LEFT JOIN file_metadata fm ON f.id = fm.file_id
+WHERE f.volume_id = $1
+  AND fm.id IS NULL
+  AND (
+    f.mime LIKE 'video/%' OR
+    f.mime LIKE 'audio/%' OR
+    f.mime LIKE 'image/%' OR
+    f.extension IN ('srt', 'vtt', 'ass', 'ssa', 'sub')
+  )
+ORDER BY f.path
+LIMIT $2 OFFSET $3
+`
+
+type GetUnenrichedFilesPaginatedParams struct {
+	VolumeID string `json:"volume_id"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+type GetUnenrichedFilesPaginatedRow struct {
+	ID         int64              `json:"id"`
+	VolumeID   string             `json:"volume_id"`
+	Path       string             `json:"path"`
+	Name       string             `json:"name"`
+	Mime       pgtype.Text        `json:"mime"`
+	SizeBytes  int64              `json:"size_bytes"`
+	ModifiedAt pgtype.Timestamptz `json:"modified_at"`
+}
+
+func (q *Queries) GetUnenrichedFilesPaginated(ctx context.Context, arg GetUnenrichedFilesPaginatedParams) ([]GetUnenrichedFilesPaginatedRow, error) {
+	rows, err := q.db.Query(ctx, getUnenrichedFilesPaginated, arg.VolumeID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUnenrichedFilesPaginatedRow{}
+	for rows.Next() {
+		var i GetUnenrichedFilesPaginatedRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.VolumeID,
+			&i.Path,
+			&i.Name,
+			&i.Mime,
+			&i.SizeBytes,
+			&i.ModifiedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listFileMetadata = `-- name: ListFileMetadata :many

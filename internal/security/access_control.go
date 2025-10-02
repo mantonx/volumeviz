@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mantonx/volumeviz/internal/api/middleware"
 )
 
 // AccessControlPolicy defines access control rules for resources

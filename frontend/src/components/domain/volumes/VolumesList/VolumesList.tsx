@@ -16,10 +16,13 @@ import {
   Users,
   Download,
   ScanSearch,
+  FileText,
+  FileJson,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { VolumeCard } from '../VolumeCard';
 import { VolumeTable } from '../VolumeTable';
+import { Dropdown } from '@/components/ui/Dropdown';
 
 interface VolumesListProps {
   className?: string;
@@ -36,6 +39,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [selectedVolumeIds, setSelectedVolumeIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showScanAllConfirm, setShowScanAllConfirm] = useState(false);
   const pageSize = 25;
 
   const { volumes, pagination, isLoading, refetch, isFetching } =
@@ -44,26 +48,58 @@ export function VolumesList({ className = '' }: VolumesListProps) {
       pageSize,
     });
 
+  // Debug: Track what's causing re-renders
+  const prevVolumes = React.useRef(volumes);
+  const prevFilters = React.useRef(filters);
+  const prevOrgStats = React.useRef(orgStats);
+  const renderCount = React.useRef(0);
+
+  React.useEffect(() => {
+    renderCount.current += 1;
+    const changes: string[] = [];
+
+    if (prevVolumes.current !== volumes) {
+      changes.push(`volumes changed (${prevVolumes.current?.length} -> ${volumes?.length})`);
+    }
+    if (prevFilters.current !== filters) {
+      changes.push('filters changed');
+    }
+    if (prevOrgStats.current !== orgStats) {
+      changes.push('orgStats changed');
+    }
+
+    if (changes.length > 0) {
+      console.log(`[VolumesList] RENDER #${renderCount.current}:`, changes.join(', '));
+    }
+
+    prevVolumes.current = volumes;
+    prevFilters.current = filters;
+    prevOrgStats.current = orgStats;
+  });
+
   const { bulkScan } = useVolumeOperations();
 
-  const handleScanAll = async () => {
+  const handleScanAllClick = () => {
+    setShowScanAllConfirm(true);
+  };
+
+  const handleConfirmScanAll = async () => {
+    setShowScanAllConfirm(false);
+
     const volumeIds = volumes.map((v) => v.name).filter((name): name is string => !!name);
-    console.log('Starting bulk scan for volumes:', volumeIds);
+
     if (volumeIds.length > 0) {
       try {
         const result = await bulkScan.mutateAsync(volumeIds, { async: true, method: 'du' });
-        console.log('Bulk scan initiated:', result);
 
         // Poll for updates every 2 seconds for up to 30 seconds
         let pollCount = 0;
         const pollInterval = setInterval(() => {
           pollCount++;
-          console.log(`Refreshing data (poll ${pollCount}/15)...`);
           refetch();
 
           if (pollCount >= 15) {
             clearInterval(pollInterval);
-            console.log('Stopped polling for scan updates');
           }
         }, 2000);
       } catch (error) {
@@ -78,6 +114,63 @@ export function VolumesList({ className = '' }: VolumesListProps) {
 
   const handleFilterChange = (newFilters: Partial<typeof filters>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
+  const handleExport = async (format: 'csv' | 'json') => {
+    try {
+      // Get auth token from localStorage (correct key is 'auth_token')
+      const token = localStorage.getItem('auth_token');
+
+      if (!token) {
+        console.error('No authentication token found');
+        // TODO: Show error notification to user
+        return;
+      }
+
+      const params = new URLSearchParams();
+
+      if (filters.searchTerm) {
+        params.append('search', filters.searchTerm);
+      }
+      if (filters.status !== 'all') {
+        params.append('status', filters.status);
+      }
+      if (filters.sortBy) {
+        params.append('sort_by', filters.sortBy);
+      }
+
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+      // Add timestamp to bust cache
+      params.append('_t', Date.now().toString());
+      const url = `${baseUrl}/volumes/export/${format}?${params.toString()}`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: 'no-store', // Disable caching for exports
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Export failed (${response.status}): ${errorText}`);
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `volumes-${new Date().toISOString().slice(0, 10)}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      console.log(`Exported volumes as ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      // TODO: Show error notification to user
+    }
   };
 
   // Auto-sync organization filter
@@ -118,7 +211,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
         </div>
 
         <button
-          onClick={handleScanAll}
+          onClick={handleScanAllClick}
           disabled={bulkScan.isLoading || volumes.length === 0}
           className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:disabled:bg-gray-600"
         >
@@ -130,16 +223,29 @@ export function VolumesList({ className = '' }: VolumesListProps) {
           {bulkScan.isLoading ? 'Scanning...' : 'Scan All'}
         </button>
 
-        <button
-          onClick={() => {
-            // TODO: Implement export functionality
-            console.log('Export volumes');
-          }}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <Download className="-ml-1 mr-2 h-4 w-4" />
-          Export
-        </button>
+        <Dropdown
+          items={[
+            {
+              id: 'csv',
+              label: 'Export as CSV',
+              icon: FileText,
+              onClick: () => handleExport('csv'),
+            },
+            {
+              id: 'json',
+              label: 'Export as JSON',
+              icon: FileJson,
+              onClick: () => handleExport('json'),
+            },
+          ]}
+          trigger={
+            <button className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <Download className="-ml-1 mr-2 h-4 w-4" />
+              Export
+            </button>
+          }
+          align="right"
+        />
 
         <button
           onClick={() => refetch()}
@@ -212,6 +318,19 @@ export function VolumesList({ className = '' }: VolumesListProps) {
 
             <select
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              value={filters.orphaned ? 'orphaned' : 'all'}
+              onChange={(e) =>
+                handleFilterChange({
+                  orphaned: e.target.value === 'orphaned',
+                })
+              }
+            >
+              <option value="all">All Volumes</option>
+              <option value="orphaned">Orphaned Only</option>
+            </select>
+
+            <select
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               value={filters.sortBy}
               onChange={(e) =>
                 handleFilterChange({
@@ -227,7 +346,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
         </div>
 
         {/* Active Filters Display */}
-        {(filters.searchTerm || filters.status !== 'all') && (
+        {(filters.searchTerm || filters.status !== 'all' || filters.orphaned) && (
           <div className="mt-4 flex flex-wrap gap-2">
             {filters.searchTerm && (
               <FilterChip
@@ -239,6 +358,12 @@ export function VolumesList({ className = '' }: VolumesListProps) {
               <FilterChip
                 label={`Status: ${filters.status}`}
                 onRemove={() => handleFilterChange({ status: 'all' })}
+              />
+            )}
+            {filters.orphaned && (
+              <FilterChip
+                label="Orphaned volumes only"
+                onRemove={() => handleFilterChange({ orphaned: false })}
               />
             )}
           </div>
@@ -327,7 +452,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
       )}
 
       {/* Pagination */}
-      {pagination.total > pagination.pageSize && (
+      {pagination.total > 0 && pagination.total > pagination.pageSize && (
         <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6 rounded-lg shadow">
           <div className="flex-1 flex justify-between sm:hidden">
             <button
@@ -449,6 +574,62 @@ export function VolumesList({ className = '' }: VolumesListProps) {
                   </svg>
                 </button>
               </nav>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scan All Confirmation Modal */}
+      {showScanAllConfirm && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setShowScanAllConfirm(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Confirm Bulk Scan
+            </h3>
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                You are about to scan <span className="font-semibold">{volumes.length} volume{volumes.length !== 1 ? 's' : ''}</span> on the current page.
+              </p>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Volumes to scan:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{volumes.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Total size:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {formatBytes(volumes.reduce((sum, v) => sum + (v.size_bytes || 0), 0))}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Method:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">Progressive scan</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+                Note: Scans run in the background. You can continue working while volumes are being scanned.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowScanAllConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmScanAll}
+                disabled={bulkScan.isLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {bulkScan.isLoading ? 'Starting...' : 'Start Scan'}
+              </button>
             </div>
           </div>
         </div>

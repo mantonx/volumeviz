@@ -25,6 +25,53 @@ func (q *Queries) CancelScanJob(ctx context.Context, scanID string) error {
 	return err
 }
 
+const claimNextScanJob = `-- name: ClaimNextScanJob :one
+UPDATE scan_jobs
+SET
+    status = 'running',
+    started_at = $1,
+    updated_at = CURRENT_TIMESTAMP
+WHERE scan_id = (
+    SELECT scan_id
+    FROM scan_jobs
+    WHERE status = 'pending'
+    ORDER BY started_at ASC NULLS FIRST, scan_id ASC
+    LIMIT 1
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id
+`
+
+func (q *Queries) ClaimNextScanJob(ctx context.Context, startedAt pgtype.Timestamptz) (ScanJobs, error) {
+	row := q.db.QueryRow(ctx, claimNextScanJob, startedAt)
+	var i ScanJobs
+	err := row.Scan(
+		&i.ScanID,
+		&i.VolumeID,
+		&i.Status,
+		&i.TotalFiles,
+		&i.ScannedFiles,
+		&i.FailedFiles,
+		&i.TotalBytes,
+		&i.ScannedBytes,
+		&i.ScanRateFilesPerSec,
+		&i.ScanRateMbPerSec,
+		&i.ErrorMessage,
+		&i.ErrorDetails,
+		&i.StartedAt,
+		&i.CompletedAt,
+		&i.PausedAt,
+		&i.PauseReason,
+		&i.DurationSeconds,
+		&i.TriggeredBy,
+		&i.ScanOptions,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.OrganizationID,
+	)
+	return i, err
+}
+
 const completeScanJob = `-- name: CompleteScanJob :exec
 UPDATE scan_jobs
 SET 
@@ -325,7 +372,7 @@ func (q *Queries) GetScanJobByScanID(ctx context.Context, scanID string) (ScanJo
 
 const listScanJobs = `-- name: ListScanJobs :many
 SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs
-ORDER BY started_at DESC
+ORDER BY COALESCE(started_at, created_at) DESC NULLS LAST
 LIMIT $1 OFFSET $2
 `
 
@@ -492,7 +539,7 @@ func (q *Queries) ListScanJobsByStatus(ctx context.Context, arg ListScanJobsBySt
 const listScanJobsByVolume = `-- name: ListScanJobsByVolume :many
 SELECT scan_id, volume_id, status, total_files, scanned_files, failed_files, total_bytes, scanned_bytes, scan_rate_files_per_sec, scan_rate_mb_per_sec, error_message, error_details, started_at, completed_at, paused_at, pause_reason, duration_seconds, triggered_by, scan_options, created_at, updated_at, organization_id FROM scan_jobs
 WHERE volume_id = $1
-ORDER BY started_at DESC
+ORDER BY started_at DESC NULLS LAST
 LIMIT $2 OFFSET $3
 `
 
@@ -607,9 +654,40 @@ func (q *Queries) ListScanJobsByVolumeAndOrganization(ctx context.Context, arg L
 	return items, nil
 }
 
+const markInFlightJobsAsFailed = `-- name: MarkInFlightJobsAsFailed :many
+UPDATE scan_jobs
+SET
+    status = 'failed',
+    error_message = $1,
+    completed_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
+WHERE status IN ('running', 'pending')
+RETURNING scan_id
+`
+
+func (q *Queries) MarkInFlightJobsAsFailed(ctx context.Context, errorMessage pgtype.Text) ([]string, error) {
+	rows, err := q.db.Query(ctx, markInFlightJobsAsFailed, errorMessage)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var scan_id string
+		if err := rows.Scan(&scan_id); err != nil {
+			return nil, err
+		}
+		items = append(items, scan_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markInFlightJobsAsPaused = `-- name: MarkInFlightJobsAsPaused :many
 UPDATE scan_jobs
-SET 
+SET
     status = 'paused',
     error_message = $1,
     updated_at = CURRENT_TIMESTAMP
@@ -639,14 +717,13 @@ func (q *Queries) MarkInFlightJobsAsPaused(ctx context.Context, errorMessage pgt
 
 const markStaleScanJobsAsFailed = `-- name: MarkStaleScanJobsAsFailed :many
 UPDATE scan_jobs
-SET 
+SET
     status = 'failed',
-    error_message = 'Scan job marked as stale after timeout',
+    error_message = 'Scan job marked as stale after timeout (no heartbeat)',
     completed_at = CURRENT_TIMESTAMP,
     updated_at = CURRENT_TIMESTAMP
 WHERE status = 'running'
-  AND started_at < (CURRENT_TIMESTAMP - INTERVAL '1 second' * $1)
-  AND started_at IS NOT NULL
+  AND updated_at < (CURRENT_TIMESTAMP - INTERVAL '1 second' * $1)
 RETURNING scan_id
 `
 
@@ -668,6 +745,17 @@ func (q *Queries) MarkStaleScanJobsAsFailed(ctx context.Context, dollar_1 interf
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateScanJobHeartbeat = `-- name: UpdateScanJobHeartbeat :exec
+UPDATE scan_jobs
+SET updated_at = CURRENT_TIMESTAMP
+WHERE scan_id = $1
+`
+
+func (q *Queries) UpdateScanJobHeartbeat(ctx context.Context, scanID string) error {
+	_, err := q.db.Exec(ctx, updateScanJobHeartbeat, scanID)
+	return err
 }
 
 const updateScanJobProgress = `-- name: UpdateScanJobProgress :exec

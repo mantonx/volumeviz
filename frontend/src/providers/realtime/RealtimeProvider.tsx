@@ -521,12 +521,35 @@ export function RealtimeProvider({
   const [, updateScanProgress] = useAtom(updateScanProgressAtom);
   const [, addCapacityAlert] = useAtom(addCapacityAlertAtom);
 
+  // Get JWT token from localStorage and append to WebSocket URL
+  const authenticatedWebSocketUrl = React.useMemo(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      logger.warn('[RealtimeProvider] No auth token found in localStorage');
+      return websocketUrl;
+    }
+
+    // Append token as query parameter
+    const separator = websocketUrl.includes('?') ? '&' : '?';
+    const urlWithToken = `${websocketUrl}${separator}token=${encodeURIComponent(token)}`;
+    logger.debug('[RealtimeProvider] WebSocket URL with auth token prepared');
+    return urlWithToken;
+  }, [websocketUrl]);
+
+  // Debug: Track renders
+  const renderCount = React.useRef(0);
+  React.useEffect(() => {
+    renderCount.current += 1;
+    console.log('[RealtimeProvider] RENDER COUNT:', renderCount.current);
+  });
+
   logger.debug(
     '[RealtimeProvider] Initializing with WebSocket URL:',
     websocketUrl,
   );
 
   // Memoize message handlers to prevent recreating on every render
+  // Note: Jotai atom setters are stable and don't need to be in dependencies
   const messageHandlers = React.useMemo(
     () =>
       createVolumeVizMessageHandlers(
@@ -537,25 +560,19 @@ export function RealtimeProvider({
         updateScanProgress,
         addCapacityAlert,
       ),
-    [
-      addHistoricalUpdate,
-      updateSystemStatistics,
-      updateSystemHealth,
-      addErrorEvent,
-      updateScanProgress,
-      addCapacityAlert,
-    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   const config: WebSocketConfig = React.useMemo(
     () => ({
-      url: websocketUrl,
+      url: authenticatedWebSocketUrl,
       shouldReconnect: true,
       reconnectInterval: 3000,
       reconnectAttempts: 10,
       messageHandlers,
     }),
-    [websocketUrl, messageHandlers],
+    [authenticatedWebSocketUrl, messageHandlers],
   );
 
   return (

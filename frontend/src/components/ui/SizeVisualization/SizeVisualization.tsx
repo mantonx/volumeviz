@@ -4,24 +4,7 @@
  */
 
 import React from 'react';
-import { cn } from '@/utils';
-
-interface SizeVisualizationProps {
-  sizeBytes: number;
-  maxSizeBytes?: number;
-  showLabel?: boolean;
-  showPercentage?: boolean;
-  className?: string;
-  compact?: boolean;
-}
-
-export const formatBytes = (bytes?: number): string => {
-  if (bytes === undefined || bytes === null) return '—';
-  if (bytes === 0) return '0 B';
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
-};
+import { cn, formatBytes } from '@/utils';
 
 const getSizeColor = (percentage: number): string => {
   if (percentage < 30) return 'bg-green-500';

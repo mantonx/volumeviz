@@ -83,9 +83,23 @@ type Router struct {
 
 // NewRouter creates a new v1 API router
 func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store, config *config.Config) *Router {
-	// Create realtime service
-	realtimeService := realtime.NewRealtimeService(storeInstance)
-	
+	// Initialize JWT manager early if auth is enabled (needed for WebSocket authentication)
+	var jwtManager *authUtils.JWTManager
+	if config.Auth.Enabled && config.Auth.Secret != "" {
+		jwtConfig := &authUtils.JWTConfig{
+			AccessSecret:      config.Auth.Secret,
+			RefreshSecret:     "", // Will use access secret
+			AccessExpiration:  15 * time.Minute,
+			RefreshExpiration: 7 * 24 * time.Hour,
+			Issuer:            "volumeviz",
+		}
+		jwtManager = authUtils.NewJWTManager(jwtConfig)
+		log.Printf("[INFO] JWT manager initialized successfully")
+	}
+
+	// Create realtime service with JWT manager for authenticated WebSockets
+	realtimeService := realtime.NewRealtimeService(storeInstance, jwtManager)
+
 	// Create progress broadcaster for real-time updates
 	progressBroadcaster := realtime.NewBroadcaster(realtimeService, storeInstance)
 
@@ -243,6 +257,12 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 				scanScheduler = sch
 				log.Printf("[INFO] Scan scheduler initialized successfully")
 
+				// Set enrichment manager on scheduler if available
+				if enrichmentManager != nil {
+					sch.SetEnrichmentManager(enrichmentManager)
+					log.Printf("[INFO] Media enrichment manager integrated with scan scheduler")
+				}
+
 				// Auto-start the scheduler
 				ctx := context.Background()
 				if err := sch.Start(ctx); err != nil {
@@ -326,20 +346,6 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 	// Initialize organization service
 	organizationService := organizationsService.NewService(queries, auditLogger)
 	log.Printf("[INFO] Organization service initialized successfully")
-
-	// Initialize JWT manager if auth is enabled
-	var jwtManager *authUtils.JWTManager
-	if config.Auth.Enabled && config.Auth.Secret != "" {
-		jwtConfig := &authUtils.JWTConfig{
-			AccessSecret:      config.Auth.Secret,
-			RefreshSecret:     "", // Will use access secret
-			AccessExpiration:  15 * time.Minute,
-			RefreshExpiration: 7 * 24 * time.Hour,
-			Issuer:            "volumeviz",
-		}
-		jwtManager = authUtils.NewJWTManager(jwtConfig)
-		log.Printf("[INFO] JWT manager initialized successfully")
-	}
 
 	// Initialize tracking rules repository and services
 	// For now, we'll create placeholder services since we need proper database connection setup
@@ -521,6 +527,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 		"/api/v1/auth/password/reset",
 		"/api/v1/auth/refresh",
 		"/api/v1/auth/csrf",
+		"/api/v1/ws", // WebSocket endpoint handles its own authentication
 	}
 	r.engine.Use(middleware.AuthMiddleware(authConfig))
 }

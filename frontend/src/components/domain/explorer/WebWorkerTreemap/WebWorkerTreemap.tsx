@@ -8,7 +8,7 @@ import React, {
 import { Loader2, Zap, AlertCircle, RefreshCw } from 'lucide-react';
 import { useTreemapWorker } from '@/hooks/useWebWorker';
 import { useAdaptiveTreemap } from '@/hooks/useAdaptiveLoading';
-import { cn } from '@/utils/class-names/cn';
+import { cn, formatBytes } from '@/utils';
 
 export interface TreemapNode {
   id: string;
@@ -240,13 +240,7 @@ export const WebWorkerTreemap: React.FC<WebWorkerTreemapProps> = ({
     [onNodeClick],
   );
 
-  // Format file size for display
-  const formatBytes = useCallback((bytes: number): string => {
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes === 0) return '0 B';
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${Math.round((bytes / Math.pow(1024, i)) * 100) / 100} ${sizes[i]}`;
-  }, []);
+  // formatBytes is now imported from @/utils
 
   // Memoize the SVG elements for performance
   const rectElements = useMemo(() => {

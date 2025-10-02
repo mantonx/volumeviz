@@ -1,4 +1,6 @@
 import { selectedVolumeAtom } from '@/atoms/volumes';
+import { ScanProgressDetail } from '@/components/domain/scan/ScanProgressDetail';
+import { Dropdown } from '@/components/ui/Dropdown';
 import { useVolumeOperations } from '@/hooks/api/useVolumeOperations';
 import { useVolumeBulkActions } from '@/hooks/volumes/useVolumeBulkActions';
 import { formatBytes } from '@/utils/formatters';
@@ -13,11 +15,15 @@ import {
   Clock,
   HardDrive,
   MoreVertical,
+  ScanSearch,
+  Info,
+  Trash2,
 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import { VolumeTableProps } from './VolumeTable.types';
 
-export const VolumeTable: React.FC<VolumeTableProps> = ({
+export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
   volumes,
   isLoading,
   onVolumeSelect,
@@ -51,7 +57,8 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
     if (selectedVolumeIds.length === volumes.length) {
       onSelectionChange?.([]);
     } else {
-      onSelectionChange?.(volumes.map((v) => v.id));
+      // Use volume.name as unique identifier (API doesn't return 'id')
+      onSelectionChange?.(volumes.map((v) => v.name));
     }
   };
 
@@ -63,7 +70,8 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
   };
 
   const handleRowClick = (volume: any) => {
-    setSelectedVolume(volume.id);
+    // Use volume.name as the unique identifier since API doesn't return 'id'
+    setSelectedVolume(volume.name || volume.id);
     onVolumeSelect?.(volume);
   };
 
@@ -212,27 +220,29 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {volumes.map((volume) => {
-              const isSelected = selectedVolumeIds.includes(volume.id);
-              const isExpanded = expandedRows.has(volume.id);
+            {volumes.flatMap((volume) => {
+              // Use volume.name as unique identifier (API doesn't return 'id')
+              const volumeId = volume.name;
+              const isSelected = selectedVolumeIds.includes(volumeId);
+              const isExpanded = expandedRows.has(volumeId);
               const sizePercentage = volume.quota_bytes
                 ? Math.min((volume.size_bytes / volume.quota_bytes) * 100, 100)
                 : 0;
 
-              return (
-                <React.Fragment key={volume.id}>
-                  <tr
-                    className={cn(
-                      'hover:bg-gray-50 cursor-pointer',
-                      isSelected && 'bg-blue-50',
-                    )}
-                  >
+              const rows = [
+                <tr
+                  key={`row-${volumeId}`}
+                  className={cn(
+                    'hover:bg-gray-50 cursor-pointer',
+                    isSelected && 'bg-blue-50',
+                  )}
+                >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         checked={isSelected}
-                        onChange={() => handleRowSelect(volume.id)}
+                        onChange={() => handleRowSelect(volumeId)}
                         onClick={(e) => e.stopPropagation()}
                       />
                     </td>
@@ -245,7 +255,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleExpanded(volume.id);
+                            toggleExpanded(volumeId);
                           }}
                           className="mr-2 p-1 hover:bg-gray-200 rounded"
                         >
@@ -293,8 +303,24 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
                       )}
                     </td>
 
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic">
-                      {volume.file_count ? volume.file_count.toLocaleString() : 'Not scanned'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {volume.scan_status === 'running' || volume.scan_status === 'pending' ? (
+                        <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                          <Activity className="w-3.5 h-3.5 animate-pulse" />
+                          <span>Scanning...</span>
+                        </span>
+                      ) : volume.file_count !== null && volume.file_count !== undefined ? (
+                        <div className="text-gray-900 dark:text-white">
+                          <div className="font-medium">{volume.file_count.toLocaleString()} files</div>
+                          {volume.last_scan_at && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              {formatDistanceToNow(new Date(volume.last_scan_at), { addSuffix: true })}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-500 italic">Not scanned</span>
+                      )}
                     </td>
 
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -308,74 +334,54 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
                     </td>
 
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        className="text-gray-400 hover:text-gray-600 p-1 rounded"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Dropdown
+                          items={[
+                            {
+                              id: 'scan',
+                              label: 'Scan Volume',
+                              icon: ScanSearch,
+                              onClick: () => scanVolume.mutate({ volumeId: volumeId }),
+                              disabled: volume.scan_status === 'running',
+                            },
+                            {
+                              id: 'details',
+                              label: 'View Details',
+                              icon: Info,
+                              onClick: () => handleRowClick(volume),
+                            },
+                            {
+                              id: 'delete',
+                              label: 'Delete Volume',
+                              icon: Trash2,
+                              onClick: () => {
+                                // TODO: Add delete confirmation modal
+                                console.log('Delete volume:', volumeId);
+                              },
+                              destructive: true,
+                            },
+                          ]}
+                          trigger={<MoreVertical className="w-4 h-4" />}
+                          align="right"
+                        />
+                      </div>
                     </td>
-                  </tr>
+                  </tr>,
+              ];
 
-                  {/* Expanded Row */}
-                  {isExpanded && (
-                    <tr>
-                      <td colSpan={8} className="px-6 py-4 bg-gray-50">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <span className="font-medium text-gray-700">
-                              Created:
-                            </span>
-                            <div className="text-gray-600">
-                              {new Date(volume.created_at).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-700">
-                              Updated:
-                            </span>
-                            <div className="text-gray-600">
-                              {new Date(volume.updated_at).toLocaleDateString()}
-                            </div>
-                          </div>
-                          {volume.quota_bytes && (
-                            <div>
-                              <span className="font-medium text-gray-700">
-                                Usage:
-                              </span>
-                              <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className={cn(
-                                    'h-2 rounded-full',
-                                    sizePercentage > 90
-                                      ? 'bg-red-500'
-                                      : sizePercentage > 75
-                                        ? 'bg-yellow-500'
-                                        : 'bg-blue-500',
-                                  )}
-                                  style={{
-                                    width: `${Math.min(sizePercentage, 100)}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                          {volume.error_message && (
-                            <div>
-                              <span className="font-medium text-red-700">
-                                Error:
-                              </span>
-                              <div className="text-red-600 text-xs">
-                                {volume.error_message}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              );
+              // Add expanded row if needed
+              if (isExpanded) {
+                rows.push(
+                  <ExpandedVolumeRow
+                    key={`expanded-${volumeId}`}
+                    volume={volume}
+                    volumeId={volumeId}
+                    sizePercentage={sizePercentage}
+                  />
+                );
+              }
+
+              return rows;
             })}
           </tbody>
         </table>
@@ -395,4 +401,86 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
       )}
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent re-render on volume scan progress updates
+  // Only re-render if volumes array length changes or if non-scan-progress fields change
+  if (prevProps.volumes.length !== nextProps.volumes.length) return false;
+  if (prevProps.isLoading !== nextProps.isLoading) return false;
+  if (prevProps.selectedVolumeIds.length !== nextProps.selectedVolumeIds.length) return false;
+  if (JSON.stringify(prevProps.selectedVolumeIds) !== JSON.stringify(nextProps.selectedVolumeIds)) return false;
+
+  // Check if non-progress volume fields changed
+  for (let i = 0; i < prevProps.volumes.length; i++) {
+    const prev = prevProps.volumes[i];
+    const next = nextProps.volumes[i];
+
+    // Only check fields that aren't scan progress related
+    if (prev.name !== next.name ||
+        prev.status !== next.status ||
+        prev.size_bytes !== next.size_bytes ||
+        prev.file_count !== next.file_count) {
+      return false;
+    }
+  }
+
+  return true; // Props are equal, skip re-render
+});
+
+// Separate memoized component for expanded row to isolate WebSocket updates
+const ExpandedVolumeRow = React.memo<{
+  volume: any;
+  volumeId: string;
+  sizePercentage: number;
+}>(({ volume, volumeId, sizePercentage }) => {
+  return (
+    <tr>
+      <td colSpan={8} className="px-6 py-4 bg-gray-50">
+        {/* Scan Progress Detail - shows if volume is actively scanning */}
+        <ScanProgressDetail volumeId={volumeId} volumeName={volume.name} className="mb-4" />
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <span className="font-medium text-gray-700">Created:</span>
+            <div className="text-gray-600">
+              {new Date(volume.created_at).toLocaleDateString()}
+            </div>
+          </div>
+          <div>
+            <span className="font-medium text-gray-700">Updated:</span>
+            <div className="text-gray-600">
+              {volume.updated_at
+                ? new Date(volume.updated_at).toLocaleDateString()
+                : '—'}
+            </div>
+          </div>
+          {volume.quota_bytes && (
+            <div>
+              <span className="font-medium text-gray-700">Usage:</span>
+              <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={cn(
+                    'h-2 rounded-full',
+                    sizePercentage > 90
+                      ? 'bg-red-500'
+                      : sizePercentage > 75
+                        ? 'bg-yellow-500'
+                        : 'bg-blue-500',
+                  )}
+                  style={{
+                    width: `${Math.min(sizePercentage, 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          {volume.error_message && (
+            <div>
+              <span className="font-medium text-red-700">Error:</span>
+              <div className="text-red-600 text-xs">{volume.error_message}</div>
+            </div>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+});

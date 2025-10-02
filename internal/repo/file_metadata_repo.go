@@ -157,24 +157,64 @@ func (r *FileMetadataRepo) BulkSaveMetadata(ctx context.Context, results []model
 
 // GetUnenrichedFiles returns files that need enrichment
 func (r *FileMetadataRepo) GetUnenrichedFiles(ctx context.Context, volumeID string, limit int) ([]models.FileInfo, error) {
-	// Temporarily simplified - unenriched file detection not supported in new schema
-	// TODO: Implement query to find files without metadata
-	// log.Printf("GetUnenrichedFiles requested for volume %s, limit %d (simplified)", volumeID, limit)
-	return []models.FileInfo{}, nil
+	rows, err := r.queries.GetUnenrichedFiles(ctx, sqlc.GetUnenrichedFilesParams{
+		VolumeID: volumeID,
+		Limit:    int32(limit),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get unenriched files: %w", err)
+	}
+
+	// Convert to FileInfo models
+	files := make([]models.FileInfo, 0, len(rows))
+	for _, row := range rows {
+		files = append(files, models.FileInfo{
+			ID:       row.ID,
+			VolumeID: row.VolumeID,
+			Path:     row.Path,
+			Name:     row.Name,
+			MimeType: row.Mime.String,
+			Size:     row.SizeBytes,
+		})
+	}
+
+	return files, nil
 }
 
 // GetUnenrichedFilesPaginated returns files that need enrichment with pagination
 func (r *FileMetadataRepo) GetUnenrichedFilesPaginated(ctx context.Context, volumeID string, limit int, offset int64) ([]models.FileInfo, error) {
-	// Temporarily simplified - query not available in new schema
-	// TODO: Implement query to find files without metadata with pagination
-	return []models.FileInfo{}, nil
+	rows, err := r.queries.GetUnenrichedFilesPaginated(ctx, sqlc.GetUnenrichedFilesPaginatedParams{
+		VolumeID: volumeID,
+		Limit:    int32(limit),
+		Offset:   int32(offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get unenriched files paginated: %w", err)
+	}
+
+	// Convert to FileInfo models
+	files := make([]models.FileInfo, 0, len(rows))
+	for _, row := range rows {
+		files = append(files, models.FileInfo{
+			ID:       row.ID,
+			VolumeID: row.VolumeID,
+			Path:     row.Path,
+			Name:     row.Name,
+			MimeType: row.Mime.String,
+			Size:     row.SizeBytes,
+		})
+	}
+
+	return files, nil
 }
 
 // GetUnenrichedFileCount returns total count of files that need enrichment
 func (r *FileMetadataRepo) GetUnenrichedFileCount(ctx context.Context, volumeID string) (int64, error) {
-	// Temporarily simplified - query not available in new schema
-	// TODO: Implement query to count files without metadata
-	return 0, nil
+	count, err := r.queries.GetUnenrichedFileCount(ctx, volumeID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get unenriched file count: %w", err)
+	}
+	return count, nil
 }
 
 // GetEnrichmentProgress returns enrichment progress for a volume

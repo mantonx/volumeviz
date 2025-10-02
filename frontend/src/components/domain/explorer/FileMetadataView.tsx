@@ -7,6 +7,7 @@
 
 import { CalendarIcon, FileIcon, HardDriveIcon } from 'lucide-react';
 import React from 'react';
+import { formatBytes } from '@/utils';
 
 interface FileMetadataViewProps {
   file: any;
@@ -27,13 +28,7 @@ export const FileMetadataView: React.FC<FileMetadataViewProps> = ({
     );
   }
 
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  // formatBytes is now imported from @/utils
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();

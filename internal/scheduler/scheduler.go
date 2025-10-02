@@ -19,11 +19,12 @@ import (
 
 // Scheduler implements the ScanScheduler interface with hardened scan orchestration
 type Scheduler struct {
-	config           *SchedulerConfig
-	scanner          interfaces.VolumeScanner
-	repository       ScanRepository
-	volumeProvider   VolumeProvider
-	metricsCollector interfaces.MetricsCollector
+	config              *SchedulerConfig
+	scanner             interfaces.VolumeScanner
+	repository          ScanRepository
+	volumeProvider      VolumeProvider
+	metricsCollector    interfaces.MetricsCollector
+	enrichmentManager   interfaces.EnrichmentManager
 	// Enhanced store integration for atomic operations
 	store               store.Store
 	progressBroadcaster realtime.BroadcasterInterface
@@ -136,6 +137,11 @@ func NewScheduler(
 	}
 
 	return scheduler, nil
+}
+
+// SetEnrichmentManager sets the enrichment manager for media enrichment phase
+func (s *Scheduler) SetEnrichmentManager(manager interfaces.EnrichmentManager) {
+	s.enrichmentManager = manager
 }
 
 // Start starts the scan scheduler
@@ -409,7 +415,7 @@ func (s *Scheduler) EnqueueVolume(volumeName string) (string, error) {
 			ScanID:         scanID,
 			VolumeID:       volumeName,
 			OrganizationID: organizationID,
-			Status:         "queued",
+			Status:         "pending",
 			Method:         s.selectScanMethod(),
 		}
 
@@ -622,7 +628,7 @@ func (s *Scheduler) broadcastAllScansProgress() {
 						// Scan data might not be available yet - this is normal
 						return
 					}
-					log.Printf("[DEBUG] Failed to broadcast progress for scan %s (status: %s): %v", scanID, status, err)
+					log.Printf("[WARN] Failed to broadcast progress for scan %s (status: %s): %v", scanID, status, err)
 				}
 			}(scanJob.ScanID, scanJob.VolumeID, scanJob.Status)
 		}
@@ -636,10 +642,8 @@ func (s *Scheduler) broadcastVolumeStates() {
 		return
 	}
 
-	// For now, we just log that we would broadcast volume state updates
-	// The actual volume refresh can be handled by the frontend fetching latest data
+	// For now, volume state updates are handled by the frontend fetching latest data
 	// when receiving the continuous progress updates from broadcastAllScansProgress
-	log.Printf("[DEBUG] Periodic volume state check completed")
 }
 
 // runScheduledScan performs a scheduled scan of all volumes
@@ -911,8 +915,22 @@ func (w *worker) processClaimedScanJob(scanJob *models.ScanJob) {
 				log.Printf("[INFO] Worker %d triggered filesystem indexing for scan %s", w.id, scanJob.ScanID)
 			}
 
-			// Note: media_enrichment phase should be completed by
-			// the enrichment manager when it actually completes its work
+			// Trigger media enrichment phase (will wait for filesystem indexing to complete)
+			if w.scheduler.enrichmentManager != nil {
+				go func(scanID, volumeID string) {
+					if err := w.scheduler.enrichmentManager.EnrichVolumeWithScanID(context.Background(), volumeID, scanID); err != nil {
+						log.Printf("[ERROR] Worker failed to trigger media enrichment for scan %s: %v", scanID, err)
+						// Update media_enrichment phase as failed
+						if failErr := w.scheduler.store.ScanProgress().FailScanPhase(context.Background(), scanID, "media_enrichment", err.Error()); failErr != nil {
+							log.Printf("[ERROR] Worker failed to mark media_enrichment phase as failed for scan %s: %v", scanID, failErr)
+						}
+					} else {
+						log.Printf("[INFO] Worker triggered media enrichment for scan %s", scanID)
+					}
+				}(scanJob.ScanID, scanJob.VolumeID)
+			} else {
+				log.Printf("[WARN] Worker %d: enrichment manager not available, skipping media enrichment for scan %s", w.id, scanJob.ScanID)
+			}
 		}
 
 		// Don't mark scan job as completed here - let it complete naturally
@@ -986,8 +1004,6 @@ func (w *worker) runHeartbeat(ctx context.Context, scanID string) {
 					}
 				}
 			}
-
-			log.Printf("[DEBUG] Worker %d sent heartbeat for scan %s (progress: %d%%)", w.id, scanID, progress)
 		case <-ctx.Done():
 			return
 		}

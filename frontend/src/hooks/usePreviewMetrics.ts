@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { formatBytes } from '@/utils';
 
 export interface PreviewMetrics {
   totalRequests: number;
@@ -153,14 +154,7 @@ export function usePreviewMetrics() {
     return (metrics.failedRequests / metrics.totalRequests) * 100;
   }, [metrics.totalRequests, metrics.failedRequests]);
 
-  // Format bytes for display
-  const formatBytes = useCallback((bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  }, []);
+  // formatBytes is now imported from @/utils
 
   // Get formatted metrics for display
   const getFormattedMetrics = useCallback(() => {

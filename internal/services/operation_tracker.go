@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"volumeviz/internal/models"
+	"github.com/mantonx/volumeviz/internal/models"
 )
 
 // OperationTracker manages file operation tracking and rollback

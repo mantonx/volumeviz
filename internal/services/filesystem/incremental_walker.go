@@ -3,6 +3,7 @@ package filesystem
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,38 +34,54 @@ func NewIncrementalWalker(indexer *FilesystemIndexer, volumeID string) *Incremen
 
 // Walk performs incremental filesystem walk with sub-phase progress reporting
 func (w *IncrementalWalker) Walk(ctx context.Context, mountpoint string, scanID string) error {
+	log.Printf("[WALKER] Starting Walk for volume %s (scanID: %s, mountpoint: %s)", w.volumeID, scanID, mountpoint)
+
 	// Phase 1: Preparation (0-10%)
+	log.Printf("[WALKER] Phase 1: Starting preparation phase")
 	if err := w.preparationPhase(ctx, mountpoint, scanID); err != nil {
+		log.Printf("[WALKER] Phase 1 FAILED: %v", err)
 		return fmt.Errorf("preparation phase failed: %w", err)
 	}
+	log.Printf("[WALKER] Phase 1: Preparation complete")
 
 	// Phase 2: Database Reconciliation (10-60%)
+	log.Printf("[WALKER] Phase 2: Starting database reconciliation")
 	if err := w.databaseReconciliationPhase(ctx, mountpoint, scanID); err != nil {
+		log.Printf("[WALKER] Phase 2 FAILED: %v", err)
 		return fmt.Errorf("database reconciliation phase failed: %w", err)
 	}
+	log.Printf("[WALKER] Phase 2: Database reconciliation complete")
 
 	// Phase 3: Filesystem Walking (60-100%)
+	log.Printf("[WALKER] Phase 3: Starting filesystem walking")
 	if err := w.filesystemWalkingPhase(ctx, mountpoint, scanID); err != nil {
+		log.Printf("[WALKER] Phase 3 FAILED: %v", err)
 		return fmt.Errorf("filesystem walking phase failed: %w", err)
 	}
+	log.Printf("[WALKER] Phase 3: Filesystem walking complete")
 
+	log.Printf("[WALKER] Walk completed successfully for volume %s", w.volumeID)
 	return nil
 }
 
 // preparationPhase handles initial setup and file counting
 func (w *IncrementalWalker) preparationPhase(ctx context.Context, mountpoint string, scanID string) error {
+	log.Printf("[WALKER] Preparation: Counting files in %s", mountpoint)
 	w.updateSubPhase(scanID, "preparation", 0, "Counting files and directories...")
 
 	// Count files for progress baseline
 	totalFiles, totalFolders, err := w.countFilesAndFolders(ctx, mountpoint)
 	if err != nil {
 		if err == context.DeadlineExceeded {
+			log.Printf("[WALKER] Preparation: File counting timed out - using dynamic progress tracking")
 			fmt.Printf("File counting timed out - will use dynamic progress tracking\n")
 			totalFiles, totalFolders = 0, 0
 		} else {
+			log.Printf("[WALKER] Preparation: Failed to count files: %v", err)
 			return fmt.Errorf("failed to count files: %w", err)
 		}
 	}
+	log.Printf("[WALKER] Preparation: Counted %d files and %d folders", totalFiles, totalFolders)
 
 	// Initialize progress tracking
 	w.initializeProgress(scanID, totalFiles, totalFolders)
@@ -72,8 +89,11 @@ func (w *IncrementalWalker) preparationPhase(ctx context.Context, mountpoint str
 	w.updateSubPhase(scanID, "preparation", 50, "Preparing database connections...")
 
 	// Create skip pattern matcher
+	log.Printf("[WALKER] Preparation: Creating skip pattern matcher (SkipHidden=%v, %d patterns)",
+		w.indexer.config.SkipHidden, len(w.indexer.config.SkipPatterns))
 	skipMatcher, err := NewSkipPatternMatcher(w.indexer.config.SkipPatterns, w.indexer.config.SkipHidden)
 	if err != nil {
+		log.Printf("[WALKER] Preparation: Failed to create skip matcher: %v", err)
 		return fmt.Errorf("failed to create skip pattern matcher: %w", err)
 	}
 	w.skipMatcher = skipMatcher
@@ -177,24 +197,43 @@ func (w *IncrementalWalker) databaseReconciliationPhase(ctx context.Context, mou
 
 // filesystemWalkingPhase handles the actual filesystem traversal and indexing
 func (w *IncrementalWalker) filesystemWalkingPhase(ctx context.Context, mountpoint string, scanID string) error {
+	log.Printf("[WALKER] Filesystem Walking: Starting walk of %s", mountpoint)
 	w.updateSubPhase(scanID, "filesystem_walking", 0, "Starting filesystem scan...")
 
-	return filepath.Walk(mountpoint, func(path string, info os.FileInfo, err error) error {
+	itemCount := 0
+	skippedCount := 0
+	folderCount := 0
+	fileCount := 0
+
+	err := filepath.Walk(mountpoint, func(path string, info os.FileInfo, err error) error {
+		itemCount++
+
+		// Log first few items for debugging
+		if itemCount <= 5 {
+			log.Printf("[WALKER] Walk callback #%d: path=%s, isDir=%v", itemCount, path, info != nil && info.IsDir())
+		}
+
 		// Check for cancellation
 		select {
 		case <-ctx.Done():
+			log.Printf("[WALKER] Walk cancelled by context after processing %d items", itemCount)
 			return ctx.Err()
 		default:
 		}
 
 		// Handle walk errors
 		if err != nil {
+			log.Printf("[WALKER] Walk error for %s: %v", path, err)
 			w.indexer.recordError(w.volumeID, fmt.Sprintf("walk error for %s: %v", path, err))
 			return nil
 		}
 
 		// Check skip rules
 		if w.skipMatcher != nil && w.skipMatcher.ShouldSkip(path, info) {
+			skippedCount++
+			if skippedCount <= 5 {
+				log.Printf("[WALKER] Skipping %s (rule matched)", path)
+			}
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
@@ -204,6 +243,10 @@ func (w *IncrementalWalker) filesystemWalkingPhase(ctx context.Context, mountpoi
 		// Check depth limits
 		depth := strings.Count(strings.TrimPrefix(path, mountpoint), string(os.PathSeparator))
 		if depth > w.indexer.config.MaxDepth {
+			if skippedCount <= 5 {
+				log.Printf("[WALKER] Skipping %s (max depth %d exceeded)", path, w.indexer.config.MaxDepth)
+			}
+			skippedCount++
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
@@ -215,11 +258,24 @@ func (w *IncrementalWalker) filesystemWalkingPhase(ctx context.Context, mountpoi
 
 		// Process based on type
 		if info.IsDir() {
+			folderCount++
+			if folderCount <= 5 {
+				log.Printf("[WALKER] Processing folder: %s", path)
+			}
 			return w.processFolder(ctx, path, info, depth)
 		} else {
+			fileCount++
+			if fileCount <= 5 {
+				log.Printf("[WALKER] Processing file: %s", path)
+			}
 			return w.processFile(ctx, path, info, depth, scanID)
 		}
 	})
+
+	log.Printf("[WALKER] Filesystem Walking: Walk completed - %d items visited, %d skipped, %d folders, %d files",
+		itemCount, skippedCount, folderCount, fileCount)
+
+	return err
 }
 
 // updateSubPhase updates sub-phase progress and operation description
@@ -294,6 +350,7 @@ func (w *IncrementalWalker) processFolder(ctx context.Context, path string, info
 			err = w.indexer.store.Folders().UpdateFolderMetadata(ctx, existing.ID,
 				folderParams.Mtime, folderParams.Ctime, folderParams.Uid, folderParams.Gid, folderParams.Mode)
 			if err != nil {
+				log.Printf("[WALKER] Failed to update folder %s: %v", path, err)
 				w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to update folder %s: %v", path, err))
 			}
 		}
@@ -302,10 +359,12 @@ func (w *IncrementalWalker) processFolder(ctx context.Context, path string, info
 		return nil
 	}
 
-	// Create new folder
-	folder, err := w.indexer.store.Folders().CreateFolder(ctx, folderParams)
+	// Create or update folder (use upsert to handle concurrent scans)
+	folder, err := w.indexer.store.Folders().UpsertFolder(ctx, folderParams)
 	if err != nil {
-		w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to create folder %s: %v", path, err))
+		log.Printf("[WALKER] Failed to upsert folder %s: %v", path, err)
+		log.Printf("[WALKER] Folder params - Name: %q, Path: %q", folderParams.Name, folderParams.Path)
+		w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to upsert folder %s: %v", path, err))
 		return nil
 	}
 
@@ -319,6 +378,7 @@ func (w *IncrementalWalker) processFile(ctx context.Context, path string, info o
 	folderPath := filepath.Dir(path)
 	folder, exists := w.folderCache[folderPath]
 	if !exists {
+		log.Printf("[WALKER] Parent folder not found for file %s (folderPath: %s)", path, folderPath)
 		w.indexer.recordError(w.volumeID, fmt.Sprintf("parent folder not found for file %s", path))
 		return nil
 	}
@@ -334,6 +394,7 @@ func (w *IncrementalWalker) processFile(ctx context.Context, path string, info o
 				fileParams.Mtime, fileParams.Ctime, fileParams.Birthtime,
 				fileParams.Uid, fileParams.Gid, fileParams.Mode)
 			if err != nil {
+				log.Printf("[WALKER] Failed to update file %s: %v", path, err)
 				w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to update file %s: %v", path, err))
 			}
 		}
@@ -342,10 +403,11 @@ func (w *IncrementalWalker) processFile(ctx context.Context, path string, info o
 		return nil
 	}
 
-	// Create new file
-	file, err := w.indexer.store.Files().CreateFile(ctx, fileParams)
+	// Create or update file (use upsert to handle concurrent scans)
+	file, err := w.indexer.store.Files().UpsertFile(ctx, fileParams)
 	if err != nil {
-		w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to create file %s: %v", path, err))
+		log.Printf("[WALKER] Failed to upsert file %s: %v", path, err)
+		w.indexer.recordError(w.volumeID, fmt.Sprintf("failed to upsert file %s: %v", path, err))
 		return nil
 	}
 

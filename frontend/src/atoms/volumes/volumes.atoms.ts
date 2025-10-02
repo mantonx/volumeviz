@@ -10,6 +10,7 @@ export const volumeFiltersAtom = atom<VolumeFilters>({
   organizationId: null,
   status: 'all',
   sortBy: 'name',
+  orphaned: false,
 });
 
 // Selected volume atom

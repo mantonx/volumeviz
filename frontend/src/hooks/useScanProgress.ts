@@ -1,7 +1,7 @@
 import { useRealtime } from '@/providers/realtime';
 import { getScanProgressForVolumeAtom } from '@/providers/realtime/atoms';
 import { useAtomValue } from 'jotai';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 export interface ScanPhase {
   name: string;
@@ -39,14 +39,18 @@ export function useScanProgress(volumeId: string) {
   const { sendMessage, isConnected } = useRealtime();
 
   // Get realtime progress data from WebSocket via Jotai atom
-  const progress = useAtomValue(getScanProgressForVolumeAtom(volumeId));
-
-  // Debug logging for all progress data
-  console.log(`[useScanProgress] ${volumeId} progress:`, progress);
+  // Memoize the atom to prevent creating a new atom on every render
+  const progressAtom = useMemo(
+    () => getScanProgressForVolumeAtom(volumeId),
+    [volumeId],
+  );
+  const progress = useAtomValue(progressAtom);
 
   // Subscribe to WebSocket updates for this volume
   useEffect(() => {
-    if (!isConnected || !volumeId) return;
+    if (!isConnected || !volumeId) {
+      return;
+    }
 
     // Subscribe to scan updates for this volume
     sendMessage({

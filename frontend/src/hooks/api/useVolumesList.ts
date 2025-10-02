@@ -41,6 +41,11 @@ export function useVolumesList(options: UseVolumesListOptions = {}) {
       }
     }
 
+    // Add orphaned filter
+    if (filters.orphaned) {
+      params.orphaned = true;
+    }
+
     // Add sorting
     if (filters.sortBy) {
       const sortDirections: Record<string, string> = {
@@ -61,6 +66,9 @@ export function useVolumesList(options: UseVolumesListOptions = {}) {
         enabled: enabled, // Fetch volumes regardless of org (backend handles filtering)
         staleTime: 30 * 1000, // 30 seconds
         refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchInterval: false,
+        refetchIntervalInBackground: false,
       },
     });
 

@@ -124,16 +124,8 @@ export const updateScanProgressAtom = atom(
     set,
     { volumeId, progress }: { volumeId: string; progress: ScanProgressData },
   ) => {
-    console.log(
-      `[updateScanProgressAtom] Updating progress for ${volumeId}:`,
-      progress,
-    );
     const current = get(scanProgressAtom);
     set(scanProgressAtom, {
-      ...current,
-      [volumeId]: progress,
-    });
-    console.log(`[updateScanProgressAtom] Updated atom state:`, {
       ...current,
       [volumeId]: progress,
     });

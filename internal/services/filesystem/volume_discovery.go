@@ -203,13 +203,12 @@ func (vds *VolumeDiscoveryService) persistVolumes(ctx context.Context, volumes [
 				organizationID = *existing.OrganizationID
 			}
 			
-			updated, err := vds.store.Volumes().UpdateVolume(ctx, organizationID, updateParams)
+			_, err := vds.store.Volumes().UpdateVolume(ctx, organizationID, updateParams)
 			if err != nil {
 				log.Printf("[ERROR] Failed to update volume %s: %v", vol.VolumeID, err)
 				continue
 			}
 
-			log.Printf("[DEBUG] Updated volume: %s", updated.VolumeID)
 			updatedCount++
 		}
 	}
