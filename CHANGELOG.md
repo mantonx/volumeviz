@@ -8,11 +8,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Initial project setup and architecture
-- Core volume scanning and analysis engine
-- Modern React-based web interface
-- Real-time WebSocket integration
-- Comprehensive REST API v1.2
+- Community infrastructure (ROADMAP.md, CODE_OF_CONDUCT.md)
+- GitHub Discussions enabled for community Q&A
+- Good first issues created for new contributors (#38-#42)
+- Repository topics for better discoverability
+- Streaming enrichment progress with real-time updates
+- Enhanced scan progress visualization
+
+### Changed
+- README updated with OSS contribution pathways
+- Improved documentation structure for contributors
+
+## [0.5.0] - 2025-10-05
+
+### 🎉 Open Source Release
+
+This release marks VolumeViz's transition to an open source project with significant improvements to scanning performance, real-time progress tracking, and comprehensive analytics capabilities.
+
+### ✨ Added
+
+#### Scanning & Performance
+- **Incremental Scanning**: 99% faster rescans for large volumes (1TB+)
+  - Snapshot-based change detection with mtime comparison
+  - Configurable retention (default: 90 days)
+  - Automatic fallback to full scan when needed
+- **Checkpoint & Resume**: Automatic resume of interrupted scans
+  - Progress checkpoint every 5 minutes
+  - Crash recovery with zero data loss
+  - Resume from last successful checkpoint
+- **Streaming Enrichment Progress**: Real-time transparency during enrichment
+  - Live file count and processing speed metrics
+  - Accurate ETA calculations
+  - Phase-by-phase progress tracking
+
+#### Analytics & Insights
+- Complete stats/analytics backend with real data
+- Volume growth forecasting and trend analysis
+- File type distribution visualization
+- Storage capacity planning tools
+- Performance metrics and health monitoring
+
+#### User Interface
+- **OnboardingPage**: Guided setup wizard with progress tracking
+- **TrendsPage**: Comprehensive analytics with interactive charts
+- **SearchPage**: Advanced search with duplicate detection UI
+- **VolumesPage**: Full CRUD interface with bulk operations
+- Real-time scan progress visualization with WebSocket updates
+- Enrichment phase transparency with streaming updates
+
+#### Data Management
+- Automated data retention system with scheduler
+- Configurable retention periods for different data types:
+  - Scan jobs: 30 days
+  - Scan metrics: 90 days
+  - File metadata: 180 days
+  - Inactive files: 60 days
+- Scheduler API for managing cleanup jobs
+- Organization-scoped data isolation
+
+#### Developer Experience
+- Comprehensive Storybook component library
+- Auto-generated TypeScript API client from OpenAPI (Orval)
+- Jotai atomic state management
+- TanStack Query v5 for server state
+- Modern React 19 with concurrent features
+
+### 🐛 Fixed
+- Volume size display issues and data reconciliation
+- Modal flash in delete confirmation dialogs
+- React import order initialization errors
+- Missing API barrel exports for search and metadata
+- Incorrect file count display for unscanned volumes
+- Scan reconciliation clearing volume data unexpectedly
+
+### 📚 Documentation
+- Added comprehensive project roadmap (ROADMAP.md)
+- Added code of conduct (CODE_OF_CONDUCT.md)
+- Enhanced contributing guidelines
+- Architecture decision records (ADR)
+- API documentation improvements
+- WebSocket event documentation
+
+### 🔒 Security
+- Multi-tenant row-level security
+- JWT authentication improvements
+- Audit logging framework
+- Secure WebSocket connections with validation
+
+### ⚡ Performance
+- 99% faster rescans with incremental scanning
+- Streaming enrichment reduces perceived wait time
+- Bulk database operations for file metadata
+- Optimized queries with proper indexing
+- Connection pooling and caching
 
 ## [1.0.0] - 2025-08-14
 

@@ -6,6 +6,8 @@
 
 **VolumeViz** is a modern Docker volume analytics platform with an intuitive web interface that provides comprehensive insights into storage usage, file organization, and media content across your containerized infrastructure.
 
+> 📸 **Screenshots coming soon!** Check our [Storybook](https://volumeviz.io/storybook) for component demos.
+
 ## 🎯 Core Features
 
 VolumeViz is built around 7 core features designed to provide a complete storage management experience:
