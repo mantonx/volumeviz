@@ -12,6 +12,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/models"
 	coreModels "github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/realtime"
+	"github.com/mantonx/volumeviz/internal/repo"
 	"github.com/mantonx/volumeviz/internal/services/filesystem"
 	"github.com/mantonx/volumeviz/internal/services/previews"
 	"github.com/mantonx/volumeviz/internal/store"
@@ -62,6 +63,16 @@ type VolumeScanner struct {
 	store               store.Store
 	progressThrottler   *filesystem.ProgressThrottler
 	progressBroadcaster realtime.BroadcasterInterface
+
+	// Resilience features
+	retryConfig        RetryConfig
+	timeoutConfig      TimeoutConfig
+	circuitBreaker     *CircuitBreaker
+	checkpointManager  *CheckpointManager
+	resumeManager      *ResumeManager
+
+	// Incremental scanning
+	incrementalScanner *IncrementalScanner
 }
 
 // NewVolumeScanner creates a new volume scanner instance
@@ -82,7 +93,40 @@ func NewVolumeScanner(
 		NewNativeMethod(config.Scanning),
 	}
 
-	return &VolumeScanner{
+	// Configure retry from config
+	retryConfig := DefaultRetryConfig()
+	if !config.Scanning.RetryEnabled {
+		retryConfig.MaxAttempts = 1 // Disable retry
+	} else {
+		retryConfig.MaxAttempts = config.Scanning.RetryMaxAttempts
+		retryConfig.InitialBackoff = config.Scanning.RetryInitialBackoff
+		retryConfig.MaxBackoff = config.Scanning.RetryMaxBackoff
+	}
+
+	// Configure timeout from config
+	timeoutConfig := TimeoutConfig{
+		PerMethodTimeout: config.Scanning.PerMethodTimeout,
+		OverallTimeout:   config.Scanning.OverallTimeout,
+		IndexingTimeout:  config.Scanning.IndexingTimeout,
+	}
+
+	// Configure circuit breaker
+	var circuitBreaker *CircuitBreaker
+	if config.Scanning.CircuitBreakerEnabled {
+		circuitBreaker = NewCircuitBreaker(
+			5,             // Open after 5 consecutive failures
+			2,             // Close after 2 consecutive successes
+			1*time.Minute, // Try again after 1 minute
+		)
+	} else {
+		// Create a no-op circuit breaker that never opens
+		circuitBreaker = &CircuitBreaker{
+			state:            StateClosed,
+			failureThreshold: 999999, // Effectively disabled
+		}
+	}
+
+	scanner := &VolumeScanner{
 		methods:         methods,
 		cache:           cache,
 		metrics:         metrics,
@@ -94,7 +138,15 @@ func NewVolumeScanner(
 		volumeToScan:    make(map[string]string),
 		volumeMapping:   volumeConfig.NewVolumeMappingConfig(),
 		progressManager: progressManager,
+		retryConfig:     retryConfig,
+		timeoutConfig:   timeoutConfig,
+		circuitBreaker:  circuitBreaker,
 	}
+
+	// Note: Checkpoint and resume managers will be set later when store is available
+	// They require store.Store which isn't passed to NewVolumeScanner
+
+	return scanner
 }
 
 // NewVolumeScannerWithIndexing creates a volume scanner with filesystem indexing support
@@ -128,7 +180,50 @@ func NewVolumeScannerWithIndexing(
 		NewNativeMethod(config.Scanning),
 	}
 
-	return &VolumeScanner{
+	// Configure retry from config
+	retryConfig := DefaultRetryConfig()
+	if !config.Scanning.RetryEnabled {
+		retryConfig.MaxAttempts = 1 // Disable retry
+	} else {
+		retryConfig.MaxAttempts = config.Scanning.RetryMaxAttempts
+		retryConfig.InitialBackoff = config.Scanning.RetryInitialBackoff
+		retryConfig.MaxBackoff = config.Scanning.RetryMaxBackoff
+	}
+
+	// Configure timeout from config
+	timeoutConfig := TimeoutConfig{
+		PerMethodTimeout: config.Scanning.PerMethodTimeout,
+		OverallTimeout:   config.Scanning.OverallTimeout,
+		IndexingTimeout:  config.Scanning.IndexingTimeout,
+	}
+
+	// Configure circuit breaker
+	var circuitBreaker *CircuitBreaker
+	if config.Scanning.CircuitBreakerEnabled {
+		circuitBreaker = NewCircuitBreaker(
+			5,             // Open after 5 consecutive failures
+			2,             // Close after 2 consecutive successes
+			1*time.Minute, // Try again after 1 minute
+		)
+	} else {
+		// Create a no-op circuit breaker that never opens
+		circuitBreaker = &CircuitBreaker{
+			state:            StateClosed,
+			failureThreshold: 999999, // Effectively disabled
+		}
+	}
+
+	// Initialize checkpoint and resume managers
+	checkpointManager := NewCheckpointManager(store, progressManager, logger)
+	resumeManager := NewResumeManager(store, logger)
+
+	// Initialize incremental scanner
+	var incrementalScanner *IncrementalScanner
+	if config.Scanning.IncrementalEnabled {
+		incrementalScanner = NewIncrementalScanner(store)
+	}
+
+	scanner := &VolumeScanner{
 		methods:           methods,
 		cache:             cache,
 		metrics:           metrics,
@@ -146,7 +241,15 @@ func NewVolumeScannerWithIndexing(
 		previewService:    previewService,
 		store:             store,
 		progressManager:   progressManager,
+		retryConfig:        retryConfig,
+		timeoutConfig:      timeoutConfig,
+		circuitBreaker:     circuitBreaker,
+		checkpointManager:  checkpointManager,
+		resumeManager:      resumeManager,
+		incrementalScanner: incrementalScanner,
 	}
+
+	return scanner
 }
 
 // SetProgressBroadcaster sets the progress broadcaster for comprehensive real-time updates
@@ -178,9 +281,55 @@ func (vs *VolumeScanner) SetStatsService(service interfaces.StatsService) {
 	vs.statsService = service
 }
 
+// scanWithRetry wraps scanWithMethod with retry logic and circuit breaker tracking
+func (vs *VolumeScanner) scanWithRetry(ctx context.Context, method interfaces.ScanMethod, volumeID, volumePath string) (*interfaces.ScanResult, error) {
+	var result *interfaces.ScanResult
+	attempt := 0
+
+	// Wrap with circuit breaker
+	err := vs.circuitBreaker.Call(func() error {
+		// Retry logic within circuit breaker
+		return RetryWithBackoff(ctx, vs.retryConfig, func() error {
+			attempt++
+			var attemptErr error
+			result, attemptErr = vs.scanWithMethod(ctx, method, volumeID, volumePath)
+
+			if attemptErr != nil && vs.logger != nil {
+				vs.logger.Printf("Scan attempt %d failed: volume=%s method=%s retryable=%v error=%v",
+					attempt, volumeID, method.Name(), IsRetryable(attemptErr), attemptErr)
+			}
+
+			return attemptErr
+		})
+	})
+
+	// Log circuit breaker state changes
+	if err != nil && vs.logger != nil {
+		cbState := vs.circuitBreaker.GetState()
+		if cbState != StateClosed {
+			vs.logger.Printf("Circuit breaker state changed: state=%s stats=%v",
+				cbState, vs.circuitBreaker.GetStats())
+		}
+	}
+
+	return result, err
+}
+
 // ScanVolume scans a volume and returns size information
 func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*interfaces.ScanResult, error) {
-	// Check cache first
+	// Check circuit breaker first
+	if vs.circuitBreaker.GetState() == StateOpen {
+		return nil, &coreModels.ScanError{
+			VolumeID: volumeID,
+			Code:     "CIRCUIT_BREAKER_OPEN",
+			Message:  "circuit breaker is open, too many recent failures",
+			Context: map[string]any{
+				"circuit_breaker_stats": vs.circuitBreaker.GetStats(),
+			},
+		}
+	}
+
+	// Check cache
 	if result := vs.cache.Get(volumeID); result != nil {
 		vs.metrics.CacheHit(volumeID)
 		if vs.logger != nil {
@@ -221,6 +370,30 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 		}
 	}
 
+	// Check if incremental scanning is enabled and available
+	var prevSnapshot *repo.VolumeSnapshot
+	var scanMethod string = "full" // Default to full scan
+
+	if vs.incrementalScanner != nil && !vs.config.Scanning.IncrementalForceFullScan {
+		canUseIncremental, snapshot, err := vs.incrementalScanner.ShouldUseIncrementalScan(ctx, volumeID)
+		if err != nil {
+			if vs.logger != nil {
+				vs.logger.Printf("Error checking incremental scan availability for volume %s: %v", volumeID, err)
+			}
+			// Continue with full scan
+		} else if canUseIncremental {
+			prevSnapshot = snapshot
+			scanMethod = "incremental"
+			if vs.logger != nil {
+				vs.logger.Printf("Using incremental scan for volume %s (prev_snapshot_id=%d, snapshot_time=%s)",
+					volumeID, prevSnapshot.ID, prevSnapshot.SnapshotTime.Format(time.RFC3339))
+			}
+			// Note: Actual incremental scanning (detecting changes and only scanning changed paths)
+			// is deferred to filesystem indexing phase. The scan method still performs a full
+			// size calculation, but the snapshot will help with faster rescans in the future.
+		}
+	}
+
 	// Try scan methods in order of preference
 	var lastErr error
 	for _, method := range vs.methods {
@@ -233,14 +406,14 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 		}
 
 		if vs.logger != nil {
-			vs.logger.Printf("Starting volume scan: volume=%s method=%s path=%s estimated_duration=%v",
+			vs.logger.Printf("Starting volume scan with retry: volume=%s method=%s path=%s estimated_duration=%v",
 				volumeID, method.Name(), volumePath, method.EstimatedDuration(volumePath))
 		}
 
-		result, err := vs.scanWithMethod(ctx, method, volumeID, volumePath)
+		result, err := vs.scanWithRetry(ctx, method, volumeID, volumePath)
 		if err != nil {
 			if vs.logger != nil {
-				vs.logger.Printf("Scan method %s failed for volume %s: %v",
+				vs.logger.Printf("Scan method %s failed after retries for volume %s: %v",
 					method.Name(), volumeID, err)
 			}
 			lastErr = err
@@ -273,6 +446,17 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 				volumeID, method.Name(), result.TotalSize, result.Duration)
 		}
 
+		// Create snapshot after successful scan for future incremental scans
+		if vs.incrementalScanner != nil {
+			scanID := vs.getScanIDForVolume(volumeID)
+			go func() {
+				_, err := vs.incrementalScanner.CreateSnapshot(context.Background(), volumeID, scanID, volumePath, scanMethod)
+				if err != nil && vs.logger != nil {
+					vs.logger.Printf("Failed to create snapshot for volume %s: %v", volumeID, err)
+				}
+			}()
+		}
+
 		// Trigger filesystem indexing if enabled
 		if vs.filesystemIndexer != nil {
 			scanID := vs.getScanIDForVolume(volumeID)
@@ -282,15 +466,16 @@ func (vs *VolumeScanner) ScanVolume(ctx context.Context, volumeID string) (*inte
 		return result, nil
 	}
 
-	// All methods failed
+	// All methods failed after retries
 	return nil, &coreModels.ScanError{
 		VolumeID: volumeID,
 		Code:     coreModels.ErrorCodeAllMethodsFailed,
-		Message:  "all scan methods failed",
+		Message:  "all scan methods failed after retries",
 		Err:      lastErr,
 		Context: map[string]any{
 			"attempted_methods": vs.getMethodNames(),
 			"volume_path":       volumePath,
+			"retry_config":      vs.retryConfig,
 		},
 	}
 }

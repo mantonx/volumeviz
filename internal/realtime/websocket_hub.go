@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -29,8 +30,9 @@ type Hub struct {
 	broadcast  chan BroadcastMessage
 
 	// Configuration
-	pingInterval time.Duration
-	pongWait     time.Duration
+	pingInterval   time.Duration
+	pongWait       time.Duration
+	allowedOrigins []string
 
 	// Store for querying volume data
 	store store.Store
@@ -85,16 +87,22 @@ func NewHub(store store.Store) *Hub {
 
 // NewHubWithAuth creates a new WebSocket hub with JWT authentication support
 func NewHubWithAuth(store store.Store, jwtManager *auth.JWTManager) *Hub {
+	return NewHubWithConfig(store, jwtManager, []string{"http://localhost:3000"})
+}
+
+// NewHubWithConfig creates a new WebSocket hub with full configuration
+func NewHubWithConfig(store store.Store, jwtManager *auth.JWTManager, allowedOrigins []string) *Hub {
 	return &Hub{
-		connections:  make(map[string]*Connection),
-		rooms:        make(map[string]map[string]*Connection),
-		register:     make(chan *Connection, 256),
-		unregister:   make(chan *Connection, 256),
-		broadcast:    make(chan BroadcastMessage, 1024),
-		pingInterval: time.Second * 30,
-		pongWait:     time.Second * 60,
-		store:        store,
-		jwtManager:   jwtManager,
+		connections:    make(map[string]*Connection),
+		rooms:          make(map[string]map[string]*Connection),
+		register:       make(chan *Connection, 256),
+		unregister:     make(chan *Connection, 256),
+		broadcast:      make(chan BroadcastMessage, 1024),
+		pingInterval:   time.Second * 30,
+		pongWait:       time.Second * 60,
+		allowedOrigins: allowedOrigins,
+		store:          store,
+		jwtManager:     jwtManager,
 	}
 }
 
@@ -615,9 +623,28 @@ func (h *Hub) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		isAuthenticated = false
 	}
 
-	// Accept WebSocket connection with proper options
+	// Accept WebSocket connection with proper origin validation
+	// The websocket library parses the Origin header and extracts just the host:port,
+	// then matches it against OriginPatterns. So we need to extract host:port from configured origins.
+	// For example: "http://localhost:3000" -> "localhost:3000"
+	originPatterns := make([]string, 0, len(h.allowedOrigins))
+	for _, origin := range h.allowedOrigins {
+		// Parse the configured origin URL to extract just the host
+		u, err := url.Parse(origin)
+		if err != nil {
+			log.Printf("[WEBSOCKET-HUB] WARNING: Invalid origin URL %q: %v", origin, err)
+			continue
+		}
+		if u.Host != "" {
+			originPatterns = append(originPatterns, u.Host)
+		} else {
+			// If it's already just a host (no scheme), use it directly
+			originPatterns = append(originPatterns, origin)
+		}
+	}
+
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		OriginPatterns: []string{"*"}, // TODO: Configure proper origins for production
+		OriginPatterns: originPatterns,
 		Subprotocols:   []string{},
 	})
 	if err != nil {

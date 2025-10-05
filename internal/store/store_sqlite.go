@@ -64,6 +64,18 @@ func (s *sqliteStore) ScanProgress() repo.ScanProgressRepo {
 	return repo.NewSQLiteScanProgressRepo(s.conn.DB)
 }
 
+// Checkpoints returns a checkpoint repository (not implemented for SQLite)
+func (s *sqliteStore) Checkpoints() repo.CheckpointRepo {
+	// Checkpointing is PostgreSQL-only for now
+	return nil
+}
+
+// Snapshots returns a snapshot repository (not implemented for SQLite)
+func (s *sqliteStore) Snapshots() repo.SnapshotRepo {
+	// Snapshots are PostgreSQL-only for now
+	return nil
+}
+
 // Retention returns a retention repository using the SQLite queries
 func (s *sqliteStore) Retention() repo.RetentionRepo {
 	return repo.NewSQLiteRetentionRepo(s.conn.Queries)
@@ -151,6 +163,18 @@ func (s *sqliteTxStore) Scans() repo.ScansRepo {
 // ScanProgress returns a scan progress repository using the transaction connection
 func (s *sqliteTxStore) ScanProgress() repo.ScanProgressRepo {
 	// TODO: Implement SQLite transaction support for scan progress
+	return nil
+}
+
+// Checkpoints returns a checkpoint repository (not implemented for SQLite)
+func (s *sqliteTxStore) Checkpoints() repo.CheckpointRepo {
+	// Checkpointing is PostgreSQL-only for now
+	return nil
+}
+
+// Snapshots returns a snapshot repository (not implemented for SQLite)
+func (s *sqliteTxStore) Snapshots() repo.SnapshotRepo {
+	// Snapshots are PostgreSQL-only for now
 	return nil
 }
 

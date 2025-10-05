@@ -1,10 +1,9 @@
 /**
- * SearchPage - Comprehensive file search with advanced filtering and duplicate detection
+ * SearchPage - Comprehensive file search with advanced filtering
  *
  * Features:
  * - Multi-criteria search (name, content, metadata)
  * - Advanced filtering (size, type, date, volume)
- * - Duplicate file detection and analysis
  * - Saved searches for recurring queries
  * - Search history tracking
  * - Export search results (CSV, JSON)
@@ -16,19 +15,13 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search as SearchIcon,
-  Copy,
   Download,
-  Trash2,
-  FileSearch,
-  History,
-  BookmarkPlus,
-  TrendingUp,
   AlertCircle,
 } from 'lucide-react';
-import { SearchInterface } from '@/components/domain/search';
+import { SearchInterface, type SearchQuery } from '@/components/domain/search';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { Card } from '@/components/ui/Card';
+import { searchApi } from '@/api/search';
 import type { SearchPageProps, SearchState } from './SearchPage.types';
 
 export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
@@ -45,19 +38,68 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
     showHistory: false,
   });
 
-  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Handlers
-  const handleSearch = useCallback((query: string) => {
-    setSearchState((prev) => ({ ...prev, query, isSearching: true }));
-    // TODO: Implement actual search API call
-    console.log('Searching for:', query);
+  const handleSearch = useCallback(async (searchQuery: SearchQuery) => {
+    // Extract the actual query string from the SearchQuery object
+    const queryString = 'query' in searchQuery ? searchQuery.query : '';
 
-    // Simulate API call
-    setTimeout(() => {
-      setSearchState((prev) => ({ ...prev, isSearching: false }));
-    }, 500);
+    setSearchState((prev) => ({ ...prev, query: queryString }));
+    setIsSearching(true);
+    setError(null);
+
+    const startTime = Date.now();
+
+    try {
+      const rawResults = await searchApi.search({
+        query: queryString,
+        page: 1,
+        page_size: 50,
+      });
+
+      // Transform API results to SearchInterface format
+      const formattedResults = {
+        items: rawResults.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          path: r.path,
+          type: r.type || 'file',
+          size: r.size,
+          modifiedAt: r.modified ? new Date(r.modified) : undefined,
+          relevanceScore: r.score || 100,
+          highlights: r.matched_content ? [{
+            field: 'content',
+            matches: [{
+              start: 0,
+              end: r.matched_content.length,
+              text: r.matched_content,
+            }]
+          }] : undefined,
+        })),
+        totalCount: rawResults.length,
+        page: 1,
+        pageSize: 50,
+        hasMore: false,
+        searchTime: Date.now() - startTime,
+      };
+
+      setSearchResults(formattedResults);
+      setSearchState((prev) => ({
+        ...prev,
+        results: rawResults,
+      }));
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Search failed. Please try again.';
+      setError(errorMessage);
+      setSearchResults(null);
+      setSearchState((prev) => ({ ...prev, results: [] }));
+    } finally {
+      setIsSearching(false);
+    }
   }, []);
 
   const handleFileSelect = useCallback(
@@ -68,23 +110,38 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
     [navigate],
   );
 
-  const handleDuplicateDetection = useCallback(() => {
-    setIsDuplicateModalOpen(true);
-    // TODO: Implement duplicate detection API call
-    console.log('Detecting duplicates...');
-  }, []);
-
   const handleExport = useCallback((format: 'csv' | 'json') => {
-    // TODO: Implement export functionality
-    console.log('Exporting results as:', format);
-    setIsExportModalOpen(false);
-  }, []);
-
-  const handleBulkDelete = useCallback(() => {
-    if (searchState.selectedResults.length === 0) return;
-    // TODO: Implement bulk delete
-    console.log('Bulk delete:', searchState.selectedResults);
-  }, [searchState.selectedResults]);
+    try {
+      // Convert results to export format
+      if (format === 'csv') {
+        const csvContent = searchState.results
+          .map((r) => `"${r.name}","${r.path}",${r.size},"${r.modified}"`)
+          .join('\n');
+        const blob = new Blob([`Name,Path,Size,Modified\n${csvContent}`], {
+          type: 'text/csv',
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `search-results-${Date.now()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const blob = new Blob([JSON.stringify(searchState.results, null, 2)], {
+          type: 'application/json',
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `search-results-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      setIsExportModalOpen(false);
+    } catch (err) {
+      setError('Failed to export results. Please try again.');
+    }
+  }, [searchState.results]);
 
   return (
     <div className={`min-h-screen bg-gray-50 ${className}`}>
@@ -98,24 +155,12 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
                 Search & Discovery
               </h1>
               <p className="mt-2 text-gray-600">
-                Find files, detect duplicates, and analyze your storage
+                Find files and analyze your storage
               </p>
             </div>
 
             {/* Quick Actions */}
             <div className="flex items-center gap-3">
-              {searchState.selectedResults.length > 0 && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleBulkDelete}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Selected ({searchState.selectedResults.length})
-                  </Button>
-                </>
-              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -125,146 +170,48 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
                 <Download className="w-4 h-4 mr-2" />
                 Export Results
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleDuplicateDetection}
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                Find Duplicates
-              </Button>
             </div>
           </div>
         </div>
 
-        {/* Search Statistics */}
-        {searchState.results.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <FileSearch className="w-5 h-5 text-blue-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Results Found</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {searchState.results.length}
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <Copy className="w-5 h-5 text-orange-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Potential Duplicates</p>
-                  <p className="text-2xl font-bold text-gray-900">0</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Total Size</p>
-                  <p className="text-2xl font-bold text-gray-900">0 GB</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <History className="w-5 h-5 text-purple-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Recent Searches</p>
-                  <p className="text-2xl font-bold text-gray-900">5</p>
-                </div>
-              </div>
-            </Card>
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-900">Error</p>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-600 hover:text-red-800"
+            >
+              <span className="sr-only">Dismiss</span>
+              ✕
+            </button>
           </div>
         )}
+
 
         {/* Main Search Interface */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <SearchInterface
+            results={searchResults}
+            isSearching={isSearching}
+            searchError={error || undefined}
             onSearch={handleSearch}
             onResultClick={(result) => handleFileSelect(result.id)}
+            onExportResults={(format) => {
+              setIsExportModalOpen(true);
+            }}
             showAdvanced={true}
             showFilters={true}
             showSavedSearches={true}
             showHistory={true}
-            enableRealTimeSearch={true}
+            enableRealTimeSearch={false}
             className="max-w-none"
           />
         </div>
-
-        {/* Duplicate Detection Modal */}
-        <Modal
-          isOpen={isDuplicateModalOpen}
-          onClose={() => setIsDuplicateModalOpen(false)}
-          title="Duplicate File Detection"
-        >
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
-              <Copy className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  Scan for Duplicate Files
-                </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  This will analyze all files in your volumes to find duplicates
-                  based on content hash, size, and name patterns.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="font-medium text-gray-900">Detection Options</h4>
-
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300"
-                  defaultChecked
-                />
-                <span className="text-sm text-gray-700">
-                  Compare by content hash (most accurate)
-                </span>
-              </label>
-
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300"
-                  defaultChecked
-                />
-                <span className="text-sm text-gray-700">
-                  Compare by file size and name
-                </span>
-              </label>
-
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="rounded border-gray-300" />
-                <span className="text-sm text-gray-700">
-                  Include similar filenames (fuzzy matching)
-                </span>
-              </label>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setIsDuplicateModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button variant="primary">
-                <FileSearch className="w-4 h-4 mr-2" />
-                Start Detection
-              </Button>
-            </div>
-          </div>
-        </Modal>
 
         {/* Export Results Modal */}
         <Modal

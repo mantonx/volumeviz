@@ -27,6 +27,7 @@ type Config struct {
 	MediaEnrichment    MediaEnrichmentConfig
 	Previews           previews.PreviewConfig
 	Alerts             AlertsConfig
+	Retention          RetentionConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -120,6 +121,28 @@ type ScanConfig struct {
 	BindMountsEnabled bool
 	BindAllowList     []string
 	SkipPattern       string
+
+	// Resilience configuration
+	RetryEnabled          bool
+	RetryMaxAttempts      int
+	RetryInitialBackoff   time.Duration
+	RetryMaxBackoff       time.Duration
+	PerMethodTimeout      time.Duration
+	OverallTimeout        time.Duration
+	IndexingTimeout       time.Duration
+	CircuitBreakerEnabled bool
+
+	// Checkpointing configuration
+	CheckpointEnabled       bool
+	CheckpointInterval      time.Duration
+	CheckpointItemThreshold int64
+	AutoResumeEnabled       bool
+
+	// Incremental scanning configuration
+	IncrementalEnabled         bool
+	SnapshotRetentionDays      int
+	IncrementalMaxSnapshotAge  time.Duration
+	IncrementalForceFullScan   bool
 }
 
 // FilesystemIndexingConfig holds filesystem indexing configuration
@@ -150,7 +173,7 @@ type FilesystemIndexingConfig struct {
 type MediaEnrichmentConfig struct {
 	// Global settings
 	Enabled              bool          `env:"VV_ENABLE_ENRICHERS" envDefault:"true"`
-	MaxConcurrentWorkers int           `env:"VV_MAX_CONCURRENT_ENRICHERS" envDefault:"3"`
+	MaxConcurrentWorkers int           `env:"VV_MAX_CONCURRENT_ENRICHERS" envDefault:"8"` // Increased from 3 to 8 for better performance
 	TimeoutPerFile       time.Duration `env:"VV_ENRICHER_TIMEOUT_PER_FILE" envDefault:"30s"`
 
 	// FFprobe settings
@@ -173,6 +196,18 @@ type AlertsConfig struct {
 	Enabled                   bool `env:"ALERTS_ENABLED" envDefault:"false"`
 	EvaluationIntervalMinutes int  `env:"ALERTS_EVALUATION_INTERVAL_MINUTES" envDefault:"1"`
 	DeliveryWorkers           int  `env:"ALERTS_DELIVERY_WORKERS" envDefault:"3"`
+}
+
+// RetentionConfig holds data retention configuration
+type RetentionConfig struct {
+	Enabled                bool          `env:"RETENTION_ENABLED" envDefault:"true"`
+	CleanupInterval        time.Duration `env:"RETENTION_CLEANUP_INTERVAL" envDefault:"24h"`
+	RunOnStartup           bool          `env:"RETENTION_RUN_ON_STARTUP" envDefault:"true"`
+	ScanJobsRetentionDays  int           `env:"RETENTION_SCAN_JOBS_DAYS" envDefault:"30"`
+	ScanMetricsRetentionDays int         `env:"RETENTION_SCAN_METRICS_DAYS" envDefault:"90"`
+	ScanPhasesRetentionDays  int         `env:"RETENTION_SCAN_PHASES_DAYS" envDefault:"7"`
+	FileMetadataRetentionDays int        `env:"RETENTION_FILE_METADATA_DAYS" envDefault:"180"`
+	InactiveFilesRetentionDays int       `env:"RETENTION_INACTIVE_FILES_DAYS" envDefault:"60"`
 }
 
 // Load loads configuration from environment variables with defaults
@@ -253,6 +288,28 @@ func Load() *Config {
 			BindMountsEnabled: getBoolEnv("SCAN_BIND_MOUNTS_ENABLED", false),
 			BindAllowList:     getStringSliceEnv("SCAN_BIND_ALLOWLIST", []string{}),
 			SkipPattern:       getEnv("SCAN_SKIP_PATTERN", "^docker_|^builder_|^containerd"),
+
+			// Resilience configuration
+			RetryEnabled:          getBoolEnv("SCAN_RETRY_ENABLED", true),
+			RetryMaxAttempts:      getIntEnv("SCAN_RETRY_MAX_ATTEMPTS", 3),
+			RetryInitialBackoff:   getDurationEnv("SCAN_RETRY_INITIAL_BACKOFF", 1*time.Second),
+			RetryMaxBackoff:       getDurationEnv("SCAN_RETRY_MAX_BACKOFF", 30*time.Second),
+			PerMethodTimeout:      getDurationEnv("SCAN_PER_METHOD_TIMEOUT", 30*time.Minute),
+			OverallTimeout:        getDurationEnv("SCAN_OVERALL_TIMEOUT", 2*time.Hour),
+			IndexingTimeout:       getDurationEnv("SCAN_INDEXING_TIMEOUT", 4*time.Hour),
+			CircuitBreakerEnabled: getBoolEnv("SCAN_CIRCUIT_BREAKER_ENABLED", true),
+
+			// Checkpointing configuration
+			CheckpointEnabled:       getBoolEnv("SCAN_CHECKPOINT_ENABLED", true),
+			CheckpointInterval:      getDurationEnv("SCAN_CHECKPOINT_INTERVAL", 5*time.Minute),
+			CheckpointItemThreshold: getInt64Env("SCAN_CHECKPOINT_ITEM_THRESHOLD", 100000),
+			AutoResumeEnabled:       getBoolEnv("SCAN_AUTO_RESUME_ENABLED", true),
+
+			// Incremental scanning configuration
+			IncrementalEnabled:        getBoolEnv("SCAN_INCREMENTAL_ENABLED", true),
+			SnapshotRetentionDays:     getIntEnv("SCAN_SNAPSHOT_RETENTION_DAYS", 90),
+			IncrementalMaxSnapshotAge: getDurationEnv("SCAN_INCREMENTAL_MAX_SNAPSHOT_AGE", 7*24*time.Hour),
+			IncrementalForceFullScan:  getBoolEnv("SCAN_INCREMENTAL_FORCE_FULL", false),
 		},
 		FilesystemIndexing: FilesystemIndexingConfig{
 			Enabled:                   true, // Always enabled - users expect files to be indexed
@@ -304,6 +361,16 @@ func Load() *Config {
 			Enabled:                   getBoolEnv("ALERTS_ENABLED", false),
 			EvaluationIntervalMinutes: getIntEnv("ALERTS_EVALUATION_INTERVAL_MINUTES", 1),
 			DeliveryWorkers:           getIntEnv("ALERTS_DELIVERY_WORKERS", 3),
+		},
+		Retention: RetentionConfig{
+			Enabled:                    getBoolEnv("RETENTION_ENABLED", true),
+			CleanupInterval:            getDurationEnv("RETENTION_CLEANUP_INTERVAL", 24*time.Hour),
+			RunOnStartup:               getBoolEnv("RETENTION_RUN_ON_STARTUP", true),
+			ScanJobsRetentionDays:      getIntEnv("RETENTION_SCAN_JOBS_DAYS", 30),
+			ScanMetricsRetentionDays:   getIntEnv("RETENTION_SCAN_METRICS_DAYS", 90),
+			ScanPhasesRetentionDays:    getIntEnv("RETENTION_SCAN_PHASES_DAYS", 7),
+			FileMetadataRetentionDays:  getIntEnv("RETENTION_FILE_METADATA_DAYS", 180),
+			InactiveFilesRetentionDays: getIntEnv("RETENTION_INACTIVE_FILES_DAYS", 60),
 		},
 	}
 }

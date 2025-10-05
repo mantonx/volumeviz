@@ -188,6 +188,12 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 		progress.ProcessedFiles = filesProcessed
 		progress.LastUpdate = time.Now()
 
+		// Calculate throughput (files per second)
+		elapsed := time.Since(progress.StartedAt).Seconds()
+		if elapsed > 0 {
+			progress.FilesPerSecond = float64(filesProcessed) / elapsed
+		}
+
 		// Calculate progress percentage (using processed files vs total)
 		var progressPercent float64
 		if progress.TotalFiles > 0 {
@@ -201,6 +207,11 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 			progressPercentInt := int(progressPercent * 100)
 			go m.updateDatabaseProgressDetailed(context.Background(), scanID, "media_enrichment",
 				progressPercentInt, int(filesProcessed), int(progress.TotalFiles))
+		}
+
+		// Broadcast progress at batch completion (not per-file) - reduces broadcasts from 4,876 to ~5
+		if m.progressBroadcaster != nil {
+			go m.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, volumeID)
 		}
 
 		// Break if we got fewer files than requested (end of data)
@@ -245,7 +256,10 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 			volumeID, filesProcessed, progress.SuccessfulFiles, progress.ErrorsCount)
 	}
 
-	return lastError
+	// Return nil even if there were individual file errors - enrichment phase completed successfully
+	// Individual errors are already logged and tracked in progress.ErrorsCount
+	// Only return error if enrichment couldn't start or was canceled
+	return nil
 }
 
 // processBatch processes a single batch of files with controlled concurrency
@@ -400,6 +414,31 @@ func (m *Manager) updateDatabaseProgressDetailed(ctx context.Context, scanID, ph
 		ItemsProcessed: &itemsProcessed64,
 		ItemsTotal:     &itemsTotal64,
 	}
+
+	// Add current file and throughput info if available
+	// Note: progressMap is keyed by volumeID, so we need to find the volumeID from scanID
+	m.progressMutex.Lock()
+	var progressData *EnrichmentProgress
+	// Search through all progress entries to find one matching this scanID
+	for _, p := range m.progressMap {
+		if p.ScanID == scanID {
+			progressData = p
+			break
+		}
+	}
+
+	if progressData != nil {
+		if progressData.CurrentFile != "" {
+			updateParams.CurrentItem = &progressData.CurrentFile
+		}
+		if progressData.FilesPerSecond > 0 {
+			updateParams.ItemsPerSecond = &progressData.FilesPerSecond
+		}
+		if progressData.CurrentEnricher != "" {
+			updateParams.SubPhase = &progressData.CurrentEnricher
+		}
+	}
+	m.progressMutex.Unlock()
 
 	err := scanProgressRepo.UpdateScanPhaseProgress(ctx, updateParams)
 	if err != nil && m.logger != nil {

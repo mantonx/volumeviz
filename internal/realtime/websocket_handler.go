@@ -15,15 +15,15 @@ type RealtimeService struct {
 	store store.Store
 }
 
-// NewRealtimeService creates a new real-time service
+// NewRealtimeService creates a new real-time service with default allowed origins
 func NewRealtimeService(store store.Store, jwtManager *auth.JWTManager) *RealtimeService {
-	// Use NewHubWithAuth if JWT manager is provided, otherwise use NewHub
-	var hub *Hub
-	if jwtManager != nil {
-		hub = NewHubWithAuth(store, jwtManager)
-	} else {
-		hub = NewHub(store)
-	}
+	return NewRealtimeServiceWithOrigins(store, jwtManager, []string{"http://localhost:3000"})
+}
+
+// NewRealtimeServiceWithOrigins creates a new real-time service with custom allowed origins
+func NewRealtimeServiceWithOrigins(store store.Store, jwtManager *auth.JWTManager, allowedOrigins []string) *RealtimeService {
+	// Create hub with proper configuration
+	hub := NewHubWithConfig(store, jwtManager, allowedOrigins)
 
 	// Start hub in background
 	go hub.Run(context.Background())

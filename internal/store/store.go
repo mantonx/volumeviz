@@ -18,6 +18,8 @@ type Store interface {
 	Volumes() repo.VolumesRepo
 	Scans() repo.ScansRepo
 	ScanProgress() repo.ScanProgressRepo
+	Checkpoints() repo.CheckpointRepo
+	Snapshots() repo.SnapshotRepo
 	Retention() repo.RetentionRepo
 	Stats() *repo.StatsRepo
 	Files() *repo.FilesRepo
@@ -45,12 +47,15 @@ type TxStore interface {
 	Volumes() repo.VolumesRepo
 	Scans() repo.ScansRepo
 	ScanProgress() repo.ScanProgressRepo
+	Checkpoints() repo.CheckpointRepo
+	Snapshots() repo.SnapshotRepo
 	Retention() repo.RetentionRepo
 	Stats() *repo.StatsRepo
 	Files() *repo.FilesRepo
 	Folders() *repo.FoldersRepo
 	FileMetadata() *repo.FileMetadataRepo
 	Alerts() repo.AlertsRepo
+	Search() *repo.SearchRepo
 	Users() repo.UsersRepo
 	Organizations() repo.OrganizationsRepo
 }

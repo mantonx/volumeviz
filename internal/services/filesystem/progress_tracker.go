@@ -3,6 +3,7 @@ package filesystem
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/models"
@@ -17,6 +18,8 @@ type ProgressTracker struct {
 	throttler           *ProgressThrottler
 	updateInterval      time.Duration
 	progressBroadcaster realtime.BroadcasterInterface
+	lastBroadcast       time.Time // Throttle WebSocket broadcasts to prevent spam
+	broadcastMutex      sync.Mutex // Protects lastBroadcast from concurrent access
 }
 
 // NewProgressTracker creates a new progress tracker
@@ -95,9 +98,18 @@ func (pt *ProgressTracker) QueueProgressUpdate(scanID string, progress *Indexing
 	var err error
 	if forceUpdate {
 		err = pt.throttler.ForceUpdate(context.Background(), scanID, update)
-		
+
 		// Trigger real-time WebSocket broadcast for force updates (milestones)
-		if err == nil && pt.progressBroadcaster != nil {
+		// FIX: Throttle broadcasts to max 1 per second with mutex protection to prevent race condition spam
+		pt.broadcastMutex.Lock()
+		now := time.Now()
+		shouldBroadcast := now.Sub(pt.lastBroadcast) > 1*time.Second
+		if shouldBroadcast {
+			pt.lastBroadcast = now // Update BEFORE broadcast to prevent race
+		}
+		pt.broadcastMutex.Unlock()
+
+		if err == nil && pt.progressBroadcaster != nil && shouldBroadcast {
 			if scansRepo := pt.store.Scans(); scansRepo != nil {
 				if scanJob, err := scansRepo.GetScanJobByScanID(context.Background(), scanID); err == nil && scanJob != nil {
 					go pt.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, scanJob.VolumeID)
@@ -118,15 +130,47 @@ func (pt *ProgressTracker) UpdatePhaseStatus(ctx context.Context, scanID, phaseN
 	scanProgressRepo := pt.store.ScanProgress()
 
 	if status == "completed" {
+		// IMPORTANT: Set progress to 100% when completing a phase
+		// This fixes the bug where progress might be stuck at a lower value due to dynamic item_total changes
+		completedProgress := 100
+		err := scanProgressRepo.UpdateScanPhaseProgress(ctx, models.UpdateScanPhaseParams{
+			ScanID:    scanID,
+			PhaseName: phaseName,
+			Progress:  &completedProgress,
+		})
+		if err != nil {
+			fmt.Printf("Failed to set progress to 100%% for %s phase: %v\n", phaseName, err)
+		}
+
 		// Use CompleteScanPhase for proper completion handling
-		err := scanProgressRepo.CompleteScanPhase(ctx, scanID, phaseName)
+		err = scanProgressRepo.CompleteScanPhase(ctx, scanID, phaseName)
 		if err != nil {
 			fmt.Printf("Failed to complete %s phase for scan %s: %v\n", phaseName, scanID, err)
 		} else {
-			fmt.Printf("Completed %s phase for scan %s\n", phaseName, scanID)
-			
-			// Trigger WebSocket broadcast when phase completes
-			if pt.progressBroadcaster != nil {
+			fmt.Printf("Completed %s phase for scan %s (progress: 100%%)\n", phaseName, scanID)
+
+			// IMPORTANT: Mark scan as completed when filesystem_indexing finishes
+			// This decouples scan completion from enrichment - enrichment continues in background
+			if phaseName == "filesystem_indexing" {
+				if scansRepo := pt.store.Scans(); scansRepo != nil {
+					if err := scansRepo.CompletesScanJob(ctx, scanID); err != nil {
+						fmt.Printf("Failed to mark scan %s as completed after filesystem indexing: %v\n", scanID, err)
+					} else {
+						fmt.Printf("✅ Scan %s marked as COMPLETED after filesystem indexing (enrichment will continue in background)\n", scanID)
+					}
+				}
+			}
+
+			// Trigger WebSocket broadcast when phase completes (with mutex protection)
+			pt.broadcastMutex.Lock()
+			now := time.Now()
+			shouldBroadcast := now.Sub(pt.lastBroadcast) > 1*time.Second
+			if shouldBroadcast {
+				pt.lastBroadcast = now
+			}
+			pt.broadcastMutex.Unlock()
+
+			if pt.progressBroadcaster != nil && shouldBroadcast {
 				// Get volume ID from scan job
 				if scansRepo := pt.store.Scans(); scansRepo != nil {
 					if scanJob, err := scansRepo.GetScanJobByScanID(ctx, scanID); err == nil && scanJob != nil {
@@ -157,7 +201,16 @@ func (pt *ProgressTracker) UpdatePhaseStatus(ctx context.Context, scanID, phaseN
 	}
 
 	// Additional WebSocket broadcast for real-time updates
-	if pt.progressBroadcaster != nil && (status == "failed" || status == "running") {
+	// FIX: Throttle to prevent spam with mutex protection (phase status changes are infrequent anyway)
+	pt.broadcastMutex.Lock()
+	now := time.Now()
+	shouldBroadcast := now.Sub(pt.lastBroadcast) > 1*time.Second
+	if shouldBroadcast {
+		pt.lastBroadcast = now // Update BEFORE broadcast to prevent race
+	}
+	pt.broadcastMutex.Unlock()
+
+	if pt.progressBroadcaster != nil && (status == "failed" || status == "running") && shouldBroadcast {
 		// Get volume ID from scan job for broadcasts
 		if scansRepo := pt.store.Scans(); scansRepo != nil {
 			if scanJob, err := scansRepo.GetScanJobByScanID(ctx, scanID); err == nil && scanJob != nil {

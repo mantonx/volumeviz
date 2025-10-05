@@ -4,7 +4,7 @@
  */
 export * from './orval-generated/api';
 
-// TODO: These types and APIs are placeholders until backend implements search endpoints
+import { customFetchClient } from './fetch-client';
 
 export type SearchSuggestion = {
   value: string;
@@ -52,14 +52,60 @@ export type SearchFilesRequest = {
   page_size?: number;
 };
 
-// Placeholder API object until backend is ready
+// Search API implementation
 export const searchApi = {
   getSuggestions: async (query: string): Promise<SearchSuggestion[]> => {
-    // TODO: Implement when backend endpoint exists
-    return [];
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    try {
+      const response = await customFetchClient<SearchSuggestion[]>('/search/suggestions', {
+        params: { q: query },
+      });
+      return response || [];
+    } catch (error) {
+      // Log error but return empty array for suggestions to not break UX
+      // Suggestions are optional and should fail gracefully
+      console.warn('Failed to fetch search suggestions:', error);
+      return [];
+    }
   },
+
   search: async (request: SearchFilesRequest): Promise<FileSearchResult[]> => {
-    // TODO: Implement when backend endpoint exists
-    return [];
+    if (!request.query || request.query.trim().length === 0) {
+      throw new Error('Search query cannot be empty');
+    }
+
+    try {
+      const response = await customFetchClient<{ files: FileSearchResult[] }>('/search/files', {
+        params: {
+          q: request.query,
+          minSize: request.size_min,
+          maxSize: request.size_max,
+          mtimeFrom: request.modified_after,
+          mtimeTo: request.modified_before,
+          path: request.paths,
+          page: request.page || 1,
+          perPage: request.page_size || 20,
+        },
+      });
+      return response.files || [];
+    } catch (error) {
+      // Provide user-friendly error messages
+      if (error instanceof Error) {
+        if (error.message.includes('Network')) {
+          throw new Error('Unable to connect to search service. Please check your connection.');
+        }
+        if (error.message.includes('404')) {
+          throw new Error('Search service not found. Please contact support.');
+        }
+        if (error.message.includes('500')) {
+          throw new Error('Search service error. Please try again later.');
+        }
+        throw error;
+      }
+      throw new Error('Search failed. Please try again.');
+    }
   },
 };

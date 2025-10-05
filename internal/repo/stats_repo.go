@@ -65,22 +65,73 @@ func (r *StatsRepo) StoreScanResult(ctx context.Context, scanResult *interfaces.
 		fmt.Printf("[WARN] Failed to invalidate previous volume sizes for %s: %v\n", scanResult.VolumeID, err)
 	}
 
-	// Convert ScanResult to InsertVolumeSizeParams using only available fields
+	// Compute comprehensive file statistics from the files table
+	stats, err := r.queries.ComputeVolumeFileStatistics(ctx, scanResult.VolumeID)
+	if err != nil {
+		// If stats computation fails, fall back to basic info from ScanResult
+		fmt.Printf("[WARN] Failed to compute file statistics for %s, using basic scan data: %v\n", scanResult.VolumeID, err)
+
+		params := sqlc.InsertVolumeSizeParams{
+			VolumeID:              scanResult.VolumeID,
+			TotalSize:             scanResult.TotalSize,
+			FileCount:             int64(scanResult.FileCount),
+			DirectoryCount:        int64(scanResult.DirectoryCount),
+			LargestFileSize:       pgtype.Int8{Int64: scanResult.LargestFile, Valid: scanResult.LargestFile > 0},
+			SmallestFileSize:      pgtype.Int8{Valid: false},
+			AverageFileSize:       pgtype.Int8{Valid: false},
+			MedianFileSize:        pgtype.Int8{Valid: false},
+			TypeDistribution:      []byte("{}"),
+			ExtensionDistribution: []byte("{}"),
+			CalculatedAt:          pgtype.Timestamptz{Time: time.Now(), Valid: true},
+		}
+		return r.queries.InsertVolumeSize(ctx, params)
+	}
+
+	// Use computed statistics from files table
+	// Convert interface{} types safely
+	var totalSize, directoryCount int64
+
+	if stats.TotalSize != nil {
+		if val, ok := stats.TotalSize.(int64); ok {
+			totalSize = val
+		}
+	}
+
+	if stats.DirectoryCount != nil {
+		if val, ok := stats.DirectoryCount.(int64); ok {
+			directoryCount = val
+		}
+	}
+
+	smallestFileSize := pgtype.Int8{Valid: false}
+	if stats.SmallestFileSize != nil {
+		if val, ok := stats.SmallestFileSize.(int64); ok {
+			smallestFileSize = pgtype.Int8{Int64: val, Valid: true}
+		}
+	}
+
+	largestFileSize := pgtype.Int8{Valid: false}
+	if stats.LargestFileSize != nil {
+		if val, ok := stats.LargestFileSize.(int64); ok {
+			largestFileSize = pgtype.Int8{Int64: val, Valid: true}
+		}
+	}
+
 	params := sqlc.InsertVolumeSizeParams{
 		VolumeID:              scanResult.VolumeID,
-		TotalSize:             scanResult.TotalSize,
-		FileCount:             int64(scanResult.FileCount),
-		DirectoryCount:        int64(scanResult.DirectoryCount),
-		LargestFileSize:       pgtype.Int8{Int64: scanResult.LargestFile, Valid: scanResult.LargestFile > 0},
-		SmallestFileSize:      pgtype.Int8{}, // TODO: Add to ScanResult if needed
-		AverageFileSize:       pgtype.Int8{}, // TODO: Calculate if needed
-		MedianFileSize:        pgtype.Int8{}, // TODO: Calculate if needed
-		TypeDistribution:      []byte("{}"), // Empty JSON object as placeholder
-		ExtensionDistribution: []byte("{}"), // Empty JSON object as placeholder
+		TotalSize:             totalSize,
+		FileCount:             stats.FileCount,
+		DirectoryCount:        directoryCount,
+		LargestFileSize:       largestFileSize,
+		SmallestFileSize:      smallestFileSize,
+		AverageFileSize:       pgtype.Int8{Int64: stats.AverageFileSize, Valid: stats.AverageFileSize > 0},
+		MedianFileSize:        pgtype.Int8{Int64: stats.MedianFileSize, Valid: stats.MedianFileSize > 0},
+		TypeDistribution:      stats.TypeDistribution,
+		ExtensionDistribution: stats.ExtensionDistribution,
 		CalculatedAt:          pgtype.Timestamptz{Time: time.Now(), Valid: true},
 	}
 
-	// Insert the scan result
+	// Insert the computed statistics
 	err = r.queries.InsertVolumeSize(ctx, params)
 	return err
 }

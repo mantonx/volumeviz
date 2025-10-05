@@ -20,19 +20,35 @@ const (
 
 // OrganizationMiddleware ensures the user has a valid organization context
 type OrganizationMiddleware struct {
-	store store.Store
+	store       store.Store
+	authEnabled bool
 }
 
 // NewOrganizationMiddleware creates a new organization middleware instance
 func NewOrganizationMiddleware(store store.Store) *OrganizationMiddleware {
 	return &OrganizationMiddleware{
-		store: store,
+		store:       store,
+		authEnabled: true, // Default to auth enabled for backwards compatibility
+	}
+}
+
+// NewOrganizationMiddlewareWithAuth creates a new organization middleware with auth configuration
+func NewOrganizationMiddlewareWithAuth(store store.Store, authEnabled bool) *OrganizationMiddleware {
+	return &OrganizationMiddleware{
+		store:       store,
+		authEnabled: authEnabled,
 	}
 }
 
 // RequireOrganization ensures the request has a valid organization context
 func (m *OrganizationMiddleware) RequireOrganization() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip organization checks if auth is disabled
+		if !m.authEnabled {
+			c.Next()
+			return
+		}
+
 		// Get user from context (set by auth middleware)
 		userID, exists := c.Get("user_id")
 		if !exists {

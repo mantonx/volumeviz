@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/models"
 )
 
@@ -53,12 +55,16 @@ type ScanProgressRepo interface {
 
 // scanProgressRepo implements ScanProgressRepo using pgx queries
 type scanProgressRepo struct {
-	pool *pgxpool.Pool
+	pool    *pgxpool.Pool
+	queries *sqlc.Queries
 }
 
 // NewScanProgressRepo creates a new scan progress repository
 func NewScanProgressRepo(pool *pgxpool.Pool) ScanProgressRepo {
-	return &scanProgressRepo{pool: pool}
+	return &scanProgressRepo{
+		pool:    pool,
+		queries: sqlc.New(pool),
+	}
 }
 
 // NewScanProgressRepoFromConn creates a scan progress repository from a single connection
@@ -567,22 +573,193 @@ func (r *scanProgressRepo) GetLatestPerformanceMetrics(ctx context.Context, scan
 // =============================================================================
 
 func (r *scanProgressRepo) GetActiveScansSummary(ctx context.Context) ([]*models.ActiveScanSummary, error) {
-	// TODO: active_scans view doesn't exist in database
-	// Need to either create the view or query scan_jobs + scan_phases directly
-	// For now, return empty list to avoid breaking callers
-	return []*models.ActiveScanSummary{}, nil
+	// Use the SQLC generated query to get active scans from the view
+	activeScans, err := r.queries.GetActiveScans(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active scans: %w", err)
+	}
+
+	// For each active scan, get the current running phase details
+	result := make([]*models.ActiveScanSummary, 0, len(activeScans))
+	for _, scan := range activeScans {
+		// Get phase details for this scan
+		phases, err := r.GetScanPhasesByID(ctx, scan.ScanID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get phases for scan %s: %w", scan.ScanID, err)
+		}
+
+		// Find the currently running phase, or the most recent phase
+		var currentPhase *models.ScanPhase
+		for _, phase := range phases {
+			if phase.Status == "running" {
+				currentPhase = phase
+				break
+			}
+		}
+		// If no running phase, use the first one (most recent)
+		if currentPhase == nil && len(phases) > 0 {
+			currentPhase = phases[0]
+		}
+
+		// Calculate overall progress from view data
+		overallProgress := 0
+		if scan.OverallProgressPercent != nil {
+			if floatVal, ok := scan.OverallProgressPercent.(float64); ok {
+				overallProgress = int(floatVal)
+			}
+		}
+
+		// Calculate elapsed seconds
+		elapsedSeconds := 0
+		if scan.DurationSeconds.Valid {
+			elapsedSeconds = int(scan.DurationSeconds.Int.Int64())
+		}
+
+		summary := &models.ActiveScanSummary{
+			ScanID:          scan.ScanID,
+			VolumeID:        stringFromPgText(scan.VolumeID),
+			JobStatus:       scan.Status,
+			OverallProgress: overallProgress,
+			ElapsedSeconds:  elapsedSeconds,
+		}
+
+		if scan.StartedAt.Valid {
+			summary.JobStartedAt = scan.StartedAt.Time
+		}
+
+		// Add phase details if we have them
+		if currentPhase != nil {
+			summary.CurrentPhase = currentPhase.PhaseName
+			summary.PhaseName = currentPhase.PhaseName
+			summary.PhaseStatus = currentPhase.Status
+			summary.PhaseProgress = currentPhase.Progress
+			summary.ItemsProcessed = currentPhase.ItemsProcessed
+			summary.ItemsTotal = currentPhase.ItemsTotal
+			summary.CurrentItem = currentPhase.CurrentItem
+			summary.ItemsPerSecond = currentPhase.ItemsPerSecond
+			summary.PhaseErrors = currentPhase.ItemsFailed
+		}
+
+		result = append(result, summary)
+	}
+
+	return result, nil
 }
 
 func (r *scanProgressRepo) GetScanProgressSummary(ctx context.Context, scanID string) (*models.ScanProgressSummary, error) {
-	// TODO: scan_progress_summary view doesn't exist in database
-	// Need to either create the view or aggregate scan_jobs + scan_phases directly
-	return nil, fmt.Errorf("GetScanProgressSummary not implemented: scan_progress_summary view doesn't exist")
+	// Use the SQLC generated query to get scan progress summary from the view
+	phaseRows, err := r.queries.GetScanProgressSummary(ctx, scanID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scan progress summary: %w", err)
+	}
+
+	if len(phaseRows) == 0 {
+		return nil, fmt.Errorf("scan not found: %s", scanID)
+	}
+
+	// The view returns one row per phase, so we need to aggregate
+	firstRow := phaseRows[0]
+	summary := &models.ScanProgressSummary{
+		ScanID:    scanID,
+		VolumeID:  stringFromPgText(firstRow.VolumeID),
+		JobStatus: firstRow.ScanStatus,
+	}
+
+	if firstRow.ScanStartedAt.Valid {
+		summary.StartedAt = firstRow.ScanStartedAt.Time
+	}
+
+	// Aggregate phase data
+	var totalItems, processedItems, successfulItems, failedItems int64
+	var completedPhases, runningPhases, failedPhases int
+	var currentPhaseName string
+
+	for _, row := range phaseRows {
+		// Count phase statuses
+		phaseStatus := stringFromPgText(row.PhaseStatus)
+		switch phaseStatus {
+		case "completed":
+			completedPhases++
+		case "running":
+			runningPhases++
+			if currentPhaseName == "" {
+				currentPhaseName = stringFromPgText(row.PhaseName)
+			}
+		case "failed":
+			failedPhases++
+		}
+
+		// Sum items
+		if row.ItemsTotal.Valid {
+			totalItems += row.ItemsTotal.Int64
+		}
+		if row.ItemsProcessed.Valid {
+			processedItems += row.ItemsProcessed.Int64
+		}
+		if row.ItemsSuccessful.Valid {
+			successfulItems += row.ItemsSuccessful.Int64
+		}
+		if row.ItemsFailed.Valid {
+			failedItems += row.ItemsFailed.Int64
+		}
+	}
+
+	summary.TotalPhases = len(phaseRows)
+	summary.CompletedPhases = completedPhases
+	summary.RunningPhases = runningPhases
+	summary.FailedPhases = failedPhases
+	summary.CurrentPhase = currentPhaseName
+	summary.TotalItems = totalItems
+	summary.ProcessedItems = processedItems
+	summary.SuccessfulItems = successfulItems
+	summary.FailedItems = failedItems
+	summary.TotalErrors = failedItems // Approximate
+
+	// Calculate overall progress
+	if totalItems > 0 {
+		summary.OverallProgress = int((processedItems * 100) / totalItems)
+	}
+
+	return summary, nil
 }
 
 func (r *scanProgressRepo) GetRecentErrorsSummary(ctx context.Context, hours int, limit int32) ([]*models.RecentErrorSummary, error) {
-	// TODO: recent_scan_errors view doesn't exist in database
-	// Need to either create the view or query scan_errors directly
-	return []*models.RecentErrorSummary{}, nil
+	// Use the SQLC generated query to get recent scan errors from the view
+	errorRows, err := r.queries.GetRecentScanErrors(ctx, sqlc.GetRecentScanErrorsParams{
+		Limit:  limit,
+		Offset: 0,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent scan errors: %w", err)
+	}
+
+	// Convert from SQLC types to model types
+	result := make([]*models.RecentErrorSummary, 0, len(errorRows))
+	for _, row := range errorRows {
+		summary := &models.RecentErrorSummary{
+			ScanID:        row.ScanID,
+			VolumeID:      stringFromPgText(row.VolumeID),
+			PhaseName:     stringFromPgText(row.PhaseName),
+			ErrorType:     row.ErrorType,
+			ErrorCategory: stringFromPgText(row.ErrorCategory),
+			Severity:      stringFromPgText(row.Severity),
+			Component:     stringFromPgText(row.Component),
+			ItemPath:      stringFromPgText(row.ItemPath),
+			ErrorMessage:  row.ErrorMessage,
+		}
+
+		if row.OccurredAt.Valid {
+			summary.OccurredAt = row.OccurredAt.Time
+		}
+
+		if row.RetryCount.Valid {
+			summary.RetryCount = int(row.RetryCount.Int32)
+		}
+
+		result = append(result, summary)
+	}
+
+	return result, nil
 }
 
 // =============================================================================
@@ -911,9 +1088,32 @@ func (r *scanProgressRepo) GetScanErrorsCount(ctx context.Context, scanID, phase
 
 // GetActiveScans returns active scans with pagination (returns values, not pointers)
 func (r *scanProgressRepo) GetActiveScans(ctx context.Context, limit, offset int) ([]models.ActiveScanSummary, error) {
-	// TODO: active_scans view doesn't exist in database
-	// Need to either create the view or query scan_jobs + scan_phases directly
-	return []models.ActiveScanSummary{}, nil
+	// Use GetActiveScansSummary which uses the active_scans view
+	summaries, err := r.GetActiveScansSummary(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply pagination
+	start := offset
+	if start >= len(summaries) {
+		return []models.ActiveScanSummary{}, nil
+	}
+
+	end := start + limit
+	if end > len(summaries) {
+		end = len(summaries)
+	}
+
+	// Convert from pointers to values
+	result := make([]models.ActiveScanSummary, 0, end-start)
+	for i := start; i < end; i++ {
+		if summaries[i] != nil {
+			result = append(result, *summaries[i])
+		}
+	}
+
+	return result, nil
 }
 
 // GetActiveScansCount returns the count of active scans
@@ -974,4 +1174,12 @@ func (r *scanProgressRepo) GetRecentScanErrors(ctx context.Context, params model
 	}
 
 	return errors, rows.Err()
+}
+
+// stringFromPgText converts a pgtype.Text to a string, handling null values
+func stringFromPgText(t pgtype.Text) string {
+	if t.Valid {
+		return t.String
+	}
+	return ""
 }

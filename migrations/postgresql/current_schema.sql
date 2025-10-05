@@ -116,6 +116,109 @@ CREATE TYPE public.user_status AS ENUM (
 
 
 --
+-- Name: audit_organization_actions(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.audit_organization_actions() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+BEGIN
+    -- Only audit if we have organization context
+    IF get_current_organization_id() IS NOT NULL THEN
+        -- Log the action to audit_logs table
+        INSERT INTO audit_logs (
+            action,
+            resource_type,
+            resource_id,
+            organization_id,
+            details,
+            created_at
+        ) VALUES (
+            TG_OP,
+            TG_TABLE_NAME,
+            COALESCE(NEW.id::text, OLD.id::text),
+            get_current_organization_id(),
+            jsonb_build_object(
+                'operation', TG_OP,
+                'table', TG_TABLE_NAME,
+                'old_data', CASE WHEN TG_OP IN ('UPDATE', 'DELETE') THEN row_to_json(OLD) ELSE NULL END,
+                'new_data', CASE WHEN TG_OP IN ('INSERT', 'UPDATE') THEN row_to_json(NEW) ELSE NULL END
+            ),
+            NOW()
+        );
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+
+--
+-- Name: get_current_organization_id(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_current_organization_id() RETURNS bigint
+    LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+BEGIN
+    -- Get organization ID from session variable set by application
+    RETURN COALESCE(
+        nullif(current_setting('app.current_organization_id', true), '')::bigint,
+        NULL
+    );
+END;
+$$;
+
+
+--
+-- Name: is_system_admin(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.is_system_admin() RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+BEGIN
+    -- Check if system admin flag is set by application
+    RETURN COALESCE(
+        current_setting('app.is_system_admin', true)::boolean,
+        false
+    );
+END;
+$$;
+
+
+--
+-- Name: set_organization_context(bigint, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_organization_context(org_id bigint, is_admin boolean DEFAULT false) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+BEGIN
+    -- Set organization ID for this session
+    PERFORM set_config('app.current_organization_id', org_id::text, false);
+    
+    -- Set system admin flag for this session
+    PERFORM set_config('app.is_system_admin', is_admin::text, false);
+END;
+$$;
+
+
+--
+-- Name: set_system_admin_context(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_system_admin_context() RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+BEGIN
+    -- Set system admin flag
+    PERFORM set_config('app.is_system_admin', 'true', false);
+END;
+$$;
+
+
+--
 -- Name: update_updated_at(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -132,6 +235,117 @@ $$;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: scan_jobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scan_jobs (
+    scan_id text NOT NULL,
+    volume_id text,
+    status text DEFAULT 'pending'::text NOT NULL,
+    total_files bigint DEFAULT 0,
+    scanned_files bigint DEFAULT 0,
+    failed_files bigint DEFAULT 0,
+    total_bytes bigint DEFAULT 0,
+    scanned_bytes bigint DEFAULT 0,
+    scan_rate_files_per_sec numeric(10,2),
+    scan_rate_mb_per_sec numeric(10,2),
+    error_message text,
+    error_details jsonb DEFAULT '{}'::jsonb,
+    started_at timestamp with time zone,
+    completed_at timestamp with time zone,
+    paused_at timestamp with time zone,
+    pause_reason text,
+    duration_seconds integer,
+    triggered_by text,
+    scan_options jsonb DEFAULT '{}'::jsonb,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    organization_id bigint,
+    progress integer DEFAULT 0,
+    CONSTRAINT scan_jobs_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'running'::text, 'completed'::text, 'failed'::text, 'cancelled'::text, 'paused'::text])))
+);
+
+
+--
+-- Name: COLUMN scan_jobs.organization_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.scan_jobs.organization_id IS 'Organization that owns this scan job';
+
+
+--
+-- Name: scan_phases; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scan_phases (
+    id bigint NOT NULL,
+    scan_id text NOT NULL,
+    phase_name text NOT NULL,
+    status text DEFAULT 'queued'::text NOT NULL,
+    progress_percent integer DEFAULT 0,
+    items_total bigint DEFAULT 0,
+    items_processed bigint DEFAULT 0,
+    items_failed bigint DEFAULT 0,
+    current_item text,
+    started_at timestamp with time zone,
+    completed_at timestamp with time zone,
+    duration_ms bigint,
+    throughput_items_per_sec numeric(10,2),
+    memory_usage_mb bigint,
+    error_message text,
+    pause_reason text,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    phase_order integer DEFAULT 0,
+    progress integer DEFAULT 0,
+    current_depth integer DEFAULT 0,
+    metadata jsonb,
+    items_successful bigint DEFAULT 0,
+    CONSTRAINT scan_phases_phase_name_check CHECK ((phase_name = ANY (ARRAY['volume_scan'::text, 'filesystem_indexing'::text, 'media_enrichment'::text, 'discovery'::text, 'analysis'::text, 'indexing'::text, 'metadata_extraction'::text, 'finalization'::text]))),
+    CONSTRAINT scan_phases_progress_percent_check CHECK (((progress_percent >= 0) AND (progress_percent <= 100))),
+    CONSTRAINT scan_phases_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'queued'::text, 'running'::text, 'completed'::text, 'failed'::text, 'cancelled'::text, 'paused'::text])))
+);
+
+
+--
+-- Name: active_scans; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.active_scans AS
+ SELECT sj.scan_id,
+    sj.volume_id,
+    sj.status,
+    sj.started_at,
+    sj.updated_at,
+    sj.completed_at,
+    sj.error_message,
+    COALESCE(( SELECT avg(
+                CASE
+                    WHEN (sp.items_total > 0) THEN (((sp.items_processed)::double precision / (sp.items_total)::double precision) * (100)::double precision)
+                    ELSE (0)::double precision
+                END) AS avg
+           FROM public.scan_phases sp
+          WHERE (sp.scan_id = sj.scan_id)), (0)::double precision) AS overall_progress_percent,
+    ( SELECT count(*) AS count
+           FROM public.scan_phases sp
+          WHERE (sp.scan_id = sj.scan_id)) AS total_phases,
+    ( SELECT count(*) AS count
+           FROM public.scan_phases sp
+          WHERE ((sp.scan_id = sj.scan_id) AND (sp.status = 'completed'::text))) AS completed_phases,
+    ( SELECT count(*) AS count
+           FROM public.scan_phases sp
+          WHERE ((sp.scan_id = sj.scan_id) AND (sp.status = 'running'::text))) AS running_phases,
+    ( SELECT count(*) AS count
+           FROM public.scan_phases sp
+          WHERE ((sp.scan_id = sj.scan_id) AND (sp.status = 'failed'::text))) AS failed_phases,
+    EXTRACT(epoch FROM (COALESCE(sj.completed_at, CURRENT_TIMESTAMP) - sj.started_at)) AS duration_seconds,
+    EXTRACT(epoch FROM (CURRENT_TIMESTAMP - sj.updated_at)) AS seconds_since_update
+   FROM public.scan_jobs sj
+  WHERE (sj.status = ANY (ARRAY['running'::text, 'paused'::text]))
+  ORDER BY sj.started_at DESC;
+
 
 --
 -- Name: alert_deliveries; Type: TABLE; Schema: public; Owner: -
@@ -700,9 +914,9 @@ CREATE TABLE public.files (
     extension text,
     mime text,
     size_bytes bigint DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone,
-    modified_at timestamp with time zone,
-    accessed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    modified_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    accessed_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     mode integer,
     owner_uid integer,
     owner_gid integer,
@@ -786,8 +1000,8 @@ CREATE TABLE public.folders (
     media_file_count integer DEFAULT 0,
     has_media_files boolean DEFAULT false,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    modified_at timestamp with time zone,
-    accessed_at timestamp with time zone,
+    modified_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    accessed_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     organization_id bigint
 );
 
@@ -977,6 +1191,66 @@ ALTER SEQUENCE public.permissions_id_seq OWNED BY public.permissions.id;
 
 
 --
+-- Name: scan_errors; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scan_errors (
+    id bigint NOT NULL,
+    scan_id text NOT NULL,
+    phase_name text,
+    error_type text NOT NULL,
+    error_category text,
+    severity text,
+    component text,
+    operation text,
+    item_path text,
+    item_name text,
+    item_type text,
+    item_size bigint,
+    error_message text NOT NULL,
+    error_code text,
+    stack_trace text,
+    technical_details text,
+    occurred_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    context text,
+    retry_count integer DEFAULT 0,
+    max_retries integer DEFAULT 0,
+    retry_after timestamp with time zone,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
+-- Name: recent_scan_errors; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.recent_scan_errors AS
+ SELECT se.id,
+    se.scan_id,
+    sj.volume_id,
+    se.phase_name,
+    se.error_type,
+    se.error_category,
+    se.severity,
+    se.component,
+    se.operation,
+    se.error_message,
+    se.item_path,
+    se.item_name,
+    se.item_type,
+    se.occurred_at,
+    se.retry_count,
+    se.max_retries,
+    sj.status AS scan_status,
+    sj.started_at AS scan_started_at,
+    EXTRACT(epoch FROM (CURRENT_TIMESTAMP - se.occurred_at)) AS seconds_since_error
+   FROM (public.scan_errors se
+     LEFT JOIN public.scan_jobs sj ON ((se.scan_id = sj.scan_id)))
+  WHERE (se.occurred_at >= (CURRENT_TIMESTAMP - '24:00:00'::interval))
+  ORDER BY se.occurred_at DESC;
+
+
+--
 -- Name: role_permissions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1056,41 +1330,50 @@ ALTER SEQUENCE public.saved_searches_id_seq OWNED BY public.saved_searches.id;
 
 
 --
--- Name: scan_jobs; Type: TABLE; Schema: public; Owner: -
+-- Name: scan_errors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.scan_jobs (
-    scan_id text NOT NULL,
-    volume_id text,
-    status text DEFAULT 'pending'::text NOT NULL,
-    total_files bigint DEFAULT 0,
-    scanned_files bigint DEFAULT 0,
-    failed_files bigint DEFAULT 0,
-    total_bytes bigint DEFAULT 0,
-    scanned_bytes bigint DEFAULT 0,
-    scan_rate_files_per_sec numeric(10,2),
-    scan_rate_mb_per_sec numeric(10,2),
-    error_message text,
-    error_details jsonb DEFAULT '{}'::jsonb,
-    started_at timestamp with time zone,
-    completed_at timestamp with time zone,
-    paused_at timestamp with time zone,
-    pause_reason text,
-    duration_seconds integer,
-    triggered_by text,
-    scan_options jsonb DEFAULT '{}'::jsonb,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    organization_id bigint,
-    CONSTRAINT scan_jobs_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'running'::text, 'completed'::text, 'failed'::text, 'cancelled'::text, 'paused'::text])))
-);
+CREATE SEQUENCE public.scan_errors_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 --
--- Name: COLUMN scan_jobs.organization_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: scan_errors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.scan_jobs.organization_id IS 'Organization that owns this scan job';
+ALTER SEQUENCE public.scan_errors_id_seq OWNED BY public.scan_errors.id;
+
+
+--
+-- Name: scan_history; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.scan_history AS
+ SELECT sj.scan_id,
+    sj.volume_id,
+    sj.status,
+    sj.started_at,
+    sj.completed_at,
+    EXTRACT(epoch FROM (sj.completed_at - sj.started_at)) AS duration_seconds,
+    ( SELECT count(*) AS count
+           FROM public.scan_phases sp
+          WHERE ((sp.scan_id = sj.scan_id) AND (sp.status = 'completed'::text))) AS completed_phases,
+    ( SELECT count(*) AS count
+           FROM public.scan_phases sp
+          WHERE ((sp.scan_id = sj.scan_id) AND (sp.status = 'failed'::text))) AS failed_phases,
+    ( SELECT count(*) AS count
+           FROM public.scan_errors se
+          WHERE (se.scan_id = sj.scan_id)) AS total_errors,
+    ( SELECT sum(sp.items_processed) AS sum
+           FROM public.scan_phases sp
+          WHERE (sp.scan_id = sj.scan_id)) AS total_items_processed
+   FROM public.scan_jobs sj
+  WHERE (sj.status = ANY (ARRAY['completed'::text, 'failed'::text, 'cancelled'::text]))
+  ORDER BY sj.completed_at DESC;
 
 
 --
@@ -1168,35 +1451,6 @@ ALTER SEQUENCE public.scan_phase_steps_id_seq OWNED BY public.scan_phase_steps.i
 
 
 --
--- Name: scan_phases; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.scan_phases (
-    id bigint NOT NULL,
-    scan_id text NOT NULL,
-    phase_name text NOT NULL,
-    status text DEFAULT 'queued'::text NOT NULL,
-    progress_percent integer DEFAULT 0,
-    items_total bigint DEFAULT 0,
-    items_processed bigint DEFAULT 0,
-    items_failed bigint DEFAULT 0,
-    current_item text,
-    started_at timestamp with time zone,
-    completed_at timestamp with time zone,
-    duration_ms bigint,
-    throughput_items_per_sec numeric(10,2),
-    memory_usage_mb bigint,
-    error_message text,
-    pause_reason text,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT scan_phases_phase_name_check CHECK ((phase_name = ANY (ARRAY['discovery'::text, 'analysis'::text, 'indexing'::text, 'metadata_extraction'::text, 'finalization'::text]))),
-    CONSTRAINT scan_phases_progress_percent_check CHECK (((progress_percent >= 0) AND (progress_percent <= 100))),
-    CONSTRAINT scan_phases_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'completed'::text, 'failed'::text, 'cancelled'::text, 'paused'::text])))
-);
-
-
---
 -- Name: scan_phases_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -1213,6 +1467,134 @@ CREATE SEQUENCE public.scan_phases_id_seq
 --
 
 ALTER SEQUENCE public.scan_phases_id_seq OWNED BY public.scan_phases.id;
+
+
+--
+-- Name: scan_progress_summary; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.scan_progress_summary AS
+ SELECT sj.scan_id,
+    sj.volume_id,
+    sj.status AS scan_status,
+    sj.started_at AS scan_started_at,
+    sj.completed_at AS scan_completed_at,
+    sp.phase_name,
+    sp.status AS phase_status,
+    sp.started_at AS phase_started_at,
+    sp.completed_at AS phase_completed_at,
+    sp.items_processed,
+    sp.items_total,
+    sp.items_failed,
+    sp.items_successful,
+    sp.current_item,
+    sp.progress_percent,
+    sp.error_message AS phase_error,
+    sp.pause_reason,
+    sp.current_depth,
+    sp.throughput_items_per_sec,
+    sp.memory_usage_mb,
+        CASE
+            WHEN (sp.items_total > 0) THEN round((((sp.items_processed)::numeric / (sp.items_total)::numeric) * (100)::numeric), 2)
+            ELSE (0)::numeric
+        END AS phase_progress_percent,
+    EXTRACT(epoch FROM (COALESCE(sp.completed_at, CURRENT_TIMESTAMP) - sp.started_at)) AS phase_duration_seconds
+   FROM (public.scan_jobs sj
+     LEFT JOIN public.scan_phases sp ON ((sj.scan_id = sp.scan_id)))
+  WHERE (sj.started_at >= (CURRENT_TIMESTAMP - '7 days'::interval))
+  ORDER BY sj.started_at DESC, sp.started_at;
+
+
+--
+-- Name: stats_jobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.stats_jobs (
+    id bigint NOT NULL,
+    job_id text NOT NULL,
+    job_type text NOT NULL,
+    volume_id text,
+    status text DEFAULT 'pending'::text NOT NULL,
+    progress integer DEFAULT 0,
+    error_message text,
+    started_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    completed_at timestamp with time zone,
+    duration_ms bigint,
+    records_processed bigint DEFAULT 0,
+    organization_id bigint,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT stats_jobs_job_type_check CHECK ((job_type = ANY (ARRAY['daily_stats'::text, 'growth_analysis'::text, 'trend_computation'::text, 'media_analysis'::text, 'capacity_prediction'::text]))),
+    CONSTRAINT stats_jobs_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'running'::text, 'completed'::text, 'failed'::text, 'cancelled'::text])))
+);
+
+
+--
+-- Name: TABLE stats_jobs; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.stats_jobs IS 'Background jobs for statistics computation and analysis';
+
+
+--
+-- Name: COLUMN stats_jobs.job_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.stats_jobs.job_id IS 'Unique identifier for the job (UUID or generated string)';
+
+
+--
+-- Name: COLUMN stats_jobs.job_type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.stats_jobs.job_type IS 'Type of statistics job being executed';
+
+
+--
+-- Name: COLUMN stats_jobs.volume_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.stats_jobs.volume_id IS 'Volume this job is processing (null for system-wide jobs)';
+
+
+--
+-- Name: COLUMN stats_jobs.progress; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.stats_jobs.progress IS 'Job progress percentage (0-100)';
+
+
+--
+-- Name: COLUMN stats_jobs.duration_ms; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.stats_jobs.duration_ms IS 'Job execution duration in milliseconds';
+
+
+--
+-- Name: COLUMN stats_jobs.records_processed; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.stats_jobs.records_processed IS 'Number of records/files processed by this job';
+
+
+--
+-- Name: stats_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.stats_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: stats_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.stats_jobs_id_seq OWNED BY public.stats_jobs.id;
 
 
 --
@@ -1608,6 +1990,28 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
+-- Name: volume_scan_stats; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.volume_scan_stats AS
+ SELECT sj.volume_id,
+    count(*) AS total_scans,
+    count(*) FILTER (WHERE (sj.status = 'completed'::text)) AS successful_scans,
+    count(*) FILTER (WHERE (sj.status = 'failed'::text)) AS failed_scans,
+    count(*) FILTER (WHERE (sj.status = 'running'::text)) AS running_scans,
+    max(sj.started_at) AS last_scan_started,
+    max(sj.completed_at) AS last_scan_completed,
+    avg(EXTRACT(epoch FROM (sj.completed_at - sj.started_at))) FILTER (WHERE (sj.status = 'completed'::text)) AS avg_scan_duration_seconds,
+    sum(( SELECT count(*) AS count
+           FROM public.scan_errors se
+          WHERE (se.scan_id = sj.scan_id))) AS total_errors
+   FROM public.scan_jobs sj
+  WHERE (sj.started_at >= (CURRENT_TIMESTAMP - '30 days'::interval))
+  GROUP BY sj.volume_id
+  ORDER BY (max(sj.started_at)) DESC;
+
+
+--
 -- Name: volume_sizes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1818,6 +2222,13 @@ ALTER TABLE ONLY public.saved_searches ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: scan_errors id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scan_errors ALTER COLUMN id SET DEFAULT nextval('public.scan_errors_id_seq'::regclass);
+
+
+--
 -- Name: scan_performance_metrics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1836,6 +2247,13 @@ ALTER TABLE ONLY public.scan_phase_steps ALTER COLUMN id SET DEFAULT nextval('pu
 --
 
 ALTER TABLE ONLY public.scan_phases ALTER COLUMN id SET DEFAULT nextval('public.scan_phases_id_seq'::regclass);
+
+
+--
+-- Name: stats_jobs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stats_jobs ALTER COLUMN id SET DEFAULT nextval('public.stats_jobs_id_seq'::regclass);
 
 
 --
@@ -2212,6 +2630,14 @@ ALTER TABLE ONLY public.saved_searches
 
 
 --
+-- Name: scan_errors scan_errors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scan_errors
+    ADD CONSTRAINT scan_errors_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: scan_jobs scan_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2241,6 +2667,22 @@ ALTER TABLE ONLY public.scan_phase_steps
 
 ALTER TABLE ONLY public.scan_phases
     ADD CONSTRAINT scan_phases_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: stats_jobs stats_jobs_job_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stats_jobs
+    ADD CONSTRAINT stats_jobs_job_id_key UNIQUE (job_id);
+
+
+--
+-- Name: stats_jobs stats_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stats_jobs
+    ADD CONSTRAINT stats_jobs_pkey PRIMARY KEY (id);
 
 
 --
@@ -2917,6 +3359,34 @@ CREATE INDEX idx_saved_searches_updated_at ON public.saved_searches USING btree 
 
 
 --
+-- Name: idx_scan_errors_occurred_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scan_errors_occurred_at ON public.scan_errors USING btree (occurred_at DESC);
+
+
+--
+-- Name: idx_scan_errors_phase; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scan_errors_phase ON public.scan_errors USING btree (scan_id, phase_name);
+
+
+--
+-- Name: idx_scan_errors_scan_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scan_errors_scan_id ON public.scan_errors USING btree (scan_id);
+
+
+--
+-- Name: idx_scan_errors_severity; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scan_errors_severity ON public.scan_errors USING btree (severity) WHERE (severity = ANY (ARRAY['error'::text, 'critical'::text]));
+
+
+--
 -- Name: idx_scan_jobs_organization_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2949,6 +3419,41 @@ CREATE INDEX idx_scan_jobs_volume_id ON public.scan_jobs USING btree (volume_id)
 --
 
 CREATE INDEX idx_scan_jobs_volume_org ON public.scan_jobs USING btree (volume_id, organization_id);
+
+
+--
+-- Name: idx_stats_jobs_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_stats_jobs_created_at ON public.stats_jobs USING btree (created_at DESC);
+
+
+--
+-- Name: idx_stats_jobs_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_stats_jobs_job_id ON public.stats_jobs USING btree (job_id);
+
+
+--
+-- Name: idx_stats_jobs_org_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_stats_jobs_org_id ON public.stats_jobs USING btree (organization_id);
+
+
+--
+-- Name: idx_stats_jobs_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_stats_jobs_status ON public.stats_jobs USING btree (status);
+
+
+--
+-- Name: idx_stats_jobs_volume_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_stats_jobs_volume_id ON public.stats_jobs USING btree (volume_id);
 
 
 --
@@ -3145,6 +3650,27 @@ CREATE TRIGGER alert_destinations_updated_at_trigger BEFORE UPDATE ON public.ale
 --
 
 CREATE TRIGGER alert_rules_updated_at_trigger BEFORE UPDATE ON public.alert_rules FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+
+--
+-- Name: files audit_files_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER audit_files_trigger AFTER INSERT OR DELETE OR UPDATE ON public.files FOR EACH ROW EXECUTE FUNCTION public.audit_organization_actions();
+
+
+--
+-- Name: users audit_users_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER audit_users_trigger AFTER INSERT OR DELETE OR UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.audit_organization_actions();
+
+
+--
+-- Name: volumes audit_volumes_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER audit_volumes_trigger AFTER INSERT OR DELETE OR UPDATE ON public.volumes FOR EACH ROW EXECUTE FUNCTION public.audit_organization_actions();
 
 
 --
@@ -3434,6 +3960,14 @@ ALTER TABLE ONLY public.saved_searches
 
 
 --
+-- Name: scan_errors scan_errors_scan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scan_errors
+    ADD CONSTRAINT scan_errors_scan_id_fkey FOREIGN KEY (scan_id) REFERENCES public.scan_jobs(scan_id) ON DELETE CASCADE;
+
+
+--
 -- Name: scan_jobs scan_jobs_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3562,42 +4096,298 @@ ALTER TABLE ONLY public.volumes
 
 
 --
+-- Name: alerts; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.alerts ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: audit_logs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: audit_logs audit_logs_organization_read; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY audit_logs_organization_read ON public.audit_logs FOR SELECT USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id())));
+
+
+--
+-- Name: audit_logs audit_logs_system_admin_write; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY audit_logs_system_admin_write ON public.audit_logs FOR INSERT WITH CHECK (public.is_system_admin());
+
+
+--
+-- Name: daily_stats; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.daily_stats ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: docker_mount_catalog; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.docker_mount_catalog ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: files; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.files ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: files files_organization_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY files_organization_isolation ON public.files USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL))) WITH CHECK ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL)));
+
+
+--
+-- Name: folders; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.folders ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: folders folders_organization_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY folders_organization_isolation ON public.folders USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL))) WITH CHECK ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL)));
+
+
+--
+-- Name: organization_invitations invitations_organization_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY invitations_organization_isolation ON public.organization_invitations USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()))) WITH CHECK ((public.is_system_admin() OR (organization_id = public.get_current_organization_id())));
+
+
+--
+-- Name: organization_invitations; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.organization_invitations ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: saved_searches; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.saved_searches ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: scan_jobs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.scan_jobs ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: users; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: users users_organization_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY users_organization_isolation ON public.users USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()))) WITH CHECK ((public.is_system_admin() OR (organization_id = public.get_current_organization_id())));
+
+
+--
+-- Name: volumes; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.volumes ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: volumes volumes_organization_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY volumes_organization_isolation ON public.volumes USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL))) WITH CHECK ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL)));
+
+
+--
 -- PostgreSQL database dump complete
 --
 
--- Migration: Add stats_jobs table for background statistics processing
--- This table tracks statistics computation jobs for monitoring and debugging
+-- Add scan checkpoints for crash recovery and resume capability
+-- This enables long-running scans (1TB+ volumes) to resume after crashes/restarts
 
-CREATE TABLE IF NOT EXISTS stats_jobs (
+CREATE TABLE scan_checkpoints (
     id BIGSERIAL PRIMARY KEY,
-    job_id TEXT NOT NULL UNIQUE,
-    job_type TEXT NOT NULL,
-    volume_id TEXT,
-    status TEXT NOT NULL DEFAULT 'pending',
-    progress INTEGER DEFAULT 0,
-    error_message TEXT,
-    started_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMPTZ,
-    duration_ms BIGINT,
-    records_processed BIGINT DEFAULT 0,
-    organization_id BIGINT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    scan_id TEXT NOT NULL,
+    volume_id TEXT NOT NULL,
+    checkpoint_type TEXT NOT NULL, -- 'volume_scan', 'filesystem_indexing', 'enrichment'
 
-    CONSTRAINT stats_jobs_status_check CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
-    CONSTRAINT stats_jobs_job_type_check CHECK (job_type IN ('daily_stats', 'growth_analysis', 'trend_computation', 'media_analysis', 'capacity_prediction'))
+    -- Progress state
+    phase TEXT NOT NULL,
+    progress DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+
+    -- Counters
+    items_processed BIGINT NOT NULL DEFAULT 0,
+    bytes_processed BIGINT NOT NULL DEFAULT 0,
+    errors_count BIGINT NOT NULL DEFAULT 0,
+
+    -- Resume position for filesystem indexing
+    last_path TEXT,
+    last_depth INTEGER,
+    last_folder_id BIGINT, -- Resume from this folder in folders table
+    resume_data JSONB, -- Method-specific resume data
+
+    -- Metadata
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- Ensure one checkpoint per scan+type combination
+    CONSTRAINT unique_scan_checkpoint UNIQUE (scan_id, checkpoint_type)
 );
 
-CREATE INDEX IF NOT EXISTS idx_stats_jobs_status ON stats_jobs(status);
-CREATE INDEX IF NOT EXISTS idx_stats_jobs_job_id ON stats_jobs(job_id);
-CREATE INDEX IF NOT EXISTS idx_stats_jobs_volume_id ON stats_jobs(volume_id);
-CREATE INDEX IF NOT EXISTS idx_stats_jobs_created_at ON stats_jobs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_stats_jobs_org_id ON stats_jobs(organization_id);
+-- Indexes for fast checkpoint lookup
+CREATE INDEX idx_scan_checkpoints_scan_id ON scan_checkpoints(scan_id);
+CREATE INDEX idx_scan_checkpoints_volume_id ON scan_checkpoints(volume_id);
+CREATE INDEX idx_scan_checkpoints_updated_at ON scan_checkpoints(updated_at DESC);
 
-COMMENT ON TABLE stats_jobs IS 'Background jobs for statistics computation and analysis';
-COMMENT ON COLUMN stats_jobs.job_id IS 'Unique identifier for the job (UUID or generated string)';
-COMMENT ON COLUMN stats_jobs.job_type IS 'Type of statistics job being executed';
-COMMENT ON COLUMN stats_jobs.volume_id IS 'Volume this job is processing (null for system-wide jobs)';
-COMMENT ON COLUMN stats_jobs.progress IS 'Job progress percentage (0-100)';
-COMMENT ON COLUMN stats_jobs.duration_ms IS 'Job execution duration in milliseconds';
-COMMENT ON COLUMN stats_jobs.records_processed IS 'Number of records/files processed by this job';
+-- Index for cleanup job (delete checkpoints older than 7 days)
+CREATE INDEX idx_scan_checkpoints_created_at ON scan_checkpoints(created_at);
+
+-- Note: If scan_jobs table exists in your schema, you may want to add a status column
+-- to track interrupted scans. This migration doesn't modify scan_jobs as it may not exist.
+
+-- Function to automatically update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_scan_checkpoint_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to auto-update updated_at on checkpoint updates
+CREATE TRIGGER trigger_update_scan_checkpoint_updated_at
+    BEFORE UPDATE ON scan_checkpoints
+    FOR EACH ROW
+    EXECUTE FUNCTION update_scan_checkpoint_updated_at();
+
+-- Add comment for documentation
+COMMENT ON TABLE scan_checkpoints IS 'Stores periodic checkpoints during volume scans to enable resume capability after crashes or interruptions. Critical for 1TB+ volumes with multi-hour scan times.';
+COMMENT ON COLUMN scan_checkpoints.checkpoint_type IS 'Type of scan phase being checkpointed: volume_scan (size calculation), filesystem_indexing (file/folder crawl), enrichment (media metadata)';
+COMMENT ON COLUMN scan_checkpoints.resume_data IS 'JSON object containing phase-specific data needed to resume. Example: {"method": "diskus", "started_at": "2025-10-05T10:00:00Z"}';
+COMMENT ON COLUMN scan_checkpoints.last_folder_id IS 'ID of last processed folder in folders table. Used to resume filesystem indexing from exact position.';
+-- Add volume snapshots for incremental scanning
+-- This enables tracking volume state over time and detecting changes
+
+CREATE TABLE volume_snapshots (
+    id BIGSERIAL PRIMARY KEY,
+    volume_id TEXT NOT NULL,
+    scan_id TEXT NOT NULL,
+
+    -- Snapshot metadata
+    snapshot_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    scan_method TEXT NOT NULL, -- 'diskus', 'du', 'native'
+
+    -- Volume state at snapshot time
+    total_size BIGINT NOT NULL DEFAULT 0,
+    file_count BIGINT NOT NULL DEFAULT 0,
+    folder_count BIGINT NOT NULL DEFAULT 0,
+
+    -- For incremental comparison
+    root_mtime TIMESTAMPTZ, -- Root directory modification time
+    content_hash TEXT, -- Hash of directory tree structure (optional)
+
+    -- Statistics
+    scan_duration_ms BIGINT, -- How long the scan took
+    indexing_duration_ms BIGINT, -- How long indexing took
+
+    -- Metadata
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+    -- Note: Foreign key to volumes table will be added when volumes table is created
+);
+
+-- Indexes for fast lookups
+CREATE INDEX idx_volume_snapshots_volume_id ON volume_snapshots(volume_id);
+CREATE INDEX idx_volume_snapshots_snapshot_time ON volume_snapshots(snapshot_time DESC);
+CREATE INDEX idx_volume_snapshots_scan_id ON volume_snapshots(scan_id);
+
+-- Index for cleanup (delete old snapshots) - using simple index instead of partial for compatibility
+CREATE INDEX idx_volume_snapshots_created_at ON volume_snapshots(created_at);
+
+-- Add table to track directory-level changes for faster incremental detection
+CREATE TABLE volume_directory_snapshots (
+    id BIGSERIAL PRIMARY KEY,
+    snapshot_id BIGINT NOT NULL,
+    volume_id TEXT NOT NULL,
+
+    -- Directory information
+    dir_path TEXT NOT NULL, -- Relative path from volume root
+    dir_mtime TIMESTAMPTZ NOT NULL, -- Directory modification time
+    dir_size BIGINT NOT NULL DEFAULT 0, -- Total size of directory
+    file_count INT NOT NULL DEFAULT 0, -- Number of files in directory
+    subdir_count INT NOT NULL DEFAULT 0, -- Number of subdirectories
+
+    -- For change detection
+    content_hash TEXT, -- Hash of directory contents (filenames + sizes)
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_snapshot FOREIGN KEY (snapshot_id) REFERENCES volume_snapshots(id) ON DELETE CASCADE
+);
+
+-- Indexes for fast change detection
+CREATE INDEX idx_volume_dir_snapshots_snapshot ON volume_directory_snapshots(snapshot_id);
+CREATE INDEX idx_volume_dir_snapshots_volume ON volume_directory_snapshots(volume_id);
+CREATE INDEX idx_volume_dir_snapshots_path ON volume_directory_snapshots(volume_id, dir_path);
+CREATE INDEX idx_volume_dir_snapshots_mtime ON volume_directory_snapshots(dir_mtime DESC);
+
+-- Function to get latest snapshot for a volume
+CREATE OR REPLACE FUNCTION get_latest_snapshot(p_volume_id TEXT)
+RETURNS TABLE (
+    snapshot_id BIGINT,
+    snapshot_time TIMESTAMPTZ,
+    total_size BIGINT,
+    file_count BIGINT,
+    folder_count BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT id, snapshot_time, total_size, file_count, folder_count
+    FROM volume_snapshots
+    WHERE volume_id = p_volume_id
+    ORDER BY snapshot_time DESC
+    LIMIT 1;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to cleanup old snapshots (keep last 10 per volume)
+CREATE OR REPLACE FUNCTION cleanup_old_snapshots(p_retention_days INT DEFAULT 90)
+RETURNS INT AS $$
+DECLARE
+    deleted_count INT;
+BEGIN
+    -- Delete snapshots older than retention period, keeping at least last 3 per volume
+    WITH ranked_snapshots AS (
+        SELECT id,
+               ROW_NUMBER() OVER (PARTITION BY volume_id ORDER BY snapshot_time DESC) as rn,
+               created_at
+        FROM volume_snapshots
+    )
+    DELETE FROM volume_snapshots
+    WHERE id IN (
+        SELECT id FROM ranked_snapshots
+        WHERE rn > 10 OR created_at < NOW() - (p_retention_days || ' days')::INTERVAL
+    );
+
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Comments for documentation
+COMMENT ON TABLE volume_snapshots IS 'Stores volume state snapshots for incremental scanning. Enables detecting changes between scans to avoid full rescans of unchanged data.';
+COMMENT ON TABLE volume_directory_snapshots IS 'Stores directory-level snapshots for fine-grained change detection. Allows identifying specific directories that changed.';
+COMMENT ON COLUMN volume_snapshots.content_hash IS 'Optional hash of directory tree structure. Can be used for quick change detection without walking the filesystem.';
+COMMENT ON COLUMN volume_directory_snapshots.content_hash IS 'Hash of directory contents (filenames + sizes). Used to detect if directory contents changed.';

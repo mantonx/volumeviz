@@ -52,10 +52,32 @@ type RetentionResult struct {
 // PostgreSQL Implementation
 // =============================================================================
 
-// PruneVolumeMetrics removes old volume metrics
+// PruneVolumeMetrics removes old scan performance metrics
 func (r *retentionRepo) PruneVolumeMetrics(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
-	// TODO: Implement when retention queries are available
-	return &RetentionResult{RecordsDeleted: 0, BytesFreed: 0}, nil
+	cutoffTime := time.Now().Add(-retentionPeriod)
+
+	// Count old metrics before deletion
+	countBefore, err := r.queries.CountOldScanMetrics(ctx, pgtype.Timestamptz{
+		Time:  cutoffTime,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete old metrics
+	err = r.queries.DeleteOldScanMetrics(ctx, pgtype.Timestamptz{
+		Time:  cutoffTime,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RetentionResult{
+		RecordsDeleted: countBefore,
+		BytesFreed:     countBefore * 256, // Rough estimate of bytes per metric record
+	}, nil
 }
 
 // PruneScanJobs removes old scan job records
@@ -100,10 +122,46 @@ func (r *retentionRepo) PruneScanJobs(ctx context.Context, retentionPeriod time.
 	}, nil
 }
 
-// PruneDailyStats removes old daily statistics
+// PruneDailyStats removes old scan phases and scan errors
 func (r *retentionRepo) PruneDailyStats(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
-	// TODO: Implement when retention queries are available
-	return &RetentionResult{RecordsDeleted: 0, BytesFreed: 0}, nil
+	cutoffTime := time.Now().Add(-retentionPeriod)
+
+	var totalDeleted int64 = 0
+
+	// Prune scan phases
+	phaseCount, err := r.queries.CountOldScanPhases(ctx, cutoffTime)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.queries.DeleteOldScanPhases(ctx, cutoffTime)
+	if err != nil {
+		return nil, err
+	}
+	totalDeleted += phaseCount
+
+	// Prune scan errors
+	errorCount, err := r.queries.CountOldScanErrors(ctx, pgtype.Timestamptz{
+		Time:  cutoffTime,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.queries.DeleteOldScanErrors(ctx, pgtype.Timestamptz{
+		Time:  cutoffTime,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	totalDeleted += errorCount
+
+	return &RetentionResult{
+		RecordsDeleted: totalDeleted,
+		BytesFreed:     totalDeleted * 512, // Rough estimate
+	}, nil
 }
 
 // PruneFileMetadata removes old file metadata
@@ -164,13 +222,21 @@ func (r *retentionRepo) PruneInactiveFiles(ctx context.Context, retentionPeriod 
 
 // GetRetentionStats returns statistics about data eligible for retention
 func (r *retentionRepo) GetRetentionStats(ctx context.Context) (map[string]int64, error) {
-	// TODO: Implement when retention queries are available
+	// Get stats for data older than 30 days
+	cutoffTime := time.Now().AddDate(0, 0, -30)
+
+	stats, err := r.queries.GetRetentionStats(ctx, cutoffTime)
+	if err != nil {
+		return nil, err
+	}
+
 	return map[string]int64{
-		"volume_metrics":  0,
-		"scan_jobs":       0,
-		"daily_stats":     0,
-		"file_metadata":   0,
-		"inactive_files":  0,
+		"scan_phases":   stats.OldScanPhases,
+		"scan_errors":   stats.OldScanErrors,
+		"scan_metrics":  stats.OldScanMetrics,
+		"file_metadata": stats.OldFileMetadata,
+		"old_files":     stats.OldFiles,
+		"old_scan_jobs": stats.OldScanJobs,
 	}, nil
 }
 
@@ -190,9 +256,14 @@ func (r *retentionRepo) RollupDailyMetrics(ctx context.Context) error {
 // SQLite Implementation
 // =============================================================================
 
-// PruneVolumeMetrics removes old volume metrics
+// PruneVolumeMetrics removes old scan performance metrics
 func (r *retentionRepoSQLite) PruneVolumeMetrics(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
-	// TODO: Implement when retention queries are available
+	cutoffTime := time.Now().Add(-retentionPeriod)
+
+	// SQLite version - query methods should be similar but check sqlc-sqlite generation
+	// For now, return empty result as SQLite retention queries need to be added separately
+	// TODO: Implement SQLite-specific retention queries
+	_ = cutoffTime // Avoid unused variable error
 	return &RetentionResult{RecordsDeleted: 0, BytesFreed: 0}, nil
 }
 
@@ -238,9 +309,13 @@ func (r *retentionRepoSQLite) PruneScanJobs(ctx context.Context, retentionPeriod
 	}, nil
 }
 
-// PruneDailyStats removes old daily statistics
+// PruneDailyStats removes old scan phases and scan errors
 func (r *retentionRepoSQLite) PruneDailyStats(ctx context.Context, retentionPeriod time.Duration) (*RetentionResult, error) {
-	// TODO: Implement when retention queries are available
+	cutoffTime := time.Now().Add(-retentionPeriod)
+
+	// SQLite version - query methods should be similar but check sqlc-sqlite generation
+	// TODO: Implement SQLite-specific retention queries
+	_ = cutoffTime // Avoid unused variable error
 	return &RetentionResult{RecordsDeleted: 0, BytesFreed: 0}, nil
 }
 
@@ -302,13 +377,14 @@ func (r *retentionRepoSQLite) PruneInactiveFiles(ctx context.Context, retentionP
 
 // GetRetentionStats returns statistics about data eligible for retention
 func (r *retentionRepoSQLite) GetRetentionStats(ctx context.Context) (map[string]int64, error) {
-	// TODO: Implement when retention queries are available
+	// TODO: Implement SQLite-specific retention stats
 	return map[string]int64{
-		"volume_metrics":  0,
-		"scan_jobs":       0,
-		"daily_stats":     0,
-		"file_metadata":   0,
-		"inactive_files":  0,
+		"scan_phases":   0,
+		"scan_errors":   0,
+		"scan_metrics":  0,
+		"file_metadata": 0,
+		"old_files":     0,
+		"old_scan_jobs": 0,
 	}, nil
 }
 

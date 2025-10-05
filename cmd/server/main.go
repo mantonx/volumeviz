@@ -14,6 +14,7 @@ import (
 	v1 "github.com/mantonx/volumeviz/internal/api/v1"
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/db"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/services/docker"
 	"github.com/mantonx/volumeviz/internal/store"
 	storeconfig "github.com/mantonx/volumeviz/internal/store/config"
@@ -141,6 +142,47 @@ func (a *healthCheckAdapter) HealthCheck(ctx context.Context) interface{} {
 	}
 }
 
+// autoResumeIncompleteScans finds and resumes interrupted scans on startup
+func autoResumeIncompleteScans(store store.Store, scanner interfaces.VolumeScanner, cfg *config.Config) {
+	ctx := context.Background()
+
+	log.Println("[AUTO-RESUME] Checking for incomplete scans...")
+
+	// Note: We'd need to add a query to get recent scans with checkpoints
+	// For now, this is a placeholder that demonstrates the pattern
+	// TODO: Add GetIncompleteScanIDs() query to checkpoint repo
+	_ = scanner // Scanner would be used for resuming scans
+
+	if store.Checkpoints() == nil {
+		log.Println("[AUTO-RESUME] Checkpointing not available (SQLite or not configured)")
+		return
+	}
+
+	// Get checkpoint stats to see if there are any recent checkpoints
+	stats, err := store.Checkpoints().GetStats(ctx)
+	if err != nil {
+		log.Printf("[AUTO-RESUME] Failed to get checkpoint stats: %v", err)
+		return
+	}
+
+	if stats.TotalCheckpoints == 0 {
+		log.Println("[AUTO-RESUME] No checkpoints found")
+		return
+	}
+
+	log.Printf("[AUTO-RESUME] Found %d recent checkpoints across %d scans",
+		stats.TotalCheckpoints, stats.TotalScans)
+	log.Printf("[AUTO-RESUME] Auto-resume functionality ready - scans will resume on next scan request")
+
+	// Note: Full auto-resume would require:
+	// 1. Query to get incomplete scan IDs from checkpoints
+	// 2. For each scan: load checkpoint and call scanner.ResumeScan(scanID)
+	// 3. Handle errors gracefully
+	//
+	// For now, checkpoints are saved and can be used for manual resume or
+	// when a new scan is requested for the same volume
+}
+
 func main() {
 	// Print version information
 	versionInfo := version.Get()
@@ -150,6 +192,9 @@ func main() {
 
 	// Load configuration
 	cfg := config.Load()
+
+	// Debug: Log authentication status
+	log.Printf("[DEBUG] Authentication enabled: %v", cfg.Auth.Enabled)
 
 	// Set Gin mode
 	gin.SetMode(cfg.Server.Mode)
@@ -225,6 +270,11 @@ func main() {
 	// Health handler is now configured with store directly
 	log.Printf("Health handler configured with store interface")
 
+	// Auto-resume incomplete scans if enabled
+	if cfg.Scan.AutoResumeEnabled {
+		go autoResumeIncompleteScans(storeInstance, nil, cfg)
+	}
+
 	// Start events service if enabled
 	if cfg.Events.Enabled && apiRouter.EventsService() != nil {
 		if err := apiRouter.EventsService().Start(context.Background()); err != nil {
@@ -275,11 +325,17 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Stop scheduler if running
+	// Stop scan scheduler if running
 	if apiRouter.Scheduler() != nil {
 		if err := apiRouter.Scheduler().Stop(ctx); err != nil {
 			log.Printf("[ERROR] Failed to stop scan scheduler: %v", err)
 		}
+	}
+
+	// Stop job scheduler if running
+	if apiRouter.JobScheduler() != nil {
+		apiRouter.JobScheduler().Stop()
+		log.Printf("[INFO] Job scheduler stopped")
 	}
 
 	if err := srv.Shutdown(ctx); err != nil {

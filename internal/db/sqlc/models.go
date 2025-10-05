@@ -386,6 +386,23 @@ func AllUserStatusValues() []UserStatus {
 	}
 }
 
+type ActiveScans struct {
+	ScanID                 string             `json:"scan_id"`
+	VolumeID               pgtype.Text        `json:"volume_id"`
+	Status                 string             `json:"status"`
+	StartedAt              pgtype.Timestamptz `json:"started_at"`
+	UpdatedAt              time.Time          `json:"updated_at"`
+	CompletedAt            pgtype.Timestamptz `json:"completed_at"`
+	ErrorMessage           pgtype.Text        `json:"error_message"`
+	OverallProgressPercent interface{}        `json:"overall_progress_percent"`
+	TotalPhases            int64              `json:"total_phases"`
+	CompletedPhases        int64              `json:"completed_phases"`
+	RunningPhases          int64              `json:"running_phases"`
+	FailedPhases           int64              `json:"failed_phases"`
+	DurationSeconds        pgtype.Numeric     `json:"duration_seconds"`
+	SecondsSinceUpdate     pgtype.Numeric     `json:"seconds_since_update"`
+}
+
 type AlertDeliveries struct {
 	ID            int64              `json:"id"`
 	AlertID       int64              `json:"alert_id"`
@@ -731,6 +748,28 @@ type Permissions struct {
 	CreatedAt   time.Time   `json:"created_at"`
 }
 
+type RecentScanErrors struct {
+	ID                int64              `json:"id"`
+	ScanID            string             `json:"scan_id"`
+	VolumeID          pgtype.Text        `json:"volume_id"`
+	PhaseName         pgtype.Text        `json:"phase_name"`
+	ErrorType         string             `json:"error_type"`
+	ErrorCategory     pgtype.Text        `json:"error_category"`
+	Severity          pgtype.Text        `json:"severity"`
+	Component         pgtype.Text        `json:"component"`
+	Operation         pgtype.Text        `json:"operation"`
+	ErrorMessage      string             `json:"error_message"`
+	ItemPath          pgtype.Text        `json:"item_path"`
+	ItemName          pgtype.Text        `json:"item_name"`
+	ItemType          pgtype.Text        `json:"item_type"`
+	OccurredAt        pgtype.Timestamptz `json:"occurred_at"`
+	RetryCount        pgtype.Int4        `json:"retry_count"`
+	MaxRetries        pgtype.Int4        `json:"max_retries"`
+	ScanStatus        pgtype.Text        `json:"scan_status"`
+	ScanStartedAt     pgtype.Timestamptz `json:"scan_started_at"`
+	SecondsSinceError pgtype.Numeric     `json:"seconds_since_error"`
+}
+
 type RolePermissions struct {
 	ID           int64     `json:"id"`
 	Role         string    `json:"role"`
@@ -752,6 +791,66 @@ type SavedSearches struct {
 	RunCount    pgtype.Int4        `json:"run_count"`
 	// Organization that owns this saved search
 	OrganizationID pgtype.Int8 `json:"organization_id"`
+}
+
+// Stores periodic checkpoints during volume scans to enable resume capability after crashes or interruptions. Critical for 1TB+ volumes with multi-hour scan times.
+type ScanCheckpoints struct {
+	ID       int64  `json:"id"`
+	ScanID   string `json:"scan_id"`
+	VolumeID string `json:"volume_id"`
+	// Type of scan phase being checkpointed: volume_scan (size calculation), filesystem_indexing (file/folder crawl), enrichment (media metadata)
+	CheckpointType string      `json:"checkpoint_type"`
+	Phase          string      `json:"phase"`
+	Progress       float64     `json:"progress"`
+	ItemsProcessed int64       `json:"items_processed"`
+	BytesProcessed int64       `json:"bytes_processed"`
+	ErrorsCount    int64       `json:"errors_count"`
+	LastPath       pgtype.Text `json:"last_path"`
+	LastDepth      pgtype.Int4 `json:"last_depth"`
+	// ID of last processed folder in folders table. Used to resume filesystem indexing from exact position.
+	LastFolderID pgtype.Int8 `json:"last_folder_id"`
+	// JSON object containing phase-specific data needed to resume. Example: {"method": "diskus", "started_at": "2025-10-05T10:00:00Z"}
+	ResumeData []byte    `json:"resume_data"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+type ScanErrors struct {
+	ID               int64              `json:"id"`
+	ScanID           string             `json:"scan_id"`
+	PhaseName        pgtype.Text        `json:"phase_name"`
+	ErrorType        string             `json:"error_type"`
+	ErrorCategory    pgtype.Text        `json:"error_category"`
+	Severity         pgtype.Text        `json:"severity"`
+	Component        pgtype.Text        `json:"component"`
+	Operation        pgtype.Text        `json:"operation"`
+	ItemPath         pgtype.Text        `json:"item_path"`
+	ItemName         pgtype.Text        `json:"item_name"`
+	ItemType         pgtype.Text        `json:"item_type"`
+	ItemSize         pgtype.Int8        `json:"item_size"`
+	ErrorMessage     string             `json:"error_message"`
+	ErrorCode        pgtype.Text        `json:"error_code"`
+	StackTrace       pgtype.Text        `json:"stack_trace"`
+	TechnicalDetails pgtype.Text        `json:"technical_details"`
+	OccurredAt       pgtype.Timestamptz `json:"occurred_at"`
+	Context          pgtype.Text        `json:"context"`
+	RetryCount       pgtype.Int4        `json:"retry_count"`
+	MaxRetries       pgtype.Int4        `json:"max_retries"`
+	RetryAfter       pgtype.Timestamptz `json:"retry_after"`
+	CreatedAt        time.Time          `json:"created_at"`
+}
+
+type ScanHistory struct {
+	ScanID              string             `json:"scan_id"`
+	VolumeID            pgtype.Text        `json:"volume_id"`
+	Status              string             `json:"status"`
+	StartedAt           pgtype.Timestamptz `json:"started_at"`
+	CompletedAt         pgtype.Timestamptz `json:"completed_at"`
+	DurationSeconds     pgtype.Numeric     `json:"duration_seconds"`
+	CompletedPhases     int64              `json:"completed_phases"`
+	FailedPhases        int64              `json:"failed_phases"`
+	TotalErrors         int64              `json:"total_errors"`
+	TotalItemsProcessed int64              `json:"total_items_processed"`
 }
 
 type ScanJobs struct {
@@ -778,6 +877,7 @@ type ScanJobs struct {
 	UpdatedAt           time.Time          `json:"updated_at"`
 	// Organization that owns this scan job
 	OrganizationID pgtype.Int8 `json:"organization_id"`
+	Progress       pgtype.Int4 `json:"progress"`
 }
 
 type ScanPerformanceMetrics struct {
@@ -824,6 +924,36 @@ type ScanPhases struct {
 	PauseReason           pgtype.Text        `json:"pause_reason"`
 	CreatedAt             time.Time          `json:"created_at"`
 	UpdatedAt             time.Time          `json:"updated_at"`
+	PhaseOrder            pgtype.Int4        `json:"phase_order"`
+	Progress              pgtype.Int4        `json:"progress"`
+	CurrentDepth          pgtype.Int4        `json:"current_depth"`
+	Metadata              []byte             `json:"metadata"`
+	ItemsSuccessful       pgtype.Int8        `json:"items_successful"`
+}
+
+type ScanProgressSummary struct {
+	ScanID                string             `json:"scan_id"`
+	VolumeID              pgtype.Text        `json:"volume_id"`
+	ScanStatus            string             `json:"scan_status"`
+	ScanStartedAt         pgtype.Timestamptz `json:"scan_started_at"`
+	ScanCompletedAt       pgtype.Timestamptz `json:"scan_completed_at"`
+	PhaseName             pgtype.Text        `json:"phase_name"`
+	PhaseStatus           pgtype.Text        `json:"phase_status"`
+	PhaseStartedAt        pgtype.Timestamptz `json:"phase_started_at"`
+	PhaseCompletedAt      pgtype.Timestamptz `json:"phase_completed_at"`
+	ItemsProcessed        pgtype.Int8        `json:"items_processed"`
+	ItemsTotal            pgtype.Int8        `json:"items_total"`
+	ItemsFailed           pgtype.Int8        `json:"items_failed"`
+	ItemsSuccessful       pgtype.Int8        `json:"items_successful"`
+	CurrentItem           pgtype.Text        `json:"current_item"`
+	ProgressPercent       pgtype.Int4        `json:"progress_percent"`
+	PhaseError            pgtype.Text        `json:"phase_error"`
+	PauseReason           pgtype.Text        `json:"pause_reason"`
+	CurrentDepth          pgtype.Int4        `json:"current_depth"`
+	ThroughputItemsPerSec pgtype.Numeric     `json:"throughput_items_per_sec"`
+	MemoryUsageMb         pgtype.Int8        `json:"memory_usage_mb"`
+	PhaseProgressPercent  pgtype.Numeric     `json:"phase_progress_percent"`
+	PhaseDurationSeconds  pgtype.Numeric     `json:"phase_duration_seconds"`
 }
 
 // Background jobs for statistics computation and analysis
@@ -999,6 +1129,33 @@ type Users struct {
 	OrganizationID         pgtype.Int8        `json:"organization_id"`
 }
 
+// Stores directory-level snapshots for fine-grained change detection. Allows identifying specific directories that changed.
+type VolumeDirectorySnapshots struct {
+	ID          int64              `json:"id"`
+	SnapshotID  int64              `json:"snapshot_id"`
+	VolumeID    string             `json:"volume_id"`
+	DirPath     string             `json:"dir_path"`
+	DirMtime    pgtype.Timestamptz `json:"dir_mtime"`
+	DirSize     int64              `json:"dir_size"`
+	FileCount   int32              `json:"file_count"`
+	SubdirCount int32              `json:"subdir_count"`
+	// Hash of directory contents (filenames + sizes). Used to detect if directory contents changed.
+	ContentHash pgtype.Text `json:"content_hash"`
+	CreatedAt   time.Time   `json:"created_at"`
+}
+
+type VolumeScanStats struct {
+	VolumeID               pgtype.Text `json:"volume_id"`
+	TotalScans             int64       `json:"total_scans"`
+	SuccessfulScans        int64       `json:"successful_scans"`
+	FailedScans            int64       `json:"failed_scans"`
+	RunningScans           int64       `json:"running_scans"`
+	LastScanStarted        interface{} `json:"last_scan_started"`
+	LastScanCompleted      interface{} `json:"last_scan_completed"`
+	AvgScanDurationSeconds float64     `json:"avg_scan_duration_seconds"`
+	TotalErrors            int64       `json:"total_errors"`
+}
+
 type VolumeSizes struct {
 	ID                    int64              `json:"id"`
 	VolumeID              string             `json:"volume_id"`
@@ -1012,6 +1169,24 @@ type VolumeSizes struct {
 	TypeDistribution      []byte             `json:"type_distribution"`
 	ExtensionDistribution []byte             `json:"extension_distribution"`
 	CalculatedAt          pgtype.Timestamptz `json:"calculated_at"`
+}
+
+// Stores volume state snapshots for incremental scanning. Enables detecting changes between scans to avoid full rescans of unchanged data.
+type VolumeSnapshots struct {
+	ID           int64              `json:"id"`
+	VolumeID     string             `json:"volume_id"`
+	ScanID       string             `json:"scan_id"`
+	SnapshotTime pgtype.Timestamptz `json:"snapshot_time"`
+	ScanMethod   string             `json:"scan_method"`
+	TotalSize    int64              `json:"total_size"`
+	FileCount    int64              `json:"file_count"`
+	FolderCount  int64              `json:"folder_count"`
+	RootMtime    pgtype.Timestamptz `json:"root_mtime"`
+	// Optional hash of directory tree structure. Can be used for quick change detection without walking the filesystem.
+	ContentHash        pgtype.Text `json:"content_hash"`
+	ScanDurationMs     pgtype.Int8 `json:"scan_duration_ms"`
+	IndexingDurationMs pgtype.Int8 `json:"indexing_duration_ms"`
+	CreatedAt          time.Time   `json:"created_at"`
 }
 
 type Volumes struct {

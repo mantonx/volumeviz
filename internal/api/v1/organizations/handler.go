@@ -153,13 +153,7 @@ func (h *Handler) UpdateMyOrganization(c *gin.Context) {
 		return
 	}
 
-	// Check if user is admin (this would be checked in middleware in a real app)
-	userRole := c.GetString("user_role")
-	if userRole != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
-		return
-	}
-
+	// Admin check is now handled by RequireSystemAdmin() middleware
 	var req UpdateOrganizationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})

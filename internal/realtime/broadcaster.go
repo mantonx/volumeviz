@@ -3,6 +3,7 @@ package realtime
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/store"
@@ -10,15 +11,20 @@ import (
 
 // Broadcaster handles real-time broadcasting with WebSocket architecture
 type Broadcaster struct {
-	service *RealtimeService
-	store   store.Store
+	service              *RealtimeService
+	store                store.Store
+	lastBroadcastByScan  map[string]time.Time // Track last broadcast per scanID
+	broadcastMutex       sync.Mutex           // Protect lastBroadcastByScan
+	broadcastMinInterval time.Duration        // Minimum interval between broadcasts (default: 1 second)
 }
 
 // NewBroadcaster creates a new progress broadcaster
 func NewBroadcaster(service *RealtimeService, store store.Store) *Broadcaster {
 	return &Broadcaster{
-		service: service,
-		store:   store,
+		service:              service,
+		store:                store,
+		lastBroadcastByScan:  make(map[string]time.Time),
+		broadcastMinInterval: 1 * time.Second, // Throttle to max 1 broadcast per second per scan
 	}
 }
 
@@ -149,6 +155,21 @@ func (eb *Broadcaster) BroadcastScanProgress(volumeID, scanID string, data inter
 func (eb *Broadcaster) BroadcastComprehensiveScanProgress(ctx context.Context, scanID, volumeID string) error {
 	if eb.service == nil || eb.store == nil {
 		return nil
+	}
+
+	// Centralized throttling - prevent broadcast spam from ANY source
+	eb.broadcastMutex.Lock()
+	lastBroadcast, exists := eb.lastBroadcastByScan[scanID]
+	now := time.Now()
+	shouldBroadcast := !exists || now.Sub(lastBroadcast) >= eb.broadcastMinInterval
+	if shouldBroadcast {
+		eb.lastBroadcastByScan[scanID] = now
+	}
+	eb.broadcastMutex.Unlock()
+
+	// Throttle: skip this broadcast if called too soon
+	if !shouldBroadcast {
+		return nil // Silently skip - not an error
 	}
 
 	scanProgressRepo := eb.store.ScanProgress()

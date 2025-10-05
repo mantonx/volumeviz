@@ -195,6 +195,15 @@ export function ScanProgressDetail({
             )}
           </div>
 
+          {/* Current Sub-Phase (Enricher) */}
+          {currentPhase.sub_phase && (
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded font-medium">
+                {currentPhase.sub_phase}
+              </span>
+            </div>
+          )}
+
           {/* Current Item */}
           {currentPhase.current_item && (
             <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">

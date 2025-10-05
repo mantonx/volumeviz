@@ -46,6 +46,16 @@ func (s *pgStore) ScanProgress() repo.ScanProgressRepo {
 	return repo.NewScanProgressRepo(s.conn.Pool)
 }
 
+// Checkpoints returns a checkpoint repository using the pool connection
+func (s *pgStore) Checkpoints() repo.CheckpointRepo {
+	return repo.NewCheckpointRepo(s.conn.Queries)
+}
+
+// Snapshots returns a snapshot repository using the pool connection
+func (s *pgStore) Snapshots() repo.SnapshotRepo {
+	return repo.NewSnapshotRepo(s.conn.Queries)
+}
+
 // Retention returns a retention repository using the pool connection
 func (s *pgStore) Retention() repo.RetentionRepo {
 	return repo.NewRetentionRepo(s.conn.Queries)
@@ -145,6 +155,16 @@ func (s *pgTxStore) ScanProgress() repo.ScanProgressRepo {
 	return repo.NewScanProgressRepo(tmpPool)
 }
 
+// Checkpoints returns a checkpoint repository using the transaction connection
+func (s *pgTxStore) Checkpoints() repo.CheckpointRepo {
+	return repo.NewCheckpointRepo(s.queries)
+}
+
+// Snapshots returns a snapshot repository using the transaction connection
+func (s *pgTxStore) Snapshots() repo.SnapshotRepo {
+	return repo.NewSnapshotRepo(s.queries)
+}
+
 // Retention returns a retention repository using the transaction connection
 func (s *pgTxStore) Retention() repo.RetentionRepo {
 	return repo.NewRetentionRepo(s.queries)
@@ -175,6 +195,11 @@ func (s *pgTxStore) FileMetadata() *repo.FileMetadataRepo {
 // Alerts returns an alerts repository using the transaction connection
 func (s *pgTxStore) Alerts() repo.AlertsRepo {
 	return repo.NewAlertsRepo(s.queries)
+}
+
+// Search returns a search repository using the transaction connection
+func (s *pgTxStore) Search() *repo.SearchRepo {
+	return repo.NewSearchRepo(s.queries)
 }
 
 // Users returns a users repository using the transaction connection

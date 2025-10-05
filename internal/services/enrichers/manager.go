@@ -479,6 +479,9 @@ func (m *Manager) EnrichFile(ctx context.Context, fileInfo FileInfo) (*Enrichmen
 			continue
 		}
 
+		// Update current enricher being used
+		m.updateCurrentEnricher(fileInfo.VolumeID, enricher.Name())
+
 		// Create context with timeout
 		enrichCtx, cancel := context.WithTimeout(ctx, m.config.TimeoutPerFile)
 
@@ -564,6 +567,17 @@ func (m *Manager) updateCurrentFile(volumeID, filePath string) {
 		// Transform the file path for proper display
 		displayPath := m.transformFilePathForDisplay(volumeID, filePath)
 		progress.CurrentFile = displayPath
+		progress.LastUpdate = time.Now()
+	}
+}
+
+// updateCurrentEnricher updates the current enricher being used for progress tracking
+func (m *Manager) updateCurrentEnricher(volumeID, enricherName string) {
+	m.progressMutex.Lock()
+	defer m.progressMutex.Unlock()
+
+	if progress, exists := m.progressMap[volumeID]; exists {
+		progress.CurrentEnricher = enricherName
 		progress.LastUpdate = time.Now()
 	}
 }
@@ -908,43 +922,11 @@ func (m *Manager) updateDatabasePhaseStatus(ctx context.Context, scanID, phaseNa
 
 // checkAndCompleteScan checks if all phases are complete and marks the scan as completed if so
 func (m *Manager) checkAndCompleteScan(ctx context.Context, scanID string) {
-	if m.store == nil {
-		return
-	}
-
-	scanProgressRepo := m.store.ScanProgress()
-	phases, err := scanProgressRepo.GetScanPhasesByID(ctx, scanID)
-	if err != nil {
-		if m.logger != nil {
-			m.logger.Printf("Failed to get phases for scan completion check %s: %v", scanID, err)
-		}
-		return
-	}
-
-	// Check if all phases are completed
-	allCompleted := true
-	for _, phase := range phases {
-		if phase.Status != "completed" {
-			allCompleted = false
-			break
-		}
-	}
-
-	// If all phases are completed, mark the scan job as completed
-	if allCompleted {
-		if m.logger != nil {
-			m.logger.Printf("All phases completed for scan %s - marking scan as completed", scanID)
-		}
-
-		if err := m.store.Scans().CompletesScanJob(ctx, scanID); err != nil {
-			if m.logger != nil {
-				m.logger.Printf("Failed to mark scan job as completed for scan %s: %v", scanID, err)
-			}
-		} else {
-			if m.logger != nil {
-				m.logger.Printf("Successfully marked scan %s as completed", scanID)
-			}
-		}
+	// NOTE: Scan completion is now handled in progress_tracker.go when filesystem_indexing completes
+	// This function is kept for backwards compatibility but does nothing
+	// Enrichment runs in background after scan is already marked completed
+	if m.logger != nil {
+		m.logger.Printf("checkAndCompleteScan called for scan %s (scan already completed after filesystem indexing)", scanID)
 	}
 }
 
@@ -979,13 +961,36 @@ func (m *Manager) updateSingleFileProgress(volumeID, scanID string) {
 	progress.SuccessfulFiles++
 	progress.LastUpdate = time.Now()
 
-	// Update database progress if we have store access
-	if scanID != "" && m.store != nil {
+	// Throttle database writes - only update every 100 files or every 5 seconds
+	// FIX: Update timestamp BEFORE checking to prevent race condition with concurrent workers
+	shouldWriteDatabase := false
+	now := time.Now()
+
+	if progress.ProcessedFiles%100 == 0 {
+		shouldWriteDatabase = true
+		progress.LastDatabaseWrite = now
+	} else if now.Sub(progress.LastDatabaseWrite) > 5*time.Second {
+		shouldWriteDatabase = true
+		progress.LastDatabaseWrite = now
+	}
+
+	if shouldWriteDatabase && scanID != "" && m.store != nil {
 		go m.updateDatabaseProgress(context.Background(), scanID, progress)
 	}
 
-	// Broadcast progress update
-	if m.progressBroadcaster != nil {
+	// Throttle WebSocket broadcasts - only broadcast every 100 files or every 2 seconds
+	// FIX: Update timestamp BEFORE checking to prevent race condition with concurrent workers
+	shouldBroadcast := false
+
+	if progress.ProcessedFiles%100 == 0 {
+		shouldBroadcast = true
+		progress.LastBroadcast = now
+	} else if now.Sub(progress.LastBroadcast) > 2*time.Second {
+		shouldBroadcast = true
+		progress.LastBroadcast = now
+	}
+
+	if shouldBroadcast && m.progressBroadcaster != nil {
 		go m.progressBroadcaster.BroadcastComprehensiveScanProgress(context.Background(), scanID, volumeID)
 	}
 }

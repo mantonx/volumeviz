@@ -56,6 +56,28 @@ type ScanConfig struct {
 	MaxConcurrent     int           `yaml:"max_concurrent"`
 	PreferredMethods  []string      `yaml:"preferred_methods"`
 	ProgressReporting bool          `yaml:"progress_reporting"`
+
+	// Resilience configuration
+	RetryEnabled          bool          `yaml:"retry_enabled"`
+	RetryMaxAttempts      int           `yaml:"retry_max_attempts"`
+	RetryInitialBackoff   time.Duration `yaml:"retry_initial_backoff"`
+	RetryMaxBackoff       time.Duration `yaml:"retry_max_backoff"`
+	PerMethodTimeout      time.Duration `yaml:"per_method_timeout"`
+	OverallTimeout        time.Duration `yaml:"overall_timeout"`
+	IndexingTimeout       time.Duration `yaml:"indexing_timeout"`
+	CircuitBreakerEnabled bool          `yaml:"circuit_breaker_enabled"`
+
+	// Checkpointing configuration
+	CheckpointEnabled       bool          `yaml:"checkpoint_enabled"`
+	CheckpointInterval      time.Duration `yaml:"checkpoint_interval"`
+	CheckpointItemThreshold int64         `yaml:"checkpoint_item_threshold"`
+	AutoResumeEnabled       bool          `yaml:"auto_resume_enabled"`
+
+	// Incremental scanning configuration
+	IncrementalEnabled        bool          `yaml:"incremental_enabled"`
+	SnapshotRetentionDays     int           `yaml:"snapshot_retention_days"`
+	IncrementalMaxSnapshotAge time.Duration `yaml:"incremental_max_snapshot_age"`
+	IncrementalForceFullScan  bool          `yaml:"incremental_force_full_scan"`
 }
 
 // CacheConfig holds configuration for caching
@@ -80,6 +102,22 @@ func DefaultConfig() Config {
 			MaxConcurrent:     5,
 			PreferredMethods:  []string{"diskus", "du", "native"},
 			ProgressReporting: true,
+
+			// Resilience defaults
+			RetryEnabled:          true,
+			RetryMaxAttempts:      3,
+			RetryInitialBackoff:   1 * time.Second,
+			RetryMaxBackoff:       30 * time.Second,
+			PerMethodTimeout:      30 * time.Minute,
+			OverallTimeout:        2 * time.Hour,
+			IndexingTimeout:       4 * time.Hour,
+			CircuitBreakerEnabled: true,
+
+			// Checkpointing defaults
+			CheckpointEnabled:       true,
+			CheckpointInterval:      5 * time.Minute,
+			CheckpointItemThreshold: 100000,
+			AutoResumeEnabled:       true,
 		},
 		Cache: CacheConfig{
 			Type:    "memory",
@@ -91,6 +129,7 @@ func DefaultConfig() Config {
 
 // ErrorCodes defines standard error codes for scan operations
 const (
+	// Non-retryable errors
 	ErrorCodeScanQueueTimeout       = "SCAN_QUEUE_TIMEOUT"
 	ErrorCodeVolumePathError        = "VOLUME_PATH_ERROR"
 	ErrorCodeAllMethodsFailed       = "ALL_METHODS_FAILED"
@@ -103,7 +142,14 @@ const (
 	ErrorCodePathNotFound           = "PATH_NOT_FOUND"
 	ErrorCodeInsufficientSpace      = "INSUFFICIENT_SPACE"
 	ErrorCodeScanTimeout            = "SCAN_TIMEOUT"
+	ErrorCodeInvalidPath            = "INVALID_PATH"
 	ErrorCodeUnknown                = "UNKNOWN"
+
+	// Retryable errors
+	ErrorCodeNetworkError      = "NETWORK_ERROR"
+	ErrorCodeTemporaryIOError  = "TEMPORARY_IO_ERROR"
+	ErrorCodeResourceBusy      = "RESOURCE_BUSY"
+	ErrorCodeRateLimitExceeded = "RATE_LIMIT_EXCEEDED"
 )
 
 // ScanStatus represents the possible states of a scan operation

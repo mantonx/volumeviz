@@ -21,7 +21,9 @@ import (
 	previewsAPI "github.com/mantonx/volumeviz/internal/api/v1/previews"
 	"github.com/mantonx/volumeviz/internal/api/v1/rules"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
+	schedulerAPI "github.com/mantonx/volumeviz/internal/api/v1/scheduler"
 	"github.com/mantonx/volumeviz/internal/api/v1/search"
+	"github.com/mantonx/volumeviz/internal/api/v1/snapshots"
 	"github.com/mantonx/volumeviz/internal/api/v1/stats"
 	"github.com/mantonx/volumeviz/internal/api/v1/system"
 	"github.com/mantonx/volumeviz/internal/api/v1/trends"
@@ -36,6 +38,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/repo"
 	"github.com/mantonx/volumeviz/internal/scheduler"
+	"github.com/mantonx/volumeviz/internal/security"
 	alertsService "github.com/mantonx/volumeviz/internal/services/alerts"
 	"github.com/mantonx/volumeviz/internal/services/cache"
 	dockerService "github.com/mantonx/volumeviz/internal/services/docker"
@@ -43,7 +46,9 @@ import (
 	"github.com/mantonx/volumeviz/internal/services/filesystem"
 	coreMetrics "github.com/mantonx/volumeviz/internal/services/metrics"
 	previewsService "github.com/mantonx/volumeviz/internal/services/previews"
+	"github.com/mantonx/volumeviz/internal/services/retention"
 	rulesService "github.com/mantonx/volumeviz/internal/services/rules"
+	jobScheduler "github.com/mantonx/volumeviz/internal/services/scheduler"
 	"github.com/mantonx/volumeviz/internal/services/scanner"
 	statsService "github.com/mantonx/volumeviz/internal/services/stats"
 	"github.com/mantonx/volumeviz/internal/store"
@@ -66,6 +71,7 @@ type Router struct {
 	store               store.Store // Modern store interface using sqlc
 	realtimeService     *realtime.RealtimeService
 	scheduler           scheduler.ScanScheduler                // Optional scan scheduler - using store façade
+	jobScheduler        *jobScheduler.Scheduler                // Job scheduler for periodic tasks
 	eventsService       events.EventService                    // Optional events service - using store façade
 	alertsEngine        interfaces.AlertEngine                 // Alerts engine for alert management
 	enrichmentManager   oldInterfaces.EnrichmentManager        // Media enrichment manager
@@ -97,8 +103,8 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		log.Printf("[INFO] JWT manager initialized successfully")
 	}
 
-	// Create realtime service with JWT manager for authenticated WebSockets
-	realtimeService := realtime.NewRealtimeService(storeInstance, jwtManager)
+	// Create realtime service with JWT manager and configured allowed origins for WebSockets
+	realtimeService := realtime.NewRealtimeServiceWithOrigins(storeInstance, jwtManager, config.CORS.AllowedOrigins)
 
 	// Create progress broadcaster for real-time updates
 	progressBroadcaster := realtime.NewBroadcaster(realtimeService, storeInstance)
@@ -114,8 +120,16 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		prometheus.Labels{"instance": "main"},
 	)
 
-	// Use default scanner config for now
+	// Create scanner config from main config with resilience settings
 	scannerConfig := models.DefaultConfig()
+	scannerConfig.Scanning.RetryEnabled = config.Scan.RetryEnabled
+	scannerConfig.Scanning.RetryMaxAttempts = config.Scan.RetryMaxAttempts
+	scannerConfig.Scanning.RetryInitialBackoff = config.Scan.RetryInitialBackoff
+	scannerConfig.Scanning.RetryMaxBackoff = config.Scan.RetryMaxBackoff
+	scannerConfig.Scanning.PerMethodTimeout = config.Scan.PerMethodTimeout
+	scannerConfig.Scanning.OverallTimeout = config.Scan.OverallTimeout
+	scannerConfig.Scanning.IndexingTimeout = config.Scan.IndexingTimeout
+	scannerConfig.Scanning.CircuitBreakerEnabled = config.Scan.CircuitBreakerEnabled
 
 	// Set up filesystem indexing repositories and config
 	foldersRepo := storeInstance.Folders()
@@ -380,6 +394,56 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		log.Printf("[INFO] Alerts engine initialized successfully")
 	}
 
+	// Initialize job scheduler for periodic tasks
+	var sched *jobScheduler.Scheduler
+	if config.Retention.Enabled || config.Scan.IncrementalEnabled {
+		sched = jobScheduler.New()
+		log.Printf("[INFO] Job scheduler initialized")
+
+		// Create and register retention job
+		if config.Retention.Enabled {
+			retentionRepo := storeInstance.Retention()
+			retentionJob := retention.NewJob(retentionRepo, &config.Retention)
+
+			if err := sched.Register(
+				retentionJob,
+				config.Retention.CleanupInterval,
+				config.Retention.RunOnStartup,
+			); err != nil {
+				log.Printf("[ERROR] Failed to register retention job: %v", err)
+			} else {
+				log.Printf("[INFO] Retention job registered (interval: %v, run on startup: %v)",
+					config.Retention.CleanupInterval, config.Retention.RunOnStartup)
+			}
+		}
+
+		// Create and register snapshot cleanup job
+		if config.Scan.IncrementalEnabled {
+			snapshotJob := scanner.NewSnapshotCleanupJob(storeInstance, config.Scan.SnapshotRetentionDays)
+
+			// Use the same cleanup interval as retention (daily by default)
+			cleanupInterval := 24 * time.Hour
+			if config.Retention.Enabled {
+				cleanupInterval = config.Retention.CleanupInterval
+			}
+
+			if err := sched.Register(
+				snapshotJob,
+				cleanupInterval,
+				config.Retention.RunOnStartup, // Use same setting as retention
+			); err != nil {
+				log.Printf("[ERROR] Failed to register snapshot cleanup job: %v", err)
+			} else {
+				log.Printf("[INFO] Snapshot cleanup job registered (retention: %d days, interval: %v)",
+					config.Scan.SnapshotRetentionDays, cleanupInterval)
+			}
+		}
+
+		// Start the scheduler
+		sched.Start()
+		log.Printf("[INFO] Job scheduler started")
+	}
+
 	router := &Router{
 		engine:              gin.New(),
 		dockerService:       dockerSvc,
@@ -388,6 +452,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		store:               storeInstance,
 		realtimeService:     realtimeService,
 		scheduler:           scanScheduler,
+		jobScheduler:        sched,
 		eventsService:       eventsService,
 		alertsEngine:        alertsEngine,
 		enrichmentManager:   enrichmentManager,
@@ -427,6 +492,11 @@ func (r *Router) EventsService() events.EventService {
 // Scheduler returns the scan scheduler if configured
 func (r *Router) Scheduler() scheduler.ScanScheduler {
 	return r.scheduler
+}
+
+// JobScheduler returns the job scheduler if configured
+func (r *Router) JobScheduler() *jobScheduler.Scheduler {
+	return r.jobScheduler
 }
 
 // setupMiddleware configures all middleware for the router
@@ -572,7 +642,11 @@ func (r *Router) setupRoutes(config *config.Config) {
 		auth.RegisterRoutes(v1, r.store, r.jwtManager, authConfig)
 
 		// Organization middleware setup
-		orgMiddleware := middleware.NewOrganizationMiddleware(r.store)
+		orgMiddleware := middleware.NewOrganizationMiddlewareWithAuth(r.store, config.Auth.Enabled)
+
+		// Security middleware for admin-only routes
+		// Note: RequireSystemAdmin() only checks user_role from context, so DB is not needed
+		securityMiddleware := security.NewSecurityMiddleware(nil, r.store)
 
 		// Organization routes
 		organizationHandler := organizations.NewHandler(r.store, r.organizationService)
@@ -580,7 +654,8 @@ func (r *Router) setupRoutes(config *config.Config) {
 		orgRoutes.Use(orgMiddleware.RequireOrganization())
 		{
 			orgRoutes.GET("/me", organizationHandler.GetMyOrganization)
-			orgRoutes.PUT("/me", organizationHandler.UpdateMyOrganization)
+			// Admin-only route: updating organization settings
+			orgRoutes.PUT("/me", securityMiddleware.RequireSystemAdmin(), organizationHandler.UpdateMyOrganization)
 		}
 
 		// Register sub-routers with store interface
@@ -640,6 +715,13 @@ func (r *Router) setupRoutes(config *config.Config) {
 			searchRouter := search.NewRouter(r.store)
 			searchRouter.RegisterRoutes(orgScopedRoutes)
 
+			// Snapshots router for incremental scanning snapshot management - organization scoped
+			if config.Scan.IncrementalEnabled {
+				snapshotsHandler := snapshots.NewHandler(r.store)
+				snapshotsHandler.RegisterRoutes(orgScopedRoutes)
+				log.Printf("[INFO] Snapshots API routes registered successfully (organization-scoped)")
+			}
+
 			// Preview router if preview service is available - organization scoped
 			if r.previewService != nil {
 				previewHandler := previewsAPI.NewHandler(r.previewService, r.store)
@@ -654,6 +736,13 @@ func (r *Router) setupRoutes(config *config.Config) {
 				alertsRouter := alerts.NewRouter(r.store, r.alertsEngine)
 				alertsRouter.RegisterRoutes(orgScopedRoutes)
 				log.Printf("[INFO] Alerts API routes registered successfully (organization-scoped)")
+			}
+
+			// Scheduler routes for job management
+			if r.jobScheduler != nil {
+				schedulerHandler := schedulerAPI.NewHandler(r.jobScheduler)
+				schedulerHandler.RegisterRoutes(orgScopedRoutes)
+				log.Printf("[INFO] Scheduler API routes registered successfully (organization-scoped)")
 			}
 
 			// Tracking rules router for mount tracking rules management - organization scoped

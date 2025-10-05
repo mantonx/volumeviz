@@ -156,3 +156,82 @@ RETURNING *;
 UPDATE scan_jobs
 SET updated_at = CURRENT_TIMESTAMP
 WHERE scan_id = $1;
+
+-- ============================================================================
+-- Database View Queries
+-- ============================================================================
+-- These queries access the monitoring views created in migration 000008
+
+-- name: GetActiveScans :many
+SELECT * FROM active_scans
+ORDER BY started_at DESC;
+
+-- name: GetActiveScansByOrganization :many
+SELECT a.* FROM active_scans a
+JOIN volumes v ON a.volume_id = v.id
+WHERE v.organization_id = $1
+ORDER BY a.started_at DESC;
+
+-- name: GetActiveScanByID :one
+SELECT * FROM active_scans
+WHERE scan_id = $1;
+
+-- name: GetScanProgressSummary :many
+SELECT * FROM scan_progress_summary
+WHERE scan_id = $1
+ORDER BY phase_started_at ASC;
+
+-- name: GetScanProgressSummaryByVolume :many
+SELECT s.* FROM scan_progress_summary s
+JOIN volumes v ON s.volume_id = v.id
+WHERE s.volume_id = $1 AND v.organization_id = $2
+ORDER BY s.scan_started_at DESC, s.phase_started_at ASC
+LIMIT $3 OFFSET $4;
+
+-- name: GetRecentScanErrors :many
+SELECT * FROM recent_scan_errors
+ORDER BY occurred_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: GetRecentScanErrorsByOrganization :many
+SELECT r.* FROM recent_scan_errors r
+JOIN volumes v ON r.volume_id = v.id
+WHERE v.organization_id = $1
+ORDER BY r.occurred_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: GetRecentScanErrorsByScanID :many
+SELECT * FROM recent_scan_errors
+WHERE scan_id = $1
+ORDER BY occurred_at DESC;
+
+-- name: GetScanHistory :many
+SELECT * FROM scan_history
+LIMIT $1 OFFSET $2;
+
+-- name: GetScanHistoryByOrganization :many
+SELECT s.* FROM scan_history s
+JOIN volumes v ON s.volume_id = v.id
+WHERE v.organization_id = $1
+ORDER BY s.completed_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: GetScanHistoryByVolume :many
+SELECT * FROM scan_history
+WHERE volume_id = $1
+ORDER BY completed_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: GetVolumeScanStats :many
+SELECT * FROM volume_scan_stats
+ORDER BY last_scan_started DESC;
+
+-- name: GetVolumeScanStatsByOrganization :many
+SELECT v.* FROM volume_scan_stats v
+JOIN volumes vol ON v.volume_id = vol.id
+WHERE vol.organization_id = $1
+ORDER BY v.last_scan_started DESC;
+
+-- name: GetVolumeScanStatsByVolumeID :one
+SELECT * FROM volume_scan_stats
+WHERE volume_id = $1;

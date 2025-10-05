@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -70,8 +71,34 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 		}()
 	}
 
-	// Start the scan in background
+	// Start the scan in background with panic recovery
 	go func() {
+		// Add panic recovery
+		defer func() {
+			if r := recover(); r != nil {
+				panicErr := NewPanicError(r)
+				if vs.logger != nil {
+					vs.logger.Printf("PANIC in scan goroutine: scan_id=%s volume=%s error=%v",
+						scanID, volumeID, panicErr)
+				}
+
+				// Mark scan as failed
+				if vs.progressManager != nil {
+					vs.progressManager.FinishPhase(scanID, "volume_scan", false,
+						fmt.Sprintf("panic: %v", r))
+				}
+
+				// Update database
+				if vs.store != nil {
+					scansRepo := vs.store.Scans()
+					if scansRepo != nil {
+						_ = scansRepo.FailScanJob(context.Background(), scanID,
+							fmt.Sprintf("panic: %v", r))
+					}
+				}
+			}
+		}()
+
 		// Update status to running
 		if vs.progressManager != nil {
 			vs.progressManager.UpdateProgress(scanID, ProgressUpdate{
@@ -86,9 +113,50 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 			vs.scanMutex.Unlock()
 		}
 
+		// Estimate timeout based on volume size
+		timeout := vs.estimateTimeout(volumeID)
+
+		if vs.logger != nil {
+			vs.logger.Printf("Starting async scan: scan_id=%s volume=%s timeout=%v",
+				scanID, volumeID, timeout)
+		}
+
+		// Start checkpointing if available
+		if vs.checkpointManager != nil {
+			vs.checkpointManager.StartCheckpointing(context.Background(), scanID, volumeID)
+			defer vs.checkpointManager.StopCheckpointing(scanID)
+		}
+
+		// Create context with timeout
+		scanCtx, cancel := withTimeout(context.Background(), timeout)
+		defer cancel()
+
 		// Add scan ID to context for progressive methods
-		scanCtx := context.WithValue(context.Background(), scanIDKey, scanID)
+		scanCtx = context.WithValue(scanCtx, scanIDKey, scanID)
+
 		result, err := vs.ScanVolume(scanCtx, volumeID)
+
+		// Check for timeout specifically
+		if errors.Is(err, context.DeadlineExceeded) {
+			if vs.logger != nil {
+				vs.logger.Printf("Scan timeout: scan_id=%s volume=%s timeout=%v",
+					scanID, volumeID, timeout)
+			}
+
+			if vs.progressManager != nil {
+				vs.progressManager.FinishPhase(scanID, "volume_scan", false,
+					fmt.Sprintf("timeout after %v", timeout))
+			}
+
+			if vs.store != nil {
+				scansRepo := vs.store.Scans()
+				if scansRepo != nil {
+					_ = scansRepo.FailScanJob(context.Background(), scanID,
+						fmt.Sprintf("timeout after %v", timeout))
+				}
+			}
+			return
+		}
 
 		if err != nil {
 			if vs.progressManager != nil {

@@ -6,6 +6,7 @@ package sqlc
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -26,6 +27,9 @@ type Querier interface {
 	// DAILY STATS COMPUTATION
 	// =============================================================================
 	ComputeVolumeDailyStats(ctx context.Context, arg ComputeVolumeDailyStatsParams) error
+	// Computes comprehensive file statistics for a volume including min/max/avg/median file sizes
+	// and type/extension distributions
+	ComputeVolumeFileStatistics(ctx context.Context, volumeID string) (ComputeVolumeFileStatisticsRow, error)
 	CountActiveAlerts(ctx context.Context) (int64, error)
 	CountActiveAlertsByOrganization(ctx context.Context, organizationID pgtype.Int8) (int64, error)
 	CountActiveMountAttachments(ctx context.Context, mountCatalogID int64) (int64, error)
@@ -36,6 +40,7 @@ type Querier interface {
 	CountAlertRules(ctx context.Context) (int64, error)
 	CountAlerts(ctx context.Context) (int64, error)
 	CountAlertsByOrganization(ctx context.Context, organizationID pgtype.Int8) (int64, error)
+	CountCheckpointsByScan(ctx context.Context, scanID string) (int64, error)
 	CountDeliveriesByStatus(ctx context.Context, status string) (int64, error)
 	CountEnabledAlertDestinations(ctx context.Context) (int64, error)
 	CountEnabledAlertRules(ctx context.Context) (int64, error)
@@ -49,10 +54,25 @@ type Querier interface {
 	CountMountsByType(ctx context.Context, mountType string) (int64, error)
 	CountOldFileMetadata(ctx context.Context, extractedAt pgtype.Timestamptz) (int64, error)
 	CountOldFiles(ctx context.Context, lastScanAt pgtype.Timestamptz) (int64, error)
+	// ============================================================================
+	// Scan Errors Retention
+	// ============================================================================
+	CountOldScanErrors(ctx context.Context, occurredAt pgtype.Timestamptz) (int64, error)
+	// ============================================================================
+	// Scan Performance Metrics Retention
+	// ============================================================================
+	CountOldScanMetrics(ctx context.Context, measuredAt pgtype.Timestamptz) (int64, error)
+	// Retention and cleanup queries for PostgreSQL
+	// These queries help prevent database bloat by removing old data
+	// ============================================================================
+	// Scan Phases Retention
+	// ============================================================================
+	CountOldScanPhases(ctx context.Context, updatedAt time.Time) (int64, error)
 	CountPreviewsByStatus(ctx context.Context, status string) (int64, error)
 	CountSavedSearches(ctx context.Context, arg CountSavedSearchesParams) (int64, error)
 	CountScanJobsByStatus(ctx context.Context, status string) (int64, error)
 	CountSearchFiles(ctx context.Context, arg CountSearchFilesParams) (int64, error)
+	CountSnapshotsForVolume(ctx context.Context, volumeID string) (int64, error)
 	CountVolumes(ctx context.Context, organizationID pgtype.Int8) (int64, error)
 	// =============================================================================
 	// ALERTS
@@ -71,10 +91,14 @@ type Querier interface {
 	// =============================================================================
 	CreateAlertRoute(ctx context.Context, arg CreateAlertRouteParams) (AlertRoutes, error)
 	CreateAlertRule(ctx context.Context, arg CreateAlertRuleParams) (AlertRules, error)
+	// Checkpoint repository queries for scan resume capability
+	CreateCheckpoint(ctx context.Context, arg CreateCheckpointParams) (ScanCheckpoints, error)
 	// Container operations (using docker_mount_attachments)
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (DockerMountAttachments, error)
 	// Essential statistics queries for PostgreSQL
 	CreateDailyStat(ctx context.Context, arg CreateDailyStatParams) (DailyStats, error)
+	// Directory snapshot queries
+	CreateDirectorySnapshot(ctx context.Context, arg CreateDirectorySnapshotParams) (VolumeDirectorySnapshots, error)
 	// Docker Mount Catalog Queries (PostgreSQL version)
 	// SQLC queries for Docker mount catalog operations
 	// =============================================================================
@@ -138,6 +162,8 @@ type Querier interface {
 	CreateVolume(ctx context.Context, arg CreateVolumeParams) (Volumes, error)
 	// Volume mount operations (using docker_mount_catalog)
 	CreateVolumeMount(ctx context.Context, arg CreateVolumeMountParams) (DockerMountCatalog, error)
+	// Volume snapshot queries for incremental scanning
+	CreateVolumeSnapshot(ctx context.Context, arg CreateVolumeSnapshotParams) (VolumeSnapshots, error)
 	DeactivateMountAssignment(ctx context.Context, mountCatalogID pgtype.Int8) error
 	DeactivateMountAttachment(ctx context.Context, id int64) error
 	DeactivateMountAttachmentsByContainer(ctx context.Context, containerID string) error
@@ -148,6 +174,8 @@ type Querier interface {
 	DeleteAlertRoute(ctx context.Context, id int64) error
 	DeleteAlertRule(ctx context.Context, id int64) error
 	DeleteAlertsByRule(ctx context.Context, ruleID int64) error
+	DeleteAllCheckpointsForScan(ctx context.Context, scanID string) error
+	DeleteCheckpoint(ctx context.Context, arg DeleteCheckpointParams) error
 	DeleteDeliveriesByAlert(ctx context.Context, alertID int64) error
 	DeleteFile(ctx context.Context, id int64) error
 	DeleteFileMetadata(ctx context.Context, fileID int64) error
@@ -155,17 +183,23 @@ type Querier interface {
 	DeleteFilesByVolume(ctx context.Context, volumeID string) error
 	DeleteFolder(ctx context.Context, id int64) error
 	DeleteFoldersByVolume(ctx context.Context, volumeID string) error
+	DeleteOldCheckpoints(ctx context.Context, createdAt time.Time) (int64, error)
 	// Retention queries for cleanup
 	DeleteOldFileMetadata(ctx context.Context, extractedAt pgtype.Timestamptz) error
 	// Retention queries for cleanup
 	DeleteOldFiles(ctx context.Context, lastScanAt pgtype.Timestamptz) error
+	DeleteOldScanErrors(ctx context.Context, occurredAt pgtype.Timestamptz) error
 	DeleteOldScanJobs(ctx context.Context, completedAt pgtype.Timestamptz) error
+	DeleteOldScanMetrics(ctx context.Context, measuredAt pgtype.Timestamptz) error
+	DeleteOldScanPhases(ctx context.Context, updatedAt time.Time) error
+	DeleteOldSnapshots(ctx context.Context, createdAt time.Time) (int64, error)
 	DeletePreview(ctx context.Context, id int64) error
 	DeletePreviewsByFileID(ctx context.Context, fileID int64) error
 	DeleteRoutesByDestination(ctx context.Context, destinationID int64) error
 	DeleteRoutesByRule(ctx context.Context, ruleID int64) error
 	DeleteRuleConditions(ctx context.Context, ruleID pgtype.Int8) error
 	DeleteSavedSearch(ctx context.Context, arg DeleteSavedSearchParams) error
+	DeleteSnapshotsByVolume(ctx context.Context, volumeID string) error
 	DeleteStatsForDate(ctx context.Context, arg DeleteStatsForDateParams) error
 	DeleteTrackingRule(ctx context.Context, id int64) error
 	DeleteTrackingRuleTemplate(ctx context.Context, id int64) error
@@ -175,8 +209,15 @@ type Querier interface {
 	ExpireOldAssignments(ctx context.Context) error
 	FailScanJob(ctx context.Context, arg FailScanJobParams) error
 	GetActiveMountAssignment(ctx context.Context, mountCatalogID pgtype.Int8) (MountTrackingAssignments, error)
+	GetActiveScanByID(ctx context.Context, scanID string) (ActiveScans, error)
 	GetActiveScanJobs(ctx context.Context) ([]ScanJobs, error)
 	GetActiveScanJobsByOrganization(ctx context.Context, organizationID pgtype.Int8) ([]ScanJobs, error)
+	// ============================================================================
+	// Database View Queries
+	// ============================================================================
+	// These queries access the monitoring views created in migration 000008
+	GetActiveScans(ctx context.Context) ([]ActiveScans, error)
+	GetActiveScansByOrganization(ctx context.Context, organizationID pgtype.Int8) ([]ActiveScans, error)
 	GetAlert(ctx context.Context, id int64) (Alerts, error)
 	GetAlertByRuleAndVolume(ctx context.Context, arg GetAlertByRuleAndVolumeParams) (Alerts, error)
 	GetAlertCountsByRule(ctx context.Context) ([]GetAlertCountsByRuleRow, error)
@@ -192,16 +233,24 @@ type Querier interface {
 	// =============================================================================
 	GetAlertStats(ctx context.Context) (GetAlertStatsRow, error)
 	GetAlertStatsByOrganization(ctx context.Context, organizationID pgtype.Int8) (GetAlertStatsByOrganizationRow, error)
+	GetAllCheckpointsForScan(ctx context.Context, scanID string) ([]ScanCheckpoints, error)
 	GetAllUserPreferences(ctx context.Context, userID int64) ([]UserPreferences, error)
 	// =============================================================================
 	// CAPACITY PREDICTION
 	// =============================================================================
 	GetCapacityPrediction(ctx context.Context, arg GetCapacityPredictionParams) (GetCapacityPredictionRow, error)
+	// Get directories that changed between two snapshots (prev_snapshot_id, curr_snapshot_id)
+	GetChangedDirectories(ctx context.Context, arg GetChangedDirectoriesParams) ([]GetChangedDirectoriesRow, error)
+	GetCheckpoint(ctx context.Context, arg GetCheckpointParams) (ScanCheckpoints, error)
+	GetCheckpointStats(ctx context.Context) (GetCheckpointStatsRow, error)
+	GetCheckpointsByVolume(ctx context.Context, arg GetCheckpointsByVolumeParams) ([]ScanCheckpoints, error)
 	GetCompletedScanJobs(ctx context.Context, arg GetCompletedScanJobsParams) ([]ScanJobs, error)
 	GetContainerByContainerID(ctx context.Context, containerID string) (DockerMountAttachments, error)
 	GetDailyStatsForDate(ctx context.Context, arg GetDailyStatsForDateParams) ([]DailyStats, error)
 	GetDeliveryStats(ctx context.Context) (GetDeliveryStatsRow, error)
 	GetDestinationDeliveryStats(ctx context.Context, destinationID int64) (GetDestinationDeliveryStatsRow, error)
+	GetDirectorySnapshotByPath(ctx context.Context, arg GetDirectorySnapshotByPathParams) (VolumeDirectorySnapshots, error)
+	GetDirectorySnapshotsForSnapshot(ctx context.Context, snapshotID int64) ([]VolumeDirectorySnapshots, error)
 	GetDistinctExtensions(ctx context.Context, arg GetDistinctExtensionsParams) ([]GetDistinctExtensionsRow, error)
 	GetDistinctMediaKinds(ctx context.Context, volumeID string) ([]GetDistinctMediaKindsRow, error)
 	GetDistinctMimeTypes(ctx context.Context, volumeID string) ([]GetDistinctMimeTypesRow, error)
@@ -249,7 +298,9 @@ type Querier interface {
 	GetJobStatusByID(ctx context.Context, id int64) (StatsJobs, error)
 	GetLargestFiles(ctx context.Context, arg GetLargestFilesParams) ([]GetLargestFilesRow, error)
 	GetLargestFolders(ctx context.Context, arg GetLargestFoldersParams) ([]GetLargestFoldersRow, error)
+	GetLatestCheckpointForScan(ctx context.Context, scanID string) (ScanCheckpoints, error)
 	GetLatestRuleEvaluation(ctx context.Context, ruleID pgtype.Int8) (TrackingRuleEvaluations, error)
+	GetLatestSnapshotForVolume(ctx context.Context, volumeID string) (VolumeSnapshots, error)
 	GetLatestVolumeSize(ctx context.Context, volumeID string) (VolumeSizes, error)
 	// =============================================================================
 	// VOLUME STATISTICS
@@ -276,12 +327,28 @@ type Querier interface {
 	GetRecentFiles(ctx context.Context, arg GetRecentFilesParams) ([]Files, error)
 	GetRecentJobs(ctx context.Context, limit int32) ([]StatsJobs, error)
 	GetRecentJobsByType(ctx context.Context, arg GetRecentJobsByTypeParams) ([]StatsJobs, error)
+	GetRecentScanErrors(ctx context.Context, arg GetRecentScanErrorsParams) ([]RecentScanErrors, error)
+	GetRecentScanErrorsByOrganization(ctx context.Context, arg GetRecentScanErrorsByOrganizationParams) ([]RecentScanErrors, error)
+	GetRecentScanErrorsByScanID(ctx context.Context, scanID string) ([]RecentScanErrors, error)
+	// ============================================================================
+	// Retention Statistics
+	// Get counts of records eligible for retention by age
+	// ============================================================================
+	GetRetentionStats(ctx context.Context, updatedAt time.Time) (GetRetentionStatsRow, error)
 	GetRolePermissions(ctx context.Context, role string) ([]string, error)
 	GetRootFolders(ctx context.Context, volumeID string) ([]Folders, error)
 	GetRuleConditions(ctx context.Context, ruleID pgtype.Int8) ([]TrackingRuleConditions, error)
 	GetSavedSearch(ctx context.Context, arg GetSavedSearchParams) (SavedSearches, error)
 	GetSavedSearchQuery(ctx context.Context, arg GetSavedSearchQueryParams) ([]byte, error)
+	GetScanHistory(ctx context.Context, arg GetScanHistoryParams) ([]ScanHistory, error)
+	GetScanHistoryByOrganization(ctx context.Context, arg GetScanHistoryByOrganizationParams) ([]ScanHistory, error)
+	GetScanHistoryByVolume(ctx context.Context, arg GetScanHistoryByVolumeParams) ([]ScanHistory, error)
 	GetScanJobByScanID(ctx context.Context, scanID string) (ScanJobs, error)
+	GetScanProgressSummary(ctx context.Context, scanID string) ([]ScanProgressSummary, error)
+	GetScanProgressSummaryByVolume(ctx context.Context, arg GetScanProgressSummaryByVolumeParams) ([]ScanProgressSummary, error)
+	GetSnapshotByScanID(ctx context.Context, scanID string) (VolumeSnapshots, error)
+	GetSnapshotStats(ctx context.Context) (GetSnapshotStatsRow, error)
+	GetSnapshotsForVolume(ctx context.Context, arg GetSnapshotsForVolumeParams) ([]VolumeSnapshots, error)
 	GetStaleFailedPreviews(ctx context.Context, limit int32) ([]FilePreviews, error)
 	GetStorageGrowthTrend(ctx context.Context, arg GetStorageGrowthTrendParams) ([]GetStorageGrowthTrendRow, error)
 	GetTopGrowingFolders(ctx context.Context, arg GetTopGrowingFoldersParams) ([]GetTopGrowingFoldersRow, error)
@@ -317,6 +384,9 @@ type Querier interface {
 	GetVolumeByVolumeID(ctx context.Context, arg GetVolumeByVolumeIDParams) (Volumes, error)
 	GetVolumeComparison(ctx context.Context, limit int32) ([]GetVolumeComparisonRow, error)
 	GetVolumeMountsByVolume(ctx context.Context, volumeName pgtype.Text) ([]DockerMountCatalog, error)
+	GetVolumeScanStats(ctx context.Context) ([]VolumeScanStats, error)
+	GetVolumeScanStatsByOrganization(ctx context.Context, organizationID pgtype.Int8) ([]VolumeScanStats, error)
+	GetVolumeScanStatsByVolumeID(ctx context.Context, volumeID pgtype.Text) (VolumeScanStats, error)
 	GetVolumeStats(ctx context.Context, arg GetVolumeStatsParams) (GetVolumeStatsRow, error)
 	GetVolumeStatsHistory(ctx context.Context, arg GetVolumeStatsHistoryParams) ([]DailyStats, error)
 	// =============================================================================

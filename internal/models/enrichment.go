@@ -120,6 +120,10 @@ type EnrichmentProgress struct {
 
 	// Enricher-specific progress
 	EnricherProgress map[string]*EnricherProgress `json:"enricher_progress,omitempty"`
+
+	// Throttling fields (not exposed in JSON)
+	LastBroadcast     time.Time `json:"-"` // Last time progress was broadcast via WebSocket
+	LastDatabaseWrite time.Time `json:"-"` // Last time progress was written to database
 }
 
 // EnricherProgress tracks progress for a specific enricher

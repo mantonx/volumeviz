@@ -140,6 +140,7 @@ export interface ScanPhaseProgress {
   items_per_second: number;
   bytes_per_second: number;
   current_item?: string;
+  sub_phase?: string; // Current sub-phase or enricher (e.g., "ffprobe", "exif")
   current_depth: number;
   started_at?: string;
   completed_at?: string;
