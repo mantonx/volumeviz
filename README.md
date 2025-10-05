@@ -318,12 +318,14 @@ Access monitoring tools:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+We welcome contributions from developers of all skill levels! Whether you're fixing bugs, adding features, or improving documentation, we'd love your help.
 
-- Code style and standards
-- Testing requirements
-- Pull request process
-- Development setup
+**Quick Start:**
+1. Check out [good first issues](https://github.com/mantonx/volumeviz/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+2. Read the [Contributing Guide](CONTRIBUTING.md)
+3. Join [GitHub Discussions](https://github.com/mantonx/volumeviz/discussions) to ask questions
+
+See our [ROADMAP.md](ROADMAP.md) for planned features and areas where we need help.
 
 ## 📄 License
 
@@ -332,8 +334,12 @@ VolumeViz is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 ## 🔗 Links
 
 - [Documentation](docs/README.md)
-- [Changelog](CHANGELOG.md)
+- [Roadmap](ROADMAP.md)
+- [Architecture](ARCHITECTURE.md)
+- [Contributing Guide](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security Policy](SECURITY.md)
+- [GitHub Discussions](https://github.com/mantonx/volumeviz/discussions)
 - [Issue Tracker](https://github.com/mantonx/volumeviz/issues)
 
 ## 🙏 Acknowledgments
