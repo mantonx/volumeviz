@@ -209,3 +209,30 @@ func pgNumericToStringPtr(pn pgtype.Numeric) *string {
 	str := fmt.Sprintf("%.2f", f64)
 	return &str
 }
+
+// Float64 to pgtype.Numeric
+func float64ToPgNumeric(f float64) pgtype.Numeric {
+	var numeric pgtype.Numeric
+	numeric.Scan(f)
+	return numeric
+}
+
+// pgtype.Numeric to float64
+func pgNumericToFloat64(pn pgtype.Numeric) float64 {
+	if !pn.Valid {
+		return 0.0
+	}
+	var f64 float64
+	pn.Scan(&f64)
+	return f64
+}
+
+// pgtype.Numeric to float64 pointer
+func pgNumericToFloat64Ptr(pn pgtype.Numeric) *float64 {
+	if !pn.Valid {
+		return nil
+	}
+	var f64 float64
+	pn.Scan(&f64)
+	return &f64
+}

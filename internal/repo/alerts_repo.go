@@ -150,7 +150,7 @@ func (r *alertsRepo) CreateAlertRule(ctx context.Context, params models.CreateAl
 		RuleType:            ruleType,
 		MetricName:          metricName,
 		ConditionOperator:   conditionOp,
-		ThresholdValue:      pgtype.Numeric{Int: nil, Exp: 0, NaN: false, InfinityModifier: 0, Valid: true}, // TODO: Convert float64 to pgtype.Numeric
+		ThresholdValue:      float64ToPgNumeric(params.Threshold),
 		TimeWindowMinutes:   pgtype.Int4{Int32: intervalMinutes, Valid: true},
 		MinOccurrences:      pgtype.Int4{Int32: 1, Valid: true},
 		IsEnabled:           pgtype.Bool{Bool: params.IsEnabled, Valid: true},
@@ -223,7 +223,7 @@ func (r *alertsRepo) UpdateAlertRule(ctx context.Context, params models.UpdateAl
 		RuleType:            ruleType,
 		MetricName:          metricName,
 		ConditionOperator:   conditionOp,
-		ThresholdValue:      pgtype.Numeric{Int: nil, Exp: 0, NaN: false, InfinityModifier: 0, Valid: true},
+		ThresholdValue:      float64ToPgNumeric(params.Threshold),
 		TimeWindowMinutes:   pgtype.Int4{Int32: intervalMinutes, Valid: true},
 		MinOccurrences:      pgtype.Int4{Int32: 1, Valid: true},
 		IsEnabled:           pgtype.Bool{Bool: params.IsEnabled, Valid: true},
@@ -794,7 +794,7 @@ func convertAlertRuleToModel(row *sqlc.AlertRules, labels map[string]string) *mo
 		Description: description,
 		Query:       row.MetricName,        // Map metric_name back to query
 		Condition:   row.ConditionOperator, // Map operator back to condition
-		Threshold:   0,                     // TODO: Convert pgtype.Numeric to float64
+		Threshold:   pgNumericToFloat64(row.ThresholdValue),
 		Interval:    interval,
 		For:         forDuration,
 		Labels:      labels,
