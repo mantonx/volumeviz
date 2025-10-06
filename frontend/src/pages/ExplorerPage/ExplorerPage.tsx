@@ -27,6 +27,7 @@ import {
   Home,
   ArrowLeft,
 } from 'lucide-react';
+import { DirectoryTree } from '@/components/domain/explorer/DirectoryTree';
 import type { ExplorerPageProps } from './ExplorerPage.types';
 
 function formatBytes(bytes: number): string {
@@ -295,9 +296,29 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
         </div>
       </div>
 
-      {/* Breadcrumb Navigation */}
-      <div className="mb-4">
-        <Card className="p-3">
+      {/* Main content area with tree and file list */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Directory Tree Sidebar */}
+        <div className="col-span-3">
+          <Card className="p-4 h-[calc(100vh-250px)] overflow-hidden flex flex-col">
+            <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <FolderIcon className="h-4 w-4 text-blue-600" />
+              Directories
+            </h2>
+            <DirectoryTree
+              volumeId={volumeId}
+              selectedPath={currentPath}
+              onPathSelect={handleFolderClick}
+              className="flex-1"
+            />
+          </Card>
+        </div>
+
+        {/* File List Area */}
+        <div className="col-span-9">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-4">
+            <Card className="p-3">
           <div className="flex items-center gap-2 text-sm">
             <Home className="h-4 w-4 text-gray-400" />
             {breadcrumbs.map((crumb, index) => (
@@ -450,13 +471,15 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
         )}
       </Card>
 
-      {/* Status Bar */}
-      <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-        <div className="flex items-center gap-4">
-          <span>{filteredFiles.length} items in current folder</span>
-        </div>
-        <div className="flex items-center gap-4">
-          {isConnected && <span>🔄 Live updates active</span>}
+          {/* Status Bar */}
+          <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+            <div className="flex items-center gap-4">
+              <span>{filteredFiles.length} items in current folder</span>
+            </div>
+            <div className="flex items-center gap-4">
+              {isConnected && <span>🔄 Live updates active</span>}
+            </div>
+          </div>
         </div>
       </div>
     </div>
