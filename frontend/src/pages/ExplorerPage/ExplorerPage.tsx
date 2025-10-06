@@ -28,6 +28,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { DirectoryTree } from '@/components/domain/explorer/DirectoryTree';
+import { VirtualizedFileTable } from '@/components/domain/explorer/VirtualizedFileTable';
 import type { ExplorerPageProps } from './ExplorerPage.types';
 
 function formatBytes(bytes: number): string {
@@ -61,6 +62,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
   // State management
   const [currentPath, setCurrentPath] = useState('/');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 
   // WebSocket connection for real-time updates
   const { isConnected } = useRealtime();
@@ -126,8 +128,39 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
         params.set('path', folderPath);
         return params;
       });
+      setSelectedFiles(new Set()); // Clear selection when changing folders
     },
     [setSearchParams],
+  );
+
+  // Handle file selection
+  const handleFileSelect = useCallback(
+    (path: string, isMulti: boolean = false) => {
+      if (isMulti) {
+        setSelectedFiles((prev) => {
+          const next = new Set(prev);
+          if (next.has(path)) {
+            next.delete(path);
+          } else {
+            next.add(path);
+          }
+          return next;
+        });
+      } else {
+        setSelectedFiles(new Set([path]));
+      }
+    },
+    [],
+  );
+
+  // Handle file double click (navigate to folder)
+  const handleFileDoubleClick = useCallback(
+    (file: any) => {
+      if (file.is_directory) {
+        handleFolderClick(file.path);
+      }
+    },
+    [handleFolderClick],
   );
 
   // Handle breadcrumb navigation
@@ -355,12 +388,17 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
       </div>
 
       {/* File List */}
-      <Card className="p-4">
+      <Card className="p-4 h-[calc(100vh-350px)] flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <FileIcon className="h-5 w-5 text-green-600" />
             <h2 className="font-semibold text-gray-900">
               {filteredFiles.length} items
+              {selectedFiles.size > 0 && (
+                <span className="ml-2 text-sm text-gray-600">
+                  ({selectedFiles.size} selected)
+                </span>
+              )}
             </h2>
           </div>
           <Button
@@ -378,96 +416,22 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-3 text-gray-600">Loading files...</p>
           </div>
-        ) : filteredFiles.length === 0 ? (
-          <div className="text-center py-12">
-            <FolderIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">
-              {searchQuery
-                ? 'No files match your search'
-                : 'This folder is empty'}
-            </p>
-          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Size
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Modified
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Type
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {/* Parent directory link */}
-                {currentPath !== '/' && (
-                  <tr
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => {
-                      const parentPath = currentPath
-                        .split('/')
-                        .slice(0, -1)
-                        .join('/') || '/';
-                      handleFolderClick(parentPath);
-                    }}
-                  >
-                    <td className="px-4 py-3 flex items-center gap-2">
-                      <FolderIcon className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">..</span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">-</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">-</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">Parent folder</td>
-                  </tr>
-                )}
-
-                {/* Files and folders */}
-                {filteredFiles.map((file) => (
-                  <tr
-                    key={file.path}
-                    className={`hover:bg-gray-50 ${file.is_directory ? 'cursor-pointer' : ''}`}
-                    onClick={() => {
-                      if (file.is_directory) {
-                        handleFolderClick(file.path || '');
-                      }
-                    }}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {file.is_directory ? (
-                          <FolderIcon className="h-4 w-4 text-blue-600" />
-                        ) : (
-                          <FileIcon className="h-4 w-4 text-gray-600" />
-                        )}
-                        <span className="text-sm text-gray-900">
-                          {file.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {file.is_directory ? '-' : formatBytes(file.size || 0)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {formatDate(file.modified_time)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {file.is_directory
-                        ? 'Folder'
-                        : file.extension || 'File'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <VirtualizedFileTable
+            files={filteredFiles}
+            selectedFiles={selectedFiles}
+            onFileSelect={handleFileSelect}
+            onFileDoubleClick={handleFileDoubleClick}
+            onDeleteFiles={(paths) => {
+              // TODO: Implement delete functionality
+              console.log('Delete files:', paths);
+            }}
+            onDownloadFiles={(paths) => {
+              // TODO: Implement download functionality
+              console.log('Download files:', paths);
+            }}
+            className="flex-1"
+          />
         )}
       </Card>
 
