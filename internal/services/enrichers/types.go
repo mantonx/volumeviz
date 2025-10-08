@@ -39,13 +39,14 @@ const (
 type EnricherConfig struct {
 	// Global settings
 	Enabled              bool          `env:"VV_ENABLE_ENRICHERS" envDefault:"true"`
-	MaxConcurrentWorkers int           `env:"VV_MAX_CONCURRENT_ENRICHERS" envDefault:"3"`
+	MaxConcurrentWorkers int           `env:"VV_MAX_CONCURRENT_ENRICHERS" envDefault:"8"` // Increased from 3 to 8 for better throughput
 	TimeoutPerFile       time.Duration `env:"VV_ENRICHER_TIMEOUT_PER_FILE" envDefault:"30s"`
+	MaxRetries           int           `env:"VV_ENRICHER_MAX_RETRIES" envDefault:"2"` // Retry failed files up to 2 times
 
 	// FFprobe settings
 	FFprobeEnabled bool          `env:"VV_ENABLE_FFPROBE" envDefault:"true"`
 	FFprobePath    string        `env:"VV_FFPROBE_PATH" envDefault:"ffprobe"`
-	FFprobeTimeout time.Duration `env:"VV_FFPROBE_TIMEOUT" envDefault:"15s"`
+	FFprobeTimeout time.Duration `env:"VV_FFPROBE_TIMEOUT" envDefault:"10s"` // Reduced from 15s to 10s for faster processing
 
 	// EXIF settings
 	EXIFEnabled  bool `env:"VV_ENABLE_EXIF" envDefault:"true"`

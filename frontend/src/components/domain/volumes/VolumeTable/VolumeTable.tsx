@@ -341,7 +341,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
                               id: 'scan',
                               label: 'Scan Volume',
                               icon: ScanSearch,
-                              onClick: () => scanVolume.mutate({ volumeId: volumeId }),
+                              onClick: () => scanVolume.mutateAsync(volumeId),
                               disabled: volume.scan_status === 'running',
                             },
                             {

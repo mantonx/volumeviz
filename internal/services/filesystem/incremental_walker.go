@@ -60,8 +60,58 @@ func (w *IncrementalWalker) Walk(ctx context.Context, mountpoint string, scanID 
 	}
 	log.Printf("[WALKER] Phase 3: Filesystem walking complete")
 
+	// Cleanup: Flush pending updates and mark scan as completed
+	w.cleanup(scanID)
+
 	log.Printf("[WALKER] Walk completed successfully for volume %s", w.volumeID)
 	return nil
+}
+
+// cleanup performs final cleanup tasks after walking completes
+func (w *IncrementalWalker) cleanup(scanID string) {
+	// Flush any pending throttled updates before completion
+	if scanID != "" && w.indexer.progressTracker != nil {
+		w.indexer.progressTracker.FlushPending(context.Background(), scanID)
+
+		// Log throttling statistics
+		updates, throttled := w.indexer.progressTracker.GetStats(scanID)
+		if throttled > 0 {
+			reductionRate := float64(throttled) / float64(updates) * 100
+			log.Printf("[WALKER] Scan %s throttling stats - Updates: %d, Throttled: %d (%.1f%% reduction in DB writes)",
+				scanID, updates, throttled, reductionRate)
+		}
+
+		// Clean up throttler tracking
+		w.indexer.progressTracker.Cleanup(scanID)
+	}
+
+	w.indexer.progressMutex.Lock()
+	var finalStatus string
+	var errorMessage string
+	if scan, exists := w.indexer.activeScans[w.volumeID]; exists {
+		if scan.Status == "running" {
+			scan.Status = "completed"
+			finalStatus = "completed"
+		} else {
+			finalStatus = scan.Status
+			errorMessage = scan.LastError
+		}
+		scan.LastUpdate = time.Now()
+
+		// Keep completed scans for a short time then remove
+		go func() {
+			time.Sleep(30 * time.Second)
+			w.indexer.progressMutex.Lock()
+			delete(w.indexer.activeScans, w.volumeID)
+			w.indexer.progressMutex.Unlock()
+		}()
+	}
+	w.indexer.progressMutex.Unlock()
+
+	// Update database progress tracking (synchronously to ensure completion)
+	if scanID != "" {
+		w.indexer.progressTracker.UpdatePhaseStatus(context.Background(), scanID, "filesystem_indexing", finalStatus, errorMessage)
+	}
 }
 
 // preparationPhase handles initial setup and file counting

@@ -468,6 +468,29 @@ function RealtimeProviderInternal({ children }: { children: React.ReactNode }) {
       ?.forEach((callback) => callback(data));
   });
 
+  // Global subscription to ALL scan progress updates (no filters)
+  // This ensures progress data is always available when volumes are expanded
+  React.useEffect(() => {
+    if (!webSocketContext.isConnected) {
+      return;
+    }
+
+    // Subscribe to all scan progress updates globally
+    webSocketContext.sendMessage({
+      action: 'subscribe',
+      event: 'scan.progress',
+      // No filters - receive updates for ALL volumes
+    });
+
+    return () => {
+      // Unsubscribe on unmount
+      webSocketContext.sendMessage({
+        action: 'unsubscribe',
+        event: 'scan.progress',
+      });
+    };
+  }, [webSocketContext.isConnected, webSocketContext.sendMessage]);
+
   // Context value
   const contextValue: RealtimeContextValue = {
     // Connection state

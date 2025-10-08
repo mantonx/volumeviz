@@ -608,9 +608,10 @@ func (h *Handler) BulkScan(c *gin.Context) {
 
 	if req.Async {
 		// For async bulk scan, start all scans and return scan IDs
+		// Use background context to prevent cancellation when HTTP request completes
 		scanIDs := make([]string, len(req.VolumeIDs))
 		for i, volumeID := range req.VolumeIDs {
-			scanID, err := h.scanner.ScanVolumeAsync(c.Request.Context(), volumeID)
+			scanID, err := h.scanner.ScanVolumeAsync(context.Background(), volumeID)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error":   "Failed to start async scan",
@@ -631,12 +632,13 @@ func (h *Handler) BulkScan(c *gin.Context) {
 	}
 
 	// Synchronous bulk scan
+	// Use background context to prevent cancellation when HTTP request completes
 	results := make(map[string]any)
 	failed := make(map[string]string)
 	successCount := 0
 
 	for _, volumeID := range req.VolumeIDs {
-		result, err := h.scanner.ScanVolume(c.Request.Context(), volumeID)
+		result, err := h.scanner.ScanVolume(context.Background(), volumeID)
 		if err != nil {
 			failed[volumeID] = err.Error()
 		} else {

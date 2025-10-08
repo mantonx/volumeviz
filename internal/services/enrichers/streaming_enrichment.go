@@ -20,10 +20,10 @@ type StreamingEnrichmentConfig struct {
 // DefaultStreamingConfig returns sensible defaults for streaming enrichment
 func DefaultStreamingConfig() StreamingEnrichmentConfig {
 	return StreamingEnrichmentConfig{
-		BatchSize:           1000, // Process 1000 files per batch
-		MaxConcurrentBatch:  2,    // Maximum 2 batches in memory at once
+		BatchSize:           500, // Reduced from 1000 to 500 for better memory usage and faster batch completion
+		MaxConcurrentBatch:  1,   // Reduced from 2 to 1 to prevent memory pressure with larger worker pool
 		BatchTimeout:        30 * time.Minute,
-		ProgressUpdateEvery: 100, // Update progress every 100 files
+		ProgressUpdateEvery: 50, // Increased update frequency from 100 to 50 for more responsive progress
 	}
 }
 
@@ -202,7 +202,7 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 
 		m.setProgress(volumeID, progress)
 
-		// Update database progress periodically
+		// Update database progress periodically with enricher sub-phase info
 		if scanID != "" && m.store != nil && filesProcessed%int64(config.ProgressUpdateEvery) == 0 {
 			progressPercentInt := int(progressPercent * 100)
 			go m.updateDatabaseProgressDetailed(context.Background(), scanID, "media_enrichment",

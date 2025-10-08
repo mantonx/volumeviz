@@ -80,11 +80,29 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
   };
 
   return {
-    // Legacy compatibility - map to size refresh with offline support
+    // Trigger full filesystem scan through scheduler (proper scan_job creation)
     scanVolume: {
       mutateAsync: async (volumeId: string) => {
         if (isOnline) {
-          return sizeRefreshMutation.mutateAsync({ id: volumeId });
+          // Use scheduler endpoint - properly enqueues scan job
+          const response = await fetch(`/api/v1/volumes/${volumeId}/scan`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to start scan');
+          }
+
+          const data = await response.json();
+
+          // Invalidate queries to refresh UI
+          queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
+
+          return data;
         } else {
           // Queue for background sync when offline
           addPendingOperation({
@@ -95,7 +113,7 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
           return Promise.resolve({ queued: true, offline: true });
         }
       },
-      isLoading: sizeRefreshMutation.isPending,
+      isLoading: false, // Not using mutation hook anymore
     },
     refreshVolumeSize: {
       mutateAsync: async (volumeId: string) => {
@@ -116,7 +134,10 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
     indexFilesystem: {
       mutateAsync: async (volumeId: string) => {
         if (isOnline) {
-          return filesystemIndexMutation.mutateAsync({ id: volumeId });
+          return filesystemIndexMutation.mutateAsync({
+            id: volumeId,
+            data: { full_scan: true },
+          });
         } else {
           // Queue for background sync when offline
           addPendingOperation({

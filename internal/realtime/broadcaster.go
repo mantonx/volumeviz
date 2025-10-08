@@ -181,6 +181,11 @@ func (eb *Broadcaster) BroadcastComprehensiveScanProgress(ctx context.Context, s
 		return err
 	}
 
+	// Skip broadcasting if no phases exist (scan completed or not started)
+	if len(phases) == 0 {
+		return nil // Silently skip - no active scan to broadcast
+	}
+
 	// Convert to enhanced data types
 	wsPhases := make([]ScanPhaseProgress, len(phases))
 	overallProgress := 0

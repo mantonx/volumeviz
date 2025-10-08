@@ -46,34 +46,21 @@ export function useScanProgress(volumeId: string) {
   );
   const progress = useAtomValue(progressAtom);
 
-  // Subscribe to WebSocket updates for this volume
+  // Request current scan status when volume is first displayed
+  // Note: Global subscription in RealtimeProvider already receives ALL scan updates
   useEffect(() => {
     if (!isConnected || !volumeId) {
       return;
     }
 
-    // Subscribe to scan updates for this volume
-    sendMessage({
-      action: 'subscribe',
-      event: 'scan.progress',
-      filters: { volume_id: volumeId },
-    });
-
-    // Request current scan status on mount
-    sendMessage({
-      action: 'get_scan_status',
-      volume_id: volumeId,
-    });
-
-    return () => {
-      // Unsubscribe when component unmounts or volumeId changes
+    // Request current scan status on mount (only if not already in cache)
+    if (!progress) {
       sendMessage({
-        action: 'unsubscribe',
-        event: 'scan.progress',
-        filters: { volume_id: volumeId },
+        action: 'get_scan_status',
+        volume_id: volumeId,
       });
-    };
-  }, [volumeId, isConnected, sendMessage]);
+    }
+  }, [volumeId, isConnected, sendMessage, progress]);
 
   return {
     progress,

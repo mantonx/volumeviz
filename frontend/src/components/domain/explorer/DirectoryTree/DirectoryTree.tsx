@@ -15,7 +15,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { getApiFetch } from '@/api/orval-generated/api';
+import { customFetchClient } from '@/api/fetch-client';
 
 export interface DirectoryTreeProps {
   volumeId: string;
@@ -75,8 +75,8 @@ function TreeNode({
   const { data, isLoading, error } = useQuery({
     queryKey: ['folder-browse', volumeId, node.path],
     queryFn: async () => {
-      const response = await getApiFetch()<FolderBrowsingResponse>(
-        `/api/v1/explorer/browse?volume_id=${volumeId}&path=${encodeURIComponent(node.path)}&include_children=true&limit=100`,
+      const response = await customFetchClient<FolderBrowsingResponse>(
+        `/explorer/browse?volume_id=${volumeId}&path=${encodeURIComponent(node.path)}&include_children=true&limit=100`,
       );
       return response;
     },
