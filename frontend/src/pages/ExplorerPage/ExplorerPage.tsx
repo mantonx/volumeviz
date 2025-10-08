@@ -29,24 +29,9 @@ import {
 } from 'lucide-react';
 import { DirectoryTree } from '@/components/domain/explorer/DirectoryTree';
 import { VirtualizedFileTable } from '@/components/domain/explorer/VirtualizedFileTable';
+import { FileMetadataDrawer } from '@/components/domain/explorer/FileMetadataDrawer';
 import type { ExplorerPageProps } from './ExplorerPage.types';
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
-}
-
-function formatDate(dateString?: string): string {
-  if (!dateString) return 'N/A';
-  try {
-    return new Date(dateString).toLocaleString();
-  } catch {
-    return 'Invalid date';
-  }
-}
+import type { FileItem } from '@/components/domain/explorer/VirtualizedFileTable/VirtualizedFileTable.types';
 
 export function ExplorerPage({ className = '' }: ExplorerPageProps) {
   const { volumeId } = useParams<{ volumeId: string }>();
@@ -63,6 +48,8 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
   const [currentPath, setCurrentPath] = useState('/');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [selectedFileForDrawer, setSelectedFileForDrawer] = useState<FileItem | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // WebSocket connection for real-time updates
   const { isConnected } = useRealtime();
@@ -85,7 +72,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
     },
   );
 
-  const files = filesData?.data?.files || [];
+  const files = (filesData?.data?.files as FileItem[]) || [];
 
   // Load volumes when component mounts
   useEffect(() => {
@@ -153,6 +140,12 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
     [],
   );
 
+  // Handle file click (open drawer for details)
+  const handleFileClick = useCallback((file: FileItem) => {
+    setSelectedFileForDrawer(file);
+    setIsDrawerOpen(true);
+  }, []);
+
   // Handle file double click (navigate to folder)
   const handleFileDoubleClick = useCallback(
     (file: any) => {
@@ -162,6 +155,13 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
     },
     [handleFolderClick],
   );
+
+  // Handle drawer close
+  const handleDrawerClose = useCallback(() => {
+    setIsDrawerOpen(false);
+    // Don't clear selectedFileForDrawer immediately to allow for close animation
+    setTimeout(() => setSelectedFileForDrawer(null), 300);
+  }, []);
 
   // Handle breadcrumb navigation
   const handleBreadcrumbClick = useCallback(
@@ -421,11 +421,22 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
             files={filteredFiles}
             selectedFiles={selectedFiles}
             onFileSelect={handleFileSelect}
+            onFileClick={handleFileClick}
             onFileDoubleClick={handleFileDoubleClick}
             className="flex-1"
           />
         )}
       </Card>
+
+      {/* File Metadata Drawer */}
+      {volumeId && (
+        <FileMetadataDrawer
+          open={isDrawerOpen}
+          file={selectedFileForDrawer}
+          volumeId={volumeId}
+          onClose={handleDrawerClose}
+        />
+      )}
 
           {/* Status Bar */}
           <div className="mt-4 flex items-center justify-between text-sm text-gray-500">

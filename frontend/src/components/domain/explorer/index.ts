@@ -43,3 +43,8 @@ export * from './Charts';
 
 // Alerts & Monitoring
 export * from './AlertCenter';
+
+// File Metadata & Details
+export * from './FileMetadataDrawer';
+export * from './DirectoryTree';
+export * from './VirtualizedFileTable';
