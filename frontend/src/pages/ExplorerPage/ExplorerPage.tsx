@@ -422,14 +422,6 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
             selectedFiles={selectedFiles}
             onFileSelect={handleFileSelect}
             onFileDoubleClick={handleFileDoubleClick}
-            onDeleteFiles={(paths) => {
-              // TODO: Implement delete functionality
-              console.log('Delete files:', paths);
-            }}
-            onDownloadFiles={(paths) => {
-              // TODO: Implement download functionality
-              console.log('Download files:', paths);
-            }}
             className="flex-1"
           />
         )}

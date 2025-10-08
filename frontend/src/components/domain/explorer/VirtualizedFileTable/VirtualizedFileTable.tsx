@@ -21,8 +21,6 @@ import {
   ChevronDown,
   ChevronUp,
   MoreVertical,
-  Download,
-  Trash2,
   Info,
 } from 'lucide-react';
 import { formatBytes } from '@/utils/formatters';
@@ -45,8 +43,6 @@ export interface VirtualizedFileTableProps {
   onFileSelect?: (path: string, isMulti?: boolean) => void;
   onFileClick?: (file: FileItem) => void;
   onFileDoubleClick?: (file: FileItem) => void;
-  onDeleteFiles?: (paths: string[]) => void;
-  onDownloadFiles?: (paths: string[]) => void;
   className?: string;
 }
 
@@ -59,8 +55,6 @@ export function VirtualizedFileTable({
   onFileSelect,
   onFileClick,
   onFileDoubleClick,
-  onDeleteFiles,
-  onDownloadFiles,
   className = '',
 }: VirtualizedFileTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -178,21 +172,6 @@ export function VirtualizedFileTable({
     setContextMenu(null);
   }, []);
 
-  const handleDelete = useCallback(
-    (file: FileItem) => {
-      onDeleteFiles?.([file.path]);
-      handleCloseContextMenu();
-    },
-    [onDeleteFiles, handleCloseContextMenu],
-  );
-
-  const handleDownload = useCallback(
-    (file: FileItem) => {
-      onDownloadFiles?.([file.path]);
-      handleCloseContextMenu();
-    },
-    [onDownloadFiles, handleCloseContextMenu],
-  );
 
   // Close context menu on outside click
   React.useEffect(() => {
@@ -336,27 +315,13 @@ export function VirtualizedFileTable({
         >
           <button
             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-            onClick={() => handleDownload(contextMenu.file)}
-          >
-            <Download className="h-4 w-4" />
-            Download
-          </button>
-          <button
-            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
             onClick={() => {
               onFileClick?.(contextMenu.file);
               handleCloseContextMenu();
             }}
           >
             <Info className="h-4 w-4" />
-            Details
-          </button>
-          <button
-            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-            onClick={() => handleDelete(contextMenu.file)}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
+            View Details
           </button>
         </div>
       )}
