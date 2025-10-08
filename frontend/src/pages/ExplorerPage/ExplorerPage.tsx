@@ -30,6 +30,8 @@ import {
 import { DirectoryTree } from '@/components/domain/explorer/DirectoryTree';
 import { VirtualizedFileTable } from '@/components/domain/explorer/VirtualizedFileTable';
 import { FileMetadataDrawer } from '@/components/domain/explorer/FileMetadataDrawer';
+import { ExportButton } from '@/components/shared/ExportButton';
+import { exportFilesToCSV, exportFilesToJSON, getDefaultFileExportOptions } from '@/utils/fileExport';
 import type { ExplorerPageProps } from './ExplorerPage.types';
 import type { FileItem } from '@/components/domain/explorer/VirtualizedFileTable/VirtualizedFileTable.types';
 
@@ -197,6 +199,31 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
     const query = searchQuery.toLowerCase();
     return files.filter((file) => file.name?.toLowerCase().includes(query));
   }, [files, searchQuery]);
+
+  // Handle export
+  const handleExport = useCallback(
+    (format: 'csv' | 'json') => {
+      const defaultOptions = getDefaultFileExportOptions('explorer');
+      const exportOptions = {
+        ...defaultOptions,
+        filename: `${volumeId}-${currentPath.replace(/\//g, '-')}-${Date.now()}`,
+        includeMetadata: true,
+        metadata: {
+          volume: volumeId,
+          path: currentPath,
+          totalFiles: filteredFiles.length,
+          exportedAt: new Date().toISOString(),
+        },
+      };
+
+      if (format === 'csv') {
+        exportFilesToCSV(filteredFiles, exportOptions);
+      } else {
+        exportFilesToJSON(filteredFiles, exportOptions);
+      }
+    },
+    [volumeId, currentPath, filteredFiles],
+  );
 
   if (!volumeId) {
     return (
@@ -401,14 +428,22 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
               )}
             </h2>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetchFiles()}
-            disabled={filesLoading}
-          >
-            {filesLoading ? 'Loading...' : 'Refresh'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ExportButton
+              onExport={handleExport}
+              disabled={filteredFiles.length === 0}
+              variant="outline"
+              size="sm"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetchFiles()}
+              disabled={filesLoading}
+            >
+              {filesLoading ? 'Loading...' : 'Refresh'}
+            </Button>
+          </div>
         </div>
 
         {filesLoading ? (

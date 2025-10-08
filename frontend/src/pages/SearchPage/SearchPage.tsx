@@ -15,12 +15,11 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search as SearchIcon,
-  Download,
   AlertCircle,
 } from 'lucide-react';
 import { SearchInterface, type SearchQuery } from '@/components/domain/search';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
+import { ExportButton } from '@/components/shared/ExportButton';
+import { exportFilesToCSV, exportFilesToJSON, getDefaultFileExportOptions } from '@/utils/fileExport';
 import { searchApi } from '@/api/search';
 import type { SearchPageProps, SearchState } from './SearchPage.types';
 
@@ -39,7 +38,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
   });
 
   const [error, setError] = useState<string | null>(null);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -110,38 +108,32 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
     [navigate],
   );
 
-  const handleExport = useCallback((format: 'csv' | 'json') => {
-    try {
-      // Convert results to export format
-      if (format === 'csv') {
-        const csvContent = searchState.results
-          .map((r) => `"${r.name}","${r.path}",${r.size},"${r.modified}"`)
-          .join('\n');
-        const blob = new Blob([`Name,Path,Size,Modified\n${csvContent}`], {
-          type: 'text/csv',
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `search-results-${Date.now()}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-      } else {
-        const blob = new Blob([JSON.stringify(searchState.results, null, 2)], {
-          type: 'application/json',
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `search-results-${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+  const handleExport = useCallback(
+    (format: 'csv' | 'json') => {
+      const defaultOptions = getDefaultFileExportOptions('search');
+      const exportOptions = {
+        ...defaultOptions,
+        filename: `search-results-${searchState.query.replace(/\s+/g, '-')}-${Date.now()}`,
+        includeMetadata: true,
+        metadata: {
+          query: searchState.query,
+          resultCount: searchState.results.length,
+          exportedAt: new Date().toISOString(),
+        },
+      };
+
+      try {
+        if (format === 'csv') {
+          exportFilesToCSV(searchState.results, exportOptions);
+        } else {
+          exportFilesToJSON(searchState.results, exportOptions);
+        }
+      } catch (err) {
+        setError('Failed to export results. Please try again.');
       }
-      setIsExportModalOpen(false);
-    } catch (err) {
-      setError('Failed to export results. Please try again.');
-    }
-  }, [searchState.results]);
+    },
+    [searchState.query, searchState.results],
+  );
 
   return (
     <div className={`min-h-screen bg-gray-50 ${className}`}>
@@ -161,15 +153,13 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
 
             {/* Quick Actions */}
             <div className="flex items-center gap-3">
-              <Button
+              <ExportButton
+                onExport={handleExport}
+                disabled={searchState.results.length === 0}
+                label="Export Results"
                 variant="outline"
                 size="sm"
-                onClick={() => setIsExportModalOpen(true)}
-                disabled={searchState.results.length === 0}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export Results
-              </Button>
+              />
             </div>
           </div>
         </div>
@@ -213,60 +203,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
           />
         </div>
 
-        {/* Export Results Modal */}
-        <Modal
-          isOpen={isExportModalOpen}
-          onClose={() => setIsExportModalOpen(false)}
-          title="Export Search Results"
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Export {searchState.results.length} search results in your
-              preferred format.
-            </p>
-
-            <div className="space-y-3">
-              <button
-                onClick={() => handleExport('csv')}
-                className="w-full flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Download className="w-5 h-5 text-gray-600" />
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">CSV Format</p>
-                    <p className="text-sm text-gray-500">
-                      Comma-separated values, ideal for spreadsheets
-                    </p>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleExport('json')}
-                className="w-full flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Download className="w-5 h-5 text-gray-600" />
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">JSON Format</p>
-                    <p className="text-sm text-gray-500">
-                      Structured data format, ideal for further processing
-                    </p>
-                  </div>
-                </div>
-              </button>
-            </div>
-
-            <div className="flex justify-end pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setIsExportModalOpen(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </Modal>
       </div>
     </div>
   );
