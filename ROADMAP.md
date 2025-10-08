@@ -35,12 +35,13 @@ Make VolumeViz the **best-in-class Docker volume analytics platform** with enter
 **Goal:** Make core navigation and search fully functional
 
 **Critical Features:**
-- 🔨 File Explorer with lazy-loading directory tree
-- 🔨 Virtualized file table (100k+ files)
-- 🔨 File metadata drawer with preview integration
+- ✅ File Explorer with lazy-loading directory tree
+- ✅ Virtualized file table (100k+ files)
+- ✅ File metadata drawer with preview integration
 - 🔨 Functional search with advanced filters
 - 🔨 Export capabilities (CSV/JSON)
-- 🔨 Bulk operations (delete, download)
+
+**Note:** VolumeViz is an analytics and monitoring tool. File modification operations (delete, download, move) are intentionally excluded to maintain read-only volume analysis.
 
 **Bug Fixes:**
 - Fix remaining stats repository placeholders
@@ -59,7 +60,7 @@ Make VolumeViz the **best-in-class Docker volume analytics platform** with enter
 - 📉 Retention policy recommendations
 
 **Performance:**
-- ⚡ 10x faster enrichment with bulk operations
+- ⚡ 10x faster enrichment with optimized batch processing
 - 🚀 Optimized query performance for large datasets
 - 💪 Better handling of 1TB+ volumes
 
@@ -156,7 +157,7 @@ We welcome contributions! Here are areas where community help would be most valu
 - Implement incremental scanning improvements
 - Add GraphQL API option
 - Create CLI tool for automation
-- Optimize bulk database operations
+- Optimize batch database operations for enrichment
 
 ### 🔴 Complex Features (Advanced)
 

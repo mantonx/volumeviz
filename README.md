@@ -4,7 +4,9 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](docker-compose.yml)
 
-**VolumeViz** is a modern Docker volume analytics platform with an intuitive web interface that provides comprehensive insights into storage usage, file organization, and media content across your containerized infrastructure.
+**VolumeViz** is a modern Docker volume analytics and monitoring platform with an intuitive web interface that provides comprehensive insights into storage usage, file organization, and media content across your containerized infrastructure.
+
+> **🔍 Analytics-Focused**: VolumeViz is designed for read-only analysis and monitoring. File modification operations (delete, download, move) are intentionally excluded to maintain safe, non-destructive volume inspection.
 
 > 📸 **Screenshots coming soon!** Check our [Storybook](https://volumeviz.io/storybook) for component demos.
 
@@ -31,10 +33,10 @@ VolumeViz is built around 7 core features designed to provide a complete storage
 - **Performance Metrics**: I/O patterns, access frequencies, and bottleneck identification
 
 ### 🗂️ **Explorer**
-- **Visual Navigation**: Interactive treemap and sunburst visualizations for space usage
-- **File Browser**: Virtualized file/folder views with search and filtering
-- **Preview System**: Thumbnail generation and metadata extraction for media files
-- **Cleanup Tools**: Duplicate detection and bulk operations for storage optimization
+- **Visual Navigation**: Interactive directory tree and file browser for space analysis
+- **File Browser**: High-performance virtualized table supporting 100k+ files with multi-select
+- **Preview System**: Thumbnail generation and metadata extraction for images, videos, and audio
+- **Analytics Focus**: Read-only analysis and insights (no file modification operations)
 
 ### 🔍 **Search**
 - **Advanced Queries**: Multi-criteria search across files, metadata, and content

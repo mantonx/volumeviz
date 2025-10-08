@@ -15,7 +15,5 @@ export interface VirtualizedFileTableProps {
   onFileSelect?: (path: string, isMulti?: boolean) => void;
   onFileClick?: (file: FileItem) => void;
   onFileDoubleClick?: (file: FileItem) => void;
-  onDeleteFiles?: (paths: string[]) => void;
-  onDownloadFiles?: (paths: string[]) => void;
   className?: string;
 }

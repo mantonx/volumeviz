@@ -301,10 +301,8 @@ After this cleanup, VolumeViz will:
 - Database retention (automatic cleanup)
 
 ### 🚧 Planned (Not Built Yet)
-- File tree navigation
-- Duplicate detection
-- Export results
-- Advanced bulk operations
+- Duplicate detection (cross-volume)
+- Export results (CSV/JSON)
 - Saved searches
 
 ### ❌ Not Building
