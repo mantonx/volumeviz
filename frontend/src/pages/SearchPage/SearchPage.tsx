@@ -11,20 +11,32 @@
  * - Bulk operations on results
  */
 
-import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search as SearchIcon,
   AlertCircle,
+  RotateCcw,
 } from 'lucide-react';
 import { SearchInterface, type SearchQuery } from '@/components/domain/search';
 import { ExportButton } from '@/components/shared/ExportButton';
 import { exportFilesToCSV, exportFilesToJSON, getDefaultFileExportOptions } from '@/utils/fileExport';
 import { searchApi } from '@/api/search';
+import { AdvancedFilters } from './AdvancedFilters';
+import { FilterChips } from './FilterChips';
+import {
+  filtersToUrlParams,
+  urlParamsToFilters,
+  updateUrlWithFilters,
+  getFiltersFromUrl,
+  clearFiltersFromUrl
+} from './filterUrlState';
 import type { SearchPageProps, SearchState } from './SearchPage.types';
+import type { FilterState } from './AdvancedFilters.types';
 
 export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // State management
   const [searchState, setSearchState] = useState<SearchState>({
@@ -40,6 +52,16 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
   const [error, setError] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<FilterState>({});
+
+  // Initialize filters from URL on mount
+  useEffect(() => {
+    const { filters, query } = getFiltersFromUrl();
+    setAdvancedFilters(filters);
+    if (query) {
+      setSearchState((prev) => ({ ...prev, query }));
+    }
+  }, []);
 
   // Handlers
   const handleSearch = useCallback(async (searchQuery: SearchQuery) => {
@@ -50,13 +72,33 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
     setIsSearching(true);
     setError(null);
 
+    // Update URL with current query and filters
+    updateUrlWithFilters(advancedFilters, queryString);
+
     const startTime = Date.now();
+
+    // Helper to convert size to bytes
+    const convertToBytes = (value: number, unit: 'B' | 'KB' | 'MB' | 'GB' = 'MB'): number => {
+      const multipliers = { B: 1, KB: 1024, MB: 1024 * 1024, GB: 1024 * 1024 * 1024 };
+      return value * multipliers[unit];
+    };
 
     try {
       const rawResults = await searchApi.search({
         query: queryString,
         page: 1,
         page_size: 50,
+        // Add advanced filters to API call
+        size_min: advancedFilters.sizeRange?.min
+          ? convertToBytes(advancedFilters.sizeRange.min, advancedFilters.sizeRange.minUnit)
+          : undefined,
+        size_max: advancedFilters.sizeRange?.max
+          ? convertToBytes(advancedFilters.sizeRange.max, advancedFilters.sizeRange.maxUnit)
+          : undefined,
+        modified_after: advancedFilters.dateRange?.start?.toISOString(),
+        modified_before: advancedFilters.dateRange?.end?.toISOString(),
+        file_types: advancedFilters.fileTypes?.join(','),
+        paths: advancedFilters.pathFilter,
       });
 
       // Transform API results to SearchInterface format
@@ -98,7 +140,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [advancedFilters]);
 
   const handleFileSelect = useCallback(
     (fileId: string) => {
@@ -107,6 +149,43 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
     },
     [navigate],
   );
+
+  const handleFiltersChange = useCallback((newFilters: FilterState) => {
+    setAdvancedFilters(newFilters);
+    // Update URL immediately when filters change
+    updateUrlWithFilters(newFilters, searchState.query);
+  }, [searchState.query]);
+
+  const handleRemoveFilter = useCallback((key: keyof FilterState, value?: string) => {
+    setAdvancedFilters((prev) => {
+      const updated = { ...prev };
+
+      if (value) {
+        // Remove specific value from array filter
+        if (key === 'mediaTypes' && Array.isArray(updated[key])) {
+          updated[key] = updated[key]?.filter((v) => v !== value);
+          if (updated[key]?.length === 0) delete updated[key];
+        } else if (key === 'fileTypes' && Array.isArray(updated[key])) {
+          updated[key] = updated[key]?.filter((v) => v !== value);
+          if (updated[key]?.length === 0) delete updated[key];
+        } else if (key === 'volumes' && Array.isArray(updated[key])) {
+          updated[key] = updated[key]?.filter((v) => v !== value);
+          if (updated[key]?.length === 0) delete updated[key];
+        }
+      } else {
+        // Remove entire filter
+        delete updated[key];
+      }
+
+      updateUrlWithFilters(updated, searchState.query);
+      return updated;
+    });
+  }, [searchState.query]);
+
+  const handleClearAllFilters = useCallback(() => {
+    setAdvancedFilters({});
+    clearFiltersFromUrl(true);
+  }, []);
 
   const handleExport = useCallback(
     (format: 'csv' | 'json') => {
@@ -182,6 +261,48 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
           </div>
         )}
 
+        {/* Advanced Filters */}
+        <AdvancedFilters
+          filters={advancedFilters}
+          onFiltersChange={handleFiltersChange}
+          className="mb-6"
+        />
+
+        {/* Active Filter Chips */}
+        {Object.keys(advancedFilters).length > 0 && (
+          <div className="mb-6">
+            <FilterChips
+              filters={advancedFilters}
+              onRemoveFilter={handleRemoveFilter}
+              onClearAll={handleClearAllFilters}
+            />
+          </div>
+        )}
+
+        {/* Results Summary */}
+        {searchResults && searchResults.items.length > 0 && (
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-start gap-3">
+              <SearchIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Found {searchResults.totalCount.toLocaleString()} file{searchResults.totalCount !== 1 ? 's' : ''}
+                  {searchState.query && ` matching "${searchState.query}"`}
+                </p>
+                {Object.keys(advancedFilters).length > 0 && (
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    with {Object.keys(advancedFilters).length} active filter{Object.keys(advancedFilters).length !== 1 ? 's' : ''}
+                  </p>
+                )}
+                {searchResults.searchTime && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    Search completed in {searchResults.searchTime}ms
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Search Interface */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -192,7 +313,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
             onSearch={handleSearch}
             onResultClick={(result) => handleFileSelect(result.id)}
             onExportResults={(format) => {
-              setIsExportModalOpen(true);
+              handleExport(format as 'csv' | 'json');
             }}
             showAdvanced={true}
             showFilters={true}
