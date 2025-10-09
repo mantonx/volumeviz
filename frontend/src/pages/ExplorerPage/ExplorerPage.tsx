@@ -26,11 +26,14 @@ import {
   ChevronRight,
   Home,
   ArrowLeft,
+  List,
+  LayoutGrid,
 } from 'lucide-react';
 import { DirectoryTree } from '@/components/domain/explorer/DirectoryTree';
 import { VirtualizedFileTable } from '@/components/domain/explorer/VirtualizedFileTable';
 import { FileMetadataDrawer } from '@/components/domain/explorer/FileMetadataDrawer';
 import { ExportButton } from '@/components/shared/ExportButton';
+import { TreeMapVisualization } from '@/components/domain/analytics/TreeMapVisualization';
 import { exportFilesToCSV, exportFilesToJSON, getDefaultFileExportOptions } from '@/utils/fileExport';
 import type { ExplorerPageProps } from './ExplorerPage.types';
 import type { FileItem } from '@/components/domain/explorer/VirtualizedFileTable/VirtualizedFileTable.types';
@@ -52,6 +55,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [selectedFileForDrawer, setSelectedFileForDrawer] = useState<FileItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'treemap'>('list');
 
   // WebSocket connection for real-time updates
   const { isConnected } = useRealtime();
@@ -345,7 +349,36 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
               </span>
             </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
+            {/* View Toggle */}
+            <div className="inline-flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
+                  viewMode === 'list'
+                    ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+                aria-label="Switch to list view"
+                aria-pressed={viewMode === 'list'}
+              >
+                <List className="w-4 h-4" />
+                <span>List</span>
+              </button>
+              <button
+                onClick={() => setViewMode('treemap')}
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
+                  viewMode === 'treemap'
+                    ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+                aria-label="Switch to treemap view"
+                aria-pressed={viewMode === 'treemap'}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                <span>TreeMap</span>
+              </button>
+            </div>
             {isConnected && (
               <div className="flex items-center text-green-600 text-sm">
                 <div className="w-2 h-2 bg-green-600 rounded-full mr-2" />
@@ -358,24 +391,26 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
 
       {/* Main content area with tree and file list */}
       <div className="grid grid-cols-12 gap-6">
-        {/* Directory Tree Sidebar */}
-        <div className="col-span-3">
-          <Card className="p-4 h-[calc(100vh-250px)] overflow-hidden flex flex-col">
-            <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <FolderIcon className="h-4 w-4 text-blue-600" />
-              Directories
-            </h2>
-            <DirectoryTree
-              volumeId={volumeId}
-              selectedPath={currentPath}
-              onPathSelect={handleFolderClick}
-              className="flex-1"
-            />
-          </Card>
-        </div>
+        {/* Directory Tree Sidebar - Only show in list view */}
+        {viewMode === 'list' && (
+          <div className="col-span-3">
+            <Card className="p-4 h-[calc(100vh-250px)] overflow-hidden flex flex-col">
+              <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <FolderIcon className="h-4 w-4 text-blue-600" />
+                Directories
+              </h2>
+              <DirectoryTree
+                volumeId={volumeId}
+                selectedPath={currentPath}
+                onPathSelect={handleFolderClick}
+                className="flex-1"
+              />
+            </Card>
+          </div>
+        )}
 
-        {/* File List Area */}
-        <div className="col-span-9">
+        {/* File List or TreeMap Area */}
+        <div className={viewMode === 'list' ? 'col-span-9' : 'col-span-12'}>
           {/* Breadcrumb Navigation */}
           <div className="mb-4">
             <Card className="p-3">
@@ -414,54 +449,89 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
         </div>
       </div>
 
-      {/* File List */}
-      <Card className="p-4 h-[calc(100vh-350px)] flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <FileIcon className="h-5 w-5 text-green-600" />
-            <h2 className="font-semibold text-gray-900">
-              {filteredFiles.length} items
-              {selectedFiles.size > 0 && (
-                <span className="ml-2 text-sm text-gray-600">
-                  ({selectedFiles.size} selected)
-                </span>
-              )}
-            </h2>
+      {/* File List or TreeMap */}
+      {viewMode === 'list' ? (
+        <Card className="p-4 h-[calc(100vh-350px)] flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FileIcon className="h-5 w-5 text-green-600" />
+              <h2 className="font-semibold text-gray-900">
+                {filteredFiles.length} items
+                {selectedFiles.size > 0 && (
+                  <span className="ml-2 text-sm text-gray-600">
+                    ({selectedFiles.size} selected)
+                  </span>
+                )}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <ExportButton
+                onExport={handleExport}
+                disabled={filteredFiles.length === 0}
+                variant="outline"
+                size="sm"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetchFiles()}
+                disabled={filesLoading}
+              >
+                {filesLoading ? 'Loading...' : 'Refresh'}
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <ExportButton
-              onExport={handleExport}
-              disabled={filteredFiles.length === 0}
-              variant="outline"
-              size="sm"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetchFiles()}
-              disabled={filesLoading}
-            >
-              {filesLoading ? 'Loading...' : 'Refresh'}
-            </Button>
-          </div>
-        </div>
 
-        {filesLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-3 text-gray-600">Loading files...</p>
-          </div>
-        ) : (
-          <VirtualizedFileTable
-            files={filteredFiles}
-            selectedFiles={selectedFiles}
-            onFileSelect={handleFileSelect}
-            onFileClick={handleFileClick}
-            onFileDoubleClick={handleFileDoubleClick}
-            className="flex-1"
-          />
-        )}
-      </Card>
+          {filesLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-3 text-gray-600">Loading files...</p>
+            </div>
+          ) : (
+            <VirtualizedFileTable
+              files={filteredFiles}
+              selectedFiles={selectedFiles}
+              onFileSelect={handleFileSelect}
+              onFileClick={handleFileClick}
+              onFileDoubleClick={handleFileDoubleClick}
+              className="flex-1"
+            />
+          )}
+        </Card>
+      ) : (
+        <div>
+          {filesLoading ? (
+            <Card className="p-8">
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-3 text-gray-600">Loading files...</p>
+              </div>
+            </Card>
+          ) : (
+            <TreeMapVisualization
+              volumeId={volumeId}
+              files={filteredFiles}
+              currentPath={currentPath}
+              onFileClick={(node) => {
+                const file: FileItem = {
+                  name: node.name,
+                  path: node.path,
+                  size: node.value,
+                  is_directory: node.type === 'directory',
+                  modified_time: node.modifiedTime,
+                  extension: node.extension,
+                };
+                if (node.type === 'directory') {
+                  handleFolderClick(node.path);
+                } else {
+                  handleFileClick(file);
+                }
+              }}
+              onNavigate={handleFolderClick}
+            />
+          )}
+        </div>
+      )}
 
       {/* File Metadata Drawer */}
       {volumeId && (
