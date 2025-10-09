@@ -28,12 +28,14 @@ import {
   ArrowLeft,
   List,
   LayoutGrid,
+  BarChart3,
 } from 'lucide-react';
 import { DirectoryTree } from '@/components/domain/explorer/DirectoryTree';
 import { VirtualizedFileTable } from '@/components/domain/explorer/VirtualizedFileTable';
 import { FileMetadataDrawer } from '@/components/domain/explorer/FileMetadataDrawer';
 import { ExportButton } from '@/components/shared/ExportButton';
 import { TreeMapVisualization } from '@/components/domain/analytics/TreeMapVisualization';
+import { FileAgeAnalysis } from '@/components/domain/analytics/FileAgeAnalysis';
 import { exportFilesToCSV, exportFilesToJSON, getDefaultFileExportOptions } from '@/utils/fileExport';
 import type { ExplorerPageProps } from './ExplorerPage.types';
 import type { FileItem } from '@/components/domain/explorer/VirtualizedFileTable/VirtualizedFileTable.types';
@@ -55,7 +57,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [selectedFileForDrawer, setSelectedFileForDrawer] = useState<FileItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'treemap'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'treemap' | 'analytics'>('list');
 
   // WebSocket connection for real-time updates
   const { isConnected } = useRealtime();
@@ -378,6 +380,19 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
                 <LayoutGrid className="w-4 h-4" />
                 <span>TreeMap</span>
               </button>
+              <button
+                onClick={() => setViewMode('analytics')}
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
+                  viewMode === 'analytics'
+                    ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+                aria-label="Switch to analytics view"
+                aria-pressed={viewMode === 'analytics'}
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Analytics</span>
+              </button>
             </div>
             {isConnected && (
               <div className="flex items-center text-green-600 text-sm">
@@ -409,7 +424,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
           </div>
         )}
 
-        {/* File List or TreeMap Area */}
+        {/* File List, TreeMap, or Analytics Area */}
         <div className={viewMode === 'list' ? 'col-span-9' : 'col-span-12'}>
           {/* Breadcrumb Navigation */}
           <div className="mb-4">
@@ -449,7 +464,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
         </div>
       </div>
 
-      {/* File List or TreeMap */}
+      {/* File List, TreeMap, or Analytics */}
       {viewMode === 'list' ? (
         <Card className="p-4 h-[calc(100vh-350px)] flex flex-col">
           <div className="flex items-center justify-between mb-4">
@@ -498,7 +513,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
             />
           )}
         </Card>
-      ) : (
+      ) : viewMode === 'treemap' ? (
         <div>
           {filesLoading ? (
             <Card className="p-8">
@@ -528,6 +543,23 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
                 }
               }}
               onNavigate={handleFolderClick}
+            />
+          )}
+        </div>
+      ) : (
+        <div>
+          {filesLoading ? (
+            <Card className="p-8">
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-3 text-gray-600">Loading files...</p>
+              </div>
+            </Card>
+          ) : (
+            <FileAgeAnalysis
+              files={filteredFiles}
+              volumeId={volumeId}
+              onFileClick={handleFileClick}
             />
           )}
         </div>
