@@ -906,6 +906,17 @@ export interface GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParams {
   threshold: number;
 }
 
+export interface GithubComMantonxVolumevizInternalServicesAuthUserInfo {
+  createdAt?: string;
+  email?: string;
+  id?: number;
+  isActive?: boolean;
+  lastLoginAt?: string;
+  organizationID?: number;
+  role?: string;
+  username?: string;
+}
+
 export interface GithubComMantonxVolumevizInternalServicesRulesActionBreakdown {
   exclude?: number;
   include?: number;
@@ -1050,6 +1061,31 @@ export interface GithubComMantonxVolumevizInternalServicesSchedulerJobStatus {
   name?: string;
   nextRun?: string;
   runCount?: number;
+}
+
+export interface InternalApiV1AuthAuthResponse {
+  token?: string;
+  user?: GithubComMantonxVolumevizInternalServicesAuthUserInfo;
+}
+
+export interface InternalApiV1AuthLoginRequest {
+  organization_id?: number;
+  password: string;
+  username: string;
+}
+
+export interface InternalApiV1AuthRegisterRequest {
+  email: string;
+  organization_id: number;
+  /** @minLength 8 */
+  password: string;
+  /** Only admin can set role */
+  role?: string;
+  /**
+   * @minLength 3
+   * @maxLength 50
+   */
+  username: string;
 }
 
 export interface InternalApiV1DiagRealtimeDiagnostics {
@@ -2773,6 +2809,20 @@ export type GetApiV1SearchSuggestionsParams = {
    */
   type?: string;
 };
+
+export type PostAuthLogin400 = { [key: string]: unknown };
+
+export type PostAuthLogin401 = { [key: string]: unknown };
+
+export type PostAuthLogin403 = { [key: string]: unknown };
+
+export type PostAuthLogin500 = { [key: string]: unknown };
+
+export type PostAuthRegister400 = { [key: string]: unknown };
+
+export type PostAuthRegister409 = { [key: string]: unknown };
+
+export type PostAuthRegister500 = { [key: string]: unknown };
 
 export type GetFilesFileIdPreviewParams = {
   /**
@@ -17625,6 +17675,271 @@ export const usePutApiV1TrackingRules = <
   TContext
 > => {
   const mutationOptions = getPutApiV1TrackingRulesMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Authenticate user and get JWT token
+ * @summary Login
+ */
+export type postAuthLoginResponse200 = {
+  data: InternalApiV1AuthAuthResponse;
+  status: 200;
+};
+
+export type postAuthLoginResponse400 = {
+  data: PostAuthLogin400;
+  status: 400;
+};
+
+export type postAuthLoginResponse401 = {
+  data: PostAuthLogin401;
+  status: 401;
+};
+
+export type postAuthLoginResponse403 = {
+  data: PostAuthLogin403;
+  status: 403;
+};
+
+export type postAuthLoginResponse500 = {
+  data: PostAuthLogin500;
+  status: 500;
+};
+
+export type postAuthLoginResponseComposite =
+  | postAuthLoginResponse200
+  | postAuthLoginResponse400
+  | postAuthLoginResponse401
+  | postAuthLoginResponse403
+  | postAuthLoginResponse500;
+
+export type postAuthLoginResponse = postAuthLoginResponseComposite & {
+  headers: Headers;
+};
+
+export const getPostAuthLoginUrl = () => {
+  return `/auth/login`;
+};
+
+export const postAuthLogin = async (
+  internalApiV1AuthLoginRequest: InternalApiV1AuthLoginRequest,
+  options?: RequestInit,
+): Promise<postAuthLoginResponse> => {
+  return customFetchClient<postAuthLoginResponse>(getPostAuthLoginUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(internalApiV1AuthLoginRequest),
+  });
+};
+
+export const getPostAuthLoginMutationOptions = <
+  TError =
+    | PostAuthLogin400
+    | PostAuthLogin401
+    | PostAuthLogin403
+    | PostAuthLogin500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthLogin>>,
+    TError,
+    { data: InternalApiV1AuthLoginRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthLogin>>,
+  TError,
+  { data: InternalApiV1AuthLoginRequest },
+  TContext
+> => {
+  const mutationKey = ['postAuthLogin'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthLogin>>,
+    { data: InternalApiV1AuthLoginRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthLogin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthLogin>>
+>;
+export type PostAuthLoginMutationBody = InternalApiV1AuthLoginRequest;
+export type PostAuthLoginMutationError =
+  | PostAuthLogin400
+  | PostAuthLogin401
+  | PostAuthLogin403
+  | PostAuthLogin500;
+
+/**
+ * @summary Login
+ */
+export const usePostAuthLogin = <
+  TError =
+    | PostAuthLogin400
+    | PostAuthLogin401
+    | PostAuthLogin403
+    | PostAuthLogin500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthLogin>>,
+      TError,
+      { data: InternalApiV1AuthLoginRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthLogin>>,
+  TError,
+  { data: InternalApiV1AuthLoginRequest },
+  TContext
+> => {
+  const mutationOptions = getPostAuthLoginMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Register a new user
+ * @summary Register
+ */
+export type postAuthRegisterResponse201 = {
+  data: InternalApiV1AuthAuthResponse;
+  status: 201;
+};
+
+export type postAuthRegisterResponse400 = {
+  data: PostAuthRegister400;
+  status: 400;
+};
+
+export type postAuthRegisterResponse409 = {
+  data: PostAuthRegister409;
+  status: 409;
+};
+
+export type postAuthRegisterResponse500 = {
+  data: PostAuthRegister500;
+  status: 500;
+};
+
+export type postAuthRegisterResponseComposite =
+  | postAuthRegisterResponse201
+  | postAuthRegisterResponse400
+  | postAuthRegisterResponse409
+  | postAuthRegisterResponse500;
+
+export type postAuthRegisterResponse = postAuthRegisterResponseComposite & {
+  headers: Headers;
+};
+
+export const getPostAuthRegisterUrl = () => {
+  return `/auth/register`;
+};
+
+export const postAuthRegister = async (
+  internalApiV1AuthRegisterRequest: InternalApiV1AuthRegisterRequest,
+  options?: RequestInit,
+): Promise<postAuthRegisterResponse> => {
+  return customFetchClient<postAuthRegisterResponse>(getPostAuthRegisterUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(internalApiV1AuthRegisterRequest),
+  });
+};
+
+export const getPostAuthRegisterMutationOptions = <
+  TError = PostAuthRegister400 | PostAuthRegister409 | PostAuthRegister500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAuthRegister>>,
+    TError,
+    { data: InternalApiV1AuthRegisterRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAuthRegister>>,
+  TError,
+  { data: InternalApiV1AuthRegisterRequest },
+  TContext
+> => {
+  const mutationKey = ['postAuthRegister'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAuthRegister>>,
+    { data: InternalApiV1AuthRegisterRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postAuthRegister(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAuthRegisterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAuthRegister>>
+>;
+export type PostAuthRegisterMutationBody = InternalApiV1AuthRegisterRequest;
+export type PostAuthRegisterMutationError =
+  | PostAuthRegister400
+  | PostAuthRegister409
+  | PostAuthRegister500;
+
+/**
+ * @summary Register
+ */
+export const usePostAuthRegister = <
+  TError = PostAuthRegister400 | PostAuthRegister409 | PostAuthRegister500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postAuthRegister>>,
+      TError,
+      { data: InternalApiV1AuthRegisterRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postAuthRegister>>,
+  TError,
+  { data: InternalApiV1AuthRegisterRequest },
+  TContext
+> => {
+  const mutationOptions = getPostAuthRegisterMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

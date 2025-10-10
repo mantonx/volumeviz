@@ -1430,6 +1430,27 @@ definitions:
     - query
     - threshold
     type: object
+  github_com_mantonx_volumeviz_internal_services_auth.UserInfo:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      id:
+        format: int64
+        type: integer
+      isActive:
+        type: boolean
+      lastLoginAt:
+        type: string
+      organizationID:
+        format: int64
+        type: integer
+      role:
+        type: string
+      username:
+        type: string
+    type: object
   github_com_mantonx_volumeviz_internal_services_rules.ActionBreakdown:
     properties:
       exclude:
@@ -1670,6 +1691,47 @@ definitions:
       runCount:
         format: int64
         type: integer
+    type: object
+  internal_api_v1_auth.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_auth.UserInfo'
+    type: object
+  internal_api_v1_auth.LoginRequest:
+    properties:
+      organization_id:
+        type: integer
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  internal_api_v1_auth.RegisterRequest:
+    properties:
+      email:
+        type: string
+      organization_id:
+        type: integer
+      password:
+        minLength: 8
+        type: string
+      role:
+        description: Only admin can set role
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - organization_id
+    - password
+    - username
     type: object
   internal_api_v1_diag.RealtimeDiagnostics:
     properties:
@@ -6109,6 +6171,85 @@ paths:
       summary: Update tracking rules configuration
       tags:
       - tracking-rules-config
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and get JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: Registration details
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register
+      tags:
+      - auth
   /files/{file_id}/preview:
     get:
       consumes:
