@@ -259,29 +259,31 @@ export function VolumesList({ className = '' }: VolumesListProps) {
         </button>
       </div>
 
-      {/* Organization Stats */}
-      {orgStats && (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <StatsCard
-            title="Total Volumes"
-            value={orgStats.total_volumes || 0}
-            icon={<HardDrive className="w-5 h-5" />}
-            color="blue"
-          />
-          <StatsCard
-            title="Total Size"
-            value={formatBytes(orgStats.total_size || 0)}
-            icon={<Database className="w-5 h-5" />}
-            color="green"
-          />
-          <StatsCard
-            title="Active Users"
-            value={orgStats.total_users || 0}
-            icon={<Users className="w-5 h-5" />}
-            color="purple"
-          />
-        </div>
-      )}
+      {/* Organization Stats - Calculate from real data */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <StatsCard
+          title="Total Volumes"
+          value={pagination.total || 0}
+          icon={<HardDrive className="w-5 h-5" />}
+          color="blue"
+        />
+        <StatsCard
+          title="Page Size"
+          value={formatBytes(
+            volumes.reduce((sum, v) => sum + (v.size_bytes || 0), 0)
+          )}
+          subtitle={`${volumes.length} volumes on this page`}
+          icon={<Database className="w-5 h-5" />}
+          color="green"
+        />
+        <StatsCard
+          title="Active on Page"
+          value={volumes.filter(v => v.status === 'active').length}
+          subtitle={`of ${volumes.length} shown`}
+          icon={<Users className="w-5 h-5" />}
+          color="purple"
+        />
+      </div>
 
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
@@ -650,9 +652,10 @@ interface StatsCardProps {
   value: string | number;
   icon: React.ReactNode;
   color: 'blue' | 'green' | 'purple';
+  subtitle?: string;
 }
 
-function StatsCard({ title, value, icon, color }: StatsCardProps) {
+function StatsCard({ title, value, icon, color, subtitle }: StatsCardProps) {
   const colorClasses = {
     blue: 'bg-blue-500 dark:bg-blue-600',
     green: 'bg-green-500 dark:bg-green-600',
@@ -678,6 +681,11 @@ function StatsCard({ title, value, icon, color }: StatsCardProps) {
               <dd className="text-lg font-medium text-gray-900 dark:text-white">
                 {value}
               </dd>
+              {subtitle && (
+                <dd className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {subtitle}
+                </dd>
+              )}
             </dl>
           </div>
         </div>
