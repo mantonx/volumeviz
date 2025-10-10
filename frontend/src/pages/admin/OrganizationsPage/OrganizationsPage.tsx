@@ -9,33 +9,66 @@
  * - View organization members
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, Search, Plus, Edit, Users, Database, TrendingUp, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { getApiV1OrganizationsMe } from '@/api/client';
 
-// Mock data - will be replaced with API calls
-const mockOrganizations = [
-  {
-    id: 1,
-    name: 'default',
-    displayName: 'Default Organization',
-    description: 'Default organization for existing VolumeViz installation',
-    isActive: true,
-    maxUsers: 1000,
-    maxVolumes: 10000,
-    maxStorageGb: 100000,
-    planType: 'enterprise',
-    userCount: 4,
-    volumeCount: 35,
-    storageUsageBytes: 0,
-    createdAt: '2025-10-09',
-  },
-];
+interface Organization {
+  id: number;
+  name: string;
+  displayName: string;
+  description?: string;
+  isActive: boolean;
+  maxUsers?: number;
+  maxVolumes?: number;
+  maxStorageGb?: number;
+  planType?: string;
+  userCount: number;
+  volumeCount: number;
+  storageUsageBytes: number;
+  createdAt: string;
+}
 
 export const OrganizationsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [organizations] = useState(mockOrganizations);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrganization = async () => {
+      try {
+        const response = await getApiV1OrganizationsMe();
+        const data = response.data as any;
+
+        // Transform the API response to match our Organization interface
+        const org: Organization = {
+          id: data?.organization?.id || 0,
+          name: data?.organization?.name || 'default',
+          displayName: data?.organization?.display_name || 'My Organization',
+          description: data?.organization?.description || '',
+          isActive: true,
+          maxUsers: data?.limits?.max_users,
+          maxVolumes: data?.limits?.max_volumes,
+          maxStorageGb: data?.limits?.max_storage_gb,
+          planType: data?.organization?.plan_type || 'free',
+          userCount: data?.stats?.user_count || 0,
+          volumeCount: data?.stats?.volume_count || 0,
+          storageUsageBytes: data?.stats?.storage_usage_bytes || 0,
+          createdAt: data?.organization?.created_at || new Date().toISOString(),
+        };
+
+        setOrganizations([org]); // Currently only showing user's own org
+      } catch (err) {
+        console.error('Failed to fetch organization:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrganization();
+  }, []);
 
   const filteredOrgs = organizations.filter(org =>
     org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -8,61 +8,94 @@
  * - System health
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Users,
   Building2,
   Database,
   Activity,
   TrendingUp,
-  AlertTriangle,
   CheckCircle,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { getVolumes, getApiV1OrganizationsMe } from '@/api/client';
 
-// Mock data
-const stats = {
-  totalUsers: 4,
-  totalOrganizations: 1,
-  totalVolumes: 35,
-  totalScans: 128,
-  activeScans: 0,
-  storageTrackedTB: 2.4,
-};
-
-const recentActivity = [
-  {
-    id: 1,
-    type: 'user_created',
-    message: 'New user "demouser" created',
-    timestamp: '2025-10-09T14:30:00Z',
-    user: 'admin',
-  },
-  {
-    id: 2,
-    type: 'scan_completed',
-    message: 'Volume scan completed: volumeviz_movies_dev',
-    timestamp: '2025-10-09T14:25:00Z',
-    user: 'system',
-  },
-  {
-    id: 3,
-    type: 'login',
-    message: 'User "demouser" logged in',
-    timestamp: '2025-10-09T14:20:00Z',
-    user: 'demouser',
-  },
-];
-
-const systemHealth = {
-  api: 'healthy',
-  database: 'healthy',
-  storage: 'healthy',
-  lastCheck: '2025-10-09T14:35:00Z',
-};
+interface DashboardStats {
+  totalUsers: number;
+  totalOrganizations: number;
+  totalVolumes: number;
+  totalScans: number;
+  activeScans: number;
+  storageTrackedTB: number;
+}
 
 export const DashboardPage: React.FC = () => {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    totalOrganizations: 0,
+    totalVolumes: 0,
+    totalScans: 0,
+    activeScans: 0,
+    storageTrackedTB: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Fetch volumes (paged response)
+        const volumesResponse = await getVolumes({ page_size: 1000 });
+        const volumesData = volumesResponse.data as any;
+        const volumes = (volumesData?.data || []) as any[];
+        const totalVolumes = volumesData?.total || volumes.length;
+
+        // Fetch organization info
+        let orgUserCount = 0;
+        let storageUsageBytes = 0;
+        try {
+          const orgResponse = await getApiV1OrganizationsMe();
+          const orgData = orgResponse.data as any;
+          orgUserCount = orgData?.stats?.user_count || 0;
+          storageUsageBytes = orgData?.stats?.storage_usage_bytes || 0;
+        } catch (err) {
+          console.error('Failed to fetch organization:', err);
+        }
+
+        // Calculate storage from organization stats or fallback to volume sizes
+        let totalTB = storageUsageBytes / (1024 * 1024 * 1024 * 1024);
+
+        if (totalTB === 0 && volumes.length > 0) {
+          const totalBytes = volumes.reduce((sum: number, vol: any) => {
+            const size = vol.size || 0;
+            return sum + size;
+          }, 0);
+          totalTB = totalBytes / (1024 * 1024 * 1024 * 1024);
+        }
+
+        setStats({
+          totalUsers: orgUserCount,
+          totalOrganizations: 1, // User can only see their own org
+          totalVolumes: totalVolumes,
+          totalScans: 0, // TODO: Add scan stats when API is available
+          activeScans: 0, // TODO: Calculate from volume scan statuses
+          storageTrackedTB: totalTB,
+        });
+      } catch (err) {
+        console.error('Failed to fetch dashboard stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const systemHealth = {
+    api: 'healthy',
+    database: 'healthy',
+    storage: 'healthy',
+    lastCheck: new Date().toISOString(),
+  };
   const formatTimestamp = (timestamp: string): string => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -73,19 +106,6 @@ export const DashboardPage: React.FC = () => {
     if (minutes < 60) return `${minutes}m ago`;
     if (minutes < 1440) return `${Math.floor(minutes / 60)}h ago`;
     return `${Math.floor(minutes / 1440)}d ago`;
-  };
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'user_created':
-        return <Users className="h-4 w-4 text-blue-600" />;
-      case 'scan_completed':
-        return <Database className="h-4 w-4 text-green-600" />;
-      case 'login':
-        return <Activity className="h-4 w-4 text-purple-600" />;
-      default:
-        return <Activity className="h-4 w-4 text-gray-600" />;
-    }
   };
 
   return (
@@ -232,33 +252,21 @@ export const DashboardPage: React.FC = () => {
         </p>
       </Card>
 
-      {/* Recent Activity */}
+      {/* Recent Activity - Placeholder until audit log API is available */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             Recent Activity
           </h2>
-          <Button variant="ghost" size="sm">
-            View All
-          </Button>
         </div>
-        <div className="space-y-4">
-          {recentActivity.map((activity) => (
-            <div
-              key={activity.id}
-              className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <div className="mt-0.5">{getActivityIcon(activity.type)}</div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-900 dark:text-white">
-                  {activity.message}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {activity.user} • {formatTimestamp(activity.timestamp)}
-                </p>
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-8">
+          <Activity className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+            Activity log coming soon
+          </h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Recent system activity will be displayed here
+          </p>
         </div>
       </Card>
     </div>
