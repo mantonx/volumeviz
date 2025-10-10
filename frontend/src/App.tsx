@@ -1,6 +1,7 @@
 import { ApiHealthChecker } from '@/components/application';
-import { ProtectedRoute } from '@/components/auth';
+import { ProtectedRoute, RequireAdmin } from '@/components/auth';
 import { Layout } from '@/components/layout/Layout';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ToastProvider } from '@/components/ui';
 import { RealtimeProvider } from '@/providers/realtime';
 import { backgroundSyncManager } from '@/utils/background-sync';
@@ -27,6 +28,9 @@ const LoginPage = React.lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = React.lazy(() => import('@/pages/RegisterPage'));
 const UserProfilePage = React.lazy(() => import('@/pages/UserProfilePage'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
+
+// Admin pages
+const AdminUsersPage = React.lazy(() => import('@/pages/admin/UsersPage'));
 
 // Legacy pages - kept for backward compatibility and Settings integration
 const ExplorerPage = React.lazy(() => import('@/pages/ExplorerPage'));
@@ -129,6 +133,23 @@ const App: React.FC = () => {
                 {/* Public Routes (no Layout) */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+
+                {/* Admin Routes (protected, admin-only, separate layout) */}
+                <Route
+                  path="/admin/*"
+                  element={
+                    <ProtectedRoute>
+                      <RequireAdmin>
+                        <AdminLayout>
+                          <Routes>
+                            <Route path="users" element={<AdminUsersPage />} />
+                            <Route path="*" element={<Navigate to="/admin/users" replace />} />
+                          </Routes>
+                        </AdminLayout>
+                      </RequireAdmin>
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Protected Routes (with Layout) */}
                 <Route
