@@ -20,6 +20,7 @@ export function useVolumesList(options: UseVolumesListOptions = {}) {
     const params: any = {
       page,
       page_size: pageSize,
+      system: false, // Hide anonymous 64-char system volumes by default
     };
 
     // Add search if available
@@ -79,7 +80,8 @@ export function useVolumesList(options: UseVolumesListOptions = {}) {
   }, [data]);
 
   const pagination = useMemo(() => {
-    if (!data?.pagination) {
+    // API returns pagination data at root level: { data, total, page, page_size }
+    if (!data) {
       return {
         page,
         pageSize,
@@ -90,18 +92,21 @@ export function useVolumesList(options: UseVolumesListOptions = {}) {
       };
     }
 
-    const { page: currentPage, limit, total, has_more } = data.pagination;
+    const total = (data as any).total || 0;
+    const currentPage = (data as any).page || page;
+    const limit = (data as any).page_size || pageSize;
     const totalPages = Math.ceil(total / limit);
+    const hasMore = currentPage < totalPages;
 
     return {
       page: currentPage,
       pageSize: limit,
       total,
       totalPages,
-      hasNext: has_more,
+      hasNext: hasMore,
       hasPrevious: currentPage > 1,
     };
-  }, [data?.pagination, page, pageSize]);
+  }, [data, page, pageSize]);
 
   return {
     volumes,
