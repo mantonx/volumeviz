@@ -1,5 +1,108 @@
 basePath: /api/v1
 definitions:
+  AggregateMetadata:
+    properties:
+      cache_hit:
+        example: false
+        type: boolean
+      compute_time_ms:
+        example: 125
+        type: integer
+      timestamp:
+        type: string
+      truncated:
+        example: false
+        type: boolean
+    type: object
+  AggregateResponse:
+    properties:
+      metadata:
+        $ref: '#/definitions/AggregateMetadata'
+      nodes:
+        items:
+          $ref: '#/definitions/AggregateTreeNode'
+        type: array
+      stats:
+        $ref: '#/definitions/AggregateStats'
+    type: object
+  AggregateStats:
+    properties:
+      avg_file_size:
+        example: 10485760
+        type: integer
+      dir_count:
+        example: 234
+        type: integer
+      file_count:
+        example: 1000
+        type: integer
+      largest_file:
+        $ref: '#/definitions/FileRef'
+      last_modified:
+        type: string
+      max_depth:
+        example: 5
+        type: integer
+      median_size:
+        example: 5242880
+        type: integer
+      total_count:
+        example: 1234
+        type: integer
+      total_size:
+        example: 10737418240
+        type: integer
+    type: object
+  AggregateTreeNode:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/AggregateTreeNode'
+        type: array
+      color:
+        example: '#3b82f6'
+        type: string
+      count:
+        example: 42
+        type: integer
+      created:
+        type: string
+      depth:
+        example: 2
+        type: integer
+      extension:
+        example: mp4
+        type: string
+      id:
+        example: node-123
+        type: string
+      mime_type:
+        example: video/mp4
+        type: string
+      modified:
+        type: string
+      name:
+        example: movies
+        type: string
+      opacity:
+        example: 0.8
+        type: number
+      parent_path:
+        example: /media
+        type: string
+      path:
+        example: /media/movies
+        type: string
+      size:
+        example: 4294967296
+        type: integer
+      type:
+        enum:
+        - file
+        - directory
+        example: directory
+        type: string
+    type: object
   AsyncScanResponse:
     properties:
       scan_id:
@@ -11,6 +114,51 @@ definitions:
       volume_id:
         example: tv-shows-readonly
         type: string
+    type: object
+  BulkDeleteResult:
+    properties:
+      error:
+        example: volume is in use
+        type: string
+      success:
+        example: true
+        type: boolean
+      volume_id:
+        example: vol1
+        type: string
+    type: object
+  BulkDeleteVolumesRequest:
+    properties:
+      force:
+        description: Force deletion even if volume is in use
+        example: false
+        type: boolean
+      volume_ids:
+        example:
+        - vol1
+        - vol2
+        - vol3
+        items:
+          type: string
+        type: array
+    required:
+    - volume_ids
+    type: object
+  BulkDeleteVolumesResponse:
+    properties:
+      failure_count:
+        example: 2
+        type: integer
+      results:
+        items:
+          $ref: '#/definitions/BulkDeleteResult'
+        type: array
+      success_count:
+        example: 3
+        type: integer
+      total_requested:
+        example: 5
+        type: integer
     type: object
   BulkScanRequest:
     properties:
@@ -78,19 +226,34 @@ definitions:
         example: 20.10.8
         type: string
     type: object
+  DuplicateFile:
+    properties:
+      hash:
+        example: d41d8cd98f00b204e9800998ecf8427e
+        type: string
+      id:
+        example: file-123
+        type: string
+      modified_time:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      name:
+        example: img1.jpg
+        type: string
+      path:
+        example: /media/photos/img1.jpg
+        type: string
+      size:
+        example: 2048000
+        type: integer
+      volume_id:
+        example: media-library
+        type: string
+    type: object
   ErrorResponse:
     properties:
-      code:
-        example: VOLUME_NOT_FOUND
-        type: string
-      details:
-        additionalProperties: {}
-        type: object
       error:
-        example: Volume not found
-        type: string
-      message:
-        example: Additional error details
+        example: Invalid request
         type: string
     type: object
   ExtensionOption:
@@ -179,6 +342,21 @@ definitions:
         type: string
       uid:
         example: 1000
+        type: integer
+    type: object
+  FileRef:
+    properties:
+      id:
+        example: file-456
+        type: string
+      name:
+        example: large-video.mp4
+        type: string
+      path:
+        example: /media/movies/large-video.mp4
+        type: string
+      size:
+        example: 5368709120
         type: integer
     type: object
   FilesystemCapabilitiesResponse:
@@ -462,6 +640,110 @@ definitions:
         example: video/mp4
         type: string
     type: object
+  Operation:
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/OperationAction'
+        type: array
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      description:
+        example: Delete 5 duplicate files
+        type: string
+      id:
+        example: op-123
+        type: string
+      metadata:
+        $ref: '#/definitions/OperationMetadata'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.OperationStatus'
+        example: completed
+      type:
+        allOf:
+        - $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.OperationType'
+        example: delete
+      volume_id:
+        example: media-library
+        type: string
+    type: object
+  OperationAction:
+    properties:
+      backup_path:
+        example: /tmp/volumeviz-backup/img1.jpg
+        type: string
+      error_message:
+        type: string
+      executed_at:
+        type: string
+      file_size:
+        example: 2048000
+        type: integer
+      id:
+        example: action-456
+        type: string
+      source_path:
+        example: /media/photos/img1.jpg
+        type: string
+      status:
+        example: completed
+        type: string
+      target_path:
+        example: /media/photos/backup/img1.jpg
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.OperationType'
+        example: delete
+    type: object
+  OperationHistory:
+    properties:
+      operations:
+        items:
+          $ref: '#/definitions/Operation'
+        type: array
+      pagination:
+        $ref: '#/definitions/PaginationResponse'
+    type: object
+  OperationMetadata:
+    properties:
+      processed_files:
+        example: 3
+        type: integer
+      risk_level:
+        example: medium
+        type: string
+      saved_space_bytes:
+        example: 8192000
+        type: integer
+      total_files:
+        example: 5
+        type: integer
+      total_size_bytes:
+        example: 10240000
+        type: integer
+      workflow_id:
+        example: cleanup-workflow-789
+        type: string
+    type: object
+  PaginationResponse:
+    properties:
+      page:
+        example: 1
+        type: integer
+      page_size:
+        example: 50
+        type: integer
+      pages:
+        example: 25
+        type: integer
+      total:
+        example: 1234
+        type: integer
+    type: object
   RefreshRequest:
     properties:
       async:
@@ -470,6 +752,56 @@ definitions:
       method:
         example: du
         type: string
+    type: object
+  RollbackFailure:
+    properties:
+      action_id:
+        example: action-456
+        type: string
+      error_message:
+        example: Source file no longer exists
+        type: string
+      reason:
+        example: backup_missing
+        type: string
+    type: object
+  RollbackRequest:
+    properties:
+      action_ids:
+        example:
+        - '["action-456"'
+        - ' "action-789"]'
+        items:
+          type: string
+        type: array
+      operation_id:
+        example: op-123
+        type: string
+      reason:
+        example: User requested rollback
+        type: string
+    type: object
+  RollbackResponse:
+    properties:
+      completed_at:
+        type: string
+      failed:
+        items:
+          $ref: '#/definitions/RollbackFailure'
+        type: array
+      operation_id:
+        example: rollback-op-321
+        type: string
+      rolled_back:
+        example:
+        - '["action-456"'
+        - ' "action-789"]'
+        items:
+          type: string
+        type: array
+      success:
+        example: true
+        type: boolean
     type: object
   ScanResponse:
     properties:
@@ -585,6 +917,10 @@ definitions:
       driver:
         example: local
         type: string
+      file_count:
+        description: File/folder counts from filesystem indexing
+        example: 1250
+        type: integer
       filesystem_capacity:
         $ref: '#/definitions/FilesystemCapacity'
       filesystem_progress:
@@ -595,6 +931,10 @@ definitions:
         description: Background filesystem indexing status
         example: indexing
         type: string
+      folder_count:
+        description: Total number of folders indexed
+        example: 150
+        type: integer
       is_orphaned:
         example: false
         type: boolean
@@ -633,6 +973,94 @@ definitions:
         type: string
       size_bytes:
         example: 1073741824
+        type: integer
+      status:
+        description: Volume status (computed from scan status and active state)
+        example: active
+        type: string
+    type: object
+  duplicates.DetectionParameters:
+    properties:
+      include_empty:
+        example: false
+        type: boolean
+      max_size:
+        example: 104857600
+        type: integer
+      min_size:
+        example: 1048576
+        type: integer
+      path:
+        example: /movies
+        type: string
+      volume_id:
+        example: media-library
+        type: string
+    type: object
+  duplicates.DuplicateDetectionResponse:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/duplicates.DuplicateGroup'
+        type: array
+      parameters:
+        $ref: '#/definitions/duplicates.DetectionParameters'
+      processing_time_ms:
+        type: integer
+      summary:
+        $ref: '#/definitions/duplicates.DuplicateSummary'
+      timestamp:
+        type: string
+    type: object
+  duplicates.DuplicateGroup:
+    properties:
+      count:
+        example: 3
+        type: integer
+      created_at:
+        type: string
+      files:
+        items:
+          $ref: '#/definitions/DuplicateFile'
+        type: array
+      hash:
+        example: d41d8cd98f00b204e9800998ecf8427e
+        type: string
+      id:
+        example: dup-1
+        type: string
+      size:
+        example: 2048000
+        type: integer
+      wasted_space:
+        example: 4096000
+        type: integer
+    type: object
+  duplicates.DuplicateSummary:
+    properties:
+      largest_group:
+        properties:
+          count:
+            example: 8
+            type: integer
+          id:
+            example: dup-5
+            type: string
+          wasted_space:
+            example: 134217728
+            type: integer
+        type: object
+      processed_files:
+        example: 10000
+        type: integer
+      total_duplicates:
+        example: 42
+        type: integer
+      total_groups:
+        example: 15
+        type: integer
+      total_wasted_space:
+        example: 536870912
         type: integer
     type: object
   gin.H:
@@ -882,6 +1310,32 @@ definitions:
       full_scan:
         type: boolean
     type: object
+  github_com_mantonx_volumeviz_internal_models.OperationStatus:
+    enum:
+    - pending
+    - in_progress
+    - completed
+    - failed
+    - rolled_back
+    type: string
+    x-enum-varnames:
+    - OperationStatusPending
+    - OperationStatusInProgress
+    - OperationStatusCompleted
+    - OperationStatusFailed
+    - OperationStatusRolledBack
+  github_com_mantonx_volumeviz_internal_models.OperationType:
+    enum:
+    - delete
+    - move
+    - copy
+    - rename
+    type: string
+    x-enum-varnames:
+    - OperationTypeDelete
+    - OperationTypeMove
+    - OperationTypeCopy
+    - OperationTypeRename
   github_com_mantonx_volumeviz_internal_models.UpdateAlertDestinationParams:
     properties:
       config:
@@ -1193,142 +1647,29 @@ definitions:
       total_execution_time_ms:
         type: integer
     type: object
-  internal_api_v1_auth.AcceptInvitationRequest:
+  github_com_mantonx_volumeviz_internal_services_scheduler.JobStatus:
     properties:
-      token:
+      description:
         type: string
-    required:
-    - token
-    type: object
-  internal_api_v1_auth.AuthResponse:
-    properties:
-      expires_at:
-        type: string
-      refresh_token:
-        type: string
-      token:
-        type: string
-      user:
-        $ref: '#/definitions/internal_api_v1_auth.UserProfile'
-    type: object
-  internal_api_v1_auth.ForcePasswordChangeRequest:
-    properties:
-      current_password:
-        type: string
-      new_password:
-        minLength: 8
-        type: string
-    required:
-    - current_password
-    - new_password
-    type: object
-  internal_api_v1_auth.LoginRequest:
-    properties:
-      password:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
-    type: object
-  internal_api_v1_auth.PasswordChangeRequest:
-    properties:
-      current_password:
-        type: string
-      new_password:
-        minLength: 8
-        type: string
-    required:
-    - current_password
-    - new_password
-    type: object
-  internal_api_v1_auth.PasswordResetRequest:
-    properties:
-      email:
-        type: string
-    required:
-    - email
-    type: object
-  internal_api_v1_auth.RefreshTokenRequest:
-    properties:
-      refresh_token:
-        type: string
-    required:
-    - refresh_token
-    type: object
-  internal_api_v1_auth.RegisterRequest:
-    properties:
-      email:
-        type: string
-      first_name:
-        type: string
-      last_name:
-        type: string
-      password:
-        minLength: 8
-        type: string
-      role:
-        description: Only admin can set role
-        type: string
-      username:
-        maxLength: 50
-        minLength: 3
-        type: string
-    required:
-    - email
-    - password
-    - username
-    type: object
-  internal_api_v1_auth.RegisterWithInvitationRequest:
-    properties:
-      email:
-        type: string
-      first_name:
-        type: string
-      last_name:
-        type: string
-      password:
-        minLength: 8
-        type: string
-      token:
-        type: string
-      username:
-        maxLength: 50
-        minLength: 3
-        type: string
-    required:
-    - email
-    - password
-    - token
-    - username
-    type: object
-  internal_api_v1_auth.UserProfile:
-    properties:
-      created_at:
-        type: string
-      display_name:
-        type: string
-      email:
-        type: string
-      first_name:
-        type: string
-      id:
+      enabled:
+        type: boolean
+      errorCount:
+        format: int64
         type: integer
-      last_login_at:
+      interval:
+        $ref: '#/definitions/time.Duration'
+      lastDuration:
+        $ref: '#/definitions/time.Duration'
+      lastError: {}
+      lastRun:
         type: string
-      last_name:
+      name:
         type: string
-      organization_id:
+      nextRun:
+        type: string
+      runCount:
+        format: int64
         type: integer
-      role:
-        type: string
-      status:
-        type: string
-      timezone:
-        type: string
-      username:
-        type: string
     type: object
   internal_api_v1_diag.RealtimeDiagnostics:
     properties:
@@ -2578,6 +2919,65 @@ definitions:
           type: string
         type: array
     type: object
+  internal_api_v1_users.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      organization_id:
+        type: integer
+      password:
+        minLength: 8
+        type: string
+      role:
+        enum:
+        - admin
+        - operator
+        - user
+        - viewer
+        type: string
+      username:
+        minLength: 3
+        type: string
+    required:
+    - email
+    - organization_id
+    - password
+    - role
+    - username
+    type: object
+  internal_api_v1_users.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      is_active:
+        type: boolean
+      role:
+        enum:
+        - admin
+        - operator
+        - user
+        - viewer
+        type: string
+    type: object
+  internal_api_v1_users.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      last_login_at:
+        type: string
+      organization_id:
+        type: integer
+      role:
+        type: string
+      username:
+        type: string
+    type: object
   time.Duration:
     enum:
     - -9223372036854775808
@@ -3374,6 +3774,147 @@ paths:
       summary: Get real-time diagnostics
       tags:
       - Diagnostics
+  /api/v1/duplicates/detect:
+    get:
+      consumes:
+      - application/json
+      description: Find duplicate files by content hash in the specified volume and
+        path
+      parameters:
+      - description: Volume ID
+        example: '"media-library"'
+        in: query
+        name: volumeId
+        required: true
+        type: string
+      - default: '"/"'
+        description: Starting path
+        example: '"/movies"'
+        in: query
+        name: path
+        type: string
+      - description: Minimum file size in bytes
+        example: 1048576
+        in: query
+        name: minSize
+        type: integer
+      - description: Maximum file size in bytes
+        example: 104857600
+        in: query
+        name: maxSize
+        type: integer
+      - default: false
+        description: Include empty files
+        in: query
+        name: includeEmpty
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/duplicates.DuplicateDetectionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Detect duplicate files
+      tags:
+      - Duplicates
+  /api/v1/duplicates/detect-by-size:
+    get:
+      consumes:
+      - application/json
+      description: Find potential duplicate files by matching file sizes (faster than
+        hash-based detection)
+      parameters:
+      - description: Volume ID
+        example: '"media-library"'
+        in: query
+        name: volumeId
+        required: true
+        type: string
+      - default: '"/"'
+        description: Starting path
+        example: '"/movies"'
+        in: query
+        name: path
+        type: string
+      - description: Minimum file size in bytes
+        example: 1048576
+        in: query
+        name: minSize
+        type: integer
+      - description: Maximum file size in bytes
+        example: 104857600
+        in: query
+        name: maxSize
+        type: integer
+      - default: false
+        description: Include empty files
+        in: query
+        name: includeEmpty
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/duplicates.DuplicateDetectionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Detect potential duplicates by file size
+      tags:
+      - Duplicates
+  /api/v1/duplicates/verify/{groupId}:
+    post:
+      consumes:
+      - application/json
+      description: Verify a size-based duplicate group by calculating and comparing
+        file hashes
+      parameters:
+      - description: Duplicate group ID
+        example: '"size-dup-1"'
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Duplicate group to verify
+        in: body
+        name: group
+        required: true
+        schema:
+          $ref: '#/definitions/duplicates.DuplicateGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/duplicates.DuplicateGroup'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Verify a duplicate group with hash comparison
+      tags:
+      - Duplicates
   /api/v1/explorer/browse:
     get:
       consumes:
@@ -3912,6 +4453,69 @@ paths:
       summary: Get tree children
       tags:
       - Explorer
+  /api/v1/fs/aggregate:
+    get:
+      consumes:
+      - application/json
+      description: Get hierarchical file system data with aggregated sizes and counts
+        for visualization
+      parameters:
+      - description: Volume ID
+        example: '"media-library"'
+        in: query
+        name: volumeId
+        required: true
+        type: string
+      - default: '"/"'
+        description: Starting path
+        example: '"/movies"'
+        in: query
+        name: path
+        type: string
+      - default: 3
+        description: Maximum depth to traverse
+        in: query
+        maximum: 10
+        minimum: 1
+        name: maxDepth
+        type: integer
+      - default: '"size"'
+        description: Statistic to aggregate
+        enum:
+        - size
+        - count
+        in: query
+        name: stat
+        type: string
+      - description: Minimum size filter in bytes
+        example: 1048576
+        in: query
+        name: minSize
+        type: integer
+      - default: 1000
+        description: Maximum nodes to return
+        in: query
+        maximum: 10000
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AggregateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get aggregated file system data
+      tags:
+      - Explorer
   /api/v1/metadata/files/by-duration:
     get:
       consumes:
@@ -4400,6 +5004,235 @@ paths:
       summary: Get mount catalog summary
       tags:
       - docker-mounts
+  /api/v1/operations:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves paginated list of file operations for undo/rollback
+      parameters:
+      - description: Volume ID
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/OperationHistory'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get operation history
+      tags:
+      - operations
+  /api/v1/operations/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes an operation from history and cleans up associated backups
+      parameters:
+      - description: Operation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete operation
+      tags:
+      - operations
+    get:
+      consumes:
+      - application/json
+      description: Retrieves detailed information about a specific operation
+      parameters:
+      - description: Operation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Operation'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get operation details
+      tags:
+      - operations
+  /api/v1/operations/{id}/rollback:
+    post:
+      consumes:
+      - application/json
+      description: Rolls back a completed operation or specific actions within it
+      parameters:
+      - description: Operation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Rollback request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/RollbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/RollbackResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Rollback operation
+      tags:
+      - operations
+  /api/v1/operations/cleanup:
+    post:
+      consumes:
+      - application/json
+      description: Removes old backup files based on retention policy
+      parameters:
+      - default: 30
+        description: Retention period in days
+        in: query
+        name: retention_days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Cleanup backup files
+      tags:
+      - operations
+  /api/v1/organizations/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get organization details by ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization details
+          schema:
+            $ref: '#/definitions/internal_api_v1_organizations.OrganizationResponse'
+        "404":
+          description: Organization not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get organization by ID
+      tags:
+      - organizations
+  /api/v1/organizations/{id}/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get organization usage statistics
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Include growth metrics
+        in: query
+        name: include_growth
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization stats
+          schema:
+            $ref: '#/definitions/internal_api_v1_organizations.OrganizationWithStatsResponse'
+        "404":
+          description: Organization not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get organization statistics
+      tags:
+      - organizations
   /api/v1/organizations/me:
     get:
       consumes:
@@ -4703,6 +5536,127 @@ paths:
       summary: Get rule templates
       tags:
       - tracking-rules
+  /api/v1/scheduler/jobs:
+    get:
+      description: Get status information for all scheduled jobs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_scheduler.JobStatus'
+            type: object
+      summary: Get all scheduled jobs
+      tags:
+      - scheduler
+  /api/v1/scheduler/jobs/{name}:
+    get:
+      description: Get status information for a specific scheduled job
+      parameters:
+      - description: Job name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_services_scheduler.JobStatus'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get job status
+      tags:
+      - scheduler
+  /api/v1/scheduler/jobs/{name}/disable:
+    post:
+      description: Disable a scheduled job (it will not run automatically)
+      parameters:
+      - description: Job name
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Disable a job
+      tags:
+      - scheduler
+  /api/v1/scheduler/jobs/{name}/enable:
+    post:
+      description: Enable a previously disabled scheduled job
+      parameters:
+      - description: Job name
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Enable a job
+      tags:
+      - scheduler
+  /api/v1/scheduler/jobs/{name}/run:
+    post:
+      description: Trigger a scheduled job to run immediately
+      parameters:
+      - description: Job name
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Manually run a job
+      tags:
+      - scheduler
   /api/v1/search/files:
     get:
       consumes:
@@ -5155,324 +6109,6 @@ paths:
       summary: Update tracking rules configuration
       tags:
       - tracking-rules-config
-  /auth/accept-invitation:
-    post:
-      consumes:
-      - application/json
-      description: Accept an organization invitation for an existing user
-      parameters:
-      - description: Invitation acceptance
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_auth.AcceptInvitationRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/gin.H'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: Accept organization invitation
-      tags:
-      - auth
-  /auth/csrf:
-    get:
-      description: Get CSRF token for state-changing operations
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get CSRF token
-      tags:
-      - auth
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      description: Authenticate user and return JWT token
-      parameters:
-      - description: Login credentials
-        in: body
-        name: credentials
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_auth.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: User login
-      tags:
-      - auth
-  /auth/logout:
-    post:
-      description: Logout user and revoke session
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: Logout
-      tags:
-      - auth
-  /auth/me:
-    get:
-      description: Get authenticated user's profile information
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_api_v1_auth.UserProfile'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: Get current user profile
-      tags:
-      - auth
-  /auth/password/change:
-    post:
-      consumes:
-      - application/json
-      description: Change authenticated user's password
-      parameters:
-      - description: Password change request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_auth.PasswordChangeRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: Change password
-      tags:
-      - auth
-  /auth/password/force-change:
-    post:
-      consumes:
-      - application/json
-      description: Change default admin password (requires current default password)
-      parameters:
-      - description: Forced password change request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_auth.ForcePasswordChangeRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: Force password change for default admin
-      tags:
-      - auth
-  /auth/password/reset:
-    post:
-      consumes:
-      - application/json
-      description: Request password reset email
-      parameters:
-      - description: Password reset request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_auth.PasswordResetRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: Request password reset
-      tags:
-      - auth
-  /auth/refresh:
-    post:
-      consumes:
-      - application/json
-      description: Refresh access token using refresh token
-      parameters:
-      - description: Refresh token request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_auth.RefreshTokenRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: Refresh access token
-      tags:
-      - auth
-  /auth/register:
-    post:
-      consumes:
-      - application/json
-      description: Register a new user account
-      parameters:
-      - description: Registration details
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_auth.RegisterRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: User registration
-      tags:
-      - auth
-  /auth/register/invitation:
-    post:
-      consumes:
-      - application/json
-      description: Register a new user with an organization invitation token
-      parameters:
-      - description: Registration with invitation
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_auth.RegisterWithInvitationRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: Register with invitation token
-      tags:
-      - auth
   /files/{file_id}/preview:
     get:
       consumes:
@@ -6094,6 +6730,95 @@ paths:
       summary: Get recent scan errors
       tags:
       - scan
+  /snapshots/stats:
+    get:
+      description: Get aggregate statistics about volume snapshots
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get snapshot statistics
+      tags:
+      - snapshots
+  /snapshots/volumes/{volume_id}:
+    get:
+      description: Get snapshot history for a specific volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: volume_id
+        required: true
+        type: string
+      - default: 10
+        description: Limit number of results
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get volume snapshots
+      tags:
+      - snapshots
+  /snapshots/volumes/{volume_id}/latest:
+    get:
+      description: Get the most recent snapshot for a specific volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: volume_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get latest snapshot
+      tags:
+      - snapshots
   /stats/daily:
     get:
       consumes:
@@ -6521,6 +7246,208 @@ paths:
       summary: Get volume trend slope
       tags:
       - trends
+  /users:
+    get:
+      description: List all users in the organization (admin only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 25
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Create a new user in the organization (admin only)
+      parameters:
+      - description: User creation request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_users.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_api_v1_users.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new user
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      description: Delete a user (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a user
+      tags:
+      - users
+    get:
+      description: Get a specific user by ID (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_users.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update user details (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User update request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_users.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_users.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update a user
+      tags:
+      - users
   /volumes:
     get:
       consumes:
@@ -6925,6 +7852,36 @@ paths:
       summary: Get filesystem indexing status
       tags:
       - filesystem
+  /volumes/bulk-delete:
+    post:
+      consumes:
+      - application/json
+      description: Delete multiple Docker volumes by their IDs
+      parameters:
+      - description: Volume IDs to delete
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/BulkDeleteVolumesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete results
+          schema:
+            $ref: '#/definitions/BulkDeleteVolumesResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Bulk delete volumes
+      tags:
+      - volumes
   /volumes/bulk-scan:
     post:
       consumes:
@@ -6958,6 +7915,111 @@ paths:
       summary: Bulk scan volumes
       tags:
       - scan
+  /volumes/export/csv:
+    get:
+      consumes:
+      - application/json
+      description: Export filtered and sorted volumes list in CSV format
+      parameters:
+      - description: 'Page number for pagination (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 1000, max: 10000 for exports)'
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort field and direction
+        in: query
+        name: sort
+        type: string
+      - description: Search query to filter volumes by name
+        in: query
+        name: q
+        type: string
+      - description: Filter by volume driver
+        in: query
+        name: driver
+        type: string
+      - description: Filter orphaned volumes
+        in: query
+        name: orphaned
+        type: boolean
+      - description: Include system volumes
+        in: query
+        name: system
+        type: boolean
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV file download
+          schema:
+            type: file
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Export volumes as CSV
+      tags:
+      - volumes
+  /volumes/export/json:
+    get:
+      consumes:
+      - application/json
+      description: Export filtered and sorted volumes list in JSON format
+      parameters:
+      - description: 'Page number for pagination (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 1000, max: 10000 for exports)'
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort field and direction
+        in: query
+        name: sort
+        type: string
+      - description: Search query to filter volumes by name
+        in: query
+        name: q
+        type: string
+      - description: Filter by volume driver
+        in: query
+        name: driver
+        type: string
+      - description: Filter orphaned volumes
+        in: query
+        name: orphaned
+        type: boolean
+      - description: Include system volumes
+        in: query
+        name: system
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JSON export
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Export volumes as JSON
+      tags:
+      - volumes
 schemes:
 - http
 - https

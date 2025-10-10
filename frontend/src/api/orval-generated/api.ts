@@ -94,10 +94,81 @@ import type {
 } from '@tanstack/react-query';
 
 import { customFetchClient } from '../fetch-client';
+export interface AggregateMetadata {
+  cache_hit?: boolean;
+  compute_time_ms?: number;
+  timestamp?: string;
+  truncated?: boolean;
+}
+
+export interface AggregateResponse {
+  metadata?: AggregateMetadata;
+  nodes?: AggregateTreeNode[];
+  stats?: AggregateStats;
+}
+
+export interface AggregateStats {
+  avg_file_size?: number;
+  dir_count?: number;
+  file_count?: number;
+  largest_file?: FileRef;
+  last_modified?: string;
+  max_depth?: number;
+  median_size?: number;
+  total_count?: number;
+  total_size?: number;
+}
+
+export type AggregateTreeNodeType =
+  (typeof AggregateTreeNodeType)[keyof typeof AggregateTreeNodeType];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const AggregateTreeNodeType = {
+  file: 'file',
+  directory: 'directory',
+} as const;
+
+export interface AggregateTreeNode {
+  children?: AggregateTreeNode[];
+  color?: string;
+  count?: number;
+  created?: string;
+  depth?: number;
+  extension?: string;
+  id?: string;
+  mime_type?: string;
+  modified?: string;
+  name?: string;
+  opacity?: number;
+  parent_path?: string;
+  path?: string;
+  size?: number;
+  type?: AggregateTreeNodeType;
+}
+
 export interface AsyncScanResponse {
   scan_id?: string;
   status?: string;
   volume_id?: string;
+}
+
+export interface BulkDeleteResult {
+  error?: string;
+  success?: boolean;
+  volume_id?: string;
+}
+
+export interface BulkDeleteVolumesRequest {
+  /** Force deletion even if volume is in use */
+  force?: boolean;
+  volume_ids: string[];
+}
+
+export interface BulkDeleteVolumesResponse {
+  failure_count?: number;
+  results?: BulkDeleteResult[];
+  success_count?: number;
+  total_requested?: number;
 }
 
 export interface BulkScanRequest {
@@ -126,13 +197,18 @@ export interface DockerHealth {
   version?: string;
 }
 
-export type ErrorResponseDetails = { [key: string]: unknown };
+export interface DuplicateFile {
+  hash?: string;
+  id?: string;
+  modified_time?: string;
+  name?: string;
+  path?: string;
+  size?: number;
+  volume_id?: string;
+}
 
 export interface ErrorResponse {
-  code?: string;
-  details?: ErrorResponseDetails;
   error?: string;
-  message?: string;
 }
 
 export interface ExtensionOption {
@@ -176,6 +252,13 @@ export interface FilePermissions {
   mode?: number;
   owner?: string;
   uid?: number;
+}
+
+export interface FileRef {
+  id?: string;
+  name?: string;
+  path?: string;
+  size?: number;
 }
 
 export type FilesystemCapabilitiesResponseFeatures = { [key: string]: boolean };
@@ -318,9 +401,74 @@ export interface MimeTypeOption {
   value?: string;
 }
 
+export interface Operation {
+  actions?: OperationAction[];
+  completed_at?: string;
+  created_at?: string;
+  description?: string;
+  id?: string;
+  metadata?: OperationMetadata;
+  status?: GithubComMantonxVolumevizInternalModelsOperationStatus;
+  type?: GithubComMantonxVolumevizInternalModelsOperationType;
+  volume_id?: string;
+}
+
+export interface OperationAction {
+  backup_path?: string;
+  error_message?: string;
+  executed_at?: string;
+  file_size?: number;
+  id?: string;
+  source_path?: string;
+  status?: string;
+  target_path?: string;
+  type?: GithubComMantonxVolumevizInternalModelsOperationType;
+}
+
+export interface OperationHistory {
+  operations?: Operation[];
+  pagination?: PaginationResponse;
+}
+
+export interface OperationMetadata {
+  processed_files?: number;
+  risk_level?: string;
+  saved_space_bytes?: number;
+  total_files?: number;
+  total_size_bytes?: number;
+  workflow_id?: string;
+}
+
+export interface PaginationResponse {
+  page?: number;
+  page_size?: number;
+  pages?: number;
+  total?: number;
+}
+
 export interface RefreshRequest {
   async?: boolean;
   method?: string;
+}
+
+export interface RollbackFailure {
+  action_id?: string;
+  error_message?: string;
+  reason?: string;
+}
+
+export interface RollbackRequest {
+  action_ids?: string[];
+  operation_id?: string;
+  reason?: string;
+}
+
+export interface RollbackResponse {
+  completed_at?: string;
+  failed?: RollbackFailure[];
+  operation_id?: string;
+  rolled_back?: string[];
+  success?: boolean;
 }
 
 export interface ScanResponse {
@@ -395,11 +543,15 @@ export interface VolumeV1 {
   container_names?: string[];
   created_at?: string;
   driver?: string;
+  /** File/folder counts from filesystem indexing */
+  file_count?: number;
   filesystem_capacity?: FilesystemCapacity;
   /** Background indexing progress details */
   filesystem_progress?: VolumeV1FilesystemProgress;
   /** Background filesystem indexing status */
   filesystem_status?: string;
+  /** Total number of folders indexed */
+  folder_count?: number;
   is_orphaned?: boolean;
   is_system?: boolean;
   labels?: VolumeV1Labels;
@@ -414,6 +566,48 @@ export interface VolumeV1 {
   scan_status?: string;
   scope?: string;
   size_bytes?: number;
+  /** Volume status (computed from scan status and active state) */
+  status?: string;
+}
+
+export interface DuplicatesDetectionParameters {
+  include_empty?: boolean;
+  max_size?: number;
+  min_size?: number;
+  path?: string;
+  volume_id?: string;
+}
+
+export interface DuplicatesDuplicateDetectionResponse {
+  groups?: DuplicatesDuplicateGroup[];
+  parameters?: DuplicatesDetectionParameters;
+  processing_time_ms?: number;
+  summary?: DuplicatesDuplicateSummary;
+  timestamp?: string;
+}
+
+export interface DuplicatesDuplicateGroup {
+  count?: number;
+  created_at?: string;
+  files?: DuplicateFile[];
+  hash?: string;
+  id?: string;
+  size?: number;
+  wasted_space?: number;
+}
+
+export type DuplicatesDuplicateSummaryLargestGroup = {
+  count?: number;
+  id?: string;
+  wasted_space?: number;
+};
+
+export interface DuplicatesDuplicateSummary {
+  largest_group?: DuplicatesDuplicateSummaryLargestGroup;
+  processed_files?: number;
+  total_duplicates?: number;
+  total_groups?: number;
+  total_wasted_space?: number;
 }
 
 export interface GinH {
@@ -609,6 +803,29 @@ export interface GithubComMantonxVolumevizInternalModelsFilesystemIndexingReques
   delta_mode?: boolean;
   full_scan?: boolean;
 }
+
+export type GithubComMantonxVolumevizInternalModelsOperationStatus =
+  (typeof GithubComMantonxVolumevizInternalModelsOperationStatus)[keyof typeof GithubComMantonxVolumevizInternalModelsOperationStatus];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const GithubComMantonxVolumevizInternalModelsOperationStatus = {
+  OperationStatusPending: 'pending',
+  OperationStatusInProgress: 'in_progress',
+  OperationStatusCompleted: 'completed',
+  OperationStatusFailed: 'failed',
+  OperationStatusRolledBack: 'rolled_back',
+} as const;
+
+export type GithubComMantonxVolumevizInternalModelsOperationType =
+  (typeof GithubComMantonxVolumevizInternalModelsOperationType)[keyof typeof GithubComMantonxVolumevizInternalModelsOperationType];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const GithubComMantonxVolumevizInternalModelsOperationType = {
+  OperationTypeDelete: 'delete',
+  OperationTypeMove: 'move',
+  OperationTypeCopy: 'copy',
+  OperationTypeRename: 'rename',
+} as const;
 
 export type GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParamsConfig =
   { [key: string]: unknown };
@@ -822,84 +1039,17 @@ export interface GithubComMantonxVolumevizInternalServicesRulesRulePerformanceRe
   total_execution_time_ms?: number;
 }
 
-export interface InternalApiV1AuthAcceptInvitationRequest {
-  token: string;
-}
-
-export interface InternalApiV1AuthAuthResponse {
-  expires_at?: string;
-  refresh_token?: string;
-  token?: string;
-  user?: InternalApiV1AuthUserProfile;
-}
-
-export interface InternalApiV1AuthForcePasswordChangeRequest {
-  current_password: string;
-  /** @minLength 8 */
-  new_password: string;
-}
-
-export interface InternalApiV1AuthLoginRequest {
-  password: string;
-  username: string;
-}
-
-export interface InternalApiV1AuthPasswordChangeRequest {
-  current_password: string;
-  /** @minLength 8 */
-  new_password: string;
-}
-
-export interface InternalApiV1AuthPasswordResetRequest {
-  email: string;
-}
-
-export interface InternalApiV1AuthRefreshTokenRequest {
-  refresh_token: string;
-}
-
-export interface InternalApiV1AuthRegisterRequest {
-  email: string;
-  first_name?: string;
-  last_name?: string;
-  /** @minLength 8 */
-  password: string;
-  /** Only admin can set role */
-  role?: string;
-  /**
-   * @minLength 3
-   * @maxLength 50
-   */
-  username: string;
-}
-
-export interface InternalApiV1AuthRegisterWithInvitationRequest {
-  email: string;
-  first_name?: string;
-  last_name?: string;
-  /** @minLength 8 */
-  password: string;
-  token: string;
-  /**
-   * @minLength 3
-   * @maxLength 50
-   */
-  username: string;
-}
-
-export interface InternalApiV1AuthUserProfile {
-  created_at?: string;
-  display_name?: string;
-  email?: string;
-  first_name?: string;
-  id?: number;
-  last_login_at?: string;
-  last_name?: string;
-  organization_id?: number;
-  role?: string;
-  status?: string;
-  timezone?: string;
-  username?: string;
+export interface GithubComMantonxVolumevizInternalServicesSchedulerJobStatus {
+  description?: string;
+  enabled?: boolean;
+  errorCount?: number;
+  interval?: TimeDuration;
+  lastDuration?: TimeDuration;
+  lastError?: unknown;
+  lastRun?: string;
+  name?: string;
+  nextRun?: string;
+  runCount?: number;
 }
 
 export interface InternalApiV1DiagRealtimeDiagnostics {
@@ -1643,6 +1793,55 @@ export interface InternalApiV1SearchUpdateSavedSearchRequest {
   tags?: string[];
 }
 
+export type InternalApiV1UsersCreateUserRequestRole =
+  (typeof InternalApiV1UsersCreateUserRequestRole)[keyof typeof InternalApiV1UsersCreateUserRequestRole];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const InternalApiV1UsersCreateUserRequestRole = {
+  admin: 'admin',
+  operator: 'operator',
+  user: 'user',
+  viewer: 'viewer',
+} as const;
+
+export interface InternalApiV1UsersCreateUserRequest {
+  email: string;
+  organization_id: number;
+  /** @minLength 8 */
+  password: string;
+  role: InternalApiV1UsersCreateUserRequestRole;
+  /** @minLength 3 */
+  username: string;
+}
+
+export type InternalApiV1UsersUpdateUserRequestRole =
+  (typeof InternalApiV1UsersUpdateUserRequestRole)[keyof typeof InternalApiV1UsersUpdateUserRequestRole];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const InternalApiV1UsersUpdateUserRequestRole = {
+  admin: 'admin',
+  operator: 'operator',
+  user: 'user',
+  viewer: 'viewer',
+} as const;
+
+export interface InternalApiV1UsersUpdateUserRequest {
+  email?: string;
+  is_active?: boolean;
+  role?: InternalApiV1UsersUpdateUserRequestRole;
+}
+
+export interface InternalApiV1UsersUserResponse {
+  created_at?: string;
+  email?: string;
+  id?: number;
+  is_active?: boolean;
+  last_login_at?: string;
+  organization_id?: number;
+  role?: string;
+  username?: string;
+}
+
 export type TimeDuration = (typeof TimeDuration)[keyof typeof TimeDuration];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
@@ -1744,6 +1943,52 @@ export type GetAlertsRulesParams = {
    * Filter by enabled status
    */
   enabled?: boolean;
+};
+
+export type GetApiV1DuplicatesDetectParams = {
+  /**
+   * Volume ID
+   */
+  volumeId: string;
+  /**
+   * Starting path
+   */
+  path?: string;
+  /**
+   * Minimum file size in bytes
+   */
+  minSize?: number;
+  /**
+   * Maximum file size in bytes
+   */
+  maxSize?: number;
+  /**
+   * Include empty files
+   */
+  includeEmpty?: boolean;
+};
+
+export type GetApiV1DuplicatesDetectBySizeParams = {
+  /**
+   * Volume ID
+   */
+  volumeId: string;
+  /**
+   * Starting path
+   */
+  path?: string;
+  /**
+   * Minimum file size in bytes
+   */
+  minSize?: number;
+  /**
+   * Maximum file size in bytes
+   */
+  maxSize?: number;
+  /**
+   * Include empty files
+   */
+  includeEmpty?: boolean;
 };
 
 export type GetApiV1ExplorerBrowseParams = {
@@ -2019,6 +2264,45 @@ export type GetApiV1ExplorerTreeChildren404 = { [key: string]: unknown };
 
 export type GetApiV1ExplorerTreeChildren500 = { [key: string]: unknown };
 
+export type GetApiV1FsAggregateParams = {
+  /**
+   * Volume ID
+   */
+  volumeId: string;
+  /**
+   * Starting path
+   */
+  path?: string;
+  /**
+   * Maximum depth to traverse
+   * @minimum 1
+   * @maximum 10
+   */
+  maxDepth?: number;
+  /**
+   * Statistic to aggregate
+   */
+  stat?: GetApiV1FsAggregateStat;
+  /**
+   * Minimum size filter in bytes
+   */
+  minSize?: number;
+  /**
+   * Maximum nodes to return
+   * @maximum 10000
+   */
+  limit?: number;
+};
+
+export type GetApiV1FsAggregateStat =
+  (typeof GetApiV1FsAggregateStat)[keyof typeof GetApiV1FsAggregateStat];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const GetApiV1FsAggregateStat = {
+  size: 'size',
+  count: 'count',
+} as const;
+
 export type GetApiV1MetadataFilesByDurationParams = {
   /**
    * Volume ID
@@ -2268,6 +2552,45 @@ export type PostApiV1MountsDiscover500 = { [key: string]: unknown };
 
 export type GetApiV1MountsSummary500 = { [key: string]: unknown };
 
+export type GetApiV1OperationsParams = {
+  /**
+   * Volume ID
+   */
+  volume_id: string;
+  /**
+   * Page number
+   */
+  page?: number;
+  /**
+   * Page size
+   */
+  page_size?: number;
+};
+
+export type PostApiV1OperationsCleanupParams = {
+  /**
+   * Retention period in days
+   */
+  retention_days?: number;
+};
+
+export type PostApiV1OperationsCleanup200 = { [key: string]: unknown };
+
+export type GetApiV1OrganizationsId404 = { [key: string]: unknown };
+
+export type GetApiV1OrganizationsId500 = { [key: string]: unknown };
+
+export type GetApiV1OrganizationsIdStatsParams = {
+  /**
+   * Include growth metrics
+   */
+  include_growth?: boolean;
+};
+
+export type GetApiV1OrganizationsIdStats404 = { [key: string]: unknown };
+
+export type GetApiV1OrganizationsIdStats500 = { [key: string]: unknown };
+
 export type GetApiV1OrganizationsMe401 = { [key: string]: unknown };
 
 export type GetApiV1OrganizationsMe404 = { [key: string]: unknown };
@@ -2305,6 +2628,26 @@ export type GetApiV1RulesTemplatesParams = {
    */
   builtin?: boolean;
 };
+
+export type GetApiV1SchedulerJobs200 = {
+  [key: string]: GithubComMantonxVolumevizInternalServicesSchedulerJobStatus;
+};
+
+export type GetApiV1SchedulerJobsName404 = { [key: string]: string };
+
+export type PostApiV1SchedulerJobsNameDisable200 = { [key: string]: string };
+
+export type PostApiV1SchedulerJobsNameDisable404 = { [key: string]: string };
+
+export type PostApiV1SchedulerJobsNameEnable200 = { [key: string]: string };
+
+export type PostApiV1SchedulerJobsNameEnable404 = { [key: string]: string };
+
+export type PostApiV1SchedulerJobsNameRun200 = { [key: string]: string };
+
+export type PostApiV1SchedulerJobsNameRun404 = { [key: string]: string };
+
+export type PostApiV1SchedulerJobsNameRun500 = { [key: string]: string };
 
 export type GetApiV1SearchFilesParams = {
   /**
@@ -2430,18 +2773,6 @@ export type GetApiV1SearchSuggestionsParams = {
    */
   type?: string;
 };
-
-export type GetAuthCsrf200 = { [key: string]: string };
-
-export type PostAuthLogout200 = { [key: string]: string };
-
-export type PostAuthPasswordChange200 = { [key: string]: string };
-
-export type PostAuthPasswordForceChange200 = { [key: string]: string };
-
-export type PostAuthPasswordReset200 = { [key: string]: string };
-
-export type PostAuthRefresh200 = { [key: string]: unknown };
 
 export type GetFilesFileIdPreviewParams = {
   /**
@@ -2640,6 +2971,31 @@ export type GetScansRecentErrorsParams = {
 
 export type GetScansRecentErrors200 = { [key: string]: unknown };
 
+export type GetSnapshotsStats200 = { [key: string]: unknown };
+
+export type GetSnapshotsStats500 = { [key: string]: unknown };
+
+export type GetSnapshotsVolumesVolumeIdParams = {
+  /**
+   * Limit number of results
+   */
+  limit?: number;
+};
+
+export type GetSnapshotsVolumesVolumeId200 = { [key: string]: unknown };
+
+export type GetSnapshotsVolumesVolumeId400 = { [key: string]: unknown };
+
+export type GetSnapshotsVolumesVolumeId500 = { [key: string]: unknown };
+
+export type GetSnapshotsVolumesVolumeIdLatest200 = { [key: string]: unknown };
+
+export type GetSnapshotsVolumesVolumeIdLatest400 = { [key: string]: unknown };
+
+export type GetSnapshotsVolumesVolumeIdLatest404 = { [key: string]: unknown };
+
+export type GetSnapshotsVolumesVolumeIdLatest500 = { [key: string]: unknown };
+
 export type GetStatsDailyParams = {
   /**
    * Volume ID
@@ -2766,6 +3122,57 @@ export type GetTrendsVolumesVolumeIdSlope400 = { [key: string]: unknown };
 
 export type GetTrendsVolumesVolumeIdSlope500 = { [key: string]: unknown };
 
+export type GetUsersParams = {
+  /**
+   * Page number
+   */
+  page?: number;
+  /**
+   * Page size
+   */
+  page_size?: number;
+};
+
+export type GetUsers200 = { [key: string]: unknown };
+
+export type GetUsers401 = { [key: string]: unknown };
+
+export type GetUsers403 = { [key: string]: unknown };
+
+export type GetUsers500 = { [key: string]: unknown };
+
+export type PostUsers400 = { [key: string]: unknown };
+
+export type PostUsers401 = { [key: string]: unknown };
+
+export type PostUsers409 = { [key: string]: unknown };
+
+export type PostUsers500 = { [key: string]: unknown };
+
+export type DeleteUsersId400 = { [key: string]: unknown };
+
+export type DeleteUsersId401 = { [key: string]: unknown };
+
+export type DeleteUsersId404 = { [key: string]: unknown };
+
+export type DeleteUsersId500 = { [key: string]: unknown };
+
+export type GetUsersId400 = { [key: string]: unknown };
+
+export type GetUsersId401 = { [key: string]: unknown };
+
+export type GetUsersId404 = { [key: string]: unknown };
+
+export type GetUsersId500 = { [key: string]: unknown };
+
+export type PutUsersId400 = { [key: string]: unknown };
+
+export type PutUsersId401 = { [key: string]: unknown };
+
+export type PutUsersId404 = { [key: string]: unknown };
+
+export type PutUsersId500 = { [key: string]: unknown };
+
 export type GetVolumesParams = {
   /**
    * Page number for pagination (default: 1)
@@ -2829,6 +3236,70 @@ export type PostVolumesBulkScan200 = { [key: string]: unknown };
 export type PostVolumesBulkScan400 = { [key: string]: unknown };
 
 export type PostVolumesBulkScan500 = { [key: string]: unknown };
+
+export type GetVolumesExportCsvParams = {
+  /**
+   * Page number for pagination (default: 1)
+   */
+  page?: number;
+  /**
+   * Number of items per page (default: 1000, max: 10000 for exports)
+   */
+  page_size?: number;
+  /**
+   * Sort field and direction
+   */
+  sort?: string;
+  /**
+   * Search query to filter volumes by name
+   */
+  q?: string;
+  /**
+   * Filter by volume driver
+   */
+  driver?: string;
+  /**
+   * Filter orphaned volumes
+   */
+  orphaned?: boolean;
+  /**
+   * Include system volumes
+   */
+  system?: boolean;
+};
+
+export type GetVolumesExportJsonParams = {
+  /**
+   * Page number for pagination (default: 1)
+   */
+  page?: number;
+  /**
+   * Number of items per page (default: 1000, max: 10000 for exports)
+   */
+  page_size?: number;
+  /**
+   * Sort field and direction
+   */
+  sort?: string;
+  /**
+   * Search query to filter volumes by name
+   */
+  q?: string;
+  /**
+   * Filter by volume driver
+   */
+  driver?: string;
+  /**
+   * Filter orphaned volumes
+   */
+  orphaned?: boolean;
+  /**
+   * Include system volumes
+   */
+  system?: boolean;
+};
+
+export type GetVolumesExportJson200 = { [key: string]: unknown };
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
@@ -6568,6 +7039,589 @@ export function useGetApiV1DiagRealtime<
 }
 
 /**
+ * Find duplicate files by content hash in the specified volume and path
+ * @summary Detect duplicate files
+ */
+export type getApiV1DuplicatesDetectResponse200 = {
+  data: DuplicatesDuplicateDetectionResponse;
+  status: 200;
+};
+
+export type getApiV1DuplicatesDetectResponse400 = {
+  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
+  status: 400;
+};
+
+export type getApiV1DuplicatesDetectResponse500 = {
+  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
+  status: 500;
+};
+
+export type getApiV1DuplicatesDetectResponseComposite =
+  | getApiV1DuplicatesDetectResponse200
+  | getApiV1DuplicatesDetectResponse400
+  | getApiV1DuplicatesDetectResponse500;
+
+export type getApiV1DuplicatesDetectResponse =
+  getApiV1DuplicatesDetectResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetApiV1DuplicatesDetectUrl = (
+  params: GetApiV1DuplicatesDetectParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/duplicates/detect?${stringifiedParams}`
+    : `/api/v1/duplicates/detect`;
+};
+
+export const getApiV1DuplicatesDetect = async (
+  params: GetApiV1DuplicatesDetectParams,
+  options?: RequestInit,
+): Promise<getApiV1DuplicatesDetectResponse> => {
+  return customFetchClient<getApiV1DuplicatesDetectResponse>(
+    getGetApiV1DuplicatesDetectUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetApiV1DuplicatesDetectQueryKey = (
+  params?: GetApiV1DuplicatesDetectParams,
+) => {
+  return [`/api/v1/duplicates/detect`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetApiV1DuplicatesDetectQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1DuplicatesDetectParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetApiV1DuplicatesDetectQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>
+  > = ({ signal }) =>
+    getApiV1DuplicatesDetect(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1DuplicatesDetectQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>
+>;
+export type GetApiV1DuplicatesDetectQueryError =
+  | GithubComMantonxVolumevizInternalModelsErrorResponse
+  | GithubComMantonxVolumevizInternalModelsErrorResponse;
+
+export function useGetApiV1DuplicatesDetect<
+  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1DuplicatesDetectParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1DuplicatesDetect<
+  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1DuplicatesDetectParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1DuplicatesDetect<
+  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1DuplicatesDetectParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Detect duplicate files
+ */
+
+export function useGetApiV1DuplicatesDetect<
+  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1DuplicatesDetectParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetApiV1DuplicatesDetectQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Find potential duplicate files by matching file sizes (faster than hash-based detection)
+ * @summary Detect potential duplicates by file size
+ */
+export type getApiV1DuplicatesDetectBySizeResponse200 = {
+  data: DuplicatesDuplicateDetectionResponse;
+  status: 200;
+};
+
+export type getApiV1DuplicatesDetectBySizeResponse400 = {
+  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
+  status: 400;
+};
+
+export type getApiV1DuplicatesDetectBySizeResponse500 = {
+  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
+  status: 500;
+};
+
+export type getApiV1DuplicatesDetectBySizeResponseComposite =
+  | getApiV1DuplicatesDetectBySizeResponse200
+  | getApiV1DuplicatesDetectBySizeResponse400
+  | getApiV1DuplicatesDetectBySizeResponse500;
+
+export type getApiV1DuplicatesDetectBySizeResponse =
+  getApiV1DuplicatesDetectBySizeResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetApiV1DuplicatesDetectBySizeUrl = (
+  params: GetApiV1DuplicatesDetectBySizeParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/duplicates/detect-by-size?${stringifiedParams}`
+    : `/api/v1/duplicates/detect-by-size`;
+};
+
+export const getApiV1DuplicatesDetectBySize = async (
+  params: GetApiV1DuplicatesDetectBySizeParams,
+  options?: RequestInit,
+): Promise<getApiV1DuplicatesDetectBySizeResponse> => {
+  return customFetchClient<getApiV1DuplicatesDetectBySizeResponse>(
+    getGetApiV1DuplicatesDetectBySizeUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetApiV1DuplicatesDetectBySizeQueryKey = (
+  params?: GetApiV1DuplicatesDetectBySizeParams,
+) => {
+  return [
+    `/api/v1/duplicates/detect-by-size`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetApiV1DuplicatesDetectBySizeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1DuplicatesDetectBySizeParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetApiV1DuplicatesDetectBySizeQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>
+  > = ({ signal }) =>
+    getApiV1DuplicatesDetectBySize(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1DuplicatesDetectBySizeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>
+>;
+export type GetApiV1DuplicatesDetectBySizeQueryError =
+  | GithubComMantonxVolumevizInternalModelsErrorResponse
+  | GithubComMantonxVolumevizInternalModelsErrorResponse;
+
+export function useGetApiV1DuplicatesDetectBySize<
+  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1DuplicatesDetectBySizeParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1DuplicatesDetectBySize<
+  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1DuplicatesDetectBySizeParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1DuplicatesDetectBySize<
+  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1DuplicatesDetectBySizeParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Detect potential duplicates by file size
+ */
+
+export function useGetApiV1DuplicatesDetectBySize<
+  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1DuplicatesDetectBySizeParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetApiV1DuplicatesDetectBySizeQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Verify a size-based duplicate group by calculating and comparing file hashes
+ * @summary Verify a duplicate group with hash comparison
+ */
+export type postApiV1DuplicatesVerifyGroupIdResponse200 = {
+  data: DuplicatesDuplicateGroup;
+  status: 200;
+};
+
+export type postApiV1DuplicatesVerifyGroupIdResponse400 = {
+  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
+  status: 400;
+};
+
+export type postApiV1DuplicatesVerifyGroupIdResponse500 = {
+  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
+  status: 500;
+};
+
+export type postApiV1DuplicatesVerifyGroupIdResponseComposite =
+  | postApiV1DuplicatesVerifyGroupIdResponse200
+  | postApiV1DuplicatesVerifyGroupIdResponse400
+  | postApiV1DuplicatesVerifyGroupIdResponse500;
+
+export type postApiV1DuplicatesVerifyGroupIdResponse =
+  postApiV1DuplicatesVerifyGroupIdResponseComposite & {
+    headers: Headers;
+  };
+
+export const getPostApiV1DuplicatesVerifyGroupIdUrl = (groupId: string) => {
+  return `/api/v1/duplicates/verify/${groupId}`;
+};
+
+export const postApiV1DuplicatesVerifyGroupId = async (
+  groupId: string,
+  duplicatesDuplicateGroup: DuplicatesDuplicateGroup,
+  options?: RequestInit,
+): Promise<postApiV1DuplicatesVerifyGroupIdResponse> => {
+  return customFetchClient<postApiV1DuplicatesVerifyGroupIdResponse>(
+    getPostApiV1DuplicatesVerifyGroupIdUrl(groupId),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(duplicatesDuplicateGroup),
+    },
+  );
+};
+
+export const getPostApiV1DuplicatesVerifyGroupIdMutationOptions = <
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>,
+    TError,
+    { groupId: string; data: DuplicatesDuplicateGroup },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>,
+  TError,
+  { groupId: string; data: DuplicatesDuplicateGroup },
+  TContext
+> => {
+  const mutationKey = ['postApiV1DuplicatesVerifyGroupId'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>,
+    { groupId: string; data: DuplicatesDuplicateGroup }
+  > = (props) => {
+    const { groupId, data } = props ?? {};
+
+    return postApiV1DuplicatesVerifyGroupId(groupId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1DuplicatesVerifyGroupIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>
+>;
+export type PostApiV1DuplicatesVerifyGroupIdMutationBody =
+  DuplicatesDuplicateGroup;
+export type PostApiV1DuplicatesVerifyGroupIdMutationError =
+  | GithubComMantonxVolumevizInternalModelsErrorResponse
+  | GithubComMantonxVolumevizInternalModelsErrorResponse;
+
+/**
+ * @summary Verify a duplicate group with hash comparison
+ */
+export const usePostApiV1DuplicatesVerifyGroupId = <
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>,
+      TError,
+      { groupId: string; data: DuplicatesDuplicateGroup },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>,
+  TError,
+  { groupId: string; data: DuplicatesDuplicateGroup },
+  TContext
+> => {
+  const mutationOptions =
+    getPostApiV1DuplicatesVerifyGroupIdMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
  * Browse folders with parent/child relationships for navigation breadcrumbs and tree structure
  * @summary Browse folder hierarchy
  */
@@ -8730,6 +9784,230 @@ export function useGetApiV1ExplorerTreeChildren<
 }
 
 /**
+ * Get hierarchical file system data with aggregated sizes and counts for visualization
+ * @summary Get aggregated file system data
+ */
+export type getApiV1FsAggregateResponse200 = {
+  data: AggregateResponse;
+  status: 200;
+};
+
+export type getApiV1FsAggregateResponse400 = {
+  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
+  status: 400;
+};
+
+export type getApiV1FsAggregateResponse500 = {
+  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
+  status: 500;
+};
+
+export type getApiV1FsAggregateResponseComposite =
+  | getApiV1FsAggregateResponse200
+  | getApiV1FsAggregateResponse400
+  | getApiV1FsAggregateResponse500;
+
+export type getApiV1FsAggregateResponse =
+  getApiV1FsAggregateResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetApiV1FsAggregateUrl = (
+  params: GetApiV1FsAggregateParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/fs/aggregate?${stringifiedParams}`
+    : `/api/v1/fs/aggregate`;
+};
+
+export const getApiV1FsAggregate = async (
+  params: GetApiV1FsAggregateParams,
+  options?: RequestInit,
+): Promise<getApiV1FsAggregateResponse> => {
+  return customFetchClient<getApiV1FsAggregateResponse>(
+    getGetApiV1FsAggregateUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetApiV1FsAggregateQueryKey = (
+  params?: GetApiV1FsAggregateParams,
+) => {
+  return [`/api/v1/fs/aggregate`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetApiV1FsAggregateQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1FsAggregateParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetApiV1FsAggregateQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1FsAggregate>>
+  > = ({ signal }) =>
+    getApiV1FsAggregate(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1FsAggregateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1FsAggregate>>
+>;
+export type GetApiV1FsAggregateQueryError =
+  | GithubComMantonxVolumevizInternalModelsErrorResponse
+  | GithubComMantonxVolumevizInternalModelsErrorResponse;
+
+export function useGetApiV1FsAggregate<
+  TData = Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1FsAggregateParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1FsAggregate>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1FsAggregate<
+  TData = Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1FsAggregateParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1FsAggregate>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1FsAggregate<
+  TData = Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1FsAggregateParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get aggregated file system data
+ */
+
+export function useGetApiV1FsAggregate<
+  TData = Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+  TError =
+    | GithubComMantonxVolumevizInternalModelsErrorResponse
+    | GithubComMantonxVolumevizInternalModelsErrorResponse,
+>(
+  params: GetApiV1FsAggregateParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetApiV1FsAggregateQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
  * Retrieve files filtered by video/audio duration with pagination support
  * @summary Get files by duration
  */
@@ -10681,6 +11959,1237 @@ export function useGetApiV1MountsSummary<
 }
 
 /**
+ * Retrieves paginated list of file operations for undo/rollback
+ * @summary Get operation history
+ */
+export type getApiV1OperationsResponse200 = {
+  data: OperationHistory;
+  status: 200;
+};
+
+export type getApiV1OperationsResponse400 = {
+  data: ErrorResponse;
+  status: 400;
+};
+
+export type getApiV1OperationsResponse500 = {
+  data: ErrorResponse;
+  status: 500;
+};
+
+export type getApiV1OperationsResponseComposite =
+  | getApiV1OperationsResponse200
+  | getApiV1OperationsResponse400
+  | getApiV1OperationsResponse500;
+
+export type getApiV1OperationsResponse = getApiV1OperationsResponseComposite & {
+  headers: Headers;
+};
+
+export const getGetApiV1OperationsUrl = (params: GetApiV1OperationsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/operations?${stringifiedParams}`
+    : `/api/v1/operations`;
+};
+
+export const getApiV1Operations = async (
+  params: GetApiV1OperationsParams,
+  options?: RequestInit,
+): Promise<getApiV1OperationsResponse> => {
+  return customFetchClient<getApiV1OperationsResponse>(
+    getGetApiV1OperationsUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetApiV1OperationsQueryKey = (
+  params?: GetApiV1OperationsParams,
+) => {
+  return [`/api/v1/operations`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetApiV1OperationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1Operations>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params: GetApiV1OperationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1Operations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetApiV1OperationsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1Operations>>
+  > = ({ signal }) => getApiV1Operations(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1Operations>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1OperationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1Operations>>
+>;
+export type GetApiV1OperationsQueryError = ErrorResponse | ErrorResponse;
+
+export function useGetApiV1Operations<
+  TData = Awaited<ReturnType<typeof getApiV1Operations>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params: GetApiV1OperationsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1Operations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1Operations>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1Operations>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1Operations<
+  TData = Awaited<ReturnType<typeof getApiV1Operations>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params: GetApiV1OperationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1Operations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1Operations>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1Operations>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1Operations<
+  TData = Awaited<ReturnType<typeof getApiV1Operations>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params: GetApiV1OperationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1Operations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get operation history
+ */
+
+export function useGetApiV1Operations<
+  TData = Awaited<ReturnType<typeof getApiV1Operations>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params: GetApiV1OperationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1Operations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetApiV1OperationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Removes an operation from history and cleans up associated backups
+ * @summary Delete operation
+ */
+export type deleteApiV1OperationsIdResponse204 = {
+  data: null;
+  status: 204;
+};
+
+export type deleteApiV1OperationsIdResponse404 = {
+  data: ErrorResponse;
+  status: 404;
+};
+
+export type deleteApiV1OperationsIdResponse500 = {
+  data: ErrorResponse;
+  status: 500;
+};
+
+export type deleteApiV1OperationsIdResponseComposite =
+  | deleteApiV1OperationsIdResponse204
+  | deleteApiV1OperationsIdResponse404
+  | deleteApiV1OperationsIdResponse500;
+
+export type deleteApiV1OperationsIdResponse =
+  deleteApiV1OperationsIdResponseComposite & {
+    headers: Headers;
+  };
+
+export const getDeleteApiV1OperationsIdUrl = (id: string) => {
+  return `/api/v1/operations/${id}`;
+};
+
+export const deleteApiV1OperationsId = async (
+  id: string,
+  options?: RequestInit,
+): Promise<deleteApiV1OperationsIdResponse> => {
+  return customFetchClient<deleteApiV1OperationsIdResponse>(
+    getDeleteApiV1OperationsIdUrl(id),
+    {
+      ...options,
+      method: 'DELETE',
+    },
+  );
+};
+
+export const getDeleteApiV1OperationsIdMutationOptions = <
+  TError = ErrorResponse | ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteApiV1OperationsId>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteApiV1OperationsId>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ['deleteApiV1OperationsId'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteApiV1OperationsId>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteApiV1OperationsId(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteApiV1OperationsIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteApiV1OperationsId>>
+>;
+
+export type DeleteApiV1OperationsIdMutationError =
+  | ErrorResponse
+  | ErrorResponse;
+
+/**
+ * @summary Delete operation
+ */
+export const useDeleteApiV1OperationsId = <
+  TError = ErrorResponse | ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteApiV1OperationsId>>,
+      TError,
+      { id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteApiV1OperationsId>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationOptions = getDeleteApiV1OperationsIdMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Retrieves detailed information about a specific operation
+ * @summary Get operation details
+ */
+export type getApiV1OperationsIdResponse200 = {
+  data: Operation;
+  status: 200;
+};
+
+export type getApiV1OperationsIdResponse404 = {
+  data: ErrorResponse;
+  status: 404;
+};
+
+export type getApiV1OperationsIdResponse500 = {
+  data: ErrorResponse;
+  status: 500;
+};
+
+export type getApiV1OperationsIdResponseComposite =
+  | getApiV1OperationsIdResponse200
+  | getApiV1OperationsIdResponse404
+  | getApiV1OperationsIdResponse500;
+
+export type getApiV1OperationsIdResponse =
+  getApiV1OperationsIdResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetApiV1OperationsIdUrl = (id: string) => {
+  return `/api/v1/operations/${id}`;
+};
+
+export const getApiV1OperationsId = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getApiV1OperationsIdResponse> => {
+  return customFetchClient<getApiV1OperationsIdResponse>(
+    getGetApiV1OperationsIdUrl(id),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetApiV1OperationsIdQueryKey = (id?: string) => {
+  return [`/api/v1/operations/${id}`] as const;
+};
+
+export const getGetApiV1OperationsIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1OperationsId>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OperationsId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetApiV1OperationsIdQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1OperationsId>>
+  > = ({ signal }) => getApiV1OperationsId(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1OperationsId>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1OperationsIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1OperationsId>>
+>;
+export type GetApiV1OperationsIdQueryError = ErrorResponse | ErrorResponse;
+
+export function useGetApiV1OperationsId<
+  TData = Awaited<ReturnType<typeof getApiV1OperationsId>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OperationsId>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OperationsId>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OperationsId>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1OperationsId<
+  TData = Awaited<ReturnType<typeof getApiV1OperationsId>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OperationsId>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OperationsId>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OperationsId>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1OperationsId<
+  TData = Awaited<ReturnType<typeof getApiV1OperationsId>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OperationsId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get operation details
+ */
+
+export function useGetApiV1OperationsId<
+  TData = Awaited<ReturnType<typeof getApiV1OperationsId>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OperationsId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetApiV1OperationsIdQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Rolls back a completed operation or specific actions within it
+ * @summary Rollback operation
+ */
+export type postApiV1OperationsIdRollbackResponse200 = {
+  data: RollbackResponse;
+  status: 200;
+};
+
+export type postApiV1OperationsIdRollbackResponse400 = {
+  data: ErrorResponse;
+  status: 400;
+};
+
+export type postApiV1OperationsIdRollbackResponse404 = {
+  data: ErrorResponse;
+  status: 404;
+};
+
+export type postApiV1OperationsIdRollbackResponse500 = {
+  data: ErrorResponse;
+  status: 500;
+};
+
+export type postApiV1OperationsIdRollbackResponseComposite =
+  | postApiV1OperationsIdRollbackResponse200
+  | postApiV1OperationsIdRollbackResponse400
+  | postApiV1OperationsIdRollbackResponse404
+  | postApiV1OperationsIdRollbackResponse500;
+
+export type postApiV1OperationsIdRollbackResponse =
+  postApiV1OperationsIdRollbackResponseComposite & {
+    headers: Headers;
+  };
+
+export const getPostApiV1OperationsIdRollbackUrl = (id: string) => {
+  return `/api/v1/operations/${id}/rollback`;
+};
+
+export const postApiV1OperationsIdRollback = async (
+  id: string,
+  rollbackRequest: RollbackRequest,
+  options?: RequestInit,
+): Promise<postApiV1OperationsIdRollbackResponse> => {
+  return customFetchClient<postApiV1OperationsIdRollbackResponse>(
+    getPostApiV1OperationsIdRollbackUrl(id),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(rollbackRequest),
+    },
+  );
+};
+
+export const getPostApiV1OperationsIdRollbackMutationOptions = <
+  TError = ErrorResponse | ErrorResponse | ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>,
+    TError,
+    { id: string; data: RollbackRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>,
+  TError,
+  { id: string; data: RollbackRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1OperationsIdRollback'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>,
+    { id: string; data: RollbackRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return postApiV1OperationsIdRollback(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1OperationsIdRollbackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>
+>;
+export type PostApiV1OperationsIdRollbackMutationBody = RollbackRequest;
+export type PostApiV1OperationsIdRollbackMutationError =
+  | ErrorResponse
+  | ErrorResponse
+  | ErrorResponse;
+
+/**
+ * @summary Rollback operation
+ */
+export const usePostApiV1OperationsIdRollback = <
+  TError = ErrorResponse | ErrorResponse | ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>,
+      TError,
+      { id: string; data: RollbackRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>,
+  TError,
+  { id: string; data: RollbackRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getPostApiV1OperationsIdRollbackMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Removes old backup files based on retention policy
+ * @summary Cleanup backup files
+ */
+export type postApiV1OperationsCleanupResponse200 = {
+  data: PostApiV1OperationsCleanup200;
+  status: 200;
+};
+
+export type postApiV1OperationsCleanupResponse400 = {
+  data: ErrorResponse;
+  status: 400;
+};
+
+export type postApiV1OperationsCleanupResponse500 = {
+  data: ErrorResponse;
+  status: 500;
+};
+
+export type postApiV1OperationsCleanupResponseComposite =
+  | postApiV1OperationsCleanupResponse200
+  | postApiV1OperationsCleanupResponse400
+  | postApiV1OperationsCleanupResponse500;
+
+export type postApiV1OperationsCleanupResponse =
+  postApiV1OperationsCleanupResponseComposite & {
+    headers: Headers;
+  };
+
+export const getPostApiV1OperationsCleanupUrl = (
+  params?: PostApiV1OperationsCleanupParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/operations/cleanup?${stringifiedParams}`
+    : `/api/v1/operations/cleanup`;
+};
+
+export const postApiV1OperationsCleanup = async (
+  params?: PostApiV1OperationsCleanupParams,
+  options?: RequestInit,
+): Promise<postApiV1OperationsCleanupResponse> => {
+  return customFetchClient<postApiV1OperationsCleanupResponse>(
+    getPostApiV1OperationsCleanupUrl(params),
+    {
+      ...options,
+      method: 'POST',
+    },
+  );
+};
+
+export const getPostApiV1OperationsCleanupMutationOptions = <
+  TError = ErrorResponse | ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1OperationsCleanup>>,
+    TError,
+    { params?: PostApiV1OperationsCleanupParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1OperationsCleanup>>,
+  TError,
+  { params?: PostApiV1OperationsCleanupParams },
+  TContext
+> => {
+  const mutationKey = ['postApiV1OperationsCleanup'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1OperationsCleanup>>,
+    { params?: PostApiV1OperationsCleanupParams }
+  > = (props) => {
+    const { params } = props ?? {};
+
+    return postApiV1OperationsCleanup(params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1OperationsCleanupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1OperationsCleanup>>
+>;
+
+export type PostApiV1OperationsCleanupMutationError =
+  | ErrorResponse
+  | ErrorResponse;
+
+/**
+ * @summary Cleanup backup files
+ */
+export const usePostApiV1OperationsCleanup = <
+  TError = ErrorResponse | ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1OperationsCleanup>>,
+      TError,
+      { params?: PostApiV1OperationsCleanupParams },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1OperationsCleanup>>,
+  TError,
+  { params?: PostApiV1OperationsCleanupParams },
+  TContext
+> => {
+  const mutationOptions = getPostApiV1OperationsCleanupMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Get organization details by ID
+ * @summary Get organization by ID
+ */
+export type getApiV1OrganizationsIdResponse200 = {
+  data: InternalApiV1OrganizationsOrganizationResponse;
+  status: 200;
+};
+
+export type getApiV1OrganizationsIdResponse404 = {
+  data: GetApiV1OrganizationsId404;
+  status: 404;
+};
+
+export type getApiV1OrganizationsIdResponse500 = {
+  data: GetApiV1OrganizationsId500;
+  status: 500;
+};
+
+export type getApiV1OrganizationsIdResponseComposite =
+  | getApiV1OrganizationsIdResponse200
+  | getApiV1OrganizationsIdResponse404
+  | getApiV1OrganizationsIdResponse500;
+
+export type getApiV1OrganizationsIdResponse =
+  getApiV1OrganizationsIdResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetApiV1OrganizationsIdUrl = (id: number) => {
+  return `/api/v1/organizations/${id}`;
+};
+
+export const getApiV1OrganizationsId = async (
+  id: number,
+  options?: RequestInit,
+): Promise<getApiV1OrganizationsIdResponse> => {
+  return customFetchClient<getApiV1OrganizationsIdResponse>(
+    getGetApiV1OrganizationsIdUrl(id),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetApiV1OrganizationsIdQueryKey = (id?: number) => {
+  return [`/api/v1/organizations/${id}`] as const;
+};
+
+export const getGetApiV1OrganizationsIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+  TError = GetApiV1OrganizationsId404 | GetApiV1OrganizationsId500,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetApiV1OrganizationsIdQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1OrganizationsId>>
+  > = ({ signal }) =>
+    getApiV1OrganizationsId(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1OrganizationsIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1OrganizationsId>>
+>;
+export type GetApiV1OrganizationsIdQueryError =
+  | GetApiV1OrganizationsId404
+  | GetApiV1OrganizationsId500;
+
+export function useGetApiV1OrganizationsId<
+  TData = Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+  TError = GetApiV1OrganizationsId404 | GetApiV1OrganizationsId500,
+>(
+  id: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsId>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1OrganizationsId<
+  TData = Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+  TError = GetApiV1OrganizationsId404 | GetApiV1OrganizationsId500,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsId>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1OrganizationsId<
+  TData = Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+  TError = GetApiV1OrganizationsId404 | GetApiV1OrganizationsId500,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get organization by ID
+ */
+
+export function useGetApiV1OrganizationsId<
+  TData = Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+  TError = GetApiV1OrganizationsId404 | GetApiV1OrganizationsId500,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetApiV1OrganizationsIdQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Get organization usage statistics
+ * @summary Get organization statistics
+ */
+export type getApiV1OrganizationsIdStatsResponse200 = {
+  data: InternalApiV1OrganizationsOrganizationWithStatsResponse;
+  status: 200;
+};
+
+export type getApiV1OrganizationsIdStatsResponse404 = {
+  data: GetApiV1OrganizationsIdStats404;
+  status: 404;
+};
+
+export type getApiV1OrganizationsIdStatsResponse500 = {
+  data: GetApiV1OrganizationsIdStats500;
+  status: 500;
+};
+
+export type getApiV1OrganizationsIdStatsResponseComposite =
+  | getApiV1OrganizationsIdStatsResponse200
+  | getApiV1OrganizationsIdStatsResponse404
+  | getApiV1OrganizationsIdStatsResponse500;
+
+export type getApiV1OrganizationsIdStatsResponse =
+  getApiV1OrganizationsIdStatsResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetApiV1OrganizationsIdStatsUrl = (
+  id: number,
+  params?: GetApiV1OrganizationsIdStatsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/organizations/${id}/stats?${stringifiedParams}`
+    : `/api/v1/organizations/${id}/stats`;
+};
+
+export const getApiV1OrganizationsIdStats = async (
+  id: number,
+  params?: GetApiV1OrganizationsIdStatsParams,
+  options?: RequestInit,
+): Promise<getApiV1OrganizationsIdStatsResponse> => {
+  return customFetchClient<getApiV1OrganizationsIdStatsResponse>(
+    getGetApiV1OrganizationsIdStatsUrl(id, params),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetApiV1OrganizationsIdStatsQueryKey = (
+  id?: number,
+  params?: GetApiV1OrganizationsIdStatsParams,
+) => {
+  return [
+    `/api/v1/organizations/${id}/stats`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetApiV1OrganizationsIdStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+  TError = GetApiV1OrganizationsIdStats404 | GetApiV1OrganizationsIdStats500,
+>(
+  id: number,
+  params?: GetApiV1OrganizationsIdStatsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetApiV1OrganizationsIdStatsQueryKey(id, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>
+  > = ({ signal }) =>
+    getApiV1OrganizationsIdStats(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1OrganizationsIdStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>
+>;
+export type GetApiV1OrganizationsIdStatsQueryError =
+  | GetApiV1OrganizationsIdStats404
+  | GetApiV1OrganizationsIdStats500;
+
+export function useGetApiV1OrganizationsIdStats<
+  TData = Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+  TError = GetApiV1OrganizationsIdStats404 | GetApiV1OrganizationsIdStats500,
+>(
+  id: number,
+  params: undefined | GetApiV1OrganizationsIdStatsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1OrganizationsIdStats<
+  TData = Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+  TError = GetApiV1OrganizationsIdStats404 | GetApiV1OrganizationsIdStats500,
+>(
+  id: number,
+  params?: GetApiV1OrganizationsIdStatsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1OrganizationsIdStats<
+  TData = Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+  TError = GetApiV1OrganizationsIdStats404 | GetApiV1OrganizationsIdStats500,
+>(
+  id: number,
+  params?: GetApiV1OrganizationsIdStatsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get organization statistics
+ */
+
+export function useGetApiV1OrganizationsIdStats<
+  TData = Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+  TError = GetApiV1OrganizationsIdStats404 | GetApiV1OrganizationsIdStats500,
+>(
+  id: number,
+  params?: GetApiV1OrganizationsIdStatsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetApiV1OrganizationsIdStatsQueryOptions(
+    id,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
  * Get the organization details for the authenticated user
  * @summary Get current organization
  */
@@ -12213,6 +14722,724 @@ export function useGetApiV1RulesTemplates<
 
   return query;
 }
+
+/**
+ * Get status information for all scheduled jobs
+ * @summary Get all scheduled jobs
+ */
+export type getApiV1SchedulerJobsResponse200 = {
+  data: GetApiV1SchedulerJobs200;
+  status: 200;
+};
+
+export type getApiV1SchedulerJobsResponseComposite =
+  getApiV1SchedulerJobsResponse200;
+
+export type getApiV1SchedulerJobsResponse =
+  getApiV1SchedulerJobsResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetApiV1SchedulerJobsUrl = () => {
+  return `/api/v1/scheduler/jobs`;
+};
+
+export const getApiV1SchedulerJobs = async (
+  options?: RequestInit,
+): Promise<getApiV1SchedulerJobsResponse> => {
+  return customFetchClient<getApiV1SchedulerJobsResponse>(
+    getGetApiV1SchedulerJobsUrl(),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetApiV1SchedulerJobsQueryKey = () => {
+  return [`/api/v1/scheduler/jobs`] as const;
+};
+
+export const getGetApiV1SchedulerJobsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1SchedulerJobsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1SchedulerJobs>>
+  > = ({ signal }) => getApiV1SchedulerJobs({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1SchedulerJobsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1SchedulerJobs>>
+>;
+export type GetApiV1SchedulerJobsQueryError = unknown;
+
+export function useGetApiV1SchedulerJobs<
+  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1SchedulerJobs>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1SchedulerJobs<
+  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1SchedulerJobs>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1SchedulerJobs<
+  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get all scheduled jobs
+ */
+
+export function useGetApiV1SchedulerJobs<
+  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetApiV1SchedulerJobsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Get status information for a specific scheduled job
+ * @summary Get job status
+ */
+export type getApiV1SchedulerJobsNameResponse200 = {
+  data: GithubComMantonxVolumevizInternalServicesSchedulerJobStatus;
+  status: 200;
+};
+
+export type getApiV1SchedulerJobsNameResponse404 = {
+  data: GetApiV1SchedulerJobsName404;
+  status: 404;
+};
+
+export type getApiV1SchedulerJobsNameResponseComposite =
+  | getApiV1SchedulerJobsNameResponse200
+  | getApiV1SchedulerJobsNameResponse404;
+
+export type getApiV1SchedulerJobsNameResponse =
+  getApiV1SchedulerJobsNameResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetApiV1SchedulerJobsNameUrl = (name: string) => {
+  return `/api/v1/scheduler/jobs/${name}`;
+};
+
+export const getApiV1SchedulerJobsName = async (
+  name: string,
+  options?: RequestInit,
+): Promise<getApiV1SchedulerJobsNameResponse> => {
+  return customFetchClient<getApiV1SchedulerJobsNameResponse>(
+    getGetApiV1SchedulerJobsNameUrl(name),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetApiV1SchedulerJobsNameQueryKey = (name?: string) => {
+  return [`/api/v1/scheduler/jobs/${name}`] as const;
+};
+
+export const getGetApiV1SchedulerJobsNameQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+  TError = GetApiV1SchedulerJobsName404,
+>(
+  name: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetApiV1SchedulerJobsNameQueryKey(name);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>
+  > = ({ signal }) =>
+    getApiV1SchedulerJobsName(name, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!name,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1SchedulerJobsNameQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>
+>;
+export type GetApiV1SchedulerJobsNameQueryError = GetApiV1SchedulerJobsName404;
+
+export function useGetApiV1SchedulerJobsName<
+  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+  TError = GetApiV1SchedulerJobsName404,
+>(
+  name: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1SchedulerJobsName<
+  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+  TError = GetApiV1SchedulerJobsName404,
+>(
+  name: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetApiV1SchedulerJobsName<
+  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+  TError = GetApiV1SchedulerJobsName404,
+>(
+  name: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get job status
+ */
+
+export function useGetApiV1SchedulerJobsName<
+  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+  TError = GetApiV1SchedulerJobsName404,
+>(
+  name: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetApiV1SchedulerJobsNameQueryOptions(name, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Disable a scheduled job (it will not run automatically)
+ * @summary Disable a job
+ */
+export type postApiV1SchedulerJobsNameDisableResponse200 = {
+  data: PostApiV1SchedulerJobsNameDisable200;
+  status: 200;
+};
+
+export type postApiV1SchedulerJobsNameDisableResponse404 = {
+  data: PostApiV1SchedulerJobsNameDisable404;
+  status: 404;
+};
+
+export type postApiV1SchedulerJobsNameDisableResponseComposite =
+  | postApiV1SchedulerJobsNameDisableResponse200
+  | postApiV1SchedulerJobsNameDisableResponse404;
+
+export type postApiV1SchedulerJobsNameDisableResponse =
+  postApiV1SchedulerJobsNameDisableResponseComposite & {
+    headers: Headers;
+  };
+
+export const getPostApiV1SchedulerJobsNameDisableUrl = (name: string) => {
+  return `/api/v1/scheduler/jobs/${name}/disable`;
+};
+
+export const postApiV1SchedulerJobsNameDisable = async (
+  name: string,
+  options?: RequestInit,
+): Promise<postApiV1SchedulerJobsNameDisableResponse> => {
+  return customFetchClient<postApiV1SchedulerJobsNameDisableResponse>(
+    getPostApiV1SchedulerJobsNameDisableUrl(name),
+    {
+      ...options,
+      method: 'POST',
+    },
+  );
+};
+
+export const getPostApiV1SchedulerJobsNameDisableMutationOptions = <
+  TError = PostApiV1SchedulerJobsNameDisable404,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>,
+    TError,
+    { name: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>,
+  TError,
+  { name: string },
+  TContext
+> => {
+  const mutationKey = ['postApiV1SchedulerJobsNameDisable'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>,
+    { name: string }
+  > = (props) => {
+    const { name } = props ?? {};
+
+    return postApiV1SchedulerJobsNameDisable(name, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1SchedulerJobsNameDisableMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>
+>;
+
+export type PostApiV1SchedulerJobsNameDisableMutationError =
+  PostApiV1SchedulerJobsNameDisable404;
+
+/**
+ * @summary Disable a job
+ */
+export const usePostApiV1SchedulerJobsNameDisable = <
+  TError = PostApiV1SchedulerJobsNameDisable404,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>,
+      TError,
+      { name: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>,
+  TError,
+  { name: string },
+  TContext
+> => {
+  const mutationOptions =
+    getPostApiV1SchedulerJobsNameDisableMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Enable a previously disabled scheduled job
+ * @summary Enable a job
+ */
+export type postApiV1SchedulerJobsNameEnableResponse200 = {
+  data: PostApiV1SchedulerJobsNameEnable200;
+  status: 200;
+};
+
+export type postApiV1SchedulerJobsNameEnableResponse404 = {
+  data: PostApiV1SchedulerJobsNameEnable404;
+  status: 404;
+};
+
+export type postApiV1SchedulerJobsNameEnableResponseComposite =
+  | postApiV1SchedulerJobsNameEnableResponse200
+  | postApiV1SchedulerJobsNameEnableResponse404;
+
+export type postApiV1SchedulerJobsNameEnableResponse =
+  postApiV1SchedulerJobsNameEnableResponseComposite & {
+    headers: Headers;
+  };
+
+export const getPostApiV1SchedulerJobsNameEnableUrl = (name: string) => {
+  return `/api/v1/scheduler/jobs/${name}/enable`;
+};
+
+export const postApiV1SchedulerJobsNameEnable = async (
+  name: string,
+  options?: RequestInit,
+): Promise<postApiV1SchedulerJobsNameEnableResponse> => {
+  return customFetchClient<postApiV1SchedulerJobsNameEnableResponse>(
+    getPostApiV1SchedulerJobsNameEnableUrl(name),
+    {
+      ...options,
+      method: 'POST',
+    },
+  );
+};
+
+export const getPostApiV1SchedulerJobsNameEnableMutationOptions = <
+  TError = PostApiV1SchedulerJobsNameEnable404,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>,
+    TError,
+    { name: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>,
+  TError,
+  { name: string },
+  TContext
+> => {
+  const mutationKey = ['postApiV1SchedulerJobsNameEnable'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>,
+    { name: string }
+  > = (props) => {
+    const { name } = props ?? {};
+
+    return postApiV1SchedulerJobsNameEnable(name, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1SchedulerJobsNameEnableMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>
+>;
+
+export type PostApiV1SchedulerJobsNameEnableMutationError =
+  PostApiV1SchedulerJobsNameEnable404;
+
+/**
+ * @summary Enable a job
+ */
+export const usePostApiV1SchedulerJobsNameEnable = <
+  TError = PostApiV1SchedulerJobsNameEnable404,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>,
+      TError,
+      { name: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>,
+  TError,
+  { name: string },
+  TContext
+> => {
+  const mutationOptions =
+    getPostApiV1SchedulerJobsNameEnableMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Trigger a scheduled job to run immediately
+ * @summary Manually run a job
+ */
+export type postApiV1SchedulerJobsNameRunResponse200 = {
+  data: PostApiV1SchedulerJobsNameRun200;
+  status: 200;
+};
+
+export type postApiV1SchedulerJobsNameRunResponse404 = {
+  data: PostApiV1SchedulerJobsNameRun404;
+  status: 404;
+};
+
+export type postApiV1SchedulerJobsNameRunResponse500 = {
+  data: PostApiV1SchedulerJobsNameRun500;
+  status: 500;
+};
+
+export type postApiV1SchedulerJobsNameRunResponseComposite =
+  | postApiV1SchedulerJobsNameRunResponse200
+  | postApiV1SchedulerJobsNameRunResponse404
+  | postApiV1SchedulerJobsNameRunResponse500;
+
+export type postApiV1SchedulerJobsNameRunResponse =
+  postApiV1SchedulerJobsNameRunResponseComposite & {
+    headers: Headers;
+  };
+
+export const getPostApiV1SchedulerJobsNameRunUrl = (name: string) => {
+  return `/api/v1/scheduler/jobs/${name}/run`;
+};
+
+export const postApiV1SchedulerJobsNameRun = async (
+  name: string,
+  options?: RequestInit,
+): Promise<postApiV1SchedulerJobsNameRunResponse> => {
+  return customFetchClient<postApiV1SchedulerJobsNameRunResponse>(
+    getPostApiV1SchedulerJobsNameRunUrl(name),
+    {
+      ...options,
+      method: 'POST',
+    },
+  );
+};
+
+export const getPostApiV1SchedulerJobsNameRunMutationOptions = <
+  TError = PostApiV1SchedulerJobsNameRun404 | PostApiV1SchedulerJobsNameRun500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>,
+    TError,
+    { name: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>,
+  TError,
+  { name: string },
+  TContext
+> => {
+  const mutationKey = ['postApiV1SchedulerJobsNameRun'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>,
+    { name: string }
+  > = (props) => {
+    const { name } = props ?? {};
+
+    return postApiV1SchedulerJobsNameRun(name, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1SchedulerJobsNameRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>
+>;
+
+export type PostApiV1SchedulerJobsNameRunMutationError =
+  | PostApiV1SchedulerJobsNameRun404
+  | PostApiV1SchedulerJobsNameRun500;
+
+/**
+ * @summary Manually run a job
+ */
+export const usePostApiV1SchedulerJobsNameRun = <
+  TError = PostApiV1SchedulerJobsNameRun404 | PostApiV1SchedulerJobsNameRun500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>,
+      TError,
+      { name: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>,
+  TError,
+  { name: string },
+  TContext
+> => {
+  const mutationOptions =
+    getPostApiV1SchedulerJobsNameRunMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 
 /**
  * Search files across volumes with text search and metadata filters
@@ -14398,1463 +17625,6 @@ export const usePutApiV1TrackingRules = <
   TContext
 > => {
   const mutationOptions = getPutApiV1TrackingRulesMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Accept an organization invitation for an existing user
- * @summary Accept organization invitation
- */
-export type postAuthAcceptInvitationResponse200 = {
-  data: GinH;
-  status: 200;
-};
-
-export type postAuthAcceptInvitationResponse400 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 400;
-};
-
-export type postAuthAcceptInvitationResponse401 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 401;
-};
-
-export type postAuthAcceptInvitationResponse404 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 404;
-};
-
-export type postAuthAcceptInvitationResponse500 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 500;
-};
-
-export type postAuthAcceptInvitationResponseComposite =
-  | postAuthAcceptInvitationResponse200
-  | postAuthAcceptInvitationResponse400
-  | postAuthAcceptInvitationResponse401
-  | postAuthAcceptInvitationResponse404
-  | postAuthAcceptInvitationResponse500;
-
-export type postAuthAcceptInvitationResponse =
-  postAuthAcceptInvitationResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPostAuthAcceptInvitationUrl = () => {
-  return `/auth/accept-invitation`;
-};
-
-export const postAuthAcceptInvitation = async (
-  internalApiV1AuthAcceptInvitationRequest: InternalApiV1AuthAcceptInvitationRequest,
-  options?: RequestInit,
-): Promise<postAuthAcceptInvitationResponse> => {
-  return customFetchClient<postAuthAcceptInvitationResponse>(
-    getPostAuthAcceptInvitationUrl(),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(internalApiV1AuthAcceptInvitationRequest),
-    },
-  );
-};
-
-export const getPostAuthAcceptInvitationMutationOptions = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postAuthAcceptInvitation>>,
-    TError,
-    { data: InternalApiV1AuthAcceptInvitationRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof postAuthAcceptInvitation>>,
-  TError,
-  { data: InternalApiV1AuthAcceptInvitationRequest },
-  TContext
-> => {
-  const mutationKey = ['postAuthAcceptInvitation'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postAuthAcceptInvitation>>,
-    { data: InternalApiV1AuthAcceptInvitationRequest }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return postAuthAcceptInvitation(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PostAuthAcceptInvitationMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postAuthAcceptInvitation>>
->;
-export type PostAuthAcceptInvitationMutationBody =
-  InternalApiV1AuthAcceptInvitationRequest;
-export type PostAuthAcceptInvitationMutationError =
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse;
-
-/**
- * @summary Accept organization invitation
- */
-export const usePostAuthAcceptInvitation = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postAuthAcceptInvitation>>,
-      TError,
-      { data: InternalApiV1AuthAcceptInvitationRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof postAuthAcceptInvitation>>,
-  TError,
-  { data: InternalApiV1AuthAcceptInvitationRequest },
-  TContext
-> => {
-  const mutationOptions = getPostAuthAcceptInvitationMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Get CSRF token for state-changing operations
- * @summary Get CSRF token
- */
-export type getAuthCsrfResponse200 = {
-  data: GetAuthCsrf200;
-  status: 200;
-};
-
-export type getAuthCsrfResponseComposite = getAuthCsrfResponse200;
-
-export type getAuthCsrfResponse = getAuthCsrfResponseComposite & {
-  headers: Headers;
-};
-
-export const getGetAuthCsrfUrl = () => {
-  return `/auth/csrf`;
-};
-
-export const getAuthCsrf = async (
-  options?: RequestInit,
-): Promise<getAuthCsrfResponse> => {
-  return customFetchClient<getAuthCsrfResponse>(getGetAuthCsrfUrl(), {
-    ...options,
-    method: 'GET',
-  });
-};
-
-export const getGetAuthCsrfQueryKey = () => {
-  return [`/auth/csrf`] as const;
-};
-
-export const getGetAuthCsrfQueryOptions = <
-  TData = Awaited<ReturnType<typeof getAuthCsrf>>,
-  TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof getAuthCsrf>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetAuthCsrfQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthCsrf>>> = ({
-    signal,
-  }) => getAuthCsrf({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getAuthCsrf>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type GetAuthCsrfQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getAuthCsrf>>
->;
-export type GetAuthCsrfQueryError = unknown;
-
-export function useGetAuthCsrf<
-  TData = Awaited<ReturnType<typeof getAuthCsrf>>,
-  TError = unknown,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAuthCsrf>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getAuthCsrf>>,
-          TError,
-          Awaited<ReturnType<typeof getAuthCsrf>>
-        >,
-        'initialData'
-      >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetAuthCsrf<
-  TData = Awaited<ReturnType<typeof getAuthCsrf>>,
-  TError = unknown,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAuthCsrf>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getAuthCsrf>>,
-          TError,
-          Awaited<ReturnType<typeof getAuthCsrf>>
-        >,
-        'initialData'
-      >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetAuthCsrf<
-  TData = Awaited<ReturnType<typeof getAuthCsrf>>,
-  TError = unknown,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAuthCsrf>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary Get CSRF token
- */
-
-export function useGetAuthCsrf<
-  TData = Awaited<ReturnType<typeof getAuthCsrf>>,
-  TError = unknown,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAuthCsrf>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetAuthCsrfQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-/**
- * Authenticate user and return JWT token
- * @summary User login
- */
-export type postAuthLoginResponse200 = {
-  data: InternalApiV1AuthAuthResponse;
-  status: 200;
-};
-
-export type postAuthLoginResponse400 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 400;
-};
-
-export type postAuthLoginResponse401 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 401;
-};
-
-export type postAuthLoginResponse429 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 429;
-};
-
-export type postAuthLoginResponseComposite =
-  | postAuthLoginResponse200
-  | postAuthLoginResponse400
-  | postAuthLoginResponse401
-  | postAuthLoginResponse429;
-
-export type postAuthLoginResponse = postAuthLoginResponseComposite & {
-  headers: Headers;
-};
-
-export const getPostAuthLoginUrl = () => {
-  return `/auth/login`;
-};
-
-export const postAuthLogin = async (
-  internalApiV1AuthLoginRequest: InternalApiV1AuthLoginRequest,
-  options?: RequestInit,
-): Promise<postAuthLoginResponse> => {
-  return customFetchClient<postAuthLoginResponse>(getPostAuthLoginUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(internalApiV1AuthLoginRequest),
-  });
-};
-
-export const getPostAuthLoginMutationOptions = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postAuthLogin>>,
-    TError,
-    { data: InternalApiV1AuthLoginRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof postAuthLogin>>,
-  TError,
-  { data: InternalApiV1AuthLoginRequest },
-  TContext
-> => {
-  const mutationKey = ['postAuthLogin'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postAuthLogin>>,
-    { data: InternalApiV1AuthLoginRequest }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return postAuthLogin(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PostAuthLoginMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postAuthLogin>>
->;
-export type PostAuthLoginMutationBody = InternalApiV1AuthLoginRequest;
-export type PostAuthLoginMutationError =
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse;
-
-/**
- * @summary User login
- */
-export const usePostAuthLogin = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postAuthLogin>>,
-      TError,
-      { data: InternalApiV1AuthLoginRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof postAuthLogin>>,
-  TError,
-  { data: InternalApiV1AuthLoginRequest },
-  TContext
-> => {
-  const mutationOptions = getPostAuthLoginMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Logout user and revoke session
- * @summary Logout
- */
-export type postAuthLogoutResponse200 = {
-  data: PostAuthLogout200;
-  status: 200;
-};
-
-export type postAuthLogoutResponse401 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 401;
-};
-
-export type postAuthLogoutResponseComposite =
-  | postAuthLogoutResponse200
-  | postAuthLogoutResponse401;
-
-export type postAuthLogoutResponse = postAuthLogoutResponseComposite & {
-  headers: Headers;
-};
-
-export const getPostAuthLogoutUrl = () => {
-  return `/auth/logout`;
-};
-
-export const postAuthLogout = async (
-  options?: RequestInit,
-): Promise<postAuthLogoutResponse> => {
-  return customFetchClient<postAuthLogoutResponse>(getPostAuthLogoutUrl(), {
-    ...options,
-    method: 'POST',
-  });
-};
-
-export const getPostAuthLogoutMutationOptions = <
-  TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postAuthLogout>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof postAuthLogout>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ['postAuthLogout'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postAuthLogout>>,
-    void
-  > = () => {
-    return postAuthLogout(requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PostAuthLogoutMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postAuthLogout>>
->;
-
-export type PostAuthLogoutMutationError =
-  GithubComMantonxVolumevizInternalModelsErrorResponse;
-
-/**
- * @summary Logout
- */
-export const usePostAuthLogout = <
-  TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postAuthLogout>>,
-      TError,
-      void,
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof postAuthLogout>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationOptions = getPostAuthLogoutMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Get authenticated user's profile information
- * @summary Get current user profile
- */
-export type getAuthMeResponse200 = {
-  data: InternalApiV1AuthUserProfile;
-  status: 200;
-};
-
-export type getAuthMeResponse401 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 401;
-};
-
-export type getAuthMeResponseComposite =
-  | getAuthMeResponse200
-  | getAuthMeResponse401;
-
-export type getAuthMeResponse = getAuthMeResponseComposite & {
-  headers: Headers;
-};
-
-export const getGetAuthMeUrl = () => {
-  return `/auth/me`;
-};
-
-export const getAuthMe = async (
-  options?: RequestInit,
-): Promise<getAuthMeResponse> => {
-  return customFetchClient<getAuthMeResponse>(getGetAuthMeUrl(), {
-    ...options,
-    method: 'GET',
-  });
-};
-
-export const getGetAuthMeQueryKey = () => {
-  return [`/auth/me`] as const;
-};
-
-export const getGetAuthMeQueryOptions = <
-  TData = Awaited<ReturnType<typeof getAuthMe>>,
-  TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof getAuthMe>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetAuthMeQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthMe>>> = ({
-    signal,
-  }) => getAuthMe({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getAuthMe>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type GetAuthMeQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getAuthMe>>
->;
-export type GetAuthMeQueryError =
-  GithubComMantonxVolumevizInternalModelsErrorResponse;
-
-export function useGetAuthMe<
-  TData = Awaited<ReturnType<typeof getAuthMe>>,
-  TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAuthMe>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getAuthMe>>,
-          TError,
-          Awaited<ReturnType<typeof getAuthMe>>
-        >,
-        'initialData'
-      >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetAuthMe<
-  TData = Awaited<ReturnType<typeof getAuthMe>>,
-  TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAuthMe>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getAuthMe>>,
-          TError,
-          Awaited<ReturnType<typeof getAuthMe>>
-        >,
-        'initialData'
-      >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetAuthMe<
-  TData = Awaited<ReturnType<typeof getAuthMe>>,
-  TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAuthMe>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary Get current user profile
- */
-
-export function useGetAuthMe<
-  TData = Awaited<ReturnType<typeof getAuthMe>>,
-  TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAuthMe>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetAuthMeQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-/**
- * Change authenticated user's password
- * @summary Change password
- */
-export type postAuthPasswordChangeResponse200 = {
-  data: PostAuthPasswordChange200;
-  status: 200;
-};
-
-export type postAuthPasswordChangeResponse400 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 400;
-};
-
-export type postAuthPasswordChangeResponse401 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 401;
-};
-
-export type postAuthPasswordChangeResponseComposite =
-  | postAuthPasswordChangeResponse200
-  | postAuthPasswordChangeResponse400
-  | postAuthPasswordChangeResponse401;
-
-export type postAuthPasswordChangeResponse =
-  postAuthPasswordChangeResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPostAuthPasswordChangeUrl = () => {
-  return `/auth/password/change`;
-};
-
-export const postAuthPasswordChange = async (
-  internalApiV1AuthPasswordChangeRequest: InternalApiV1AuthPasswordChangeRequest,
-  options?: RequestInit,
-): Promise<postAuthPasswordChangeResponse> => {
-  return customFetchClient<postAuthPasswordChangeResponse>(
-    getPostAuthPasswordChangeUrl(),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(internalApiV1AuthPasswordChangeRequest),
-    },
-  );
-};
-
-export const getPostAuthPasswordChangeMutationOptions = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postAuthPasswordChange>>,
-    TError,
-    { data: InternalApiV1AuthPasswordChangeRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof postAuthPasswordChange>>,
-  TError,
-  { data: InternalApiV1AuthPasswordChangeRequest },
-  TContext
-> => {
-  const mutationKey = ['postAuthPasswordChange'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postAuthPasswordChange>>,
-    { data: InternalApiV1AuthPasswordChangeRequest }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return postAuthPasswordChange(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PostAuthPasswordChangeMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postAuthPasswordChange>>
->;
-export type PostAuthPasswordChangeMutationBody =
-  InternalApiV1AuthPasswordChangeRequest;
-export type PostAuthPasswordChangeMutationError =
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse;
-
-/**
- * @summary Change password
- */
-export const usePostAuthPasswordChange = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postAuthPasswordChange>>,
-      TError,
-      { data: InternalApiV1AuthPasswordChangeRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof postAuthPasswordChange>>,
-  TError,
-  { data: InternalApiV1AuthPasswordChangeRequest },
-  TContext
-> => {
-  const mutationOptions = getPostAuthPasswordChangeMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Change default admin password (requires current default password)
- * @summary Force password change for default admin
- */
-export type postAuthPasswordForceChangeResponse200 = {
-  data: PostAuthPasswordForceChange200;
-  status: 200;
-};
-
-export type postAuthPasswordForceChangeResponse400 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 400;
-};
-
-export type postAuthPasswordForceChangeResponse401 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 401;
-};
-
-export type postAuthPasswordForceChangeResponse403 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 403;
-};
-
-export type postAuthPasswordForceChangeResponseComposite =
-  | postAuthPasswordForceChangeResponse200
-  | postAuthPasswordForceChangeResponse400
-  | postAuthPasswordForceChangeResponse401
-  | postAuthPasswordForceChangeResponse403;
-
-export type postAuthPasswordForceChangeResponse =
-  postAuthPasswordForceChangeResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPostAuthPasswordForceChangeUrl = () => {
-  return `/auth/password/force-change`;
-};
-
-export const postAuthPasswordForceChange = async (
-  internalApiV1AuthForcePasswordChangeRequest: InternalApiV1AuthForcePasswordChangeRequest,
-  options?: RequestInit,
-): Promise<postAuthPasswordForceChangeResponse> => {
-  return customFetchClient<postAuthPasswordForceChangeResponse>(
-    getPostAuthPasswordForceChangeUrl(),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(internalApiV1AuthForcePasswordChangeRequest),
-    },
-  );
-};
-
-export const getPostAuthPasswordForceChangeMutationOptions = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postAuthPasswordForceChange>>,
-    TError,
-    { data: InternalApiV1AuthForcePasswordChangeRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof postAuthPasswordForceChange>>,
-  TError,
-  { data: InternalApiV1AuthForcePasswordChangeRequest },
-  TContext
-> => {
-  const mutationKey = ['postAuthPasswordForceChange'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postAuthPasswordForceChange>>,
-    { data: InternalApiV1AuthForcePasswordChangeRequest }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return postAuthPasswordForceChange(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PostAuthPasswordForceChangeMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postAuthPasswordForceChange>>
->;
-export type PostAuthPasswordForceChangeMutationBody =
-  InternalApiV1AuthForcePasswordChangeRequest;
-export type PostAuthPasswordForceChangeMutationError =
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse;
-
-/**
- * @summary Force password change for default admin
- */
-export const usePostAuthPasswordForceChange = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postAuthPasswordForceChange>>,
-      TError,
-      { data: InternalApiV1AuthForcePasswordChangeRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof postAuthPasswordForceChange>>,
-  TError,
-  { data: InternalApiV1AuthForcePasswordChangeRequest },
-  TContext
-> => {
-  const mutationOptions =
-    getPostAuthPasswordForceChangeMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Request password reset email
- * @summary Request password reset
- */
-export type postAuthPasswordResetResponse200 = {
-  data: PostAuthPasswordReset200;
-  status: 200;
-};
-
-export type postAuthPasswordResetResponse400 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 400;
-};
-
-export type postAuthPasswordResetResponseComposite =
-  | postAuthPasswordResetResponse200
-  | postAuthPasswordResetResponse400;
-
-export type postAuthPasswordResetResponse =
-  postAuthPasswordResetResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPostAuthPasswordResetUrl = () => {
-  return `/auth/password/reset`;
-};
-
-export const postAuthPasswordReset = async (
-  internalApiV1AuthPasswordResetRequest: InternalApiV1AuthPasswordResetRequest,
-  options?: RequestInit,
-): Promise<postAuthPasswordResetResponse> => {
-  return customFetchClient<postAuthPasswordResetResponse>(
-    getPostAuthPasswordResetUrl(),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(internalApiV1AuthPasswordResetRequest),
-    },
-  );
-};
-
-export const getPostAuthPasswordResetMutationOptions = <
-  TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postAuthPasswordReset>>,
-    TError,
-    { data: InternalApiV1AuthPasswordResetRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof postAuthPasswordReset>>,
-  TError,
-  { data: InternalApiV1AuthPasswordResetRequest },
-  TContext
-> => {
-  const mutationKey = ['postAuthPasswordReset'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postAuthPasswordReset>>,
-    { data: InternalApiV1AuthPasswordResetRequest }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return postAuthPasswordReset(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PostAuthPasswordResetMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postAuthPasswordReset>>
->;
-export type PostAuthPasswordResetMutationBody =
-  InternalApiV1AuthPasswordResetRequest;
-export type PostAuthPasswordResetMutationError =
-  GithubComMantonxVolumevizInternalModelsErrorResponse;
-
-/**
- * @summary Request password reset
- */
-export const usePostAuthPasswordReset = <
-  TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postAuthPasswordReset>>,
-      TError,
-      { data: InternalApiV1AuthPasswordResetRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof postAuthPasswordReset>>,
-  TError,
-  { data: InternalApiV1AuthPasswordResetRequest },
-  TContext
-> => {
-  const mutationOptions = getPostAuthPasswordResetMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Refresh access token using refresh token
- * @summary Refresh access token
- */
-export type postAuthRefreshResponse200 = {
-  data: PostAuthRefresh200;
-  status: 200;
-};
-
-export type postAuthRefreshResponse400 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 400;
-};
-
-export type postAuthRefreshResponse401 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 401;
-};
-
-export type postAuthRefreshResponseComposite =
-  | postAuthRefreshResponse200
-  | postAuthRefreshResponse400
-  | postAuthRefreshResponse401;
-
-export type postAuthRefreshResponse = postAuthRefreshResponseComposite & {
-  headers: Headers;
-};
-
-export const getPostAuthRefreshUrl = () => {
-  return `/auth/refresh`;
-};
-
-export const postAuthRefresh = async (
-  internalApiV1AuthRefreshTokenRequest: InternalApiV1AuthRefreshTokenRequest,
-  options?: RequestInit,
-): Promise<postAuthRefreshResponse> => {
-  return customFetchClient<postAuthRefreshResponse>(getPostAuthRefreshUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(internalApiV1AuthRefreshTokenRequest),
-  });
-};
-
-export const getPostAuthRefreshMutationOptions = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postAuthRefresh>>,
-    TError,
-    { data: InternalApiV1AuthRefreshTokenRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof postAuthRefresh>>,
-  TError,
-  { data: InternalApiV1AuthRefreshTokenRequest },
-  TContext
-> => {
-  const mutationKey = ['postAuthRefresh'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postAuthRefresh>>,
-    { data: InternalApiV1AuthRefreshTokenRequest }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return postAuthRefresh(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PostAuthRefreshMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postAuthRefresh>>
->;
-export type PostAuthRefreshMutationBody = InternalApiV1AuthRefreshTokenRequest;
-export type PostAuthRefreshMutationError =
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse;
-
-/**
- * @summary Refresh access token
- */
-export const usePostAuthRefresh = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postAuthRefresh>>,
-      TError,
-      { data: InternalApiV1AuthRefreshTokenRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof postAuthRefresh>>,
-  TError,
-  { data: InternalApiV1AuthRefreshTokenRequest },
-  TContext
-> => {
-  const mutationOptions = getPostAuthRefreshMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Register a new user account
- * @summary User registration
- */
-export type postAuthRegisterResponse201 = {
-  data: InternalApiV1AuthAuthResponse;
-  status: 201;
-};
-
-export type postAuthRegisterResponse400 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 400;
-};
-
-export type postAuthRegisterResponse409 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 409;
-};
-
-export type postAuthRegisterResponseComposite =
-  | postAuthRegisterResponse201
-  | postAuthRegisterResponse400
-  | postAuthRegisterResponse409;
-
-export type postAuthRegisterResponse = postAuthRegisterResponseComposite & {
-  headers: Headers;
-};
-
-export const getPostAuthRegisterUrl = () => {
-  return `/auth/register`;
-};
-
-export const postAuthRegister = async (
-  internalApiV1AuthRegisterRequest: InternalApiV1AuthRegisterRequest,
-  options?: RequestInit,
-): Promise<postAuthRegisterResponse> => {
-  return customFetchClient<postAuthRegisterResponse>(getPostAuthRegisterUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(internalApiV1AuthRegisterRequest),
-  });
-};
-
-export const getPostAuthRegisterMutationOptions = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postAuthRegister>>,
-    TError,
-    { data: InternalApiV1AuthRegisterRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof postAuthRegister>>,
-  TError,
-  { data: InternalApiV1AuthRegisterRequest },
-  TContext
-> => {
-  const mutationKey = ['postAuthRegister'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postAuthRegister>>,
-    { data: InternalApiV1AuthRegisterRequest }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return postAuthRegister(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PostAuthRegisterMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postAuthRegister>>
->;
-export type PostAuthRegisterMutationBody = InternalApiV1AuthRegisterRequest;
-export type PostAuthRegisterMutationError =
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse;
-
-/**
- * @summary User registration
- */
-export const usePostAuthRegister = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postAuthRegister>>,
-      TError,
-      { data: InternalApiV1AuthRegisterRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof postAuthRegister>>,
-  TError,
-  { data: InternalApiV1AuthRegisterRequest },
-  TContext
-> => {
-  const mutationOptions = getPostAuthRegisterMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Register a new user with an organization invitation token
- * @summary Register with invitation token
- */
-export type postAuthRegisterInvitationResponse200 = {
-  data: InternalApiV1AuthAuthResponse;
-  status: 200;
-};
-
-export type postAuthRegisterInvitationResponse400 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 400;
-};
-
-export type postAuthRegisterInvitationResponse404 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 404;
-};
-
-export type postAuthRegisterInvitationResponse409 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 409;
-};
-
-export type postAuthRegisterInvitationResponse500 = {
-  data: GithubComMantonxVolumevizInternalModelsErrorResponse;
-  status: 500;
-};
-
-export type postAuthRegisterInvitationResponseComposite =
-  | postAuthRegisterInvitationResponse200
-  | postAuthRegisterInvitationResponse400
-  | postAuthRegisterInvitationResponse404
-  | postAuthRegisterInvitationResponse409
-  | postAuthRegisterInvitationResponse500;
-
-export type postAuthRegisterInvitationResponse =
-  postAuthRegisterInvitationResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPostAuthRegisterInvitationUrl = () => {
-  return `/auth/register/invitation`;
-};
-
-export const postAuthRegisterInvitation = async (
-  internalApiV1AuthRegisterWithInvitationRequest: InternalApiV1AuthRegisterWithInvitationRequest,
-  options?: RequestInit,
-): Promise<postAuthRegisterInvitationResponse> => {
-  return customFetchClient<postAuthRegisterInvitationResponse>(
-    getPostAuthRegisterInvitationUrl(),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(internalApiV1AuthRegisterWithInvitationRequest),
-    },
-  );
-};
-
-export const getPostAuthRegisterInvitationMutationOptions = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postAuthRegisterInvitation>>,
-    TError,
-    { data: InternalApiV1AuthRegisterWithInvitationRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof postAuthRegisterInvitation>>,
-  TError,
-  { data: InternalApiV1AuthRegisterWithInvitationRequest },
-  TContext
-> => {
-  const mutationKey = ['postAuthRegisterInvitation'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postAuthRegisterInvitation>>,
-    { data: InternalApiV1AuthRegisterWithInvitationRequest }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return postAuthRegisterInvitation(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PostAuthRegisterInvitationMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postAuthRegisterInvitation>>
->;
-export type PostAuthRegisterInvitationMutationBody =
-  InternalApiV1AuthRegisterWithInvitationRequest;
-export type PostAuthRegisterInvitationMutationError =
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse
-  | GithubComMantonxVolumevizInternalModelsErrorResponse;
-
-/**
- * @summary Register with invitation token
- */
-export const usePostAuthRegisterInvitation = <
-  TError =
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse
-    | GithubComMantonxVolumevizInternalModelsErrorResponse,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postAuthRegisterInvitation>>,
-      TError,
-      { data: InternalApiV1AuthRegisterWithInvitationRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof postAuthRegisterInvitation>>,
-  TError,
-  { data: InternalApiV1AuthRegisterWithInvitationRequest },
-  TContext
-> => {
-  const mutationOptions = getPostAuthRegisterInvitationMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -19855,6 +21625,654 @@ export function useGetScansRecentErrors<
 }
 
 /**
+ * Get aggregate statistics about volume snapshots
+ * @summary Get snapshot statistics
+ */
+export type getSnapshotsStatsResponse200 = {
+  data: GetSnapshotsStats200;
+  status: 200;
+};
+
+export type getSnapshotsStatsResponse500 = {
+  data: GetSnapshotsStats500;
+  status: 500;
+};
+
+export type getSnapshotsStatsResponseComposite =
+  | getSnapshotsStatsResponse200
+  | getSnapshotsStatsResponse500;
+
+export type getSnapshotsStatsResponse = getSnapshotsStatsResponseComposite & {
+  headers: Headers;
+};
+
+export const getGetSnapshotsStatsUrl = () => {
+  return `/snapshots/stats`;
+};
+
+export const getSnapshotsStats = async (
+  options?: RequestInit,
+): Promise<getSnapshotsStatsResponse> => {
+  return customFetchClient<getSnapshotsStatsResponse>(
+    getGetSnapshotsStatsUrl(),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetSnapshotsStatsQueryKey = () => {
+  return [`/snapshots/stats`] as const;
+};
+
+export const getGetSnapshotsStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSnapshotsStats>>,
+  TError = GetSnapshotsStats500,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof getSnapshotsStats>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSnapshotsStatsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSnapshotsStats>>
+  > = ({ signal }) => getSnapshotsStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSnapshotsStats>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetSnapshotsStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSnapshotsStats>>
+>;
+export type GetSnapshotsStatsQueryError = GetSnapshotsStats500;
+
+export function useGetSnapshotsStats<
+  TData = Awaited<ReturnType<typeof getSnapshotsStats>>,
+  TError = GetSnapshotsStats500,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsStats>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSnapshotsStats>>,
+          TError,
+          Awaited<ReturnType<typeof getSnapshotsStats>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSnapshotsStats<
+  TData = Awaited<ReturnType<typeof getSnapshotsStats>>,
+  TError = GetSnapshotsStats500,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsStats>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSnapshotsStats>>,
+          TError,
+          Awaited<ReturnType<typeof getSnapshotsStats>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSnapshotsStats<
+  TData = Awaited<ReturnType<typeof getSnapshotsStats>>,
+  TError = GetSnapshotsStats500,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsStats>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get snapshot statistics
+ */
+
+export function useGetSnapshotsStats<
+  TData = Awaited<ReturnType<typeof getSnapshotsStats>>,
+  TError = GetSnapshotsStats500,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsStats>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetSnapshotsStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Get snapshot history for a specific volume
+ * @summary Get volume snapshots
+ */
+export type getSnapshotsVolumesVolumeIdResponse200 = {
+  data: GetSnapshotsVolumesVolumeId200;
+  status: 200;
+};
+
+export type getSnapshotsVolumesVolumeIdResponse400 = {
+  data: GetSnapshotsVolumesVolumeId400;
+  status: 400;
+};
+
+export type getSnapshotsVolumesVolumeIdResponse500 = {
+  data: GetSnapshotsVolumesVolumeId500;
+  status: 500;
+};
+
+export type getSnapshotsVolumesVolumeIdResponseComposite =
+  | getSnapshotsVolumesVolumeIdResponse200
+  | getSnapshotsVolumesVolumeIdResponse400
+  | getSnapshotsVolumesVolumeIdResponse500;
+
+export type getSnapshotsVolumesVolumeIdResponse =
+  getSnapshotsVolumesVolumeIdResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetSnapshotsVolumesVolumeIdUrl = (
+  volumeId: string,
+  params?: GetSnapshotsVolumesVolumeIdParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/snapshots/volumes/${volumeId}?${stringifiedParams}`
+    : `/snapshots/volumes/${volumeId}`;
+};
+
+export const getSnapshotsVolumesVolumeId = async (
+  volumeId: string,
+  params?: GetSnapshotsVolumesVolumeIdParams,
+  options?: RequestInit,
+): Promise<getSnapshotsVolumesVolumeIdResponse> => {
+  return customFetchClient<getSnapshotsVolumesVolumeIdResponse>(
+    getGetSnapshotsVolumesVolumeIdUrl(volumeId, params),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetSnapshotsVolumesVolumeIdQueryKey = (
+  volumeId?: string,
+  params?: GetSnapshotsVolumesVolumeIdParams,
+) => {
+  return [
+    `/snapshots/volumes/${volumeId}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetSnapshotsVolumesVolumeIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+  TError = GetSnapshotsVolumesVolumeId400 | GetSnapshotsVolumesVolumeId500,
+>(
+  volumeId: string,
+  params?: GetSnapshotsVolumesVolumeIdParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetSnapshotsVolumesVolumeIdQueryKey(volumeId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>
+  > = ({ signal }) =>
+    getSnapshotsVolumesVolumeId(volumeId, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!volumeId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetSnapshotsVolumesVolumeIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>
+>;
+export type GetSnapshotsVolumesVolumeIdQueryError =
+  | GetSnapshotsVolumesVolumeId400
+  | GetSnapshotsVolumesVolumeId500;
+
+export function useGetSnapshotsVolumesVolumeId<
+  TData = Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+  TError = GetSnapshotsVolumesVolumeId400 | GetSnapshotsVolumesVolumeId500,
+>(
+  volumeId: string,
+  params: undefined | GetSnapshotsVolumesVolumeIdParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+          TError,
+          Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSnapshotsVolumesVolumeId<
+  TData = Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+  TError = GetSnapshotsVolumesVolumeId400 | GetSnapshotsVolumesVolumeId500,
+>(
+  volumeId: string,
+  params?: GetSnapshotsVolumesVolumeIdParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+          TError,
+          Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSnapshotsVolumesVolumeId<
+  TData = Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+  TError = GetSnapshotsVolumesVolumeId400 | GetSnapshotsVolumesVolumeId500,
+>(
+  volumeId: string,
+  params?: GetSnapshotsVolumesVolumeIdParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get volume snapshots
+ */
+
+export function useGetSnapshotsVolumesVolumeId<
+  TData = Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+  TError = GetSnapshotsVolumesVolumeId400 | GetSnapshotsVolumesVolumeId500,
+>(
+  volumeId: string,
+  params?: GetSnapshotsVolumesVolumeIdParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsVolumesVolumeId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetSnapshotsVolumesVolumeIdQueryOptions(
+    volumeId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Get the most recent snapshot for a specific volume
+ * @summary Get latest snapshot
+ */
+export type getSnapshotsVolumesVolumeIdLatestResponse200 = {
+  data: GetSnapshotsVolumesVolumeIdLatest200;
+  status: 200;
+};
+
+export type getSnapshotsVolumesVolumeIdLatestResponse400 = {
+  data: GetSnapshotsVolumesVolumeIdLatest400;
+  status: 400;
+};
+
+export type getSnapshotsVolumesVolumeIdLatestResponse404 = {
+  data: GetSnapshotsVolumesVolumeIdLatest404;
+  status: 404;
+};
+
+export type getSnapshotsVolumesVolumeIdLatestResponse500 = {
+  data: GetSnapshotsVolumesVolumeIdLatest500;
+  status: 500;
+};
+
+export type getSnapshotsVolumesVolumeIdLatestResponseComposite =
+  | getSnapshotsVolumesVolumeIdLatestResponse200
+  | getSnapshotsVolumesVolumeIdLatestResponse400
+  | getSnapshotsVolumesVolumeIdLatestResponse404
+  | getSnapshotsVolumesVolumeIdLatestResponse500;
+
+export type getSnapshotsVolumesVolumeIdLatestResponse =
+  getSnapshotsVolumesVolumeIdLatestResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetSnapshotsVolumesVolumeIdLatestUrl = (volumeId: string) => {
+  return `/snapshots/volumes/${volumeId}/latest`;
+};
+
+export const getSnapshotsVolumesVolumeIdLatest = async (
+  volumeId: string,
+  options?: RequestInit,
+): Promise<getSnapshotsVolumesVolumeIdLatestResponse> => {
+  return customFetchClient<getSnapshotsVolumesVolumeIdLatestResponse>(
+    getGetSnapshotsVolumesVolumeIdLatestUrl(volumeId),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetSnapshotsVolumesVolumeIdLatestQueryKey = (
+  volumeId?: string,
+) => {
+  return [`/snapshots/volumes/${volumeId}/latest`] as const;
+};
+
+export const getGetSnapshotsVolumesVolumeIdLatestQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+  TError =
+    | GetSnapshotsVolumesVolumeIdLatest400
+    | GetSnapshotsVolumesVolumeIdLatest404
+    | GetSnapshotsVolumesVolumeIdLatest500,
+>(
+  volumeId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetSnapshotsVolumesVolumeIdLatestQueryKey(volumeId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>
+  > = ({ signal }) =>
+    getSnapshotsVolumesVolumeIdLatest(volumeId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!volumeId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetSnapshotsVolumesVolumeIdLatestQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>
+>;
+export type GetSnapshotsVolumesVolumeIdLatestQueryError =
+  | GetSnapshotsVolumesVolumeIdLatest400
+  | GetSnapshotsVolumesVolumeIdLatest404
+  | GetSnapshotsVolumesVolumeIdLatest500;
+
+export function useGetSnapshotsVolumesVolumeIdLatest<
+  TData = Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+  TError =
+    | GetSnapshotsVolumesVolumeIdLatest400
+    | GetSnapshotsVolumesVolumeIdLatest404
+    | GetSnapshotsVolumesVolumeIdLatest500,
+>(
+  volumeId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+          TError,
+          Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSnapshotsVolumesVolumeIdLatest<
+  TData = Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+  TError =
+    | GetSnapshotsVolumesVolumeIdLatest400
+    | GetSnapshotsVolumesVolumeIdLatest404
+    | GetSnapshotsVolumesVolumeIdLatest500,
+>(
+  volumeId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+          TError,
+          Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSnapshotsVolumesVolumeIdLatest<
+  TData = Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+  TError =
+    | GetSnapshotsVolumesVolumeIdLatest400
+    | GetSnapshotsVolumesVolumeIdLatest404
+    | GetSnapshotsVolumesVolumeIdLatest500,
+>(
+  volumeId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get latest snapshot
+ */
+
+export function useGetSnapshotsVolumesVolumeIdLatest<
+  TData = Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+  TError =
+    | GetSnapshotsVolumesVolumeIdLatest400
+    | GetSnapshotsVolumesVolumeIdLatest404
+    | GetSnapshotsVolumesVolumeIdLatest500,
+>(
+  volumeId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSnapshotsVolumesVolumeIdLatest>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetSnapshotsVolumesVolumeIdLatestQueryOptions(
+    volumeId,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
  * Get daily aggregated statistics for a volume
  * @summary Get daily stats
  */
@@ -22540,6 +24958,788 @@ export function useGetTrendsVolumesVolumeIdSlope<
 }
 
 /**
+ * List all users in the organization (admin only)
+ * @summary List users
+ */
+export type getUsersResponse200 = {
+  data: GetUsers200;
+  status: 200;
+};
+
+export type getUsersResponse401 = {
+  data: GetUsers401;
+  status: 401;
+};
+
+export type getUsersResponse403 = {
+  data: GetUsers403;
+  status: 403;
+};
+
+export type getUsersResponse500 = {
+  data: GetUsers500;
+  status: 500;
+};
+
+export type getUsersResponseComposite =
+  | getUsersResponse200
+  | getUsersResponse401
+  | getUsersResponse403
+  | getUsersResponse500;
+
+export type getUsersResponse = getUsersResponseComposite & {
+  headers: Headers;
+};
+
+export const getGetUsersUrl = (params?: GetUsersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/users?${stringifiedParams}`
+    : `/users`;
+};
+
+export const getUsers = async (
+  params?: GetUsersParams,
+  options?: RequestInit,
+): Promise<getUsersResponse> => {
+  return customFetchClient<getUsersResponse>(getGetUsersUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetUsersQueryKey = (params?: GetUsersParams) => {
+  return [`/users`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetUsersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getUsers>>,
+  TError = GetUsers401 | GetUsers403 | GetUsers500,
+>(
+  params?: GetUsersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getUsers>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetUsersQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getUsers>>> = ({
+    signal,
+  }) => getUsers(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getUsers>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetUsersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getUsers>>
+>;
+export type GetUsersQueryError = GetUsers401 | GetUsers403 | GetUsers500;
+
+export function useGetUsers<
+  TData = Awaited<ReturnType<typeof getUsers>>,
+  TError = GetUsers401 | GetUsers403 | GetUsers500,
+>(
+  params: undefined | GetUsersParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getUsers>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getUsers>>,
+          TError,
+          Awaited<ReturnType<typeof getUsers>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetUsers<
+  TData = Awaited<ReturnType<typeof getUsers>>,
+  TError = GetUsers401 | GetUsers403 | GetUsers500,
+>(
+  params?: GetUsersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getUsers>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getUsers>>,
+          TError,
+          Awaited<ReturnType<typeof getUsers>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetUsers<
+  TData = Awaited<ReturnType<typeof getUsers>>,
+  TError = GetUsers401 | GetUsers403 | GetUsers500,
+>(
+  params?: GetUsersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getUsers>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List users
+ */
+
+export function useGetUsers<
+  TData = Awaited<ReturnType<typeof getUsers>>,
+  TError = GetUsers401 | GetUsers403 | GetUsers500,
+>(
+  params?: GetUsersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getUsers>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetUsersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Create a new user in the organization (admin only)
+ * @summary Create a new user
+ */
+export type postUsersResponse201 = {
+  data: InternalApiV1UsersUserResponse;
+  status: 201;
+};
+
+export type postUsersResponse400 = {
+  data: PostUsers400;
+  status: 400;
+};
+
+export type postUsersResponse401 = {
+  data: PostUsers401;
+  status: 401;
+};
+
+export type postUsersResponse409 = {
+  data: PostUsers409;
+  status: 409;
+};
+
+export type postUsersResponse500 = {
+  data: PostUsers500;
+  status: 500;
+};
+
+export type postUsersResponseComposite =
+  | postUsersResponse201
+  | postUsersResponse400
+  | postUsersResponse401
+  | postUsersResponse409
+  | postUsersResponse500;
+
+export type postUsersResponse = postUsersResponseComposite & {
+  headers: Headers;
+};
+
+export const getPostUsersUrl = () => {
+  return `/users`;
+};
+
+export const postUsers = async (
+  internalApiV1UsersCreateUserRequest: InternalApiV1UsersCreateUserRequest,
+  options?: RequestInit,
+): Promise<postUsersResponse> => {
+  return customFetchClient<postUsersResponse>(getPostUsersUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(internalApiV1UsersCreateUserRequest),
+  });
+};
+
+export const getPostUsersMutationOptions = <
+  TError = PostUsers400 | PostUsers401 | PostUsers409 | PostUsers500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postUsers>>,
+    TError,
+    { data: InternalApiV1UsersCreateUserRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postUsers>>,
+  TError,
+  { data: InternalApiV1UsersCreateUserRequest },
+  TContext
+> => {
+  const mutationKey = ['postUsers'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postUsers>>,
+    { data: InternalApiV1UsersCreateUserRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postUsers(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostUsersMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postUsers>>
+>;
+export type PostUsersMutationBody = InternalApiV1UsersCreateUserRequest;
+export type PostUsersMutationError =
+  | PostUsers400
+  | PostUsers401
+  | PostUsers409
+  | PostUsers500;
+
+/**
+ * @summary Create a new user
+ */
+export const usePostUsers = <
+  TError = PostUsers400 | PostUsers401 | PostUsers409 | PostUsers500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postUsers>>,
+      TError,
+      { data: InternalApiV1UsersCreateUserRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postUsers>>,
+  TError,
+  { data: InternalApiV1UsersCreateUserRequest },
+  TContext
+> => {
+  const mutationOptions = getPostUsersMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Delete a user (admin only)
+ * @summary Delete a user
+ */
+export type deleteUsersIdResponse204 = {
+  data: null;
+  status: 204;
+};
+
+export type deleteUsersIdResponse400 = {
+  data: DeleteUsersId400;
+  status: 400;
+};
+
+export type deleteUsersIdResponse401 = {
+  data: DeleteUsersId401;
+  status: 401;
+};
+
+export type deleteUsersIdResponse404 = {
+  data: DeleteUsersId404;
+  status: 404;
+};
+
+export type deleteUsersIdResponse500 = {
+  data: DeleteUsersId500;
+  status: 500;
+};
+
+export type deleteUsersIdResponseComposite =
+  | deleteUsersIdResponse204
+  | deleteUsersIdResponse400
+  | deleteUsersIdResponse401
+  | deleteUsersIdResponse404
+  | deleteUsersIdResponse500;
+
+export type deleteUsersIdResponse = deleteUsersIdResponseComposite & {
+  headers: Headers;
+};
+
+export const getDeleteUsersIdUrl = (id: number) => {
+  return `/users/${id}`;
+};
+
+export const deleteUsersId = async (
+  id: number,
+  options?: RequestInit,
+): Promise<deleteUsersIdResponse> => {
+  return customFetchClient<deleteUsersIdResponse>(getDeleteUsersIdUrl(id), {
+    ...options,
+    method: 'DELETE',
+  });
+};
+
+export const getDeleteUsersIdMutationOptions = <
+  TError =
+    | DeleteUsersId400
+    | DeleteUsersId401
+    | DeleteUsersId404
+    | DeleteUsersId500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteUsersId>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteUsersId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ['deleteUsersId'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteUsersId>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteUsersId(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteUsersIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteUsersId>>
+>;
+
+export type DeleteUsersIdMutationError =
+  | DeleteUsersId400
+  | DeleteUsersId401
+  | DeleteUsersId404
+  | DeleteUsersId500;
+
+/**
+ * @summary Delete a user
+ */
+export const useDeleteUsersId = <
+  TError =
+    | DeleteUsersId400
+    | DeleteUsersId401
+    | DeleteUsersId404
+    | DeleteUsersId500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteUsersId>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteUsersId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationOptions = getDeleteUsersIdMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Get a specific user by ID (admin only)
+ * @summary Get user by ID
+ */
+export type getUsersIdResponse200 = {
+  data: InternalApiV1UsersUserResponse;
+  status: 200;
+};
+
+export type getUsersIdResponse400 = {
+  data: GetUsersId400;
+  status: 400;
+};
+
+export type getUsersIdResponse401 = {
+  data: GetUsersId401;
+  status: 401;
+};
+
+export type getUsersIdResponse404 = {
+  data: GetUsersId404;
+  status: 404;
+};
+
+export type getUsersIdResponse500 = {
+  data: GetUsersId500;
+  status: 500;
+};
+
+export type getUsersIdResponseComposite =
+  | getUsersIdResponse200
+  | getUsersIdResponse400
+  | getUsersIdResponse401
+  | getUsersIdResponse404
+  | getUsersIdResponse500;
+
+export type getUsersIdResponse = getUsersIdResponseComposite & {
+  headers: Headers;
+};
+
+export const getGetUsersIdUrl = (id: number) => {
+  return `/users/${id}`;
+};
+
+export const getUsersId = async (
+  id: number,
+  options?: RequestInit,
+): Promise<getUsersIdResponse> => {
+  return customFetchClient<getUsersIdResponse>(getGetUsersIdUrl(id), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetUsersIdQueryKey = (id?: number) => {
+  return [`/users/${id}`] as const;
+};
+
+export const getGetUsersIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getUsersId>>,
+  TError = GetUsersId400 | GetUsersId401 | GetUsersId404 | GetUsersId500,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getUsersId>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetUsersIdQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getUsersId>>> = ({
+    signal,
+  }) => getUsersId(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getUsersId>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetUsersIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getUsersId>>
+>;
+export type GetUsersIdQueryError =
+  | GetUsersId400
+  | GetUsersId401
+  | GetUsersId404
+  | GetUsersId500;
+
+export function useGetUsersId<
+  TData = Awaited<ReturnType<typeof getUsersId>>,
+  TError = GetUsersId400 | GetUsersId401 | GetUsersId404 | GetUsersId500,
+>(
+  id: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getUsersId>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getUsersId>>,
+          TError,
+          Awaited<ReturnType<typeof getUsersId>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetUsersId<
+  TData = Awaited<ReturnType<typeof getUsersId>>,
+  TError = GetUsersId400 | GetUsersId401 | GetUsersId404 | GetUsersId500,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getUsersId>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getUsersId>>,
+          TError,
+          Awaited<ReturnType<typeof getUsersId>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetUsersId<
+  TData = Awaited<ReturnType<typeof getUsersId>>,
+  TError = GetUsersId400 | GetUsersId401 | GetUsersId404 | GetUsersId500,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getUsersId>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get user by ID
+ */
+
+export function useGetUsersId<
+  TData = Awaited<ReturnType<typeof getUsersId>>,
+  TError = GetUsersId400 | GetUsersId401 | GetUsersId404 | GetUsersId500,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getUsersId>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetUsersIdQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Update user details (admin only)
+ * @summary Update a user
+ */
+export type putUsersIdResponse200 = {
+  data: InternalApiV1UsersUserResponse;
+  status: 200;
+};
+
+export type putUsersIdResponse400 = {
+  data: PutUsersId400;
+  status: 400;
+};
+
+export type putUsersIdResponse401 = {
+  data: PutUsersId401;
+  status: 401;
+};
+
+export type putUsersIdResponse404 = {
+  data: PutUsersId404;
+  status: 404;
+};
+
+export type putUsersIdResponse500 = {
+  data: PutUsersId500;
+  status: 500;
+};
+
+export type putUsersIdResponseComposite =
+  | putUsersIdResponse200
+  | putUsersIdResponse400
+  | putUsersIdResponse401
+  | putUsersIdResponse404
+  | putUsersIdResponse500;
+
+export type putUsersIdResponse = putUsersIdResponseComposite & {
+  headers: Headers;
+};
+
+export const getPutUsersIdUrl = (id: number) => {
+  return `/users/${id}`;
+};
+
+export const putUsersId = async (
+  id: number,
+  internalApiV1UsersUpdateUserRequest: InternalApiV1UsersUpdateUserRequest,
+  options?: RequestInit,
+): Promise<putUsersIdResponse> => {
+  return customFetchClient<putUsersIdResponse>(getPutUsersIdUrl(id), {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(internalApiV1UsersUpdateUserRequest),
+  });
+};
+
+export const getPutUsersIdMutationOptions = <
+  TError = PutUsersId400 | PutUsersId401 | PutUsersId404 | PutUsersId500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof putUsersId>>,
+    TError,
+    { id: number; data: InternalApiV1UsersUpdateUserRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof putUsersId>>,
+  TError,
+  { id: number; data: InternalApiV1UsersUpdateUserRequest },
+  TContext
+> => {
+  const mutationKey = ['putUsersId'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof putUsersId>>,
+    { id: number; data: InternalApiV1UsersUpdateUserRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return putUsersId(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PutUsersIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putUsersId>>
+>;
+export type PutUsersIdMutationBody = InternalApiV1UsersUpdateUserRequest;
+export type PutUsersIdMutationError =
+  | PutUsersId400
+  | PutUsersId401
+  | PutUsersId404
+  | PutUsersId500;
+
+/**
+ * @summary Update a user
+ */
+export const usePutUsersId = <
+  TError = PutUsersId400 | PutUsersId401 | PutUsersId404 | PutUsersId500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof putUsersId>>,
+      TError,
+      { id: number; data: InternalApiV1UsersUpdateUserRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof putUsersId>>,
+  TError,
+  { id: number; data: InternalApiV1UsersUpdateUserRequest },
+  TContext
+> => {
+  const mutationOptions = getPutUsersIdMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
  * Get paginated list of Docker volumes with filtering, sorting, and search capabilities
  * @summary List Docker volumes
  */
@@ -24571,6 +27771,126 @@ export function useGetVolumesVolumeIdFilesystemStatus<
 }
 
 /**
+ * Delete multiple Docker volumes by their IDs
+ * @summary Bulk delete volumes
+ */
+export type postVolumesBulkDeleteResponse200 = {
+  data: BulkDeleteVolumesResponse;
+  status: 200;
+};
+
+export type postVolumesBulkDeleteResponse400 = {
+  data: ErrorResponse;
+  status: 400;
+};
+
+export type postVolumesBulkDeleteResponse500 = {
+  data: ErrorResponse;
+  status: 500;
+};
+
+export type postVolumesBulkDeleteResponseComposite =
+  | postVolumesBulkDeleteResponse200
+  | postVolumesBulkDeleteResponse400
+  | postVolumesBulkDeleteResponse500;
+
+export type postVolumesBulkDeleteResponse =
+  postVolumesBulkDeleteResponseComposite & {
+    headers: Headers;
+  };
+
+export const getPostVolumesBulkDeleteUrl = () => {
+  return `/volumes/bulk-delete`;
+};
+
+export const postVolumesBulkDelete = async (
+  bulkDeleteVolumesRequest: BulkDeleteVolumesRequest,
+  options?: RequestInit,
+): Promise<postVolumesBulkDeleteResponse> => {
+  return customFetchClient<postVolumesBulkDeleteResponse>(
+    getPostVolumesBulkDeleteUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(bulkDeleteVolumesRequest),
+    },
+  );
+};
+
+export const getPostVolumesBulkDeleteMutationOptions = <
+  TError = ErrorResponse | ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postVolumesBulkDelete>>,
+    TError,
+    { data: BulkDeleteVolumesRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postVolumesBulkDelete>>,
+  TError,
+  { data: BulkDeleteVolumesRequest },
+  TContext
+> => {
+  const mutationKey = ['postVolumesBulkDelete'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postVolumesBulkDelete>>,
+    { data: BulkDeleteVolumesRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postVolumesBulkDelete(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostVolumesBulkDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postVolumesBulkDelete>>
+>;
+export type PostVolumesBulkDeleteMutationBody = BulkDeleteVolumesRequest;
+export type PostVolumesBulkDeleteMutationError = ErrorResponse | ErrorResponse;
+
+/**
+ * @summary Bulk delete volumes
+ */
+export const usePostVolumesBulkDelete = <
+  TError = ErrorResponse | ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postVolumesBulkDelete>>,
+      TError,
+      { data: BulkDeleteVolumesRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postVolumesBulkDelete>>,
+  TError,
+  { data: BulkDeleteVolumesRequest },
+  TContext
+> => {
+  const mutationOptions = getPostVolumesBulkDeleteMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
  * Scan multiple volumes at once, with support for async processing
  * @summary Bulk scan volumes
  */
@@ -24691,3 +28011,427 @@ export const usePostVolumesBulkScan = <
 
   return useMutation(mutationOptions, queryClient);
 };
+
+/**
+ * Export filtered and sorted volumes list in CSV format
+ * @summary Export volumes as CSV
+ */
+export type getVolumesExportCsvResponse200 = {
+  data: Blob;
+  status: 200;
+};
+
+export type getVolumesExportCsvResponse400 = {
+  data: ErrorResponse;
+  status: 400;
+};
+
+export type getVolumesExportCsvResponse500 = {
+  data: ErrorResponse;
+  status: 500;
+};
+
+export type getVolumesExportCsvResponseComposite =
+  | getVolumesExportCsvResponse200
+  | getVolumesExportCsvResponse400
+  | getVolumesExportCsvResponse500;
+
+export type getVolumesExportCsvResponse =
+  getVolumesExportCsvResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetVolumesExportCsvUrl = (
+  params?: GetVolumesExportCsvParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/volumes/export/csv?${stringifiedParams}`
+    : `/volumes/export/csv`;
+};
+
+export const getVolumesExportCsv = async (
+  params?: GetVolumesExportCsvParams,
+  options?: RequestInit,
+): Promise<getVolumesExportCsvResponse> => {
+  return customFetchClient<getVolumesExportCsvResponse>(
+    getGetVolumesExportCsvUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetVolumesExportCsvQueryKey = (
+  params?: GetVolumesExportCsvParams,
+) => {
+  return [`/volumes/export/csv`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetVolumesExportCsvQueryOptions = <
+  TData = Awaited<ReturnType<typeof getVolumesExportCsv>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params?: GetVolumesExportCsvParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getVolumesExportCsv>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetVolumesExportCsvQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getVolumesExportCsv>>
+  > = ({ signal }) =>
+    getVolumesExportCsv(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getVolumesExportCsv>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetVolumesExportCsvQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getVolumesExportCsv>>
+>;
+export type GetVolumesExportCsvQueryError = ErrorResponse | ErrorResponse;
+
+export function useGetVolumesExportCsv<
+  TData = Awaited<ReturnType<typeof getVolumesExportCsv>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params: undefined | GetVolumesExportCsvParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getVolumesExportCsv>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getVolumesExportCsv>>,
+          TError,
+          Awaited<ReturnType<typeof getVolumesExportCsv>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetVolumesExportCsv<
+  TData = Awaited<ReturnType<typeof getVolumesExportCsv>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params?: GetVolumesExportCsvParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getVolumesExportCsv>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getVolumesExportCsv>>,
+          TError,
+          Awaited<ReturnType<typeof getVolumesExportCsv>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetVolumesExportCsv<
+  TData = Awaited<ReturnType<typeof getVolumesExportCsv>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params?: GetVolumesExportCsvParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getVolumesExportCsv>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Export volumes as CSV
+ */
+
+export function useGetVolumesExportCsv<
+  TData = Awaited<ReturnType<typeof getVolumesExportCsv>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params?: GetVolumesExportCsvParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getVolumesExportCsv>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetVolumesExportCsvQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Export filtered and sorted volumes list in JSON format
+ * @summary Export volumes as JSON
+ */
+export type getVolumesExportJsonResponse200 = {
+  data: GetVolumesExportJson200;
+  status: 200;
+};
+
+export type getVolumesExportJsonResponse400 = {
+  data: ErrorResponse;
+  status: 400;
+};
+
+export type getVolumesExportJsonResponse500 = {
+  data: ErrorResponse;
+  status: 500;
+};
+
+export type getVolumesExportJsonResponseComposite =
+  | getVolumesExportJsonResponse200
+  | getVolumesExportJsonResponse400
+  | getVolumesExportJsonResponse500;
+
+export type getVolumesExportJsonResponse =
+  getVolumesExportJsonResponseComposite & {
+    headers: Headers;
+  };
+
+export const getGetVolumesExportJsonUrl = (
+  params?: GetVolumesExportJsonParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/volumes/export/json?${stringifiedParams}`
+    : `/volumes/export/json`;
+};
+
+export const getVolumesExportJson = async (
+  params?: GetVolumesExportJsonParams,
+  options?: RequestInit,
+): Promise<getVolumesExportJsonResponse> => {
+  return customFetchClient<getVolumesExportJsonResponse>(
+    getGetVolumesExportJsonUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetVolumesExportJsonQueryKey = (
+  params?: GetVolumesExportJsonParams,
+) => {
+  return [`/volumes/export/json`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetVolumesExportJsonQueryOptions = <
+  TData = Awaited<ReturnType<typeof getVolumesExportJson>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params?: GetVolumesExportJsonParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getVolumesExportJson>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetVolumesExportJsonQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getVolumesExportJson>>
+  > = ({ signal }) =>
+    getVolumesExportJson(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getVolumesExportJson>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetVolumesExportJsonQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getVolumesExportJson>>
+>;
+export type GetVolumesExportJsonQueryError = ErrorResponse | ErrorResponse;
+
+export function useGetVolumesExportJson<
+  TData = Awaited<ReturnType<typeof getVolumesExportJson>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params: undefined | GetVolumesExportJsonParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getVolumesExportJson>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getVolumesExportJson>>,
+          TError,
+          Awaited<ReturnType<typeof getVolumesExportJson>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetVolumesExportJson<
+  TData = Awaited<ReturnType<typeof getVolumesExportJson>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params?: GetVolumesExportJsonParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getVolumesExportJson>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getVolumesExportJson>>,
+          TError,
+          Awaited<ReturnType<typeof getVolumesExportJson>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetVolumesExportJson<
+  TData = Awaited<ReturnType<typeof getVolumesExportJson>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params?: GetVolumesExportJsonParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getVolumesExportJson>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Export volumes as JSON
+ */
+
+export function useGetVolumesExportJson<
+  TData = Awaited<ReturnType<typeof getVolumesExportJson>>,
+  TError = ErrorResponse | ErrorResponse,
+>(
+  params?: GetVolumesExportJsonParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getVolumesExportJson>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetVolumesExportJsonQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}

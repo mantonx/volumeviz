@@ -1067,6 +1067,208 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/duplicates/detect": {
+            "get": {
+                "description": "Find duplicate files by content hash in the specified volume and path",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Duplicates"
+                ],
+                "summary": "Detect duplicate files",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"media-library\"",
+                        "description": "Volume ID",
+                        "name": "volumeId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"/\"",
+                        "example": "\"/movies\"",
+                        "description": "Starting path",
+                        "name": "path",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1048576,
+                        "description": "Minimum file size in bytes",
+                        "name": "minSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 104857600,
+                        "description": "Maximum file size in bytes",
+                        "name": "maxSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Include empty files",
+                        "name": "includeEmpty",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/duplicates.DuplicateDetectionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/duplicates/detect-by-size": {
+            "get": {
+                "description": "Find potential duplicate files by matching file sizes (faster than hash-based detection)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Duplicates"
+                ],
+                "summary": "Detect potential duplicates by file size",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"media-library\"",
+                        "description": "Volume ID",
+                        "name": "volumeId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"/\"",
+                        "example": "\"/movies\"",
+                        "description": "Starting path",
+                        "name": "path",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1048576,
+                        "description": "Minimum file size in bytes",
+                        "name": "minSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 104857600,
+                        "description": "Maximum file size in bytes",
+                        "name": "maxSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Include empty files",
+                        "name": "includeEmpty",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/duplicates.DuplicateDetectionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/duplicates/verify/{groupId}": {
+            "post": {
+                "description": "Verify a size-based duplicate group by calculating and comparing file hashes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Duplicates"
+                ],
+                "summary": "Verify a duplicate group with hash comparison",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"size-dup-1\"",
+                        "description": "Duplicate group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Duplicate group to verify",
+                        "name": "group",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/duplicates.DuplicateGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/duplicates.DuplicateGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/explorer/browse": {
             "get": {
                 "description": "Browse folders with parent/child relationships for navigation breadcrumbs and tree structure",
@@ -1829,6 +2031,94 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/fs/aggregate": {
+            "get": {
+                "description": "Get hierarchical file system data with aggregated sizes and counts for visualization",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Explorer"
+                ],
+                "summary": "Get aggregated file system data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"media-library\"",
+                        "description": "Volume ID",
+                        "name": "volumeId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"/\"",
+                        "example": "\"/movies\"",
+                        "description": "Starting path",
+                        "name": "path",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 3,
+                        "description": "Maximum depth to traverse",
+                        "name": "maxDepth",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "size",
+                            "count"
+                        ],
+                        "type": "string",
+                        "default": "\"size\"",
+                        "description": "Statistic to aggregate",
+                        "name": "stat",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1048576,
+                        "description": "Minimum size filter in bytes",
+                        "name": "minSize",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10000,
+                        "type": "integer",
+                        "default": 1000,
+                        "description": "Maximum nodes to return",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AggregateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/metadata/files/by-duration": {
             "get": {
                 "description": "Retrieve files filtered by video/audio duration with pagination support",
@@ -2522,6 +2812,251 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/operations": {
+            "get": {
+                "description": "Retrieves paginated list of file operations for undo/rollback",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "Get operation history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume ID",
+                        "name": "volume_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/OperationHistory"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/operations/cleanup": {
+            "post": {
+                "description": "Removes old backup files based on retention policy",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "Cleanup backup files",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 30,
+                        "description": "Retention period in days",
+                        "name": "retention_days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/operations/{id}": {
+            "get": {
+                "description": "Retrieves detailed information about a specific operation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "Get operation details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Operation ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Operation"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes an operation from history and cleans up associated backups",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "Delete operation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Operation ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/operations/{id}/rollback": {
+            "post": {
+                "description": "Rolls back a completed operation or specific actions within it",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "Rollback operation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Operation ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Rollback request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RollbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/RollbackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/organizations/me": {
             "get": {
                 "description": "Get the organization details for the authenticated user",
@@ -2614,6 +3149,104 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Organization not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{id}": {
+            "get": {
+                "description": "Get organization details by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get organization by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Organization ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Organization details",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_organizations.OrganizationResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Organization not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{id}/stats": {
+            "get": {
+                "description": "Get organization usage statistics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get organization statistics",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Organization ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include growth metrics",
+                        "name": "include_growth",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Organization stats",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_organizations.OrganizationWithStatsResponse"
                         }
                     },
                     "404": {
@@ -2971,6 +3604,190 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scheduler/jobs": {
+            "get": {
+                "description": "Get status information for all scheduled jobs",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scheduler"
+                ],
+                "summary": "Get all scheduled jobs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_scheduler.JobStatus"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scheduler/jobs/{name}": {
+            "get": {
+                "description": "Get status information for a specific scheduled job",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scheduler"
+                ],
+                "summary": "Get job status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_services_scheduler.JobStatus"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scheduler/jobs/{name}/disable": {
+            "post": {
+                "description": "Disable a scheduled job (it will not run automatically)",
+                "tags": [
+                    "scheduler"
+                ],
+                "summary": "Disable a job",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scheduler/jobs/{name}/enable": {
+            "post": {
+                "description": "Enable a previously disabled scheduled job",
+                "tags": [
+                    "scheduler"
+                ],
+                "summary": "Enable a job",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scheduler/jobs/{name}/run": {
+            "post": {
+                "description": "Trigger a scheduled job to run immediately",
+                "tags": [
+                    "scheduler"
+                ],
+                "summary": "Manually run a job",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -3651,492 +4468,6 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/gin.H"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/accept-invitation": {
-            "post": {
-                "description": "Accept an organization invitation for an existing user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Accept organization invitation",
-                "parameters": [
-                    {
-                        "description": "Invitation acceptance",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.AcceptInvitationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/gin.H"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/csrf": {
-            "get": {
-                "description": "Get CSRF token for state-changing operations",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Get CSRF token",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/login": {
-            "post": {
-                "description": "Authenticate user and return JWT token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "User login",
-                "parameters": [
-                    {
-                        "description": "Login credentials",
-                        "name": "credentials",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/logout": {
-            "post": {
-                "description": "Logout user and revoke session",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Logout",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/me": {
-            "get": {
-                "description": "Get authenticated user's profile information",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Get current user profile",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.UserProfile"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/password/change": {
-            "post": {
-                "description": "Change authenticated user's password",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Change password",
-                "parameters": [
-                    {
-                        "description": "Password change request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.PasswordChangeRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/password/force-change": {
-            "post": {
-                "description": "Change default admin password (requires current default password)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Force password change for default admin",
-                "parameters": [
-                    {
-                        "description": "Forced password change request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.ForcePasswordChangeRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/password/reset": {
-            "post": {
-                "description": "Request password reset email",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Request password reset",
-                "parameters": [
-                    {
-                        "description": "Password reset request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.PasswordResetRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/refresh": {
-            "post": {
-                "description": "Refresh access token using refresh token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Refresh access token",
-                "parameters": [
-                    {
-                        "description": "Refresh token request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.RefreshTokenRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/register": {
-            "post": {
-                "description": "Register a new user account",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "User registration",
-                "parameters": [
-                    {
-                        "description": "Registration details",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.RegisterRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/register/invitation": {
-            "post": {
-                "description": "Register a new user with an organization invitation token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Register with invitation token",
-                "parameters": [
-                    {
-                        "description": "Registration with invitation",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.RegisterWithInvitationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
                         }
                     }
                 }
@@ -5064,6 +5395,136 @@ const docTemplate = `{
                 }
             }
         },
+        "/snapshots/stats": {
+            "get": {
+                "description": "Get aggregate statistics about volume snapshots",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "snapshots"
+                ],
+                "summary": "Get snapshot statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/snapshots/volumes/{volume_id}": {
+            "get": {
+                "description": "Get snapshot history for a specific volume",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "snapshots"
+                ],
+                "summary": "Get volume snapshots",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume ID",
+                        "name": "volume_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit number of results",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/snapshots/volumes/{volume_id}/latest": {
+            "get": {
+                "description": "Get the most recent snapshot for a specific volume",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "snapshots"
+                ],
+                "summary": "Get latest snapshot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume ID",
+                        "name": "volume_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/stats/daily": {
             "get": {
                 "description": "Get daily aggregated statistics for a volume",
@@ -5691,6 +6152,300 @@ const docTemplate = `{
                 }
             }
         },
+        "/users": {
+            "get": {
+                "description": "List all users in the organization (admin only)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 25,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new user in the organization (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create a new user",
+                "parameters": [
+                    {
+                        "description": "User creation request",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_users.CreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_users.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "description": "Get a specific user by ID (admin only)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_users.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update user details (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update a user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User update request",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_users.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_users.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a user (admin only)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete a user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/volumes": {
             "get": {
                 "description": "Get paginated list of Docker volumes with filtering, sorting, and search capabilities",
@@ -5788,6 +6543,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/volumes/bulk-delete": {
+            "post": {
+                "description": "Delete multiple Docker volumes by their IDs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "volumes"
+                ],
+                "summary": "Bulk delete volumes",
+                "parameters": [
+                    {
+                        "description": "Volume IDs to delete",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/BulkDeleteVolumesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Delete results",
+                        "schema": {
+                            "$ref": "#/definitions/BulkDeleteVolumesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/volumes/bulk-scan": {
             "post": {
                 "description": "Scan multiple volumes at once, with support for async processing",
@@ -5832,6 +6633,165 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/volumes/export/csv": {
+            "get": {
+                "description": "Export filtered and sorted volumes list in CSV format",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "volumes"
+                ],
+                "summary": "Export volumes as CSV",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number for pagination (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 1000, max: 10000 for exports)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field and direction",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query to filter volumes by name",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by volume driver",
+                        "name": "driver",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter orphaned volumes",
+                        "name": "orphaned",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include system volumes",
+                        "name": "system",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "CSV file download",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/volumes/export/json": {
+            "get": {
+                "description": "Export filtered and sorted volumes list in JSON format",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "volumes"
+                ],
+                "summary": "Export volumes as JSON",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number for pagination (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 1000, max: 10000 for exports)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field and direction",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query to filter volumes by name",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by volume driver",
+                        "name": "driver",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter orphaned volumes",
+                        "name": "orphaned",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include system volumes",
+                        "name": "system",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "JSON export",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -6347,6 +7307,151 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "AggregateMetadata": {
+            "type": "object",
+            "properties": {
+                "cache_hit": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "compute_time_ms": {
+                    "type": "integer",
+                    "example": 125
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "truncated": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "AggregateResponse": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "$ref": "#/definitions/AggregateMetadata"
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AggregateTreeNode"
+                    }
+                },
+                "stats": {
+                    "$ref": "#/definitions/AggregateStats"
+                }
+            }
+        },
+        "AggregateStats": {
+            "type": "object",
+            "properties": {
+                "avg_file_size": {
+                    "type": "integer",
+                    "example": 10485760
+                },
+                "dir_count": {
+                    "type": "integer",
+                    "example": 234
+                },
+                "file_count": {
+                    "type": "integer",
+                    "example": 1000
+                },
+                "largest_file": {
+                    "$ref": "#/definitions/FileRef"
+                },
+                "last_modified": {
+                    "type": "string"
+                },
+                "max_depth": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "median_size": {
+                    "type": "integer",
+                    "example": 5242880
+                },
+                "total_count": {
+                    "type": "integer",
+                    "example": 1234
+                },
+                "total_size": {
+                    "type": "integer",
+                    "example": 10737418240
+                }
+            }
+        },
+        "AggregateTreeNode": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AggregateTreeNode"
+                    }
+                },
+                "color": {
+                    "type": "string",
+                    "example": "#3b82f6"
+                },
+                "count": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "created": {
+                    "type": "string"
+                },
+                "depth": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "extension": {
+                    "type": "string",
+                    "example": "mp4"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "node-123"
+                },
+                "mime_type": {
+                    "type": "string",
+                    "example": "video/mp4"
+                },
+                "modified": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "movies"
+                },
+                "opacity": {
+                    "type": "number",
+                    "example": 0.8
+                },
+                "parent_path": {
+                    "type": "string",
+                    "example": "/media"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/media/movies"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 4294967296
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "file",
+                        "directory"
+                    ],
+                    "example": "directory"
+                }
+            }
+        },
         "AsyncScanResponse": {
             "type": "object",
             "properties": {
@@ -6361,6 +7466,70 @@ const docTemplate = `{
                 "volume_id": {
                     "type": "string",
                     "example": "tv-shows-readonly"
+                }
+            }
+        },
+        "BulkDeleteResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "volume is in use"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "volume_id": {
+                    "type": "string",
+                    "example": "vol1"
+                }
+            }
+        },
+        "BulkDeleteVolumesRequest": {
+            "type": "object",
+            "required": [
+                "volume_ids"
+            ],
+            "properties": {
+                "force": {
+                    "description": "Force deletion even if volume is in use",
+                    "type": "boolean",
+                    "example": false
+                },
+                "volume_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "vol1",
+                        "vol2",
+                        "vol3"
+                    ]
+                }
+            }
+        },
+        "BulkDeleteVolumesResponse": {
+            "type": "object",
+            "properties": {
+                "failure_count": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BulkDeleteResult"
+                    }
+                },
+                "success_count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "total_requested": {
+                    "type": "integer",
+                    "example": 5
                 }
             }
         },
@@ -6456,24 +7625,45 @@ const docTemplate = `{
                 }
             }
         },
+        "DuplicateFile": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string",
+                    "example": "d41d8cd98f00b204e9800998ecf8427e"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "file-123"
+                },
+                "modified_time": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "img1.jpg"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/media/photos/img1.jpg"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 2048000
+                },
+                "volume_id": {
+                    "type": "string",
+                    "example": "media-library"
+                }
+            }
+        },
         "ErrorResponse": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "VOLUME_NOT_FOUND"
-                },
-                "details": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
                 "error": {
                     "type": "string",
-                    "example": "Volume not found"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Additional error details"
+                    "example": "Invalid request"
                 }
             }
         },
@@ -6598,6 +7788,27 @@ const docTemplate = `{
                 "uid": {
                     "type": "integer",
                     "example": 1000
+                }
+            }
+        },
+        "FileRef": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "file-456"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "large-video.mp4"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/media/movies/large-video.mp4"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 5368709120
                 }
             }
         },
@@ -6985,6 +8196,161 @@ const docTemplate = `{
                 }
             }
         },
+        "Operation": {
+            "type": "object",
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OperationAction"
+                    }
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Delete 5 duplicate files"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "op-123"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/OperationMetadata"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.OperationStatus"
+                        }
+                    ],
+                    "example": "completed"
+                },
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.OperationType"
+                        }
+                    ],
+                    "example": "delete"
+                },
+                "volume_id": {
+                    "type": "string",
+                    "example": "media-library"
+                }
+            }
+        },
+        "OperationAction": {
+            "type": "object",
+            "properties": {
+                "backup_path": {
+                    "type": "string",
+                    "example": "/tmp/volumeviz-backup/img1.jpg"
+                },
+                "error_message": {
+                    "type": "string"
+                },
+                "executed_at": {
+                    "type": "string"
+                },
+                "file_size": {
+                    "type": "integer",
+                    "example": 2048000
+                },
+                "id": {
+                    "type": "string",
+                    "example": "action-456"
+                },
+                "source_path": {
+                    "type": "string",
+                    "example": "/media/photos/img1.jpg"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "completed"
+                },
+                "target_path": {
+                    "type": "string",
+                    "example": "/media/photos/backup/img1.jpg"
+                },
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.OperationType"
+                        }
+                    ],
+                    "example": "delete"
+                }
+            }
+        },
+        "OperationHistory": {
+            "type": "object",
+            "properties": {
+                "operations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Operation"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/PaginationResponse"
+                }
+            }
+        },
+        "OperationMetadata": {
+            "type": "object",
+            "properties": {
+                "processed_files": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "risk_level": {
+                    "type": "string",
+                    "example": "medium"
+                },
+                "saved_space_bytes": {
+                    "type": "integer",
+                    "example": 8192000
+                },
+                "total_files": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "total_size_bytes": {
+                    "type": "integer",
+                    "example": 10240000
+                },
+                "workflow_id": {
+                    "type": "string",
+                    "example": "cleanup-workflow-789"
+                }
+            }
+        },
+        "PaginationResponse": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "pages": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 1234
+                }
+            }
+        },
         "RefreshRequest": {
             "type": "object",
             "properties": {
@@ -6995,6 +8361,78 @@ const docTemplate = `{
                 "method": {
                     "type": "string",
                     "example": "du"
+                }
+            }
+        },
+        "RollbackFailure": {
+            "type": "object",
+            "properties": {
+                "action_id": {
+                    "type": "string",
+                    "example": "action-456"
+                },
+                "error_message": {
+                    "type": "string",
+                    "example": "Source file no longer exists"
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "backup_missing"
+                }
+            }
+        },
+        "RollbackRequest": {
+            "type": "object",
+            "properties": {
+                "action_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"action-456\"",
+                        " \"action-789\"]"
+                    ]
+                },
+                "operation_id": {
+                    "type": "string",
+                    "example": "op-123"
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "User requested rollback"
+                }
+            }
+        },
+        "RollbackResponse": {
+            "type": "object",
+            "properties": {
+                "completed_at": {
+                    "type": "string"
+                },
+                "failed": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/RollbackFailure"
+                    }
+                },
+                "operation_id": {
+                    "type": "string",
+                    "example": "rollback-op-321"
+                },
+                "rolled_back": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"action-456\"",
+                        " \"action-789\"]"
+                    ]
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -7160,6 +8598,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "local"
                 },
+                "file_count": {
+                    "description": "File/folder counts from filesystem indexing",
+                    "type": "integer",
+                    "example": 1250
+                },
                 "filesystem_capacity": {
                     "$ref": "#/definitions/FilesystemCapacity"
                 },
@@ -7172,6 +8615,11 @@ const docTemplate = `{
                     "description": "Background filesystem indexing status",
                     "type": "string",
                     "example": "indexing"
+                },
+                "folder_count": {
+                    "description": "Total number of folders indexed",
+                    "type": "integer",
+                    "example": 150
                 },
                 "is_orphaned": {
                     "type": "boolean",
@@ -7224,6 +8672,131 @@ const docTemplate = `{
                 "size_bytes": {
                     "type": "integer",
                     "example": 1073741824
+                },
+                "status": {
+                    "description": "Volume status (computed from scan status and active state)",
+                    "type": "string",
+                    "example": "active"
+                }
+            }
+        },
+        "duplicates.DetectionParameters": {
+            "type": "object",
+            "properties": {
+                "include_empty": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "max_size": {
+                    "type": "integer",
+                    "example": 104857600
+                },
+                "min_size": {
+                    "type": "integer",
+                    "example": 1048576
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/movies"
+                },
+                "volume_id": {
+                    "type": "string",
+                    "example": "media-library"
+                }
+            }
+        },
+        "duplicates.DuplicateDetectionResponse": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/duplicates.DuplicateGroup"
+                    }
+                },
+                "parameters": {
+                    "$ref": "#/definitions/duplicates.DetectionParameters"
+                },
+                "processing_time_ms": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "$ref": "#/definitions/duplicates.DuplicateSummary"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "duplicates.DuplicateGroup": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/DuplicateFile"
+                    }
+                },
+                "hash": {
+                    "type": "string",
+                    "example": "d41d8cd98f00b204e9800998ecf8427e"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "dup-1"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 2048000
+                },
+                "wasted_space": {
+                    "type": "integer",
+                    "example": 4096000
+                }
+            }
+        },
+        "duplicates.DuplicateSummary": {
+            "type": "object",
+            "properties": {
+                "largest_group": {
+                    "type": "object",
+                    "properties": {
+                        "count": {
+                            "type": "integer",
+                            "example": 8
+                        },
+                        "id": {
+                            "type": "string",
+                            "example": "dup-5"
+                        },
+                        "wasted_space": {
+                            "type": "integer",
+                            "example": 134217728
+                        }
+                    }
+                },
+                "processed_files": {
+                    "type": "integer",
+                    "example": 10000
+                },
+                "total_duplicates": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "total_groups": {
+                    "type": "integer",
+                    "example": 15
+                },
+                "total_wasted_space": {
+                    "type": "integer",
+                    "example": 536870912
                 }
             }
         },
@@ -7582,6 +9155,38 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
+        },
+        "github_com_mantonx_volumeviz_internal_models.OperationStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "in_progress",
+                "completed",
+                "failed",
+                "rolled_back"
+            ],
+            "x-enum-varnames": [
+                "OperationStatusPending",
+                "OperationStatusInProgress",
+                "OperationStatusCompleted",
+                "OperationStatusFailed",
+                "OperationStatusRolledBack"
+            ]
+        },
+        "github_com_mantonx_volumeviz_internal_models.OperationType": {
+            "type": "string",
+            "enum": [
+                "delete",
+                "move",
+                "copy",
+                "rename"
+            ],
+            "x-enum-varnames": [
+                "OperationTypeDelete",
+                "OperationTypeMove",
+                "OperationTypeCopy",
+                "OperationTypeRename"
+            ]
         },
         "github_com_mantonx_volumeviz_internal_models.UpdateAlertDestinationParams": {
             "type": "object",
@@ -8033,205 +9638,38 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_api_v1_auth.AcceptInvitationRequest": {
-            "type": "object",
-            "required": [
-                "token"
-            ],
-            "properties": {
-                "token": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_api_v1_auth.AuthResponse": {
+        "github_com_mantonx_volumeviz_internal_services_scheduler.JobStatus": {
             "type": "object",
             "properties": {
-                "expires_at": {
+                "description": {
                     "type": "string"
                 },
-                "refresh_token": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "errorCount": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "interval": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "lastDuration": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "lastError": {},
+                "lastRun": {
                     "type": "string"
                 },
-                "token": {
+                "name": {
                     "type": "string"
                 },
-                "user": {
-                    "$ref": "#/definitions/internal_api_v1_auth.UserProfile"
-                }
-            }
-        },
-        "internal_api_v1_auth.ForcePasswordChangeRequest": {
-            "type": "object",
-            "required": [
-                "current_password",
-                "new_password"
-            ],
-            "properties": {
-                "current_password": {
+                "nextRun": {
                     "type": "string"
                 },
-                "new_password": {
-                    "type": "string",
-                    "minLength": 8
-                }
-            }
-        },
-        "internal_api_v1_auth.LoginRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_api_v1_auth.PasswordChangeRequest": {
-            "type": "object",
-            "required": [
-                "current_password",
-                "new_password"
-            ],
-            "properties": {
-                "current_password": {
-                    "type": "string"
-                },
-                "new_password": {
-                    "type": "string",
-                    "minLength": 8
-                }
-            }
-        },
-        "internal_api_v1_auth.PasswordResetRequest": {
-            "type": "object",
-            "required": [
-                "email"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_api_v1_auth.RefreshTokenRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_api_v1_auth.RegisterRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "password",
-                "username"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                },
-                "role": {
-                    "description": "Only admin can set role",
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 3
-                }
-            }
-        },
-        "internal_api_v1_auth.RegisterWithInvitationRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "password",
-                "token",
-                "username"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                },
-                "token": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 3
-                }
-            }
-        },
-        "internal_api_v1_auth.UserProfile": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "display_name": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "last_login_at": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "organization_id": {
-                    "type": "integer"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "timezone": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
+                "runCount": {
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },
@@ -10004,6 +11442,90 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "internal_api_v1_users.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "organization_id",
+                "password",
+                "role",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "operator",
+                        "user",
+                        "viewer"
+                    ]
+                },
+                "username": {
+                    "type": "string",
+                    "minLength": 3
+                }
+            }
+        },
+        "internal_api_v1_users.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "operator",
+                        "user",
+                        "viewer"
+                    ]
+                }
+            }
+        },
+        "internal_api_v1_users.UserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "last_login_at": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },

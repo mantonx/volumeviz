@@ -10,20 +10,45 @@
  * - Delete users (with confirmation)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Search, Plus, Edit, Trash2, CheckCircle, XCircle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { getUsers } from '@/api/client';
 
-// Mock data for now - will be replaced with API calls
-const mockUsers = [
-  { id: 1, username: 'admin', email: 'admin@volumeviz.local', role: 'admin', isActive: true, organizationId: 1, createdAt: '2025-10-09' },
-  { id: 7, username: 'demouser', email: 'demo@volumeviz.local', role: 'user', isActive: true, organizationId: 1, createdAt: '2025-10-10' },
-];
+interface UserData {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  organization_id: number;
+  created_at: string;
+  last_login_at?: string;
+}
 
 export const UsersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [users] = useState(mockUsers);
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await getUsers({ page: 1, page_size: 100 });
+        const data = response.data as any;
+        setUsers(data?.data || []);
+      } catch (err: any) {
+        console.error('Failed to fetch users:', err);
+        setError(err.message || 'Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const filteredUsers = users.filter(user =>
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -119,7 +144,7 @@ export const UsersPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user.isActive ? (
+                    {user.is_active ? (
                       <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
                         <CheckCircle className="h-4 w-4" />
                         Active
@@ -132,10 +157,10 @@ export const UsersPage: React.FC = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {user.organizationId}
+                    {user.organization_id}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {user.createdAt}
+                    {new Date(user.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
