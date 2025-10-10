@@ -68,10 +68,10 @@ export function WebSocketProvider({
       reconnectInterval: mergedConfig.reconnectInterval,
       reconnectAttempts: mergedConfig.reconnectAttempts,
       onOpen: (event: WebSocketEventMap['open']) => {
-        console.log('[WebSocket] Connection opened');
+        // Connection opened - silent unless debugging
       },
       onClose: (event: WebSocketEventMap['close']) => {
-        console.log('[WebSocket] Connection closed:', event.code);
+        // Connection closed - silent unless debugging
       },
       onError: (event: WebSocketEventMap['error']) => {
         console.error('[WebSocket] Connection error');
@@ -122,12 +122,7 @@ export function WebSocketProvider({
         clearWebSocketData();
       }
 
-      console.log('[WebSocket] Connection state:', {
-        readyState,
-        isConnected: newState.isConnected,
-        reconnectAttempts: newState.reconnectAttempts,
-      });
-
+      // Connection state updated - silent unless debugging
       return newState;
     });
   }, [readyState, updateConnectionState, clearWebSocketData]);
@@ -140,8 +135,6 @@ export function WebSocketProvider({
 
     try {
       const parsedMessage: WebSocketMessage = JSON.parse(lastMessage.data);
-
-      console.log('[WebSocket] Received message:', parsedMessage);
 
       // Add to message history
       addMessageToHistory(parsedMessage);
@@ -156,27 +149,18 @@ export function WebSocketProvider({
       mergedConfig.messageHandlers?.forEach((handler) => {
         if (handler.type === parsedMessage.type) {
           try {
-            console.log(
-              `[WebSocket] Calling handler for ${handler.type}:`,
-              parsedMessage.data,
-            );
             handler.handler(parsedMessage.data, parsedMessage);
           } catch (error) {
             console.error(
-              `Error in message handler for ${handler.type}:`,
+              `[WebSocket] Error in message handler for ${handler.type}:`,
               error,
             );
           }
         }
       });
-
-      // Handle system messages
-      if (parsedMessage.type.startsWith('system.')) {
-        console.log('[WebSocket] System message:', parsedMessage);
-      }
     } catch (error) {
       console.error(
-        'Failed to parse WebSocket message:',
+        '[WebSocket] Failed to parse message:',
         error,
         'Raw:',
         lastMessage.data,
@@ -220,15 +204,11 @@ export function WebSocketProvider({
           filters: filters || {},
         };
 
-        console.log('[WebSocket] Sending subscription:', subscriptionRequest);
         sendMessage(JSON.stringify(subscriptionRequest));
         addSubscription({ event, filters });
         return true;
       } else {
-        console.warn(
-          '[WebSocket] Cannot subscribe - connection not open:',
-          readyState,
-        );
+        // Cannot subscribe - connection not open
         return false;
       }
     },
@@ -250,15 +230,11 @@ export function WebSocketProvider({
           filters: filters || {},
         };
 
-        console.log('[WebSocket] Sending unsubscription:', subscriptionRequest);
         sendMessage(JSON.stringify(subscriptionRequest));
         removeSubscription(event);
         return true;
       } else {
-        console.warn(
-          '[WebSocket] Cannot unsubscribe - connection not open:',
-          readyState,
-        );
+        // Cannot unsubscribe - connection not open
         return false;
       }
     },

@@ -725,3 +725,36 @@ func (eb *Broadcaster) BroadcastCapacityAlert(volumeID string, severity string, 
 func generateAlertID() string {
 	return "alert_" + time.Now().Format("20060102150405")
 }
+
+// BroadcastVolumeSizeUpdate broadcasts volume size updates in real-time (Phase 3)
+func (eb *Broadcaster) BroadcastVolumeSizeUpdate(volumeID string, sizeBytes int64, calculationTime float64) {
+	if eb.service == nil {
+		return
+	}
+
+	data := map[string]interface{}{
+		"volume_id":        volumeID,
+		"size_bytes":       sizeBytes,
+		"calculation_time": calculationTime,
+		"timestamp":        time.Now(),
+	}
+
+	// Broadcast to all connected clients using BroadcastToRoom with wildcard
+	eb.service.BroadcastToRoom("*", "volume.size_updated", data)
+}
+
+// BroadcastVolumeMetadataUpdate broadcasts volume metadata changes (Phase 3)
+func (eb *Broadcaster) BroadcastVolumeMetadataUpdate(volumeID string, metadata interface{}) {
+	if eb.service == nil {
+		return
+	}
+
+	data := map[string]interface{}{
+		"volume_id": volumeID,
+		"metadata":  metadata,
+		"timestamp": time.Now(),
+	}
+
+	// Broadcast to all connected clients using BroadcastToRoom with wildcard
+	eb.service.BroadcastToRoom("*", "volume.metadata_updated", data)
+}

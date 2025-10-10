@@ -57,6 +57,20 @@ export const customFetchClient = async <T = any>(
     headers.set('Content-Type', 'application/json');
   }
 
+  // Add cache-busting headers for GET requests to prevent stale data
+  const method = fetchConfig.method?.toUpperCase() || 'GET';
+  if (method === 'GET') {
+    if (!headers.has('Cache-Control')) {
+      headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+    if (!headers.has('Pragma')) {
+      headers.set('Pragma', 'no-cache');
+    }
+    if (!headers.has('Expires')) {
+      headers.set('Expires', '0');
+    }
+  }
+
   // Create abort controller for timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);

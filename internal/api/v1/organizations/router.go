@@ -30,10 +30,22 @@ func (r *Router) RegisterRoutes(v1 *gin.RouterGroup, authMiddleware gin.HandlerF
 	orgsAuth := v1.Group("/organizations")
 	orgsAuth.Use(authMiddleware)
 	{
+		// List all organizations (admin only)
+		orgsAuth.GET("", r.handler.ListOrganizations)
+
+		// Create new organization (admin only)
+		orgsAuth.POST("", r.handler.CreateOrganization)
+
 		// Get current user's organization
 		orgsAuth.GET("/me", r.handler.GetMyOrganization)
 
 		// Update current user's organization (admin only)
 		orgsAuth.PUT("/me", r.handler.UpdateMyOrganization)
+
+		// Update organization by ID (admin only)
+		orgsAuth.PUT("/:id", r.handler.UpdateOrganization)
+
+		// Delete organization by ID (admin only)
+		orgsAuth.DELETE("/:id", r.handler.DeleteOrganization)
 	}
 }

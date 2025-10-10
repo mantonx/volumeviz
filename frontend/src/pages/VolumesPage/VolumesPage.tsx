@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VolumesList } from '@/components/domain/volumes';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { usePostVolumesBulkScan } from '@/api/orval-generated/api';
+import { useVolumeWebSocket } from '@/hooks/useVolumeWebSocket';
 import {
   HardDrive,
   Trash2,
@@ -29,6 +30,39 @@ export const VolumesPage: React.FC = () => {
   const [isBulkScanModalOpen, setIsBulkScanModalOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [selectedVolumes, setSelectedVolumes] = useState<string[]>([]);
+
+  // Real-time updates via WebSocket
+  const { isConnected, onSizeUpdate, onMetadataUpdate, onScanProgress } = useVolumeWebSocket({
+    enabled: true,
+  });
+
+  // Track volume updates for refresh indicator
+  const [hasUpdates, setHasUpdates] = useState(false);
+
+  // Listen for volume size updates
+  useEffect(() => {
+    const cleanupSize = onSizeUpdate((event) => {
+      console.log('[VolumesPage] Volume size updated:', event);
+      setHasUpdates(true);
+      // Could trigger a refetch or optimistically update the UI here
+    });
+
+    const cleanupMetadata = onMetadataUpdate((event) => {
+      console.log('[VolumesPage] Volume metadata updated:', event);
+      setHasUpdates(true);
+    });
+
+    const cleanupProgress = onScanProgress((event) => {
+      console.log('[VolumesPage] Scan progress:', event);
+      // Could show progress indicator here
+    });
+
+    return () => {
+      cleanupSize();
+      cleanupMetadata();
+      cleanupProgress();
+    };
+  }, [onSizeUpdate, onMetadataUpdate, onScanProgress]);
 
   // Bulk scan mutation
   const bulkScanMutation = usePostVolumesBulkScan();

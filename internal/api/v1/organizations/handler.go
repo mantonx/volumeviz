@@ -67,6 +67,18 @@ type OrganizationLimits struct {
 	StorageLeftGB *float64 `json:"storage_left_gb,omitempty" example:"499.5"`
 }
 
+// CreateOrganizationRequest represents a request to create a new organization
+type CreateOrganizationRequest struct {
+	Name         string  `json:"name" binding:"required,min=3" example:"acme-corp"`
+	DisplayName  string  `json:"display_name" binding:"required,min=3" example:"ACME Corporation"`
+	Description  *string `json:"description,omitempty" example:"A leading technology company"`
+	Subdomain    *string `json:"subdomain,omitempty" example:"acme"`
+	MaxUsers     *int32  `json:"max_users,omitempty" example:"50"`
+	MaxVolumes   *int32  `json:"max_volumes,omitempty" example:"100"`
+	MaxStorageGB *int64  `json:"max_storage_gb,omitempty" example:"1000"`
+	PlanType     *string `json:"plan_type,omitempty" example:"pro" enums:"free,pro,enterprise"`
+}
+
 // UpdateOrganizationRequest represents a request to update organization details
 type UpdateOrganizationRequest struct {
 	DisplayName  string  `json:"display_name" binding:"required,min=3" example:"ACME Corporation"`
@@ -364,4 +376,210 @@ func (h *Handler) GetOrganizationStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+// ListOrganizations returns a list of all organizations (admin only)
+// @Summary List all organizations
+// @Description List all organizations in the system (admin only)
+// @Tags organizations
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(25)
+// @Success 200 {object} map[string]interface{} "List of organizations"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden - admin required"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /organizations [get]
+func (h *Handler) ListOrganizations(c *gin.Context) {
+	// Admin check is handled by middleware
+
+	// Parse pagination parameters
+	page := 1
+	pageSize := 25
+	if p := c.Query("page"); p != "" {
+		fmt.Sscanf(p, "%d", &page)
+	}
+	if ps := c.Query("page_size"); ps != "" {
+		fmt.Sscanf(ps, "%d", &pageSize)
+	}
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 25
+	}
+
+	offset := int32((page - 1) * pageSize)
+	limit := int32(pageSize)
+
+	// Get organizations from service layer
+	orgs, err := h.organizationSvc.ListOrganizations(c.Request.Context(), limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list organizations", "details": err.Error()})
+		return
+	}
+
+	// Get total count
+	total, err := h.organizationSvc.CountOrganizations(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count organizations", "details": err.Error()})
+		return
+	}
+
+	// Transform to response
+	response := make([]OrganizationResponse, len(orgs))
+	for i, org := range orgs {
+		response[i] = h.convertServiceOrgToResponse(*org)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":      response,
+		"page":      page,
+		"page_size": pageSize,
+		"total":     total,
+	})
+}
+
+// CreateOrganization creates a new organization (admin only)
+// @Summary Create organization
+// @Description Create a new organization (admin only)
+// @Tags organizations
+// @Accept json
+// @Produce json
+// @Param request body CreateOrganizationRequest true "Organization creation details"
+// @Success 201 {object} OrganizationResponse "Created organization"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden - admin required"
+// @Failure 409 {object} map[string]interface{} "Conflict - organization already exists"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /organizations [post]
+func (h *Handler) CreateOrganization(c *gin.Context) {
+	var req CreateOrganizationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+		return
+	}
+
+	// Convert API request to service request
+	createReq := organizationsService.CreateOrganizationRequest{
+		Name:         req.Name,
+		DisplayName:  req.DisplayName,
+		Description:  req.Description,
+		Subdomain:    req.Subdomain,
+		MaxUsers:     req.MaxUsers,
+		MaxVolumes:   req.MaxVolumes,
+		MaxStorageGB: req.MaxStorageGB,
+		PlanType:     req.PlanType,
+	}
+
+	// Create organization using service
+	org, err := h.organizationSvc.CreateOrganization(c.Request.Context(), createReq)
+	if err != nil {
+		// Check for duplicate name
+		if err.Error() == "organization with this name already exists" {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create organization", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, h.convertServiceOrgToResponse(*org))
+}
+
+// UpdateOrganization updates an organization by ID (admin only)
+// @Summary Update organization
+// @Description Update organization details by ID (admin only)
+// @Tags organizations
+// @Accept json
+// @Produce json
+// @Param id path int true "Organization ID"
+// @Param request body UpdateOrganizationRequest true "Organization update details"
+// @Success 200 {object} OrganizationResponse "Updated organization"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden - admin required"
+// @Failure 404 {object} map[string]interface{} "Organization not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /organizations/{id} [put]
+func (h *Handler) UpdateOrganization(c *gin.Context) {
+	orgID := c.Param("id")
+
+	// Parse organization ID
+	var id int64
+	if _, err := fmt.Sscanf(orgID, "%d", &id); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization ID"})
+		return
+	}
+
+	var req UpdateOrganizationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+		return
+	}
+
+	// Convert API request to service request
+	updateReq := organizationsService.UpdateOrganizationRequest{
+		DisplayName:  &req.DisplayName,
+		Description:  req.Description,
+		Subdomain:    req.Subdomain,
+		MaxUsers:     req.MaxUsers,
+		MaxVolumes:   req.MaxVolumes,
+		MaxStorageGB: req.MaxStorageGB,
+		PlanType:     req.PlanType,
+	}
+
+	// Update organization using service
+	updatedOrg, err := h.organizationSvc.UpdateOrganization(c.Request.Context(), id, updateReq)
+	if err != nil {
+		if err.Error() == "organization not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update organization", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, h.convertServiceOrgToResponse(*updatedOrg))
+}
+
+// DeleteOrganization deletes an organization by ID (admin only)
+// @Summary Delete organization
+// @Description Delete an organization by ID (admin only)
+// @Tags organizations
+// @Accept json
+// @Produce json
+// @Param id path int true "Organization ID"
+// @Success 204 "Organization deleted successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden - admin required"
+// @Failure 404 {object} map[string]interface{} "Organization not found"
+// @Failure 409 {object} map[string]interface{} "Conflict - organization has users or volumes"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /organizations/{id} [delete]
+func (h *Handler) DeleteOrganization(c *gin.Context) {
+	orgID := c.Param("id")
+
+	// Parse organization ID
+	var id int64
+	if _, err := fmt.Sscanf(orgID, "%d", &id); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization ID"})
+		return
+	}
+
+	// Delete organization (soft delete)
+	err := h.organizationSvc.DeleteOrganization(c.Request.Context(), id)
+	if err != nil {
+		if err.Error() == "organization not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete organization", "details": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

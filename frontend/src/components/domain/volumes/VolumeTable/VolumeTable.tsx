@@ -434,52 +434,134 @@ const ExpandedVolumeRow = React.memo<{
 }>(({ volume, volumeId, sizePercentage }) => {
   return (
     <tr>
-      <td colSpan={8} className="px-6 py-4 bg-gray-50">
+      <td colSpan={8} className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
         {/* Scan Progress Detail - shows if volume is actively scanning */}
         <ScanProgressDetail volumeId={volumeId} volumeName={volume.name} className="mb-4" />
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <span className="font-medium text-gray-700">Created:</span>
-            <div className="text-gray-600">
-              {new Date(volume.created_at).toLocaleDateString()}
-            </div>
-          </div>
-          <div>
-            <span className="font-medium text-gray-700">Updated:</span>
-            <div className="text-gray-600">
-              {volume.updated_at
-                ? new Date(volume.updated_at).toLocaleDateString()
-                : '—'}
-            </div>
-          </div>
-          {volume.quota_bytes && (
-            <div>
-              <span className="font-medium text-gray-700">Usage:</span>
-              <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className={cn(
-                    'h-2 rounded-full',
-                    sizePercentage > 90
-                      ? 'bg-red-500'
-                      : sizePercentage > 75
-                        ? 'bg-yellow-500'
-                        : 'bg-blue-500',
-                  )}
-                  style={{
-                    width: `${Math.min(sizePercentage, 100)}%`,
-                  }}
-                />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Volume Information */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm uppercase tracking-wide">Volume Info</h4>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Mount Point:</span>
+                <div className="text-gray-600 dark:text-gray-400 font-mono text-xs break-all">
+                  {volume.mountpoint || volume.mount_point || '—'}
+                </div>
               </div>
+              <div>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Driver:</span>
+                <div className="text-gray-600 dark:text-gray-400">
+                  {volume.driver || '—'}
+                </div>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Scope:</span>
+                <div className="text-gray-600 dark:text-gray-400">
+                  {volume.scope || '—'}
+                </div>
+              </div>
+              {volume.labels && Object.keys(volume.labels).length > 0 && (
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Labels:</span>
+                  <div className="text-gray-600 dark:text-gray-400 text-xs space-y-1 mt-1">
+                    {Object.entries(volume.labels).map(([key, value]) => (
+                      <div key={key} className="font-mono">
+                        {key}: {String(value)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-          {volume.error_message && (
-            <div>
-              <span className="font-medium text-red-700">Error:</span>
-              <div className="text-red-600 text-xs">{volume.error_message}</div>
+          </div>
+
+          {/* Timestamps & Status */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm uppercase tracking-wide">Timestamps</h4>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Created:</span>
+                <div className="text-gray-600 dark:text-gray-400">
+                  {volume.created_at ? new Date(volume.created_at).toLocaleString() : '—'}
+                </div>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Last Updated:</span>
+                <div className="text-gray-600 dark:text-gray-400">
+                  {volume.updated_at ? new Date(volume.updated_at).toLocaleString() : '—'}
+                </div>
+              </div>
+              {volume.last_scan_at && (
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Last Scanned:</span>
+                  <div className="text-gray-600 dark:text-gray-400">
+                    {new Date(volume.last_scan_at).toLocaleString()}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Attachments & Usage */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm uppercase tracking-wide">Usage</h4>
+            <div className="space-y-2 text-sm">
+              {volume.attachments_count !== undefined && (
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Container Attachments:</span>
+                  <div className="text-gray-600 dark:text-gray-400">
+                    {volume.attachments_count} {volume.attachments_count === 1 ? 'container' : 'containers'}
+                  </div>
+                </div>
+              )}
+              {volume.is_orphaned !== undefined && (
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Orphaned:</span>
+                  <div className={cn(
+                    "font-medium",
+                    volume.is_orphaned ? "text-orange-600 dark:text-orange-400" : "text-green-600 dark:text-green-400"
+                  )}>
+                    {volume.is_orphaned ? 'Yes (no containers attached)' : 'No'}
+                  </div>
+                </div>
+              )}
+              {volume.quota_bytes && (
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Quota Usage:</span>
+                  <div className="mt-1">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div
+                        className={cn(
+                          'h-2 rounded-full',
+                          sizePercentage > 90
+                            ? 'bg-red-500'
+                            : sizePercentage > 75
+                              ? 'bg-yellow-500'
+                              : 'bg-blue-500',
+                        )}
+                        style={{
+                          width: `${Math.min(sizePercentage, 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {sizePercentage.toFixed(1)}% of quota
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* Error Message - Full Width */}
+        {volume.error_message && (
+          <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+            <span className="font-medium text-red-700 dark:text-red-400 text-sm">Error:</span>
+            <div className="text-red-600 dark:text-red-300 text-sm mt-1">{volume.error_message}</div>
+          </div>
+        )}
       </td>
     </tr>
   );

@@ -67,6 +67,7 @@ type Querier interface {
 	// Scan Phases Retention
 	// ============================================================================
 	CountOldScanPhases(ctx context.Context, updatedAt time.Time) (int64, error)
+	CountOrganizations(ctx context.Context) (int64, error)
 	CountPendingInvitations(ctx context.Context, organizationID int64) (int64, error)
 	CountPreviewsByStatus(ctx context.Context, status string) (int64, error)
 	CountSavedSearches(ctx context.Context, arg CountSavedSearchesParams) (int64, error)

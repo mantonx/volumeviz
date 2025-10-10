@@ -119,10 +119,12 @@ func ParseSortParams(c *gin.Context, allowedFields []string) ([]SortParam, error
 
 // ParseVolumeFilters extracts volume-specific filter parameters
 func ParseVolumeFilters(c *gin.Context) (*VolumeFilters, error) {
+	// Default to showing all volumes (system=true) so users see both named and anonymous volumes
+	// Users can explicitly set system=false to hide anonymous 64-char volumes
 	filters := &VolumeFilters{
 		Query:  c.Query("q"),
 		Driver: c.Query("driver"),
-		System: c.DefaultQuery("system", "false") == "true",
+		System: c.DefaultQuery("system", "true") == "true",
 	}
 
 	// Parse orphaned filter

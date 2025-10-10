@@ -1354,6 +1354,29 @@ export interface InternalApiV1MountsMountCatalogSummaryResponse {
   volume_mounts?: number;
 }
 
+export type InternalApiV1OrganizationsCreateOrganizationRequestPlanType =
+  (typeof InternalApiV1OrganizationsCreateOrganizationRequestPlanType)[keyof typeof InternalApiV1OrganizationsCreateOrganizationRequestPlanType];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const InternalApiV1OrganizationsCreateOrganizationRequestPlanType = {
+  free: 'free',
+  pro: 'pro',
+  enterprise: 'enterprise',
+} as const;
+
+export interface InternalApiV1OrganizationsCreateOrganizationRequest {
+  description?: string;
+  /** @minLength 3 */
+  display_name: string;
+  max_storage_gb?: number;
+  max_users?: number;
+  max_volumes?: number;
+  /** @minLength 3 */
+  name: string;
+  plan_type?: InternalApiV1OrganizationsCreateOrganizationRequestPlanType;
+  subdomain?: string;
+}
+
 export interface InternalApiV1OrganizationsOrganizationLimits {
   max_storage_gb?: number;
   max_users?: number;
@@ -1891,6 +1914,12 @@ export const TimeDuration = {
   Minute: 60000000000,
   Hour: 3600000000000,
 } as const;
+
+/**
+ * Organization update details
+ */
+export type InternalApiV1OrganizationsUpdateOrganizationRequestBody =
+  InternalApiV1OrganizationsUpdateOrganizationRequest;
 
 export type GetAlertsParams = {
   /**
@@ -2887,6 +2916,57 @@ export type GetHealthDatabase200 = { [key: string]: unknown };
 export type GetHealthEvents200 = { [key: string]: unknown };
 
 export type GetHealthScheduler200 = { [key: string]: unknown };
+
+export type GetOrganizationsParams = {
+  /**
+   * Page number
+   */
+  page?: number;
+  /**
+   * Page size
+   */
+  page_size?: number;
+};
+
+export type GetOrganizations200 = { [key: string]: unknown };
+
+export type GetOrganizations401 = { [key: string]: unknown };
+
+export type GetOrganizations403 = { [key: string]: unknown };
+
+export type GetOrganizations500 = { [key: string]: unknown };
+
+export type PostOrganizations400 = { [key: string]: unknown };
+
+export type PostOrganizations401 = { [key: string]: unknown };
+
+export type PostOrganizations403 = { [key: string]: unknown };
+
+export type PostOrganizations409 = { [key: string]: unknown };
+
+export type PostOrganizations500 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId400 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId401 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId403 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId404 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId409 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId500 = { [key: string]: unknown };
+
+export type PutOrganizationsId400 = { [key: string]: unknown };
+
+export type PutOrganizationsId401 = { [key: string]: unknown };
+
+export type PutOrganizationsId403 = { [key: string]: unknown };
+
+export type PutOrganizationsId404 = { [key: string]: unknown };
+
+export type PutOrganizationsId500 = { [key: string]: unknown };
 
 export type PostPreviews400 = { [key: string]: unknown };
 
@@ -13502,7 +13582,7 @@ export const getPutApiV1OrganizationsMeUrl = () => {
 };
 
 export const putApiV1OrganizationsMe = async (
-  internalApiV1OrganizationsUpdateOrganizationRequest: InternalApiV1OrganizationsUpdateOrganizationRequest,
+  internalApiV1OrganizationsUpdateOrganizationRequestBody: InternalApiV1OrganizationsUpdateOrganizationRequestBody,
   options?: RequestInit,
 ): Promise<putApiV1OrganizationsMeResponse> => {
   return customFetchClient<putApiV1OrganizationsMeResponse>(
@@ -13511,7 +13591,9 @@ export const putApiV1OrganizationsMe = async (
       ...options,
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(internalApiV1OrganizationsUpdateOrganizationRequest),
+      body: JSON.stringify(
+        internalApiV1OrganizationsUpdateOrganizationRequestBody,
+      ),
     },
   );
 };
@@ -13528,14 +13610,14 @@ export const getPutApiV1OrganizationsMeMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof putApiV1OrganizationsMe>>,
     TError,
-    { data: InternalApiV1OrganizationsUpdateOrganizationRequest },
+    { data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof putApiV1OrganizationsMe>>,
   TError,
-  { data: InternalApiV1OrganizationsUpdateOrganizationRequest },
+  { data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
   TContext
 > => {
   const mutationKey = ['putApiV1OrganizationsMe'];
@@ -13549,7 +13631,7 @@ export const getPutApiV1OrganizationsMeMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof putApiV1OrganizationsMe>>,
-    { data: InternalApiV1OrganizationsUpdateOrganizationRequest }
+    { data: InternalApiV1OrganizationsUpdateOrganizationRequestBody }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -13563,7 +13645,7 @@ export type PutApiV1OrganizationsMeMutationResult = NonNullable<
   Awaited<ReturnType<typeof putApiV1OrganizationsMe>>
 >;
 export type PutApiV1OrganizationsMeMutationBody =
-  InternalApiV1OrganizationsUpdateOrganizationRequest;
+  InternalApiV1OrganizationsUpdateOrganizationRequestBody;
 export type PutApiV1OrganizationsMeMutationError =
   | PutApiV1OrganizationsMe400
   | PutApiV1OrganizationsMe401
@@ -13587,7 +13669,7 @@ export const usePutApiV1OrganizationsMe = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof putApiV1OrganizationsMe>>,
       TError,
-      { data: InternalApiV1OrganizationsUpdateOrganizationRequest },
+      { data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
       TContext
     >;
     request?: SecondParameter<typeof customFetchClient>;
@@ -13596,7 +13678,7 @@ export const usePutApiV1OrganizationsMe = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof putApiV1OrganizationsMe>>,
   TError,
-  { data: InternalApiV1OrganizationsUpdateOrganizationRequest },
+  { data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
   TContext
 > => {
   const mutationOptions = getPutApiV1OrganizationsMeMutationOptions(options);
@@ -19717,6 +19799,701 @@ export function useGetMediaCapabilities<
 
   return query;
 }
+
+/**
+ * List all organizations in the system (admin only)
+ * @summary List all organizations
+ */
+export type getOrganizationsResponse200 = {
+  data: GetOrganizations200;
+  status: 200;
+};
+
+export type getOrganizationsResponse401 = {
+  data: GetOrganizations401;
+  status: 401;
+};
+
+export type getOrganizationsResponse403 = {
+  data: GetOrganizations403;
+  status: 403;
+};
+
+export type getOrganizationsResponse500 = {
+  data: GetOrganizations500;
+  status: 500;
+};
+
+export type getOrganizationsResponseComposite =
+  | getOrganizationsResponse200
+  | getOrganizationsResponse401
+  | getOrganizationsResponse403
+  | getOrganizationsResponse500;
+
+export type getOrganizationsResponse = getOrganizationsResponseComposite & {
+  headers: Headers;
+};
+
+export const getGetOrganizationsUrl = (params?: GetOrganizationsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/organizations?${stringifiedParams}`
+    : `/organizations`;
+};
+
+export const getOrganizations = async (
+  params?: GetOrganizationsParams,
+  options?: RequestInit,
+): Promise<getOrganizationsResponse> => {
+  return customFetchClient<getOrganizationsResponse>(
+    getGetOrganizationsUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
+};
+
+export const getGetOrganizationsQueryKey = (
+  params?: GetOrganizationsParams,
+) => {
+  return [`/organizations`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetOrganizationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOrganizations>>,
+  TError = GetOrganizations401 | GetOrganizations403 | GetOrganizations500,
+>(
+  params?: GetOrganizationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrganizations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetOrganizationsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOrganizations>>
+  > = ({ signal }) => getOrganizations(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOrganizations>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetOrganizationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOrganizations>>
+>;
+export type GetOrganizationsQueryError =
+  | GetOrganizations401
+  | GetOrganizations403
+  | GetOrganizations500;
+
+export function useGetOrganizations<
+  TData = Awaited<ReturnType<typeof getOrganizations>>,
+  TError = GetOrganizations401 | GetOrganizations403 | GetOrganizations500,
+>(
+  params: undefined | GetOrganizationsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrganizations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrganizations>>,
+          TError,
+          Awaited<ReturnType<typeof getOrganizations>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetOrganizations<
+  TData = Awaited<ReturnType<typeof getOrganizations>>,
+  TError = GetOrganizations401 | GetOrganizations403 | GetOrganizations500,
+>(
+  params?: GetOrganizationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrganizations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrganizations>>,
+          TError,
+          Awaited<ReturnType<typeof getOrganizations>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetOrganizations<
+  TData = Awaited<ReturnType<typeof getOrganizations>>,
+  TError = GetOrganizations401 | GetOrganizations403 | GetOrganizations500,
+>(
+  params?: GetOrganizationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrganizations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List all organizations
+ */
+
+export function useGetOrganizations<
+  TData = Awaited<ReturnType<typeof getOrganizations>>,
+  TError = GetOrganizations401 | GetOrganizations403 | GetOrganizations500,
+>(
+  params?: GetOrganizationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrganizations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetOrganizationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Create a new organization (admin only)
+ * @summary Create organization
+ */
+export type postOrganizationsResponse201 = {
+  data: InternalApiV1OrganizationsOrganizationResponse;
+  status: 201;
+};
+
+export type postOrganizationsResponse400 = {
+  data: PostOrganizations400;
+  status: 400;
+};
+
+export type postOrganizationsResponse401 = {
+  data: PostOrganizations401;
+  status: 401;
+};
+
+export type postOrganizationsResponse403 = {
+  data: PostOrganizations403;
+  status: 403;
+};
+
+export type postOrganizationsResponse409 = {
+  data: PostOrganizations409;
+  status: 409;
+};
+
+export type postOrganizationsResponse500 = {
+  data: PostOrganizations500;
+  status: 500;
+};
+
+export type postOrganizationsResponseComposite =
+  | postOrganizationsResponse201
+  | postOrganizationsResponse400
+  | postOrganizationsResponse401
+  | postOrganizationsResponse403
+  | postOrganizationsResponse409
+  | postOrganizationsResponse500;
+
+export type postOrganizationsResponse = postOrganizationsResponseComposite & {
+  headers: Headers;
+};
+
+export const getPostOrganizationsUrl = () => {
+  return `/organizations`;
+};
+
+export const postOrganizations = async (
+  internalApiV1OrganizationsCreateOrganizationRequest: InternalApiV1OrganizationsCreateOrganizationRequest,
+  options?: RequestInit,
+): Promise<postOrganizationsResponse> => {
+  return customFetchClient<postOrganizationsResponse>(
+    getPostOrganizationsUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(internalApiV1OrganizationsCreateOrganizationRequest),
+    },
+  );
+};
+
+export const getPostOrganizationsMutationOptions = <
+  TError =
+    | PostOrganizations400
+    | PostOrganizations401
+    | PostOrganizations403
+    | PostOrganizations409
+    | PostOrganizations500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postOrganizations>>,
+    TError,
+    { data: InternalApiV1OrganizationsCreateOrganizationRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postOrganizations>>,
+  TError,
+  { data: InternalApiV1OrganizationsCreateOrganizationRequest },
+  TContext
+> => {
+  const mutationKey = ['postOrganizations'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postOrganizations>>,
+    { data: InternalApiV1OrganizationsCreateOrganizationRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postOrganizations(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostOrganizationsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postOrganizations>>
+>;
+export type PostOrganizationsMutationBody =
+  InternalApiV1OrganizationsCreateOrganizationRequest;
+export type PostOrganizationsMutationError =
+  | PostOrganizations400
+  | PostOrganizations401
+  | PostOrganizations403
+  | PostOrganizations409
+  | PostOrganizations500;
+
+/**
+ * @summary Create organization
+ */
+export const usePostOrganizations = <
+  TError =
+    | PostOrganizations400
+    | PostOrganizations401
+    | PostOrganizations403
+    | PostOrganizations409
+    | PostOrganizations500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postOrganizations>>,
+      TError,
+      { data: InternalApiV1OrganizationsCreateOrganizationRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postOrganizations>>,
+  TError,
+  { data: InternalApiV1OrganizationsCreateOrganizationRequest },
+  TContext
+> => {
+  const mutationOptions = getPostOrganizationsMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Delete an organization by ID (admin only)
+ * @summary Delete organization
+ */
+export type deleteOrganizationsIdResponse204 = {
+  data: null;
+  status: 204;
+};
+
+export type deleteOrganizationsIdResponse400 = {
+  data: DeleteOrganizationsId400;
+  status: 400;
+};
+
+export type deleteOrganizationsIdResponse401 = {
+  data: DeleteOrganizationsId401;
+  status: 401;
+};
+
+export type deleteOrganizationsIdResponse403 = {
+  data: DeleteOrganizationsId403;
+  status: 403;
+};
+
+export type deleteOrganizationsIdResponse404 = {
+  data: DeleteOrganizationsId404;
+  status: 404;
+};
+
+export type deleteOrganizationsIdResponse409 = {
+  data: DeleteOrganizationsId409;
+  status: 409;
+};
+
+export type deleteOrganizationsIdResponse500 = {
+  data: DeleteOrganizationsId500;
+  status: 500;
+};
+
+export type deleteOrganizationsIdResponseComposite =
+  | deleteOrganizationsIdResponse204
+  | deleteOrganizationsIdResponse400
+  | deleteOrganizationsIdResponse401
+  | deleteOrganizationsIdResponse403
+  | deleteOrganizationsIdResponse404
+  | deleteOrganizationsIdResponse409
+  | deleteOrganizationsIdResponse500;
+
+export type deleteOrganizationsIdResponse =
+  deleteOrganizationsIdResponseComposite & {
+    headers: Headers;
+  };
+
+export const getDeleteOrganizationsIdUrl = (id: number) => {
+  return `/organizations/${id}`;
+};
+
+export const deleteOrganizationsId = async (
+  id: number,
+  options?: RequestInit,
+): Promise<deleteOrganizationsIdResponse> => {
+  return customFetchClient<deleteOrganizationsIdResponse>(
+    getDeleteOrganizationsIdUrl(id),
+    {
+      ...options,
+      method: 'DELETE',
+    },
+  );
+};
+
+export const getDeleteOrganizationsIdMutationOptions = <
+  TError =
+    | DeleteOrganizationsId400
+    | DeleteOrganizationsId401
+    | DeleteOrganizationsId403
+    | DeleteOrganizationsId404
+    | DeleteOrganizationsId409
+    | DeleteOrganizationsId500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOrganizationsId>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteOrganizationsId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ['deleteOrganizationsId'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteOrganizationsId>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteOrganizationsId(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteOrganizationsIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteOrganizationsId>>
+>;
+
+export type DeleteOrganizationsIdMutationError =
+  | DeleteOrganizationsId400
+  | DeleteOrganizationsId401
+  | DeleteOrganizationsId403
+  | DeleteOrganizationsId404
+  | DeleteOrganizationsId409
+  | DeleteOrganizationsId500;
+
+/**
+ * @summary Delete organization
+ */
+export const useDeleteOrganizationsId = <
+  TError =
+    | DeleteOrganizationsId400
+    | DeleteOrganizationsId401
+    | DeleteOrganizationsId403
+    | DeleteOrganizationsId404
+    | DeleteOrganizationsId409
+    | DeleteOrganizationsId500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteOrganizationsId>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteOrganizationsId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationOptions = getDeleteOrganizationsIdMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Update organization details by ID (admin only)
+ * @summary Update organization
+ */
+export type putOrganizationsIdResponse200 = {
+  data: InternalApiV1OrganizationsOrganizationResponse;
+  status: 200;
+};
+
+export type putOrganizationsIdResponse400 = {
+  data: PutOrganizationsId400;
+  status: 400;
+};
+
+export type putOrganizationsIdResponse401 = {
+  data: PutOrganizationsId401;
+  status: 401;
+};
+
+export type putOrganizationsIdResponse403 = {
+  data: PutOrganizationsId403;
+  status: 403;
+};
+
+export type putOrganizationsIdResponse404 = {
+  data: PutOrganizationsId404;
+  status: 404;
+};
+
+export type putOrganizationsIdResponse500 = {
+  data: PutOrganizationsId500;
+  status: 500;
+};
+
+export type putOrganizationsIdResponseComposite =
+  | putOrganizationsIdResponse200
+  | putOrganizationsIdResponse400
+  | putOrganizationsIdResponse401
+  | putOrganizationsIdResponse403
+  | putOrganizationsIdResponse404
+  | putOrganizationsIdResponse500;
+
+export type putOrganizationsIdResponse = putOrganizationsIdResponseComposite & {
+  headers: Headers;
+};
+
+export const getPutOrganizationsIdUrl = (id: number) => {
+  return `/organizations/${id}`;
+};
+
+export const putOrganizationsId = async (
+  id: number,
+  internalApiV1OrganizationsUpdateOrganizationRequestBody: InternalApiV1OrganizationsUpdateOrganizationRequestBody,
+  options?: RequestInit,
+): Promise<putOrganizationsIdResponse> => {
+  return customFetchClient<putOrganizationsIdResponse>(
+    getPutOrganizationsIdUrl(id),
+    {
+      ...options,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(
+        internalApiV1OrganizationsUpdateOrganizationRequestBody,
+      ),
+    },
+  );
+};
+
+export const getPutOrganizationsIdMutationOptions = <
+  TError =
+    | PutOrganizationsId400
+    | PutOrganizationsId401
+    | PutOrganizationsId403
+    | PutOrganizationsId404
+    | PutOrganizationsId500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof putOrganizationsId>>,
+    TError,
+    {
+      id: number;
+      data: InternalApiV1OrganizationsUpdateOrganizationRequestBody;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof putOrganizationsId>>,
+  TError,
+  { id: number; data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
+  TContext
+> => {
+  const mutationKey = ['putOrganizationsId'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof putOrganizationsId>>,
+    {
+      id: number;
+      data: InternalApiV1OrganizationsUpdateOrganizationRequestBody;
+    }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return putOrganizationsId(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PutOrganizationsIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putOrganizationsId>>
+>;
+export type PutOrganizationsIdMutationBody =
+  InternalApiV1OrganizationsUpdateOrganizationRequestBody;
+export type PutOrganizationsIdMutationError =
+  | PutOrganizationsId400
+  | PutOrganizationsId401
+  | PutOrganizationsId403
+  | PutOrganizationsId404
+  | PutOrganizationsId500;
+
+/**
+ * @summary Update organization
+ */
+export const usePutOrganizationsId = <
+  TError =
+    | PutOrganizationsId400
+    | PutOrganizationsId401
+    | PutOrganizationsId403
+    | PutOrganizationsId404
+    | PutOrganizationsId500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof putOrganizationsId>>,
+      TError,
+      {
+        id: number;
+        data: InternalApiV1OrganizationsUpdateOrganizationRequestBody;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof putOrganizationsId>>,
+  TError,
+  { id: number; data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
+  TContext
+> => {
+  const mutationOptions = getPutOrganizationsIdMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 
 /**
  * Generate a new preview (thumbnail, poster, or cover) for a file

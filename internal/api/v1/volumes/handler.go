@@ -34,6 +34,18 @@ type Handler struct {
 	systemVolumeRegex *regexp.Regexp
 	volumeScanner     interfaces.VolumeScanner // VolumeViz scanner for size calculation
 	volumeMapping     *config.VolumeMappingConfig
+	cache             VolumeCache // In-memory cache for volume data (Phase 3)
+}
+
+// VolumeCache interface for caching volume data
+type VolumeCache interface {
+	Get(volumeID string) (models.VolumeV1, bool)
+	GetMultiple(volumeIDs []string) (map[string]models.VolumeV1, []string)
+	Set(volumeID string, volume models.VolumeV1)
+	SetMultiple(volumes []models.VolumeV1)
+	Invalidate(volumeID string)
+	InvalidateAll()
+	GetStats() interface{}
 }
 
 // NewHandler creates a new volume handler with store interface
@@ -59,7 +71,56 @@ func NewHandlerWithScanner(dockerService interfaces.DockerService, store store.S
 		systemVolumeRegex: regex,
 		volumeScanner:     scanner,
 		volumeMapping:     config.NewVolumeMappingConfig(),
+		cache:             nil, // Cache is optional, set via SetCache()
 	}
+}
+
+// SetCache sets the volume cache on the handler (Phase 3 optimization)
+func (h *Handler) SetCache(cache VolumeCache) {
+	h.cache = cache
+}
+
+// GetCacheStats returns cache statistics
+// @Summary Get volume cache statistics
+// @Description Returns statistics about the volume cache (hit rate, size, etc.)
+// @Tags volumes
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Cache statistics"
+// @Router /volumes/cache/stats [get]
+func (h *Handler) GetCacheStats(c *gin.Context) {
+	if h.cache == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"enabled": false,
+			"message": "Cache is not enabled",
+		})
+		return
+	}
+
+	stats := h.cache.GetStats()
+	c.JSON(http.StatusOK, stats)
+}
+
+// InvalidateCache clears the volume cache
+// @Summary Invalidate volume cache
+// @Description Clears all entries from the volume cache
+// @Tags volumes
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Cache invalidated"
+// @Router /volumes/cache/invalidate [post]
+func (h *Handler) InvalidateCache(c *gin.Context) {
+	if h.cache == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Cache is not enabled",
+		})
+		return
+	}
+
+	h.cache.InvalidateAll()
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Cache invalidated successfully",
+	})
 }
 
 // Helper function to determine if volume is system-managed
@@ -108,9 +169,10 @@ func (h *Handler) ListVolumes(c *gin.Context) {
 		return
 	}
 
-	// Get volumes from Docker API (primary source for volume metadata)
-	// Store is used for file/directory data, but Docker is source of truth for volumes
-	apiVolumes, total, err := h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
+	// Get volumes from database (fast, <100ms)
+	// The reconciliation service keeps the database in sync with Docker
+	// Fallback to Docker API if database is unavailable
+	apiVolumes, total, err := h.getVolumesFromDatabase(ctx, pagination, sortParams, filters)
 
 	if err != nil {
 		apiutils.RespondWithInternalError(c, "Failed to list volumes", err)
@@ -175,7 +237,7 @@ func (h *Handler) volumePassesFilters(vol models.VolumeV1, filters *apiutils.Vol
 func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils.PaginationParams, sortParams []apiutils.SortParam, filters *apiutils.VolumeFilters) ([]models.VolumeV1, int64, error) {
 	// Get organization ID from context
 	orgID, hasOrg := middleware.GetOrganizationID(ctx)
-	
+
 	// Get all volumes from Docker
 	volumes, err := h.dockerService.ListVolumes(ctx)
 	if err != nil {
@@ -185,19 +247,30 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 	// Apply basic filters first
 	filtered := h.filterVolumes(volumes, filters)
 
-	// Filter by organization if organization context is available
+	// OPTIMIZATION: Batch-fetch all organization volumes upfront to avoid N+1 queries
+	// This single query replaces what used to be N queries (one per volume)
+	volumeMetadataMap := make(map[string]*sqlc.Volumes)
 	if hasOrg && h.store != nil {
+		if queries, ok := h.store.Queries().(*sqlc.Queries); ok {
+			dbVolumes, err := queries.ListVolumes(ctx, sqlc.ListVolumesParams{
+				OrganizationID: pgtype.Int8{Int64: orgID, Valid: true},
+				Limit:          10000, // Large limit to get all volumes
+				Offset:         0,
+			})
+			if err == nil {
+				for i := range dbVolumes {
+					volumeMetadataMap[dbVolumes[i].VolumeID] = &dbVolumes[i]
+				}
+			}
+		}
+	}
+
+	// Filter by organization using the pre-fetched map
+	if hasOrg && len(volumeMetadataMap) > 0 {
 		orgFiltered := make([]coremodels.Volume, 0)
 		for _, vol := range filtered {
-			// Check if volume belongs to this organization
-			if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, vol.VolumeID); err == nil {
-				if dbVol.OrganizationID != nil && *dbVol.OrganizationID == orgID {
-					orgFiltered = append(orgFiltered, vol)
-				}
-			} else {
-				// If volume not in database yet, we may want to consider it as unassigned
-				// For now, skip volumes not in the database when org context is required
-				continue
+			if _, exists := volumeMetadataMap[vol.VolumeID]; exists {
+				orgFiltered = append(orgFiltered, vol)
 			}
 		}
 		filtered = orgFiltered
@@ -237,46 +310,48 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 				}
 			}
 
-			// Get last scan timestamp from database
+			// Get last scan timestamp from pre-fetched metadata map
 			if hasOrg {
-				if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, vol.VolumeID); err == nil && dbVol.LastScanned != nil {
-					apiVol.LastScanAt = dbVol.LastScanned
-				}
-			} else {
-				// Without organization context, we can't query volume-specific data
-				// This should rarely happen as we filter by organization above
-			}
-
-			// Get latest scan status and progress
-			if queries, ok := h.store.Queries().(*sqlc.Queries); ok {
-				if latestScans, err := queries.ListScanJobsByVolume(ctx, sqlc.ListScanJobsByVolumeParams{
-					VolumeID: pgtype.Text{String: vol.VolumeID, Valid: true},
-					Limit:    1,
-					Offset:   0,
-				}); err == nil && len(latestScans) > 0 {
-					latestScan := latestScans[0]
-					apiVol.ScanStatus = &latestScan.Status
-					apiVol.LastScanID = &latestScan.ScanID
-					// Calculate progress from scanned/total files
-					if latestScan.TotalFiles.Valid && latestScan.ScannedFiles.Valid && latestScan.TotalFiles.Int64 > 0 {
-						progress := int((latestScan.ScannedFiles.Int64 * 100) / latestScan.TotalFiles.Int64)
-						apiVol.ScanProgress = &progress
-					}
-					// Update overall status based on scan status
-					apiVol.Status = computeVolumeStatus(&latestScan.Status, apiVol.IsOrphaned, apiVol.AttachmentsCount)
-				}
-
-				// Get file and folder counts from indexed files
-				fileCount, err := queries.CountFilesByVolume(ctx, vol.VolumeID)
-				if err == nil && fileCount > 0 {
-					apiVol.FileCount = &fileCount
-				}
-
-				folderCount, err := queries.CountFoldersByVolume(ctx, vol.VolumeID)
-				if err == nil && folderCount > 0 {
-					apiVol.FolderCount = &folderCount
+				if dbVol, ok := volumeMetadataMap[vol.VolumeID]; ok && dbVol.LastScanAt.Valid {
+					apiVol.LastScanAt = &dbVol.LastScanAt.Time
 				}
 			}
+
+			// OPTIMIZATION: Skip expensive N+1 queries for list view
+			// These fields (scan status, file counts) are only needed for detail view
+			// Fetching them here causes N queries (one per volume), significantly slowing down the list endpoint
+			// TODO: These should be fetched only when viewing a specific volume's details
+
+			// Get latest scan status and progress (DISABLED for list view performance)
+			// if queries, ok := h.store.Queries().(*sqlc.Queries); ok {
+			// 	if latestScans, err := queries.ListScanJobsByVolume(ctx, sqlc.ListScanJobsByVolumeParams{
+			// 		VolumeID: pgtype.Text{String: vol.VolumeID, Valid: true},
+			// 		Limit:    1,
+			// 		Offset:   0,
+			// 	}); err == nil && len(latestScans) > 0 {
+			// 		latestScan := latestScans[0]
+			// 		apiVol.ScanStatus = &latestScan.Status
+			// 		apiVol.LastScanID = &latestScan.ScanID
+			// 		// Calculate progress from scanned/total files
+			// 		if latestScan.TotalFiles.Valid && latestScan.ScannedFiles.Valid && latestScan.TotalFiles.Int64 > 0 {
+			// 			progress := int((latestScan.ScannedFiles.Int64 * 100) / latestScan.TotalFiles.Int64)
+			// 			apiVol.ScanProgress = &progress
+			// 		}
+			// 		// Update overall status based on scan status
+			// 		apiVol.Status = computeVolumeStatus(&latestScan.Status, apiVol.IsOrphaned, apiVol.AttachmentsCount)
+			// 	}
+
+			// 	// Get file and folder counts from indexed files (DISABLED for list view performance)
+			// 	fileCount, err := queries.CountFilesByVolume(ctx, vol.VolumeID)
+			// 	if err == nil && fileCount > 0 {
+			// 		apiVol.FileCount = &fileCount
+			// 	}
+
+			// 	folderCount, err := queries.CountFoldersByVolume(ctx, vol.VolumeID)
+			// 	if err == nil && folderCount > 0 {
+			// 		apiVol.FolderCount = &folderCount
+			// 	}
+			// }
 		}
 
 		// Check for cached scan results from Docker volume usage data (no new scan triggered)
@@ -1575,6 +1650,11 @@ func (h *Handler) BulkDeleteVolumes(c *gin.Context) {
 		} else {
 			result.Success = true
 			successCount++
+
+			// Invalidate cache for deleted volume (Phase 3)
+			if h.cache != nil {
+				h.cache.Invalidate(volumeID)
+			}
 		}
 
 		results = append(results, result)

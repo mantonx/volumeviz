@@ -35,3 +35,6 @@ FROM organizations
 WHERE is_active = true
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2;
+
+-- name: CountOrganizations :one
+SELECT COUNT(*) FROM organizations WHERE is_active = true;

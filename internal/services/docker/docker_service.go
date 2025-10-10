@@ -5,6 +5,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -21,6 +22,12 @@ import (
 // Wraps the Docker client with business logic and error handling
 type DockerService struct {
 	client interfaces.DockerClient
+
+	// Disk usage cache to avoid expensive Docker API calls
+	diskUsageCache      *types.DiskUsage
+	diskUsageCacheTime  time.Time
+	diskUsageCacheTTL   time.Duration
+	diskUsageCacheMutex sync.RWMutex
 }
 
 // NewDockerService creates a new Docker service instance
@@ -32,7 +39,8 @@ func NewDockerService(host string, timeout time.Duration) (*DockerService, error
 	}
 
 	return &DockerService{
-		client: client,
+		client:            client,
+		diskUsageCacheTTL: 30 * time.Second, // Cache disk usage for 30 seconds
 	}, nil
 }
 
@@ -73,6 +81,44 @@ func (s *DockerService) Version(ctx context.Context) (types.Version, error) {
 	return s.client.Version(ctx)
 }
 
+// getCachedDiskUsage returns cached disk usage data or fetches fresh data if cache is stale
+// This significantly improves performance by avoiding expensive Docker API calls
+func (s *DockerService) getCachedDiskUsage(ctx context.Context) types.DiskUsage {
+	s.diskUsageCacheMutex.RLock()
+	if s.diskUsageCache != nil && time.Since(s.diskUsageCacheTime) < s.diskUsageCacheTTL {
+		// Cache hit - return cached data
+		cache := *s.diskUsageCache
+		s.diskUsageCacheMutex.RUnlock()
+		return cache
+	}
+	s.diskUsageCacheMutex.RUnlock()
+
+	// Cache miss or stale - fetch fresh data
+	s.diskUsageCacheMutex.Lock()
+	defer s.diskUsageCacheMutex.Unlock()
+
+	// Double-check after acquiring write lock (another goroutine might have updated it)
+	if s.diskUsageCache != nil && time.Since(s.diskUsageCacheTime) < s.diskUsageCacheTTL {
+		return *s.diskUsageCache
+	}
+
+	// Fetch fresh disk usage data
+	diskUsage, err := s.client.DiskUsage(ctx, types.DiskUsageOptions{
+		Types: []types.DiskUsageObject{types.VolumeObject},
+	})
+	if err != nil {
+		// Log the error but return empty diskUsage - volumes will just show without sizes
+		// This maintains backward compatibility if the Docker daemon doesn't support /system/df
+		return types.DiskUsage{}
+	}
+
+	// Update cache
+	s.diskUsageCache = &diskUsage
+	s.diskUsageCacheTime = time.Now()
+
+	return diskUsage
+}
+
 // ListVolumes returns all Docker volumes with metadata
 func (s *DockerService) ListVolumes(ctx context.Context) ([]models.Volume, error) {
 	// List all volumes
@@ -81,15 +127,8 @@ func (s *DockerService) ListVolumes(ctx context.Context) ([]models.Volume, error
 		return nil, utils.WrapError(err, "failed to list volumes")
 	}
 
-	// Get disk usage data which includes volume sizes
-	diskUsage, err := s.client.DiskUsage(ctx, types.DiskUsageOptions{
-		Types: []types.DiskUsageObject{types.VolumeObject},
-	})
-	if err != nil {
-		// Log the error but don't fail the request - volumes will just show without sizes
-		// This maintains backward compatibility if the Docker daemon doesn't support /system/df
-		diskUsage = types.DiskUsage{}
-	}
+	// Get disk usage data which includes volume sizes (with caching)
+	diskUsage := s.getCachedDiskUsage(ctx)
 
 	// Create a map of volume names to disk usage data for quick lookup
 	volumeSizeMap := make(map[string]*volume.UsageData)

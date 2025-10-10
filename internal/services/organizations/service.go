@@ -26,9 +26,15 @@ type Service interface {
 	
 	// DeactivateOrganization deactivates an organization
 	DeactivateOrganization(ctx context.Context, orgID int64) error
-	
+
+	// DeleteOrganization permanently deletes an organization
+	DeleteOrganization(ctx context.Context, orgID int64) error
+
 	// ListOrganizations lists all active organizations
 	ListOrganizations(ctx context.Context, limit, offset int32) ([]*Organization, error)
+
+	// CountOrganizations counts all active organizations
+	CountOrganizations(ctx context.Context) (int64, error)
 	
 // 	// InviteUser invites a user to join an organization
 // 	InviteUser(ctx context.Context, req InviteUserRequest) (*OrganizationInvitation, error)
@@ -276,7 +282,7 @@ func (s *DefaultService) DeactivateOrganization(ctx context.Context, orgID int64
 	if err != nil {
 		return fmt.Errorf("failed to deactivate organization: %w", err)
 	}
-	
+
 	// Log audit event
 	s.auditLogger.LogEvent(ctx, audit.Event{
 		Action:       "organization.deactivated",
@@ -284,7 +290,26 @@ func (s *DefaultService) DeactivateOrganization(ctx context.Context, orgID int64
 		ResourceID:   fmt.Sprintf("%d", orgID),
 		Details:      map[string]interface{}{"message": "Organization %d deactivated"},
 	})
-	
+
+	return nil
+}
+
+func (s *DefaultService) DeleteOrganization(ctx context.Context, orgID int64) error {
+	// Use DeactivateOrganization for soft delete
+	// This is safer than hard delete and maintains referential integrity
+	err := s.queries.DeactivateOrganization(ctx, orgID)
+	if err != nil {
+		return fmt.Errorf("failed to delete organization: %w", err)
+	}
+
+	// Log audit event
+	s.auditLogger.LogEvent(ctx, audit.Event{
+		Action:       "organization.deleted",
+		ResourceType: "organization",
+		ResourceID:   fmt.Sprintf("%d", orgID),
+		Details:      map[string]interface{}{"message": "Organization %d deleted"},
+	})
+
 	return nil
 }
 
@@ -296,13 +321,21 @@ func (s *DefaultService) ListOrganizations(ctx context.Context, limit, offset in
 	if err != nil {
 		return nil, fmt.Errorf("failed to list organizations: %w", err)
 	}
-	
+
 	orgs := make([]*Organization, 0, len(orgRecords))
 	for _, orgRecord := range orgRecords {
 		orgs = append(orgs, convertSQLCOrganization(orgRecord))
 	}
-	
+
 	return orgs, nil
+}
+
+func (s *DefaultService) CountOrganizations(ctx context.Context) (int64, error) {
+	count, err := s.queries.CountOrganizations(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count organizations: %w", err)
+	}
+	return count, nil
 }
 
 // func (s *DefaultService) InviteUser(ctx context.Context, req InviteUserRequest) (*OrganizationInvitation, error) {

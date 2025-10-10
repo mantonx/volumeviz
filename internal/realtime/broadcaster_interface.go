@@ -21,6 +21,10 @@ type BroadcasterInterface interface {
 	BroadcastScanHistoricalUpdate(volumeID, scanID string, scanResult interface{})
 	BroadcastUsageSnapshot(volumeID string, snapshot interface{})
 	BroadcastCapacityAlert(volumeID string, severity string, message string)
+
+	// Phase 3: Volume metadata updates
+	BroadcastVolumeSizeUpdate(volumeID string, sizeBytes int64, calculationTime float64)
+	BroadcastVolumeMetadataUpdate(volumeID string, metadata interface{})
 }
 
 // Ensure our implementations satisfy the interface

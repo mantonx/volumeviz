@@ -72,6 +72,8 @@ type Router struct {
 	scanner             oldInterfaces.VolumeScanner
 	store               store.Store // Modern store interface using sqlc
 	realtimeService     *realtime.RealtimeService
+	progressBroadcaster *realtime.Broadcaster                  // Progress broadcaster (Phase 3)
+	volumesHandler      *volumes.Handler                       // Volumes handler (Phase 3)
 	scheduler           scheduler.ScanScheduler                // Optional scan scheduler - using store façade
 	jobScheduler        *jobScheduler.Scheduler                // Job scheduler for periodic tasks
 	eventsService       events.EventService                    // Optional events service - using store façade
@@ -462,6 +464,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		scanner:             volumeScanner,
 		store:               storeInstance,
 		realtimeService:     realtimeService,
+		progressBroadcaster: progressBroadcaster, // Phase 3
 		scheduler:           scanScheduler,
 		jobScheduler:        sched,
 		eventsService:       eventsService,
@@ -695,8 +698,11 @@ func (r *Router) setupRoutes(config *config.Config) {
 		orgScopedRoutes.Use(orgMiddleware.RequireOrganization())
 		{
 			// Volumes router - organization scoped
-			volumesRouter := volumes.NewRouterWithScanner(r.dockerService, r.store, nil, r.scanner)
+			volumesRouter := volumes.NewRouterWithScanner(r.dockerService, r.store, r.progressBroadcaster, r.scanner)
 			volumesRouter.RegisterRoutes(orgScopedRoutes)
+
+			// Store volumes handler for Phase 3 integration
+			r.volumesHandler = volumesRouter.Handler()
 
 			// Explorer router for directory browsing and file operations - organization scoped
 			explorer.RegisterRoutes(orgScopedRoutes, r.store)
@@ -805,6 +811,16 @@ func (r *Router) GetHealthHandler() *health.Handler {
 		return r.healthRouter.GetHandler()
 	}
 	return nil
+}
+
+// VolumesHandler returns the volumes handler (Phase 3)
+func (r *Router) VolumesHandler() *volumes.Handler {
+	return r.volumesHandler
+}
+
+// RealtimePublisher returns the progress broadcaster (Phase 3)
+func (r *Router) RealtimePublisher() *realtime.Broadcaster {
+	return r.progressBroadcaster
 }
 
 // createStoreInstance is no longer needed - using store directly

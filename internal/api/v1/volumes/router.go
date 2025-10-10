@@ -26,6 +26,11 @@ func NewRouterWithScanner(dockerService interfaces.DockerService, store store.St
 	}
 }
 
+// Handler returns the underlying handler (for Phase 3 integration)
+func (r *Router) Handler() *Handler {
+	return r.handler
+}
+
 // RegisterRoutes registers all volume-related routes
 func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	// Volume endpoints
@@ -33,6 +38,10 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 	{
 		// List and filter volumes with pagination
 		volumes.GET("", r.handler.ListVolumes)
+
+		// Cache management (Phase 3)
+		volumes.GET("/cache/stats", r.handler.GetCacheStats)
+		volumes.POST("/cache/invalidate", r.handler.InvalidateCache)
 
 		// Export endpoints
 		volumes.GET("/export/csv", r.handler.ExportVolumesCSV)

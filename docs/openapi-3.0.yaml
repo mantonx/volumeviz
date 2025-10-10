@@ -2676,13 +2676,8 @@ paths:
     put:
       description: Update organization details (admin only)
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/internal_api_v1_organizations.UpdateOrganizationReq\
-                uest"
-        description: Organization update details
-        required: true
+        $ref: "#/components/requestBodies/internal_api_v1_organizations.UpdateOrganizat\
+          ionRequest"
       responses:
         "200":
           description: Updated organization details
@@ -3971,6 +3966,224 @@ paths:
       summary: Get media enrichment capabilities
       tags:
         - media
+  /organizations:
+    get:
+      description: List all organizations in the system (admin only)
+      parameters:
+        - description: Page number
+          in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - description: Page size
+          in: query
+          name: page_size
+          schema:
+            type: integer
+            default: 25
+      responses:
+        "200":
+          description: List of organizations
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "403":
+          description: Forbidden - admin required
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+      summary: List all organizations
+      tags:
+        - organizations
+    post:
+      description: Create a new organization (admin only)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/internal_api_v1_organizations.CreateOrganizationReq\
+                uest"
+        description: Organization creation details
+        required: true
+      responses:
+        "201":
+          description: Created organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/internal_api_v1_organizations.OrganizationResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "403":
+          description: Forbidden - admin required
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "409":
+          description: Conflict - organization already exists
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+      summary: Create organization
+      tags:
+        - organizations
+  "/organizations/{id}":
+    delete:
+      description: Delete an organization by ID (admin only)
+      parameters:
+        - description: Organization ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Organization deleted successfully
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "403":
+          description: Forbidden - admin required
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "404":
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "409":
+          description: Conflict - organization has users or volumes
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+      summary: Delete organization
+      tags:
+        - organizations
+    put:
+      description: Update organization details by ID (admin only)
+      parameters:
+        - description: Organization ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/internal_api_v1_organizations.UpdateOrganizat\
+          ionRequest"
+      responses:
+        "200":
+          description: Updated organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/internal_api_v1_organizations.OrganizationResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "403":
+          description: Forbidden - admin required
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "404":
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+      summary: Update organization
+      tags:
+        - organizations
   /previews:
     post:
       description: Generate a new preview (thumbnail, poster, or cover) for a file
@@ -5871,6 +6084,15 @@ servers:
   - url: http://localhost:8080/api/v1
   - url: https://localhost:8080/api/v1
 components:
+  requestBodies:
+    internal_api_v1_organizations.UpdateOrganizationRequest:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/internal_api_v1_organizations.UpdateOrganizationReq\
+              uest"
+      description: Organization update details
+      required: true
   schemas:
     AggregateMetadata:
       properties:
@@ -8130,6 +8352,42 @@ components:
         volume_mounts:
           example: 15
           type: integer
+      type: object
+    internal_api_v1_organizations.CreateOrganizationRequest:
+      properties:
+        description:
+          example: A leading technology company
+          type: string
+        display_name:
+          example: ACME Corporation
+          minLength: 3
+          type: string
+        max_storage_gb:
+          example: 1000
+          type: integer
+        max_users:
+          example: 50
+          type: integer
+        max_volumes:
+          example: 100
+          type: integer
+        name:
+          example: acme-corp
+          minLength: 3
+          type: string
+        plan_type:
+          enum:
+            - free
+            - pro
+            - enterprise
+          example: pro
+          type: string
+        subdomain:
+          example: acme
+          type: string
+      required:
+        - display_name
+        - name
       type: object
     internal_api_v1_organizations.OrganizationLimits:
       properties:

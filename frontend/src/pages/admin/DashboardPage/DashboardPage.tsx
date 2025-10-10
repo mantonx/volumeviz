@@ -18,7 +18,8 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { getVolumes, getApiV1OrganizationsMe } from '@/api/client';
+import { getVolumes, getOrganizations, getUsers } from '@/api/client';
+import { useVolumeWebSocket } from '@/hooks/useVolumeWebSocket';
 
 interface DashboardStats {
   totalUsers: number;
@@ -27,6 +28,33 @@ interface DashboardStats {
   totalScans: number;
   activeScans: number;
   storageTrackedTB: number;
+}
+
+// Helper function to format bytes into human-readable format
+function formatBytes(bytes: number): { value: string; unit: string } {
+  if (bytes === 0) return { value: '0', unit: 'B' };
+
+  const tb = bytes / (1024 * 1024 * 1024 * 1024);
+  if (tb >= 1) {
+    return { value: tb.toFixed(2), unit: 'TB' };
+  }
+
+  const gb = bytes / (1024 * 1024 * 1024);
+  if (gb >= 1) {
+    return { value: gb.toFixed(2), unit: 'GB' };
+  }
+
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1) {
+    return { value: mb.toFixed(2), unit: 'MB' };
+  }
+
+  const kb = bytes / 1024;
+  if (kb >= 1) {
+    return { value: kb.toFixed(2), unit: 'KB' };
+  }
+
+  return { value: bytes.toString(), unit: 'B' };
 }
 
 export const DashboardPage: React.FC = () => {
@@ -39,56 +67,122 @@ export const DashboardPage: React.FC = () => {
     storageTrackedTB: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [hasFetched, setHasFetched] = useState(false);
+
+  // Real-time updates via WebSocket
+  const { isConnected, onSizeUpdate } = useVolumeWebSocket({
+    enabled: true,
+  });
+
+  // Log on every render to track when state changes
+  console.log(`[Dashboard] Rendering at ${performance.now().toFixed(0)}ms with stats:`, stats);
+
+  // Listen for volume size updates to refresh storage stats
+  useEffect(() => {
+    const cleanup = onSizeUpdate((event) => {
+      console.log('[Dashboard] Volume size updated, refreshing storage stats:', event);
+      // Optimistically update the storage total
+      setStats(prev => ({
+        ...prev,
+        storageTrackedTB: prev.storageTrackedTB + (event.size_bytes || 0),
+      }));
+    });
+
+    return cleanup;
+  }, [onSizeUpdate]);
 
   useEffect(() => {
+    // Prevent double-fetch from React StrictMode
+    if (hasFetched) {
+      console.log('[Dashboard] Skipping duplicate fetch (already fetched)');
+      return;
+    }
+
     const fetchStats = async () => {
       try {
-        // Fetch volumes (paged response)
-        const volumesResponse = await getVolumes({ page_size: 1000 });
-        const volumesData = volumesResponse.data as any;
-        const volumes = (volumesData?.data || []) as any[];
-        const totalVolumes = volumesData?.total || volumes.length;
+        const startTime = performance.now();
+        console.log('[Dashboard] Starting to fetch stats...');
 
-        // Fetch organization info
-        let orgUserCount = 0;
-        let storageUsageBytes = 0;
-        try {
-          const orgResponse = await getApiV1OrganizationsMe();
-          const orgData = orgResponse.data as any;
-          orgUserCount = orgData?.stats?.user_count || 0;
-          storageUsageBytes = orgData?.stats?.storage_usage_bytes || 0;
-        } catch (err) {
-          console.error('Failed to fetch organization:', err);
+        // Fetch all stats in parallel for better performance
+        const [usersResult, orgsResult, volumesResult] = await Promise.allSettled([
+          getUsers({ page: 1, page_size: 100 }),
+          getOrganizations({ page: 1, page_size: 100 }),
+          getVolumes({ page: 1, page_size: 1000 }),
+        ]);
+
+        const endTime = performance.now();
+        console.log(`[Dashboard] All API calls completed in ${(endTime - startTime).toFixed(0)}ms`);
+
+        // Extract users count
+        let totalUsers = 0;
+        if (usersResult.status === 'fulfilled') {
+          const usersData = usersResult.value.data as any;
+          if (Array.isArray(usersData)) {
+            totalUsers = usersData.length;
+          } else if (usersData?.total !== undefined) {
+            totalUsers = usersData.total;
+          }
+        } else {
+          console.error('Failed to fetch users:', usersResult.reason);
         }
 
-        // Calculate storage from organization stats or fallback to volume sizes
-        let totalTB = storageUsageBytes / (1024 * 1024 * 1024 * 1024);
-
-        if (totalTB === 0 && volumes.length > 0) {
-          const totalBytes = volumes.reduce((sum: number, vol: any) => {
-            const size = vol.size || 0;
-            return sum + size;
-          }, 0);
-          totalTB = totalBytes / (1024 * 1024 * 1024 * 1024);
+        // Extract organizations count
+        let totalOrganizations = 0;
+        if (orgsResult.status === 'fulfilled') {
+          const orgsData = orgsResult.value.data as any;
+          if (Array.isArray(orgsData)) {
+            totalOrganizations = orgsData.length;
+          } else if (orgsData?.total !== undefined) {
+            totalOrganizations = orgsData.total;
+          }
+        } else {
+          console.error('Failed to fetch organizations:', orgsResult.reason);
         }
 
-        setStats({
-          totalUsers: orgUserCount,
-          totalOrganizations: 1, // User can only see their own org
-          totalVolumes: totalVolumes,
+        // Extract volumes count and total size
+        let totalVolumes = 0;
+        let totalBytes = 0;
+        if (volumesResult.status === 'fulfilled') {
+          const volumesData = volumesResult.value.data as any;
+          if (Array.isArray(volumesData)) {
+            totalVolumes = volumesData.length;
+            // Calculate total storage from volume sizes
+            totalBytes = volumesData.reduce((sum: number, vol: any) => {
+              return sum + (vol.size_bytes || 0);
+            }, 0);
+          } else if (volumesData?.total !== undefined) {
+            totalVolumes = volumesData.total;
+          }
+        } else {
+          console.error('Failed to fetch volumes:', volumesResult.reason);
+        }
+        const activeScans = 0;
+
+        const newStats = {
+          totalUsers,
+          totalOrganizations,
+          totalVolumes,
           totalScans: 0, // TODO: Add scan stats when API is available
-          activeScans: 0, // TODO: Calculate from volume scan statuses
-          storageTrackedTB: totalTB,
-        });
+          activeScans,
+          storageTrackedTB: totalBytes,
+        };
+
+        console.log('[Dashboard] About to call setStats with:', newStats);
+        const beforeSetStats = performance.now();
+        setStats(newStats);
+        const afterSetStats = performance.now();
+        console.log(`[Dashboard] setStats called in ${(afterSetStats - beforeSetStats).toFixed(2)}ms`);
       } catch (err) {
         console.error('Failed to fetch dashboard stats:', err);
       } finally {
         setLoading(false);
+        setHasFetched(true);
+        console.log('[Dashboard] Fetch complete, loading set to false');
       }
     };
 
     fetchStats();
-  }, []);
+  }, [hasFetched]);
 
   const systemHealth = {
     api: 'healthy',
@@ -203,7 +297,10 @@ export const DashboardPage: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Storage Tracked</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                {stats.storageTrackedTB} TB
+                {(() => {
+                  const formatted = formatBytes(stats.storageTrackedTB);
+                  return `${formatted.value} ${formatted.unit}`;
+                })()}
               </p>
             </div>
             <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-indigo-100 dark:bg-indigo-900">

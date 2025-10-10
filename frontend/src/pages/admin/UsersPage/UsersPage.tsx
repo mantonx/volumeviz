@@ -11,10 +11,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { User, Search, Plus, Edit, Trash2, CheckCircle, XCircle, Shield } from 'lucide-react';
+import { User, Search, Plus, Edit, Trash2, CheckCircle, XCircle, Shield, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { getUsers } from '@/api/client';
+import {
+  getUsers,
+  postUsers,
+  putUsersId,
+  deleteUsersId,
+  InternalApiV1UsersCreateUserRequest,
+  InternalApiV1UsersUpdateUserRequest,
+  InternalApiV1UsersCreateUserRequestRole,
+  InternalApiV1UsersUpdateUserRequestRole,
+} from '@/api/client';
 
 interface UserData {
   id: number;
@@ -32,22 +41,35 @@ export const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
+
+  const [createForm, setCreateForm] = useState<InternalApiV1UsersCreateUserRequest>({
+    username: '',
+    email: '',
+    password: '',
+    role: 'user' as InternalApiV1UsersCreateUserRequestRole,
+    organization_id: 1,
+  });
+
+  const [editForm, setEditForm] = useState<InternalApiV1UsersUpdateUserRequest>({});
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await getUsers({ page: 1, page_size: 100 });
-        // The API returns { data: [...], page, page_size, total }
-        // But response.data seems to BE the array directly in the logs
-        // Let's check if response.data is an array or object
         const responseData = response.data as any;
 
+        // Orval extracts the 'data' field from the API response, so response.data IS the array
         if (Array.isArray(responseData)) {
-          // response.data is directly the array
           setUsers(responseData);
         } else {
-          // response.data is the paged response object
-          setUsers(responseData?.data || []);
+          console.error('[UsersPage] Unexpected response format:', responseData);
+          setUsers([]);
         }
       } catch (err: any) {
         console.error('[UsersPage] Failed to fetch users:', err);
@@ -59,6 +81,101 @@ export const UsersPage: React.FC = () => {
 
     fetchUsers();
   }, []);
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
+  const refreshUsers = async () => {
+    try {
+      const response = await getUsers({ page: 1, page_size: 100 });
+      const responseData = response.data as any;
+
+      // Orval extracts the 'data' field from the API response, so response.data IS the array
+      if (Array.isArray(responseData)) {
+        // Create a completely new array with new object references to force React re-render
+        const newUsers = responseData.map((user: any) => ({ ...user }));
+        setUsers(newUsers);
+        setLastUpdateTime(Date.now());
+      } else {
+        console.error('[UsersPage] Unexpected response format:', responseData);
+        setUsers([]);
+      }
+    } catch (err: any) {
+      console.error('[UsersPage] Failed to refresh users:', err);
+      showNotification('error', 'Failed to refresh users');
+    }
+  };
+
+  const handleCreateUser = async () => {
+    try {
+      console.log('[UsersPage] Creating user with data:', createForm);
+      await postUsers(createForm);
+      showNotification('success', 'User created successfully');
+      setShowCreateModal(false);
+      setCreateForm({
+        username: '',
+        email: '',
+        password: '',
+        role: 'user' as InternalApiV1UsersCreateUserRequestRole,
+        organization_id: 1,
+      });
+      await refreshUsers();
+    } catch (err: any) {
+      console.error('[UsersPage] Failed to create user:', err);
+      console.error('[UsersPage] Error response:', err.response);
+      console.error('[UsersPage] Error data:', err.response?.data);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to create user';
+      showNotification('error', errorMessage);
+    }
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      await putUsersId(selectedUser.id, editForm);
+      showNotification('success', 'User updated successfully');
+      setShowEditModal(false);
+      setSelectedUser(null);
+      setEditForm({});
+      await refreshUsers();
+    } catch (err: any) {
+      console.error('[UsersPage] Failed to update user:', err);
+      showNotification('error', err.response?.data?.message || 'Failed to update user');
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      await deleteUsersId(selectedUser.id);
+      showNotification('success', 'User deleted successfully');
+      setShowDeleteConfirm(false);
+      setSelectedUser(null);
+      await refreshUsers();
+    } catch (err: any) {
+      console.error('[UsersPage] Failed to delete user:', err);
+      showNotification('error', err.response?.data?.message || 'Failed to delete user');
+    }
+  };
+
+  const openEditModal = (user: UserData) => {
+    setSelectedUser(user);
+    setEditForm({
+      email: user.email,
+      role: user.role as InternalApiV1UsersUpdateUserRequestRole,
+      is_active: user.is_active,
+    });
+    setShowEditModal(true);
+  };
+
+  const openDeleteConfirm = (user: UserData) => {
+    setSelectedUser(user);
+    setShowDeleteConfirm(true);
+  };
 
   const filteredUsers = users.filter(user =>
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,7 +214,7 @@ export const UsersPage: React.FC = () => {
             Manage user accounts across all organizations
           </p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => setShowCreateModal(true)}>
           <Plus className="h-4 w-4" />
           Create User
         </Button>
@@ -147,7 +264,7 @@ export const UsersPage: React.FC = () => {
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                <tr key={`${user.id}-${lastUpdateTime}`} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900">
@@ -199,6 +316,7 @@ export const UsersPage: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => openEditModal(user)}
                         className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                       >
                         <Edit className="h-4 w-4" />
@@ -206,6 +324,7 @@ export const UsersPage: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => openDeleteConfirm(user)}
                         className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -227,6 +346,269 @@ export const UsersPage: React.FC = () => {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {searchTerm ? 'Try adjusting your search' : 'Get started by creating a new user'}
           </p>
+        </div>
+      )}
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New User</h2>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.username}
+                    onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    placeholder="Enter username (min 3 characters)"
+                    minLength={3}
+                    required
+                  />
+                  {createForm.username && createForm.username.length < 3 && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">Username must be at least 3 characters</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    placeholder="Enter email"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    placeholder="Enter password (min 8 characters)"
+                    minLength={8}
+                    required
+                  />
+                  {createForm.password && createForm.password.length < 8 && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">Password must be at least 8 characters</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Role
+                  </label>
+                  <select
+                    value={createForm.role}
+                    onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as InternalApiV1UsersCreateUserRequestRole })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                    <option value="viewer">Viewer</option>
+                    <option value="operator">Operator</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Organization ID
+                  </label>
+                  <input
+                    type="number"
+                    value={createForm.organization_id}
+                    onChange={(e) => setCreateForm({ ...createForm, organization_id: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleCreateUser}
+                  disabled={
+                    !createForm.username ||
+                    createForm.username.length < 3 ||
+                    !createForm.email ||
+                    !createForm.password ||
+                    createForm.password.length < 8
+                  }
+                >
+                  Create User
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit User</h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedUser?.username || ''}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white cursor-not-allowed"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Username cannot be changed</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={editForm.email || ''}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Role
+                  </label>
+                  <select
+                    value={editForm.role || ''}
+                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value as InternalApiV1UsersUpdateUserRequestRole })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                    <option value="viewer">Viewer</option>
+                    <option value="operator">Operator</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="is_active"
+                    checked={editForm.is_active ?? true}
+                    onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900 dark:text-white">
+                    Active
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleEditUser}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Delete User</h2>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Are you sure you want to delete user <strong>{selectedUser.username}</strong>? This action cannot be undone.
+              </p>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                  onClick={handleDeleteUser}
+                >
+                  Delete User
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
+          notification.type === 'success'
+            ? 'bg-green-600 text-white'
+            : 'bg-red-600 text-white'
+        }`}>
+          <p className="font-medium">{notification.message}</p>
         </div>
       )}
     </div>
