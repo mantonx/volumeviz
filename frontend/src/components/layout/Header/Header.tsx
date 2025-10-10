@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAtom, useAtomValue } from 'jotai';
 import {
   Menu,
@@ -134,6 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
   sidebarOpen,
   setSidebarOpen,
 }) => {
+  const navigate = useNavigate();
   const [theme, setTheme] = useAtom(themeAtom);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -423,6 +425,16 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* Menu Items */}
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    navigate('/profile');
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  View Profile
+                </button>
                 <button
                   onClick={logout}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"

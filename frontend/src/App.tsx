@@ -24,6 +24,8 @@ const HealthPage = React.lazy(() => import('@/pages/HealthPage'));
 const SettingsPage = React.lazy(() => import('@/pages/SettingsPage'));
 const OnboardingPage = React.lazy(() => import('@/pages/OnboardingPage'));
 const LoginPage = React.lazy(() => import('@/pages/LoginPage'));
+const RegisterPage = React.lazy(() => import('@/pages/RegisterPage'));
+const UserProfilePage = React.lazy(() => import('@/pages/UserProfilePage'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
 
 // Legacy pages - kept for backward compatibility and Settings integration
@@ -126,6 +128,7 @@ const App: React.FC = () => {
               <Routes>
                 {/* Public Routes (no Layout) */}
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
 
                 {/* Protected Routes (with Layout) */}
                 <Route
@@ -182,6 +185,7 @@ const App: React.FC = () => {
                           {/* System Routes */}
                           <Route path="/health" element={<HealthPage />} />
                           <Route path="/settings" element={<SettingsPage />} />
+                          <Route path="/profile" element={<UserProfilePage />} />
 
                           {/* 404 Route */}
                           <Route path="*" element={<NotFoundPage />} />
