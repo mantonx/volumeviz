@@ -930,14 +930,33 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		}
 	}
 
+	// Determine volume type and mount point display
+	volumeType := "local" // Default to local
+	mountpoint := volume.Mountpoint
+
+	if typeOpt, hasType := volume.Options["type"]; hasType && typeOpt == "none" {
+		if deviceOpt, hasDevice := volume.Options["device"]; hasDevice && deviceOpt != "" {
+			// This is a bind mount - use the actual source path
+			mountpoint = deviceOpt
+
+			// Check if it's a network mount (CIFS/SMB, NFS, etc.)
+			if isNetworkPath(deviceOpt) {
+				volumeType = "network"
+			} else {
+				volumeType = "bind"
+			}
+		}
+	}
+
 	// Build response
 	response := models.VolumeDetailV1{
 		Name:               volume.Name,
 		Driver:             volume.Driver,
+		VolumeType:         volumeType,
 		CreatedAt:          volume.CreatedAt,
 		Labels:             volume.Labels,
 		Scope:              volume.Scope,
-		Mountpoint:         volume.Mountpoint,
+		Mountpoint:         mountpoint,
 		SizeBytes:          sizeBytes,
 		LastScanAt:         lastScanAt,
 		Attachments:        attachments,
