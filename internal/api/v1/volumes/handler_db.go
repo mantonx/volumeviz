@@ -5,6 +5,7 @@ package volumes
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -164,12 +165,21 @@ func (h *Handler) convertDBVolumeToAPI(dbVol sqlc.Volumes) models.VolumeV1 {
 		_ = json.Unmarshal(dbVol.Options, &options)
 	}
 
-	// Determine mount point display
-	// For bind mounts (type=none), show the actual device path instead of Docker internal path
+	// Determine volume type and mount point display
+	volumeType := "local" // Default to local
 	mountpoint := dbVol.MountPoint
+
 	if options["type"] == "none" && options["device"] != "" {
-		// This is a bind mount - show the actual source path
-		mountpoint = options["device"]
+		// This is a bind mount - determine if it's network or local based on device path
+		devicePath := options["device"]
+		mountpoint = devicePath // Show the actual source path
+
+		// Check if it's a network mount (CIFS/SMB, NFS, etc.)
+		if isNetworkPath(devicePath) {
+			volumeType = "network"
+		} else {
+			volumeType = "bind"
+		}
 	}
 
 	// Extract size
@@ -200,6 +210,7 @@ func (h *Handler) convertDBVolumeToAPI(dbVol sqlc.Volumes) models.VolumeV1 {
 	return models.VolumeV1{
 		Name:             dbVol.VolumeID,
 		Driver:           driver,
+		VolumeType:       volumeType,  // "local", "bind", or "network"
 		CreatedAt:        dbVol.CreatedAt,
 		Labels:           labels,
 		Scope:            scope,
@@ -213,6 +224,33 @@ func (h *Handler) convertDBVolumeToAPI(dbVol sqlc.Volumes) models.VolumeV1 {
 		IsOrphaned:       isOrphaned,
 		Status:           status,
 	}
+}
+
+// isNetworkPath checks if a path is a network mount (CIFS/SMB, NFS, etc.)
+func isNetworkPath(path string) bool {
+	// Check for common network mount patterns
+	// CIFS/SMB mounts often start with /cifs/, //server/, or \\server\
+	// NFS mounts often start with /nfs/ or server:/path
+	if strings.HasPrefix(path, "/cifs/") {
+		return true
+	}
+	if strings.HasPrefix(path, "/smb/") {
+		return true
+	}
+	if strings.HasPrefix(path, "/nfs/") {
+		return true
+	}
+	if strings.HasPrefix(path, "//") {
+		return true
+	}
+	if strings.HasPrefix(path, "\\\\") {
+		return true
+	}
+	// NFS-style: server:/path
+	if strings.Contains(path, ":") && !strings.HasPrefix(path, "/") {
+		return true
+	}
+	return false
 }
 
 // volumePassesDBFilters checks if a database volume passes the given filters

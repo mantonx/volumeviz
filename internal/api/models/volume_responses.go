@@ -8,6 +8,7 @@ import (
 type VolumeV1 struct {
 	Name               string              `json:"name" example:"tv-shows-readonly"`
 	Driver             string              `json:"driver" example:"local"`
+	VolumeType         string              `json:"volume_type" example:"network" enums:"local,bind,network"` // Type: local, bind mount, or network
 	CreatedAt          time.Time           `json:"created_at" example:"2023-01-01T10:00:00Z"`
 	Labels             map[string]string   `json:"labels,omitempty" example:"com.docker.compose.project:media"`
 	Options            map[string]string   `json:"options,omitempty" example:"type:none,device:/mnt/media"`
