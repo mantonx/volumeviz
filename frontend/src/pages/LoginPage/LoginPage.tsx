@@ -2,17 +2,17 @@
  * LoginPage - User authentication page
  *
  * Features:
- * - Email/password login
+ * - Username/password login with organization ID
  * - JWT token management
  * - Remember me functionality
- * - Password reset link
  * - Error handling and validation
  * - Redirect after successful login
+ * - Organization-scoped authentication
  */
 
 import React, { useState, FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Lock, Mail, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, AlertCircle, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { postAuthLogin } from '@/api/orval-generated/api';
@@ -27,8 +27,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
   const location = useLocation();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [organizationId, setOrganizationId] = useState('1'); // Default to org 1
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,27 +43,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
     try {
       // Call the login API
       const response = await postAuthLogin({
-        email,
+        username,
         password,
+        organization_id: parseInt(organizationId, 10),
       } as any);
 
       const responseData = response as any;
 
       // Store the JWT token and user info
-      if (responseData.access_token) {
+      if (responseData.token) {
         // Store refresh token if remember me is checked
         if (rememberMe && responseData.refresh_token) {
           localStorage.setItem('refresh_token', responseData.refresh_token);
         }
 
         // Use the auth hook to set authentication state
-        login(responseData.access_token, responseData.user);
+        login(responseData.token, {
+          id: responseData.user.ID.toString(),
+          email: responseData.user.Email,
+          username: responseData.user.Username,
+          role: responseData.user.Role,
+        });
 
         // Redirect to the page they were trying to access, or dashboard
         const from = (location.state as any)?.from?.pathname || '/';
         navigate(from, { replace: true });
       } else {
-        setError('Login failed: No access token received');
+        setError('Login failed: No token received');
       }
     } catch (err: any) {
       console.error('Login error:', err);
@@ -106,28 +113,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
               </div>
             )}
 
-            {/* Email Field */}
+            {/* Username Field */}
             <div>
               <label
-                htmlFor="email"
+                htmlFor="username"
                 className="block text-sm font-medium text-gray-900 dark:text-gray-900 mb-2"
               >
-                Email Address
+                Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-500 dark:text-gray-600" />
+                  <User className="h-5 w-5 text-gray-500 dark:text-gray-600" />
                 </div>
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   disabled={isLoading}
                   className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 text-gray-900 bg-white dark:bg-white dark:text-gray-900 dark:border-gray-300"
-                  placeholder="you@example.com"
-                  autoComplete="email"
+                  placeholder="Enter your username"
+                  autoComplete="username"
                 />
               </div>
             </div>
@@ -218,13 +225,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
               Development Mode:
             </p>
             <p className="text-xs text-blue-900">
-              Default credentials:{' '}
+              Test credentials:{' '}
               <code className="bg-blue-100 px-1 rounded font-medium">
-                admin@volumeviz.local
+                demouser / NewPassword123
               </code>
             </p>
             <p className="text-xs text-blue-900 mt-1">
-              Or use the JWT token from the integration test page.
+              Organization ID is set to 1 by default.
             </p>
           </div>
         </Card>
@@ -234,10 +241,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
           <p className="text-sm text-gray-800 dark:text-gray-800">
             Don't have an account?{' '}
             <button
-              onClick={() => console.log('Registration not implemented')}
+              onClick={() => navigate('/register')}
               className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-600 dark:hover:text-blue-700"
             >
-              Contact your administrator
+              Register here
             </button>
           </p>
         </div>
