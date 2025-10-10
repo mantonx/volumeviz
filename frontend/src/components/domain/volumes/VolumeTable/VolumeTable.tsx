@@ -434,37 +434,37 @@ const ExpandedVolumeRow = React.memo<{
 }>(({ volume, volumeId, sizePercentage }) => {
   return (
     <tr>
-      <td colSpan={8} className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+      <td colSpan={8} className="px-6 py-4 bg-gray-50 dark:bg-gray-900/80 border-t border-gray-200 dark:border-gray-700">
         {/* Scan Progress Detail - shows if volume is actively scanning */}
         <ScanProgressDetail volumeId={volumeId} volumeName={volume.name} className="mb-4" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Volume Information */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm uppercase tracking-wide">Volume Info</h4>
+            <h4 className="font-semibold text-gray-900 dark:text-white text-sm uppercase tracking-wide">Volume Info</h4>
             <div className="space-y-2 text-sm">
               <div>
-                <span className="font-medium text-gray-700 dark:text-gray-300">Mount Point:</span>
-                <div className="text-gray-600 dark:text-gray-400 font-mono text-xs break-all">
+                <span className="font-medium text-gray-900 dark:text-gray-200">Mount Point:</span>
+                <div className="text-gray-700 dark:text-gray-300 font-mono text-xs break-all">
                   {volume.mountpoint || volume.mount_point || '—'}
                 </div>
               </div>
               <div>
-                <span className="font-medium text-gray-700 dark:text-gray-300">Driver:</span>
-                <div className="text-gray-600 dark:text-gray-400">
+                <span className="font-medium text-gray-900 dark:text-gray-200">Driver:</span>
+                <div className="text-gray-700 dark:text-gray-300">
                   {volume.driver || '—'}
                 </div>
               </div>
               <div>
-                <span className="font-medium text-gray-700 dark:text-gray-300">Scope:</span>
-                <div className="text-gray-600 dark:text-gray-400">
+                <span className="font-medium text-gray-900 dark:text-gray-200">Scope:</span>
+                <div className="text-gray-700 dark:text-gray-300">
                   {volume.scope || '—'}
                 </div>
               </div>
               {volume.labels && Object.keys(volume.labels).length > 0 && (
                 <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Labels:</span>
-                  <div className="text-gray-600 dark:text-gray-400 text-xs space-y-1 mt-1">
+                  <span className="font-medium text-gray-900 dark:text-gray-200">Labels:</span>
+                  <div className="text-gray-700 dark:text-gray-300 text-xs space-y-1 mt-1">
                     {Object.entries(volume.labels).map(([key, value]) => (
                       <div key={key} className="font-mono">
                         {key}: {String(value)}
@@ -478,24 +478,24 @@ const ExpandedVolumeRow = React.memo<{
 
           {/* Timestamps & Status */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm uppercase tracking-wide">Timestamps</h4>
+            <h4 className="font-semibold text-gray-900 dark:text-white text-sm uppercase tracking-wide">Timestamps</h4>
             <div className="space-y-2 text-sm">
               <div>
-                <span className="font-medium text-gray-700 dark:text-gray-300">Created:</span>
-                <div className="text-gray-600 dark:text-gray-400">
+                <span className="font-medium text-gray-900 dark:text-gray-200">Created:</span>
+                <div className="text-gray-700 dark:text-gray-300">
                   {volume.created_at ? new Date(volume.created_at).toLocaleString() : '—'}
                 </div>
               </div>
               <div>
-                <span className="font-medium text-gray-700 dark:text-gray-300">Last Updated:</span>
-                <div className="text-gray-600 dark:text-gray-400">
+                <span className="font-medium text-gray-900 dark:text-gray-200">Last Updated:</span>
+                <div className="text-gray-700 dark:text-gray-300">
                   {volume.updated_at ? new Date(volume.updated_at).toLocaleString() : '—'}
                 </div>
               </div>
               {volume.last_scan_at && (
                 <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Last Scanned:</span>
-                  <div className="text-gray-600 dark:text-gray-400">
+                  <span className="font-medium text-gray-900 dark:text-gray-200">Last Scanned:</span>
+                  <div className="text-gray-700 dark:text-gray-300">
                     {new Date(volume.last_scan_at).toLocaleString()}
                   </div>
                 </div>
@@ -505,19 +505,19 @@ const ExpandedVolumeRow = React.memo<{
 
           {/* Attachments & Usage */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm uppercase tracking-wide">Usage</h4>
+            <h4 className="font-semibold text-gray-900 dark:text-white text-sm uppercase tracking-wide">Usage</h4>
             <div className="space-y-2 text-sm">
               {volume.attachments_count !== undefined && (
                 <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Container Attachments:</span>
-                  <div className="text-gray-600 dark:text-gray-400">
+                  <span className="font-medium text-gray-900 dark:text-gray-200">Container Attachments:</span>
+                  <div className="text-gray-700 dark:text-gray-300">
                     {volume.attachments_count} {volume.attachments_count === 1 ? 'container' : 'containers'}
                   </div>
                 </div>
               )}
               {volume.is_orphaned !== undefined && (
                 <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Orphaned:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-200">Orphaned:</span>
                   <div className={cn(
                     "font-medium",
                     volume.is_orphaned ? "text-orange-600 dark:text-orange-400" : "text-green-600 dark:text-green-400"
@@ -528,7 +528,7 @@ const ExpandedVolumeRow = React.memo<{
               )}
               {volume.quota_bytes && (
                 <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Quota Usage:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-200">Quota Usage:</span>
                   <div className="mt-1">
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
@@ -545,7 +545,7 @@ const ExpandedVolumeRow = React.memo<{
                         }}
                       />
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <div className="text-xs text-gray-700 dark:text-gray-300 mt-1">
                       {sizePercentage.toFixed(1)}% of quota
                     </div>
                   </div>
