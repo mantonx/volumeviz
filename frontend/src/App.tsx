@@ -4,6 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ToastProvider } from '@/components/ui';
 import { RealtimeProvider } from '@/providers/realtime';
+import { ThemeProvider } from '@/providers/theme/ThemeProvider';
 import { backgroundSyncManager } from '@/utils/background-sync';
 import { serviceWorkerManager } from '@/utils/service-worker';
 import React, { Suspense, useEffect, useState } from 'react';
@@ -128,11 +129,12 @@ const App: React.FC = () => {
   }
 
   return (
-    <div data-testid="app-root">
-      <ToastProvider>
-        <RealtimeProvider>
-          <ApiHealthChecker />
-          <Router>
+    <ThemeProvider>
+      <div data-testid="app-root">
+        <ToastProvider>
+          <RealtimeProvider>
+            <ApiHealthChecker />
+            <Router>
             <Suspense fallback={<PageLoadingSpinner />}>
               <Routes>
                 {/* Public Routes (no Layout) */}
@@ -230,7 +232,8 @@ const App: React.FC = () => {
           </Router>
         </RealtimeProvider>
       </ToastProvider>
-    </div>
+      </div>
+    </ThemeProvider>
   );
 };
 
