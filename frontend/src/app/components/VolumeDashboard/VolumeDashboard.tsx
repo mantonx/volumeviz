@@ -127,46 +127,46 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
       <div className={clsx('space-y-6', className)}>
         {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-surface rounded-lg border border-line p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <BarChart3 className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                <div className="text-2xl font-bold text-primary">
                   {chartData.length}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Active Volumes
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-surface rounded-lg border border-line p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <Activity className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                <div className="text-2xl font-bold text-primary">
                   {activeScans}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Active Scans
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-surface rounded-lg border border-line p-4">
             <div className="flex items-center gap-3">
               <div
                 className={clsx(
                   'p-2 rounded-lg',
                   isActive
                     ? 'bg-green-100 dark:bg-green-900/30'
-                    : 'bg-gray-100 dark:bg-gray-700',
+                    : 'bg-surface-secondary',
                 )}
               >
                 <Activity
@@ -177,24 +177,24 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
                 />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                <div className="text-2xl font-bold text-primary">
                   {isActive ? 'ON' : 'OFF'}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Real-time Updates
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-surface rounded-lg border border-line p-4">
             <div className="flex items-center gap-3">
               <div
                 className={clsx(
                   'p-2 rounded-lg',
                   error
                     ? 'bg-red-100 dark:bg-red-900/30'
-                    : 'bg-gray-100 dark:bg-gray-700',
+                    : 'bg-surface-secondary',
                 )}
               >
                 <AlertTriangle
@@ -205,10 +205,10 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
                 />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                <div className="text-2xl font-bold text-primary">
                   {error ? '1' : '0'}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Errors
                 </div>
               </div>
@@ -231,7 +231,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
           <div className="xl:col-span-2 space-y-6">
             {/* Chart Controls */}
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-semibold text-primary">
                 Volume Visualization
               </h2>
               <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
                     'px-3 py-1.5 text-sm rounded-md transition-colors',
                     selectedChart === 'pie'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500',
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 text-secondary hover:bg-gray-300 dark:hover:bg-gray-500',
                   )}
                 >
                   <PieChart className="w-4 h-4" />
@@ -252,7 +252,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
                     'px-3 py-1.5 text-sm rounded-md transition-colors',
                     selectedChart === 'donut'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500',
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 text-secondary hover:bg-gray-300 dark:hover:bg-gray-500',
                   )}
                 >
                   Donut
@@ -263,7 +263,7 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
                     'px-3 py-1.5 text-sm rounded-md transition-colors',
                     selectedChart === 'bar'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500',
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 text-secondary hover:bg-gray-300 dark:hover:bg-gray-500',
                   )}
                 >
                   <BarChart3 className="w-4 h-4" />
@@ -312,17 +312,17 @@ export const VolumeDashboard: React.FC<VolumeDashboardProps> = ({
 
             {/* Settings Panel */}
             {showSettings && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <div className="bg-surface rounded-lg border border-line p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <Settings className="w-5 h-5 text-gray-600" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h3 className="text-lg font-semibold text-primary">
                     Settings
                   </h3>
                 </div>
 
                 <div className="space-y-3">
                   <label className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                    <span className="text-sm text-gray-700 text-secondary">
                       Show Advanced Charts
                     </span>
                     <input

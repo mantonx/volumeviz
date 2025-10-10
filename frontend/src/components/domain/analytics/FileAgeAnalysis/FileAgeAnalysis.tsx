@@ -121,10 +121,10 @@ export const FileAgeAnalysis: React.FC<FileAgeAnalysisProps> = ({
       <Card className={cn('p-8', className)}>
         <div className="text-center">
           <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <h3 className="text-lg font-semibold text-primary mb-2">
             No Data Available
           </h3>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-secondary">
             No files available for age analysis.
           </p>
         </div>
@@ -142,10 +142,10 @@ export const FileAgeAnalysis: React.FC<FileAgeAnalysisProps> = ({
               <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <h2 className="text-lg font-semibold text-primary">
                 File Age Analysis
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-secondary">
                 Analyzing {analysisData.totalFiles.toLocaleString()} files
                 {volumeId && ` from ${volumeId}`}
               </p>
@@ -165,16 +165,16 @@ export const FileAgeAnalysis: React.FC<FileAgeAnalysisProps> = ({
                 Export
               </Button>
               {showExportMenu && (
-                <div className="absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 z-10 min-w-[160px]">
+                <div className="absolute right-0 top-full mt-2 bg-surface border border-line rounded-lg shadow-lg p-2 z-10 min-w-[160px]">
                   <button
                     onClick={() => handleExport('csv')}
-                    className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                    className="w-full text-left px-3 py-2 rounded hover:bg-surface-hover text-sm"
                   >
                     Export as CSV
                   </button>
                   <button
                     onClick={() => handleExport('json')}
-                    className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                    className="w-full text-left px-3 py-2 rounded hover:bg-surface-hover text-sm"
                   >
                     Export as JSON
                   </button>
@@ -217,14 +217,14 @@ export const FileAgeAnalysis: React.FC<FileAgeAnalysisProps> = ({
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="w-5 h-5 text-blue-500" />
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+              <h3 className="font-semibold text-primary">
                 File Count by Age
               </h3>
               <div className="ml-auto">
                 <Info className="w-4 h-4 text-gray-400" />
               </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-secondary mb-4">
               Distribution of files across age buckets
             </p>
             <AgeDistributionChart
@@ -239,14 +239,14 @@ export const FileAgeAnalysis: React.FC<FileAgeAnalysisProps> = ({
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="w-5 h-5 text-green-500" />
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+              <h3 className="font-semibold text-primary">
                 Storage Size by Age
               </h3>
               <div className="ml-auto">
                 <Info className="w-4 h-4 text-gray-400" />
               </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-secondary mb-4">
               Total storage consumed by each age group
             </p>
             <StorageByAgeChart
@@ -264,7 +264,7 @@ export const FileAgeAnalysis: React.FC<FileAgeAnalysisProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-purple-500" />
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="font-semibold text-primary">
               Modification Activity Timeline
             </h3>
           </div>
@@ -299,7 +299,7 @@ export const FileAgeAnalysis: React.FC<FileAgeAnalysisProps> = ({
             </Button>
           </div>
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-secondary mb-4">
           File modification activity over the selected time period
         </p>
         <AgeTimelineChart

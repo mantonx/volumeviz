@@ -204,7 +204,7 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
           }}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white pr-10"
+          className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary pr-10"
         />
 
         {/* Loading indicator */}
@@ -217,7 +217,7 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
 
       {/* Suggestions Dropdown */}
       {isOpen && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-80 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-surface border border-line rounded-lg shadow-lg max-h-80 overflow-y-auto">
           <ul ref={listRef} className="py-1">
             {suggestions.map((suggestion, index) => (
               <li
@@ -226,7 +226,7 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
                 className={`px-4 py-3 cursor-pointer transition-colors ${
                   index === selectedIndex
                     ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                    : 'hover:bg-surface-hover'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -235,11 +235,11 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
                       {getSuggestionIcon(suggestion.type)}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      <div className="text-sm font-medium text-primary truncate">
                         {suggestion.text}
                       </div>
                       {suggestion.description && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <div className="text-xs text-tertiary truncate">
                           {suggestion.description}
                         </div>
                       )}
@@ -248,11 +248,11 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
 
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     {suggestion.count && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-tertiary">
                         {suggestion.count.toLocaleString()}
                       </span>
                     )}
-                    <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
+                    <span className="text-xs px-2 py-1 bg-surface-secondary text-secondary rounded-full">
                       {getSuggestionTypeLabel(suggestion.type)}
                     </span>
                   </div>
@@ -262,8 +262,8 @@ export const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
           </ul>
 
           {/* Keyboard hints */}
-          <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-            <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+          <div className="px-4 py-2 border-t border-line bg-surface-secondary">
+            <div className="text-xs text-tertiary flex items-center justify-between">
               <span>Use ↑↓ to navigate, Enter to select, Esc to close</span>
               <span>
                 {suggestions.length} suggestion

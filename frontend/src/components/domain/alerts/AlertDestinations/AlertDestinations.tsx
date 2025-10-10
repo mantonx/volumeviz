@@ -76,13 +76,13 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
   const getDestinationStatusColor = (isEnabled: boolean) => {
     return isEnabled
       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+      : 'bg-surface-secondary text-secondary';
   };
 
   if (loading && destinations.length === 0) {
     return (
       <div className={cn('flex items-center justify-center py-12', className)}>
-        <div className="flex items-center gap-2 text-gray-500">
+        <div className="flex items-center gap-2 text-tertiary">
           <Loader2 className="h-5 w-5 animate-spin" />
           Loading destinations...
         </div>
@@ -105,10 +105,10 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
     <div className={cn('space-y-4', className)}>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+          <h3 className="text-lg font-medium text-primary">
             Alert Destinations
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-tertiary">
             Configure where alerts should be sent
           </p>
         </div>
@@ -142,7 +142,7 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-gray-900 dark:text-white">
+                      <h4 className="font-medium text-primary">
                         {destination.name}
                       </h4>
                       <Badge
@@ -154,11 +154,11 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
                         {destination.is_enabled ? 'Enabled' : 'Disabled'}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-tertiary">
                       {destination.description ||
                         `${destination.type} notification`}
                     </p>
-                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <div className="text-xs text-tertiary mt-1">
                       Type: {destination.type} • Created:{' '}
                       {new Date(destination.created_at).toLocaleDateString()}
                     </div>
@@ -214,7 +214,7 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
 
               {operationError[`testDestination_${destination.id}`] && (
                 <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                  <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm">
+                  <div className="flex items-center gap-2 text-red-700 text-sm">
                     <AlertTriangle className="h-4 w-4" />
                     Test failed:{' '}
                     {operationError[`testDestination_${destination.id}`]}
@@ -224,7 +224,7 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
 
               {operationError[`deleteDestination_${destination.id}`] && (
                 <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                  <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm">
+                  <div className="flex items-center gap-2 text-red-700 text-sm">
                     <AlertTriangle className="h-4 w-4" />
                     Delete failed:{' '}
                     {operationError[`deleteDestination_${destination.id}`]}

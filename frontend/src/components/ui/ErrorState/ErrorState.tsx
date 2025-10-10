@@ -72,11 +72,11 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
         <AlertCircle className="h-12 w-12 mx-auto" />
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-semibold text-primary mb-2">
         {displayTitle}
       </h3>
 
-      <p className="text-gray-600 dark:text-gray-400 mb-6">{displayMessage}</p>
+      <p className="text-secondary mb-6">{displayMessage}</p>
 
       {/* Status Code Badge */}
       {statusCode && (
@@ -85,10 +85,10 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
             className={cn(
               'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
               statusCode >= 500
-                ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+                ? 'bg-red-100 text-red-800'
                 : statusCode >= 400
-                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
-                  : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-surface-secondary text-secondary',
             )}
           >
             HTTP {statusCode}
@@ -98,7 +98,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
 
       {/* Request ID */}
       {errorDetails.requestId && (
-        <div className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+        <div className="mb-4 text-xs text-tertiary">
           Request ID: <code>{errorDetails.requestId}</code>
         </div>
       )}
@@ -131,34 +131,34 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
 
       {/* Expandable Error Details */}
       {showDetails && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-left">
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
+        <div className="mt-4 pt-4 border-t border-line text-left">
+          <div className="bg-surface-secondary rounded-lg p-4 space-y-2">
             {errorDetails.code && (
               <div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-medium text-tertiary">
                   Code:
                 </span>
-                <code className="ml-2 text-xs text-gray-900 dark:text-white">
+                <code className="ml-2 text-xs text-primary">
                   {errorDetails.code}
                 </code>
               </div>
             )}
 
             <div>
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              <span className="text-xs font-medium text-tertiary">
                 Message:
               </span>
-              <code className="ml-2 text-xs text-gray-900 dark:text-white break-all">
+              <code className="ml-2 text-xs text-primary break-all">
                 {errorDetails.message}
               </code>
             </div>
 
             {errorDetails.requestId && (
               <div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-medium text-tertiary">
                   Request ID:
                 </span>
-                <code className="ml-2 text-xs text-gray-900 dark:text-white">
+                <code className="ml-2 text-xs text-primary">
                   {errorDetails.requestId}
                 </code>
               </div>
@@ -166,10 +166,10 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
 
             {statusCode && (
               <div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-medium text-tertiary">
                   Status Code:
                 </span>
-                <code className="ml-2 text-xs text-gray-900 dark:text-white">
+                <code className="ml-2 text-xs text-primary">
                   {statusCode}
                 </code>
               </div>
@@ -177,10 +177,10 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
 
             {errorDetails.details && (
               <div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-medium text-tertiary">
                   Details:
                 </span>
-                <pre className="mt-1 text-xs text-gray-900 dark:text-white bg-white dark:bg-gray-900 p-2 rounded overflow-auto">
+                <pre className="mt-1 text-xs text-primary bg-surface p-2 rounded overflow-auto">
                   {JSON.stringify(errorDetails.details, null, 2)}
                 </pre>
               </div>

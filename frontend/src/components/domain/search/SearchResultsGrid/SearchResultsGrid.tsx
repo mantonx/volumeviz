@@ -122,7 +122,7 @@ const GridItem: React.FC<GridItemProps> = ({
     <div style={style} className="p-2">
       <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
         {/* Thumbnail Area */}
-        <div className="aspect-square relative overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-800">
+        <div className="aspect-square relative overflow-hidden rounded-t-lg bg-surface-secondary">
           <PreviewThumbnail
             fileId={file.id}
             fileName={file.name}
@@ -152,7 +152,7 @@ const GridItem: React.FC<GridItemProps> = ({
 
         {/* File Details */}
         <div className="p-3 space-y-2">
-          <h3 className="font-medium text-sm text-gray-900 dark:text-white line-clamp-2 leading-tight">
+          <h3 className="font-medium text-sm text-primary line-clamp-2 leading-tight">
             {file.name}
           </h3>
 
@@ -184,7 +184,7 @@ const GridItem: React.FC<GridItemProps> = ({
             {file.width && file.height && (
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500">Size:</span>
-                <span className="text-gray-700 dark:text-gray-300">
+                <span className="text-secondary">
                   {file.width} × {file.height}px
                 </span>
               </div>
@@ -194,7 +194,7 @@ const GridItem: React.FC<GridItemProps> = ({
             {file.duration_ms && (
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500">Duration:</span>
-                <span className="text-gray-700 dark:text-gray-300">
+                <span className="text-secondary">
                   {Math.round(file.duration_ms / 1000)}s
                 </span>
               </div>
@@ -316,7 +316,7 @@ export const SearchResultsGrid: React.FC<SearchResultsGridProps> = ({
       {/* Results Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-lg font-semibold text-primary">
             Search Results
           </h2>
           <span className="text-sm text-gray-500">

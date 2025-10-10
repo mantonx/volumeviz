@@ -65,10 +65,10 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ className }) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-primary">
             Alerts Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-secondary">
             Configure alert rules, destinations, and monitor delivery status
           </p>
         </div>
@@ -82,7 +82,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ className }) => {
 
       {/* Tab Navigation */}
       <Card className="p-0">
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="border-b border-line">
           <nav className="-mb-px flex space-x-8 px-6">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -96,7 +96,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ className }) => {
                     'group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm',
                     isActive
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 text-tertiary hover:text-secondary',
                   )}
                 >
                   <Icon
@@ -104,7 +104,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ className }) => {
                       'mr-2 h-4 w-4',
                       isActive
                         ? 'text-blue-500 dark:text-blue-400'
-                        : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300',
+                        : 'text-gray-400 group-hover:text-gray-500 group-hover:text-secondary',
                     )}
                   />
                   {tab.label}

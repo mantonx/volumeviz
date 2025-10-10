@@ -48,6 +48,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
     // Log theme change for debugging
     console.log(`[Theme] Applied ${resolvedTheme} theme`);
+    console.log('[Theme] Sample CSS variables set:', {
+      '--color-text-primary': root.style.getPropertyValue('--color-text-primary'),
+      '--color-bg-primary': root.style.getPropertyValue('--color-bg-primary'),
+      '--color-border-default': root.style.getPropertyValue('--color-border-default'),
+    });
   }, [resolvedTheme]);
 
   // Listen for system theme changes when theme is set to 'system'

@@ -130,7 +130,7 @@ export const PreviewImage: React.FC<PreviewImageProps> = ({
     return (
       <div
         className={cn(
-          'flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded',
+          'flex items-center justify-center bg-surface-secondary rounded',
           'min-h-[64px] min-w-[64px]',
           size === 'small' && 'h-16 w-16',
           size === 'medium' && 'h-32 w-32',
@@ -171,7 +171,7 @@ export const PreviewImage: React.FC<PreviewImageProps> = ({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded bg-gray-100 dark:bg-gray-800',
+        'relative overflow-hidden rounded bg-surface-secondary',
         'flex items-center justify-center',
         size === 'small' && 'h-16 w-16',
         size === 'medium' && 'h-32 w-32',
@@ -185,7 +185,7 @@ export const PreviewImage: React.FC<PreviewImageProps> = ({
       {/* Loading placeholder */}
       {state.loading && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded w-full h-full" />
+          <div className="animate-pulse bg-gray-200 bg-surface-secondary rounded w-full h-full" />
           <div className="absolute">
             <ImageIcon className="w-6 h-6 text-gray-400 animate-pulse" />
           </div>

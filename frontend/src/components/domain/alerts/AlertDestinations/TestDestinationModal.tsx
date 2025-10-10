@@ -87,7 +87,7 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
 
         <Card className="relative w-full max-w-lg p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-semibold text-primary">
               Test Destination
             </h2>
             <Button variant="ghost" size="sm" onClick={handleClose}>
@@ -96,7 +96,7 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
           </div>
 
           {/* Destination Info */}
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div className="mb-6 p-4 bg-surface-secondary rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <div className="text-lg">
                 {destination.type === 'slack' && '💬'}
@@ -104,16 +104,16 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
                 {destination.type === 'webhook' && '🔗'}
               </div>
               <div>
-                <h3 className="font-medium text-gray-900 dark:text-white">
+                <h3 className="font-medium text-primary">
                   {destination.name}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+                <p className="text-sm text-tertiary capitalize">
                   {destination.type} destination
                 </p>
               </div>
             </div>
             {destination.description && (
-              <p className="text-sm text-gray-600 dark:text-gray-300">
+              <p className="text-sm text-secondary">
                 {destination.description}
               </p>
             )}
@@ -123,7 +123,7 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
             {/* Test Message Form */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Subject
                 </label>
                 <input
@@ -135,14 +135,14 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
                       subject: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                  className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                   placeholder="Test alert subject"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Message
                 </label>
                 <textarea
@@ -153,7 +153,7 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
                       message: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                  className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                   rows={4}
                   placeholder="Test alert message"
                   required
@@ -176,7 +176,7 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
                     'flex items-center gap-2 text-sm font-medium mb-2',
                     testResult.success
                       ? 'text-green-700 dark:text-green-400'
-                      : 'text-red-700 dark:text-red-400',
+                      : 'text-red-700',
                   )}
                 >
                   {testResult.success ? (
@@ -209,7 +209,7 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
             {/* Error display */}
             {error && !testResult && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm">
+                <div className="flex items-center gap-2 text-red-700 text-sm">
                   <AlertTriangle className="h-4 w-4" />
                   {error}
                 </div>
@@ -217,7 +217,7 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
             )}
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-end gap-3 pt-4 border-t border-line">
               <Button
                 variant="outline"
                 onClick={handleClose}

@@ -97,11 +97,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-900">VolumeViz</h1>
-          <p className="mt-2 text-gray-800 dark:text-gray-800">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-gray-900 text-primary">VolumeViz</h1>
+          <p className="mt-2 text-gray-800 text-primary">Sign in to your account</p>
         </div>
 
-        <Card className="p-8 bg-white dark:bg-white dark:text-gray-900">
+        <Card className="p-8 bg-surface text-primary">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {error && (
@@ -117,13 +117,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
             <div>
               <label
                 htmlFor="username"
-                className="block text-sm font-medium text-gray-900 dark:text-gray-900 mb-2"
+                className="block text-sm font-medium text-gray-900 text-primary mb-2"
               >
                 Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-500 dark:text-gray-600" />
+                  <User className="h-5 w-5 text-gray-500 text-secondary" />
                 </div>
                 <input
                   id="username"
@@ -132,7 +132,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 text-gray-900 bg-white dark:bg-white dark:text-gray-900 dark:border-gray-300"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 text-gray-900 bg-surface text-primary border-line"
                   placeholder="Enter your username"
                   autoComplete="username"
                 />
@@ -143,13 +143,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-900 dark:text-gray-900 mb-2"
+                className="block text-sm font-medium text-gray-900 text-primary mb-2"
               >
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-500 dark:text-gray-600" />
+                  <Lock className="h-5 w-5 text-gray-500 text-secondary" />
                 </div>
                 <input
                   id="password"
@@ -158,7 +158,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 text-gray-900 bg-white dark:bg-white dark:text-gray-900 dark:border-gray-300"
+                  className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 text-gray-900 bg-surface text-primary border-line"
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
@@ -170,9 +170,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-600 dark:hover:text-gray-800" />
+                    <EyeOff className="h-5 w-5 text-gray-500 hover:text-gray-700 text-secondary hover:text-primary" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-600 dark:hover:text-gray-800" />
+                    <Eye className="h-5 w-5 text-gray-500 hover:text-gray-700 text-secondary hover:text-primary" />
                   )}
                 </button>
               </div>
@@ -191,7 +191,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
                 />
                 <label
                   htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-900 dark:text-gray-900"
+                  className="ml-2 block text-sm text-gray-900 text-primary"
                 >
                   Remember me
                 </label>
@@ -238,7 +238,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
 
         {/* Footer */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-800 dark:text-gray-800">
+          <p className="text-sm text-gray-800 text-primary">
             Don't have an account?{' '}
             <button
               onClick={() => navigate('/register')}

@@ -108,7 +108,7 @@ const VolumeDetailsPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-64">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto text-blue-500 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-secondary">
             Loading volume details...
           </p>
         </div>
@@ -129,10 +129,10 @@ const VolumeDetailsPage: React.FC = () => {
           <div className="text-red-500 mb-4">
             <HardDrive className="h-12 w-12 mx-auto" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-semibold text-primary mb-2">
             Volume Not Found
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-secondary mb-4">
             The volume "{name}" could not be found.
           </p>
           <Button onClick={() => navigate('/volumes')}>
@@ -158,10 +158,10 @@ const VolumeDetailsPage: React.FC = () => {
             Back to Volumes
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-primary">
               {volume.name || 'Unnamed Volume'}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">Volume Details</p>
+            <p className="text-secondary">Volume Details</p>
           </div>
         </div>
         <div className="flex items-center space-x-3">
@@ -187,10 +187,10 @@ const VolumeDetailsPage: React.FC = () => {
               <HardDrive className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-semibold text-primary">
                 {volume.name || 'Unnamed Volume'}
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-secondary">
                 {volume.driver || 'local'} driver
               </p>
             </div>
@@ -208,23 +208,23 @@ const VolumeDetailsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                   Volume ID:
                 </span>
-                <span className="font-mono text-sm text-gray-900 dark:text-white">
+                <span className="font-mono text-sm text-primary">
                   {volume.volume_id || 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                   Driver:
                 </span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-primary">
                   {volume.driver || 'local'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                   Status:
                 </span>
                 <Badge variant={getStatusVariant(volume.is_active)}>
@@ -235,10 +235,10 @@ const VolumeDetailsPage: React.FC = () => {
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                   Size:
                 </span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-primary">
                   {volume.size_bytes
                     ? formatSize(volume.size_bytes)
                     : scanResult
@@ -247,18 +247,18 @@ const VolumeDetailsPage: React.FC = () => {
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                   Containers:
                 </span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-primary">
                   {volume.attachments_count || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                   Created:
                 </span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-primary">
                   {formatDate(volume.created_at)}
                 </span>
               </div>
@@ -271,7 +271,7 @@ const VolumeDetailsPage: React.FC = () => {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Size</p>
+                <p className="text-sm text-secondary">Size</p>
                 <p className="text-xl font-bold text-blue-600">
                   {volume.size_bytes
                     ? formatSize(volume.size_bytes)
@@ -287,7 +287,7 @@ const VolumeDetailsPage: React.FC = () => {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-secondary">
                   Containers
                 </p>
                 <p className="text-xl font-bold text-green-600">
@@ -301,7 +301,7 @@ const VolumeDetailsPage: React.FC = () => {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-secondary">
                   Driver
                 </p>
                 <p className="text-xl font-bold text-purple-600">
@@ -318,12 +318,12 @@ const VolumeDetailsPage: React.FC = () => {
       <Card className="p-6">
         <div className="flex items-center space-x-3 mb-4">
           <MapPin className="h-5 w-5 text-gray-500" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-lg font-semibold text-primary">
             Mount Point
           </h3>
         </div>
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-          <code className="text-sm text-gray-900 dark:text-white">
+        <div className="bg-surface-secondary rounded-lg p-4">
+          <code className="text-sm text-primary">
             {volume.mountpoint || 'Not available'}
           </code>
         </div>
@@ -334,7 +334,7 @@ const VolumeDetailsPage: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center space-x-3 mb-4">
             <Tag className="h-5 w-5 text-gray-500" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-semibold text-primary">
               Labels
             </h3>
           </div>
@@ -342,12 +342,12 @@ const VolumeDetailsPage: React.FC = () => {
             {Object.entries(volume.labels).map(([key, value]) => (
               <div
                 key={key}
-                className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
+                className="flex items-center justify-between bg-surface-secondary rounded-lg p-3"
               >
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <span className="text-sm font-medium text-secondary">
                   {key}
                 </span>
-                <span className="text-sm font-mono text-gray-900 dark:text-white">
+                <span className="text-sm font-mono text-primary">
                   {value}
                 </span>
               </div>
@@ -361,7 +361,7 @@ const VolumeDetailsPage: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center space-x-3 mb-4">
             <Activity className="h-5 w-5 text-gray-500" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-semibold text-primary">
               Scan Information
             </h3>
           </div>
@@ -374,36 +374,36 @@ const VolumeDetailsPage: React.FC = () => {
           ) : scanResult ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                   Size:
                 </span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-primary">
                   {formatSize(scanResult.size_bytes)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                   Method:
                 </span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-primary">
                   {scanResult.method || 'Unknown'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                   Duration:
                 </span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-primary">
                   {scanResult.duration_ms
                     ? `${scanResult.duration_ms}ms`
                     : 'Unknown'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                   Scanned At:
                 </span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-primary">
                   {formatDate(scanResult.scanned_at)}
                 </span>
               </div>

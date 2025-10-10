@@ -1,18 +1,18 @@
 /**
  * Light Theme Definition
  *
- * Maps semantic token names to actual color values for the light theme.
- * These CSS variables are applied to :root when light theme is active.
+ * Professional, refined color palette with excellent contrast and modern aesthetics.
+ * Uses slate tones for a sophisticated, polished appearance.
  */
 
 import { primitives } from '../tokens/primitives';
 
 export const lightTheme = {
   colors: {
-    // Text colors
-    '--color-text-primary': primitives.gray[900],
-    '--color-text-secondary': primitives.gray[700],
-    '--color-text-tertiary': primitives.gray[600],
+    // Text colors - refined hierarchy with better contrast
+    '--color-text-primary': primitives.gray[900],      // Deep slate for primary text
+    '--color-text-secondary': primitives.gray[600],    // Medium slate for secondary
+    '--color-text-tertiary': primitives.gray[500],     // Lighter slate for tertiary
     '--color-text-inverse': primitives.gray[50],
     '--color-text-disabled': primitives.gray[400],
     '--color-text-link': primitives.blue[600],
@@ -22,20 +22,20 @@ export const lightTheme = {
     '--color-text-error': primitives.red[700],
     '--color-text-info': primitives.blue[700],
 
-    // Background colors
-    '--color-bg-primary': '#ffffff',
-    '--color-bg-secondary': primitives.gray[50],
-    '--color-bg-tertiary': primitives.gray[100],
+    // Background colors - subtle elevation through refined grays
+    '--color-bg-primary': primitives.gray[50],          // Very light gray base for less eye strain
+    '--color-bg-secondary': '#ffffff',                  // Pure white for cards
+    '--color-bg-tertiary': primitives.gray[100],        // Slightly more visible
     '--color-bg-inverse': primitives.gray[900],
-    '--color-bg-elevated': '#ffffff',
-    '--color-bg-overlay': 'rgba(0, 0, 0, 0.5)',
-    '--color-bg-hover': primitives.gray[50],
+    '--color-bg-elevated': '#ffffff',                   // Cards/modals stay white
+    '--color-bg-overlay': 'rgba(15, 23, 42, 0.6)',     // Slate overlay
+    '--color-bg-hover': primitives.gray[100],          // Slightly stronger hover
     '--color-bg-selected': primitives.blue[50],
 
-    // Border colors
-    '--color-border-default': primitives.gray[200],
-    '--color-border-subtle': primitives.gray[100],
-    '--color-border-strong': primitives.gray[300],
+    // Border colors - refined contrast
+    '--color-border-default': primitives.gray[200],    // Clean, visible borders
+    '--color-border-subtle': primitives.gray[100],     // Very subtle dividers
+    '--color-border-strong': primitives.gray[300],     // Emphasized borders
     '--color-border-focus': primitives.blue[500],
     '--color-border-error': primitives.red[300],
 
@@ -71,16 +71,14 @@ export const lightTheme = {
       'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
   },
 
-  // Shadows
+  // Shadows - refined and professional with subtle depth
   shadows: {
-    '--shadow-sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-    '--shadow-md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-    '--shadow-lg':
-      '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-    '--shadow-xl':
-      '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-    '--shadow-2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
-    '--shadow-inner': 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
+    '--shadow-sm': '0 1px 2px 0 rgba(15, 23, 42, 0.05)',
+    '--shadow-md': '0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.04)',
+    '--shadow-lg': '0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05), 0 0 0 1px rgba(15, 23, 42, 0.04)',
+    '--shadow-xl': '0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 10px 10px -5px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(15, 23, 42, 0.04)',
+    '--shadow-2xl': '0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.05)',
+    '--shadow-inner': 'inset 0 2px 4px 0 rgba(15, 23, 42, 0.06)',
   },
 } as const;
 

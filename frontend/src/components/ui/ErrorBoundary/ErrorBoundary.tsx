@@ -115,11 +115,11 @@ export class ErrorBoundary extends Component<
           <div className="p-6 text-center">
             <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
 
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <h2 className="text-xl font-semibold text-primary mb-2">
               Something went wrong
             </h2>
 
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-secondary mb-6">
               An unexpected error occurred while rendering this component.
               {this.state.eventId && (
                 <span className="block text-xs mt-2 font-mono text-gray-500">
@@ -151,11 +151,11 @@ export class ErrorBoundary extends Component<
             </div>
 
             {this.props.showDetails && this.state.error && (
-              <details className="text-left bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <details className="text-left bg-surface-secondary rounded-lg p-4">
+                <summary className="cursor-pointer text-sm font-medium text-secondary mb-2">
                   Error Details
                 </summary>
-                <div className="text-xs font-mono text-red-600 dark:text-red-400 whitespace-pre-wrap">
+                <div className="text-xs font-mono text-red-600 whitespace-pre-wrap">
                   <div className="mb-2">
                     <strong>Error:</strong> {this.state.error.message}
                   </div>

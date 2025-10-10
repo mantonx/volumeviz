@@ -172,10 +172,10 @@ export const PermissionsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-primary">
             Roles & Permissions
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-secondary">
             Manage user roles and their permissions
           </p>
         </div>
@@ -196,10 +196,10 @@ export const PermissionsPage: React.FC = () => {
                   <Shield className="h-6 w-6 text-purple-600 dark:text-purple-300" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h3 className="text-lg font-semibold text-primary">
                     {role.displayName}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-tertiary">
                     {role.description}
                   </p>
                 </div>
@@ -238,7 +238,7 @@ export const PermissionsPage: React.FC = () => {
             <div className="space-y-4">
               {permissionCategories.map((category) => (
                 <div key={category.name}>
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <h4 className="text-sm font-medium text-secondary mb-2">
                     {category.name}
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -256,7 +256,7 @@ export const PermissionsPage: React.FC = () => {
                             flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors
                             ${hasPermission
                               ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                              : 'bg-surface-secondary text-tertiary'
                             }
                             ${isEditing ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}
                           `}

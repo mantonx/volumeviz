@@ -185,13 +185,13 @@ export function VolumesList({ className = '' }: VolumesListProps) {
       {/* View controls */}
       <div className="flex items-center justify-end gap-3">
         {/* View Mode Toggle */}
-        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+        <div className="flex bg-surface-secondary rounded-lg p-1">
           <button
             onClick={() => setViewMode('table')}
             className={`p-2 rounded-md transition-colors ${
               viewMode === 'table'
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'bg-surface text-primary shadow-sm'
+                : 'text-tertiary hover:text-primary'
             }`}
             title="Table view"
           >
@@ -201,8 +201,8 @@ export function VolumesList({ className = '' }: VolumesListProps) {
             onClick={() => setViewMode('grid')}
             className={`p-2 rounded-md transition-colors ${
               viewMode === 'grid'
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'bg-surface text-primary shadow-sm'
+                : 'text-tertiary hover:text-primary'
             }`}
             title="Grid view"
           >
@@ -213,7 +213,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
         <button
           onClick={handleScanAllClick}
           disabled={bulkScan.isLoading || volumes.length === 0}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:disabled:bg-gray-600"
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 "
         >
           {bulkScan.isLoading ? (
             <Loader2 className="-ml-1 mr-2 h-4 w-4 animate-spin" />
@@ -239,7 +239,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
             },
           ]}
           trigger={
-            <button className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <button className="inline-flex items-center px-4 py-2 border border-line rounded-md shadow-sm text-sm font-medium text-secondary bg-surface hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
               <Download className="-ml-1 mr-2 h-4 w-4" />
               Export
             </button>
@@ -250,7 +250,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center px-4 py-2 border border-line rounded-md shadow-sm text-sm font-medium text-secondary bg-surface hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCw
             className={`-ml-1 mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`}
@@ -286,16 +286,16 @@ export function VolumesList({ className = '' }: VolumesListProps) {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+      <div className="bg-surface-elevated shadow-md rounded-lg p-6 border border-line">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                <Search className="h-5 w-5 text-tertiary" />
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-line rounded-md leading-5 bg-surface placeholder-tertiary text-primary focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Search volumes..."
                 value={filters.searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
@@ -305,7 +305,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
 
           <div className="flex gap-2">
             <select
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-line bg-surface text-primary rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               value={filters.status}
               onChange={(e) =>
                 handleFilterChange({
@@ -319,7 +319,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
             </select>
 
             <select
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-line bg-surface text-primary rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               value={filters.orphaned ? 'orphaned' : 'all'}
               onChange={(e) =>
                 handleFilterChange({
@@ -332,7 +332,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
             </select>
 
             <select
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-line bg-surface text-primary rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               value={filters.sortBy}
               onChange={(e) =>
                 handleFilterChange({
@@ -429,11 +429,11 @@ export function VolumesList({ className = '' }: VolumesListProps) {
           ) : (
             <div className="col-span-full">
               <div className="text-center py-12 px-6">
-                <HardDrive className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <HardDrive className="w-16 h-16 text-tertiary mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-primary mb-2">
                   No volumes found
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                <p className="text-secondary mb-6 max-w-md mx-auto">
                   {filters.searchTerm || filters.status !== 'all'
                     ? 'Try adjusting your filters or search terms.'
                     : 'Get started by adding your first Docker volume to track and analyze.'}
@@ -441,7 +441,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
                 {!filters.searchTerm && filters.status === 'all' && (
                   <button
                     type="button"
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600"
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 "
                   >
                     <Plus className="-ml-1 mr-2 h-4 w-4" />
                     Add Your First Volume
@@ -455,26 +455,26 @@ export function VolumesList({ className = '' }: VolumesListProps) {
 
       {/* Pagination */}
       {pagination.total > 0 && pagination.total > pagination.pageSize && (
-        <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6 rounded-lg shadow">
+        <div className="bg-surface px-4 py-3 flex items-center justify-between border-t border-line sm:px-6 rounded-lg shadow">
           <div className="flex-1 flex justify-between sm:hidden">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={!pagination.hasPrevious}
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-4 py-2 border border-line text-sm font-medium rounded-md text-secondary bg-surface hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
             <button
               onClick={() => setCurrentPage((p) => p + 1)}
               disabled={!pagination.hasNext}
-              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="ml-3 relative inline-flex items-center px-4 py-2 border border-line text-sm font-medium rounded-md text-secondary bg-surface hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>
           </div>
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+              <p className="text-sm text-secondary">
                 Showing{' '}
                 <span className="font-medium">
                   {(pagination.page - 1) * pagination.pageSize + 1}
@@ -498,7 +498,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={!pagination.hasPrevious}
-                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-line bg-surface text-sm font-medium text-tertiary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="sr-only">Previous</span>
                   <svg
@@ -538,7 +538,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
                     return (
                       <React.Fragment key={page}>
                         {showEllipsis && (
-                          <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <span className="relative inline-flex items-center px-4 py-2 border border-line bg-surface text-sm font-medium text-secondary">
                             ...
                           </span>
                         )}
@@ -546,8 +546,8 @@ export function VolumesList({ className = '' }: VolumesListProps) {
                           onClick={() => setCurrentPage(page)}
                           className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                             page === pagination.page
-                              ? 'z-10 bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-600 text-blue-600 dark:text-blue-400'
-                              : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-surface border-line text-tertiary hover:bg-surface-hover'
                           }`}
                         >
                           {page}
@@ -558,7 +558,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
                 <button
                   onClick={() => setCurrentPage((p) => p + 1)}
                   disabled={!pagination.hasNext}
-                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-line bg-surface text-sm font-medium text-tertiary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="sr-only">Next</span>
                   <svg
@@ -588,24 +588,24 @@ export function VolumesList({ className = '' }: VolumesListProps) {
           onClick={() => setShowScanAllConfirm(false)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+            className="bg-surface rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg font-medium text-primary mb-4">
               Confirm Bulk Scan
             </h3>
             <div className="mb-6">
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+              <p className="text-sm text-secondary mb-4">
                 You are about to scan <span className="font-semibold">{volumes.length} volume{volumes.length !== 1 ? 's' : ''}</span> on the current page.
               </p>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4 space-y-2">
+              <div className="bg-surface-secondary rounded-md p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Volumes to scan:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{volumes.length}</span>
+                  <span className="text-secondary">Volumes to scan:</span>
+                  <span className="font-medium text-primary">{volumes.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Known size:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <span className="text-secondary">Known size:</span>
+                  <span className="font-medium text-primary">
                     {(() => {
                       const volumesWithSize = volumes.filter(v => v.size_bytes && v.size_bytes > 0);
                       const totalKnownSize = volumes.reduce((sum, v) => sum + (v.size_bytes || 0), 0);
@@ -616,18 +616,18 @@ export function VolumesList({ className = '' }: VolumesListProps) {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Method:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">Progressive scan</span>
+                  <span className="text-secondary">Method:</span>
+                  <span className="font-medium text-primary">Progressive scan</span>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+              <p className="text-xs text-tertiary mt-4">
                 Note: Scans run in the background. You can continue working while volumes are being scanned.
               </p>
             </div>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowScanAllConfirm(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="px-4 py-2 text-sm font-medium text-secondary bg-surface border border-line rounded-md hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Cancel
               </button>
@@ -657,13 +657,13 @@ interface StatsCardProps {
 
 function StatsCard({ title, value, icon, color, subtitle }: StatsCardProps) {
   const colorClasses = {
-    blue: 'bg-blue-500 dark:bg-blue-600',
-    green: 'bg-green-500 dark:bg-green-600',
-    purple: 'bg-purple-500 dark:bg-purple-600',
+    blue: 'bg-blue-500',
+    green: 'bg-green-500',
+    purple: 'bg-purple-500',
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+    <div className="bg-surface overflow-hidden shadow rounded-lg">
       <div className="p-5">
         <div className="flex items-center">
           <div className="flex-shrink-0">
@@ -675,14 +675,14 @@ function StatsCard({ title, value, icon, color, subtitle }: StatsCardProps) {
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+              <dt className="text-sm font-medium text-tertiary truncate">
                 {title}
               </dt>
-              <dd className="text-lg font-medium text-gray-900 dark:text-white">
+              <dd className="text-lg font-medium text-primary">
                 {value}
               </dd>
               {subtitle && (
-                <dd className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <dd className="text-xs text-tertiary mt-1">
                   {subtitle}
                 </dd>
               )}

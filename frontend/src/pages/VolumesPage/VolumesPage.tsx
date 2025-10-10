@@ -117,17 +117,17 @@ export const VolumesPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-secondary">
       <div className="p-6">
         {/* Page Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                <HardDrive className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+              <h1 className="text-3xl font-bold text-primary flex items-center gap-3">
+                <HardDrive className="w-8 h-8 text-blue-600" />
                 Volumes
               </h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">
+              <p className="mt-2 text-secondary">
                 Manage and analyze your Docker volumes
               </p>
             </div>

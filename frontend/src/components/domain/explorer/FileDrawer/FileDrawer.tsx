@@ -98,16 +98,16 @@ export const FileDrawer: React.FC<FileDrawerProps> = ({
       {/* Drawer */}
       <div
         className={cn(
-          'fixed top-0 right-0 h-full w-96 bg-white dark:bg-gray-900 shadow-xl z-50 transform transition-transform duration-300 ease-in-out',
+          'fixed top-0 right-0 h-full w-96 bg-surface shadow-xl z-50 transform transition-transform duration-300 ease-in-out',
           isOpen ? 'translate-x-0' : 'translate-x-full',
           className,
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-line">
           <div className="flex items-center space-x-2">
             <FileIcon className="w-5 h-5" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-lg font-semibold text-primary">
               File Details
             </h2>
           </div>
@@ -129,38 +129,38 @@ export const FileDrawer: React.FC<FileDrawerProps> = ({
             <div className="space-y-6">
               {/* Basic Information */}
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                <h3 className="text-sm font-medium text-primary mb-3 flex items-center">
                   <InfoIcon className="w-4 h-4 mr-2" />
                   Basic Information
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                       Name
                     </label>
-                    <p className="text-sm text-gray-900 dark:text-gray-100 break-all">
+                    <p className="text-sm text-primary break-all">
                       {file.name}
                     </p>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                       Path
                     </label>
-                    <p className="text-sm text-gray-900 dark:text-gray-100 break-all font-mono">
+                    <p className="text-sm text-primary break-all font-mono">
                       {file.path}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                         Size
                       </label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">
+                      <p className="text-sm text-primary">
                         {formatFileSize(file.size)}
                       </p>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                         Type
                       </label>
                       <div className="mt-1">
@@ -175,33 +175,33 @@ export const FileDrawer: React.FC<FileDrawerProps> = ({
 
               {/* Timestamps */}
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                <h3 className="text-sm font-medium text-primary mb-3 flex items-center">
                   <CalendarIcon className="w-4 h-4 mr-2" />
                   Timestamps
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                       Created
                     </label>
-                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                    <p className="text-sm text-primary">
                       {formatDate(file.created)}
                     </p>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                       Modified
                     </label>
-                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                    <p className="text-sm text-primary">
                       {formatDate(file.modified)}
                     </p>
                   </div>
                   {file.accessed && (
                     <div>
-                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                         Accessed
                       </label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">
+                      <p className="text-sm text-primary">
                         {formatDate(file.accessed)}
                       </p>
                     </div>
@@ -212,44 +212,44 @@ export const FileDrawer: React.FC<FileDrawerProps> = ({
               {/* Media Properties (if applicable) */}
               {(file.duration || file.width || file.height || file.bitrate) && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                  <h3 className="text-sm font-medium text-primary mb-3 flex items-center">
                     <TagIcon className="w-4 h-4 mr-2" />
                     Media Properties
                   </h3>
                   <div className="space-y-3">
                     {file.duration && (
                       <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                           Duration
                         </label>
-                        <p className="text-sm text-gray-900 dark:text-gray-100">
+                        <p className="text-sm text-primary">
                           {formatDuration(file.duration)}
                         </p>
                       </div>
                     )}
                     {file.width && file.height && (
                       <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                           Dimensions
                         </label>
-                        <p className="text-sm text-gray-900 dark:text-gray-100">
+                        <p className="text-sm text-primary">
                           {file.width} × {file.height}
                         </p>
                       </div>
                     )}
                     {file.bitrate && (
                       <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                           Bitrate
                         </label>
-                        <p className="text-sm text-gray-900 dark:text-gray-100">
+                        <p className="text-sm text-primary">
                           {(file.bitrate / 1000).toFixed(0)} kbps
                         </p>
                       </div>
                     )}
                     {file.codec && (
                       <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                           Codec
                         </label>
                         <div className="mt-1">
@@ -264,17 +264,17 @@ export const FileDrawer: React.FC<FileDrawerProps> = ({
               {/* System Properties */}
               {(file.permissions || file.owner || file.group) && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                  <h3 className="text-sm font-medium text-primary mb-3 flex items-center">
                     <HardDriveIcon className="w-4 h-4 mr-2" />
                     System Properties
                   </h3>
                   <div className="space-y-3">
                     {file.permissions && (
                       <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                           Permissions
                         </label>
-                        <p className="text-sm text-gray-900 dark:text-gray-100 font-mono">
+                        <p className="text-sm text-primary font-mono">
                           {file.permissions}
                         </p>
                       </div>
@@ -282,20 +282,20 @@ export const FileDrawer: React.FC<FileDrawerProps> = ({
                     <div className="grid grid-cols-2 gap-3">
                       {file.owner && (
                         <div>
-                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                             Owner
                           </label>
-                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                          <p className="text-sm text-primary">
                             {file.owner}
                           </p>
                         </div>
                       )}
                       {file.group && (
                         <div>
-                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          <label className="text-xs font-medium text-tertiary uppercase tracking-wider">
                             Group
                           </label>
-                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                          <p className="text-sm text-primary">
                             {file.group}
                           </p>
                         </div>
@@ -308,11 +308,11 @@ export const FileDrawer: React.FC<FileDrawerProps> = ({
               {/* Raw Metadata */}
               {file.rawMetadata && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+                  <h3 className="text-sm font-medium text-primary mb-3">
                     Raw Metadata
                   </h3>
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                    <pre className="text-xs text-gray-600 dark:text-gray-400 overflow-x-auto">
+                  <div className="bg-surface-secondary rounded-lg p-3">
+                    <pre className="text-xs text-secondary overflow-x-auto">
                       {JSON.stringify(file.rawMetadata, null, 2)}
                     </pre>
                   </div>

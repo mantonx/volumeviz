@@ -105,7 +105,7 @@ function TreeNode({
       <div
         className={`
           flex items-center gap-1 py-1 px-2 rounded cursor-pointer
-          hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
+          hover:bg-surface-hover transition-colors
           ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' : ''}
         `}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
@@ -114,16 +114,16 @@ function TreeNode({
         {/* Expand/collapse chevron */}
         <button
           onClick={handleToggle}
-          className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+          className="p-0.5 hover:bg-gray-200 hover:bg-surface-hover rounded"
           disabled={!node.hasChildren}
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
           ) : node.hasChildren ? (
             isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <ChevronDown className="h-4 w-4 text-secondary" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <ChevronRight className="h-4 w-4 text-secondary" />
             )
           ) : (
             <div className="w-4 h-4" /> /* Spacer */
@@ -140,7 +140,7 @@ function TreeNode({
         {/* Folder name and stats */}
         <span className="text-sm font-medium truncate flex-1">{node.name}</span>
         {node.folderCount > 0 && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-tertiary">
             {node.folderCount}
           </span>
         )}
@@ -177,7 +177,7 @@ function TreeNode({
       {/* Empty state for expanded folders with no children */}
       {isExpanded && children.length === 0 && !isLoading && !error && node.hasChildren && (
         <div
-          className="text-xs text-gray-500 dark:text-gray-400 py-1 italic"
+          className="text-xs text-tertiary py-1 italic"
           style={{ paddingLeft: `${(level + 1) * 16 + 8}px` }}
         >
           No subdirectories
@@ -230,7 +230,7 @@ export function DirectoryTree({
   if (isLoading) {
     return (
       <div className={`p-4 ${className}`}>
-        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+        <div className="flex items-center gap-2 text-secondary">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm">Loading directory tree...</span>
         </div>
@@ -251,7 +251,7 @@ export function DirectoryTree({
   if (rootFolders.length === 0) {
     return (
       <div className={`p-4 ${className}`}>
-        <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+        <div className="text-sm text-tertiary italic">
           No directories found in this volume
         </div>
       </div>
@@ -264,7 +264,7 @@ export function DirectoryTree({
       <div
         className={`
           flex items-center gap-2 py-2 px-2 mb-1 rounded cursor-pointer
-          hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
+          hover:bg-surface-hover transition-colors
           ${selectedPath === '/' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' : ''}
         `}
         onClick={() => onPathSelect?.('/')}
@@ -272,7 +272,7 @@ export function DirectoryTree({
         <FolderOpen className="h-4 w-4 text-blue-500" />
         <span className="text-sm font-semibold">Root</span>
         {rootFolders.length > 0 && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-tertiary">
             {rootFolders.length}
           </span>
         )}

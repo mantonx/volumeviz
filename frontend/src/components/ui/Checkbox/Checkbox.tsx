@@ -40,7 +40,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         'inline-flex items-center justify-center w-4 h-4 border-2 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
         checked || indeterminate
           ? 'bg-blue-600 border-blue-600 text-white'
-          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800',
+          : 'border-line bg-surface',
         disabled
           ? 'opacity-50 cursor-not-allowed'
           : 'cursor-pointer hover:border-blue-500',

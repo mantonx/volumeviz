@@ -353,13 +353,13 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
           </div>
           <div className="flex items-center space-x-3">
             {/* View Toggle */}
-            <div className="inline-flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
+            <div className="inline-flex rounded-lg bg-surface-secondary p-1">
               <button
                 onClick={() => setViewMode('list')}
                 className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
                   viewMode === 'list'
-                    ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                    ? 'bg-surface-secondary shadow-sm text-primary'
+                    : 'text-secondary hover:text-primary'
                 }`}
                 aria-label="Switch to list view"
                 aria-pressed={viewMode === 'list'}
@@ -371,8 +371,8 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
                 onClick={() => setViewMode('treemap')}
                 className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
                   viewMode === 'treemap'
-                    ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                    ? 'bg-surface-secondary shadow-sm text-primary'
+                    : 'text-secondary hover:text-primary'
                 }`}
                 aria-label="Switch to treemap view"
                 aria-pressed={viewMode === 'treemap'}
@@ -384,8 +384,8 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
                 onClick={() => setViewMode('analytics')}
                 className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
                   viewMode === 'analytics'
-                    ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                    ? 'bg-surface-secondary shadow-sm text-primary'
+                    : 'text-secondary hover:text-primary'
                 }`}
                 aria-label="Switch to analytics view"
                 aria-pressed={viewMode === 'analytics'}

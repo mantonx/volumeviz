@@ -305,7 +305,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
         )}
 
         {/* Main Search Interface */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-surface-elevated rounded-lg shadow-md border border-line p-6">
           <SearchInterface
             results={searchResults}
             isSearching={isSearching}

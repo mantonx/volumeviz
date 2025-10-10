@@ -327,7 +327,7 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
             error.severity === 'medium',
           'border-blue-200 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/10':
             error.severity === 'low',
-          'border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-800':
+          'border-gray-200 bg-gray-50 border-line dark:bg-gray-800':
             error.resolved,
           'cursor-pointer hover:shadow-md': isClickable,
           'opacity-60': error.acknowledged || error.resolved,
@@ -418,14 +418,14 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
                 <div className="flex items-center gap-2">
                   <h4
                     className={clsx(
-                      'font-medium text-gray-900 dark:text-white truncate',
+                      'font-medium text-primary truncate',
                       currentSize.fontSize,
                     )}
                   >
                     {scanErrorDisplay?.title || error.message}
                   </h4>
                   {error.code && (
-                    <code className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1 py-0.5 rounded">
+                    <code className="text-xs bg-surface-secondary text-secondary px-1 py-0.5 rounded">
                       {error.code}
                     </code>
                   )}
@@ -439,7 +439,7 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
                 {/* Enhanced error message for scan errors */}
                 {scanErrorDisplay &&
                   scanErrorDisplay.message !== scanErrorDisplay.title && (
-                    <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                    <div className="mt-1 text-sm text-secondary">
                       {scanErrorDisplay.message}
                     </div>
                   )}
@@ -458,7 +458,7 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
 
                 {/* Context Information */}
                 {(error.context || scanErrorDisplay?.context) && (
-                  <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="mt-1 text-sm text-secondary">
                     {scanErrorDisplay?.context && (
                       <div
                         className="truncate mb-1"
@@ -486,7 +486,7 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
 
                 {/* Timestamp */}
                 {showTimestamps && (
-                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-500">
+                  <div className="mt-1 text-xs text-gray-500 text-tertiary">
                     {formatTimestamp(error.timestamp)}
                   </div>
                 )}
@@ -499,7 +499,7 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
                         e.stopPropagation();
                         toggleErrorCollapse(error.id);
                       }}
-                      className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                      className="flex items-center gap-1 text-xs text-secondary hover:text-gray-800 hover:text-primary"
                     >
                       {isCollapsed ? (
                         <ChevronRight className="w-3 h-3" />
@@ -517,7 +517,7 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
                           </div>
                         )}
                         {error.details && (
-                          <div className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded font-mono whitespace-pre-wrap">
+                          <div className="text-xs text-secondary bg-surface-secondary p-2 rounded font-mono whitespace-pre-wrap">
                             {error.details}
                           </div>
                         )}
@@ -586,7 +586,7 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
         <button
           onClick={() => toggleGroup(group.category)}
           className={clsx(
-            'w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors',
+            'w-full flex items-center justify-between p-3 bg-surface-secondary border border-line rounded-lg hover:bg-surface-hover transition-colors',
             currentSize.fontSize,
           )}
           data-testid={`${testId}-group-${group.category}`}
@@ -596,10 +596,10 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
               {getCategoryIcon(group.category)}
             </div>
             <div className="text-left">
-              <div className="font-medium text-gray-900 dark:text-white">
+              <div className="font-medium text-primary">
                 {group.label}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-secondary">
                 {group.count} error{group.count !== 1 ? 's' : ''}
               </div>
             </div>
@@ -638,10 +638,10 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
     if (isLoading) {
       return (
         <div
-          className="flex items-center justify-center h-32 bg-gray-50 dark:bg-gray-800 rounded-lg"
+          className="flex items-center justify-center h-32 bg-surface-secondary rounded-lg"
           data-testid={testId}
         >
-          <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-3 text-secondary">
             <XCircle className="w-5 h-5 animate-pulse" />
             Loading errors...
           </div>
@@ -653,10 +653,10 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
     if (processedErrors.length === 0) {
       return (
         <div
-          className="flex items-center justify-center h-32 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+          className="flex items-center justify-center h-32 bg-surface-secondary rounded-lg border border-line"
           data-testid={testId}
         >
-          <div className="text-center text-gray-600 dark:text-gray-400">
+          <div className="text-center text-secondary">
             <Check className="w-8 h-8 mx-auto mb-2 text-green-600 dark:text-green-400" />
             <div>{emptyMessage}</div>
           </div>
@@ -679,7 +679,7 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
         <div className="flex items-center justify-between mb-4">
           <div
             className={clsx(
-              'font-medium text-gray-900 dark:text-white',
+              'font-medium text-primary',
               currentSize.fontSize,
             )}
           >
@@ -694,7 +694,7 @@ export const ErrorSummary = forwardRef<ErrorSummaryRef, ErrorSummaryProps>(
             <button
               onClick={clearAll}
               className={clsx(
-                'flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors',
+                'flex items-center gap-1 text-secondary hover:text-red-600 dark:hover:text-red-400 transition-colors',
                 currentSize.buttonSize,
               )}
               data-testid={`${testId}-clear-all`}

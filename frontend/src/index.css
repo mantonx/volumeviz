@@ -1,5 +1,42 @@
 @import "tailwindcss";
 
+/* Tailwind v4 Theme Configuration */
+/* Note: We use direct CSS variable names that ThemeProvider will set at runtime */
+@theme {
+  /* Text colors - ThemeProvider sets these based on light/dark theme */
+  --color-primary*: initial;
+  --color-secondary*: initial;
+  --color-tertiary*: initial;
+
+  /* Background colors */
+  --color-surface*: initial;
+  --color-surface-secondary*: initial;
+  --color-surface-elevated*: initial;
+  --color-surface-hover*: initial;
+
+  /* Border colors */
+  --color-line*: initial;
+  --color-line-subtle*: initial;
+}
+
+/* Map Tailwind utilities to our theme CSS variables */
+@layer utilities {
+  .text-primary { color: var(--color-text-primary) !important; }
+  .text-secondary { color: var(--color-text-secondary) !important; }
+  .text-tertiary { color: var(--color-text-tertiary) !important; }
+
+  .bg-surface { background-color: var(--color-bg-primary) !important; }
+  .bg-surface-secondary { background-color: var(--color-bg-secondary) !important; }
+  .bg-surface-elevated { background-color: var(--color-bg-elevated) !important; }
+  .bg-surface-hover { background-color: var(--color-bg-hover) !important; }
+
+  .border-line { border-color: var(--color-border-default) !important; }
+  .border-line-subtle { border-color: var(--color-border-subtle) !important; }
+
+  .hover\:text-primary:hover { color: var(--color-text-primary) !important; }
+  .hover\:bg-surface-hover:hover { background-color: var(--color-bg-hover) !important; }
+}
+
 /* Custom animations for progress indicators */
 @keyframes shimmer {
   0% { transform: translateX(-100%); }

@@ -79,7 +79,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 bg-surface">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -91,19 +91,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-line transform transition-transform duration-300 ease-in-out lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Sidebar header */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-line">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Admin Panel</h1>
+            <h1 className="text-lg font-bold text-primary">Admin Panel</h1>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="lg:hidden text-gray-500 hover:text-secondary hover:text-primary"
           >
             <X className="h-5 w-5" />
           </button>
@@ -124,7 +124,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
                   isActive
                     ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    : 'text-gray-700 text-secondary hover:bg-surface-hover'
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
@@ -134,7 +134,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     "text-xs truncate",
                     isActive
                       ? "text-blue-500 dark:text-blue-400"
-                      : "text-gray-500 dark:text-gray-400"
+                      : "text-gray-500 text-tertiary"
                   )}>
                     {item.description}
                   </p>
@@ -145,10 +145,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </nav>
 
         {/* Sidebar footer */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-t border-line">
           <Link
             to="/"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:text-primary hover:bg-surface-hover rounded-lg transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
             Back to Dashboard
@@ -159,19 +159,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar for mobile */}
-        <div className="sticky top-0 z-30 lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="sticky top-0 z-30 lg:hidden bg-surface border-b border-line">
           <div className="flex items-center justify-between h-16 px-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSidebarOpen(true)}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className="text-gray-500 hover:text-secondary hover:text-primary"
             >
               <Menu className="h-6 w-6" />
             </Button>
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <h1 className="text-base font-bold text-gray-900 dark:text-white">Admin</h1>
+              <h1 className="text-base font-bold text-primary">Admin</h1>
             </div>
             <div className="w-10" /> {/* Spacer for centering */}
           </div>

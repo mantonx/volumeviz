@@ -85,7 +85,7 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
         );
       default:
         return (
-          <AlertTriangle className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+          <AlertTriangle className="h-4 w-4 text-secondary" />
         );
     }
   };
@@ -101,7 +101,7 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
       case 'retrying':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-surface-secondary text-secondary';
     }
   };
 
@@ -116,7 +116,7 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
       case 'low':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-surface-secondary text-secondary';
     }
   };
 
@@ -144,7 +144,7 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
   if (loading && deliveries.length === 0) {
     return (
       <div className={cn('flex items-center justify-center py-12', className)}>
-        <div className="flex items-center gap-2 text-gray-500">
+        <div className="flex items-center gap-2 text-tertiary">
           <Loader2 className="h-5 w-5 animate-spin" />
           Loading delivery history...
         </div>
@@ -167,10 +167,10 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
     <div className={cn('space-y-4', className)}>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+          <h3 className="text-lg font-medium text-primary">
             Alert Delivery History
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-tertiary">
             Track the delivery status of all alert notifications
           </p>
         </div>
@@ -189,13 +189,13 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
       <Card className="p-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
+            <Filter className="h-4 w-4 text-tertiary" />
             <select
               value={statusFilter}
               onChange={(e) =>
                 setStatusFilter(e.target.value as DeliveryStatus)
               }
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm"
+              className="px-3 py-2 border border-line rounded-md bg-surface text-sm"
             >
               <option value="all">All Status</option>
               <option value="delivered">Delivered</option>
@@ -206,18 +206,18 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
           </div>
 
           <div className="flex items-center gap-2 flex-1 max-w-md">
-            <Search className="h-4 w-4 text-gray-500" />
+            <Search className="h-4 w-4 text-tertiary" />
             <input
               type="text"
               placeholder="Search by rule name or destination..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm"
+              className="flex-1 px-3 py-2 border border-line rounded-md bg-surface text-sm"
             />
           </div>
 
           {deliveries.length > 0 && (
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-tertiary">
               {filteredDeliveries.length} of {pagination.total} deliveries
             </div>
           )}
@@ -240,19 +240,19 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
             <Card key={delivery.id} className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg flex-shrink-0">
+                  <div className="p-2 bg-surface-secondary rounded-lg flex-shrink-0">
                     {getStatusIcon(delivery.status)}
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-gray-900 dark:text-white truncate">
+                      <h4 className="font-medium text-primary truncate">
                         {delivery.alert?.rule_name || 'Unknown Rule'}
                       </h4>
-                      <span className="text-gray-400 dark:text-gray-500">
+                      <span className="text-tertiary">
                         →
                       </span>
-                      <span className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                      <span className="text-sm text-secondary truncate">
                         {delivery.destination?.name || 'Unknown Destination'}
                       </span>
                       {delivery.alert?.severity && (
@@ -265,7 +265,7 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-4 text-xs text-tertiary">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {formatDate(delivery.attempted_at)}

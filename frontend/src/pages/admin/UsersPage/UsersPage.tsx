@@ -187,7 +187,7 @@ export const UsersPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading users...</p>
+          <p className="mt-4 text-secondary">Loading users...</p>
         </div>
       </div>
     );
@@ -198,7 +198,7 @@ export const UsersPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400">Error: {error}</p>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Please check the console for details</p>
+          <p className="mt-2 text-secondary">Please check the console for details</p>
         </div>
       </div>
     );
@@ -209,8 +209,8 @@ export const UsersPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">User Management</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <h1 className="text-3xl font-bold text-primary">User Management</h1>
+          <p className="mt-2 text-secondary">
             Manage user accounts across all organizations
           </p>
         </div>
@@ -230,7 +230,7 @@ export const UsersPage: React.FC = () => {
               placeholder="Search users by username or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full pl-10 pr-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
             />
           </div>
         </div>
@@ -240,41 +240,41 @@ export const UsersPage: React.FC = () => {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-surface-secondary border-b border-line">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
                   Org ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
                   Created
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-surface divide-y divide-line">
               {filteredUsers.map((user) => (
-                <tr key={`${user.id}-${lastUpdateTime}`} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                <tr key={`${user.id}-${lastUpdateTime}`} className="hover:bg-surface-hover">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900">
                         <User className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                       </div>
                       <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="text-sm font-medium text-primary">
                           {user.username}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className="text-sm text-tertiary">
                           {user.email}
                         </div>
                       </div>
@@ -286,7 +286,7 @@ export const UsersPage: React.FC = () => {
                         ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
                         : user.role === 'user'
                         ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        : 'bg-gray-100 text-gray-800 bg-surface-secondary text-secondary'
                     }`}>
                       {user.role === 'admin' && <Shield className="h-3 w-3" />}
                       {user.role}
@@ -299,16 +299,16 @@ export const UsersPage: React.FC = () => {
                         Active
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm">
+                      <span className="inline-flex items-center gap-1 text-tertiary text-sm">
                         <XCircle className="h-4 w-4" />
                         Inactive
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-tertiary">
                     {user.organization_id}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-tertiary">
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -342,8 +342,8 @@ export const UsersPage: React.FC = () => {
       {filteredUsers.length === 0 && (
         <div className="text-center py-12">
           <User className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No users found</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h3 className="mt-2 text-sm font-medium text-primary">No users found</h3>
+          <p className="mt-1 text-sm text-tertiary">
             {searchTerm ? 'Try adjusting your search' : 'Get started by creating a new user'}
           </p>
         </div>
@@ -355,10 +355,10 @@ export const UsersPage: React.FC = () => {
           <Card className="w-full max-w-md mx-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New User</h2>
+                <h2 className="text-xl font-bold text-primary">Create New User</h2>
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="text-gray-400 hover:text-gray-600 hover:text-secondary"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -366,14 +366,14 @@ export const UsersPage: React.FC = () => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Username
                   </label>
                   <input
                     type="text"
                     value={createForm.username}
                     onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                     placeholder="Enter username (min 3 characters)"
                     minLength={3}
                     required
@@ -384,28 +384,28 @@ export const UsersPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Email
                   </label>
                   <input
                     type="email"
                     value={createForm.email}
                     onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                     placeholder="Enter email"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Password
                   </label>
                   <input
                     type="password"
                     value={createForm.password}
                     onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                     placeholder="Enter password (min 8 characters)"
                     minLength={8}
                     required
@@ -416,13 +416,13 @@ export const UsersPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Role
                   </label>
                   <select
                     value={createForm.role}
                     onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as InternalApiV1UsersCreateUserRequestRole })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
@@ -432,14 +432,14 @@ export const UsersPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Organization ID
                   </label>
                   <input
                     type="number"
                     value={createForm.organization_id}
                     onChange={(e) => setCreateForm({ ...createForm, organization_id: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                   />
                 </div>
               </div>
@@ -477,10 +477,10 @@ export const UsersPage: React.FC = () => {
           <Card className="w-full max-w-md mx-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit User</h2>
+                <h2 className="text-xl font-bold text-primary">Edit User</h2>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="text-gray-400 hover:text-gray-600 hover:text-secondary"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -488,38 +488,38 @@ export const UsersPage: React.FC = () => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Username
                   </label>
                   <input
                     type="text"
                     value={selectedUser?.username || ''}
                     disabled
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-line rounded-lg bg-surface-secondary text-primary cursor-not-allowed"
                   />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Username cannot be changed</p>
+                  <p className="mt-1 text-xs text-tertiary">Username cannot be changed</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Email
                   </label>
                   <input
                     type="email"
                     value={editForm.email || ''}
                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Role
                   </label>
                   <select
                     value={editForm.role || ''}
                     onChange={(e) => setEditForm({ ...editForm, role: e.target.value as InternalApiV1UsersUpdateUserRequestRole })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
@@ -536,7 +536,7 @@ export const UsersPage: React.FC = () => {
                     onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900 dark:text-white">
+                  <label htmlFor="is_active" className="ml-2 block text-sm text-primary">
                     Active
                   </label>
                 </div>
@@ -568,16 +568,16 @@ export const UsersPage: React.FC = () => {
           <Card className="w-full max-w-md mx-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Delete User</h2>
+                <h2 className="text-xl font-bold text-primary">Delete User</h2>
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="text-gray-400 hover:text-gray-600 hover:text-secondary"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-secondary mb-6">
                 Are you sure you want to delete user <strong>{selectedUser.username}</strong>? This action cannot be undone.
               </p>
 

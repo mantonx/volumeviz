@@ -176,11 +176,11 @@ export const FileTable: React.FC<FileTableProps> = ({
 
   return (
     <div className={cn('overflow-auto', className)}>
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
+      <table className="min-w-full divide-y divide-line">
+        <thead className="bg-surface-secondary sticky top-0">
           <tr>
             <th
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider cursor-pointer hover:bg-surface-hover"
               onClick={() => handleSort('name')}
             >
               Name
@@ -191,7 +191,7 @@ export const FileTable: React.FC<FileTableProps> = ({
               )}
             </th>
             <th
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider cursor-pointer hover:bg-surface-hover"
               onClick={() => handleSort('size')}
             >
               Size
@@ -202,7 +202,7 @@ export const FileTable: React.FC<FileTableProps> = ({
               )}
             </th>
             <th
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider cursor-pointer hover:bg-surface-hover"
               onClick={() => handleSort('modified')}
             >
               Modified
@@ -212,20 +212,20 @@ export const FileTable: React.FC<FileTableProps> = ({
                 </span>
               )}
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
               Type
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
               Actions
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody className="bg-surface divide-y divide-line">
           {sortedFiles.map((file) => (
             <tr
               key={file.id}
               className={cn(
-                'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer',
+                'hover:bg-surface-hover cursor-pointer',
                 selectedFile === file.id && 'bg-blue-50 dark:bg-blue-900/20',
               )}
               onClick={() => handleFileClick(file)}
@@ -234,15 +234,15 @@ export const FileTable: React.FC<FileTableProps> = ({
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center">
                   {getFileIcon(file)}
-                  <span className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                  <span className="ml-2 text-sm font-medium text-primary truncate">
                     {file.name}
                   </span>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-tertiary">
                 {file.type === 'folder' ? '—' : formatFileSize(file.size)}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-tertiary">
                 {formatDate(file.modified)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">

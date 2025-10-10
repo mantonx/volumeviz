@@ -37,14 +37,14 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 bg-surface">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-surface border-b border-line">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-primary">
             VolumeViz Dashboard
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-secondary mt-1">
             Real-time monitoring and analysis of Docker volume usage
           </p>
         </div>
@@ -58,9 +58,9 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-8">
+      <div className="bg-surface border-t border-line mt-8">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
+          <div className="text-sm text-secondary text-center">
             VolumeViz - Docker Volume Visualization Tool
           </div>
         </div>

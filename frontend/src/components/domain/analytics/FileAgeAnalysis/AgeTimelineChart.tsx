@@ -39,14 +39,14 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
   if (!active || !payload || !payload.length) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 max-w-xs">
-      <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+    <div className="bg-surface border border-line rounded-lg shadow-lg p-3 max-w-xs">
+      <p className="font-semibold text-primary mb-2">
         {label}
       </p>
       <div className="space-y-1 text-sm">
         {payload.map((entry, index) => (
           <div key={index} className="flex justify-between gap-4">
-            <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-secondary">
               {entry.name}:
             </span>
             <span className="font-medium" style={{ color: entry.color }}>

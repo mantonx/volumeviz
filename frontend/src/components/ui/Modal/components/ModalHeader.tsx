@@ -31,14 +31,14 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
     <div
       className={clsx(
         'flex items-center justify-between',
-        'px-6 py-4 border-b border-neutral-200 dark:border-neutral-700',
+        'px-6 py-4 border-b border-line',
         className,
       )}
       {...props}
     >
       <div className="flex items-center min-w-0 flex-1">
         {title && (
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+          <h2 className="text-lg font-semibold text-primary truncate">
             {title}
           </h2>
         )}
@@ -50,8 +50,8 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
           onClick={onClose}
           className={clsx(
             'ml-4 p-1 rounded-md',
-            'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300',
-            'hover:bg-neutral-100 dark:hover:bg-neutral-800',
+            'text-tertiary hover:text-primary',
+            'hover:bg-surface-hover',
             'transition-colors duration-200',
             'focus:outline-none focus:ring-2 focus:ring-brand-primary-500 focus:ring-offset-2',
           )}

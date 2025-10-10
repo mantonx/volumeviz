@@ -164,7 +164,7 @@ const FileRow: React.FC<FileRowProps> = ({ index, style, data }) => {
     <div
       style={style}
       className={cn(
-        'flex items-center px-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer',
+        'flex items-center px-4 border-b border-line hover:bg-surface-hover cursor-pointer',
         isSelected && 'bg-blue-50 dark:bg-blue-900/20',
       )}
       onClick={handleClick}
@@ -183,18 +183,18 @@ const FileRow: React.FC<FileRowProps> = ({ index, style, data }) => {
       {/* Icon + Name */}
       <div className="flex items-center min-w-0 flex-1 mr-4">
         {getFileIcon(file)}
-        <span className="ml-2 text-sm text-gray-900 dark:text-gray-100 truncate">
+        <span className="ml-2 text-sm text-primary truncate">
           {file.name}
         </span>
       </div>
 
       {/* Size */}
-      <div className="w-20 text-sm text-gray-500 dark:text-gray-400 text-right mr-4">
+      <div className="w-20 text-sm text-tertiary text-right mr-4">
         {file.type === 'directory' ? '—' : formatFileSize(file.size)}
       </div>
 
       {/* Modified */}
-      <div className="w-32 text-sm text-gray-500 dark:text-gray-400 text-right mr-4">
+      <div className="w-32 text-sm text-tertiary text-right mr-4">
         {formatDate(file.modified)}
       </div>
 
@@ -269,7 +269,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
 
   return (
     <div
-      className="flex items-center px-4 border-b-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+      className="flex items-center px-4 border-b-2 border-line bg-surface-secondary"
       style={{ height: HEADER_HEIGHT }}
     >
       {/* Checkbox */}
@@ -286,7 +286,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
         className="flex items-center min-w-0 flex-1 mr-4 cursor-pointer hover:text-blue-600"
         onClick={() => handleSort('name')}
       >
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        <span className="text-xs font-medium text-tertiary uppercase tracking-wider">
           Name
         </span>
         <SortIcon field="name" />
@@ -297,7 +297,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
         className="w-20 text-right mr-4 cursor-pointer hover:text-blue-600 flex items-center justify-end"
         onClick={() => handleSort('size')}
       >
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        <span className="text-xs font-medium text-tertiary uppercase tracking-wider">
           Size
         </span>
         <SortIcon field="size" />
@@ -308,7 +308,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
         className="w-32 text-right mr-4 cursor-pointer hover:text-blue-600 flex items-center justify-end"
         onClick={() => handleSort('modified')}
       >
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        <span className="text-xs font-medium text-tertiary uppercase tracking-wider">
           Modified
         </span>
         <SortIcon field="modified" />
@@ -316,14 +316,14 @@ const TableHeader: React.FC<TableHeaderProps> = ({
 
       {/* Type */}
       <div className="w-16 mr-4">
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        <span className="text-xs font-medium text-tertiary uppercase tracking-wider">
           Type
         </span>
       </div>
 
       {/* Actions */}
       <div className="w-20">
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        <span className="text-xs font-medium text-tertiary uppercase tracking-wider">
           Actions
         </span>
       </div>
@@ -477,7 +477,7 @@ export const VirtualizedFileList: React.FC<VirtualizedFileListProps> = ({
     <div
       ref={containerRef}
       className={cn(
-        'border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden',
+        'border border-line rounded-lg overflow-hidden',
         className,
       )}
       style={{ height }}

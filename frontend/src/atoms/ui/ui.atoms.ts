@@ -3,8 +3,8 @@ import { atom } from 'jotai';
 // Sidebar state
 export const sidebarOpenAtom = atom(true);
 
-// Theme state
-export const themeAtom = atom<'light' | 'dark' | 'auto'>('auto');
+// Theme state moved to @/atoms/theme/theme.atoms.ts
+// Import from @/store or @/atoms/theme instead
 
 // Loading states
 export const globalLoadingAtom = atom(false);

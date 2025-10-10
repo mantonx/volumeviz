@@ -19,7 +19,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   return (
     <div
       className={cn(
-        'animate-pulse rounded-md bg-gray-200 dark:bg-gray-700',
+        'animate-pulse rounded-md bg-gray-200',
         className,
       )}
       {...props}
@@ -45,7 +45,7 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({
     <div className={cn('overflow-hidden', className)}>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <thead className="bg-surface-secondary border-b border-line">
             <tr>
               <th className="p-3 w-10">
                 <Skeleton className="h-4 w-4" />
@@ -68,7 +68,7 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="divide-y divide-y border-line">
             {[...Array(rows)].map((_, i) => (
               <tr key={i}>
                 <td className="p-3">
@@ -77,7 +77,7 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({
                 <td className="p-3">
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-48 bg-gray-100 dark:bg-gray-800" />
+                    <Skeleton className="h-3 w-48 bg-surface-secondary" />
                   </div>
                 </td>
                 <td className="p-3">
@@ -86,14 +86,14 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({
                 <td className="p-3">
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full" />
+                    <Skeleton className="h-2 w-full bg-surface-secondary rounded-full" />
                   </div>
                 </td>
                 {columns > 4 && (
                   <td className="p-3">
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-3 w-12 bg-gray-100 dark:bg-gray-800" />
+                      <Skeleton className="h-3 w-12 bg-surface-secondary" />
                     </div>
                   </td>
                 )}
@@ -126,7 +126,7 @@ export const CardSkeleton: React.FC<CardSkeletonProps> = ({
         <Skeleton className="h-8 w-8 rounded-full" />
         <div className="space-y-2">
           <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-24 bg-gray-100 dark:bg-gray-800" />
+          <Skeleton className="h-3 w-24 bg-surface-secondary" />
         </div>
       </div>
       <div className="space-y-2">
@@ -162,7 +162,7 @@ export const ListSkeleton: React.FC<ListSkeletonProps> = ({
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-3/4" />
             {showSubtitle && (
-              <Skeleton className="h-3 w-1/2 bg-gray-100 dark:bg-gray-800" />
+              <Skeleton className="h-3 w-1/2 bg-surface-secondary" />
             )}
           </div>
           <Skeleton className="h-6 w-16 rounded-full" />
@@ -185,7 +185,7 @@ export const DashboardSkeleton: React.FC = () => (
       {[...Array(4)].map((_, i) => (
         <div
           key={i}
-          className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+          className="p-4 border border-line rounded-lg"
         >
           <div className="flex items-center justify-between">
             <Skeleton className="h-8 w-8 rounded" />
@@ -193,17 +193,17 @@ export const DashboardSkeleton: React.FC = () => (
           </div>
           <div className="mt-4">
             <Skeleton className="h-6 w-16" />
-            <Skeleton className="h-3 w-24 mt-1 bg-gray-100 dark:bg-gray-800" />
+            <Skeleton className="h-3 w-24 mt-1 bg-surface-secondary" />
           </div>
         </div>
       ))}
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+      <div className="p-6 border border-line rounded-lg">
         <Skeleton className="h-6 w-32 mb-4" />
         <ListSkeleton items={6} />
       </div>
-      <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+      <div className="p-6 border border-line rounded-lg">
         <Skeleton className="h-6 w-40 mb-4" />
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (

@@ -174,7 +174,7 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
 
   return (
     <div className={clsx('flex flex-wrap items-center gap-2', className)}>
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Filters:</span>
+      <span className="text-sm font-medium text-secondary">Active Filters:</span>
       {chips.map((chip) => (
         <div
           key={chip.key}
@@ -193,7 +193,7 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
       {chips.length > 1 && (
         <button
           onClick={onClearAll}
-          className="text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 font-medium underline"
+          className="text-sm text-secondary hover:text-red-600 dark:hover:text-red-400 font-medium underline"
         >
           Clear all
         </button>

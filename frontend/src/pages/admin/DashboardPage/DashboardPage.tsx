@@ -206,10 +206,10 @@ export const DashboardPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-primary">
           Admin Dashboard
         </h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-secondary">
           System overview and recent activity
         </p>
       </div>
@@ -220,8 +220,8 @@ export const DashboardPage: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Users</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+              <p className="text-sm text-secondary">Total Users</p>
+              <p className="text-3xl font-bold text-primary mt-2">
                 {stats.totalUsers}
               </p>
             </div>
@@ -235,8 +235,8 @@ export const DashboardPage: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Organizations</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+              <p className="text-sm text-secondary">Organizations</p>
+              <p className="text-3xl font-bold text-primary mt-2">
                 {stats.totalOrganizations}
               </p>
             </div>
@@ -250,8 +250,8 @@ export const DashboardPage: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Tracked Volumes</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+              <p className="text-sm text-secondary">Tracked Volumes</p>
+              <p className="text-3xl font-bold text-primary mt-2">
                 {stats.totalVolumes}
               </p>
             </div>
@@ -265,8 +265,8 @@ export const DashboardPage: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Scans</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+              <p className="text-sm text-secondary">Total Scans</p>
+              <p className="text-3xl font-bold text-primary mt-2">
                 {stats.totalScans}
               </p>
             </div>
@@ -280,8 +280,8 @@ export const DashboardPage: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Active Scans</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+              <p className="text-sm text-secondary">Active Scans</p>
+              <p className="text-3xl font-bold text-primary mt-2">
                 {stats.activeScans}
               </p>
             </div>
@@ -295,8 +295,8 @@ export const DashboardPage: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Storage Tracked</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+              <p className="text-sm text-secondary">Storage Tracked</p>
+              <p className="text-3xl font-bold text-primary mt-2">
                 {(() => {
                   const formatted = formatBytes(stats.storageTrackedTB);
                   return `${formatted.value} ${formatted.unit}`;
@@ -312,15 +312,15 @@ export const DashboardPage: React.FC = () => {
 
       {/* System Health */}
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-xl font-semibold text-primary mb-4">
           System Health
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">API</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+              <p className="text-sm font-medium text-primary">API</p>
+              <p className="text-xs text-tertiary capitalize">
                 {systemHealth.api}
               </p>
             </div>
@@ -328,8 +328,8 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Database</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+              <p className="text-sm font-medium text-primary">Database</p>
+              <p className="text-xs text-tertiary capitalize">
                 {systemHealth.database}
               </p>
             </div>
@@ -337,14 +337,14 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Storage</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+              <p className="text-sm font-medium text-primary">Storage</p>
+              <p className="text-xs text-tertiary capitalize">
                 {systemHealth.storage}
               </p>
             </div>
           </div>
         </div>
-        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+        <p className="mt-4 text-xs text-tertiary">
           Last checked: {formatTimestamp(systemHealth.lastCheck)}
         </p>
       </Card>
@@ -352,16 +352,16 @@ export const DashboardPage: React.FC = () => {
       {/* Recent Activity - Placeholder until audit log API is available */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-semibold text-primary">
             Recent Activity
           </h2>
         </div>
         <div className="text-center py-8">
           <Activity className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+          <h3 className="mt-2 text-sm font-medium text-primary">
             Activity log coming soon
           </h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-tertiary">
             Recent system activity will be displayed here
           </p>
         </div>

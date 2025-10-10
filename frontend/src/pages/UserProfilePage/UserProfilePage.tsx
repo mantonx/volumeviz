@@ -81,15 +81,15 @@ export const UserProfilePage: React.FC = () => {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile & Settings</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <h1 className="text-3xl font-bold text-primary">Profile & Settings</h1>
+        <p className="mt-2 text-secondary">
           Manage your account information and security settings
         </p>
       </div>
 
       {/* User Information Card */}
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-xl font-semibold text-primary mb-4">
           Account Information
         </h2>
         <div className="space-y-4">
@@ -99,8 +99,8 @@ export const UserProfilePage: React.FC = () => {
               <User className="h-5 w-5 text-blue-600 dark:text-blue-300" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Username</p>
-              <p className="text-base font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-tertiary">Username</p>
+              <p className="text-base font-medium text-primary">
                 {user?.username || 'Not set'}
               </p>
             </div>
@@ -112,8 +112,8 @@ export const UserProfilePage: React.FC = () => {
               <Mail className="h-5 w-5 text-purple-600 dark:text-purple-300" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
-              <p className="text-base font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-tertiary">Email</p>
+              <p className="text-base font-medium text-primary">
                 {user?.email || 'Not set'}
               </p>
             </div>
@@ -125,8 +125,8 @@ export const UserProfilePage: React.FC = () => {
               <Shield className="h-5 w-5 text-green-600 dark:text-green-300" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Role</p>
-              <p className="text-base font-medium text-gray-900 dark:text-white capitalize">
+              <p className="text-sm font-medium text-tertiary">Role</p>
+              <p className="text-base font-medium text-primary capitalize">
                 {user?.role || 'Not set'}
               </p>
             </div>
@@ -134,12 +134,12 @@ export const UserProfilePage: React.FC = () => {
 
           {/* User ID */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700">
-              <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-surface-secondary">
+              <User className="h-5 w-5 text-secondary" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">User ID</p>
-              <p className="text-base font-mono text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-tertiary">User ID</p>
+              <p className="text-base font-mono text-primary">
                 {user?.id || 'Not set'}
               </p>
             </div>
@@ -150,8 +150,8 @@ export const UserProfilePage: React.FC = () => {
       {/* Change Password Card */}
       <Card className="p-6">
         <div className="flex items-center gap-3 mb-4">
-          <Lock className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <Lock className="h-5 w-5 text-secondary" />
+          <h2 className="text-xl font-semibold text-primary">
             Change Password
           </h2>
         </div>
@@ -181,7 +181,7 @@ export const UserProfilePage: React.FC = () => {
 
           {/* Current Password */}
           <div>
-            <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="currentPassword" className="block text-sm font-medium text-secondary mb-2">
               Current Password
             </label>
             <div className="relative">
@@ -192,7 +192,7 @@ export const UserProfilePage: React.FC = () => {
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
                 disabled={isChangingPassword}
-                className="block w-full pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:text-gray-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                className="block w-full pr-10 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:bg-surface-secondary disabled:text-gray-500 text-primary bg-surface"
                 placeholder="Enter current password"
               />
               <button
@@ -203,9 +203,9 @@ export const UserProfilePage: React.FC = () => {
                 aria-label={showCurrentPassword ? 'Hide password' : 'Show password'}
               >
                 {showCurrentPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" />
+                  <EyeOff className="h-5 w-5 text-tertiary hover:text-secondary" />
                 ) : (
-                  <Eye className="h-5 w-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" />
+                  <Eye className="h-5 w-5 text-tertiary hover:text-secondary" />
                 )}
               </button>
             </div>
@@ -213,7 +213,7 @@ export const UserProfilePage: React.FC = () => {
 
           {/* New Password */}
           <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="newPassword" className="block text-sm font-medium text-secondary mb-2">
               New Password
             </label>
             <div className="relative">
@@ -224,7 +224,7 @@ export const UserProfilePage: React.FC = () => {
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 disabled={isChangingPassword}
-                className="block w-full pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:text-gray-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                className="block w-full pr-10 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:bg-surface-secondary disabled:text-gray-500 text-primary bg-surface"
                 placeholder="Enter new password"
                 minLength={8}
               />
@@ -236,9 +236,9 @@ export const UserProfilePage: React.FC = () => {
                 aria-label={showNewPassword ? 'Hide password' : 'Show password'}
               >
                 {showNewPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" />
+                  <EyeOff className="h-5 w-5 text-tertiary hover:text-secondary" />
                 ) : (
-                  <Eye className="h-5 w-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" />
+                  <Eye className="h-5 w-5 text-tertiary hover:text-secondary" />
                 )}
               </button>
             </div>
@@ -246,7 +246,7 @@ export const UserProfilePage: React.FC = () => {
 
           {/* Confirm New Password */}
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-secondary mb-2">
               Confirm New Password
             </label>
             <div className="relative">
@@ -257,7 +257,7 @@ export const UserProfilePage: React.FC = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={isChangingPassword}
-                className="block w-full pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:text-gray-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                className="block w-full pr-10 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:bg-surface-secondary disabled:text-gray-500 text-primary bg-surface"
                 placeholder="Confirm new password"
                 minLength={8}
               />
@@ -269,9 +269,9 @@ export const UserProfilePage: React.FC = () => {
                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
               >
                 {showConfirmPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" />
+                  <EyeOff className="h-5 w-5 text-tertiary hover:text-secondary" />
                 ) : (
-                  <Eye className="h-5 w-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" />
+                  <Eye className="h-5 w-5 text-tertiary hover:text-secondary" />
                 )}
               </button>
             </div>

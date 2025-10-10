@@ -44,7 +44,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   return (
     <Card className={cn('p-4', className)}>
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-sm text-secondary">
           Showing {startItem} to {endItem} of {totalItems} items
         </div>
 

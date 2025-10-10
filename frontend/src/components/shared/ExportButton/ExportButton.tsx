@@ -51,21 +51,21 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
         size="sm"
       >
         <div className="p-6">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-sm text-secondary mb-6">
             Choose a format to export your data:
           </p>
 
           <div className="space-y-3">
             <button
               onClick={() => handleExport('csv')}
-              className="w-full flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center gap-4 p-4 border border-line rounded-lg hover:bg-surface-hover transition-colors"
             >
               <FileText className="h-8 w-8 text-green-600 dark:text-green-500" />
               <div className="text-left">
-                <div className="font-medium text-gray-900 dark:text-gray-100">
+                <div className="font-medium text-primary">
                   CSV (Spreadsheet)
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-tertiary">
                   Compatible with Excel, Google Sheets
                 </div>
               </div>
@@ -73,14 +73,14 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
 
             <button
               onClick={() => handleExport('json')}
-              className="w-full flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center gap-4 p-4 border border-line rounded-lg hover:bg-surface-hover transition-colors"
             >
               <FileJson className="h-8 w-8 text-blue-600 dark:text-blue-500" />
               <div className="text-left">
-                <div className="font-medium text-gray-900 dark:text-gray-100">
+                <div className="font-medium text-primary">
                   JSON (Data Format)
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-tertiary">
                   For developers and data processing
                 </div>
               </div>

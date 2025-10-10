@@ -69,14 +69,14 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
       case 'low':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-surface-secondary text-secondary';
     }
   };
 
   const getStatusColor = (isEnabled: boolean) => {
     return isEnabled
       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+      : 'bg-surface-secondary text-secondary';
   };
 
   const formatCondition = (condition: any) => {
@@ -101,7 +101,7 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
   if (loading && rules.length === 0) {
     return (
       <div className={cn('flex items-center justify-center py-12', className)}>
-        <div className="flex items-center gap-2 text-gray-500">
+        <div className="flex items-center gap-2 text-tertiary">
           <Loader2 className="h-5 w-5 animate-spin" />
           Loading alert rules...
         </div>
@@ -124,10 +124,10 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
     <div className={cn('space-y-4', className)}>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+          <h3 className="text-lg font-medium text-primary">
             Alert Rules & Routes
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-tertiary">
             Configure rules for when alerts should be triggered and where they
             go
           </p>
@@ -161,7 +161,7 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
                     <Activity className="h-5 w-5 text-blue-500 flex-shrink-0" />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-medium text-gray-900 dark:text-white truncate">
+                        <h4 className="font-medium text-primary truncate">
                           {rule.name}
                         </h4>
                         <Badge
@@ -177,10 +177,10 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
                           {rule.severity}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                      <p className="text-sm text-tertiary truncate">
                         {rule.description || 'No description'}
                       </p>
-                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      <div className="text-xs text-tertiary mt-1">
                         <div className="flex items-center gap-4">
                           <span>
                             Condition: {formatCondition(rule.condition)}
@@ -241,7 +241,7 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
 
               {operationError[`testRule_${rule.id}`] && (
                 <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                  <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm">
+                  <div className="flex items-center gap-2 text-red-700 text-sm">
                     <AlertTriangle className="h-4 w-4" />
                     Test failed: {operationError[`testRule_${rule.id}`]}
                   </div>
@@ -250,7 +250,7 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
 
               {operationError[`deleteRule_${rule.id}`] && (
                 <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                  <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm">
+                  <div className="flex items-center gap-2 text-red-700 text-sm">
                     <AlertTriangle className="h-4 w-4" />
                     Delete failed: {operationError[`deleteRule_${rule.id}`]}
                   </div>

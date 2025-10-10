@@ -17,18 +17,18 @@ interface GrowthIndicatorProps {
 
 const getGrowthColor = (rate: number): string => {
   const percentage = rate * 100;
-  if (percentage < 1) return 'text-green-600 dark:text-green-400';
-  if (percentage < 5) return 'text-yellow-600 dark:text-yellow-400';
-  if (percentage < 10) return 'text-orange-600 dark:text-orange-400';
-  return 'text-red-600 dark:text-red-400';
+  if (percentage < 1) return 'text-green-600';
+  if (percentage < 5) return 'text-yellow-600';
+  if (percentage < 10) return 'text-orange-600';
+  return 'text-red-600';
 };
 
 const getGrowthBgColor = (rate: number): string => {
   const percentage = rate * 100;
-  if (percentage < 1) return 'bg-green-100 dark:bg-green-900/30';
-  if (percentage < 5) return 'bg-yellow-100 dark:bg-yellow-900/30';
-  if (percentage < 10) return 'bg-orange-100 dark:bg-orange-900/30';
-  return 'bg-red-100 dark:bg-red-900/30';
+  if (percentage < 1) return 'bg-green-100';
+  if (percentage < 5) return 'bg-yellow-100';
+  if (percentage < 10) return 'bg-orange-100';
+  return 'bg-red-100';
 };
 
 const getGrowthIcon = (rate: number) => {
@@ -58,7 +58,7 @@ export const GrowthIndicator: React.FC<GrowthIndicatorProps> = ({
   if (growthRate === undefined || growthRate === null) {
     return (
       <span
-        className={cn('text-sm text-gray-500 dark:text-gray-400', className)}
+        className={cn('text-sm text-tertiary', className)}
       >
         —
       </span>
@@ -98,7 +98,7 @@ export const GrowthIndicator: React.FC<GrowthIndicatorProps> = ({
           {percentage.toFixed(1)}%
         </span>
         {showLabel && (
-          <span className="text-xs text-gray-600 dark:text-gray-400">
+          <span className="text-xs text-secondary">
             {label}
           </span>
         )}
@@ -127,16 +127,16 @@ export const GrowthAlert: React.FC<GrowthAlertProps> = ({
     <div
       className={cn(
         'flex items-start gap-2 p-3 rounded-lg',
-        'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800',
+        'bg-orange-50 border border-orange-200',
         className,
       )}
     >
-      <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+      <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0 mt-0.5" />
       <div className="flex-1">
-        <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
+        <p className="text-sm font-medium text-orange-900">
           High Growth Rate Detected
         </p>
-        <p className="text-xs text-orange-700 dark:text-orange-300 mt-0.5">
+        <p className="text-xs text-orange-700 mt-0.5">
           {volumeName} is growing at {percentage.toFixed(1)}% rate. Consider
           investigating disk usage.
         </p>

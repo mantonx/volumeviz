@@ -124,7 +124,7 @@ export const MountsPage: React.FC = () => {
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow border">
+          <div className="bg-surface-elevated p-4 rounded-lg shadow-md border border-line">
             <h3 className="text-sm font-semibold text-gray-600">
               Total Mounts
             </h3>
@@ -132,31 +132,31 @@ export const MountsPage: React.FC = () => {
               {summary.total_mounts || 0}
             </p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow border">
+          <div className="bg-surface-elevated p-4 rounded-lg shadow-md border border-line">
             <h3 className="text-sm font-semibold text-gray-600">Volumes</h3>
             <p className="text-2xl font-bold text-blue-500">
               {summary.volume_mounts || 0}
             </p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow border">
+          <div className="bg-surface-elevated p-4 rounded-lg shadow-md border border-line">
             <h3 className="text-sm font-semibold text-gray-600">Bind Mounts</h3>
             <p className="text-2xl font-bold text-green-500">
               {summary.bind_mounts || 0}
             </p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow border">
+          <div className="bg-surface-elevated p-4 rounded-lg shadow-md border border-line">
             <h3 className="text-sm font-semibold text-gray-600">Tmpfs</h3>
             <p className="text-2xl font-bold text-purple-500">
               {summary.tmpfs_mounts || 0}
             </p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow border">
+          <div className="bg-surface-elevated p-4 rounded-lg shadow-md border border-line">
             <h3 className="text-sm font-semibold text-gray-600">Orphaned</h3>
             <p className="text-2xl font-bold text-yellow-500">
               {summary.orphaned_mounts || 0}
             </p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow border">
+          <div className="bg-surface-elevated p-4 rounded-lg shadow-md border border-line">
             <h3 className="text-sm font-semibold text-gray-600">Projects</h3>
             <p className="text-2xl font-bold text-indigo-500">
               {summary.compose_projects || 0}
@@ -166,7 +166,7 @@ export const MountsPage: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow border mb-6">
+      <div className="bg-surface-elevated p-4 rounded-lg shadow-md border border-line mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -237,7 +237,7 @@ export const MountsPage: React.FC = () => {
       </div>
 
       {/* Mounts Table */}
-      <div className="bg-white rounded-lg shadow border overflow-hidden">
+      <div className="bg-surface-elevated rounded-lg shadow-md border border-line overflow-hidden">
         {loading ? (
           <TableSkeleton rows={10} columns={5} />
         ) : error ? (
@@ -252,7 +252,7 @@ export const MountsPage: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-line">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -278,7 +278,7 @@ export const MountsPage: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-line">
                 {mounts.map((mount) => (
                   <tr key={mount.id!} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">

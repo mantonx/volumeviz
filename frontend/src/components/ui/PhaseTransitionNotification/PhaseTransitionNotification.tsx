@@ -145,11 +145,11 @@ export const PhaseTransitionNotification: React.FC<
         };
       default:
         return {
-          bg: 'bg-gray-50 dark:bg-gray-800',
-          border: 'border-gray-200 dark:border-gray-700',
-          icon: 'text-gray-600 dark:text-gray-400',
-          title: 'text-gray-900 dark:text-white',
-          text: 'text-gray-700 dark:text-gray-300',
+          bg: 'bg-surface-secondary',
+          border: 'border-line',
+          icon: 'text-secondary',
+          title: 'text-primary',
+          text: 'text-gray-700 text-secondary',
           accent: 'bg-gray-500',
         };
     }
@@ -264,7 +264,7 @@ export const PhaseTransitionNotification: React.FC<
                   onClick={handleToggleDetails}
                   className={clsx(
                     colors.icon,
-                    'hover:bg-white/20 dark:hover:bg-gray-800/20 p-1 rounded',
+                    'hover:bg-white/20 p-1 rounded',
                   )}
                   title={isExpanded ? 'Hide details' : 'Show details'}
                 >
@@ -281,7 +281,7 @@ export const PhaseTransitionNotification: React.FC<
                   onClick={handleDismiss}
                   className={clsx(
                     colors.icon,
-                    'hover:bg-white/20 dark:hover:bg-gray-800/20 p-1 rounded',
+                    'hover:bg-white/20 p-1 rounded',
                   )}
                   title="Dismiss"
                 >

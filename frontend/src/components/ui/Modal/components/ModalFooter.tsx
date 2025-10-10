@@ -31,8 +31,8 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
     <div
       className={clsx(
         'flex items-center gap-3',
-        'px-6 py-4 border-t border-neutral-200 dark:border-neutral-700',
-        'bg-neutral-50 dark:bg-neutral-800',
+        'px-6 py-4 border-t border-line',
+        'bg-surface-secondary',
         alignmentClasses[align],
         className,
       )}

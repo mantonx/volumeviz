@@ -9,9 +9,9 @@ const buttonVariants: Record<ButtonVariant, string> = {
   primary: 'bg-blue-600 hover:bg-blue-700 text-white',
   secondary: 'bg-gray-600 hover:bg-gray-700 text-white',
   outline:
-    'border border-gray-300 hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-300',
+    'border border-line hover:bg-surface-hover text-secondary',
   ghost:
-    'hover:bg-gray-100 text-gray-700 dark:hover:bg-gray-800 dark:text-gray-300',
+    'hover:bg-surface-hover text-secondary',
   destructive: 'bg-red-600 hover:bg-red-700 text-white',
 };
 

@@ -61,7 +61,7 @@ const TreeNodeComponent: React.FC<TreeNodeProps> = ({
     <div className="select-none">
       <div
         className={cn(
-          'flex items-center space-x-1 px-2 py-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded',
+          'flex items-center space-x-1 px-2 py-1 cursor-pointer hover:bg-surface-hover rounded',
           isSelected && 'bg-blue-100 dark:bg-blue-900/30',
         )}
         onClick={handleClick}
@@ -69,7 +69,7 @@ const TreeNodeComponent: React.FC<TreeNodeProps> = ({
         {canExpand ? (
           <button
             onClick={handleToggle}
-            className="flex items-center justify-center w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+            className="flex items-center justify-center w-4 h-4 hover:bg-gray-200 hover:bg-surface-hover rounded"
           >
             {node.isLoading ? (
               <LoaderIcon className="w-3 h-3 animate-spin" />
@@ -93,7 +93,7 @@ const TreeNodeComponent: React.FC<TreeNodeProps> = ({
           <div className="w-4 h-4" />
         )}
 
-        <span className="flex-1 text-sm text-gray-900 dark:text-gray-100 truncate">
+        <span className="flex-1 text-sm text-primary truncate">
           {node.name}
         </span>
       </div>
@@ -192,7 +192,7 @@ export const Tree: React.FC<TreeProps> = ({
       {isLoading && rootNodes.length === 0 ? (
         <div className="flex items-center justify-center p-4">
           <LoaderIcon className="w-4 h-4 animate-spin mr-2" />
-          <span className="text-sm text-gray-600 dark:text-gray-400">
+          <span className="text-sm text-secondary">
             Loading directory tree...
           </span>
         </div>

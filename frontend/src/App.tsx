@@ -47,7 +47,7 @@ const RulesPage = React.lazy(() => import('@/pages/RulesPage'));
 const PageLoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
     <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-    <span className="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
+    <span className="ml-2 text-secondary">Loading...</span>
   </div>
 );
 
@@ -116,11 +116,11 @@ const App: React.FC = () => {
     return (
       <div
         data-testid="app-loading"
-        className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900"
+        className="min-h-screen flex items-center justify-center bg-gray-50 bg-surface"
       >
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
+          <p className="mt-4 text-secondary">
             Loading VolumeViz...
           </p>
         </div>
@@ -135,104 +135,104 @@ const App: React.FC = () => {
           <RealtimeProvider>
             <ApiHealthChecker />
             <Router>
-            <Suspense fallback={<PageLoadingSpinner />}>
-              <Routes>
-                {/* Public Routes (no Layout) */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+              <Suspense fallback={<PageLoadingSpinner />}>
+                  <Routes>
+                  {/* Public Routes (no Layout) */}
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
 
-                {/* Admin Routes (protected, admin-only, separate layout) */}
-                <Route
-                  path="/admin/*"
-                  element={
-                    <ProtectedRoute>
-                      <RequireAdmin>
-                        <AdminLayout>
-                          <Routes>
-                            <Route index element={<AdminDashboardPage />} />
-                            <Route path="users" element={<AdminUsersPage />} />
-                            <Route path="organizations" element={<AdminOrganizationsPage />} />
-                            <Route path="audit" element={<AdminAuditLogsPage />} />
-                            <Route path="permissions" element={<AdminPermissionsPage />} />
-                            <Route path="settings" element={<AdminSystemSettingsPage />} />
-                            <Route path="*" element={<Navigate to="/admin" replace />} />
+                  {/* Admin Routes (protected, admin-only, separate layout) */}
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <ProtectedRoute>
+                        <RequireAdmin>
+                          <AdminLayout>
+                            <Routes>
+                              <Route index element={<AdminDashboardPage />} />
+                              <Route path="users" element={<AdminUsersPage />} />
+                              <Route path="organizations" element={<AdminOrganizationsPage />} />
+                              <Route path="audit" element={<AdminAuditLogsPage />} />
+                              <Route path="permissions" element={<AdminPermissionsPage />} />
+                              <Route path="settings" element={<AdminSystemSettingsPage />} />
+                              <Route path="*" element={<Navigate to="/admin" replace />} />
+                            </Routes>
+                          </AdminLayout>
+                        </RequireAdmin>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Protected Routes (with Layout) */}
+                  <Route
+                    path="/*"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                            <Routes>
+                            {/* Onboarding Route */}
+                            <Route
+                              path="/onboarding"
+                              element={<OnboardingPage />}
+                            />
+
+                            {/* Main Routes - redirect to onboarding if needed */}
+                            <Route
+                              path="/"
+                              element={
+                                shouldRedirectToOnboarding ? (
+                                  <Navigate to="/onboarding" replace />
+                                ) : (
+                                  <Dashboard />
+                                )
+                              }
+                            />
+                            {/* Main Navigation Routes */}
+                            <Route path="/volumes" element={<VolumesPage />} />
+                            <Route
+                              path="/volumes/:name"
+                              element={<VolumeDetailsPage />}
+                            />
+                            <Route path="/files" element={<FilesPage />} />
+                            <Route path="/trends" element={<TrendsPage />} />
+                            <Route path="/alerts" element={<AlertsPage />} />
+
+                            {/* Legacy Routes - redirect to new unified /files page */}
+                            <Route
+                              path="/explorer"
+                              element={<Navigate to="/files" replace />}
+                            />
+                            <Route
+                              path="/explorer/:volumeId"
+                              element={<Navigate to="/files" replace />}
+                            />
+                            <Route
+                              path="/search"
+                              element={<Navigate to="/files" replace />}
+                            />
+
+                            {/* Advanced/Settings Routes */}
+                            <Route path="/mounts" element={<MountsPage />} />
+                            <Route path="/rules" element={<RulesPage />} />
+
+                            {/* System Routes */}
+                            <Route path="/health" element={<HealthPage />} />
+                            <Route path="/settings" element={<SettingsPage />} />
+                            <Route path="/profile" element={<UserProfilePage />} />
+
+                            {/* 404 Route */}
+                            <Route path="*" element={<NotFoundPage />} />
                           </Routes>
-                        </AdminLayout>
-                      </RequireAdmin>
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* Protected Routes (with Layout) */}
-                <Route
-                  path="/*"
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <Routes>
-                          {/* Onboarding Route */}
-                          <Route
-                            path="/onboarding"
-                            element={<OnboardingPage />}
-                          />
-
-                          {/* Main Routes - redirect to onboarding if needed */}
-                          <Route
-                            path="/"
-                            element={
-                              shouldRedirectToOnboarding ? (
-                                <Navigate to="/onboarding" replace />
-                              ) : (
-                                <Dashboard />
-                              )
-                            }
-                          />
-                          {/* Main Navigation Routes */}
-                          <Route path="/volumes" element={<VolumesPage />} />
-                          <Route
-                            path="/volumes/:name"
-                            element={<VolumeDetailsPage />}
-                          />
-                          <Route path="/files" element={<FilesPage />} />
-                          <Route path="/trends" element={<TrendsPage />} />
-                          <Route path="/alerts" element={<AlertsPage />} />
-
-                          {/* Legacy Routes - redirect to new unified /files page */}
-                          <Route
-                            path="/explorer"
-                            element={<Navigate to="/files" replace />}
-                          />
-                          <Route
-                            path="/explorer/:volumeId"
-                            element={<Navigate to="/files" replace />}
-                          />
-                          <Route
-                            path="/search"
-                            element={<Navigate to="/files" replace />}
-                          />
-
-                          {/* Advanced/Settings Routes */}
-                          <Route path="/mounts" element={<MountsPage />} />
-                          <Route path="/rules" element={<RulesPage />} />
-
-                          {/* System Routes */}
-                          <Route path="/health" element={<HealthPage />} />
-                          <Route path="/settings" element={<SettingsPage />} />
-                          <Route path="/profile" element={<UserProfilePage />} />
-
-                          {/* 404 Route */}
-                          <Route path="*" element={<NotFoundPage />} />
-                        </Routes>
-                      </Layout>
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-            </Suspense>
-          </Router>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                </Routes>
+              </Suspense>
+            </Router>
         </RealtimeProvider>
       </ToastProvider>
-      </div>
+    </div>
     </ThemeProvider>
   );
 };

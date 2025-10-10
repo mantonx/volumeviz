@@ -89,10 +89,10 @@ export const SystemSettingsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-primary">
             System Settings
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-secondary">
             Configure system-wide settings and preferences
           </p>
         </div>
@@ -120,14 +120,14 @@ export const SystemSettingsPage: React.FC = () => {
             <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900">
               <Settings className="h-5 w-5 text-blue-600 dark:text-blue-300" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-semibold text-primary">
               Authentication
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 JWT Expiration (minutes)
               </label>
               <input
@@ -136,12 +136,12 @@ export const SystemSettingsPage: React.FC = () => {
                 onChange={(e) =>
                   updateSetting('jwtExpirationMinutes', parseInt(e.target.value))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Refresh Token Expiration (days)
               </label>
               <input
@@ -150,12 +150,12 @@ export const SystemSettingsPage: React.FC = () => {
                 onChange={(e) =>
                   updateSetting('refreshTokenExpirationDays', parseInt(e.target.value))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Max Login Attempts
               </label>
               <input
@@ -164,7 +164,7 @@ export const SystemSettingsPage: React.FC = () => {
                 onChange={(e) =>
                   updateSetting('maxLoginAttempts', parseInt(e.target.value))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
               />
             </div>
           </div>
@@ -176,14 +176,14 @@ export const SystemSettingsPage: React.FC = () => {
             <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900">
               <Settings className="h-5 w-5 text-green-600 dark:text-green-300" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-semibold text-primary">
               Storage & Scanning
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Max Concurrent Scans
               </label>
               <input
@@ -192,12 +192,12 @@ export const SystemSettingsPage: React.FC = () => {
                 onChange={(e) =>
                   updateSetting('maxScanConcurrency', parseInt(e.target.value))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Scan Interval (minutes)
               </label>
               <input
@@ -206,12 +206,12 @@ export const SystemSettingsPage: React.FC = () => {
                 onChange={(e) =>
                   updateSetting('scanIntervalMinutes', parseInt(e.target.value))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Data Retention (days)
               </label>
               <input
@@ -220,7 +220,7 @@ export const SystemSettingsPage: React.FC = () => {
                 onChange={(e) =>
                   updateSetting('retentionDays', parseInt(e.target.value))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
               />
             </div>
           </div>
@@ -232,7 +232,7 @@ export const SystemSettingsPage: React.FC = () => {
             <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900">
               <Settings className="h-5 w-5 text-purple-600 dark:text-purple-300" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-semibold text-primary">
               Notifications
             </h2>
           </div>
@@ -250,7 +250,7 @@ export const SystemSettingsPage: React.FC = () => {
               />
               <label
                 htmlFor="enable-email"
-                className="ml-2 block text-sm text-gray-900 dark:text-white"
+                className="ml-2 block text-sm text-primary"
               >
                 Enable Email Notifications
               </label>
@@ -259,19 +259,19 @@ export const SystemSettingsPage: React.FC = () => {
             {settings.enableEmailNotifications && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-secondary mb-2">
                     SMTP Host
                   </label>
                   <input
                     type="text"
                     value={settings.smtpHost}
                     onChange={(e) => updateSetting('smtpHost', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-secondary mb-2">
                     SMTP Port
                   </label>
                   <input
@@ -280,19 +280,19 @@ export const SystemSettingsPage: React.FC = () => {
                     onChange={(e) =>
                       updateSetting('smtpPort', parseInt(e.target.value))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-secondary mb-2">
                     SMTP Username
                   </label>
                   <input
                     type="text"
                     value={settings.smtpUsername}
                     onChange={(e) => updateSetting('smtpUsername', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                   />
                 </div>
               </div>
@@ -306,12 +306,12 @@ export const SystemSettingsPage: React.FC = () => {
             <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900">
               <Settings className="h-5 w-5 text-orange-600 dark:text-orange-300" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">API</h2>
+            <h2 className="text-xl font-semibold text-primary">API</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Rate Limit (requests/minute)
               </label>
               <input
@@ -320,12 +320,12 @@ export const SystemSettingsPage: React.FC = () => {
                 onChange={(e) =>
                   updateSetting('apiRateLimitPerMinute', parseInt(e.target.value))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 CORS Allowed Origins
               </label>
               <input
@@ -333,7 +333,7 @@ export const SystemSettingsPage: React.FC = () => {
                 value={settings.corsAllowedOrigins}
                 onChange={(e) => updateSetting('corsAllowedOrigins', e.target.value)}
                 placeholder="* or https://example.com"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
               />
             </div>
 
@@ -347,7 +347,7 @@ export const SystemSettingsPage: React.FC = () => {
               />
               <label
                 htmlFor="enable-swagger"
-                className="ml-2 block text-sm text-gray-900 dark:text-white"
+                className="ml-2 block text-sm text-primary"
               >
                 Enable Swagger API Documentation
               </label>

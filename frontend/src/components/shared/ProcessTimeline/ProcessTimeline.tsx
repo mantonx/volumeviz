@@ -304,7 +304,7 @@ export const ProcessTimeline = forwardRef<
                       phase.status === 'active',
                     'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400':
                       phase.status === 'skipped',
-                    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400':
+                    'bg-gray-100 text-gray-600 dark:bg-gray-800 text-tertiary':
                       phase.status === 'pending',
                     'cursor-pointer hover:scale-105 transition-transform':
                       isClickable,
@@ -321,7 +321,7 @@ export const ProcessTimeline = forwardRef<
               {/* Phase Label */}
               <div
                 className={clsx(
-                  'font-medium text-gray-900 dark:text-white leading-tight',
+                  'font-medium text-primary leading-tight',
                   currentSize.fontSize,
                   {
                     'text-center': orientation === 'horizontal',
@@ -333,7 +333,7 @@ export const ProcessTimeline = forwardRef<
 
               {/* Description */}
               {showDescriptions && phase.description && (
-                <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                <div className="text-sm text-secondary leading-relaxed">
                   {phase.description}
                 </div>
               )}
@@ -374,7 +374,7 @@ export const ProcessTimeline = forwardRef<
 
               {/* Timestamps and Duration */}
               {(showTimestamps || showDurations) && (
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-tertiary">
                   {showTimestamps && phase.timestamps?.startedAt && (
                     <span className="whitespace-nowrap">
                       Started: {formatTimestamp(phase.timestamps.startedAt)}
@@ -402,7 +402,7 @@ export const ProcessTimeline = forwardRef<
 
               {/* Metadata Display */}
               {phase.metadata?.filesProcessed && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
+                <div className="text-xs text-tertiary leading-tight">
                   {phase.metadata.filesProcessed.toLocaleString()} files
                   processed
                   {phase.metadata.totalFiles && (

@@ -108,8 +108,8 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+        <div className="bg-surface p-3 border border-line rounded-lg shadow-lg">
+          <p className="text-sm font-medium text-primary">
             {formatDate(label)}
           </p>
           {payload.map((entry: any, index: number) => (
@@ -156,7 +156,7 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
             <TrendingUpIcon className="w-5 h-5 text-blue-500" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="text-lg font-semibold text-primary">
               Volume Trend
             </h3>
           </div>
@@ -231,7 +231,7 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-6">
           <BarChart3Icon className="w-5 h-5 text-green-500" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-lg font-semibold text-primary">
             Top Folders by Size
           </h3>
         </div>
@@ -270,7 +270,7 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-6">
           <PieChartIcon className="w-5 h-5 text-purple-500" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-lg font-semibold text-primary">
             File Type Composition
           </h3>
           <Badge variant="outline" className="ml-auto">
@@ -307,22 +307,22 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
             {mockCompositionData.map((item, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg"
               >
                 <div className="flex items-center space-x-3">
                   <div
                     className="w-4 h-4 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <span className="text-sm font-medium text-primary">
                     {item.name}
                   </span>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm font-semibold text-primary">
                     {item.size.toFixed(1)} GB
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-tertiary">
                     {item.value.toFixed(1)}%
                   </p>
                 </div>

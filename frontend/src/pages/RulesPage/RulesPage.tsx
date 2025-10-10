@@ -146,7 +146,7 @@ const RulesPage: React.FC = () => {
       case 'exclude':
         return 'text-red-600 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-900/50 dark:border-red-700';
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200 dark:text-gray-400 dark:bg-gray-700 dark:border-gray-600';
+        return 'text-gray-600 bg-gray-50 border-gray-200 text-tertiary bg-surface-secondary border-line';
     }
   };
 
@@ -155,7 +155,7 @@ const RulesPage: React.FC = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-700 dark:text-gray-300">
+          <span className="ml-2 text-secondary">
             Loading rules configuration...
           </span>
         </div>
@@ -172,10 +172,10 @@ const RulesPage: React.FC = () => {
             <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-semibold text-primary">
               Tracking Rules
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-tertiary">
               Configure which mounts to track using ordered rules
             </p>
           </div>
@@ -184,7 +184,7 @@ const RulesPage: React.FC = () => {
           <button
             onClick={previewRules}
             disabled={previewLoading}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2 border border-line rounded-md shadow-sm text-sm font-medium text-secondary bg-surface hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
             <Play className="h-4 w-4 mr-2" />
             {previewLoading ? 'Previewing...' : 'Preview'}
@@ -214,7 +214,7 @@ const RulesPage: React.FC = () => {
       {/* Stats Cards */}
       {config && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+          <div className="bg-surface overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -222,11 +222,11 @@ const RulesPage: React.FC = () => {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                    <dt className="text-sm font-medium text-tertiary truncate">
                       Total Rules
                     </dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      <div className="text-2xl font-semibold text-primary">
                         {config.total || 0}
                       </div>
                     </dd>
@@ -236,7 +236,7 @@ const RulesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+          <div className="bg-surface overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -246,11 +246,11 @@ const RulesPage: React.FC = () => {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                    <dt className="text-sm font-medium text-tertiary truncate">
                       Enabled Rules
                     </dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      <div className="text-2xl font-semibold text-primary">
                         {config.enabled || 0}
                       </div>
                     </dd>
@@ -260,7 +260,7 @@ const RulesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+          <div className="bg-surface overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -270,11 +270,11 @@ const RulesPage: React.FC = () => {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                    <dt className="text-sm font-medium text-tertiary truncate">
                       Include Rules
                     </dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      <div className="text-2xl font-semibold text-primary">
                         {config.rules?.filter((r) => r.action === 'include')
                           .length || 0}
                       </div>
@@ -285,7 +285,7 @@ const RulesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+          <div className="bg-surface overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -295,11 +295,11 @@ const RulesPage: React.FC = () => {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                    <dt className="text-sm font-medium text-tertiary truncate">
                       Exclude Rules
                     </dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      <div className="text-2xl font-semibold text-primary">
                         {config.rules?.filter((r) => r.action === 'exclude')
                           .length || 0}
                       </div>
@@ -314,9 +314,9 @@ const RulesPage: React.FC = () => {
 
       {/* Preview Summary */}
       {preview && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div className="bg-surface shadow rounded-lg">
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-xl font-semibold text-primary mb-4">
               Preview Results
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -324,7 +324,7 @@ const RulesPage: React.FC = () => {
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {preview.summary?.total_mounts || 0}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-secondary">
                   Total Mounts
                 </p>
               </div>
@@ -332,7 +332,7 @@ const RulesPage: React.FC = () => {
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {preview.summary?.mounts_included || 0}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-secondary">
                   Will Include
                 </p>
               </div>
@@ -340,15 +340,15 @@ const RulesPage: React.FC = () => {
                 <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                   {preview.summary?.mounts_excluded || 0}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-secondary">
                   Will Exclude
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                <p className="text-2xl font-bold text-secondary">
                   {preview.summary?.mounts_unmatched || 0}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-secondary">
                   Unmatched
                 </p>
               </div>
@@ -356,7 +356,7 @@ const RulesPage: React.FC = () => {
                 <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                   {preview.execution_time_ms || 0}ms
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-secondary">
                   Execution Time
                 </p>
               </div>
@@ -366,18 +366,18 @@ const RulesPage: React.FC = () => {
       )}
 
       {/* Rules List */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+      <div className="bg-surface shadow rounded-lg">
+        <div className="px-6 py-4 border-b border-line">
+          <h2 className="text-xl font-semibold text-primary">
             Rules (Ordered by Priority)
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-secondary">
             Drag to reorder • Higher rules take precedence
           </p>
         </div>
 
         {config && config.rules && config.rules.length > 0 ? (
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="divide-y divide-line">
             {config.rules.map((rule, index) => (
               <div
                 key={rule.id}
@@ -385,7 +385,7 @@ const RulesPage: React.FC = () => {
                 onDragStart={(e) => handleDragStart(e, rule, index)}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, index)}
-                className={`p-6 cursor-move hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                className={`p-6 cursor-move hover:bg-surface-hover transition-colors ${
                   draggedRule?.id === rule.id ? 'opacity-50' : ''
                 }`}
               >
@@ -393,17 +393,17 @@ const RulesPage: React.FC = () => {
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center">
                       <span className="text-2xl text-gray-400">⋮⋮</span>
-                      <span className="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                      <span className="ml-2 text-sm font-medium text-tertiary">
                         #{index + 1}
                       </span>
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      <h3 className="text-lg font-semibold text-primary">
                         {rule.name}
                       </h3>
                       {rule.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-secondary">
                           {rule.description}
                         </p>
                       )}
@@ -413,10 +413,10 @@ const RulesPage: React.FC = () => {
                         >
                           {(rule.action || '').toUpperCase()}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-tertiary">
                           Priority: {rule.priority || 0}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-tertiary">
                           Matches: {rule.match_count || 0}
                         </span>
                       </div>
@@ -433,7 +433,7 @@ const RulesPage: React.FC = () => {
                         }
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                      <span className="ml-2 text-sm text-secondary">
                         Enabled
                       </span>
                     </label>
@@ -442,14 +442,14 @@ const RulesPage: React.FC = () => {
 
                 {/* Conditions */}
                 <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <h4 className="text-sm font-medium text-secondary mb-2">
                     Conditions:
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {rule.conditions?.map((condition, condIndex) => (
                       <span
                         key={condIndex}
-                        className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                        className="inline-flex items-center px-2 py-1 rounded text-xs bg-surface-secondary text-secondary"
                       >
                         {condition.field_name} {condition.operator}{' '}
                         {condition.value || condition.values?.join(', ')}
@@ -461,7 +461,7 @@ const RulesPage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+          <div className="p-8 text-center text-tertiary">
             <p>No tracking rules configured</p>
             <button
               onClick={() => setShowCreateForm(true)}
@@ -476,17 +476,17 @@ const RulesPage: React.FC = () => {
       {/* Create Rule Form Placeholder */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          <div className="bg-surface rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4 text-primary">
               Create New Rule
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-secondary mb-4">
               Rule creation form would go here...
             </p>
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                className="px-4 py-2 text-secondary hover:text-gray-800 hover:text-primary"
               >
                 Cancel
               </button>

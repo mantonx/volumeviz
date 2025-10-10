@@ -763,7 +763,7 @@ export const VolumeExplorerPanel = forwardRef<
           </div>
         );
       } else {
-        return <div className="divide-y divide-gray-200">{content}</div>;
+        return <div className="divide-y divide-line">{content}</div>;
       }
     };
 

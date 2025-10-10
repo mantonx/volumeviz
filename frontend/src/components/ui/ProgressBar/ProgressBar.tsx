@@ -139,7 +139,7 @@ export const ProgressBar = forwardRef<ProgressBarRef, ProgressBarProps>(
     );
 
     const trackClasses = clsx(
-      'progress-bar-track w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden',
+      'progress-bar-track w-full bg-gray-200 rounded-full overflow-hidden',
       sizeClasses[size],
     );
 
@@ -184,7 +184,7 @@ export const ProgressBar = forwardRef<ProgressBarRef, ProgressBarProps>(
           <div className="flex justify-between items-center mt-1">
             <span
               className={clsx(
-                'progress-bar-label font-medium text-gray-700 dark:text-gray-300',
+                'progress-bar-label font-medium text-secondary',
                 labelSizeClasses[size],
               )}
               data-testid={`${testId}-label`}
@@ -194,7 +194,7 @@ export const ProgressBar = forwardRef<ProgressBarRef, ProgressBarProps>(
             {!indeterminate && (
               <span
                 className={clsx(
-                  'text-gray-500 dark:text-gray-400',
+                  'text-tertiary',
                   labelSizeClasses[size],
                 )}
               >

@@ -159,10 +159,10 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
   return (
     <div className={`flex h-full ${className}`}>
       {/* Left Panel - Directory Tree */}
-      <div className="w-80 flex-shrink-0 border-r border-gray-200 dark:border-gray-700">
+      <div className="w-80 flex-shrink-0 border-r border-line">
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-lg font-semibold text-primary">
               {volumeName}
             </h2>
             <div className="flex items-center space-x-1">
@@ -192,14 +192,14 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
       {/* Right Panel - Tabbed Interface */}
       <div className="flex-1 flex flex-col">
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="border-b border-line">
           <div className="flex space-x-0">
             <button
               onClick={() => setActiveTab('explorer')}
               className={`px-6 py-3 text-sm font-medium border-b-2 ${
                 activeTab === 'explorer'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-secondary'
               }`}
             >
               Explorer
@@ -209,7 +209,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
               className={`px-6 py-3 text-sm font-medium border-b-2 flex items-center space-x-2 ${
                 activeTab === 'insights'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-secondary'
               }`}
             >
               <BarChart3Icon className="w-4 h-4" />
@@ -220,7 +220,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
               className={`px-6 py-3 text-sm font-medium border-b-2 flex items-center space-x-2 ${
                 activeTab === 'alerts'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-secondary'
               }`}
             >
               <BellIcon className="w-4 h-4" />
@@ -234,9 +234,9 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
           {activeTab === 'explorer' && (
             <>
               {/* Search and Navigation Bar */}
-              <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+              <div className="border-b border-line p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-secondary">
                     <span className="font-medium">Path:</span> {currentPath}
                   </div>
                   <ViewToggle
@@ -254,7 +254,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
                   <input
                     type="text"
                     placeholder="Search files and folders..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
+                    className="w-full pl-10 pr-4 py-2 border border-line rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />

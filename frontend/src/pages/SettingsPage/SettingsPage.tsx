@@ -16,6 +16,7 @@ import {
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import {
   themeAtom,
   autoRefreshEnabledAtom,
@@ -122,7 +123,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
         autoRefresh: true,
         realTimeUpdates: false,
         experimentalFeatures: false,
-        debugMode: environment === 'development',
+        debugMode: environment.isDevelopment,
       });
     }
   };
@@ -199,10 +200,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
     <div className="max-w-4xl space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-primary">
           Settings
         </h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">
+        <p className="mt-1 text-secondary">
           Configure VolumeViz preferences and system behavior
         </p>
       </div>
@@ -226,14 +227,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
       {/* API Configuration */}
       <Card className="p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-            <Database className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Database className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-primary">
               API Configuration
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-secondary">
               Configure connection to VolumeViz backend API
             </p>
           </div>
@@ -241,24 +242,24 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-secondary mb-2">
               Base URL
             </label>
             <input
               type="url"
               value={apiConfig.baseUrl}
               onChange={(e) => handleApiConfigChange('baseUrl', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-line rounded-lg bg-surface text-primary placeholder-tertiary focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="http://localhost:8080/api/v1"
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-xs text-tertiary">
               Full URL to the VolumeViz API endpoint including /api/v1 prefix
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Timeout (ms)
               </label>
               <input
@@ -270,12 +271,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
                 onChange={(e) =>
                   handleApiConfigChange('timeout', parseInt(e.target.value))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg bg-surface text-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Retry Attempts
               </label>
               <input
@@ -289,12 +290,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
                     parseInt(e.target.value),
                   )
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg bg-surface text-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Retry Delay (ms)
               </label>
               <input
@@ -306,7 +307,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
                 onChange={(e) =>
                   handleApiConfigChange('retryDelay', parseInt(e.target.value))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-line rounded-lg bg-surface text-primary"
               />
             </div>
           </div>
@@ -316,14 +317,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
       {/* Appearance */}
       <Card className="p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-            <Palette className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
+            <Palette className="h-5 w-5 text-purple-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-primary">
               Appearance
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-secondary">
               Customize the visual appearance of VolumeViz
             </p>
           </div>
@@ -331,39 +332,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            <label className="block text-sm font-medium text-secondary mb-3">
               Theme
             </label>
-            <div className="grid grid-cols-3 gap-3">
-              {(['light', 'dark', 'system'] as ThemeOption[]).map(
-                (themeOption) => (
-                  <button
-                    key={themeOption}
-                    onClick={() => handleThemeChange(themeOption)}
-                    className={`p-3 rounded-lg border-2 transition-colors ${
-                      theme === themeOption
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                  >
-                    <div className="flex flex-col items-center space-y-2">
-                      {themeOption === 'light' && (
-                        <Monitor className="h-5 w-5" />
-                      )}
-                      {themeOption === 'dark' && (
-                        <Monitor className="h-5 w-5" />
-                      )}
-                      {themeOption === 'system' && (
-                        <Monitor className="h-5 w-5" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {getThemeDisplayName(themeOption)}
-                      </span>
-                    </div>
-                  </button>
-                ),
-              )}
-            </div>
+            <p className="text-sm text-secondary mb-4">
+              Choose your preferred color scheme. System will automatically match
+              your operating system's theme preference.
+            </p>
+            <ThemeToggle showLabels={true} size="md" />
           </div>
         </div>
       </Card>
@@ -371,14 +347,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
       {/* Data & Refresh */}
       <Card className="p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="h-10 w-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-            <Monitor className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <Monitor className="h-5 w-5 text-green-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-primary">
               Data & Refresh
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-secondary">
               Configure how VolumeViz updates and refreshes data
             </p>
           </div>
@@ -387,10 +363,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+              <h3 className="text-sm font-medium text-primary">
                 Auto-refresh
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-tertiary">
                 Automatically refresh volume data in the background
               </p>
             </div>
@@ -405,7 +381,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
 
           {autoRefresh && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Refresh Interval: {formatInterval(refreshInterval)}
               </label>
               <div className="flex space-x-2">
@@ -415,8 +391,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
                     onClick={() => handleIntervalChange(interval)}
                     className={`px-3 py-1 text-xs rounded-md transition-colors ${
                       refreshInterval === interval
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-surface-secondary text-secondary hover:bg-gray-200'
                     }`}
                   >
                     {formatInterval(interval)}
@@ -431,14 +407,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
       {/* Feature Flags */}
       <Card className="p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="h-10 w-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
-            <Settings className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+          <div className="h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
+            <Settings className="h-5 w-5 text-orange-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-primary">
               Advanced Features
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-secondary">
               Enable experimental and advanced functionality
             </p>
           </div>
@@ -448,12 +424,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
           {Object.entries(features).map(([key, enabled]) => (
             <div key={key} className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                <h3 className="text-sm font-medium text-primary">
                   {key
                     .replace(/([A-Z])/g, ' $1')
                     .replace(/^./, (str) => str.toUpperCase())}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-tertiary">
                   {key === 'autoRefresh' && 'Enable automatic data refreshing'}
                   {key === 'realTimeUpdates' &&
                     'Real-time WebSocket updates (experimental)'}
@@ -487,14 +463,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
       {/* System Information */}
       <Card className="p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="h-10 w-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-            <Info className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          <div className="h-10 w-10 bg-surface-secondary rounded-lg flex items-center justify-center">
+            <Info className="h-5 w-5 text-secondary" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-primary">
               System Information
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-secondary">
               Current environment and version details
             </p>
           </div>
@@ -502,33 +478,33 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-secondary">
               Environment:
             </span>
             <Badge
-              variant={environment === 'production' ? 'default' : 'secondary'}
+              variant={environment.isProduction ? 'default' : 'secondary'}
             >
-              {environment}
+              {environment.nodeEnv}
             </Badge>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">Version:</span>
-            <span className="font-medium text-gray-900 dark:text-white">
-              1.0.0
+            <span className="text-secondary">Version:</span>
+            <span className="font-medium text-primary">
+              {environment.version}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">API URL:</span>
+            <span className="text-secondary">API URL:</span>
             <span
-              className="font-mono text-xs text-gray-700 dark:text-gray-300 truncate max-w-48"
+              className="font-mono text-xs text-secondary truncate max-w-48"
               title={apiConfig.baseUrl}
             >
               {apiConfig.baseUrl}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">Build:</span>
-            <span className="font-mono text-xs text-gray-700 dark:text-gray-300">
+            <span className="text-secondary">Build:</span>
+            <span className="font-mono text-xs text-secondary">
               {new Date().toISOString().split('T')[0]}
             </span>
           </div>

@@ -151,7 +151,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
+                <h3 className="text-sm sm:text-base font-medium text-primary truncate">
                   {file.name}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-500 truncate mt-1">
@@ -313,7 +313,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       {/* Results Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-lg font-semibold text-primary">
             Search Results
           </h2>
           <span className="text-sm text-gray-500">

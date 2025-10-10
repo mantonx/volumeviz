@@ -19,13 +19,13 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = () => {
     <div className="min-h-96 flex items-center justify-center">
       <Card className="p-8 max-w-md text-center">
         <AlertTriangle className="h-16 w-16 mx-auto text-gray-400 mb-6" />
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-4xl font-bold text-primary mb-2">
           404
         </h1>
-        <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">
+        <h2 className="text-xl font-semibold text-secondary mb-4">
           Page Not Found
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">
+        <p className="text-secondary mb-8">
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">

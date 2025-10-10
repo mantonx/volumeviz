@@ -147,18 +147,18 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
       />
 
       {/* Modal panel - scrollable container */}
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-xl bg-white dark:bg-gray-900 shadow-2xl transition-all">
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-xl bg-surface shadow-2xl transition-all">
         {/* Scrollable content */}
         <div className="overflow-y-auto max-h-[90vh]">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-6 border-b border-line">
             <div className="flex items-center space-x-3">
               <HardDrive className="h-6 w-6 text-blue-600" />
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-semibold text-primary">
                   Volume Details
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-tertiary">
                   {volumeName}
                 </p>
               </div>
@@ -168,7 +168,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="text-gray-400 hover:text-primary"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -180,7 +180,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
-                <span className="ml-2 text-gray-600 dark:text-gray-400">
+                <span className="ml-2 text-secondary">
                   Loading volume details...
                 </span>
               </div>
@@ -188,10 +188,10 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-semibold text-primary mb-2">
                     Failed to Load Details
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  <p className="text-secondary mb-4">
                     {error}
                   </p>
                   <Button onClick={fetchVolumeDetails}>
@@ -209,7 +209,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         <BarChart3 className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <span className="text-sm font-medium text-secondary">
                           Storage
                         </span>
                       </div>
@@ -226,7 +226,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                           className="text-lg font-semibold"
                         />
                         {volume.filesystem_capacity && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-xs text-tertiary">
                             {(
                               (volume.size_bytes /
                                 volume.filesystem_capacity.total_bytes) *
@@ -237,7 +237,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                         )}
                       </div>
                     ) : (
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="text-sm text-tertiary">
                         Size not available
                       </div>
                     )}
@@ -248,7 +248,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         <Activity className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <span className="text-sm font-medium text-secondary">
                           Status
                         </span>
                       </div>
@@ -276,7 +276,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                           System Volume
                         </Badge>
                       )}
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-tertiary">
                         {volume.attachments?.length || 0} container(s) attached
                       </div>
                     </div>
@@ -287,7 +287,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         <Database className="h-4 w-4 text-purple-600" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <span className="text-sm font-medium text-secondary">
                           Last Scan
                         </span>
                       </div>
@@ -303,16 +303,16 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
 
                 {/* Basic Information */}
                 <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  <h3 className="text-lg font-semibold text-primary mb-4">
                     Basic Information
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="text-sm font-medium text-secondary">
                         Name
                       </label>
                       <div className="flex items-center space-x-2 mt-1">
-                        <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm text-gray-900 dark:text-gray-100">
+                        <code className="px-2 py-1 bg-surface-secondary rounded text-sm text-primary">
                           {volume.name}
                         </code>
                         <Button
@@ -327,7 +327,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                       </div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="text-sm font-medium text-secondary">
                         Driver
                       </label>
                       <div className="mt-1">
@@ -336,7 +336,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                     </div>
                     {volume.volume_type && (
                       <div>
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label className="text-sm font-medium text-secondary">
                           Type
                         </label>
                         <div className="mt-1">
@@ -361,7 +361,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                       </div>
                     )}
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="text-sm font-medium text-secondary">
                         Scope
                       </label>
                       <div className="mt-1">
@@ -369,12 +369,12 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                       </div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="text-sm font-medium text-secondary">
                         Created
                       </label>
                       <div className="flex items-center space-x-2 mt-1">
                         <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                        <span className="text-sm text-secondary">
                           {new Date(volume.created_at).toLocaleString()}
                         </span>
                       </div>
@@ -384,16 +384,16 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
 
                 {/* Mount Information */}
                 <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  <h3 className="text-lg font-semibold text-primary mb-4">
                     Mount Information
                   </h3>
                   <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="text-sm font-medium text-secondary">
                       Mountpoint
                     </label>
                     <div className="flex items-center space-x-2 mt-1">
                       <MapPin className="h-4 w-4 text-gray-400" />
-                      <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm flex-1 text-gray-900 dark:text-gray-100">
+                      <code className="px-2 py-1 bg-surface-secondary rounded text-sm flex-1 text-primary">
                         {volume.mountpoint}
                       </code>
                       <Button
@@ -412,7 +412,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                 {/* Container Attachments */}
                 {volume.attachments && volume.attachments.length > 0 && (
                   <Card className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <h3 className="text-lg font-semibold text-primary mb-4">
                       Container Attachments ({volume.attachments.length})
                     </h3>
                     <div className="space-y-3">
@@ -420,15 +420,15 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                         (attachment: AttachmentV1, index: number) => (
                           <div
                             key={index}
-                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                            className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg"
                           >
                             <div className="flex items-center space-x-3">
                               <Database className="h-4 w-4 text-blue-600" />
                               <div>
-                                <div className="font-medium text-gray-900 dark:text-white">
+                                <div className="font-medium text-primary">
                                   {attachment.container_name}
                                 </div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                <div className="text-sm text-tertiary">
                                   {attachment.container_id}
                                 </div>
                               </div>
@@ -452,7 +452,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                 {/* Labels */}
                 {volume.labels && Object.keys(volume.labels).length > 0 && (
                   <Card className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <h3 className="text-lg font-semibold text-primary mb-4">
                       Labels
                     </h3>
                     <div className="space-y-2">
@@ -463,11 +463,11 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                         >
                           <div className="flex items-center space-x-2">
                             <Tag className="h-4 w-4 text-gray-400" />
-                            <code className="text-sm text-gray-900 dark:text-gray-100">
+                            <code className="text-sm text-primary">
                               {key}
                             </code>
                           </div>
-                          <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm text-gray-900 dark:text-gray-100">
+                          <code className="px-2 py-1 bg-surface-secondary rounded text-sm text-primary">
                             {value}
                           </code>
                         </div>
@@ -479,40 +479,40 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                 {/* Filesystem Capacity */}
                 {volume.filesystem_capacity && (
                   <Card className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <h3 className="text-lg font-semibold text-primary mb-4">
                       Filesystem Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label className="text-sm font-medium text-secondary">
                           Total Capacity
                         </label>
-                        <div className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <div className="mt-1 text-lg font-semibold text-primary">
                           {formatBytes(volume.filesystem_capacity.total_bytes)}
                         </div>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label className="text-sm font-medium text-secondary">
                           Available
                         </label>
-                        <div className="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">
+                        <div className="mt-1 text-lg font-semibold text-green-600">
                           {formatBytes(
                             volume.filesystem_capacity.available_bytes,
                           )}
                         </div>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label className="text-sm font-medium text-secondary">
                           Usage
                         </label>
                         <div className="mt-1">
-                          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          <div className="text-lg font-semibold text-primary">
                             {volume.filesystem_capacity.usage_percent.toFixed(
                               1,
                             )}
                             %
                           </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
+                          <div className="w-full bg-surface-secondary rounded-full h-2 mt-1">
                             <div
                               className="bg-blue-600 h-2 rounded-full"
                               style={{
@@ -529,7 +529,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
             ) : (
               <div className="text-center py-12">
                 <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-secondary">
                   No volume details available
                 </p>
               </div>
@@ -537,7 +537,7 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end space-x-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+          <div className="flex items-center justify-end space-x-3 px-6 py-4 border-t border-line bg-surface-secondary">
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>

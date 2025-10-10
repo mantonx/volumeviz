@@ -265,7 +265,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
 
         <Card className="relative w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-semibold text-primary">
               Edit Alert Rule
             </h2>
             <Button variant="ghost" size="sm" onClick={onClose}>
@@ -277,7 +277,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
             {/* Basic Information */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Rule Name *
                 </label>
                 <input
@@ -287,10 +287,10 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                     setFormState((prev) => ({ ...prev, name: e.target.value }))
                   }
                   className={cn(
-                    'w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700',
+                    'w-full px-3 py-2 border rounded-md bg-surface',
                     validationErrors.name
                       ? 'border-red-300 dark:border-red-600'
-                      : 'border-gray-300 dark:border-gray-600',
+                      : 'border-line',
                   )}
                   placeholder="High Volume Usage Alert"
                 />
@@ -302,7 +302,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Description
                 </label>
                 <input
@@ -314,14 +314,14 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                       description: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                  className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                   placeholder="Optional description of this rule"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Severity *
                   </label>
                   <select
@@ -332,7 +332,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                         severity: e.target.value as Severity,
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                    className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -342,7 +342,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Cooldown (seconds) *
                   </label>
                   <input
@@ -356,10 +356,10 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                       }))
                     }
                     className={cn(
-                      'w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700',
+                      'w-full px-3 py-2 border rounded-md bg-surface',
                       validationErrors.cooldown_seconds
                         ? 'border-red-300 dark:border-red-600'
-                        : 'border-gray-300 dark:border-gray-600',
+                        : 'border-line',
                     )}
                     placeholder="300"
                   />
@@ -386,7 +386,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                 />
                 <label
                   htmlFor="is_enabled"
-                  className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                  className="ml-2 text-sm text-secondary"
                 >
                   Enable this rule
                 </label>
@@ -395,12 +395,12 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
 
             {/* Condition */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-medium text-primary mb-4">
                 Alert Condition
               </h3>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Field *
                   </label>
                   <select
@@ -412,10 +412,10 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                       }))
                     }
                     className={cn(
-                      'w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700',
+                      'w-full px-3 py-2 border rounded-md bg-surface',
                       validationErrors.condition_field
                         ? 'border-red-300 dark:border-red-600'
-                        : 'border-gray-300 dark:border-gray-600',
+                        : 'border-line',
                     )}
                   >
                     {conditionFields.map((field) => (
@@ -432,7 +432,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Operator *
                   </label>
                   <select
@@ -447,10 +447,10 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                       }))
                     }
                     className={cn(
-                      'w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700',
+                      'w-full px-3 py-2 border rounded-md bg-surface',
                       validationErrors.condition_operator
                         ? 'border-red-300 dark:border-red-600'
-                        : 'border-gray-300 dark:border-gray-600',
+                        : 'border-line',
                     )}
                   >
                     {conditionOperators.map((op) => (
@@ -467,7 +467,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Value *
                   </label>
                   <input
@@ -488,10 +488,10 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                       }));
                     }}
                     className={cn(
-                      'w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700',
+                      'w-full px-3 py-2 border rounded-md bg-surface',
                       validationErrors.condition_value
                         ? 'border-red-300 dark:border-red-600'
-                        : 'border-gray-300 dark:border-gray-600',
+                        : 'border-line',
                     )}
                     placeholder={
                       formState.condition.operator === 'contains' ? 'text' : '0'
@@ -509,7 +509,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
             {/* Routes */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                <h3 className="text-lg font-medium text-primary">
                   Alert Routes
                 </h3>
                 <Button
@@ -548,7 +548,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Target className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          <span className="text-sm font-medium text-primary">
                             Route {index + 1}
                           </span>
                         </div>
@@ -565,7 +565,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
 
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          <label className="block text-sm font-medium text-secondary mb-1">
                             Destination *
                           </label>
                           <select
@@ -575,7 +575,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                                 destination_id: parseInt(e.target.value),
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                            className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                           >
                             {destinations.map((dest) => (
                               <option key={dest.id} value={dest.id}>
@@ -587,7 +587,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-sm font-medium text-secondary mb-1">
                               Custom Subject
                             </label>
                             <input
@@ -601,13 +601,13 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                                   },
                                 })
                               }
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm"
+                              className="w-full px-3 py-2 border border-line rounded-md bg-surface text-sm"
                               placeholder="Optional custom subject"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-sm font-medium text-secondary mb-1">
                               Custom Message
                             </label>
                             <input
@@ -621,7 +621,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
                                   },
                                 })
                               }
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm"
+                              className="w-full px-3 py-2 border border-line rounded-md bg-surface text-sm"
                               placeholder="Optional custom message"
                             />
                           </div>
@@ -636,7 +636,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
             {/* Error display */}
             {error && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm">
+                <div className="flex items-center gap-2 text-red-700 text-sm">
                   <AlertTriangle className="h-4 w-4" />
                   {error}
                 </div>
@@ -644,7 +644,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({
             )}
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-end gap-3 pt-4 border-t border-line">
               <Button variant="outline" onClick={onClose} disabled={isLoading}>
                 Cancel
               </Button>

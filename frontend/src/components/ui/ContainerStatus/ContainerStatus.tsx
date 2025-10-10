@@ -59,8 +59,8 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
             className={cn(
               'text-sm font-medium',
               hasContainers
-                ? 'text-gray-900 dark:text-white'
-                : 'text-gray-500 dark:text-gray-400',
+                ? 'text-primary'
+                : 'text-tertiary',
             )}
           >
             {actualContainerCount}
@@ -79,7 +79,7 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
               className="h-4 w-4 text-green-500"
               title="Active containers"
             />
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
+            <span className="text-sm font-medium text-primary">
               {actualContainerCount === 1
                 ? '1 container'
                 : `${actualContainerCount} containers`}
@@ -91,7 +91,7 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
               className="h-4 w-4 text-gray-400"
               title="No active containers"
             />
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-sm text-tertiary">
               No containers
             </span>
           </>
@@ -99,7 +99,7 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
       </div>
 
       {showDetails && hasContainers && (
-        <div className="text-xs text-gray-600 dark:text-gray-400">
+        <div className="text-xs text-secondary">
           {/* Show first 2 containers or all if expanded */}
           {(isExpanded ? containers : containers.slice(0, 2)).map(
             (container, index) => (
@@ -114,8 +114,8 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className={cn(
-                'flex items-center gap-1 text-gray-500 dark:text-gray-500 italic',
-                'hover:text-blue-600 dark:hover:text-blue-400 hover:underline',
+                'flex items-center gap-1 text-tertiary italic',
+                'hover:text-blue-600 hover:underline',
                 'cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 rounded',
                 'text-left',
               )}
@@ -141,7 +141,7 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
 
           {/* If we don't have container names but have a count > 2, show static text */}
           {!canExpand && actualContainerCount > 2 && containers.length <= 2 && (
-            <div className="text-gray-500 dark:text-gray-500 italic">
+            <div className="text-tertiary italic">
               +{actualContainerCount - containers.length} more containers
             </div>
           )}
@@ -178,7 +178,7 @@ export const ContainerHealth: React.FC<ContainerHealthProps> = ({
     return (
       <div
         className={cn(
-          'flex items-center gap-1.5 text-gray-500 dark:text-gray-400',
+          'flex items-center gap-1.5 text-tertiary',
           className,
         )}
       >
@@ -194,7 +194,7 @@ export const ContainerHealth: React.FC<ContainerHealthProps> = ({
         {runningCount > 0 && (
           <div className="flex items-center gap-1">
             <PlayCircle className="h-3.5 w-3.5 text-green-500" />
-            <span className="text-xs font-medium text-green-600 dark:text-green-400">
+            <span className="text-xs font-medium text-green-600">
               {runningCount}
             </span>
           </div>
@@ -210,7 +210,7 @@ export const ContainerHealth: React.FC<ContainerHealthProps> = ({
         {unhealthyCount > 0 && (
           <div className="flex items-center gap-1">
             <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
-            <span className="text-xs font-medium text-red-600 dark:text-red-400">
+            <span className="text-xs font-medium text-red-600">
               {unhealthyCount}
             </span>
           </div>
@@ -225,7 +225,7 @@ export const ContainerHealth: React.FC<ContainerHealthProps> = ({
         {runningCount > 0 && (
           <div className="flex items-center gap-1.5">
             <PlayCircle className="h-4 w-4 text-green-500" />
-            <span className="text-sm font-medium text-green-600 dark:text-green-400">
+            <span className="text-sm font-medium text-green-600">
               {runningCount} running
             </span>
           </div>
@@ -233,7 +233,7 @@ export const ContainerHealth: React.FC<ContainerHealthProps> = ({
         {stoppedCount > 0 && (
           <div className="flex items-center gap-1.5">
             <PauseCircle className="h-4 w-4 text-gray-400" />
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-sm text-tertiary">
               {stoppedCount} stopped
             </span>
           </div>
@@ -241,7 +241,7 @@ export const ContainerHealth: React.FC<ContainerHealthProps> = ({
         {unhealthyCount > 0 && (
           <div className="flex items-center gap-1.5">
             <AlertTriangle className="h-4 w-4 text-red-500" />
-            <span className="text-sm font-medium text-red-600 dark:text-red-400">
+            <span className="text-sm font-medium text-red-600">
               {unhealthyCount} unhealthy
             </span>
           </div>
@@ -268,7 +268,7 @@ export const ContainerBadge: React.FC<ContainerBadgeProps> = ({
       <div
         className={cn(
           'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
-          'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+          'bg-surface-secondary text-secondary',
           className,
         )}
       >
@@ -283,8 +283,8 @@ export const ContainerBadge: React.FC<ContainerBadgeProps> = ({
       className={cn(
         'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
         active
-          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+          ? 'bg-green-100 text-green-700'
+          : 'bg-surface-secondary text-secondary',
         className,
       )}
     >

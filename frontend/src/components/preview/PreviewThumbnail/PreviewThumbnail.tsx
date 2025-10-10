@@ -150,7 +150,7 @@ export const PreviewThumbnail: React.FC<PreviewThumbnailProps> = ({
       ref={containerRef}
       className={`
         ${getDimensions()}
-        relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center
+        relative overflow-hidden rounded-lg bg-surface-secondary flex items-center justify-center
         ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}
         ${className}
       `}

@@ -106,10 +106,10 @@ const ImagePreview: React.FC<{ fileId: number; fileName: string }> = ({
 
   if (isLoading) {
     return (
-      <div className="w-full h-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+      <div className="w-full h-64 flex items-center justify-center bg-surface-secondary rounded-lg">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-secondary">
             Loading preview...
           </p>
         </div>
@@ -119,8 +119,8 @@ const ImagePreview: React.FC<{ fileId: number; fileName: string }> = ({
 
   if (isError || !previewData?.data) {
     return (
-      <div className="w-full h-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-        <div className="text-center text-gray-500 dark:text-gray-400">
+      <div className="w-full h-64 flex items-center justify-center bg-surface-secondary rounded-lg">
+        <div className="text-center text-tertiary">
           <AlertCircle className="h-12 w-12 mx-auto mb-2" />
           <p className="text-sm">Preview not available</p>
         </div>
@@ -129,7 +129,7 @@ const ImagePreview: React.FC<{ fileId: number; fileName: string }> = ({
   }
 
   return (
-    <div className="w-full rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+    <div className="w-full rounded-lg overflow-hidden bg-surface-secondary">
       <img
         src={`/api/v1/files/${fileId}/preview?type=thumbnail&size=large`}
         alt="File preview"
@@ -147,7 +147,7 @@ const VideoPreview: React.FC<{ fileId: number; fileName: string }> = ({
   fileId,
 }) => {
   return (
-    <div className="w-full rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+    <div className="w-full rounded-lg overflow-hidden bg-surface-secondary">
       <video
         controls
         className="w-full h-auto max-h-96"
@@ -170,9 +170,9 @@ const AudioPreview: React.FC<{ fileId: number; fileName: string }> = ({
   fileId,
 }) => {
   return (
-    <div className="w-full p-6 rounded-lg bg-gray-100 dark:bg-gray-800">
+    <div className="w-full p-6 rounded-lg bg-surface-secondary">
       <div className="flex items-center justify-center mb-4">
-        <FileAudio className="h-16 w-16 text-gray-400 dark:text-gray-500" />
+        <FileAudio className="h-16 w-16 text-tertiary" />
       </div>
       <audio controls className="w-full">
         <source
@@ -193,8 +193,8 @@ const FallbackPreview: React.FC<{ file: any; category: MediaTypeCategory }> = ({
   category,
 }) => {
   return (
-    <div className="w-full h-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-      <div className="text-center text-gray-500 dark:text-gray-400">
+    <div className="w-full h-64 flex items-center justify-center bg-surface-secondary rounded-lg">
+      <div className="text-center text-tertiary">
         {getFileIcon(category)}
         <p className="mt-4 text-sm font-medium">
           {file.extension?.toUpperCase() || 'File'}
@@ -214,12 +214,12 @@ const MetadataRow: React.FC<{
   icon?: React.ReactNode;
 }> = ({ label, value, icon }) => {
   return (
-    <div className="flex items-start py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-      <div className="flex items-center gap-2 w-1/3 text-sm font-medium text-gray-600 dark:text-gray-400">
-        {icon && <span className="text-gray-400 dark:text-gray-500">{icon}</span>}
+    <div className="flex items-start py-3 border-b border-line last:border-b-0">
+      <div className="flex items-center gap-2 w-1/3 text-sm font-medium text-secondary">
+        {icon && <span className="text-tertiary">{icon}</span>}
         {label}
       </div>
-      <div className="w-2/3 text-sm text-gray-900 dark:text-gray-100 break-all">
+      <div className="w-2/3 text-sm text-primary break-all">
         {value}
       </div>
     </div>
@@ -296,11 +296,11 @@ export function FileMetadataDrawer({
         {/* Preview Section */}
         {showPreview && file.id && (
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
               Preview
             </h3>
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="rounded-lg border border-line overflow-hidden">
               {category === 'image' && (
                 <ImagePreview fileId={file.id} fileName={file.name || 'image'} />
               )}
@@ -321,11 +321,11 @@ export function FileMetadataDrawer({
 
         {/* Basic Information */}
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
             <Info className="h-4 w-4" />
             Information
           </h3>
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="bg-surface rounded-lg border border-line divide-y divide-line">
             <MetadataRow
               label="Name"
               value={file.name}
@@ -333,7 +333,7 @@ export function FileMetadataDrawer({
             />
             <MetadataRow
               label="Path"
-              value={<code className="text-xs bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded">{file.path}</code>}
+              value={<code className="text-xs bg-gray-100 bg-surface px-2 py-1 rounded">{file.path}</code>}
             />
             {!file.is_directory && (
               <>
@@ -374,7 +374,7 @@ export function FileMetadataDrawer({
         {/* Extended Metadata */}
         {metadataLoading && (
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="text-sm font-semibold text-primary">
               Metadata
             </h3>
             <div className="space-y-2">
@@ -387,10 +387,10 @@ export function FileMetadataDrawer({
 
         {!metadataLoading && metadata?.metadata && Object.keys(metadata.metadata).length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="text-sm font-semibold text-primary">
               Extended Metadata
             </h3>
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="bg-surface rounded-lg border border-line divide-y divide-line">
               {Object.entries(metadata.metadata).map(([key, value]) => (
                 <MetadataRow
                   key={key}

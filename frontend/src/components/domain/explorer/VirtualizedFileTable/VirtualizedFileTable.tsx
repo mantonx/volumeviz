@@ -194,31 +194,31 @@ export function VirtualizedFileTable({
   return (
     <div className={`flex flex-col h-full ${className}`}>
       {/* Table Header */}
-      <div className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-12 gap-4 px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+      <div className="bg-surface-secondary border-b border-line">
+        <div className="grid grid-cols-12 gap-4 px-4 py-3 text-xs font-medium text-tertiary uppercase">
           <button
-            className="col-span-5 flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+            className="col-span-5 flex items-center gap-1 hover:text-primary"
             onClick={() => handleSort('name')}
           >
             Name
             <SortIcon field="name" />
           </button>
           <button
-            className="col-span-2 flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+            className="col-span-2 flex items-center gap-1 hover:text-primary"
             onClick={() => handleSort('size')}
           >
             Size
             <SortIcon field="size" />
           </button>
           <button
-            className="col-span-3 flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+            className="col-span-3 flex items-center gap-1 hover:text-primary"
             onClick={() => handleSort('modified')}
           >
             Modified
             <SortIcon field="modified" />
           </button>
           <button
-            className="col-span-2 flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+            className="col-span-2 flex items-center gap-1 hover:text-primary"
             onClick={() => handleSort('type')}
           >
             Type
@@ -251,8 +251,8 @@ export function VirtualizedFileTable({
                 ref={rowVirtualizer.measureElement}
                 className={`
                   absolute top-0 left-0 w-full grid grid-cols-12 gap-4 px-4 py-2
-                  border-b border-gray-100 dark:border-gray-800
-                  hover:bg-gray-50 dark:hover:bg-gray-800
+                  border-b border-line
+                  hover:bg-surface-hover
                   cursor-pointer transition-colors
                   ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
                 `}
@@ -268,28 +268,28 @@ export function VirtualizedFileTable({
                   {file.is_directory ? (
                     <FolderIcon className="h-4 w-4 text-blue-500 flex-shrink-0" />
                   ) : (
-                    <FileIcon className="h-4 w-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+                    <FileIcon className="h-4 w-4 text-secondary flex-shrink-0" />
                   )}
-                  <span className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                  <span className="text-sm text-primary truncate">
                     {file.name}
                   </span>
                 </div>
 
                 {/* Size */}
-                <div className="col-span-2 flex items-center text-sm text-gray-600 dark:text-gray-400">
+                <div className="col-span-2 flex items-center text-sm text-secondary">
                   {file.is_directory ? '-' : formatBytes(file.size || 0)}
                 </div>
 
                 {/* Modified */}
-                <div className="col-span-3 flex items-center text-sm text-gray-600 dark:text-gray-400">
+                <div className="col-span-3 flex items-center text-sm text-secondary">
                   {formatDate(file.modified_time)}
                 </div>
 
                 {/* Type */}
-                <div className="col-span-2 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                <div className="col-span-2 flex items-center justify-between text-sm text-secondary">
                   <span>{file.is_directory ? 'Folder' : file.extension || 'File'}</span>
                   <button
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                    className="p-1 hover:bg-gray-200 hover:bg-surface-hover rounded"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleContextMenu(e, file);
@@ -307,14 +307,14 @@ export function VirtualizedFileTable({
       {/* Context Menu */}
       {contextMenu && (
         <div
-          className="fixed bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 py-1 z-50"
+          className="fixed bg-surface shadow-lg rounded-md border border-line py-1 z-50"
           style={{
             left: contextMenu.x,
             top: contextMenu.y,
           }}
         >
           <button
-            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+            className="w-full px-4 py-2 text-left text-sm hover:bg-surface-hover flex items-center gap-2"
             onClick={() => {
               onFileClick?.(contextMenu.file);
               handleCloseContextMenu();
@@ -328,7 +328,7 @@ export function VirtualizedFileTable({
 
       {/* Empty State */}
       {files.length === 0 && (
-        <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
+        <div className="flex-1 flex items-center justify-center text-tertiary">
           <div className="text-center">
             <FileIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p>No files to display</p>

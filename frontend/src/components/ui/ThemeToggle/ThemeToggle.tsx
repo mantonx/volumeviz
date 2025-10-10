@@ -49,7 +49,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   return (
     <div
-      className="flex gap-1 p-1 bg-background-secondary rounded-lg border border-border-subtle"
+      className="flex gap-1 p-1 bg-surface-secondary rounded-lg border border-line"
       role="radiogroup"
       aria-label="Theme selection"
     >
@@ -64,8 +64,8 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
             ${sizeClasses[size]}
             ${
               theme === value
-                ? 'bg-background-primary text-text-primary shadow-sm'
-                : 'text-text-secondary hover:text-text-primary hover:bg-background-hover'
+                ? 'bg-surface text-primary shadow-sm border border-line'
+                : 'text-secondary hover:text-primary hover:bg-surface-hover'
             }
           `}
           aria-label={`Switch to ${label} theme`}

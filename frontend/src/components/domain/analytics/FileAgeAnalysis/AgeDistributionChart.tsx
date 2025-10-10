@@ -38,25 +38,25 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
   const bucket = payload[0].payload;
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 max-w-xs">
+    <div className="bg-surface border border-line rounded-lg shadow-lg p-3 max-w-xs">
       <div className="mb-2">
-        <p className="font-semibold text-gray-900 dark:text-gray-100">
+        <p className="font-semibold text-primary">
           {bucket.label}
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-xs text-tertiary">
           {bucket.description}
         </p>
       </div>
-      <div className="space-y-1 text-sm border-t border-gray-200 dark:border-gray-700 pt-2">
+      <div className="space-y-1 text-sm border-t border-line pt-2">
         <div className="flex justify-between gap-4">
-          <span className="text-gray-600 dark:text-gray-400">Files:</span>
-          <span className="font-medium text-gray-900 dark:text-gray-100">
+          <span className="text-secondary">Files:</span>
+          <span className="font-medium text-primary">
             {bucket.fileCount.toLocaleString()}
           </span>
         </div>
         <div className="flex justify-between gap-4">
-          <span className="text-gray-600 dark:text-gray-400">Percentage:</span>
-          <span className="font-medium text-gray-900 dark:text-gray-100">
+          <span className="text-secondary">Percentage:</span>
+          <span className="font-medium text-primary">
             {formatPercentage(bucket.percentage)}
           </span>
         </div>

@@ -141,7 +141,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Webhook URL *
               </label>
               <input
@@ -149,10 +149,10 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
                 value={formState.config.url || ''}
                 onChange={(e) => updateConfig('url', e.target.value)}
                 className={cn(
-                  'w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700',
+                  'w-full px-3 py-2 border rounded-md bg-surface',
                   validationErrors.url
                     ? 'border-red-300 dark:border-red-600'
-                    : 'border-gray-300 dark:border-gray-600',
+                    : 'border-line',
                 )}
                 placeholder="https://example.com/webhook"
               />
@@ -164,13 +164,13 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 HTTP Method
               </label>
               <select
                 value={formState.config.method || 'POST'}
                 onChange={(e) => updateConfig('method', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                className="w-full px-3 py-2 border border-line rounded-md bg-surface"
               >
                 <option value="POST">POST</option>
                 <option value="PUT">PUT</option>
@@ -179,20 +179,20 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Content Type
               </label>
               <input
                 type="text"
                 value={formState.config.content_type || 'application/json'}
                 onChange={(e) => updateConfig('content_type', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                 placeholder="application/json"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Custom Headers (JSON)
               </label>
               <textarea
@@ -210,7 +210,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
                     updateConfig('headers', e.target.value);
                   }
                 }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 font-mono text-sm"
+                className="w-full px-3 py-2 border border-line rounded-md bg-surface font-mono text-sm"
                 rows={3}
                 placeholder='{"Authorization": "Bearer token"}'
               />
@@ -222,7 +222,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Slack Webhook URL *
               </label>
               <input
@@ -230,10 +230,10 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
                 value={formState.config.webhook_url || ''}
                 onChange={(e) => updateConfig('webhook_url', e.target.value)}
                 className={cn(
-                  'w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700',
+                  'w-full px-3 py-2 border rounded-md bg-surface',
                   validationErrors.webhook_url
                     ? 'border-red-300 dark:border-red-600'
-                    : 'border-gray-300 dark:border-gray-600',
+                    : 'border-line',
                 )}
                 placeholder="https://hooks.slack.com/services/..."
               />
@@ -245,40 +245,40 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Channel
               </label>
               <input
                 type="text"
                 value={formState.config.channel || ''}
                 onChange={(e) => updateConfig('channel', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                 placeholder="#alerts"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Username
               </label>
               <input
                 type="text"
                 value={formState.config.username || ''}
                 onChange={(e) => updateConfig('username', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                 placeholder="VolumeViz"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Icon Emoji
               </label>
               <input
                 type="text"
                 value={formState.config.icon_emoji || ''}
                 onChange={(e) => updateConfig('icon_emoji', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                 placeholder=":warning:"
               />
             </div>
@@ -289,7 +289,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 User Key *
               </label>
               <input
@@ -297,10 +297,10 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
                 value={formState.config.user_key || ''}
                 onChange={(e) => updateConfig('user_key', e.target.value)}
                 className={cn(
-                  'w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700',
+                  'w-full px-3 py-2 border rounded-md bg-surface',
                   validationErrors.user_key
                     ? 'border-red-300 dark:border-red-600'
-                    : 'border-gray-300 dark:border-gray-600',
+                    : 'border-line',
                 )}
                 placeholder="Your Pushover user key"
               />
@@ -312,7 +312,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 API Token *
               </label>
               <input
@@ -320,10 +320,10 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
                 value={formState.config.api_token || ''}
                 onChange={(e) => updateConfig('api_token', e.target.value)}
                 className={cn(
-                  'w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700',
+                  'w-full px-3 py-2 border rounded-md bg-surface',
                   validationErrors.api_token
                     ? 'border-red-300 dark:border-red-600'
-                    : 'border-gray-300 dark:border-gray-600',
+                    : 'border-line',
                 )}
                 placeholder="Your application's API token"
               />
@@ -335,7 +335,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Priority
               </label>
               <select
@@ -343,7 +343,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
                 onChange={(e) =>
                   updateConfig('priority', parseInt(e.target.value))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                className="w-full px-3 py-2 border border-line rounded-md bg-surface"
               >
                 <option value="-2">Lowest</option>
                 <option value="-1">Low</option>
@@ -354,14 +354,14 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Sound
               </label>
               <input
                 type="text"
                 value={formState.config.sound || ''}
                 onChange={(e) => updateConfig('sound', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                 placeholder="pushover"
               />
             </div>
@@ -385,7 +385,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
 
         <Card className="relative w-full max-w-lg p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-semibold text-primary">
               Edit Destination
             </h2>
             <Button variant="ghost" size="sm" onClick={onClose}>
@@ -397,7 +397,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
             {/* Basic Information */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Name *
                 </label>
                 <input
@@ -407,10 +407,10 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
                     setFormState((prev) => ({ ...prev, name: e.target.value }))
                   }
                   className={cn(
-                    'w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700',
+                    'w-full px-3 py-2 border rounded-md bg-surface',
                     validationErrors.name
                       ? 'border-red-300 dark:border-red-600'
-                      : 'border-gray-300 dark:border-gray-600',
+                      : 'border-line',
                   )}
                   placeholder="My Alert Destination"
                 />
@@ -422,7 +422,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Description
                 </label>
                 <input
@@ -434,19 +434,19 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
                       description: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                  className="w-full px-3 py-2 border border-line rounded-md bg-surface"
                   placeholder="Optional description"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Type
                 </label>
-                <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 capitalize">
+                <div className="px-3 py-2 bg-surface-secondary border border-line rounded-md text-secondary capitalize">
                   {destination.type}
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-tertiary mt-1">
                   Type cannot be changed after creation
                 </p>
               </div>
@@ -466,7 +466,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
                 />
                 <label
                   htmlFor="is_enabled"
-                  className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                  className="ml-2 text-sm text-secondary"
                 >
                   Enable this destination
                 </label>
@@ -475,7 +475,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
 
             {/* Type-specific configuration */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-medium text-primary mb-4">
                 {destination.type.charAt(0).toUpperCase() +
                   destination.type.slice(1)}{' '}
                 Configuration
@@ -486,7 +486,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
             {/* Error display */}
             {error && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm">
+                <div className="flex items-center gap-2 text-red-700 text-sm">
                   <AlertTriangle className="h-4 w-4" />
                   {error}
                 </div>
@@ -494,7 +494,7 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
             )}
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-end gap-3 pt-4 border-t border-line">
               <Button variant="outline" onClick={onClose} disabled={isLoading}>
                 Cancel
               </Button>

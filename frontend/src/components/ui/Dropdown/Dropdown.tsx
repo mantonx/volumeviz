@@ -44,10 +44,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
           onClick={() => setIsOpen(!isOpen)}
           className={clsx(
             'p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
-            'text-gray-500 dark:text-gray-400',
-            'hover:text-gray-700 dark:hover:text-gray-200',
-            'hover:bg-gray-100 dark:hover:bg-gray-800',
-            'active:bg-gray-200 dark:active:bg-gray-700',
+            'text-tertiary',
+            'hover:text-primary',
+            'hover:bg-surface-hover',
+            'active:bg-surface-secondary',
           )}
           aria-label="More actions"
           aria-expanded={isOpen}
@@ -60,7 +60,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       {isOpen && (
         <div
           className={clsx(
-            'absolute top-full mt-1 py-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 min-w-[160px]',
+            'absolute top-full mt-1 py-1 bg-surface border border-line rounded-lg shadow-lg z-50 min-w-[160px]',
             align === 'right' ? 'right-0' : 'left-0',
           )}
         >
@@ -73,11 +73,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 disabled={item.disabled}
                 className={clsx(
                   'w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors',
-                  'hover:bg-gray-50 dark:hover:bg-gray-800',
+                  'hover:bg-surface-hover',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                   item.destructive
-                    ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                    : 'text-gray-700 dark:text-gray-200',
+                    ? 'text-red-600 hover:bg-red-50'
+                    : 'text-secondary',
                 )}
               >
                 {IconComponent && <IconComponent className="w-4 h-4" />}

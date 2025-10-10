@@ -132,14 +132,14 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
           {showViewsList && (
             <Card className="absolute top-full mt-1 right-0 z-50 w-80 max-h-96 overflow-y-auto">
               <div className="p-3 border-b">
-                <h3 className="font-medium text-gray-900 dark:text-white">
+                <h3 className="font-medium text-primary">
                   Saved Views
                 </h3>
               </div>
 
               <div className="p-2 space-y-1">
                 {savedViews.length === 0 ? (
-                  <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                  <div className="text-center py-4 text-gray-500 text-tertiary text-sm">
                     No saved views yet
                   </div>
                 ) : (
@@ -147,7 +147,7 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
                     <div
                       key={view.id}
                       className={cn(
-                        'flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800',
+                        'flex items-center gap-2 p-2 rounded hover:bg-surface-hover',
                         currentView?.id === view.id &&
                           'bg-blue-50 dark:bg-blue-900/20',
                       )}
@@ -188,14 +188,14 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
                             className="text-left w-full"
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              <span className="text-sm font-medium text-primary truncate">
                                 {view.name}
                               </span>
                               {view.is_default && (
                                 <Star className="h-3 w-3 text-yellow-500 flex-shrink-0" />
                               )}
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-gray-500 text-tertiary">
                               {new Date(view.created_at).toLocaleDateString()}
                             </div>
                           </button>
@@ -266,13 +266,13 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-medium text-primary mb-4">
                 Save Current View
               </h3>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 text-secondary mb-2">
                     View Name
                   </label>
                   <Input
@@ -290,11 +290,11 @@ export const FilterViewsManager: React.FC<SavedViewsManagerProps> = ({
                     id="make-default"
                     checked={makeDefault}
                     onChange={(e) => setMakeDefault(e.target.checked)}
-                    className="rounded border-gray-300 dark:border-gray-600"
+                    className="rounded border-gray-300 border-line"
                   />
                   <label
                     htmlFor="make-default"
-                    className="text-sm text-gray-700 dark:text-gray-300"
+                    className="text-sm text-gray-700 text-secondary"
                   >
                     Make this my default view
                   </label>

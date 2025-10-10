@@ -193,10 +193,10 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-secondary">
                 Total Alerts
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-2xl font-bold text-primary">
                 {alertCounts.total}
               </p>
             </div>
@@ -207,7 +207,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-secondary">
                 Active
               </p>
               <p className="text-2xl font-bold text-red-600">
@@ -221,7 +221,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-secondary">
                 Critical
               </p>
               <p className="text-2xl font-bold text-red-600">
@@ -235,7 +235,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-secondary">
                 Warnings
               </p>
               <p className="text-2xl font-bold text-yellow-600">
@@ -257,7 +257,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
               <input
                 type="text"
                 placeholder="Search alerts..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
+                className="w-full pl-10 pr-4 py-2 border border-line rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -272,7 +272,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
               onChange={(e) =>
                 setSelectedSeverity(e.target.value as Alert['severity'] | 'all')
               }
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
+              className="px-3 py-2 border border-line rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
             >
               <option value="all">All Severities</option>
               <option value="critical">Critical</option>
@@ -288,7 +288,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
               onChange={(e) =>
                 setSelectedStatus(e.target.value as Alert['status'] | 'all')
               }
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
+              className="px-3 py-2 border border-line rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
             >
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
@@ -301,7 +301,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
 
       {/* Alert List */}
       <Card className="p-0">
-        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+        <div className="divide-y divide-line">
           {filteredAlerts.length === 0 ? (
             <div className="p-8 text-center">
               <BellIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
@@ -311,7 +311,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
             filteredAlerts.map((alert) => (
               <div
                 key={alert.id}
-                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="p-4 hover:bg-surface-hover"
               >
                 <div className="flex items-start space-x-3">
                   {/* Severity Icon */}
@@ -322,7 +322,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
                   {/* Alert Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                      <h4 className="text-sm font-medium text-primary truncate">
                         {alert.title}
                       </h4>
                       <div className="flex items-center space-x-2">
@@ -333,7 +333,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ className = '' }) => {
                       </div>
                     </div>
 
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <p className="text-sm text-secondary mb-2">
                       {alert.description}
                     </p>
 

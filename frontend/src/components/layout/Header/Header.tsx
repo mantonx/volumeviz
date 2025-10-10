@@ -268,7 +268,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    <header className="sticky top-0 z-40 bg-surface border-b border-line">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left side: Mobile menu button */}
         <div className="flex items-center lg:hidden">
@@ -276,7 +276,7 @@ export const Header: React.FC<HeaderProps> = ({
             variant="ghost"
             size="sm"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-secondary hover:text-primary"
             aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           >
             {sidebarOpen ? (
@@ -289,7 +289,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Center: Page title and breadcrumbs (future enhancement) */}
         <div className="flex-1 lg:flex-none">
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white lg:hidden">
+          <h1 className="text-lg font-semibold text-primary lg:hidden">
             VolumeViz
           </h1>
         </div>
@@ -302,15 +302,15 @@ export const Header: React.FC<HeaderProps> = ({
               /* REST-only status */
               <div
                 data-testid="status-pill"
-                className="flex items-center space-x-2 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700"
+                className="flex items-center space-x-2 px-2 py-1 rounded-md bg-surface-secondary"
                 title={getStatusText(apiStatus)}
               >
                 <StatusIcon status={apiStatus} />
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                <span className="text-xs font-medium text-secondary">
                   API: {apiStatus === 'online' ? 'OK' : 'Error'}
                 </span>
                 {requestCount > 0 && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400 animate-pulse">
+                  <span className="text-xs text-tertiary animate-pulse">
                     {requestCount}
                   </span>
                 )}
@@ -319,26 +319,26 @@ export const Header: React.FC<HeaderProps> = ({
               /* REST + WebSocket status */
               <div
                 data-testid="status-pill"
-                className="flex items-center space-x-3 px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700"
+                className="flex items-center space-x-3 px-3 py-1 rounded-md bg-surface-secondary"
                 title={getCombinedStatusText()}
               >
                 {/* API Status */}
                 <div className="flex items-center space-x-1">
                   <StatusIcon status={apiStatus} />
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  <span className="text-xs font-medium text-secondary">
                     API: {apiStatus === 'online' ? 'OK' : 'Error'}
                   </span>
                 </div>
 
                 {/* Separator dot */}
-                <div className="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500 separator-dot" />
+                <div className="w-1 h-1 rounded-full bg-line separator-dot" />
 
                 {/* WebSocket Status */}
                 <div className="flex items-center space-x-1">
                   <div data-testid="ws-status-icon">
                     <WebSocketIcon status={wsStatus} latency={latency} />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  <span className="text-xs font-medium text-secondary">
                     RT: {getWebSocketDisplayText(wsStatus)}
                   </span>
                 </div>
@@ -346,8 +346,8 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* Request counter */}
                 {requestCount > 0 && (
                   <>
-                    <div className="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500 separator-dot" />
-                    <span className="text-xs text-gray-500 dark:text-gray-400 animate-pulse">
+                    <div className="w-1 h-1 rounded-full bg-line separator-dot" />
+                    <span className="text-xs text-tertiary animate-pulse">
                       {requestCount}
                     </span>
                   </>
@@ -361,7 +361,7 @@ export const Header: React.FC<HeaderProps> = ({
             variant="ghost"
             size="sm"
             onClick={handleThemeToggle}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-secondary hover:text-primary"
             title={`Current theme: ${theme}`}
             aria-label="Toggle theme"
           >
@@ -372,7 +372,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-secondary hover:text-primary"
             title="Notifications"
             aria-label="View notifications"
           >
@@ -383,7 +383,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-secondary hover:text-primary"
             title="Settings"
             aria-label="Open settings"
           >
@@ -395,7 +395,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className="text-secondary hover:text-primary"
               title="User menu"
               aria-label="Open user menu"
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -405,19 +405,19 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Dropdown Menu */}
             {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+              <div className="absolute right-0 mt-2 w-56 bg-surface-elevated rounded-lg shadow-lg border border-line py-1 z-50">
                 {/* User Info */}
-                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="px-4 py-3 border-b border-line">
                   <div className="flex items-center gap-3">
                     <UserCircle className="h-8 w-8 text-gray-400" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                      <p className="text-sm font-medium text-primary truncate">
                         {user?.display_name ||
                           user?.username ||
                           user?.email ||
                           'User'}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      <p className="text-xs text-tertiary truncate">
                         {user?.email}
                       </p>
                     </div>
@@ -430,7 +430,7 @@ export const Header: React.FC<HeaderProps> = ({
                     setIsUserMenuOpen(false);
                     navigate('/profile');
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  className="w-full px-4 py-2 text-left text-sm text-secondary hover:bg-surface-hover flex items-center gap-2"
                 >
                   <User className="h-4 w-4" />
                   View Profile
@@ -441,7 +441,7 @@ export const Header: React.FC<HeaderProps> = ({
                       setIsUserMenuOpen(false);
                       navigate('/admin');
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    className="w-full px-4 py-2 text-left text-sm text-secondary hover:bg-surface-hover flex items-center gap-2"
                   >
                     <Settings className="h-4 w-4" />
                     Admin Panel
@@ -449,7 +449,7 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
                 <button
                   onClick={logout}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  className="w-full px-4 py-2 text-left text-sm text-secondary hover:bg-surface-hover flex items-center gap-2"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out
@@ -462,7 +462,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-secondary hover:text-primary"
             title="Help"
             aria-label="Get help"
           >

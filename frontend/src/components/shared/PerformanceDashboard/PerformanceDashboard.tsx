@@ -286,7 +286,7 @@ export const PerformanceDashboard = forwardRef<
       const isClickable = !!onMetricClick;
 
       const cardClasses = clsx(
-        'performance-metric-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg transition-all duration-200',
+        'performance-metric-card bg-surface border border-line rounded-lg transition-all duration-200',
         currentSize.padding,
         {
           'cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600':
@@ -346,14 +346,14 @@ export const PerformanceDashboard = forwardRef<
               <div>
                 <div
                   className={clsx(
-                    'font-medium text-gray-900 dark:text-white',
+                    'font-medium text-primary',
                     currentSize.labelSize,
                   )}
                 >
                   {metric.label}
                 </div>
                 {layout !== 'compact' && metric.description && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-xs text-tertiary">
                     {metric.description}
                   </div>
                 )}
@@ -372,7 +372,7 @@ export const PerformanceDashboard = forwardRef<
                     metric.trend === 'down' && metric.higherIsBetter,
                   'text-green-600 dark:text-green-400':
                     metric.trend === 'down' && !metric.higherIsBetter,
-                  'text-gray-400 dark:text-gray-500': metric.trend === 'stable',
+                  'text-tertiary': metric.trend === 'stable',
                 })}
               >
                 {getTrendIcon(metric.trend)}
@@ -384,7 +384,7 @@ export const PerformanceDashboard = forwardRef<
           <div className="mt-2">
             <div
               className={clsx(
-                'font-bold text-gray-900 dark:text-white',
+                'font-bold text-primary',
                 currentSize.valueSize,
               )}
             >
@@ -410,7 +410,7 @@ export const PerformanceDashboard = forwardRef<
 
           {/* Timestamp */}
           {showTimestamps && metric.lastUpdated && layout !== 'compact' && (
-            <div className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+            <div className="mt-2 text-xs text-tertiary">
               Updated: {metric.lastUpdated.toLocaleTimeString()}
             </div>
           )}
@@ -429,10 +429,10 @@ export const PerformanceDashboard = forwardRef<
     if (isLoading && processedMetrics.length === 0) {
       return (
         <div
-          className="flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-800 rounded-lg"
+          className="flex items-center justify-center h-48 bg-surface-secondary rounded-lg"
           data-testid={testId}
         >
-          <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-3 text-secondary">
             <RefreshCw className="w-5 h-5 animate-spin" />
             Loading metrics...
           </div>
@@ -472,10 +472,10 @@ export const PerformanceDashboard = forwardRef<
     if (processedMetrics.length === 0) {
       return (
         <div
-          className="flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+          className="flex items-center justify-center h-48 bg-surface-secondary rounded-lg border border-line"
           data-testid={testId}
         >
-          <div className="text-center text-gray-600 dark:text-gray-400">
+          <div className="text-center text-secondary">
             <Activity className="w-8 h-8 mx-auto mb-2" />
             <div>No metrics available</div>
           </div>
@@ -497,7 +497,7 @@ export const PerformanceDashboard = forwardRef<
         {/* Header with refresh button */}
         {(onRefresh || refreshInterval) && (
           <div className="flex items-center justify-between mb-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-secondary">
               {processedMetrics.length} metric
               {processedMetrics.length !== 1 ? 's' : ''}
               {refreshInterval && (
@@ -508,7 +508,7 @@ export const PerformanceDashboard = forwardRef<
               <button
                 onClick={refresh}
                 disabled={isLoading}
-                className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-surface-secondary text-secondary rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
                 data-testid={`${testId}-refresh`}
               >
                 <RefreshCw
@@ -529,7 +529,7 @@ export const PerformanceDashboard = forwardRef<
 
         {/* Footer with last refresh time */}
         {showTimestamps && (
-          <div className="mt-4 text-xs text-gray-400 dark:text-gray-500 text-center">
+          <div className="mt-4 text-xs text-tertiary text-center">
             Last updated: {lastRefresh.toLocaleTimeString()}
           </div>
         )}

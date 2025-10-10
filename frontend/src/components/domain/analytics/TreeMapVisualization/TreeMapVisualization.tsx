@@ -173,7 +173,7 @@ const TreeMapCustomTooltip: React.FC<TreeMapTooltipProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 max-w-xs">
+    <div className="bg-surface border border-line rounded-lg shadow-lg p-3 max-w-xs">
       <div className="flex items-start gap-2 mb-2">
         {node.type === 'directory' ? (
           <Folder className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
@@ -181,47 +181,47 @@ const TreeMapCustomTooltip: React.FC<TreeMapTooltipProps> = ({
           <File className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+          <p className="font-semibold text-primary truncate">
             {node.name}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+          <p className="text-xs text-tertiary truncate">
             {node.path}
           </p>
         </div>
       </div>
       <div className="space-y-1 text-sm">
         <div className="flex justify-between">
-          <span className="text-gray-600 dark:text-gray-400">Size:</span>
-          <span className="font-medium text-gray-900 dark:text-gray-100">
+          <span className="text-secondary">Size:</span>
+          <span className="font-medium text-primary">
             {formatFileSize(node.value)}
           </span>
         </div>
         {totalSize > 0 && (
           <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">Percentage:</span>
-            <span className="font-medium text-gray-900 dark:text-gray-100">
+            <span className="text-secondary">Percentage:</span>
+            <span className="font-medium text-primary">
               {formatPercentage(node.value, totalSize)}
             </span>
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-gray-600 dark:text-gray-400">Type:</span>
-          <span className="font-medium text-gray-900 dark:text-gray-100">
+          <span className="text-secondary">Type:</span>
+          <span className="font-medium text-primary">
             {getFileTypeCategory(node)}
           </span>
         </div>
         {node.modifiedTime && (
           <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">Modified:</span>
-            <span className="font-medium text-gray-900 dark:text-gray-100">
+            <span className="text-secondary">Modified:</span>
+            <span className="font-medium text-primary">
               {getRelativeTime(node.modifiedTime)}
             </span>
           </div>
         )}
         {node.type === 'directory' && node.children && (
           <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">Items:</span>
-            <span className="font-medium text-gray-900 dark:text-gray-100">
+            <span className="text-secondary">Items:</span>
+            <span className="font-medium text-primary">
               {node.children.length}
             </span>
           </div>
@@ -327,10 +327,10 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
       <Card className={cn('p-8', className)}>
         <div className="text-center">
           <Folder className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <h3 className="text-lg font-semibold text-primary mb-2">
             No Data Available
           </h3>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-secondary">
             No files or folders to display in this directory.
           </p>
         </div>
@@ -345,10 +345,10 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Info className="w-5 h-5 text-blue-500" />
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="font-semibold text-primary">
               Storage TreeMap
             </h3>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-sm text-tertiary">
               ({formatFileSize(totalSize)} total)
             </span>
           </div>
@@ -375,19 +375,19 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
                 {COLOR_SCHEME_OPTIONS.find((s) => s.id === selectedColorScheme)?.label}
               </Button>
               {showColorPicker && (
-                <div className="absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 z-10 min-w-[240px]">
+                <div className="absolute right-0 top-full mt-2 bg-surface border border-line rounded-lg shadow-lg p-2 z-10 min-w-[240px]">
                   {COLOR_SCHEME_OPTIONS.map((option) => (
                     <button
                       key={option.id}
                       onClick={() => handleColorSchemeChange(option.id)}
                       className={cn(
-                        'w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700',
+                        'w-full text-left px-3 py-2 rounded hover:bg-surface-hover',
                         selectedColorScheme === option.id &&
                           'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
                       )}
                     >
                       <div className="font-medium">{option.label}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-tertiary">
                         {option.description}
                       </div>
                     </button>
@@ -409,8 +409,8 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
                 className={cn(
                   'hover:text-blue-600 dark:hover:text-blue-400 transition-colors',
                   index === breadcrumbs.length - 1
-                    ? 'text-gray-900 dark:text-gray-100 font-medium'
-                    : 'text-gray-600 dark:text-gray-400',
+                    ? 'text-primary font-medium'
+                    : 'text-secondary',
                 )}
               >
                 {crumb.name}
@@ -452,10 +452,10 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
       <Card className="p-4">
         <div className="flex items-start gap-4">
           <div className="flex-1">
-            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+            <h4 className="font-medium text-primary mb-2">
               How to Use
             </h4>
-            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+            <ul className="text-sm text-secondary space-y-1">
               <li>• Rectangle size represents file/folder size</li>
               <li>• Hover over rectangles to see details</li>
               <li>• Click on folders to drill down</li>
@@ -464,7 +464,7 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
           </div>
           {selectedColorScheme === 'fileType' && (
             <div className="flex-1">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+              <h4 className="font-medium text-primary mb-2">
                 File Types
               </h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
@@ -481,7 +481,7 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
                       className="w-4 h-4 rounded"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-gray-700 dark:text-gray-300">
+                    <span className="text-secondary">
                       {item.label}
                     </span>
                   </div>
@@ -491,7 +491,7 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
           )}
           {selectedColorScheme === 'age' && (
             <div className="flex-1">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+              <h4 className="font-medium text-primary mb-2">
                 File Age
               </h4>
               <div className="space-y-1 text-sm">
@@ -507,7 +507,7 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
                       className="w-4 h-4 rounded"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-gray-700 dark:text-gray-300">
+                    <span className="text-secondary">
                       {item.label}
                     </span>
                   </div>

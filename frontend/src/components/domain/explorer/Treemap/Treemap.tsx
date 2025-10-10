@@ -335,7 +335,7 @@ export const Treemap: React.FC<TreemapProps> = ({
     return (
       <div
         className={cn(
-          'flex items-center justify-center border border-gray-200 dark:border-gray-700 rounded-lg',
+          'flex items-center justify-center border border-line rounded-lg',
           className,
         )}
         style={{ width, height }}
@@ -353,7 +353,7 @@ export const Treemap: React.FC<TreemapProps> = ({
         ref={svgRef}
         width={width}
         height={height}
-        className="border border-gray-200 dark:border-gray-700 rounded-lg"
+        className="border border-line rounded-lg"
       >
         {visibleRects.map((rect) => {
           const isSelected = selectedNodes.has(rect.node.id);
@@ -421,7 +421,7 @@ export const Treemap: React.FC<TreemapProps> = ({
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="absolute z-10 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm rounded-lg shadow-lg pointer-events-none"
+          className="absolute z-10 px-3 py-2 bg-surface text-primary text-sm rounded-lg shadow-lg pointer-events-none"
           style={{
             left: tooltip.x,
             top: tooltip.y,

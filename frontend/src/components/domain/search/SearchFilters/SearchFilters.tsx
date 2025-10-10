@@ -321,7 +321,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-primary">
           Advanced Filters
         </h3>
         <Button onClick={clearAllFilters} variant="outline" size="sm">
@@ -332,13 +332,13 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Media Type Filter */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-sm font-medium text-secondary">
             Media Type
           </label>
           <select
             value={filters.mediaKind || ''}
             onChange={(e) => updateMediaKind(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-surface-secondary border-line text-primary"
             disabled={metadataLoading}
           >
             <option value="">All Media Types</option>
@@ -352,7 +352,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
 
         {/* File Size Filter */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-sm font-medium text-secondary">
             File Size
           </label>
           <select
@@ -373,7 +373,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                 updateSizeRange({ min: preset.min, max: preset.max });
               }
             }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-surface-secondary border-line text-primary"
           >
             {SIZE_PRESETS.map((preset) => (
               <option key={preset.label} value={preset.label}>
@@ -392,7 +392,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   : ''
               }
               onChange={(e) => updateCustomSize('min', e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
             />
             <input
               type="number"
@@ -403,14 +403,14 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   : ''
               }
               onChange={(e) => updateCustomSize('max', e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
             />
           </div>
         </div>
 
         {/* Time Range Filter */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-sm font-medium text-secondary">
             Modified Date
           </label>
           <div className="grid grid-cols-1 gap-2">
@@ -428,7 +428,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   e.target.value ? `${e.target.value}T00:00:00Z` : '',
                 )
               }
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
             />
             <input
               type="date"
@@ -442,7 +442,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   e.target.value ? `${e.target.value}T23:59:59Z` : '',
                 )
               }
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
             />
           </div>
         </div>
@@ -450,7 +450,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
         {/* Duration Filter (for video/audio) */}
         {showDurationFilter && (
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-secondary">
               Duration (seconds)
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -463,7 +463,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                     : ''
                 }
                 onChange={(e) => updateDurationRange('min', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
               />
               <input
                 type="number"
@@ -474,7 +474,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                     : ''
                 }
                 onChange={(e) => updateDurationRange('max', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
               />
             </div>
           </div>
@@ -483,7 +483,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
         {/* Dimensions Filter (for images/video) */}
         {showDimensionsFilter && (
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-secondary">
               Dimensions (pixels)
             </label>
             <div className="space-y-2">
@@ -495,7 +495,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   onChange={(e) =>
                     updateDimensions('width', 'min', e.target.value)
                   }
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
                 />
                 <input
                   type="number"
@@ -504,7 +504,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   onChange={(e) =>
                     updateDimensions('width', 'max', e.target.value)
                   }
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -515,7 +515,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   onChange={(e) =>
                     updateDimensions('height', 'min', e.target.value)
                   }
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
                 />
                 <input
                   type="number"
@@ -524,7 +524,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   onChange={(e) =>
                     updateDimensions('height', 'max', e.target.value)
                   }
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
                 />
               </div>
             </div>
@@ -533,7 +533,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
 
         {/* Boolean Filters */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-sm font-medium text-secondary">
             Features
           </label>
           <div className="space-y-2">
@@ -551,7 +551,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   }
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                <span className="ml-2 text-sm text-secondary">
                   Has GPS coordinates
                 </span>
               </label>
@@ -571,7 +571,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   }
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                <span className="ml-2 text-sm text-secondary">
                   Has subtitles
                 </span>
               </label>
@@ -590,7 +590,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                 }
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <span className="ml-2 text-sm text-secondary">
                 Has file hash
               </span>
             </label>
@@ -601,7 +601,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
       {/* File Types Filter (categorized) */}
       <div className="mt-6 pt-6 border-t border-gray-200">
         <details className="space-y-4">
-          <summary className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+          <summary className="text-sm font-medium text-secondary cursor-pointer">
             File Types ({filters.mimeTypes.length} selected)
             {metadataLoading && (
               <span className="ml-2 text-xs text-gray-500">(loading...)</span>
@@ -663,7 +663,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                         className="border border-gray-200 rounded-lg p-3"
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">
+                          <h4 className="font-medium text-sm text-secondary">
                             {categoryLabels[category]}
                           </h4>
                           <div className="flex items-center gap-2">
@@ -729,7 +729,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
                               />
                               <span
-                                className="flex-1 text-gray-700 dark:text-gray-300"
+                                className="flex-1 text-secondary"
                                 title={mimeType.value}
                               >
                                 {mimeType.label}
@@ -778,7 +778,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
         filters.timeRange.to ||
         Object.values(filters.booleanFilters).some((v) => v !== undefined)) && (
         <div className="mt-6 pt-6 border-t border-gray-200">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <h4 className="text-sm font-medium text-secondary mb-3">
             Active Filters:
           </h4>
           <div className="flex flex-wrap gap-2">

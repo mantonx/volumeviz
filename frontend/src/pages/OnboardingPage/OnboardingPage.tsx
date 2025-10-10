@@ -643,10 +643,10 @@ const OnboardingPage: React.FC = () => {
     <div className="space-y-6">
       <div className="text-center">
         <Layers className="mx-auto h-12 w-12 text-blue-600" />
-        <h2 className="mt-4 text-2xl font-semibold text-gray-900 dark:text-white">
+        <h2 className="mt-4 text-2xl font-semibold text-primary">
           Discovering Your Docker Mounts
         </h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-secondary">
           Let's analyze what you have running to recommend the best tracking
           strategy
         </p>
@@ -655,7 +655,7 @@ const OnboardingPage: React.FC = () => {
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
+          <p className="mt-4 text-secondary">
             Scanning Docker mounts...
           </p>
         </div>
@@ -689,8 +689,8 @@ const OnboardingPage: React.FC = () => {
           )}
 
           {/* Mount Type Summary */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          <div className="bg-surface rounded-lg p-6 shadow">
+            <h3 className="text-lg font-medium text-primary mb-4">
               Mount Types Found
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -698,7 +698,7 @@ const OnboardingPage: React.FC = () => {
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {state.discovery.totalMounts}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Total
                 </div>
               </div>
@@ -706,7 +706,7 @@ const OnboardingPage: React.FC = () => {
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {state.discovery.volumeCount}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Volumes
                 </div>
               </div>
@@ -714,7 +714,7 @@ const OnboardingPage: React.FC = () => {
                 <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                   {state.discovery.bindCount}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Bind Mounts
                 </div>
               </div>
@@ -722,7 +722,7 @@ const OnboardingPage: React.FC = () => {
                 <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                   {state.discovery.tmpfsCount}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Tmpfs
                 </div>
               </div>
@@ -741,7 +741,7 @@ const OnboardingPage: React.FC = () => {
               <button
                 onClick={triggerDiscovery}
                 disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-4 py-2 border border-line rounded-md shadow-sm text-sm font-medium text-secondary bg-surface hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -755,7 +755,7 @@ const OnboardingPage: React.FC = () => {
                   </>
                 )}
               </button>
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-2 text-xs text-tertiary">
                 Re-scan for Docker mounts if data looks incomplete
               </p>
             </div>
@@ -763,8 +763,8 @@ const OnboardingPage: React.FC = () => {
 
           {/* Compose Projects */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg p-6 shadow">
+              <h3 className="text-lg font-medium text-primary mb-4">
                 Compose Projects
               </h3>
               <div className="space-y-2">
@@ -774,10 +774,10 @@ const OnboardingPage: React.FC = () => {
                       key={project}
                       className="flex justify-between items-center"
                     >
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-sm text-secondary">
                         {project}
                       </span>
-                      <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">
+                      <span className="px-2 py-1 bg-surface-secondary rounded text-sm">
                         {count}
                       </span>
                     </div>
@@ -786,8 +786,8 @@ const OnboardingPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg p-6 shadow">
+              <h3 className="text-lg font-medium text-primary mb-4">
                 Top Services
               </h3>
               <div className="space-y-2">
@@ -799,10 +799,10 @@ const OnboardingPage: React.FC = () => {
                       key={service}
                       className="flex justify-between items-center"
                     >
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-sm text-secondary">
                         {service}
                       </span>
-                      <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">
+                      <span className="px-2 py-1 bg-surface-secondary rounded text-sm">
                         {count}
                       </span>
                     </div>
@@ -819,10 +819,10 @@ const OnboardingPage: React.FC = () => {
     <div className="space-y-6">
       <div className="text-center">
         <Settings className="mx-auto h-12 w-12 text-blue-600" />
-        <h2 className="mt-4 text-2xl font-semibold text-gray-900 dark:text-white">
+        <h2 className="mt-4 text-2xl font-semibold text-primary">
           Choose Your Tracking Strategy
         </h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-secondary">
           Select a preset that matches your use case, or start with custom rules
         </p>
       </div>
@@ -834,7 +834,7 @@ const OnboardingPage: React.FC = () => {
             className={`relative rounded-lg border-2 p-6 cursor-pointer transition-all ${
               state.selectedPreset === preset.id
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                : 'border-line hover:border-gray-300 hover:border-line'
             }`}
             onClick={() => selectPreset(preset.id)}
           >
@@ -849,21 +849,21 @@ const OnboardingPage: React.FC = () => {
                 className={`p-3 rounded-lg ${
                   state.selectedPreset === preset.id
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    : 'bg-surface-secondary text-secondary'
                 }`}
               >
                 <preset.icon className="h-8 w-8" />
               </div>
 
-              <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+              <h3 className="mt-4 text-lg font-medium text-primary">
                 {preset.name}
               </h3>
 
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              <p className="mt-2 text-sm text-secondary">
                 {preset.description}
               </p>
 
-              <div className="mt-4 text-xs text-gray-500 dark:text-gray-500">
+              <div className="mt-4 text-xs text-gray-500 text-tertiary">
                 {preset.rules.length} rule{preset.rules.length !== 1 ? 's' : ''}
               </div>
             </div>
@@ -877,10 +877,10 @@ const OnboardingPage: React.FC = () => {
     <div className="space-y-6">
       <div className="text-center">
         <Eye className="mx-auto h-12 w-12 text-blue-600" />
-        <h2 className="mt-4 text-2xl font-semibold text-gray-900 dark:text-white">
+        <h2 className="mt-4 text-2xl font-semibold text-primary">
           Preview Your Configuration
         </h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-secondary">
           Review what will be tracked with your selected preset
         </p>
       </div>
@@ -908,8 +908,8 @@ const OnboardingPage: React.FC = () => {
       ) : (
         <div className="space-y-6">
           {/* Preview Summary */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          <div className="bg-surface rounded-lg p-6 shadow">
+            <h3 className="text-lg font-medium text-primary mb-4">
               Tracking Results
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -917,7 +917,7 @@ const OnboardingPage: React.FC = () => {
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {state.previewResults.summary.mountsIncluded}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Will Track
                 </div>
               </div>
@@ -925,15 +925,15 @@ const OnboardingPage: React.FC = () => {
                 <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                   {state.previewResults.summary.mountsExcluded}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Excluded
                 </div>
               </div>
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+              <div className="text-center p-4 bg-gray-50 bg-surface/20 rounded-lg">
+                <div className="text-2xl font-bold text-secondary">
                   {state.previewResults.summary.mountsUnmatched}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   No Rules
                 </div>
               </div>
@@ -941,7 +941,7 @@ const OnboardingPage: React.FC = () => {
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {state.previewResults.summary.totalMounts}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-secondary">
                   Total
                 </div>
               </div>
@@ -950,8 +950,8 @@ const OnboardingPage: React.FC = () => {
 
           {/* Selected Preset Info */}
           {state.selectedPreset && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg p-6 shadow">
+              <h3 className="text-lg font-medium text-primary mb-4">
                 Selected Preset:{' '}
                 {PRESETS.find((p) => p.id === state.selectedPreset)?.name}
               </h3>
@@ -960,7 +960,7 @@ const OnboardingPage: React.FC = () => {
                   (rule, index) => (
                     <div
                       key={index}
-                      className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded"
+                      className="flex items-center space-x-3 p-3 bg-surface-secondary rounded"
                     >
                       <div
                         className={`px-2 py-1 rounded text-xs font-medium ${
@@ -971,7 +971,7 @@ const OnboardingPage: React.FC = () => {
                       >
                         {rule.action.toUpperCase()}
                       </div>
-                      <span className="text-sm text-gray-900 dark:text-white">
+                      <span className="text-sm text-primary">
                         {rule.name}
                       </span>
                     </div>
@@ -989,20 +989,20 @@ const OnboardingPage: React.FC = () => {
     <div className="text-center space-y-6">
       <CheckCircle className="mx-auto h-16 w-16 text-green-600" />
       <div>
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-2xl font-semibold text-primary">
           Setup Complete!
         </h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-secondary">
           Your tracking rules have been configured successfully
         </p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow max-w-md mx-auto">
+      <div className="bg-surface rounded-lg p-6 shadow max-w-md mx-auto">
         <div className="text-center">
           <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
             {state.previewResults?.summary?.mountsIncluded || 0}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-secondary">
             Mounts will be tracked
           </div>
         </div>
@@ -1043,7 +1043,7 @@ const OnboardingPage: React.FC = () => {
   })();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 bg-surface">
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         {/* Progress Steps */}
         <div className="mb-8">
@@ -1054,7 +1054,7 @@ const OnboardingPage: React.FC = () => {
                   className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
                     index <= state.currentStep
                       ? 'border-blue-600 bg-blue-600 text-white'
-                      : 'border-gray-300 dark:border-gray-600 text-gray-400'
+                      : 'border-line text-gray-400'
                   }`}
                 >
                   {index < state.currentStep ? (
@@ -1076,17 +1076,17 @@ const OnboardingPage: React.FC = () => {
             ))}
           </div>
           <div className="mt-4 text-center">
-            <h1 className="text-xl font-medium text-gray-900 dark:text-white">
+            <h1 className="text-xl font-medium text-primary">
               {currentStepData.title}
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-tertiary">
               {currentStepData.description}
             </p>
           </div>
         </div>
 
         {/* Step Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 mb-8">
+        <div className="bg-surface rounded-lg shadow-sm p-8 mb-8">
           {state.currentStep === 0 && renderDiscoveryStep()}
           {state.currentStep === 1 && renderPresetStep()}
           {state.currentStep === 2 && renderPreviewStep()}
@@ -1099,7 +1099,7 @@ const OnboardingPage: React.FC = () => {
             <button
               onClick={prevStep}
               disabled={state.currentStep === 0}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center px-4 py-2 border border-line rounded-md shadow-sm text-sm font-medium text-secondary bg-surface hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Previous

@@ -22,20 +22,20 @@ export const HealthPage: React.FC<HealthPageProps> = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-primary">
           System Health
         </h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">
+        <p className="mt-1 text-secondary">
           Monitor VolumeViz system health and diagnostics
         </p>
       </div>
 
       <Card className="p-8 text-center">
         <Heart className="h-12 w-12 mx-auto text-red-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-lg font-semibold text-primary mb-2">
           Health Monitoring
         </h3>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-secondary">
           System health monitoring dashboard will be implemented here.
         </p>
         <div className="flex justify-center space-x-2 mt-4">

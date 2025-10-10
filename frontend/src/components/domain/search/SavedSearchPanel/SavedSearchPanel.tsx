@@ -85,7 +85,7 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-secondary mb-1">
           Name *
         </label>
         <input
@@ -94,7 +94,7 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
           onChange={(e) =>
             setFormData((prev) => ({ ...prev, name: e.target.value }))
           }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
           placeholder="My saved search"
           required
           disabled={loading}
@@ -102,7 +102,7 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-secondary mb-1">
           Description
         </label>
         <textarea
@@ -110,7 +110,7 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
           onChange={(e) =>
             setFormData((prev) => ({ ...prev, description: e.target.value }))
           }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
           placeholder="Describe what this search finds..."
           rows={3}
           disabled={loading}
@@ -118,7 +118,7 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-secondary mb-1">
           Tags
         </label>
         <div className="space-y-2">
@@ -128,7 +128,7 @@ const SavedSearchForm: React.FC<SavedSearchFormProps> = ({
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyPress={handleTagKeyPress}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 bg-surface-secondary border-line text-primary"
               placeholder="Add tags..."
               disabled={loading}
             />
@@ -348,7 +348,7 @@ export const SavedSearchPanel: React.FC<SavedSearchPanelProps> = ({
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-semibold text-primary">
               Saved Searches
             </h3>
             <div className="flex items-center space-x-2">
@@ -433,12 +433,12 @@ export const SavedSearchPanel: React.FC<SavedSearchPanelProps> = ({
           )}
 
           {!loading && !error && filteredSearches.length > 0 && (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-line">
               {filteredSearches.map((search) => (
                 <div key={search.id} className="p-4 hover:bg-gray-50">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      <h4 className="text-sm font-medium text-primary truncate">
                         {search.name}
                       </h4>
                       {search.description && (

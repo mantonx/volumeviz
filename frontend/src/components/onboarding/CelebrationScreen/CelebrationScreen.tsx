@@ -97,11 +97,11 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
         </div>
 
         {/* Title */}
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+        <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">
           🎉 Setup Complete!
         </h1>
 
-        <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+        <p className="text-xl text-secondary mb-8">
           Your VolumeViz is ready to track your Docker volumes
         </p>
 
@@ -111,7 +111,7 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
             <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
               {mountsTracked}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-secondary">
               Volumes Tracked
             </div>
           </div>
@@ -120,7 +120,7 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
             <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
               {rulesCreated}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-secondary">
               Rules Created
             </div>
           </div>
@@ -129,7 +129,7 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
             <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">
               {presetName}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-secondary">
               Preset Used
             </div>
           </div>
@@ -137,10 +137,10 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
 
         {/* Features List */}
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg p-6 shadow-lg mb-8 text-left">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg font-semibold text-primary mb-4">
             What's Next?
           </h3>
-          <ul className="space-y-3 text-gray-700 dark:text-gray-300">
+          <ul className="space-y-3 text-gray-700 text-secondary">
             <li className="flex items-start">
               <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
               <span>
@@ -171,7 +171,7 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
           <ArrowRight className="w-5 h-5 ml-2" />
         </button>
 
-        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-4 text-sm text-gray-500 text-tertiary">
           You can always adjust your tracking rules in Settings
         </p>
       </div>

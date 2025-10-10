@@ -249,7 +249,7 @@ export function FileBrowser({
 
         {/* Files Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-line">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -266,7 +266,7 @@ export function FileBrowser({
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-line">
               {files.map((file) => (
                 <tr
                   key={file.id}

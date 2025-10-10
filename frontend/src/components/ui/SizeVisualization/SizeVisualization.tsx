@@ -14,10 +14,10 @@ const getSizeColor = (percentage: number): string => {
 };
 
 const getSizeTextColor = (percentage: number): string => {
-  if (percentage < 30) return 'text-green-600 dark:text-green-400';
-  if (percentage < 60) return 'text-yellow-600 dark:text-yellow-400';
-  if (percentage < 80) return 'text-orange-600 dark:text-orange-400';
-  return 'text-red-600 dark:text-red-400';
+  if (percentage < 30) return 'text-green-600';
+  if (percentage < 60) return 'text-yellow-600';
+  if (percentage < 80) return 'text-orange-600';
+  return 'text-red-600';
 };
 
 export const SizeVisualization: React.FC<SizeVisualizationProps> = ({
@@ -39,13 +39,13 @@ export const SizeVisualization: React.FC<SizeVisualizationProps> = ({
             'text-sm font-medium',
             hasComparison
               ? getSizeTextColor(percentage)
-              : 'text-gray-900 dark:text-white',
+              : 'text-primary',
           )}
         >
           {formatBytes(sizeBytes)}
         </span>
         {hasComparison && showPercentage && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-tertiary">
             ({percentage.toFixed(1)}%)
           </span>
         )}
@@ -62,13 +62,13 @@ export const SizeVisualization: React.FC<SizeVisualizationProps> = ({
               'text-sm font-medium',
               hasComparison
                 ? getSizeTextColor(percentage)
-                : 'text-gray-900 dark:text-white',
+                : 'text-primary',
             )}
           >
             {formatBytes(sizeBytes)}
           </span>
           {hasComparison && showPercentage && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-tertiary">
               {percentage.toFixed(1)}%
             </span>
           )}
@@ -77,7 +77,7 @@ export const SizeVisualization: React.FC<SizeVisualizationProps> = ({
 
       {hasComparison && (
         <div className="relative">
-          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
               className={cn(
                 'h-full transition-all duration-300 rounded-full',
@@ -89,9 +89,9 @@ export const SizeVisualization: React.FC<SizeVisualizationProps> = ({
 
           {/* Threshold indicators */}
           <div className="absolute inset-0 flex">
-            <div className="w-[30%] border-r border-gray-300 dark:border-gray-600 h-2" />
-            <div className="w-[30%] border-r border-gray-300 dark:border-gray-600 h-2" />
-            <div className="w-[20%] border-r border-gray-300 dark:border-gray-600 h-2" />
+            <div className="w-[30%] border-r border-gray-300 h-2" />
+            <div className="w-[30%] border-r border-gray-300 h-2" />
+            <div className="w-[20%] border-r border-gray-300 h-2" />
           </div>
         </div>
       )}
@@ -128,14 +128,14 @@ export const SizeComparison: React.FC<SizeComparisonProps> = ({
         return (
           <div key={item.id} className="space-y-1">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600 dark:text-gray-400 truncate max-w-[150px]">
+              <span className="text-secondary truncate max-w-[150px]">
                 {item.name}
               </span>
               <span className={cn('font-medium', getSizeTextColor(percentage))}>
                 {formatBytes(item.sizeBytes)}
               </span>
             </div>
-            <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
               <div
                 className={cn(
                   'h-full transition-all duration-300 rounded-full',

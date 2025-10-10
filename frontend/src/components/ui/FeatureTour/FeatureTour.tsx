@@ -188,13 +188,13 @@ export const FeatureTour: React.FC<FeatureTourProps> = ({
       {/* Tooltip card */}
       {currentStepData && (
         <div
-          className="absolute pointer-events-auto bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 max-w-sm"
+          className="absolute pointer-events-auto bg-surface rounded-lg shadow-2xl p-6 max-w-sm"
           style={getTooltipPosition()}
         >
           {/* Close button */}
           <button
             onClick={handleSkip}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 hover:text-primary"
           >
             <X className="w-5 h-5" />
           </button>
@@ -207,17 +207,17 @@ export const FeatureTour: React.FC<FeatureTourProps> = ({
                 className={`h-1 flex-1 rounded-full ${
                   index <= currentStep
                     ? 'bg-blue-600'
-                    : 'bg-gray-200 dark:bg-gray-700'
+                    : 'bg-gray-200 bg-surface-secondary'
                 }`}
               />
             ))}
           </div>
 
           {/* Content */}
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-semibold text-primary mb-2">
             {currentStepData.title}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-sm text-secondary mb-4">
             {currentStepData.description}
           </p>
 
@@ -233,7 +233,7 @@ export const FeatureTour: React.FC<FeatureTourProps> = ({
 
           {/* Navigation */}
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-gray-500 text-tertiary">
               Step {currentStep + 1} of {steps.length}
             </div>
 
@@ -274,7 +274,7 @@ export const FeatureTour: React.FC<FeatureTourProps> = ({
           {/* Skip link */}
           <button
             onClick={handleSkip}
-            className="w-full mt-4 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            className="w-full mt-4 text-xs text-gray-500 text-tertiary hover:text-gray-700 hover:text-primary"
           >
             Skip tour
           </button>

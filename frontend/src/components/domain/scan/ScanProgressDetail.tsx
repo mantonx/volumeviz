@@ -96,18 +96,18 @@ export function ScanProgressDetail({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Loader2 className="w-5 h-5 animate-spin text-blue-700 dark:text-blue-400" />
-          <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
+          <span className="font-semibold text-sm text-primary">
             Scanning {volumeName || volumeId}
           </span>
         </div>
-        <span className="text-sm font-bold text-gray-900 dark:text-gray-100 bg-blue-200 dark:bg-blue-900 px-2 py-1 rounded">
+        <span className="text-sm font-bold text-primary bg-blue-200 dark:bg-blue-900 px-2 py-1 rounded">
           {Math.round(scanData.overall_progress)}%
         </span>
       </div>
 
       {/* Overall Progress Bar */}
       <div className="mb-4">
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden border border-gray-300 dark:border-gray-600">
+        <div className="h-3 bg-gray-200 bg-surface-secondary rounded-full overflow-hidden border border-gray-300 border-line">
           <div
             className="h-full bg-blue-600 dark:bg-blue-500 transition-all duration-500 ease-out"
             style={{ width: `${Math.min(scanData.overall_progress, 100)}%` }}
@@ -143,7 +143,7 @@ export function ScanProgressDetail({
 
       {/* Performance Stats */}
       {scanData.performance_stats && !scanData.scanJustStarted && (
-        <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mt-2">
+        <div className="flex items-center justify-between text-xs text-secondary mt-2">
           {scanData.performance_stats.estimated_remaining_seconds > 0 && scanData.performance_stats.overall_items_per_second > 0 && (
             <div className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -158,7 +158,7 @@ export function ScanProgressDetail({
 
       {/* Initial state message */}
       {scanData.scanJustStarted && (
-        <div className="text-xs text-gray-700 dark:text-gray-300 italic font-medium">
+        <div className="text-xs text-secondary italic font-medium">
           Initializing scan...
         </div>
       )}
@@ -179,9 +179,9 @@ export function ScanProgressDetail({
 
 // Memoized sub-components
 const StatCard = React.memo<{ label: string; value: string }>(({ label, value }) => (
-  <div className="bg-white dark:bg-gray-800 rounded p-2 border border-blue-100 dark:border-blue-900">
-    <div className="text-gray-500 dark:text-gray-400">{label}</div>
-    <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{value}</div>
+  <div className="bg-surface rounded p-2 border border-blue-100 dark:border-blue-900">
+    <div className="text-tertiary">{label}</div>
+    <div className="text-lg font-semibold text-primary">{value}</div>
   </div>
 ));
 
@@ -196,18 +196,18 @@ const PhaseDisplay = React.memo<{ phase: ScanPhaseProgress }>(({ phase }) => {
   const safeProgress = displayProgress >= 100 && phase.status === 'running' ? 99 : displayProgress;
 
   return (
-    <div className="mb-3 bg-white dark:bg-gray-800 rounded p-3 border border-blue-100 dark:border-blue-900">
+    <div className="mb-3 bg-surface rounded p-3 border border-blue-100 dark:border-blue-900">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+        <span className="text-sm font-medium text-primary">
           {formatPhaseName(phase.phase_name)}
         </span>
-        <span className="text-xs text-gray-600 dark:text-gray-400">
+        <span className="text-xs text-secondary">
           {Math.round(safeProgress)}%
         </span>
       </div>
 
       {/* Phase Progress Bar */}
-      <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-2">
+      <div className="h-1.5 bg-gray-200 bg-surface-secondary rounded-full overflow-hidden mb-2">
         <div
           className="h-full bg-blue-500 transition-all duration-300"
           style={{ width: `${Math.min(safeProgress, 100)}%` }}
@@ -224,7 +224,7 @@ const PhaseDisplay = React.memo<{ phase: ScanPhaseProgress }>(({ phase }) => {
       )}
 
       {/* Phase Details */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-secondary">
         {phase.items_total > 0 && (
           <div className="flex items-center gap-1">
             <FileText className="w-3 h-3" />
@@ -244,7 +244,7 @@ const PhaseDisplay = React.memo<{ phase: ScanPhaseProgress }>(({ phase }) => {
 
       {/* Current Item */}
       {phase.current_item && (
-        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate" title={phase.current_item}>
+        <div className="mt-2 text-xs text-tertiary truncate" title={phase.current_item}>
           {truncateFilePath(phase.current_item)}
         </div>
       )}
@@ -275,7 +275,7 @@ const PhaseIndicator = React.memo<{ phase: ScanPhaseProgress }>(({ phase }) => {
       case 'running':
         return 'text-blue-700 dark:text-blue-300';
       default:
-        return 'text-gray-500 dark:text-gray-400';
+        return 'text-tertiary';
     }
   };
 
@@ -286,7 +286,7 @@ const PhaseIndicator = React.memo<{ phase: ScanPhaseProgress }>(({ phase }) => {
         {formatPhaseName(phase.phase_name)}
       </span>
       {phase.status === 'running' && (
-        <span className="text-gray-700 dark:text-gray-300 ml-auto font-medium">
+        <span className="text-secondary ml-auto font-medium">
           {Math.round(phase.progress)}%
         </span>
       )}

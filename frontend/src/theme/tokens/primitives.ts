@@ -21,19 +21,19 @@ export const primitives = {
     950: '#172554',
   },
 
-  // Neutral palette
+  // Neutral palette - Slate with subtle cool undertones for a modern, professional look
   gray: {
-    50: '#f9fafb',
-    100: '#f3f4f6',
-    200: '#e5e7eb',
-    300: '#d1d5db',
-    400: '#9ca3af',
-    500: '#6b7280',
-    600: '#4b5563',
-    700: '#374151',
-    800: '#1f2937',
-    900: '#111827',
-    950: '#030712',
+    50: '#f8fafc',    // Slightly cooler white
+    100: '#f1f5f9',   // Very light slate
+    200: '#e2e8f0',   // Light slate
+    300: '#cbd5e1',   // Medium-light slate
+    400: '#94a3b8',   // Medium slate
+    500: '#64748b',   // Balanced slate
+    600: '#475569',   // Dark slate
+    700: '#334155',   // Darker slate
+    800: '#1e293b',   // Very dark slate
+    900: '#0f172a',   // Almost black slate
+    950: '#020617',   // True black with blue hint
   },
 
   // Semantic status colors

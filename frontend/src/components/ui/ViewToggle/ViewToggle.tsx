@@ -122,7 +122,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
               sizeClasses[size],
               value === option.id
                 ? 'bg-blue-600 text-white'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300',
+                : 'hover:bg-surface-hover text-secondary',
             )}
             aria-label={`Switch to ${option.label} view`}
           >
@@ -146,9 +146,9 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
           onClick={() => setIsOpen(!isOpen)}
           className={clsx(
             'inline-flex items-center gap-2 rounded-lg',
-            'bg-white dark:bg-gray-800',
-            'border border-gray-300 dark:border-gray-600',
-            'hover:bg-gray-50 dark:hover:bg-gray-700',
+            'bg-surface',
+            'border border-line',
+            'hover:bg-surface-hover',
             'transition-colors',
             buttonPaddingClasses[size],
             sizeClasses[size],
@@ -164,8 +164,8 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
           <div
             className={clsx(
               'absolute right-0 mt-2 w-32 rounded-lg shadow-lg z-10',
-              'bg-white dark:bg-gray-900',
-              'border border-gray-200 dark:border-gray-700',
+              'bg-surface',
+              'border border-line',
               'py-1',
             )}
           >
@@ -179,11 +179,11 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
                 className={clsx(
                   'w-full flex items-center gap-2 px-3 py-2',
                   'text-left transition-colors',
-                  'hover:bg-gray-100 dark:hover:bg-gray-800',
+                  'hover:bg-surface-hover',
                   sizeClasses[size],
                   value === option.id
-                    ? 'text-blue-600 dark:text-blue-400 font-medium'
-                    : 'text-gray-700 dark:text-gray-300',
+                    ? 'text-blue-600 font-medium'
+                    : 'text-secondary',
                 )}
               >
                 {React.cloneElement(option.icon as React.ReactElement, {
@@ -203,7 +203,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
     <div
       className={clsx(
         'inline-flex rounded-lg',
-        'bg-gray-100 dark:bg-gray-800',
+        'bg-surface-secondary',
         paddingClasses[size],
         className,
       )}
@@ -218,8 +218,8 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
             buttonPaddingClasses[size],
             sizeClasses[size],
             value === option.id
-              ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100',
+              ? 'bg-surface shadow-sm text-primary'
+              : 'text-tertiary hover:text-primary',
           )}
           aria-label={`Switch to ${option.label} view`}
           aria-pressed={value === option.id}

@@ -143,8 +143,8 @@ export const FileGrid: React.FC<FileGridProps> = ({
           <div
             key={file.id}
             className={cn(
-              'group relative bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700',
-              'hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200',
+              'group relative bg-surface rounded-lg border border-line',
+              'hover:shadow-md hover:border-line transition-all duration-200',
               'cursor-pointer overflow-hidden',
               selectedFile === file.id && 'ring-2 ring-blue-500',
             )}
@@ -152,7 +152,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
             onDoubleClick={() => handleFileDoubleClick(file)}
           >
             {/* Preview/Icon Area */}
-            <div className="aspect-square bg-gray-50 dark:bg-gray-800 flex items-center justify-center relative">
+            <div className="aspect-square bg-surface-secondary flex items-center justify-center relative">
               {file.type === 'folder' ? (
                 <FolderIcon
                   className={cn(
@@ -192,7 +192,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-6 h-6 p-0 bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-900"
+                  className="w-6 h-6 p-0 bg-white/90 bg-surface/90 hover:bg-white hover:bg-surface-hover"
                   onClick={(e) => {
                     e.stopPropagation();
                     // Handle more actions
@@ -208,7 +208,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-6 h-6 p-0 bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-900"
+                    className="w-6 h-6 p-0 bg-white/90 bg-surface/90 hover:bg-white hover:bg-surface-hover"
                     onClick={(e) => {
                       e.stopPropagation();
                       // Handle download
@@ -222,11 +222,11 @@ export const FileGrid: React.FC<FileGridProps> = ({
 
             {/* File Info */}
             <div className="p-3">
-              <div className="truncate text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <div className="truncate text-sm font-medium text-primary mb-1">
                 {file.name}
               </div>
 
-              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-between text-xs text-tertiary">
                 <div className="flex flex-col space-y-1">
                   {file.type === 'file' && (
                     <span>{formatFileSize(file.size)}</span>
