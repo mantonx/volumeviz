@@ -12,7 +12,8 @@ import { User, Mail, Shield, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
-import { postAuthChangePassword } from '@/api/orval-generated/api';
+// TODO: Implement change password endpoint
+// import { postAuthChangePassword } from '@/api/orval-generated/api';
 
 export const UserProfilePage: React.FC = () => {
   const { user } = useAuth();
@@ -45,10 +46,14 @@ export const UserProfilePage: React.FC = () => {
     setIsChangingPassword(true);
 
     try {
-      await postAuthChangePassword({
-        current_password: currentPassword,
-        new_password: newPassword,
-      } as any);
+      // TODO: Implement change password endpoint
+      // await postAuthChangePassword({
+      //   current_password: currentPassword,
+      //   new_password: newPassword,
+      // } as any);
+      setError('Change password feature is not yet implemented');
+      setIsChangingPassword(false);
+      return;
 
       setSuccess(true);
       setCurrentPassword('');

@@ -40,6 +40,7 @@ interface VolumeDetailV1 {
   id: string;
   name: string;
   driver: string;
+  volume_type?: string; // "local", "bind", or "network"
   scope: string;
   mountpoint: string;
   created_at: string;
@@ -341,6 +342,32 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                         <Badge variant="outline">{volume.driver}</Badge>
                       </div>
                     </div>
+                    {volume.volume_type && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Type
+                        </label>
+                        <div className="mt-1">
+                          <Badge
+                            variant={
+                              volume.volume_type === 'network'
+                                ? 'default'
+                                : 'secondary'
+                            }
+                            className={cn(
+                              volume.volume_type === 'network' &&
+                                'bg-blue-600 text-white',
+                            )}
+                          >
+                            {volume.volume_type === 'network'
+                              ? 'Network Mount'
+                              : volume.volume_type === 'bind'
+                                ? 'Bind Mount'
+                                : 'Local Volume'}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Scope
