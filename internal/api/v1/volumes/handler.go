@@ -909,26 +909,20 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		}
 	}
 
+	// Get size from Docker UsageData if available
 	if volume.UsageData != nil && volume.UsageData.Size >= 0 {
 		sizeBytes = &volume.UsageData.Size
-	} else if h.volumeScanner != nil {
-		// Use VolumeViz scanner as fallback for volumes without size data
-		if scanResult, err := h.volumeScanner.ScanVolume(ctx, volumeName); err == nil {
-			sizeBytes = &scanResult.TotalSize
-			// Add filesystem capacity information if available and not already retrieved from database
-			if filesystemCapacity == nil && scanResult.FilesystemCapacity != nil {
-				filesystemCapacity = &models.FilesystemCapacity{
-					TotalBytes:     scanResult.FilesystemCapacity.TotalBytes,
-					AvailableBytes: scanResult.FilesystemCapacity.AvailableBytes,
-					UsedBytes:      scanResult.FilesystemCapacity.UsedBytes,
-					UsagePercent:   scanResult.FilesystemCapacity.UsagePercent,
-					BlockSize:      scanResult.FilesystemCapacity.BlockSize,
-					TotalBlocks:    scanResult.FilesystemCapacity.TotalBlocks,
-					FreeBlocks:     scanResult.FilesystemCapacity.FreeBlocks,
-				}
+	}
+	// If not available, try to get from database (cached from previous scans)
+	if sizeBytes == nil && h.store != nil {
+		if orgID, hasOrg := middleware.GetOrganizationID(ctx); hasOrg {
+			if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, volumeName); err == nil && dbVol.UsageData != nil {
+				sizeBytes = &dbVol.UsageData.Size
 			}
 		}
 	}
+	// Note: We do NOT perform live scanning here as it's too slow for API responses.
+	// Users should trigger scans explicitly via the scan endpoint.
 
 	// Determine volume type and mount point display
 	volumeType := "local" // Default to local

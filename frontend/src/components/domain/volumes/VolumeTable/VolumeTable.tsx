@@ -1,6 +1,7 @@
 import { selectedVolumeAtom } from '@/atoms/volumes';
 import { ScanProgressDetail } from '@/components/domain/scan/ScanProgressDetail';
 import { Dropdown } from '@/components/ui/Dropdown';
+import { VolumeDetailsModal } from '@/components/application/Modals';
 import { useVolumeOperations } from '@/hooks/api/useVolumeOperations';
 import { useVolumeBulkActions } from '@/hooks/volumes/useVolumeBulkActions';
 import { formatBytes } from '@/utils/formatters';
@@ -35,6 +36,8 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
   const setSelectedVolume = useSetAtom(selectedVolumeAtom);
   const { scanVolume, refreshVolumeSize } = useVolumeOperations();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalVolumeName, setModalVolumeName] = useState<string>('');
 
   // Convert selected volumes for bulk actions
   const selectedVolumes = useMemo(
@@ -73,6 +76,11 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
     // Use volume.name as the unique identifier since API doesn't return 'id'
     setSelectedVolume(volume.name || volume.id);
     onVolumeSelect?.(volume);
+  };
+
+  const openVolumeModal = (volumeName: string) => {
+    setModalVolumeName(volumeName);
+    setIsModalOpen(true);
   };
 
   const toggleExpanded = (volumeId: string) => {
@@ -267,9 +275,15 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
                         </button>
                         <HardDrive className="w-5 h-5 text-gray-400 mr-3" />
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openVolumeModal(volumeId);
+                            }}
+                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
+                          >
                             {volume.name}
-                          </div>
+                          </button>
                           <div
                             className="text-sm text-gray-500 truncate max-w-xs"
                             title={volume.path}
@@ -348,7 +362,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
                               id: 'details',
                               label: 'View Details',
                               icon: Info,
-                              onClick: () => handleRowClick(volume),
+                              onClick: () => openVolumeModal(volumeId),
                             },
                             {
                               id: 'delete',
@@ -399,6 +413,13 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
           </p>
         </div>
       )}
+
+      {/* Volume Details Modal */}
+      <VolumeDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        volumeName={modalVolumeName}
+      />
     </div>
   );
 }, (prevProps, nextProps) => {
@@ -461,6 +482,18 @@ const ExpandedVolumeRow = React.memo<{
                   {volume.scope || '—'}
                 </div>
               </div>
+              {volume.volume_type && (
+                <div>
+                  <span className="font-medium text-gray-900 dark:text-gray-200">Type:</span>
+                  <div className="text-gray-700 dark:text-gray-300">
+                    {volume.volume_type === 'network'
+                      ? 'Network Mount'
+                      : volume.volume_type === 'bind'
+                        ? 'Bind Mount'
+                        : 'Local Volume'}
+                  </div>
+                </div>
+              )}
               {volume.labels && Object.keys(volume.labels).length > 0 && (
                 <div>
                   <span className="font-medium text-gray-900 dark:text-gray-200">Labels:</span>

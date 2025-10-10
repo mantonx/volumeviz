@@ -29,6 +29,7 @@ import { FreshnessIndicator } from '@/components/ui/FreshnessIndicator';
 import { ContainerStatus } from '@/components/ui/ContainerStatus';
 import { cn } from '@/utils';
 import { useToast } from '@/components/ui';
+import { customFetchClient } from '@/api/fetch-client';
 interface VolumeDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -82,21 +83,12 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/v1/volumes/${encodeURIComponent(volumeName)}`,
+      const volumeData = await customFetchClient<VolumeDetailV1>(
+        `/volumes/${encodeURIComponent(volumeName)}`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
         },
       );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const volumeData: VolumeDetailV1 = await response.json();
       setVolume(volumeData);
     } catch (err) {
       const errorMessage =
