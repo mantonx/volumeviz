@@ -213,6 +213,7 @@ func RequireRole(requiredRole UserRole) gin.HandlerFunc {
 func hasRequiredRole(userRole, requiredRole UserRole) bool {
 	roleHierarchy := map[UserRole]int{
 		RoleViewer:   1,
+		"user":       2, // "user" role is equivalent to operator
 		RoleOperator: 2,
 		RoleAdmin:    3,
 	}
