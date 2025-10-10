@@ -30,17 +30,17 @@ type Service interface {
 	// ListOrganizations lists all active organizations
 	ListOrganizations(ctx context.Context, limit, offset int32) ([]*Organization, error)
 	
-	// InviteUser invites a user to join an organization
-	InviteUser(ctx context.Context, req InviteUserRequest) (*OrganizationInvitation, error)
-	
-	// AcceptInvitation accepts an organization invitation
-	AcceptInvitation(ctx context.Context, token string, userID int64) error
-	
-	// CancelInvitation cancels an organization invitation
-	CancelInvitation(ctx context.Context, invitationID int64) error
-	
-	// ListInvitations lists all invitations for an organization
-	ListInvitations(ctx context.Context, orgID int64, limit, offset int32) ([]*OrganizationInvitation, error)
+// 	// InviteUser invites a user to join an organization
+// 	InviteUser(ctx context.Context, req InviteUserRequest) (*OrganizationInvitation, error)
+// 	
+// 	// AcceptInvitation accepts an organization invitation
+// 	AcceptInvitation(ctx context.Context, token string, userID int64) error
+// 	
+// 	// CancelInvitation cancels an organization invitation
+// 	CancelInvitation(ctx context.Context, invitationID int64) error
+// 	
+// 	// ListInvitations lists all invitations for an organization
+// 	ListInvitations(ctx context.Context, orgID int64, limit, offset int32) ([]*OrganizationInvitation, error)
 }
 
 // Organization represents an organization
@@ -101,13 +101,13 @@ type UpdateOrganizationRequest struct {
 	PlanType     *string                `json:"plan_type,omitempty"`
 }
 
-type InviteUserRequest struct {
-	OrganizationID int64  `json:"organization_id" validate:"required"`
-	Email          string `json:"email" validate:"required,email"`
-	Role           string `json:"role" validate:"required"`
-	Message        *string `json:"message,omitempty"`
-	InvitedBy      int64  `json:"invited_by" validate:"required"`
-}
+// type InviteUserRequest struct {
+// 	OrganizationID int64  `json:"organization_id" validate:"required"`
+// 	Email          string `json:"email" validate:"required,email"`
+// 	Role           string `json:"role" validate:"required"`
+// 	Message        *string `json:"message,omitempty"`
+// 	InvitedBy      int64  `json:"invited_by" validate:"required"`
+// }
 
 // DefaultService implements the Service interface
 type DefaultService struct {
@@ -175,7 +175,7 @@ func (s *DefaultService) CreateOrganization(ctx context.Context, req CreateOrgan
 		Action:       "organization.created",
 		ResourceType: "organization",
 		ResourceID:   fmt.Sprintf("%d", org.ID),
-		Details:      fmt.Sprintf("Organization '%s' created", org.Name),
+		Details:      map[string]interface{}{"name": org.Name, "message": "Organization created"},
 	})
 	
 	return org, nil
@@ -265,7 +265,7 @@ func (s *DefaultService) UpdateOrganization(ctx context.Context, orgID int64, re
 		Action:       "organization.updated",
 		ResourceType: "organization",
 		ResourceID:   fmt.Sprintf("%d", org.ID),
-		Details:      fmt.Sprintf("Organization '%s' updated", org.Name),
+		Details:      map[string]interface{}{"message": "Organization '%s' updated"},
 	})
 	
 	return org, nil
@@ -282,7 +282,7 @@ func (s *DefaultService) DeactivateOrganization(ctx context.Context, orgID int64
 		Action:       "organization.deactivated",
 		ResourceType: "organization",
 		ResourceID:   fmt.Sprintf("%d", orgID),
-		Details:      fmt.Sprintf("Organization %d deactivated", orgID),
+		Details:      map[string]interface{}{"message": "Organization %d deactivated"},
 	})
 	
 	return nil
@@ -305,104 +305,104 @@ func (s *DefaultService) ListOrganizations(ctx context.Context, limit, offset in
 	return orgs, nil
 }
 
-func (s *DefaultService) InviteUser(ctx context.Context, req InviteUserRequest) (*OrganizationInvitation, error) {
-	// Generate invitation token
-	token, err := generateInvitationToken()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate invitation token: %w", err)
-	}
-	
-	// Set expiration time (7 days from now)
-	expiresAt := time.Now().Add(7 * 24 * time.Hour)
-	
-	// Create invitation
-	invitationRecord, err := s.queries.CreateOrganizationInvitation(ctx, sqlc.CreateOrganizationInvitationParams{
-		OrganizationID: req.OrganizationID,
-		Email:          req.Email,
-		Role:           req.Role,
-		Token:          token,
-		InvitedBy:      pgtype.Int8{Int64: req.InvitedBy, Valid: true},
-		Message:        pgtype.Text{String: getStringValue(req.Message), Valid: req.Message != nil},
-		ExpiresAt:      pgtype.Timestamptz{Time: expiresAt, Valid: true},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create invitation: %w", err)
-	}
-	
-	invitation := convertSQLCInvitation(invitationRecord)
-	
-	// Log audit event
-	s.auditLogger.LogEvent(ctx, audit.Event{
-		Action:       "organization.user_invited",
-		ResourceType: "organization",
-		ResourceID:   fmt.Sprintf("%d", req.OrganizationID),
-		Details:      fmt.Sprintf("User %s invited to organization %d", req.Email, req.OrganizationID),
-	})
-	
-	return invitation, nil
-}
+// func (s *DefaultService) InviteUser(ctx context.Context, req InviteUserRequest) (*OrganizationInvitation, error) {
+// 	// Generate invitation token
+// 	token, err := generateInvitationToken()
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to generate invitation token: %w", err)
+// 	}
+// 	
+// 	// Set expiration time (7 days from now)
+// 	expiresAt := time.Now().Add(7 * 24 * time.Hour)
+// 	
+// 	// Create invitation
+// 	invitationRecord, err := s.queries.CreateOrganizationInvitation(ctx, sqlc.CreateOrganizationInvitationParams{
+// 		OrganizationID: req.OrganizationID,
+// 		Email:          req.Email,
+// 		Role:           req.Role,
+// 		Token:          token,
+// 		InvitedBy:      pgtype.Int8{Int64: req.InvitedBy, Valid: true},
+// 		Message:        pgtype.Text{String: getStringValue(req.Message), Valid: req.Message != nil},
+// 		ExpiresAt:      pgtype.Timestamptz{Time: expiresAt, Valid: true},
+// 	})
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to create invitation: %w", err)
+// 	}
+// 	
+// 	invitation := convertSQLCInvitation(invitationRecord)
+// 	
+// 	// Log audit event
+// 	s.auditLogger.LogEvent(ctx, audit.Event{
+// 		Action:       "organization.user_invited",
+// 		ResourceType: "organization",
+// 		ResourceID:   fmt.Sprintf("%d", req.OrganizationID),
+// 		Details:      map[string]interface{}{"message": "User %s invited to organization %d"},
+// 	})
+// 	
+// 	return invitation, nil
+// }
 
-func (s *DefaultService) AcceptInvitation(ctx context.Context, token string, userID int64) error {
-	// Get invitation by token
-	invitationRecord, err := s.queries.GetOrganizationInvitationByToken(ctx, token)
-	if err != nil {
-		return fmt.Errorf("invalid or expired invitation token: %w", err)
-	}
-	
-	// Accept the invitation
-	err = s.queries.AcceptOrganizationInvitation(ctx, sqlc.AcceptOrganizationInvitationParams{
-		ID:         invitationRecord.ID,
-		AcceptedBy: pgtype.Int8{Int64: userID, Valid: true},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to accept invitation: %w", err)
-	}
-	
-	// Log audit event
-	s.auditLogger.LogEvent(ctx, audit.Event{
-		Action:       "organization.invitation_accepted",
-		ResourceType: "organization",
-		ResourceID:   fmt.Sprintf("%d", invitationRecord.OrganizationID),
-		Details:      fmt.Sprintf("Invitation %d accepted by user %d", invitationRecord.ID, userID),
-	})
-	
-	return nil
-}
+// func (s *DefaultService) AcceptInvitation(ctx context.Context, token string, userID int64) error {
+// 	// Get invitation by token
+// 	invitationRecord, err := s.queries.GetOrganizationInvitationByToken(ctx, token)
+// 	if err != nil {
+// 		return fmt.Errorf("invalid or expired invitation token: %w", err)
+// 	}
+// 	
+// 	// Accept the invitation
+// 	err = s.queries.AcceptOrganizationInvitation(ctx, sqlc.AcceptOrganizationInvitationParams{
+// 		ID:         invitationRecord.ID,
+// 		AcceptedBy: pgtype.Int8{Int64: userID, Valid: true},
+// 	})
+// 	if err != nil {
+// 		return fmt.Errorf("failed to accept invitation: %w", err)
+// 	}
+// 	
+// 	// Log audit event
+// 	s.auditLogger.LogEvent(ctx, audit.Event{
+// 		Action:       "organization.invitation_accepted",
+// 		ResourceType: "organization",
+// 		ResourceID:   fmt.Sprintf("%d", invitationRecord.OrganizationID),
+// 		Details:      map[string]interface{}{"message": "Invitation %d accepted by user %d"},
+// 	})
+// 	
+// 	return nil
+// }
 
-func (s *DefaultService) CancelInvitation(ctx context.Context, invitationID int64) error {
-	err := s.queries.CancelOrganizationInvitation(ctx, invitationID)
-	if err != nil {
-		return fmt.Errorf("failed to cancel invitation: %w", err)
-	}
-	
-	// Log audit event
-	s.auditLogger.LogEvent(ctx, audit.Event{
-		Action:       "organization.invitation_cancelled",
-		ResourceType: "organization",
-		ResourceID:   fmt.Sprintf("%d", invitationID),
-		Details:      fmt.Sprintf("Invitation %d cancelled", invitationID),
-	})
-	
-	return nil
-}
+// func (s *DefaultService) CancelInvitation(ctx context.Context, invitationID int64) error {
+// 	err := s.queries.CancelOrganizationInvitation(ctx, invitationID)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to cancel invitation: %w", err)
+// 	}
+// 	
+// 	// Log audit event
+// 	s.auditLogger.LogEvent(ctx, audit.Event{
+// 		Action:       "organization.invitation_cancelled",
+// 		ResourceType: "organization",
+// 		ResourceID:   fmt.Sprintf("%d", invitationID),
+// 		Details:      map[string]interface{}{"message": "Invitation %d cancelled"},
+// 	})
+// 	
+// 	return nil
+// }
 
-func (s *DefaultService) ListInvitations(ctx context.Context, orgID int64, limit, offset int32) ([]*OrganizationInvitation, error) {
-	invitationRecords, err := s.queries.ListOrganizationInvitations(ctx, sqlc.ListOrganizationInvitationsParams{
-		OrganizationID: orgID,
-		Limit:          limit,
-		Offset:         offset,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list invitations: %w", err)
-	}
-	
-	invitations := make([]*OrganizationInvitation, 0, len(invitationRecords))
-	for _, invitationRecord := range invitationRecords {
-		invitations = append(invitations, convertSQLCInvitation(invitationRecord))
-	}
-	
-	return invitations, nil
-}
+// func (s *DefaultService) ListInvitations(ctx context.Context, orgID int64, limit, offset int32) ([]*OrganizationInvitation, error) {
+// 	invitationRecords, err := s.queries.ListOrganizationInvitations(ctx, sqlc.ListOrganizationInvitationsParams{
+// 		OrganizationID: orgID,
+// 		Limit:          limit,
+// 		Offset:         offset,
+// 	})
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to list invitations: %w", err)
+// 	}
+// 	
+// 	invitations := make([]*OrganizationInvitation, 0, len(invitationRecords))
+// 	for _, invitationRecord := range invitationRecords {
+// 		invitations = append(invitations, convertSQLCInvitation(invitationRecord))
+// 	}
+// 	
+// 	return invitations, nil
+// }
 
 // Helper functions
 
@@ -447,24 +447,24 @@ func convertSQLCOrganization(orgRecord sqlc.Organizations) *Organization {
 	}
 }
 
-// convertSQLCInvitation converts a SQLC invitation record to a service invitation
-func convertSQLCInvitation(invitationRecord sqlc.OrganizationInvitations) *OrganizationInvitation {
-	return &OrganizationInvitation{
-		ID:             invitationRecord.ID,
-		OrganizationID: invitationRecord.OrganizationID,
-		Email:          invitationRecord.Email,
-		Role:           invitationRecord.Role,
-		Token:          invitationRecord.Token,
-		InvitedBy:      getOptionalInt64(invitationRecord.InvitedBy),
-		Message:        getOptionalString(invitationRecord.Message),
-		Status:         invitationRecord.Status,
-		AcceptedAt:     getOptionalTime(invitationRecord.AcceptedAt),
-		AcceptedBy:     getOptionalInt64(invitationRecord.AcceptedBy),
-		ExpiresAt:      invitationRecord.ExpiresAt.Time,
-		CreatedAt:      invitationRecord.CreatedAt,
-		UpdatedAt:      invitationRecord.UpdatedAt,
-	}
-}
+// // convertSQLCInvitation converts a SQLC invitation record to a service invitation
+// func convertSQLCInvitation(invitationRecord sqlc.OrganizationInvitations) *OrganizationInvitation {
+// 	return &OrganizationInvitation{
+// 		ID:             invitationRecord.ID,
+// 		OrganizationID: invitationRecord.OrganizationID,
+// 		Email:          invitationRecord.Email,
+// 		Role:           invitationRecord.Role,
+// 		Token:          invitationRecord.Token,
+// 		InvitedBy:      getOptionalInt64(invitationRecord.InvitedBy),
+// 		Message:        getOptionalString(invitationRecord.Message),
+// 		Status:         invitationRecord.Status,
+// 		AcceptedAt:     getOptionalTime(invitationRecord.AcceptedAt),
+// 		AcceptedBy:     getOptionalInt64(invitationRecord.AcceptedBy),
+// 		ExpiresAt:      invitationRecord.ExpiresAt.Time,
+// 		CreatedAt:      invitationRecord.CreatedAt,
+// 		UpdatedAt:      invitationRecord.UpdatedAt,
+// 	}
+// }
 
 // getOptionalString safely extracts a string from pgtype.Text
 func getOptionalString(text pgtype.Text) *string {
@@ -482,10 +482,10 @@ func getOptionalInt64(val pgtype.Int8) *int64 {
 	return &val.Int64
 }
 
-// getOptionalTime safely extracts a time from pgtype.Timestamptz
-func getOptionalTime(ts pgtype.Timestamptz) *time.Time {
-	if !ts.Valid {
-		return nil
-	}
-	return &ts.Time
-}
+// // getOptionalTime safely extracts a time from pgtype.Timestamptz
+// func getOptionalTime(ts pgtype.Timestamptz) *time.Time {
+// 	if !ts.Valid {
+// 		return nil
+// 	}
+// 	return &ts.Time
+// }

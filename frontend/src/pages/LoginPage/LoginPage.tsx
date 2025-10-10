@@ -90,11 +90,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">VolumeViz</h1>
-          <p className="mt-2 text-gray-600">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-900">VolumeViz</h1>
+          <p className="mt-2 text-gray-800 dark:text-gray-800">Sign in to your account</p>
         </div>
 
-        <Card className="p-8">
+        <Card className="p-8 bg-white dark:bg-white dark:text-gray-900">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {error && (
@@ -110,13 +110,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-900 dark:text-gray-900 mb-2"
               >
                 Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-gray-500 dark:text-gray-600" />
                 </div>
                 <input
                   id="email"
@@ -125,7 +125,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 text-gray-900 bg-white dark:bg-white dark:text-gray-900 dark:border-gray-300"
                   placeholder="you@example.com"
                   autoComplete="email"
                 />
@@ -136,13 +136,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-900 dark:text-gray-900 mb-2"
               >
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-gray-500 dark:text-gray-600" />
                 </div>
                 <input
                   id="password"
@@ -151,7 +151,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                  className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 text-gray-900 bg-white dark:bg-white dark:text-gray-900 dark:border-gray-300"
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
@@ -160,11 +160,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <EyeOff className="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-600 dark:hover:text-gray-800" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <Eye className="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-600 dark:hover:text-gray-800" />
                   )}
                 </button>
               </div>
@@ -183,7 +184,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
                 />
                 <label
                   htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-700"
+                  className="ml-2 block text-sm text-gray-900 dark:text-gray-900"
                 >
                   Remember me
                 </label>
@@ -213,16 +214,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
 
           {/* Development Note */}
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-800 mb-2">
-              <strong>Development Mode:</strong>
+            <p className="text-xs text-blue-900 mb-2 font-semibold">
+              Development Mode:
             </p>
-            <p className="text-xs text-blue-700">
+            <p className="text-xs text-blue-900">
               Default credentials:{' '}
-              <code className="bg-blue-100 px-1 rounded">
+              <code className="bg-blue-100 px-1 rounded font-medium">
                 admin@volumeviz.local
               </code>
             </p>
-            <p className="text-xs text-blue-700 mt-1">
+            <p className="text-xs text-blue-900 mt-1">
               Or use the JWT token from the integration test page.
             </p>
           </div>
@@ -230,11 +231,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
 
         {/* Footer */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-800 dark:text-gray-800">
             Don't have an account?{' '}
             <button
               onClick={() => console.log('Registration not implemented')}
-              className="font-medium text-blue-600 hover:text-blue-500"
+              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-600 dark:hover:text-blue-700"
             >
               Contact your administrator
             </button>

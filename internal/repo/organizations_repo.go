@@ -19,13 +19,6 @@ type OrganizationsRepo interface {
 	DeactivateOrganization(ctx context.Context, id int64) error
 	ListOrganizations(ctx context.Context, params sqlc.ListOrganizationsParams) ([]sqlc.Organizations, error)
 
-	// Organization invitations
-	CreateOrganizationInvitation(ctx context.Context, params sqlc.CreateOrganizationInvitationParams) (sqlc.OrganizationInvitations, error)
-	GetOrganizationInvitationByToken(ctx context.Context, token string) (sqlc.OrganizationInvitations, error)
-	AcceptOrganizationInvitation(ctx context.Context, params sqlc.AcceptOrganizationInvitationParams) error
-	CancelOrganizationInvitation(ctx context.Context, id int64) error
-	ListOrganizationInvitations(ctx context.Context, params sqlc.ListOrganizationInvitationsParams) ([]sqlc.OrganizationInvitations, error)
-
 	// Organization statistics
 	GetOrganizationUserCount(ctx context.Context, orgID int64) (int64, error)
 	GetOrganizationVolumeCount(ctx context.Context, orgID int64) (int64, error)
@@ -77,41 +70,12 @@ func (r *PostgreSQLOrganizationsRepo) ListOrganizations(ctx context.Context, par
 	return r.queries.ListOrganizations(ctx, params)
 }
 
-// Organization invitations
-
-func (r *PostgreSQLOrganizationsRepo) CreateOrganizationInvitation(ctx context.Context, params sqlc.CreateOrganizationInvitationParams) (sqlc.OrganizationInvitations, error) {
-	return r.queries.CreateOrganizationInvitation(ctx, params)
-}
-
-func (r *PostgreSQLOrganizationsRepo) GetOrganizationInvitationByToken(ctx context.Context, token string) (sqlc.OrganizationInvitations, error) {
-	return r.queries.GetOrganizationInvitationByToken(ctx, token)
-}
-
-func (r *PostgreSQLOrganizationsRepo) AcceptOrganizationInvitation(ctx context.Context, params sqlc.AcceptOrganizationInvitationParams) error {
-	return r.queries.AcceptOrganizationInvitation(ctx, params)
-}
-
-func (r *PostgreSQLOrganizationsRepo) CancelOrganizationInvitation(ctx context.Context, id int64) error {
-	return r.queries.CancelOrganizationInvitation(ctx, id)
-}
-
-func (r *PostgreSQLOrganizationsRepo) ListOrganizationInvitations(ctx context.Context, params sqlc.ListOrganizationInvitationsParams) ([]sqlc.OrganizationInvitations, error) {
-	return r.queries.ListOrganizationInvitations(ctx, params)
-}
-
 // Organization statistics
 
 func (r *PostgreSQLOrganizationsRepo) GetOrganizationUserCount(ctx context.Context, orgID int64) (int64, error) {
-	query := `SELECT COUNT(*) FROM users WHERE organization_id = $1`
-	
-	var count int64
-	row := r.db.QueryRow(ctx, query, orgID)
-	err := row.Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get user count: %w", err)
-	}
-	
-	return count, nil
+	// Users table not implemented yet - return 0
+	// TODO: Implement when user management is added
+	return 0, nil
 }
 
 func (r *PostgreSQLOrganizationsRepo) GetOrganizationVolumeCount(ctx context.Context, orgID int64) (int64, error) {

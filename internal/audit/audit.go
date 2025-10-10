@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/netip"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/mantonx/volumeviz/internal/auth"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
 )
 
@@ -16,184 +15,191 @@ import (
 type Logger interface {
 	// LogEvent logs an audit event
 	LogEvent(ctx context.Context, event Event) error
-	
+
 	// GetEvents retrieves audit events with pagination and filtering
 	GetEvents(ctx context.Context, filters EventFilters) ([]*Event, error)
 }
 
 // Event represents an audit log event
 type Event struct {
-	ID           int64                  `json:"id,omitempty"`
-	UserID       *int64                 `json:"user_id,omitempty"`
-	SessionID    *int64                 `json:"session_id,omitempty"`
-	Action       string                 `json:"action"`
-	ResourceType string                 `json:"resource_type"`
-	ResourceID   string                 `json:"resource_id,omitempty"`
-	Details      string                 `json:"details,omitempty"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
-	IPAddress    *netip.Addr            `json:"ip_address,omitempty"`
-	UserAgent    *string                `json:"user_agent,omitempty"`
-	Timestamp    time.Time              `json:"timestamp"`
+	ID             int64                  `json:"id,omitempty"`
+	OrganizationID int64                  `json:"organization_id"`
+	UserID         *int64                 `json:"user_id,omitempty"`
+	Action         string                 `json:"action"`
+	ResourceType   string                 `json:"resource_type,omitempty"`
+	ResourceID     string                 `json:"resource_id,omitempty"`
+	IPAddress      string                 `json:"ip_address,omitempty"`
+	UserAgent      string                 `json:"user_agent,omitempty"`
+	Status         string                 `json:"status"`
+	Details        map[string]interface{} `json:"details,omitempty"`
+	Timestamp      time.Time              `json:"timestamp"`
 }
 
 // EventFilters provides filtering options for audit events
 type EventFilters struct {
-	UserID       *int64
-	Action       *string
-	ResourceType *string
-	ResourceID   *string
-	StartTime    *time.Time
-	EndTime      *time.Time
-	Limit        int32
-	Offset       int32
+	OrganizationID *int64
+	UserID         *int64
+	Action         *string
+	ResourceType   *string
+	StartTime      *time.Time
+	EndTime        *time.Time
+	Limit          int32
+	Offset         int32
 }
 
 // DefaultLogger implements the Logger interface
 type DefaultLogger struct {
+	pool    *pgxpool.Pool
 	queries *sqlc.Queries
 }
 
 // NewLogger creates a new audit logger
-func NewLogger(queries *sqlc.Queries) Logger {
+func NewLogger(pool *pgxpool.Pool) Logger {
 	return &DefaultLogger{
-		queries: queries,
+		pool:    pool,
+		queries: sqlc.New(pool),
 	}
 }
 
 // LogEvent logs an audit event to the database
 func (l *DefaultLogger) LogEvent(ctx context.Context, event Event) error {
-	// Get user ID and session ID from context
+	// Serialize details to JSON
+	var detailsJSON []byte
+	if event.Details != nil {
+		var err error
+		detailsJSON, err = json.Marshal(event.Details)
+		if err != nil {
+			return fmt.Errorf("failed to serialize details: %w", err)
+		}
+	}
+
+	// Prepare parameters
 	var userID pgtype.Int8
-	var sessionID pgtype.Int8
-	
 	if event.UserID != nil {
 		userID = pgtype.Int8{Int64: *event.UserID, Valid: true}
-	} else if contextUserID, ok := auth.GetUserIDFromContext(ctx); ok {
-		userID = pgtype.Int8{Int64: contextUserID, Valid: true}
 	}
-	
-	if event.SessionID != nil {
-		sessionID = pgtype.Int8{Int64: *event.SessionID, Valid: true}
+
+	var ipAddress pgtype.Text
+	if event.IPAddress != "" {
+		ipAddress = pgtype.Text{String: event.IPAddress, Valid: true}
 	}
-	
-	// Serialize metadata
-	var metadataBytes []byte
-	if event.Metadata != nil {
-		var err error
-		metadataBytes, err = json.Marshal(event.Metadata)
-		if err != nil {
-			return fmt.Errorf("failed to serialize metadata: %w", err)
-		}
-	} else {
-		metadataBytes = []byte("{}")
+
+	var userAgent pgtype.Text
+	if event.UserAgent != "" {
+		userAgent = pgtype.Text{String: event.UserAgent, Valid: true}
 	}
-	
+
+	var resourceType pgtype.Text
+	if event.ResourceType != "" {
+		resourceType = pgtype.Text{String: event.ResourceType, Valid: true}
+	}
+
+	var resourceID pgtype.Text
+	if event.ResourceID != "" {
+		resourceID = pgtype.Text{String: event.ResourceID, Valid: true}
+	}
+
 	// Log the event
-	_, err := l.queries.LogUserActivity(ctx, sqlc.LogUserActivityParams{
-		UserID:       userID,
-		Action:       event.Action,
-		ResourceType: pgtype.Text{String: event.ResourceType, Valid: event.ResourceType != ""},
-		ResourceID:   pgtype.Text{String: event.ResourceID, Valid: event.ResourceID != ""},
-		Details:      metadataBytes, // Store full event details including metadata
-		IpAddress:    event.IPAddress,
-		UserAgent:    pgtype.Text{String: getStringValue(event.UserAgent), Valid: event.UserAgent != nil},
-		SessionID:    sessionID,
+	_, err := l.queries.CreateAuditLog(ctx, sqlc.CreateAuditLogParams{
+		OrganizationID: event.OrganizationID,
+		UserID:         userID,
+		Action:         event.Action,
+		ResourceType:   resourceType,
+		ResourceID:     resourceID,
+		IpAddress:      ipAddress,
+		UserAgent:      userAgent,
+		Status:         event.Status,
+		Details:        detailsJSON,
 	})
-	if err != nil {
-		return fmt.Errorf("failed to log audit event: %w", err)
-	}
-	
-	return nil
+
+	return err
 }
 
-// GetEvents retrieves audit events with filtering and pagination
+// GetEvents retrieves audit events with pagination and filtering
 func (l *DefaultLogger) GetEvents(ctx context.Context, filters EventFilters) ([]*Event, error) {
-	// Set default values
+	// Set defaults
 	limit := filters.Limit
 	if limit <= 0 {
-		limit = 50
+		limit = 100
 	}
 	offset := filters.Offset
 	if offset < 0 {
 		offset = 0
 	}
-	
-	// For now, we'll implement a simple query by user ID
-	// TODO: Implement more sophisticated filtering when needed
-	var userID pgtype.Int8
-	if filters.UserID != nil {
-		userID = pgtype.Int8{Int64: *filters.UserID, Valid: true}
+
+	var logs []sqlc.AuditLogs
+	var err error
+
+	// Query based on filters
+	if filters.OrganizationID != nil {
+		logs, err = l.queries.ListAuditLogsByOrg(ctx, sqlc.ListAuditLogsByOrgParams{
+			OrganizationID: *filters.OrganizationID,
+			Limit:          limit,
+			Offset:         offset,
+		})
+	} else if filters.UserID != nil {
+		logs, err = l.queries.ListAuditLogsByUser(ctx, sqlc.ListAuditLogsByUserParams{
+			UserID: pgtype.Int8{Int64: *filters.UserID, Valid: true},
+			Limit:  limit,
+			Offset: offset,
+		})
 	} else {
-		// If no user filter, get current user from context
-		if contextUserID, ok := auth.GetUserIDFromContext(ctx); ok {
-			userID = pgtype.Int8{Int64: contextUserID, Valid: true}
-		} else {
-			return []*Event{}, nil // No user context, return empty
-		}
+		// No filters - this shouldn't happen in production, but handle it
+		return nil, fmt.Errorf("organization_id or user_id filter is required")
 	}
-	
-	// Get user activity records
-	activityRecords, err := l.queries.GetUserActivityLog(ctx, sqlc.GetUserActivityLogParams{
-		UserID: userID,
-		Limit:  limit,
-		Offset: offset,
-	})
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to get audit events: %w", err)
+		return nil, fmt.Errorf("failed to retrieve audit logs: %w", err)
 	}
-	
-	// Convert to audit events
-	events := make([]*Event, 0, len(activityRecords))
-	for _, record := range activityRecords {
-		event := &Event{
-			ID:           record.ID,
-			Action:       record.Action,
-			ResourceType: record.ResourceType.String,
-			ResourceID:   record.ResourceID.String,
-			IPAddress:    record.IpAddress,
-			UserAgent:    getOptionalString(record.UserAgent),
-			Timestamp:    record.CreatedAt,
-		}
-		
-		if record.UserID.Valid {
-			event.UserID = &record.UserID.Int64
-		}
-		if record.SessionID.Valid {
-			event.SessionID = &record.SessionID.Int64
-		}
-		
-		// Parse details as JSON metadata
-		if len(record.Details) > 0 {
-			var metadata map[string]interface{}
-			if err := json.Unmarshal(record.Details, &metadata); err == nil {
-				event.Metadata = metadata
-				// Extract details string if present
-				if details, ok := metadata["details"].(string); ok {
-					event.Details = details
-				}
+
+	// Convert to Event objects
+	events := make([]*Event, len(logs))
+	for i, log := range logs {
+		var details map[string]interface{}
+		if len(log.Details) > 0 {
+			if err := json.Unmarshal(log.Details, &details); err != nil {
+				// Log error but don't fail the entire operation
+				details = map[string]interface{}{"error": "failed to parse details"}
 			}
 		}
-		
-		events = append(events, event)
+
+		var userID *int64
+		if log.UserID.Valid {
+			userID = &log.UserID.Int64
+		}
+
+		events[i] = &Event{
+			ID:             log.ID,
+			OrganizationID: log.OrganizationID,
+			UserID:         userID,
+			Action:         log.Action,
+			ResourceType:   log.ResourceType.String,
+			ResourceID:     log.ResourceID.String,
+			IPAddress:      log.IpAddress.String,
+			UserAgent:      log.UserAgent.String,
+			Status:         log.Status,
+			Details:        details,
+			Timestamp:      log.CreatedAt,
+		}
 	}
-	
+
 	return events, nil
 }
 
-// Helper functions
+// NoopLogger is a no-op implementation for when audit logging is disabled
+type NoopLogger struct{}
 
-// getStringValue safely gets the value from a string pointer
-func getStringValue(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
+// NewNoopLogger creates a new no-op audit logger
+func NewNoopLogger() Logger {
+	return &NoopLogger{}
 }
 
-// getOptionalString safely extracts a string from pgtype.Text
-func getOptionalString(text pgtype.Text) *string {
-	if !text.Valid {
-		return nil
-	}
-	return &text.String
+// LogEvent does nothing
+func (l *NoopLogger) LogEvent(ctx context.Context, event Event) error {
+	return nil
+}
+
+// GetEvents returns an empty slice
+func (l *NoopLogger) GetEvents(ctx context.Context, filters EventFilters) ([]*Event, error) {
+	return []*Event{}, nil
 }

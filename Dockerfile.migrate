@@ -1,0 +1,27 @@
+# Migration runner Dockerfile
+# Lightweight image for running database migrations before API startup
+
+FROM alpine:3.19
+
+# Install postgresql-client for pg_isready and bash for scripts
+RUN apk add --no-cache postgresql-client bash curl
+
+# Install golang-migrate
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz && \
+    mv migrate /usr/local/bin/migrate && \
+    chmod +x /usr/local/bin/migrate
+
+# Create migrations directory
+RUN mkdir -p /app/migrations/postgresql
+
+# Copy migration files
+COPY migrations/postgresql/*.sql /app/migrations/postgresql/
+
+# Copy migration runner script
+COPY scripts/run-migrations.sh /app/run-migrations.sh
+RUN chmod +x /app/run-migrations.sh
+
+WORKDIR /app
+
+# Run migrations
+ENTRYPOINT ["/app/run-migrations.sh"]

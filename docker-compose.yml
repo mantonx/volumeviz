@@ -25,6 +25,29 @@ services:
     # Security: run as non-root postgres user
     user: postgres
 
+  # Migration runner service
+  # Runs database migrations before API starts
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    container_name: volumeviz-migrate
+    environment:
+      DB_TYPE: ${DB_TYPE:-postgres}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-volumeviz}
+      DB_PASSWORD: ${DB_PASSWORD:-volumeviz}
+      DB_NAME: ${DB_NAME:-volumeviz}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      MIGRATE_PATH: /app/migrations/postgresql
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - volumeviz
+    restart: "no"  # Run once and exit
+
   # Backend API service
   api:
     build:
@@ -48,12 +71,24 @@ services:
       DB_NAME: ${DB_NAME:-volumeviz}
       DB_SSLMODE: ${DB_SSLMODE:-disable}
 
+      # Migration configuration
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+
       # Docker configuration
       DOCKER_HOST: ${DOCKER_HOST:-unix:///var/run/docker.sock}
       DOCKER_TIMEOUT: ${DOCKER_TIMEOUT:-30s}
 
       # CORS configuration
       ALLOW_ORIGINS: ${ALLOW_ORIGINS:-http://localhost:3000,http://localhost:5173}
+
+      # Authentication configuration
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      AUTH_HS256_SECRET: ${AUTH_HS256_SECRET:-your-super-secret-jwt-key-for-development-only-change-in-production}
+
+      # Alerts configuration
+      ALERTS_ENABLED: ${ALERTS_ENABLED:-true}
+      ALERTS_EVALUATION_INTERVAL: ${ALERTS_EVALUATION_INTERVAL:-5m}
+      ALERTS_RETENTION_DAYS: ${ALERTS_RETENTION_DAYS:-30}
 
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}
@@ -75,6 +110,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     networks:
       - volumeviz
     healthcheck:
@@ -95,18 +132,19 @@ services:
       dockerfile: Dockerfile
       target: frontend-builder
     container_name: volumeviz-web
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
     environment:
       # Frontend configuration
       VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api/v1}
       VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:8080/api/v1/ws}
+      VITE_API_PROXY_TARGET: ${VITE_API_PROXY_TARGET:-http://volumeviz-api:8080}
       VITE_ENABLE_WEBSOCKET: ${VITE_ENABLE_WEBSOCKET:-false}
       VITE_ENABLE_POLLING: ${VITE_ENABLE_POLLING:-true}
       VITE_POLLING_INTERVAL: ${VITE_POLLING_INTERVAL:-30000}
       VITE_MAX_CONCURRENT_SCANS: ${VITE_MAX_CONCURRENT_SCANS:-3}
       VITE_ENABLE_DEBUG: ${VITE_ENABLE_DEBUG:-false}
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-5173}:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules

@@ -35,21 +35,27 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
   return (
     <div className={clsx('relative', className)} ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={clsx(
-          'p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
-          'text-gray-500 dark:text-gray-400',
-          'hover:text-gray-700 dark:hover:text-gray-200',
-          'hover:bg-gray-100 dark:hover:bg-gray-800',
-          'active:bg-gray-200 dark:active:bg-gray-700',
-        )}
-        aria-label="More actions"
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-      >
-        {trigger || <MoreHorizontal className="w-4 h-4" />}
-      </button>
+      {trigger ? (
+        <div onClick={() => setIsOpen(!isOpen)}>
+          {trigger}
+        </div>
+      ) : (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={clsx(
+            'p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
+            'text-gray-500 dark:text-gray-400',
+            'hover:text-gray-700 dark:hover:text-gray-200',
+            'hover:bg-gray-100 dark:hover:bg-gray-800',
+            'active:bg-gray-200 dark:active:bg-gray-700',
+          )}
+          aria-label="More actions"
+          aria-expanded={isOpen}
+          aria-haspopup="true"
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+      )}
 
       {isOpen && (
         <div

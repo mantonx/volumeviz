@@ -35,30 +35,3 @@ FROM organizations
 WHERE is_active = true
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2;
-
--- name: CreateOrganizationInvitation :one
-INSERT INTO organization_invitations (organization_id, email, role, token, invited_by, message, expires_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING *;
-
--- name: GetOrganizationInvitationByToken :one
-SELECT id, organization_id, email, role, token, invited_by, message, status, accepted_at, accepted_by, expires_at, created_at, updated_at
-FROM organization_invitations
-WHERE token = $1 AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP;
-
--- name: AcceptOrganizationInvitation :exec
-UPDATE organization_invitations
-SET status = 'accepted', accepted_at = CURRENT_TIMESTAMP, accepted_by = $2
-WHERE id = $1;
-
--- name: CancelOrganizationInvitation :exec
-UPDATE organization_invitations
-SET status = 'cancelled'
-WHERE id = $1;
-
--- name: ListOrganizationInvitations :many
-SELECT id, organization_id, email, role, token, invited_by, message, status, accepted_at, accepted_by, expires_at, created_at, updated_at
-FROM organization_invitations
-WHERE organization_id = $1
-ORDER BY created_at DESC
-LIMIT $2 OFFSET $3;

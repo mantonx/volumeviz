@@ -804,15 +804,22 @@ func (h *Hub) determineRoom(event string, filters map[string]interface{}) string
 			return "scan_" + scanID
 		}
 		return "scan_progress_all"
-		
+
 	case "volume.updates":
 		return "volume_updates"
-		
+
 	case "system.events":
 		return "system_events"
-		
+
+	case "":
+		// Empty event type - subscribe to general updates
+		log.Printf("[WEBSOCKET-HUB] Empty event type, defaulting to volume_updates")
+		return "volume_updates"
+
 	default:
-		return ""
+		// Unknown event type - log warning but don't fail
+		log.Printf("[WEBSOCKET-HUB] WARNING: Unknown event type '%s', defaulting to volume_updates", event)
+		return "volume_updates"
 	}
 }
 

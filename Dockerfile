@@ -44,6 +44,9 @@ RUN npm install --legacy-peer-deps
 # Copy frontend source
 COPY frontend/ .
 
+# Copy OpenAPI spec for orval code generation
+COPY docs/ ../docs/
+
 # Build frontend
 RUN npm run build
 

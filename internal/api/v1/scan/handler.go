@@ -1534,15 +1534,18 @@ func (h *Handler) GetRecentScanErrors(c *gin.Context) {
 		}
 	}
 
-	scanProgressRepo := h.store.ScanProgress()
+	// TODO: GetRecentScanErrors disabled until recent_scan_errors view is implemented
+	// scanProgressRepo := h.store.ScanProgress()
 
 	// Get recent errors
-	recentErrors, err := scanProgressRepo.GetRecentScanErrors(c.Request.Context(), coremodels.RecentErrorsParams{
-		HoursBack: hours,
-		ErrorType: errorTypeFilter,
-		PhaseName: phaseFilter,
-		Limit:     limit,
-	})
+	// recentErrors, err := scanProgressRepo.GetRecentScanErrors(c.Request.Context(), coremodels.RecentErrorsParams{
+	// 	HoursBack: hours,
+	// 	ErrorType: errorTypeFilter,
+	// 	PhaseName: phaseFilter,
+	// 	Limit:     limit,
+	// })
+	recentErrors := []*coremodels.ScanProgressError{}
+	var err error = nil
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error:   "Failed to retrieve recent scan errors",

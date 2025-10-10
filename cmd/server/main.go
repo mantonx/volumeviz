@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/db"
 	"github.com/mantonx/volumeviz/internal/interfaces"
+	"github.com/mantonx/volumeviz/internal/migrate"
 	"github.com/mantonx/volumeviz/internal/services/docker"
 	"github.com/mantonx/volumeviz/internal/store"
 	storeconfig "github.com/mantonx/volumeviz/internal/store/config"
@@ -225,17 +227,39 @@ func main() {
 	// Create store instance
 	log.Printf("Creating store instance...")
 	var storeInstance store.Store
+
 	switch dbConfig.Type {
 	case storeconfig.DatabaseTypePostgreSQL:
 		// Build PostgreSQL connection string manually since BuildPostgresDSN doesn't exist yet
 		dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 			dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.Database)
 		ctx := context.Background()
+
+		// Run migrations before creating store if AUTO_MIGRATE is enabled
+		if os.Getenv("AUTO_MIGRATE") == "true" {
+			log.Printf("[AUTO_MIGRATE] Automatic migrations enabled")
+			// Create a standard sql.DB connection for migrations
+			migrationDB, err := sql.Open("postgres", dsn)
+			if err != nil {
+				log.Fatalf("[AUTO_MIGRATE] Failed to create migration connection: %v", err)
+			}
+			defer migrationDB.Close()
+
+			if err := migrate.RunMigrations(migrationDB, string(dbConfig.Type)); err != nil {
+				log.Fatalf("[AUTO_MIGRATE] Migration failed: %v", err)
+			}
+		} else {
+			log.Printf("[MIGRATE] AUTO_MIGRATE not enabled. Set AUTO_MIGRATE=true to run migrations automatically.")
+			log.Printf("[MIGRATE] You can also run migrations manually using: make migrate")
+		}
+
+		// Now create the pgxpool connection for the application
 		conn, err := db.ConnectPostgreSQL(ctx, dsn, 10)
 		if err != nil {
 			log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 		}
 		storeInstance = store.NewPostgreSQLStore(conn)
+
 	case storeconfig.DatabaseTypeSQLite:
 		// Build SQLite DSN - use database path directly
 		dsn := dbConfig.Database
@@ -243,18 +267,34 @@ func main() {
 			dsn = "./volumeviz.db" // Default SQLite database file
 		}
 		ctx := context.Background()
+
+		// Run migrations before creating store if AUTO_MIGRATE is enabled
+		if os.Getenv("AUTO_MIGRATE") == "true" {
+			log.Printf("[AUTO_MIGRATE] Automatic migrations enabled")
+			// SQLite migrations not yet implemented - migrations will be skipped
+			migrationDB, err := sql.Open("sqlite", dsn)
+			if err != nil {
+				log.Fatalf("[AUTO_MIGRATE] Failed to create migration connection: %v", err)
+			}
+			defer migrationDB.Close()
+
+			if err := migrate.RunMigrations(migrationDB, string(dbConfig.Type)); err != nil {
+				log.Fatalf("[AUTO_MIGRATE] Migration failed: %v", err)
+			}
+		} else {
+			log.Printf("[MIGRATE] AUTO_MIGRATE not enabled. Set AUTO_MIGRATE=true to run migrations automatically.")
+		}
+
 		conn, err := db.ConnectSQLite(ctx, dsn)
 		if err != nil {
 			log.Fatalf("Failed to connect to SQLite: %v", err)
 		}
 		storeInstance = store.NewSQLiteStore(conn)
+
 	default:
 		log.Fatalf("Unsupported database type: %s (supported types: postgresql, sqlite)", dbConfig.Type)
 	}
 	log.Printf("Store instance created successfully")
-
-	// Note: Database migrations are now handled by the store layer
-	log.Printf("Database migrations managed by store layer")
 
 	// Initialize Docker service
 	dockerService, err := docker.NewDockerService(cfg.Docker.Host, cfg.Docker.Timeout)

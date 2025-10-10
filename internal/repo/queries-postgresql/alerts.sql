@@ -79,10 +79,9 @@ INSERT INTO alerts (
     context_data,
     is_resolved,
     resolved_at,
-    organization_id,
     created_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()
+    $1, $2, $3, $4, $5, $6, $7, $8, NOW()
 ) RETURNING *;
 
 -- name: GetAlert :one
@@ -108,9 +107,10 @@ ORDER BY created_at DESC
 LIMIT $2 OFFSET $3;
 
 -- name: ListAlertsByOrganization :many
-SELECT * FROM alerts
-WHERE organization_id = $1
-ORDER BY created_at DESC
+SELECT a.* FROM alerts a
+JOIN alert_rules r ON a.rule_id = r.id
+WHERE r.organization_id = $1
+ORDER BY a.created_at DESC
 LIMIT $2 OFFSET $3;
 
 -- name: ListActiveAlerts :many
@@ -120,10 +120,11 @@ ORDER BY severity DESC, created_at DESC
 LIMIT $1 OFFSET $2;
 
 -- name: ListActiveAlertsByOrganization :many
-SELECT * FROM alerts
-WHERE organization_id = $1
-  AND is_resolved = false
-ORDER BY severity DESC, created_at DESC
+SELECT a.* FROM alerts a
+JOIN alert_rules r ON a.rule_id = r.id
+WHERE r.organization_id = $1
+  AND a.is_resolved = false
+ORDER BY a.severity DESC, a.created_at DESC
 LIMIT $2 OFFSET $3;
 
 -- name: UpdateAlertResolved :exec
@@ -150,15 +151,18 @@ DELETE FROM alerts WHERE rule_id = $1;
 SELECT COUNT(*) FROM alerts;
 
 -- name: CountAlertsByOrganization :one
-SELECT COUNT(*) FROM alerts WHERE organization_id = $1;
+SELECT COUNT(*) FROM alerts a
+JOIN alert_rules r ON a.rule_id = r.id
+WHERE r.organization_id = $1;
 
 -- name: CountActiveAlerts :one
 SELECT COUNT(*) FROM alerts WHERE is_resolved = false;
 
 -- name: CountActiveAlertsByOrganization :one
-SELECT COUNT(*) FROM alerts
-WHERE organization_id = $1
-  AND is_resolved = false;
+SELECT COUNT(*) FROM alerts a
+JOIN alert_rules r ON a.rule_id = r.id
+WHERE r.organization_id = $1
+  AND a.is_resolved = false;
 
 -- =============================================================================
 -- ALERT DESTINATIONS
@@ -368,12 +372,13 @@ FROM alerts;
 -- name: GetAlertStatsByOrganization :one
 SELECT
     COUNT(*) as total_alerts,
-    COUNT(*) FILTER (WHERE is_resolved = false) as firing_alerts,
-    COUNT(*) FILTER (WHERE is_resolved = true) as resolved_alerts,
-    (SELECT COUNT(*) FROM alert_rules WHERE is_enabled = true) as active_rules,
-    COUNT(DISTINCT volume_id) FILTER (WHERE volume_id IS NOT NULL) as affected_entities
-FROM alerts
-WHERE organization_id = $1;
+    COUNT(*) FILTER (WHERE a.is_resolved = false) as firing_alerts,
+    COUNT(*) FILTER (WHERE a.is_resolved = true) as resolved_alerts,
+    (SELECT COUNT(*) FROM alert_rules WHERE is_enabled = true AND alert_rules.organization_id = $1) as active_rules,
+    COUNT(DISTINCT a.volume_id) FILTER (WHERE a.volume_id IS NOT NULL) as affected_entities
+FROM alerts a
+JOIN alert_rules r ON a.rule_id = r.id
+WHERE r.organization_id = $1;
 
 -- name: GetDeliveryStats :one
 SELECT

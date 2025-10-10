@@ -352,7 +352,7 @@ func (r *volumesRepo) UpsertContainer(ctx context.Context, params models.CreateC
 
 	// Try INSERT first (using new simple UpsertContainer query)
 	sqlcParams := sqlc.UpsertContainerParams{
-		MountCatalogID:  0, // Default mount catalog ID for standalone container entries
+		MountCatalogID:  pgtype.Int8{Valid: false}, // NULL for standalone container entries (no mount relationship)
 		ContainerID:     params.ContainerID,
 		ContainerName:   pgtype.Text{String: params.Name, Valid: params.Name != ""},
 		DestinationPath: "", // Not applicable for standalone containers
@@ -368,7 +368,7 @@ func (r *volumesRepo) UpsertContainer(ctx context.Context, params models.CreateC
 		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
 			updateParams := sqlc.UpdateContainerParams{
 				ContainerID:     params.ContainerID,
-				MountCatalogID:  0,
+				MountCatalogID:  pgtype.Int8{Valid: false}, // NULL for standalone container entries (no mount relationship)
 				ContainerName:   pgtype.Text{String: params.Name, Valid: params.Name != ""},
 				AccessMode:      "rw",
 				ContainerState:  pgtype.Text{String: params.State, Valid: params.State != ""},

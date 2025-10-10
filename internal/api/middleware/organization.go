@@ -84,13 +84,13 @@ func (m *OrganizationMiddleware) RequireOrganization() gin.HandlerFunc {
 			}
 
 			// Check if user has an organization
-			if !user.OrganizationID.Valid || user.OrganizationID.Int64 == 0 {
+			if user.OrganizationID == 0 {
 				c.JSON(http.StatusForbidden, gin.H{"error": "User is not associated with an organization"})
 				c.Abort()
 				return
 			}
 
-			organizationID = user.OrganizationID.Int64
+			organizationID = user.OrganizationID
 		}
 
 		// Verify organization is active
@@ -168,8 +168,8 @@ func (m *OrganizationMiddleware) OptionalOrganization() gin.HandlerFunc {
 			}
 
 			// If user has an organization, use it
-			if user.OrganizationID.Valid && user.OrganizationID.Int64 > 0 {
-				organizationID = user.OrganizationID.Int64
+			if user.OrganizationID > 0 {
+				organizationID = user.OrganizationID
 			}
 		}
 

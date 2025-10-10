@@ -2,32 +2,39 @@
 
 VolumeViz uses [golang-migrate/migrate](https://github.com/golang-migrate/migrate) for database schema management. This document explains how to create and run migrations.
 
-**Current Support**: PostgreSQL (primary production database)  
+**Current Support**: PostgreSQL (primary production database)
 **Future Enhancement**: SQLite migration support can be added by creating separate migration files or database-agnostic SQL.
 
 ## Overview
 
 The migration system provides:
 - **Version control** for database schema changes
-- **Forward migrations** to apply new schema changes  
+- **Forward migrations** to apply new schema changes
 - **Rollback capability** to undo migrations if needed
 - **Consistency** across development, staging, and production environments
+- **Automatic migrations** on application startup (configurable)
+- **Migration init container** in docker-compose for production deployments
 
 ## Migration Files
 
-Migration files are stored in the `/migrations` directory:
+Migration files are stored in the `/migrations/postgresql/` directory:
 
 ```
-migrations/
-├── 000001_consolidated_schema.up.sql
-└── 000001_consolidated_schema.down.sql
+migrations/postgresql/
+├── 000001_initial_schema.up.sql
+├── 000001_initial_schema.down.sql
+├── 000002_add_stats_jobs_table.up.sql
+├── 000002_add_stats_jobs_table.down.sql
+├── 000003_fix_scanning_constraints.up.sql
+├── 000003_fix_scanning_constraints.down.sql
+└── ... (additional migrations)
 ```
 
-**Note**: This project uses a single consolidated migration that includes the complete schema. The original 16 separate migrations were consolidated for simplicity during development.
-
-Each migration consists of two files:
+**Note**: Migrations are numbered sequentially and applied in order. Each migration consists of two files:
 - **`.up.sql`**: Contains the forward migration (apply changes)
 - **`.down.sql`**: Contains the rollback migration (undo changes)
+
+**Important**: Never modify existing migrations that have been applied to production. Always create new migrations for schema changes.
 
 ## Installation
 
@@ -45,7 +52,36 @@ go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@lat
 
 ## Running Migrations
 
-### Using Make Commands
+### Automatic Migrations (Recommended for Development)
+
+VolumeViz can automatically run migrations on startup:
+
+**Using docker-compose:**
+```bash
+# Migrations run automatically via init container
+docker compose up -d
+
+# The migrate service runs first, then API starts
+# Check migration logs:
+docker compose logs migrate
+```
+
+**Using environment variable:**
+```bash
+# Enable AUTO_MIGRATE in .env or set as environment variable
+export AUTO_MIGRATE=true
+go run cmd/server/main.go
+```
+
+**Configuration:**
+- Set `AUTO_MIGRATE=true` in `.env` file (enabled by default)
+- Application will run migrations on startup before accepting requests
+- Migrations are embedded in the binary (no external files needed)
+- Safe to run multiple times - already-applied migrations are skipped
+
+### Manual Migrations
+
+#### Using Make Commands
 
 ```bash
 # Run all pending migrations
@@ -222,33 +258,124 @@ export MIGRATE_PATH=migrations
 
 ## Production Deployment
 
-### 1. Run Migrations Before App Deployment
+### Recommended Production Workflow
 
-```bash
-# In production deployment script
-./scripts/migrate.sh up
+VolumeViz provides multiple approaches for production migrations:
+
+#### Option 1: Docker Compose with Init Container (Recommended)
+
+```yaml
+# docker-compose.yml includes a migration init service
+# It runs automatically before API starts
+services:
+  migrate:
+    # Runs migrations then exits
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    # Waits for migrations to complete
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 ```
 
-### 2. Backup Before Major Changes
+**Deployment:**
+```bash
+# Start all services - migrations run first
+docker compose up -d
+
+# Check migration status
+docker compose logs migrate
+
+# Verify API started after migrations
+docker compose logs api
+```
+
+#### Option 2: AUTO_MIGRATE in Application
+
+```bash
+# Set environment variable in production
+export AUTO_MIGRATE=true
+
+# Migrations run on application startup
+./volumeviz
+```
+
+**Benefits:**
+- Migrations embedded in binary
+- No external migration files needed
+- Safe for rolling deployments
+- Idempotent - safe to run multiple times
+
+#### Option 3: Manual Pre-Deployment Migrations
+
+```bash
+# Run migrations before deploying new application version
+./scripts/migrate.sh up
+
+# Deploy application
+docker compose up -d api
+```
+
+### Production Best Practices
+
+#### 1. Always Backup Before Migrations
 
 ```bash
 # Backup database before running migrations
-pg_dump "postgres://user:pass@host:port/db" > backup_$(date +%Y%m%d_%H%M%S).sql
+BACKUP_FILE="backup_$(date +%Y%m%d_%H%M%S).sql"
+pg_dump "$DATABASE_URL" > "$BACKUP_FILE"
+echo "Backup saved to: $BACKUP_FILE"
 
 # Run migrations
-./scripts/migrate.sh up
+docker compose up migrate
 ```
 
-### 3. Monitor Migration Progress
+#### 2. Test Migrations in Staging First
 
-For large migrations, monitor progress:
+```bash
+# Apply to staging environment first
+docker compose -f docker-compose.staging.yml up migrate
+
+# Verify application works correctly
+curl https://staging.example.com/api/v1/health
+
+# Then apply to production
+docker compose -f docker-compose.prod.yml up migrate
+```
+
+#### 3. Monitor Migration Progress
 
 ```bash
 # Check current version during deployment
-./scripts/migrate.sh version
+docker compose exec postgres psql -U volumeviz -d volumeviz -c "SELECT * FROM schema_migrations ORDER BY version;"
 
-# View migration history in database
-psql -c "SELECT * FROM schema_migrations ORDER BY version;"
+# Watch migration logs in real-time
+docker compose logs -f migrate
+```
+
+#### 4. Zero-Downtime Migrations
+
+For zero-downtime deployments:
+
+1. **Make migrations backward-compatible** - New code works with old schema
+2. **Deploy migration** - Schema changes applied
+3. **Deploy new application code** - Uses new schema features
+4. **Clean up old schema** (optional) - Remove deprecated columns/tables
+
+**Example backward-compatible migration:**
+```sql
+-- Phase 1: Add new column (nullable, no constraint)
+ALTER TABLE users ADD COLUMN email VARCHAR(255);
+
+-- Deploy new code that uses email column
+
+-- Phase 2 (later): Make column required
+UPDATE users SET email = username || '@example.com' WHERE email IS NULL;
+ALTER TABLE users ALTER COLUMN email SET NOT NULL;
 ```
 
 ## Troubleshooting

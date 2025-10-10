@@ -11,7 +11,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/api/middleware"
 	"github.com/mantonx/volumeviz/internal/api/v1/aggregate"
 	"github.com/mantonx/volumeviz/internal/api/v1/alerts"
-	"github.com/mantonx/volumeviz/internal/api/v1/auth"
+	authAPI "github.com/mantonx/volumeviz/internal/api/v1/auth"
 	"github.com/mantonx/volumeviz/internal/api/v1/diag"
 	"github.com/mantonx/volumeviz/internal/api/v1/explorer"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
@@ -54,6 +54,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/mantonx/volumeviz/internal/audit"
 	authServices "github.com/mantonx/volumeviz/internal/auth"
+	authServicePkg "github.com/mantonx/volumeviz/internal/services/auth"
 	organizationsService "github.com/mantonx/volumeviz/internal/services/organizations"
 	authUtils "github.com/mantonx/volumeviz/internal/utils/auth"
 	"github.com/prometheus/client_golang/prometheus"
@@ -83,15 +84,16 @@ type Router struct {
 	rulesPreviewService *rulesService.EvaluationPreviewService // Rules preview service
 	auditLogger         audit.Logger                           // Audit logging service
 	permissionChecker   authServices.PermissionChecker        // Permission checking service
-	organizationService organizationsService.Service          // Organization management service
+	authService         *authServicePkg.Service                // Auth service for login/register
+	organizationService organizationsService.Service           // Organization management service
 	jwtManager          *authUtils.JWTManager                  // JWT manager for authentication
 }
 
 // NewRouter creates a new v1 API router
 func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store, config *config.Config) *Router {
-	// Initialize JWT manager early if auth is enabled (needed for WebSocket authentication)
+	// Initialize JWT manager if secret is provided (needed for auth endpoints and WebSocket authentication)
 	var jwtManager *authUtils.JWTManager
-	if config.Auth.Enabled && config.Auth.Secret != "" {
+	if config.Auth.Secret != "" {
 		jwtConfig := &authUtils.JWTConfig{
 			AccessSecret:      config.Auth.Secret,
 			RefreshSecret:     "", // Will use access secret
@@ -349,13 +351,21 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 	dockerClient := dockerSvc.GetDockerClient()
 	mountCatalogService := dockerService.NewMountCatalogService(dockerClient, queries, storeInstance)
 
+	// Get PostgreSQL pool for services that need it
+	pgStore := storeInstance.(*store.PostgreSQLStore)
+	pool := pgStore.GetPool()
+
 	// Initialize audit logger
-	auditLogger := audit.NewLogger(queries)
+	auditLogger := audit.NewLogger(pool)
 	log.Printf("[INFO] Audit logger initialized successfully")
 
 	// Initialize permission checker
-	permissionChecker := authServices.NewPermissionChecker(queries)
+	permissionChecker := authServices.NewPermissionChecker(pool)
 	log.Printf("[INFO] Permission checker initialized successfully")
+
+	// Initialize auth service
+	authService := authServicePkg.NewService(storeInstance.Users(), config.Auth.Secret)
+	log.Printf("[INFO] Auth service initialized successfully")
 
 	// Initialize organization service
 	organizationService := organizationsService.NewService(queries, auditLogger)
@@ -463,6 +473,7 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 		rulesPreviewService: rulesPreviewService,
 		auditLogger:         auditLogger,
 		permissionChecker:   permissionChecker,
+		authService:         authService,
 		organizationService: organizationService,
 		jwtManager:          jwtManager,
 	}
@@ -545,7 +556,7 @@ func (r *Router) setupMiddleware(config *config.Config) {
 		ExposedHeaders:   []string{"X-Request-ID"},
 		AllowCredentials: false,
 		MaxAge:           300,
-		SkipPaths:        []string{"/metrics"}, // Only skip metrics, not health endpoints
+		SkipPaths:        []string{"/metrics", "/", "/api/v1/health", "/api/v1/health/database", "/health"}, // Skip health and metrics endpoints
 	}
 	r.engine.Use(middleware.CORSMiddleware(corsConfig))
 
@@ -634,28 +645,35 @@ func (r *Router) setupRoutes(config *config.Config) {
 		diagHandler.RegisterRoutes(v1)
 
 		// Authentication routes (must come before other protected routes)
-		authConfig := &middleware.AuthConfig{
-			Enabled:      config.Auth.Enabled,
-			JWTManager:   r.jwtManager,
-			RequiredRole: middleware.RoleViewer,
+		// Auth routes (only enable if JWT manager is available)
+		if r.jwtManager != nil {
+			authRouter := authAPI.NewRouter(r.store, r.authService)
+			// Auth endpoints always require JWT validation (independent of global AUTH_ENABLED)
+			authConfig := middleware.NewAuthConfig(r.jwtManager, true)
+			authConfig.SkipPaths = []string{} // No skip paths - let the router handle public vs protected
+			authMiddleware := middleware.AuthMiddleware(authConfig)
+			authRouter.RegisterRoutes(v1, authMiddleware)
+			log.Printf("[INFO] Auth routes registered")
+		} else {
+			log.Printf("[WARNING] Auth routes not registered - JWT manager not initialized (set AUTH_HS256_SECRET env var)")
 		}
-		auth.RegisterRoutes(v1, r.store, r.jwtManager, authConfig)
 
 		// Organization middleware setup
 		orgMiddleware := middleware.NewOrganizationMiddlewareWithAuth(r.store, config.Auth.Enabled)
 
 		// Security middleware for admin-only routes
 		// Note: RequireSystemAdmin() only checks user_role from context, so DB is not needed
-		securityMiddleware := security.NewSecurityMiddleware(nil, r.store)
+		_ = security.NewSecurityMiddleware(nil, r.store) // unused for now
 
 		// Organization routes
-		organizationHandler := organizations.NewHandler(r.store, r.organizationService)
-		orgRoutes := v1.Group("/organizations")
-		orgRoutes.Use(orgMiddleware.RequireOrganization())
-		{
-			orgRoutes.GET("/me", organizationHandler.GetMyOrganization)
-			// Admin-only route: updating organization settings
-			orgRoutes.PUT("/me", securityMiddleware.RequireSystemAdmin(), organizationHandler.UpdateMyOrganization)
+		if r.jwtManager != nil {
+			organizationRouter := organizations.NewRouter(r.store, r.organizationService)
+			authConfig := middleware.NewAuthConfig(r.jwtManager, true)
+			authMiddleware := middleware.AuthMiddleware(authConfig)
+			organizationRouter.RegisterRoutes(v1, authMiddleware)
+			log.Printf("[INFO] Organization routes registered")
+		} else {
+			log.Printf("[WARNING] Organization routes not registered - JWT manager not initialized")
 		}
 
 		// Register sub-routers with store interface

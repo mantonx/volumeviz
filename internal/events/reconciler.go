@@ -305,18 +305,23 @@ func (r *ReconcilerService) reconcileContainerMounts(ctx context.Context, contai
 // Helper functions for conversion and comparison
 
 func (r *ReconcilerService) convertDockerVolumeToModel(dockerVol *volume.Volume, eventTime time.Time) *models.Volume {
+	// Use default organization (ID=1) when auth is disabled
+	// This allows volume persistence without authentication context
+	var defaultOrgID int64 = 1
+
 	return &models.Volume{
-		VolumeID:   dockerVol.Name,
-		Name:       dockerVol.Name,
-		Driver:     dockerVol.Driver,
-		Mountpoint: dockerVol.Mountpoint,
-		Labels:     dockerVol.Labels,
-		Options:    dockerVol.Options,
-		Scope:      dockerVol.Scope,
-		Status:     "active",
-		IsActive:   true,
-		CreatedAt:  eventTime,
-		UpdatedAt:  eventTime,
+		VolumeID:       dockerVol.Name,
+		Name:           dockerVol.Name,
+		Driver:         dockerVol.Driver,
+		Mountpoint:     dockerVol.Mountpoint,
+		Labels:         dockerVol.Labels,
+		Options:        dockerVol.Options,
+		Scope:          dockerVol.Scope,
+		Status:         "active",
+		IsActive:       true,
+		OrganizationID: &defaultOrgID,
+		CreatedAt:      eventTime,
+		UpdatedAt:      eventTime,
 	}
 }
 

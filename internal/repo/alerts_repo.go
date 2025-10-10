@@ -286,10 +286,6 @@ func (r *alertsRepo) CreateAlert(ctx context.Context, alert *models.Alert) (*mod
 		resolvedAt = pgtype.Timestamptz{Time: *alert.EndsAt, Valid: true}
 	}
 
-	// Organization ID - extract from context or set to null
-	var orgID pgtype.Int8
-	// For now, leave as null - proper multi-tenancy would extract from context
-
 	row, err := r.queries.CreateAlert(ctx, sqlc.CreateAlertParams{
 		RuleID:         alert.RuleID,
 		VolumeID:       pgtype.Text{String: alert.EntityID, Valid: alert.EntityID != ""},
@@ -299,7 +295,6 @@ func (r *alertsRepo) CreateAlert(ctx context.Context, alert *models.Alert) (*mod
 		ContextData:    contextData,
 		IsResolved:     pgtype.Bool{Bool: isResolved, Valid: true},
 		ResolvedAt:     resolvedAt,
-		OrganizationID: orgID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create alert: %w", err)

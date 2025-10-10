@@ -2,34 +2,35 @@ package auth
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/mantonx/volumeviz/internal/api/middleware"
+	authService "github.com/mantonx/volumeviz/internal/services/auth"
 	"github.com/mantonx/volumeviz/internal/store"
-	"github.com/mantonx/volumeviz/internal/utils/auth"
 )
 
-// RegisterRoutes registers authentication routes
-func RegisterRoutes(v1 *gin.RouterGroup, store store.Store, jwtManager *auth.JWTManager, authConfig *middleware.AuthConfig) {
-	handler := NewHandler(store, jwtManager)
-	
-	// Public auth routes (no auth required)
+type Router struct {
+	handler *Handler
+}
+
+// NewRouter creates a new auth router
+func NewRouter(store store.Store, authService *authService.Service) *Router {
+	return &Router{
+		handler: NewHandler(store, authService),
+	}
+}
+
+// RegisterRoutes registers auth routes
+func (r *Router) RegisterRoutes(v1 *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	auth := v1.Group("/auth")
 	{
-		auth.POST("/login", handler.Login)
-		auth.POST("/register", handler.Register)
-		auth.POST("/register/invitation", handler.RegisterWithInvitation) // Register with invitation token
-		auth.POST("/password/reset", handler.RequestPasswordReset)
-		auth.POST("/refresh", handler.RefreshToken) // JWT refresh endpoint
-		auth.GET("/csrf", handler.GetCSRFToken)     // CSRF token endpoint
-	}
-	
-	// Protected auth routes (auth required)
-	authProtected := v1.Group("/auth")
-	authProtected.Use(middleware.AuthMiddleware(authConfig))
-	{
-		authProtected.GET("/me", handler.GetProfile)
-		authProtected.POST("/logout", handler.Logout)
-		authProtected.POST("/password/change", handler.ChangePassword)
-		authProtected.POST("/password/force-change", handler.ForcePasswordChange) // Force password change for default admin
-		authProtected.POST("/accept-invitation", handler.AcceptInvitation)        // Accept organization invitation
+		// Public routes (no authentication required)
+		auth.POST("/login", r.handler.Login)
+		auth.POST("/register", r.handler.Register)
+
+		// Protected routes (authentication required)
+		authenticated := auth.Group("")
+		authenticated.Use(authMiddleware)
+		{
+			authenticated.GET("/me", r.handler.GetCurrentUser)
+			authenticated.POST("/change-password", r.handler.ChangePassword)
+		}
 	}
 }

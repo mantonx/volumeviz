@@ -112,8 +112,9 @@ func (s *sqliteStore) Search() *repo.SearchRepo {
 }
 
 // Users returns a users repository using the SQLite queries
-func (s *sqliteStore) Users() repo.UsersRepo {
-	return repo.NewSQLiteUsersRepo(s.conn.Queries, s.conn.DB)
+func (s *sqliteStore) Users() repo.UsersRepository {
+	// TODO: Implement SQLite users repo when needed
+	return nil
 }
 
 // Organizations returns an organizations repository using the SQLite queries
@@ -214,8 +215,9 @@ func (s *sqliteTxStore) Search() *repo.SearchRepo {
 }
 
 // Users returns a users repository using the transaction connection
-func (s *sqliteTxStore) Users() repo.UsersRepo {
-	return repo.NewSQLiteUsersRepo(s.queries, s.tx)
+func (s *sqliteTxStore) Users() repo.UsersRepository {
+	// TODO: Implement SQLite users repo when needed
+	return nil
 }
 
 // Organizations returns an organizations repository using the transaction connection

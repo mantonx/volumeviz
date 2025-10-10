@@ -602,9 +602,15 @@ export function VolumesList({ className = '' }: VolumesListProps) {
                   <span className="font-medium text-gray-900 dark:text-white">{volumes.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Total size:</span>
+                  <span className="text-gray-600 dark:text-gray-400">Known size:</span>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    {formatBytes(volumes.reduce((sum, v) => sum + (v.size_bytes || 0), 0))}
+                    {(() => {
+                      const volumesWithSize = volumes.filter(v => v.size_bytes && v.size_bytes > 0);
+                      const totalKnownSize = volumes.reduce((sum, v) => sum + (v.size_bytes || 0), 0);
+                      return volumesWithSize.length === volumes.length
+                        ? formatBytes(totalKnownSize)
+                        : `${formatBytes(totalKnownSize)} (${volumesWithSize.length}/${volumes.length} volumes)`;
+                    })()}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">

@@ -213,7 +213,13 @@ func pgNumericToStringPtr(pn pgtype.Numeric) *string {
 // Float64 to pgtype.Numeric
 func float64ToPgNumeric(f float64) pgtype.Numeric {
 	var numeric pgtype.Numeric
-	numeric.Scan(f)
+	// Use ScanNumeric with string representation for safe conversion
+	str := fmt.Sprintf("%f", f)
+	err := numeric.Scan(str)
+	if err != nil {
+		// If still fails, this might be a bigger issue
+		numeric.Valid = false
+	}
 	return numeric
 }
 

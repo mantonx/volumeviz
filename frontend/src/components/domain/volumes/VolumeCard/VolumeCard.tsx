@@ -44,15 +44,15 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
   const getStatusColor = () => {
     switch (volume.status) {
       case 'active':
-        return 'text-green-600 bg-green-100';
+        return 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30';
       case 'scanning':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-blue-800 dark:text-blue-200 bg-blue-100 dark:bg-blue-900/30';
       case 'error':
-        return 'text-red-600 bg-red-100';
+        return 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30';
       case 'inactive':
-        return 'text-gray-600 bg-gray-100';
+        return 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800';
       default:
-        return 'text-gray-600 bg-gray-100';
+        return 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800';
     }
   };
 

@@ -50,7 +50,7 @@ type ScanProgressRepo interface {
 	GetScanErrorsCount(ctx context.Context, scanID, phaseFilter, errorTypeFilter string) (int64, error)
 	GetActiveScans(ctx context.Context, limit, offset int) ([]models.ActiveScanSummary, error)
 	GetActiveScansCount(ctx context.Context) (int64, error)
-	GetRecentScanErrors(ctx context.Context, params models.RecentErrorsParams) ([]*models.ScanProgressError, error)
+	// GetRecentScanErrors(ctx context.Context, params models.RecentErrorsParams) ([]*models.ScanProgressError, error)
 }
 
 // scanProgressRepo implements ScanProgressRepo using pgx queries
@@ -87,9 +87,8 @@ func NewSQLiteScanProgressRepo(db *sql.DB) ScanProgressRepo {
 
 func (r *scanProgressRepo) CreateScanPhase(ctx context.Context, params models.CreateScanPhaseParams) (*models.ScanPhase, error) {
 	query := `
-		INSERT INTO scan_phases (scan_id, phase_name, phase_order, status, items_total, 
-			current_depth, metadata, started_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO scan_phases (scan_id, phase_name, status, items_total, started_at)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at, updated_at`
 
 	var id int64
@@ -98,11 +97,8 @@ func (r *scanProgressRepo) CreateScanPhase(ctx context.Context, params models.Cr
 	err := r.pool.QueryRow(ctx, query,
 		params.ScanID,
 		params.PhaseName,
-		params.PhaseOrder,
 		params.Status,
 		params.ItemsTotal,
-		params.CurrentDepth,
-		params.Metadata,
 		params.StartedAt,
 	).Scan(&id, &createdAt, &updatedAt)
 
@@ -111,15 +107,12 @@ func (r *scanProgressRepo) CreateScanPhase(ctx context.Context, params models.Cr
 	}
 
 	return &models.ScanPhase{
-		ID:           id,
-		ScanID:       params.ScanID,
-		PhaseName:    params.PhaseName,
-		PhaseOrder:   params.PhaseOrder,
-		Status:       params.Status,
-		ItemsTotal:   params.ItemsTotal,
-		CurrentDepth: params.CurrentDepth,
-		Metadata:     params.Metadata,
-		StartedAt:    params.StartedAt,
+		ID:         id,
+		ScanID:     params.ScanID,
+		PhaseName:  params.PhaseName,
+		Status:     params.Status,
+		ItemsTotal: params.ItemsTotal,
+		StartedAt:  params.StartedAt,
 		CreatedAt:    createdAt,
 		UpdatedAt:    updatedAt,
 	}, nil
@@ -128,15 +121,15 @@ func (r *scanProgressRepo) CreateScanPhase(ctx context.Context, params models.Cr
 func (r *scanProgressRepo) GetScanPhasesByID(ctx context.Context, scanID string) ([]*models.ScanPhase, error) {
 	query := `
 		SELECT DISTINCT ON (phase_name)
-			id, scan_id, phase_name, phase_order, status, progress, items_total,
-			items_processed, items_successful, items_failed,
+			id, scan_id, phase_name, status, progress_percent, items_total,
+			items_processed, items_failed,
 			throughput_items_per_sec,
 			started_at, completed_at, duration_ms,
-			current_item, current_depth, error_message,
-			metadata, created_at, updated_at
+			current_item, error_message,
+			created_at, updated_at
 		FROM scan_phases
 		WHERE scan_id = $1
-		ORDER BY phase_name, updated_at DESC, phase_order ASC`
+		ORDER BY phase_name, updated_at DESC`
 
 	rows, err := r.pool.Query(ctx, query, scanID)
 	if err != nil {
@@ -158,12 +151,12 @@ func (r *scanProgressRepo) GetScanPhasesByID(ctx context.Context, scanID string)
 
 func (r *scanProgressRepo) GetScanPhase(ctx context.Context, scanID, phaseName string) (*models.ScanPhase, error) {
 	query := `
-		SELECT id, scan_id, phase_name, phase_order, status, progress, items_total,
-			items_processed, items_successful, items_failed,
+		SELECT id, scan_id, phase_name, status, progress_percent, items_total,
+			items_processed, items_failed,
 			throughput_items_per_sec,
 			started_at, completed_at, duration_ms,
-			current_item, current_depth, error_message,
-			metadata, created_at, updated_at
+			current_item, error_message,
+			created_at, updated_at
 		FROM scan_phases
 		WHERE scan_id = $1 AND phase_name = $2`
 
@@ -175,13 +168,12 @@ func (r *scanProgressRepo) UpdateScanPhaseProgress(ctx context.Context, params m
 	query := `
 		UPDATE scan_phases SET
 			status = COALESCE($3, status),
-			progress = COALESCE($4, progress),
+			progress_percent = COALESCE($4, progress_percent),
 			items_processed = COALESCE($5, items_processed),
 			items_total = COALESCE($6, items_total),
-			items_successful = COALESCE($7, items_successful),
-			items_failed = COALESCE($8, items_failed),
-			current_item = COALESCE($9, current_item),
-			throughput_items_per_sec = COALESCE($10, throughput_items_per_sec),
+			items_failed = COALESCE($7, items_failed),
+			current_item = COALESCE($8, current_item),
+			throughput_items_per_sec = COALESCE($9, throughput_items_per_sec),
 			updated_at = NOW()
 		WHERE scan_id = $1 AND phase_name = $2`
 
@@ -192,7 +184,6 @@ func (r *scanProgressRepo) UpdateScanPhaseProgress(ctx context.Context, params m
 		params.Progress,
 		params.ItemsProcessed,
 		params.ItemsTotal,
-		params.ItemsSuccessful,
 		params.ItemsFailed,
 		params.CurrentItem,
 		params.ItemsPerSecond,
@@ -205,7 +196,7 @@ func (r *scanProgressRepo) CompleteScanPhase(ctx context.Context, scanID, phaseN
 	query := `
 		UPDATE scan_phases SET
 			status = 'completed',
-			progress = 100,
+			progress_percent = 100,
 			completed_at = NOW(),
 			duration_ms = EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000,
 			updated_at = NOW()
@@ -696,9 +687,10 @@ func (r *scanProgressRepo) GetScanProgressSummary(ctx context.Context, scanID st
 		if row.ItemsProcessed.Valid {
 			processedItems += row.ItemsProcessed.Int64
 		}
-		if row.ItemsSuccessful.Valid {
-			successfulItems += row.ItemsSuccessful.Int64
-		}
+		// TODO: ItemsSuccessful field doesn't exist in current schema
+		// if row.ItemsSuccessful.Valid {
+		// 	successfulItems += row.ItemsSuccessful.Int64
+		// }
 		if row.ItemsFailed.Valid {
 			failedItems += row.ItemsFailed.Int64
 		}
@@ -724,7 +716,10 @@ func (r *scanProgressRepo) GetScanProgressSummary(ctx context.Context, scanID st
 }
 
 func (r *scanProgressRepo) GetRecentErrorsSummary(ctx context.Context, hours int, limit int32) ([]*models.RecentErrorSummary, error) {
-	// Use the SQLC generated query to get recent scan errors from the view
+	// TODO: recent_scan_errors view doesn't exist - returning empty for now
+	return []*models.RecentErrorSummary{}, nil
+
+	/* // Use the SQLC generated query to get recent scan errors from the view
 	errorRows, err := r.queries.GetRecentScanErrors(ctx, sqlc.GetRecentScanErrorsParams{
 		Limit:  limit,
 		Offset: 0,
@@ -759,7 +754,7 @@ func (r *scanProgressRepo) GetRecentErrorsSummary(ctx context.Context, hours int
 		result = append(result, summary)
 	}
 
-	return result, nil
+	return result, nil */ // end of commented function
 }
 
 // =============================================================================
@@ -771,43 +766,39 @@ func (r *scanProgressRepo) scanPhaseFromRow(scanner interface {
 	Scan(dest ...interface{}) error
 }) (*models.ScanPhase, error) {
 	var phase models.ScanPhase
-	var progress, itemsTotal, itemsProcessed, itemsSuccessful, itemsFailed sql.NullInt64
+	var progressPercent, itemsTotal, itemsProcessed, itemsFailed sql.NullInt64
 	var durationMs sql.NullInt64
 	var throughputItemsPerSec sql.NullFloat64
 	var startedAt, completedAt sql.NullTime
-	var currentItem, errorMessage, metadata sql.NullString
-	var currentDepth sql.NullInt64
+	var currentItem, errorMessage sql.NullString
 
-	// SELECT id, scan_id, phase_name, phase_order, status, progress, items_total,
-	//     items_processed, items_successful, items_failed,
+	// SELECT id, scan_id, phase_name, status, progress_percent, items_total,
+	//     items_processed, items_failed,
 	//     throughput_items_per_sec,
 	//     started_at, completed_at, duration_ms,
-	//     current_item, current_depth, error_message,
-	//     metadata, created_at, updated_at
+	//     current_item, error_message,
+	//     created_at, updated_at
 
 	err := scanner.Scan(
-		&phase.ID, &phase.ScanID, &phase.PhaseName, &phase.PhaseOrder, &phase.Status,
-		&progress, &itemsTotal, &itemsProcessed, &itemsSuccessful, &itemsFailed,
+		&phase.ID, &phase.ScanID, &phase.PhaseName, &phase.Status,
+		&progressPercent, &itemsTotal, &itemsProcessed, &itemsFailed,
 		&throughputItemsPerSec,
 		&startedAt, &completedAt, &durationMs,
-		&currentItem, &currentDepth, &errorMessage,
-		&metadata, &phase.CreatedAt, &phase.UpdatedAt,
+		&currentItem, &errorMessage,
+		&phase.CreatedAt, &phase.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	if progress.Valid {
-		phase.Progress = int(progress.Int64)
+	if progressPercent.Valid {
+		phase.Progress = int(progressPercent.Int64)
 	}
 	if itemsTotal.Valid {
 		phase.ItemsTotal = itemsTotal.Int64
 	}
 	if itemsProcessed.Valid {
 		phase.ItemsProcessed = itemsProcessed.Int64
-	}
-	if itemsSuccessful.Valid {
-		phase.ItemsSuccessful = itemsSuccessful.Int64
 	}
 	if itemsFailed.Valid {
 		phase.ItemsFailed = itemsFailed.Int64
@@ -827,14 +818,8 @@ func (r *scanProgressRepo) scanPhaseFromRow(scanner interface {
 	if currentItem.Valid {
 		phase.CurrentItem = currentItem.String
 	}
-	if currentDepth.Valid {
-		phase.CurrentDepth = int(currentDepth.Int64)
-	}
 	if errorMessage.Valid {
 		phase.ErrorMessage = errorMessage.String
-	}
-	if metadata.Valid {
-		phase.Metadata = metadata.String
 	}
 
 	return &phase, nil

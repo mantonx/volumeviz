@@ -27,7 +27,7 @@ type Store interface {
 	FileMetadata() *repo.FileMetadataRepo
 	Alerts() repo.AlertsRepo
 	Search() *repo.SearchRepo
-	Users() repo.UsersRepo
+	Users() repo.UsersRepository
 	Organizations() repo.OrganizationsRepo
 
 	// Health check
@@ -56,6 +56,6 @@ type TxStore interface {
 	FileMetadata() *repo.FileMetadataRepo
 	Alerts() repo.AlertsRepo
 	Search() *repo.SearchRepo
-	Users() repo.UsersRepo
+	Users() repo.UsersRepository
 	Organizations() repo.OrganizationsRepo
 }

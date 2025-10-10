@@ -1,32 +1,81 @@
--- name: GetPermissionByResourceAction :one
-SELECT id, name, resource, action, description, created_at
-FROM permissions
-WHERE resource = $1 AND action = $2;
+-- Permissions queries for VolumeViz
+-- Simplified version matching migration 000012 schema
+
+-- name: CreatePermission :one
+INSERT INTO permissions (
+    role, resource, action, organization_id
+) VALUES (
+    $1, $2, $3, $4
+) RETURNING *;
+
+-- name: GetPermissionByID :one
+SELECT * FROM permissions WHERE id = $1;
 
 -- name: GetRolePermissions :many
-SELECT p.name
-FROM permissions p
-JOIN role_permissions rp ON p.id = rp.permission_id
-WHERE rp.role = $1;
+SELECT * FROM permissions
+WHERE role = $1
+  AND (organization_id = $2 OR organization_id IS NULL)
+ORDER BY resource, action;
 
--- name: CheckUserPermission :one
-SELECT granted, resource_id
-FROM user_permissions
-WHERE user_id = $1 AND permission_id = $2 AND (resource_id = $3 OR ($3 IS NULL AND resource_id IS NULL));
+-- name: GetRolePermissionsGlobal :many
+SELECT * FROM permissions
+WHERE role = $1 AND organization_id IS NULL
+ORDER BY resource, action;
 
--- name: GetUserPermissions :many
-SELECT p.name, up.granted
-FROM user_permissions up
-JOIN permissions p ON up.permission_id = p.id
-WHERE up.user_id = $1;
+-- name: CheckRolePermission :one
+SELECT COUNT(*) > 0 AS has_permission
+FROM permissions
+WHERE role = $1
+  AND resource = $2
+  AND action = $3
+  AND (organization_id = $4 OR organization_id IS NULL);
 
--- name: GrantUserPermission :exec
-INSERT INTO user_permissions (user_id, permission_id, granted, granted_by, resource_id)
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (user_id, permission_id, resource_id) DO UPDATE SET
-    granted = EXCLUDED.granted,
-    granted_by = EXCLUDED.granted_by;
+-- name: ListAllPermissions :many
+SELECT * FROM permissions
+ORDER BY role, resource, action;
 
--- name: RevokeUserPermission :exec
-DELETE FROM user_permissions
-WHERE user_id = $1 AND permission_id = $2 AND (resource_id = $3 OR ($3 IS NULL AND resource_id IS NULL));
+-- name: ListPermissionsByOrg :many
+SELECT * FROM permissions
+WHERE organization_id = $1 OR organization_id IS NULL
+ORDER BY role, resource, action;
+
+-- name: DeletePermission :exec
+DELETE FROM permissions WHERE id = $1;
+
+-- name: DeleteRolePermissions :exec
+DELETE FROM permissions WHERE role = $1 AND organization_id = $2;
+
+-- Roles queries
+-- name: CreateRole :one
+INSERT INTO roles (
+    organization_id, name, description, is_system
+) VALUES (
+    $1, $2, $3, $4
+) RETURNING *;
+
+-- name: GetRoleByID :one
+SELECT * FROM roles WHERE id = $1;
+
+-- name: GetRoleByName :one
+SELECT * FROM roles
+WHERE name = $1 AND organization_id = $2;
+
+-- name: ListRolesByOrg :many
+SELECT * FROM roles
+WHERE organization_id = $1
+ORDER BY created_at DESC;
+
+-- name: ListSystemRoles :many
+SELECT * FROM roles
+WHERE is_system = true
+ORDER BY name;
+
+-- name: UpdateRole :one
+UPDATE roles SET
+    description = COALESCE(sqlc.narg('description'), description),
+    updated_at = NOW()
+WHERE id = sqlc.arg('id')
+RETURNING *;
+
+-- name: DeleteRole :exec
+DELETE FROM roles WHERE id = $1 AND is_system = false;

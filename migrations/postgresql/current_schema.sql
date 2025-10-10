@@ -17,21 +17,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
--- *not* creating schema, since initdb creates it
-
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON SCHEMA public IS '';
-
-
---
--- Name: mount_access_mode; Type: TYPE; Schema: public; Owner: -
+-- Name: mount_access_mode; Type: TYPE; Schema: public; Owner: volumeviz
 --
 
 CREATE TYPE public.mount_access_mode AS ENUM (
@@ -40,8 +26,10 @@ CREATE TYPE public.mount_access_mode AS ENUM (
 );
 
 
+ALTER TYPE public.mount_access_mode OWNER TO volumeviz;
+
 --
--- Name: mount_type; Type: TYPE; Schema: public; Owner: -
+-- Name: mount_type; Type: TYPE; Schema: public; Owner: volumeviz
 --
 
 CREATE TYPE public.mount_type AS ENUM (
@@ -51,8 +39,10 @@ CREATE TYPE public.mount_type AS ENUM (
 );
 
 
+ALTER TYPE public.mount_type OWNER TO volumeviz;
+
 --
--- Name: rule_action; Type: TYPE; Schema: public; Owner: -
+-- Name: rule_action; Type: TYPE; Schema: public; Owner: volumeviz
 --
 
 CREATE TYPE public.rule_action AS ENUM (
@@ -61,8 +51,10 @@ CREATE TYPE public.rule_action AS ENUM (
 );
 
 
+ALTER TYPE public.rule_action OWNER TO volumeviz;
+
 --
--- Name: rule_evaluation_status; Type: TYPE; Schema: public; Owner: -
+-- Name: rule_evaluation_status; Type: TYPE; Schema: public; Owner: volumeviz
 --
 
 CREATE TYPE public.rule_evaluation_status AS ENUM (
@@ -73,8 +65,10 @@ CREATE TYPE public.rule_evaluation_status AS ENUM (
 );
 
 
+ALTER TYPE public.rule_evaluation_status OWNER TO volumeviz;
+
 --
--- Name: rule_operator; Type: TYPE; Schema: public; Owner: -
+-- Name: rule_operator; Type: TYPE; Schema: public; Owner: volumeviz
 --
 
 CREATE TYPE public.rule_operator AS ENUM (
@@ -92,134 +86,77 @@ CREATE TYPE public.rule_operator AS ENUM (
 );
 
 
---
--- Name: user_role; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.user_role AS ENUM (
-    'viewer',
-    'operator',
-    'admin'
-);
-
+ALTER TYPE public.rule_operator OWNER TO volumeviz;
 
 --
--- Name: user_status; Type: TYPE; Schema: public; Owner: -
+-- Name: cleanup_old_snapshots(integer); Type: FUNCTION; Schema: public; Owner: volumeviz
 --
 
-CREATE TYPE public.user_status AS ENUM (
-    'active',
-    'inactive',
-    'pending',
-    'locked'
-);
-
-
---
--- Name: audit_organization_actions(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.audit_organization_actions() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
+CREATE FUNCTION public.cleanup_old_snapshots(p_retention_days integer DEFAULT 90) RETURNS integer
+    LANGUAGE plpgsql
     AS $$
+DECLARE
+    deleted_count INT;
 BEGIN
-    -- Only audit if we have organization context
-    IF get_current_organization_id() IS NOT NULL THEN
-        -- Log the action to audit_logs table
-        INSERT INTO audit_logs (
-            action,
-            resource_type,
-            resource_id,
-            organization_id,
-            details,
-            created_at
-        ) VALUES (
-            TG_OP,
-            TG_TABLE_NAME,
-            COALESCE(NEW.id::text, OLD.id::text),
-            get_current_organization_id(),
-            jsonb_build_object(
-                'operation', TG_OP,
-                'table', TG_TABLE_NAME,
-                'old_data', CASE WHEN TG_OP IN ('UPDATE', 'DELETE') THEN row_to_json(OLD) ELSE NULL END,
-                'new_data', CASE WHEN TG_OP IN ('INSERT', 'UPDATE') THEN row_to_json(NEW) ELSE NULL END
-            ),
-            NOW()
-        );
-    END IF;
-    
-    RETURN COALESCE(NEW, OLD);
-END;
-$$;
-
-
---
--- Name: get_current_organization_id(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.get_current_organization_id() RETURNS bigint
-    LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-BEGIN
-    -- Get organization ID from session variable set by application
-    RETURN COALESCE(
-        nullif(current_setting('app.current_organization_id', true), '')::bigint,
-        NULL
+    -- Delete snapshots older than retention period, keeping at least last 3 per volume
+    WITH ranked_snapshots AS (
+        SELECT id,
+               ROW_NUMBER() OVER (PARTITION BY volume_id ORDER BY snapshot_time DESC) as rn,
+               created_at
+        FROM volume_snapshots
+    )
+    DELETE FROM volume_snapshots
+    WHERE id IN (
+        SELECT id FROM ranked_snapshots
+        WHERE rn > 10 OR created_at < NOW() - (p_retention_days || ' days')::INTERVAL
     );
+
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    RETURN deleted_count;
 END;
 $$;
 
 
+ALTER FUNCTION public.cleanup_old_snapshots(p_retention_days integer) OWNER TO volumeviz;
+
 --
--- Name: is_system_admin(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_latest_snapshot(text); Type: FUNCTION; Schema: public; Owner: volumeviz
 --
 
-CREATE FUNCTION public.is_system_admin() RETURNS boolean
-    LANGUAGE plpgsql SECURITY DEFINER
+CREATE FUNCTION public.get_latest_snapshot(p_volume_id text) RETURNS TABLE(snapshot_id bigint, snapshot_time timestamp with time zone, total_size bigint, file_count bigint, folder_count bigint)
+    LANGUAGE plpgsql
     AS $$
 BEGIN
-    -- Check if system admin flag is set by application
-    RETURN COALESCE(
-        current_setting('app.is_system_admin', true)::boolean,
-        false
-    );
+    RETURN QUERY
+    SELECT id, snapshot_time, total_size, file_count, folder_count
+    FROM volume_snapshots
+    WHERE volume_id = p_volume_id
+    ORDER BY snapshot_time DESC
+    LIMIT 1;
 END;
 $$;
 
 
+ALTER FUNCTION public.get_latest_snapshot(p_volume_id text) OWNER TO volumeviz;
+
 --
--- Name: set_organization_context(bigint, boolean); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_scan_checkpoint_updated_at(); Type: FUNCTION; Schema: public; Owner: volumeviz
 --
 
-CREATE FUNCTION public.set_organization_context(org_id bigint, is_admin boolean DEFAULT false) RETURNS void
-    LANGUAGE plpgsql SECURITY DEFINER
+CREATE FUNCTION public.update_scan_checkpoint_updated_at() RETURNS trigger
+    LANGUAGE plpgsql
     AS $$
 BEGIN
-    -- Set organization ID for this session
-    PERFORM set_config('app.current_organization_id', org_id::text, false);
-    
-    -- Set system admin flag for this session
-    PERFORM set_config('app.is_system_admin', is_admin::text, false);
+    NEW.updated_at = NOW();
+    RETURN NEW;
 END;
 $$;
 
 
---
--- Name: set_system_admin_context(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.set_system_admin_context() RETURNS void
-    LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-BEGIN
-    -- Set system admin flag
-    PERFORM set_config('app.is_system_admin', 'true', false);
-END;
-$$;
-
+ALTER FUNCTION public.update_scan_checkpoint_updated_at() OWNER TO volumeviz;
 
 --
--- Name: update_updated_at(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_updated_at(); Type: FUNCTION; Schema: public; Owner: volumeviz
 --
 
 CREATE FUNCTION public.update_updated_at() RETURNS trigger
@@ -232,12 +169,14 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_updated_at() OWNER TO volumeviz;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: scan_jobs; Type: TABLE; Schema: public; Owner: -
+-- Name: scan_jobs; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.scan_jobs (
@@ -263,20 +202,14 @@ CREATE TABLE public.scan_jobs (
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     organization_id bigint,
-    progress integer DEFAULT 0,
     CONSTRAINT scan_jobs_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'running'::text, 'completed'::text, 'failed'::text, 'cancelled'::text, 'paused'::text])))
 );
 
 
---
--- Name: COLUMN scan_jobs.organization_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.scan_jobs.organization_id IS 'Organization that owns this scan job';
-
+ALTER TABLE public.scan_jobs OWNER TO volumeviz;
 
 --
--- Name: scan_phases; Type: TABLE; Schema: public; Owner: -
+-- Name: scan_phases; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.scan_phases (
@@ -298,19 +231,25 @@ CREATE TABLE public.scan_phases (
     pause_reason text,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    phase_order integer DEFAULT 0,
-    progress integer DEFAULT 0,
-    current_depth integer DEFAULT 0,
-    metadata jsonb,
-    items_successful bigint DEFAULT 0,
+    sub_phase text,
+    progress integer GENERATED ALWAYS AS (progress_percent) STORED,
     CONSTRAINT scan_phases_phase_name_check CHECK ((phase_name = ANY (ARRAY['volume_scan'::text, 'filesystem_indexing'::text, 'media_enrichment'::text, 'discovery'::text, 'analysis'::text, 'indexing'::text, 'metadata_extraction'::text, 'finalization'::text]))),
     CONSTRAINT scan_phases_progress_percent_check CHECK (((progress_percent >= 0) AND (progress_percent <= 100))),
     CONSTRAINT scan_phases_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'queued'::text, 'running'::text, 'completed'::text, 'failed'::text, 'cancelled'::text, 'paused'::text])))
 );
 
 
+ALTER TABLE public.scan_phases OWNER TO volumeviz;
+
 --
--- Name: active_scans; Type: VIEW; Schema: public; Owner: -
+-- Name: COLUMN scan_phases.sub_phase; Type: COMMENT; Schema: public; Owner: volumeviz
+--
+
+COMMENT ON COLUMN public.scan_phases.sub_phase IS 'Current sub-phase or enricher being executed (e.g., ffprobe, exiftool)';
+
+
+--
+-- Name: active_scans; Type: VIEW; Schema: public; Owner: volumeviz
 --
 
 CREATE VIEW public.active_scans AS
@@ -347,8 +286,10 @@ CREATE VIEW public.active_scans AS
   ORDER BY sj.started_at DESC;
 
 
+ALTER TABLE public.active_scans OWNER TO volumeviz;
+
 --
--- Name: alert_deliveries; Type: TABLE; Schema: public; Owner: -
+-- Name: alert_deliveries; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.alert_deliveries (
@@ -366,8 +307,10 @@ CREATE TABLE public.alert_deliveries (
 );
 
 
+ALTER TABLE public.alert_deliveries OWNER TO volumeviz;
+
 --
--- Name: alert_deliveries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: alert_deliveries_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.alert_deliveries_id_seq
@@ -378,15 +321,17 @@ CREATE SEQUENCE public.alert_deliveries_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.alert_deliveries_id_seq OWNER TO volumeviz;
+
 --
--- Name: alert_deliveries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: alert_deliveries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.alert_deliveries_id_seq OWNED BY public.alert_deliveries.id;
 
 
 --
--- Name: alert_destinations; Type: TABLE; Schema: public; Owner: -
+-- Name: alert_destinations; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.alert_destinations (
@@ -402,8 +347,10 @@ CREATE TABLE public.alert_destinations (
 );
 
 
+ALTER TABLE public.alert_destinations OWNER TO volumeviz;
+
 --
--- Name: alert_destinations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: alert_destinations_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.alert_destinations_id_seq
@@ -414,15 +361,17 @@ CREATE SEQUENCE public.alert_destinations_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.alert_destinations_id_seq OWNER TO volumeviz;
+
 --
--- Name: alert_destinations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: alert_destinations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.alert_destinations_id_seq OWNED BY public.alert_destinations.id;
 
 
 --
--- Name: alert_routes; Type: TABLE; Schema: public; Owner: -
+-- Name: alert_routes; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.alert_routes (
@@ -434,8 +383,10 @@ CREATE TABLE public.alert_routes (
 );
 
 
+ALTER TABLE public.alert_routes OWNER TO volumeviz;
+
 --
--- Name: alert_routes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: alert_routes_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.alert_routes_id_seq
@@ -446,15 +397,17 @@ CREATE SEQUENCE public.alert_routes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.alert_routes_id_seq OWNER TO volumeviz;
+
 --
--- Name: alert_routes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: alert_routes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.alert_routes_id_seq OWNED BY public.alert_routes.id;
 
 
 --
--- Name: alert_rules; Type: TABLE; Schema: public; Owner: -
+-- Name: alert_rules; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.alert_rules (
@@ -474,14 +427,17 @@ CREATE TABLE public.alert_rules (
     trigger_count integer DEFAULT 0,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    organization_id bigint,
     CONSTRAINT alert_rules_condition_operator_check CHECK ((condition_operator = ANY (ARRAY['>'::text, '<'::text, '>='::text, '<='::text, '=='::text, '!='::text]))),
     CONSTRAINT alert_rules_rule_type_check CHECK ((rule_type = ANY (ARRAY['threshold'::text, 'growth_rate'::text, 'anomaly'::text, 'custom'::text]))),
     CONSTRAINT alert_rules_severity_check CHECK ((severity = ANY (ARRAY['low'::text, 'medium'::text, 'high'::text, 'critical'::text])))
 );
 
 
+ALTER TABLE public.alert_rules OWNER TO volumeviz;
+
 --
--- Name: alert_rules_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: alert_rules_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.alert_rules_id_seq
@@ -492,15 +448,17 @@ CREATE SEQUENCE public.alert_rules_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.alert_rules_id_seq OWNER TO volumeviz;
+
 --
--- Name: alert_rules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: alert_rules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.alert_rules_id_seq OWNED BY public.alert_rules.id;
 
 
 --
--- Name: alerts; Type: TABLE; Schema: public; Owner: -
+-- Name: alerts; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.alerts (
@@ -514,20 +472,14 @@ CREATE TABLE public.alerts (
     is_resolved boolean DEFAULT false,
     resolved_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    organization_id bigint,
     CONSTRAINT alerts_severity_check CHECK ((severity = ANY (ARRAY['low'::text, 'medium'::text, 'high'::text, 'critical'::text])))
 );
 
 
---
--- Name: COLUMN alerts.organization_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.alerts.organization_id IS 'Organization that owns this alert';
-
+ALTER TABLE public.alerts OWNER TO volumeviz;
 
 --
--- Name: alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.alerts_id_seq
@@ -538,60 +490,17 @@ CREATE SEQUENCE public.alerts_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.alerts_id_seq OWNER TO volumeviz;
+
 --
--- Name: alerts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: alerts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.alerts_id_seq OWNED BY public.alerts.id;
 
 
 --
--- Name: audit_logs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.audit_logs (
-    id bigint NOT NULL,
-    user_id bigint,
-    organization_id bigint,
-    session_id text,
-    action text NOT NULL,
-    resource_type text NOT NULL,
-    resource_id text,
-    description text NOT NULL,
-    details jsonb DEFAULT '{}'::jsonb,
-    old_values jsonb DEFAULT '{}'::jsonb,
-    new_values jsonb DEFAULT '{}'::jsonb,
-    ip_address inet,
-    user_agent text,
-    request_id text,
-    success boolean DEFAULT true NOT NULL,
-    error_message text,
-    duration_ms integer,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
-);
-
-
---
--- Name: audit_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.audit_logs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: audit_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.audit_logs_id_seq OWNED BY public.audit_logs.id;
-
-
---
--- Name: daily_stats; Type: TABLE; Schema: public; Owner: -
+-- Name: daily_stats; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.daily_stats (
@@ -611,20 +520,14 @@ CREATE TABLE public.daily_stats (
     archive_files bigint DEFAULT 0,
     other_files bigint DEFAULT 0,
     scan_duration_ms bigint,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    organization_id bigint
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
---
--- Name: COLUMN daily_stats.organization_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.daily_stats.organization_id IS 'Organization that owns this daily stat record';
-
+ALTER TABLE public.daily_stats OWNER TO volumeviz;
 
 --
--- Name: daily_stats_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: daily_stats_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.daily_stats_id_seq
@@ -635,20 +538,22 @@ CREATE SEQUENCE public.daily_stats_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.daily_stats_id_seq OWNER TO volumeviz;
+
 --
--- Name: daily_stats_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: daily_stats_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.daily_stats_id_seq OWNED BY public.daily_stats.id;
 
 
 --
--- Name: docker_mount_attachments; Type: TABLE; Schema: public; Owner: -
+-- Name: docker_mount_attachments; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.docker_mount_attachments (
     id bigint NOT NULL,
-    mount_catalog_id bigint NOT NULL,
+    mount_catalog_id bigint,
     container_id text NOT NULL,
     container_name text,
     destination_path text NOT NULL,
@@ -669,8 +574,10 @@ CREATE TABLE public.docker_mount_attachments (
 );
 
 
+ALTER TABLE public.docker_mount_attachments OWNER TO volumeviz;
+
 --
--- Name: docker_mount_attachments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: docker_mount_attachments_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.docker_mount_attachments_id_seq
@@ -681,15 +588,17 @@ CREATE SEQUENCE public.docker_mount_attachments_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.docker_mount_attachments_id_seq OWNER TO volumeviz;
+
 --
--- Name: docker_mount_attachments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: docker_mount_attachments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.docker_mount_attachments_id_seq OWNED BY public.docker_mount_attachments.id;
 
 
 --
--- Name: docker_mount_catalog; Type: TABLE; Schema: public; Owner: -
+-- Name: docker_mount_catalog; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.docker_mount_catalog (
@@ -720,15 +629,10 @@ CREATE TABLE public.docker_mount_catalog (
 );
 
 
---
--- Name: COLUMN docker_mount_catalog.organization_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.docker_mount_catalog.organization_id IS 'Organization that owns this docker mount';
-
+ALTER TABLE public.docker_mount_catalog OWNER TO volumeviz;
 
 --
--- Name: docker_mount_catalog_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: docker_mount_catalog_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.docker_mount_catalog_id_seq
@@ -739,15 +643,17 @@ CREATE SEQUENCE public.docker_mount_catalog_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.docker_mount_catalog_id_seq OWNER TO volumeviz;
+
 --
--- Name: docker_mount_catalog_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: docker_mount_catalog_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.docker_mount_catalog_id_seq OWNED BY public.docker_mount_catalog.id;
 
 
 --
--- Name: docker_mount_statistics; Type: TABLE; Schema: public; Owner: -
+-- Name: docker_mount_statistics; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.docker_mount_statistics (
@@ -768,8 +674,10 @@ CREATE TABLE public.docker_mount_statistics (
 );
 
 
+ALTER TABLE public.docker_mount_statistics OWNER TO volumeviz;
+
 --
--- Name: docker_mount_statistics_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: docker_mount_statistics_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.docker_mount_statistics_id_seq
@@ -780,15 +688,17 @@ CREATE SEQUENCE public.docker_mount_statistics_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.docker_mount_statistics_id_seq OWNER TO volumeviz;
+
 --
--- Name: docker_mount_statistics_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: docker_mount_statistics_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.docker_mount_statistics_id_seq OWNED BY public.docker_mount_statistics.id;
 
 
 --
--- Name: docker_projects; Type: TABLE; Schema: public; Owner: -
+-- Name: docker_projects; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.docker_projects (
@@ -806,8 +716,10 @@ CREATE TABLE public.docker_projects (
 );
 
 
+ALTER TABLE public.docker_projects OWNER TO volumeviz;
+
 --
--- Name: docker_projects_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: docker_projects_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.docker_projects_id_seq
@@ -818,15 +730,17 @@ CREATE SEQUENCE public.docker_projects_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.docker_projects_id_seq OWNER TO volumeviz;
+
 --
--- Name: docker_projects_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: docker_projects_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.docker_projects_id_seq OWNED BY public.docker_projects.id;
 
 
 --
--- Name: file_metadata; Type: TABLE; Schema: public; Owner: -
+-- Name: file_metadata; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.file_metadata (
@@ -840,8 +754,10 @@ CREATE TABLE public.file_metadata (
 );
 
 
+ALTER TABLE public.file_metadata OWNER TO volumeviz;
+
 --
--- Name: file_metadata_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: file_metadata_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.file_metadata_id_seq
@@ -852,15 +768,17 @@ CREATE SEQUENCE public.file_metadata_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.file_metadata_id_seq OWNER TO volumeviz;
+
 --
--- Name: file_metadata_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: file_metadata_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.file_metadata_id_seq OWNED BY public.file_metadata.id;
 
 
 --
--- Name: file_previews; Type: TABLE; Schema: public; Owner: -
+-- Name: file_previews; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.file_previews (
@@ -881,8 +799,10 @@ CREATE TABLE public.file_previews (
 );
 
 
+ALTER TABLE public.file_previews OWNER TO volumeviz;
+
 --
--- Name: file_previews_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: file_previews_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.file_previews_id_seq
@@ -893,15 +813,17 @@ CREATE SEQUENCE public.file_previews_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.file_previews_id_seq OWNER TO volumeviz;
+
 --
--- Name: file_previews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: file_previews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.file_previews_id_seq OWNED BY public.file_previews.id;
 
 
 --
--- Name: files; Type: TABLE; Schema: public; Owner: -
+-- Name: files; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.files (
@@ -955,15 +877,10 @@ CREATE TABLE public.files (
 );
 
 
---
--- Name: COLUMN files.organization_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.files.organization_id IS 'Organization that has access to this file';
-
+ALTER TABLE public.files OWNER TO volumeviz;
 
 --
--- Name: files_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: files_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.files_id_seq
@@ -974,15 +891,17 @@ CREATE SEQUENCE public.files_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.files_id_seq OWNER TO volumeviz;
+
 --
--- Name: files_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: files_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.files_id_seq OWNED BY public.files.id;
 
 
 --
--- Name: folders; Type: TABLE; Schema: public; Owner: -
+-- Name: folders; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.folders (
@@ -1006,15 +925,10 @@ CREATE TABLE public.folders (
 );
 
 
---
--- Name: COLUMN folders.organization_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.folders.organization_id IS 'Organization that has access to this folder';
-
+ALTER TABLE public.folders OWNER TO volumeviz;
 
 --
--- Name: folders_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: folders_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.folders_id_seq
@@ -1025,15 +939,17 @@ CREATE SEQUENCE public.folders_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.folders_id_seq OWNER TO volumeviz;
+
 --
--- Name: folders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: folders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.folders_id_seq OWNED BY public.folders.id;
 
 
 --
--- Name: mount_tracking_assignments; Type: TABLE; Schema: public; Owner: -
+-- Name: mount_tracking_assignments; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.mount_tracking_assignments (
@@ -1053,8 +969,10 @@ CREATE TABLE public.mount_tracking_assignments (
 );
 
 
+ALTER TABLE public.mount_tracking_assignments OWNER TO volumeviz;
+
 --
--- Name: mount_tracking_assignments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: mount_tracking_assignments_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.mount_tracking_assignments_id_seq
@@ -1065,57 +983,17 @@ CREATE SEQUENCE public.mount_tracking_assignments_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.mount_tracking_assignments_id_seq OWNER TO volumeviz;
+
 --
--- Name: mount_tracking_assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: mount_tracking_assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.mount_tracking_assignments_id_seq OWNED BY public.mount_tracking_assignments.id;
 
 
 --
--- Name: organization_invitations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.organization_invitations (
-    id bigint NOT NULL,
-    organization_id bigint NOT NULL,
-    email text NOT NULL,
-    role text DEFAULT 'viewer'::text NOT NULL,
-    token text NOT NULL,
-    invited_by bigint,
-    message text,
-    status text DEFAULT 'pending'::text NOT NULL,
-    accepted_at timestamp with time zone,
-    accepted_by bigint,
-    expires_at timestamp with time zone DEFAULT (CURRENT_TIMESTAMP + '7 days'::interval) NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT organization_invitations_role_check CHECK ((role = ANY (ARRAY['viewer'::text, 'operator'::text, 'admin'::text]))),
-    CONSTRAINT organization_invitations_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'expired'::text, 'cancelled'::text])))
-);
-
-
---
--- Name: organization_invitations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.organization_invitations_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: organization_invitations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.organization_invitations_id_seq OWNED BY public.organization_invitations.id;
-
-
---
--- Name: organizations; Type: TABLE; Schema: public; Owner: -
+-- Name: organizations; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.organizations (
@@ -1132,14 +1010,16 @@ CREATE TABLE public.organizations (
     plan_type text DEFAULT 'free'::text,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT organizations_display_name_check CHECK ((length(TRIM(BOTH FROM display_name)) >= 3)),
-    CONSTRAINT organizations_name_check CHECK ((length(TRIM(BOTH FROM name)) >= 3)),
+    CONSTRAINT org_display_name_length CHECK ((length(TRIM(BOTH FROM display_name)) >= 3)),
+    CONSTRAINT org_name_length CHECK ((length(TRIM(BOTH FROM name)) >= 3)),
     CONSTRAINT organizations_plan_type_check CHECK ((plan_type = ANY (ARRAY['free'::text, 'pro'::text, 'enterprise'::text])))
 );
 
 
+ALTER TABLE public.organizations OWNER TO volumeviz;
+
 --
--- Name: organizations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organizations_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.organizations_id_seq
@@ -1150,32 +1030,43 @@ CREATE SEQUENCE public.organizations_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organizations_id_seq OWNER TO volumeviz;
+
 --
--- Name: organizations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organizations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.organizations_id_seq OWNED BY public.organizations.id;
 
 
 --
--- Name: permissions; Type: TABLE; Schema: public; Owner: -
+-- Name: saved_searches; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
-CREATE TABLE public.permissions (
+CREATE TABLE public.saved_searches (
     id bigint NOT NULL,
-    name text NOT NULL,
-    resource text NOT NULL,
-    action text NOT NULL,
+    name character varying(255) NOT NULL,
     description text,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+    query jsonb NOT NULL,
+    tags text[],
+    is_public boolean DEFAULT false,
+    metadata jsonb,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    last_run_at timestamp with time zone,
+    run_count integer DEFAULT 0,
+    organization_id bigint,
+    CONSTRAINT saved_searches_name_not_empty CHECK ((length(TRIM(BOTH FROM name)) > 0))
 );
 
 
+ALTER TABLE public.saved_searches OWNER TO volumeviz;
+
 --
--- Name: permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: saved_searches_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
-CREATE SEQUENCE public.permissions_id_seq
+CREATE SEQUENCE public.saved_searches_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1183,15 +1074,91 @@ CREATE SEQUENCE public.permissions_id_seq
     CACHE 1;
 
 
---
--- Name: permissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.permissions_id_seq OWNED BY public.permissions.id;
-
+ALTER TABLE public.saved_searches_id_seq OWNER TO volumeviz;
 
 --
--- Name: scan_errors; Type: TABLE; Schema: public; Owner: -
+-- Name: saved_searches_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
+--
+
+ALTER SEQUENCE public.saved_searches_id_seq OWNED BY public.saved_searches.id;
+
+
+--
+-- Name: scan_checkpoints; Type: TABLE; Schema: public; Owner: volumeviz
+--
+
+CREATE TABLE public.scan_checkpoints (
+    id bigint NOT NULL,
+    scan_id text NOT NULL,
+    volume_id text NOT NULL,
+    checkpoint_type text NOT NULL,
+    phase text NOT NULL,
+    progress double precision DEFAULT 0.0 NOT NULL,
+    items_processed bigint DEFAULT 0 NOT NULL,
+    bytes_processed bigint DEFAULT 0 NOT NULL,
+    errors_count bigint DEFAULT 0 NOT NULL,
+    last_path text,
+    last_depth integer,
+    last_folder_id bigint,
+    resume_data jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.scan_checkpoints OWNER TO volumeviz;
+
+--
+-- Name: TABLE scan_checkpoints; Type: COMMENT; Schema: public; Owner: volumeviz
+--
+
+COMMENT ON TABLE public.scan_checkpoints IS 'Stores periodic checkpoints during volume scans to enable resume capability after crashes or interruptions. Critical for 1TB+ volumes with multi-hour scan times.';
+
+
+--
+-- Name: COLUMN scan_checkpoints.checkpoint_type; Type: COMMENT; Schema: public; Owner: volumeviz
+--
+
+COMMENT ON COLUMN public.scan_checkpoints.checkpoint_type IS 'Type of scan phase being checkpointed: volume_scan (size calculation), filesystem_indexing (file/folder crawl), enrichment (media metadata)';
+
+
+--
+-- Name: COLUMN scan_checkpoints.last_folder_id; Type: COMMENT; Schema: public; Owner: volumeviz
+--
+
+COMMENT ON COLUMN public.scan_checkpoints.last_folder_id IS 'ID of last processed folder in folders table. Used to resume filesystem indexing from exact position.';
+
+
+--
+-- Name: COLUMN scan_checkpoints.resume_data; Type: COMMENT; Schema: public; Owner: volumeviz
+--
+
+COMMENT ON COLUMN public.scan_checkpoints.resume_data IS 'JSON object containing phase-specific data needed to resume. Example: {"method": "diskus", "started_at": "2025-10-05T10:00:00Z"}';
+
+
+--
+-- Name: scan_checkpoints_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
+--
+
+CREATE SEQUENCE public.scan_checkpoints_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.scan_checkpoints_id_seq OWNER TO volumeviz;
+
+--
+-- Name: scan_checkpoints_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
+--
+
+ALTER SEQUENCE public.scan_checkpoints_id_seq OWNED BY public.scan_checkpoints.id;
+
+
+--
+-- Name: scan_errors; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.scan_errors (
@@ -1220,117 +1187,10 @@ CREATE TABLE public.scan_errors (
 );
 
 
---
--- Name: recent_scan_errors; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.recent_scan_errors AS
- SELECT se.id,
-    se.scan_id,
-    sj.volume_id,
-    se.phase_name,
-    se.error_type,
-    se.error_category,
-    se.severity,
-    se.component,
-    se.operation,
-    se.error_message,
-    se.item_path,
-    se.item_name,
-    se.item_type,
-    se.occurred_at,
-    se.retry_count,
-    se.max_retries,
-    sj.status AS scan_status,
-    sj.started_at AS scan_started_at,
-    EXTRACT(epoch FROM (CURRENT_TIMESTAMP - se.occurred_at)) AS seconds_since_error
-   FROM (public.scan_errors se
-     LEFT JOIN public.scan_jobs sj ON ((se.scan_id = sj.scan_id)))
-  WHERE (se.occurred_at >= (CURRENT_TIMESTAMP - '24:00:00'::interval))
-  ORDER BY se.occurred_at DESC;
-
+ALTER TABLE public.scan_errors OWNER TO volumeviz;
 
 --
--- Name: role_permissions; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.role_permissions (
-    id bigint NOT NULL,
-    role text NOT NULL,
-    permission_id bigint NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT role_permissions_role_check CHECK ((role = ANY (ARRAY['viewer'::text, 'operator'::text, 'admin'::text])))
-);
-
-
---
--- Name: role_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.role_permissions_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: role_permissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.role_permissions_id_seq OWNED BY public.role_permissions.id;
-
-
---
--- Name: saved_searches; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.saved_searches (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    description text,
-    query jsonb NOT NULL,
-    tags text[],
-    is_public boolean DEFAULT false,
-    metadata jsonb,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    last_run_at timestamp with time zone,
-    run_count integer DEFAULT 0,
-    organization_id bigint,
-    CONSTRAINT saved_searches_name_not_empty CHECK ((length(TRIM(BOTH FROM name)) > 0))
-);
-
-
---
--- Name: COLUMN saved_searches.organization_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.saved_searches.organization_id IS 'Organization that owns this saved search';
-
-
---
--- Name: saved_searches_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.saved_searches_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: saved_searches_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.saved_searches_id_seq OWNED BY public.saved_searches.id;
-
-
---
--- Name: scan_errors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: scan_errors_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.scan_errors_id_seq
@@ -1341,15 +1201,17 @@ CREATE SEQUENCE public.scan_errors_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.scan_errors_id_seq OWNER TO volumeviz;
+
 --
--- Name: scan_errors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: scan_errors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.scan_errors_id_seq OWNED BY public.scan_errors.id;
 
 
 --
--- Name: scan_history; Type: VIEW; Schema: public; Owner: -
+-- Name: scan_history; Type: VIEW; Schema: public; Owner: volumeviz
 --
 
 CREATE VIEW public.scan_history AS
@@ -1365,9 +1227,6 @@ CREATE VIEW public.scan_history AS
     ( SELECT count(*) AS count
            FROM public.scan_phases sp
           WHERE ((sp.scan_id = sj.scan_id) AND (sp.status = 'failed'::text))) AS failed_phases,
-    ( SELECT count(*) AS count
-           FROM public.scan_errors se
-          WHERE (se.scan_id = sj.scan_id)) AS total_errors,
     ( SELECT sum(sp.items_processed) AS sum
            FROM public.scan_phases sp
           WHERE (sp.scan_id = sj.scan_id)) AS total_items_processed
@@ -1376,8 +1235,10 @@ CREATE VIEW public.scan_history AS
   ORDER BY sj.completed_at DESC;
 
 
+ALTER TABLE public.scan_history OWNER TO volumeviz;
+
 --
--- Name: scan_performance_metrics; Type: TABLE; Schema: public; Owner: -
+-- Name: scan_performance_metrics; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.scan_performance_metrics (
@@ -1391,8 +1252,10 @@ CREATE TABLE public.scan_performance_metrics (
 );
 
 
+ALTER TABLE public.scan_performance_metrics OWNER TO volumeviz;
+
 --
--- Name: scan_performance_metrics_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: scan_performance_metrics_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.scan_performance_metrics_id_seq
@@ -1403,15 +1266,17 @@ CREATE SEQUENCE public.scan_performance_metrics_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.scan_performance_metrics_id_seq OWNER TO volumeviz;
+
 --
--- Name: scan_performance_metrics_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: scan_performance_metrics_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.scan_performance_metrics_id_seq OWNED BY public.scan_performance_metrics.id;
 
 
 --
--- Name: scan_phase_steps; Type: TABLE; Schema: public; Owner: -
+-- Name: scan_phase_steps; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.scan_phase_steps (
@@ -1431,8 +1296,10 @@ CREATE TABLE public.scan_phase_steps (
 );
 
 
+ALTER TABLE public.scan_phase_steps OWNER TO volumeviz;
+
 --
--- Name: scan_phase_steps_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: scan_phase_steps_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.scan_phase_steps_id_seq
@@ -1443,15 +1310,17 @@ CREATE SEQUENCE public.scan_phase_steps_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.scan_phase_steps_id_seq OWNER TO volumeviz;
+
 --
--- Name: scan_phase_steps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: scan_phase_steps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.scan_phase_steps_id_seq OWNED BY public.scan_phase_steps.id;
 
 
 --
--- Name: scan_phases_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: scan_phases_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.scan_phases_id_seq
@@ -1462,15 +1331,17 @@ CREATE SEQUENCE public.scan_phases_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.scan_phases_id_seq OWNER TO volumeviz;
+
 --
--- Name: scan_phases_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: scan_phases_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.scan_phases_id_seq OWNED BY public.scan_phases.id;
 
 
 --
--- Name: scan_progress_summary; Type: VIEW; Schema: public; Owner: -
+-- Name: scan_progress_summary; Type: VIEW; Schema: public; Owner: volumeviz
 --
 
 CREATE VIEW public.scan_progress_summary AS
@@ -1486,12 +1357,10 @@ CREATE VIEW public.scan_progress_summary AS
     sp.items_processed,
     sp.items_total,
     sp.items_failed,
-    sp.items_successful,
     sp.current_item,
     sp.progress_percent,
     sp.error_message AS phase_error,
     sp.pause_reason,
-    sp.current_depth,
     sp.throughput_items_per_sec,
     sp.memory_usage_mb,
         CASE
@@ -1505,8 +1374,22 @@ CREATE VIEW public.scan_progress_summary AS
   ORDER BY sj.started_at DESC, sp.started_at;
 
 
+ALTER TABLE public.scan_progress_summary OWNER TO volumeviz;
+
 --
--- Name: stats_jobs; Type: TABLE; Schema: public; Owner: -
+-- Name: schema_migrations; Type: TABLE; Schema: public; Owner: volumeviz
+--
+
+CREATE TABLE public.schema_migrations (
+    version bigint NOT NULL,
+    dirty boolean NOT NULL
+);
+
+
+ALTER TABLE public.schema_migrations OWNER TO volumeviz;
+
+--
+-- Name: stats_jobs; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.stats_jobs (
@@ -1529,57 +1412,59 @@ CREATE TABLE public.stats_jobs (
 );
 
 
+ALTER TABLE public.stats_jobs OWNER TO volumeviz;
+
 --
--- Name: TABLE stats_jobs; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE stats_jobs; Type: COMMENT; Schema: public; Owner: volumeviz
 --
 
 COMMENT ON TABLE public.stats_jobs IS 'Background jobs for statistics computation and analysis';
 
 
 --
--- Name: COLUMN stats_jobs.job_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN stats_jobs.job_id; Type: COMMENT; Schema: public; Owner: volumeviz
 --
 
 COMMENT ON COLUMN public.stats_jobs.job_id IS 'Unique identifier for the job (UUID or generated string)';
 
 
 --
--- Name: COLUMN stats_jobs.job_type; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN stats_jobs.job_type; Type: COMMENT; Schema: public; Owner: volumeviz
 --
 
 COMMENT ON COLUMN public.stats_jobs.job_type IS 'Type of statistics job being executed';
 
 
 --
--- Name: COLUMN stats_jobs.volume_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN stats_jobs.volume_id; Type: COMMENT; Schema: public; Owner: volumeviz
 --
 
 COMMENT ON COLUMN public.stats_jobs.volume_id IS 'Volume this job is processing (null for system-wide jobs)';
 
 
 --
--- Name: COLUMN stats_jobs.progress; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN stats_jobs.progress; Type: COMMENT; Schema: public; Owner: volumeviz
 --
 
 COMMENT ON COLUMN public.stats_jobs.progress IS 'Job progress percentage (0-100)';
 
 
 --
--- Name: COLUMN stats_jobs.duration_ms; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN stats_jobs.duration_ms; Type: COMMENT; Schema: public; Owner: volumeviz
 --
 
 COMMENT ON COLUMN public.stats_jobs.duration_ms IS 'Job execution duration in milliseconds';
 
 
 --
--- Name: COLUMN stats_jobs.records_processed; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN stats_jobs.records_processed; Type: COMMENT; Schema: public; Owner: volumeviz
 --
 
 COMMENT ON COLUMN public.stats_jobs.records_processed IS 'Number of records/files processed by this job';
 
 
 --
--- Name: stats_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: stats_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.stats_jobs_id_seq
@@ -1590,15 +1475,17 @@ CREATE SEQUENCE public.stats_jobs_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.stats_jobs_id_seq OWNER TO volumeviz;
+
 --
--- Name: stats_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: stats_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.stats_jobs_id_seq OWNED BY public.stats_jobs.id;
 
 
 --
--- Name: tracking_rule_conditions; Type: TABLE; Schema: public; Owner: -
+-- Name: tracking_rule_conditions; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.tracking_rule_conditions (
@@ -1617,8 +1504,10 @@ CREATE TABLE public.tracking_rule_conditions (
 );
 
 
+ALTER TABLE public.tracking_rule_conditions OWNER TO volumeviz;
+
 --
--- Name: tracking_rule_conditions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tracking_rule_conditions_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.tracking_rule_conditions_id_seq
@@ -1629,15 +1518,17 @@ CREATE SEQUENCE public.tracking_rule_conditions_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.tracking_rule_conditions_id_seq OWNER TO volumeviz;
+
 --
--- Name: tracking_rule_conditions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tracking_rule_conditions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.tracking_rule_conditions_id_seq OWNED BY public.tracking_rule_conditions.id;
 
 
 --
--- Name: tracking_rule_evaluations; Type: TABLE; Schema: public; Owner: -
+-- Name: tracking_rule_evaluations; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.tracking_rule_evaluations (
@@ -1659,8 +1550,10 @@ CREATE TABLE public.tracking_rule_evaluations (
 );
 
 
+ALTER TABLE public.tracking_rule_evaluations OWNER TO volumeviz;
+
 --
--- Name: tracking_rule_evaluations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tracking_rule_evaluations_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.tracking_rule_evaluations_id_seq
@@ -1671,15 +1564,17 @@ CREATE SEQUENCE public.tracking_rule_evaluations_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.tracking_rule_evaluations_id_seq OWNER TO volumeviz;
+
 --
--- Name: tracking_rule_evaluations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tracking_rule_evaluations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.tracking_rule_evaluations_id_seq OWNED BY public.tracking_rule_evaluations.id;
 
 
 --
--- Name: tracking_rule_templates; Type: TABLE; Schema: public; Owner: -
+-- Name: tracking_rule_templates; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.tracking_rule_templates (
@@ -1697,8 +1592,10 @@ CREATE TABLE public.tracking_rule_templates (
 );
 
 
+ALTER TABLE public.tracking_rule_templates OWNER TO volumeviz;
+
 --
--- Name: tracking_rule_templates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tracking_rule_templates_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.tracking_rule_templates_id_seq
@@ -1709,15 +1606,17 @@ CREATE SEQUENCE public.tracking_rule_templates_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.tracking_rule_templates_id_seq OWNER TO volumeviz;
+
 --
--- Name: tracking_rule_templates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tracking_rule_templates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.tracking_rule_templates_id_seq OWNED BY public.tracking_rule_templates.id;
 
 
 --
--- Name: tracking_rules; Type: TABLE; Schema: public; Owner: -
+-- Name: tracking_rules; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.tracking_rules (
@@ -1733,12 +1632,15 @@ CREATE TABLE public.tracking_rules (
     last_evaluation_at timestamp with time zone,
     created_by text DEFAULT 'system'::text,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    organization_id bigint
 );
 
 
+ALTER TABLE public.tracking_rules OWNER TO volumeviz;
+
 --
--- Name: tracking_rules_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tracking_rules_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.tracking_rules_id_seq
@@ -1749,15 +1651,17 @@ CREATE SEQUENCE public.tracking_rules_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.tracking_rules_id_seq OWNER TO volumeviz;
+
 --
--- Name: tracking_rules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tracking_rules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.tracking_rules_id_seq OWNED BY public.tracking_rules.id;
 
 
 --
--- Name: usage_snapshots; Type: TABLE; Schema: public; Owner: -
+-- Name: usage_snapshots; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.usage_snapshots (
@@ -1775,8 +1679,10 @@ CREATE TABLE public.usage_snapshots (
 );
 
 
+ALTER TABLE public.usage_snapshots OWNER TO volumeviz;
+
 --
--- Name: usage_snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: usage_snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.usage_snapshots_id_seq
@@ -1787,36 +1693,54 @@ CREATE SEQUENCE public.usage_snapshots_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.usage_snapshots_id_seq OWNER TO volumeviz;
+
 --
--- Name: usage_snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: usage_snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.usage_snapshots_id_seq OWNED BY public.usage_snapshots.id;
 
 
 --
--- Name: user_activity_log; Type: TABLE; Schema: public; Owner: -
+-- Name: volume_directory_snapshots; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
-CREATE TABLE public.user_activity_log (
+CREATE TABLE public.volume_directory_snapshots (
     id bigint NOT NULL,
-    user_id bigint,
-    action text NOT NULL,
-    resource_type text,
-    resource_id text,
-    details jsonb DEFAULT '{}'::jsonb,
-    ip_address inet,
-    user_agent text,
-    session_id bigint,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    snapshot_id bigint NOT NULL,
+    volume_id text NOT NULL,
+    dir_path text NOT NULL,
+    dir_mtime timestamp with time zone NOT NULL,
+    dir_size bigint DEFAULT 0 NOT NULL,
+    file_count integer DEFAULT 0 NOT NULL,
+    subdir_count integer DEFAULT 0 NOT NULL,
+    content_hash text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
+ALTER TABLE public.volume_directory_snapshots OWNER TO volumeviz;
+
 --
--- Name: user_activity_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: TABLE volume_directory_snapshots; Type: COMMENT; Schema: public; Owner: volumeviz
 --
 
-CREATE SEQUENCE public.user_activity_log_id_seq
+COMMENT ON TABLE public.volume_directory_snapshots IS 'Stores directory-level snapshots for fine-grained change detection. Allows identifying specific directories that changed.';
+
+
+--
+-- Name: COLUMN volume_directory_snapshots.content_hash; Type: COMMENT; Schema: public; Owner: volumeviz
+--
+
+COMMENT ON COLUMN public.volume_directory_snapshots.content_hash IS 'Hash of directory contents (filenames + sizes). Used to detect if directory contents changed.';
+
+
+--
+-- Name: volume_directory_snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
+--
+
+CREATE SEQUENCE public.volume_directory_snapshots_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1824,173 +1748,17 @@ CREATE SEQUENCE public.user_activity_log_id_seq
     CACHE 1;
 
 
---
--- Name: user_activity_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.user_activity_log_id_seq OWNED BY public.user_activity_log.id;
-
+ALTER TABLE public.volume_directory_snapshots_id_seq OWNER TO volumeviz;
 
 --
--- Name: user_permissions; Type: TABLE; Schema: public; Owner: -
+-- Name: volume_directory_snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
-CREATE TABLE public.user_permissions (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    permission_id bigint NOT NULL,
-    granted boolean DEFAULT true NOT NULL,
-    granted_by bigint,
-    resource_id text,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
-);
+ALTER SEQUENCE public.volume_directory_snapshots_id_seq OWNED BY public.volume_directory_snapshots.id;
 
 
 --
--- Name: user_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.user_permissions_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: user_permissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.user_permissions_id_seq OWNED BY public.user_permissions.id;
-
-
---
--- Name: user_preferences; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_preferences (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    preference_key text NOT NULL,
-    preference_value jsonb NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
-
-
---
--- Name: user_preferences_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.user_preferences_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: user_preferences_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.user_preferences_id_seq OWNED BY public.user_preferences.id;
-
-
---
--- Name: user_sessions; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_sessions (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    session_token text NOT NULL,
-    jwt_token_id text NOT NULL,
-    device_info jsonb DEFAULT '{}'::jsonb,
-    ip_address inet,
-    user_agent text,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    expires_at timestamp with time zone NOT NULL,
-    last_used_at timestamp with time zone,
-    revoked_at timestamp with time zone,
-    is_active boolean DEFAULT true NOT NULL
-);
-
-
---
--- Name: user_sessions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.user_sessions_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: user_sessions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.user_sessions_id_seq OWNED BY public.user_sessions.id;
-
-
---
--- Name: users; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.users (
-    id bigint NOT NULL,
-    username character varying(255) NOT NULL,
-    email character varying(255) NOT NULL,
-    password_hash text NOT NULL,
-    role public.user_role DEFAULT 'viewer'::public.user_role NOT NULL,
-    status public.user_status DEFAULT 'active'::public.user_status NOT NULL,
-    first_name text,
-    last_name text,
-    display_name text,
-    avatar_url text,
-    timezone text DEFAULT 'UTC'::text,
-    password_reset_token text,
-    password_reset_expires timestamp with time zone,
-    email_verification_token text,
-    email_verified_at timestamp with time zone,
-    last_login_at timestamp with time zone,
-    login_attempts integer DEFAULT 0,
-    locked_until timestamp with time zone,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    created_by text,
-    organization_id bigint,
-    CONSTRAINT email_not_empty CHECK ((length(TRIM(BOTH FROM email)) > 0)),
-    CONSTRAINT password_hash_not_empty CHECK ((length(TRIM(BOTH FROM password_hash)) > 0)),
-    CONSTRAINT username_not_empty CHECK ((length(TRIM(BOTH FROM username)) > 0))
-);
-
-
---
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.users_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
-
-
---
--- Name: volume_scan_stats; Type: VIEW; Schema: public; Owner: -
+-- Name: volume_scan_stats; Type: VIEW; Schema: public; Owner: volumeviz
 --
 
 CREATE VIEW public.volume_scan_stats AS
@@ -2001,18 +1769,17 @@ CREATE VIEW public.volume_scan_stats AS
     count(*) FILTER (WHERE (sj.status = 'running'::text)) AS running_scans,
     max(sj.started_at) AS last_scan_started,
     max(sj.completed_at) AS last_scan_completed,
-    avg(EXTRACT(epoch FROM (sj.completed_at - sj.started_at))) FILTER (WHERE (sj.status = 'completed'::text)) AS avg_scan_duration_seconds,
-    sum(( SELECT count(*) AS count
-           FROM public.scan_errors se
-          WHERE (se.scan_id = sj.scan_id))) AS total_errors
+    avg(EXTRACT(epoch FROM (sj.completed_at - sj.started_at))) FILTER (WHERE (sj.status = 'completed'::text)) AS avg_scan_duration_seconds
    FROM public.scan_jobs sj
   WHERE (sj.started_at >= (CURRENT_TIMESTAMP - '30 days'::interval))
   GROUP BY sj.volume_id
   ORDER BY (max(sj.started_at)) DESC;
 
 
+ALTER TABLE public.volume_scan_stats OWNER TO volumeviz;
+
 --
--- Name: volume_sizes; Type: TABLE; Schema: public; Owner: -
+-- Name: volume_sizes; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.volume_sizes (
@@ -2031,8 +1798,10 @@ CREATE TABLE public.volume_sizes (
 );
 
 
+ALTER TABLE public.volume_sizes OWNER TO volumeviz;
+
 --
--- Name: volume_sizes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: volume_sizes_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
 --
 
 CREATE SEQUENCE public.volume_sizes_id_seq
@@ -2043,15 +1812,75 @@ CREATE SEQUENCE public.volume_sizes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.volume_sizes_id_seq OWNER TO volumeviz;
+
 --
--- Name: volume_sizes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: volume_sizes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
 --
 
 ALTER SEQUENCE public.volume_sizes_id_seq OWNED BY public.volume_sizes.id;
 
 
 --
--- Name: volumes; Type: TABLE; Schema: public; Owner: -
+-- Name: volume_snapshots; Type: TABLE; Schema: public; Owner: volumeviz
+--
+
+CREATE TABLE public.volume_snapshots (
+    id bigint NOT NULL,
+    volume_id text NOT NULL,
+    scan_id text NOT NULL,
+    snapshot_time timestamp with time zone DEFAULT now() NOT NULL,
+    scan_method text NOT NULL,
+    total_size bigint DEFAULT 0 NOT NULL,
+    file_count bigint DEFAULT 0 NOT NULL,
+    folder_count bigint DEFAULT 0 NOT NULL,
+    root_mtime timestamp with time zone,
+    content_hash text,
+    scan_duration_ms bigint,
+    indexing_duration_ms bigint,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.volume_snapshots OWNER TO volumeviz;
+
+--
+-- Name: TABLE volume_snapshots; Type: COMMENT; Schema: public; Owner: volumeviz
+--
+
+COMMENT ON TABLE public.volume_snapshots IS 'Stores volume state snapshots for incremental scanning. Enables detecting changes between scans to avoid full rescans of unchanged data.';
+
+
+--
+-- Name: COLUMN volume_snapshots.content_hash; Type: COMMENT; Schema: public; Owner: volumeviz
+--
+
+COMMENT ON COLUMN public.volume_snapshots.content_hash IS 'Optional hash of directory tree structure. Can be used for quick change detection without walking the filesystem.';
+
+
+--
+-- Name: volume_snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: volumeviz
+--
+
+CREATE SEQUENCE public.volume_snapshots_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.volume_snapshots_id_seq OWNER TO volumeviz;
+
+--
+-- Name: volume_snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: volumeviz
+--
+
+ALTER SEQUENCE public.volume_snapshots_id_seq OWNED BY public.volume_snapshots.id;
+
+
+--
+-- Name: volumes; Type: TABLE; Schema: public; Owner: volumeviz
 --
 
 CREATE TABLE public.volumes (
@@ -2074,267 +1903,227 @@ CREATE TABLE public.volumes (
 );
 
 
+ALTER TABLE public.volumes OWNER TO volumeviz;
+
 --
--- Name: alert_deliveries id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: alert_deliveries id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_deliveries ALTER COLUMN id SET DEFAULT nextval('public.alert_deliveries_id_seq'::regclass);
 
 
 --
--- Name: alert_destinations id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: alert_destinations id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_destinations ALTER COLUMN id SET DEFAULT nextval('public.alert_destinations_id_seq'::regclass);
 
 
 --
--- Name: alert_routes id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: alert_routes id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_routes ALTER COLUMN id SET DEFAULT nextval('public.alert_routes_id_seq'::regclass);
 
 
 --
--- Name: alert_rules id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: alert_rules id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_rules ALTER COLUMN id SET DEFAULT nextval('public.alert_rules_id_seq'::regclass);
 
 
 --
--- Name: alerts id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: alerts id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alerts ALTER COLUMN id SET DEFAULT nextval('public.alerts_id_seq'::regclass);
 
 
 --
--- Name: audit_logs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.audit_logs ALTER COLUMN id SET DEFAULT nextval('public.audit_logs_id_seq'::regclass);
-
-
---
--- Name: daily_stats id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: daily_stats id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.daily_stats ALTER COLUMN id SET DEFAULT nextval('public.daily_stats_id_seq'::regclass);
 
 
 --
--- Name: docker_mount_attachments id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: docker_mount_attachments id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_attachments ALTER COLUMN id SET DEFAULT nextval('public.docker_mount_attachments_id_seq'::regclass);
 
 
 --
--- Name: docker_mount_catalog id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: docker_mount_catalog id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_catalog ALTER COLUMN id SET DEFAULT nextval('public.docker_mount_catalog_id_seq'::regclass);
 
 
 --
--- Name: docker_mount_statistics id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: docker_mount_statistics id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_statistics ALTER COLUMN id SET DEFAULT nextval('public.docker_mount_statistics_id_seq'::regclass);
 
 
 --
--- Name: docker_projects id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: docker_projects id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_projects ALTER COLUMN id SET DEFAULT nextval('public.docker_projects_id_seq'::regclass);
 
 
 --
--- Name: file_metadata id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: file_metadata id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.file_metadata ALTER COLUMN id SET DEFAULT nextval('public.file_metadata_id_seq'::regclass);
 
 
 --
--- Name: file_previews id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: file_previews id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.file_previews ALTER COLUMN id SET DEFAULT nextval('public.file_previews_id_seq'::regclass);
 
 
 --
--- Name: files id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: files id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.files ALTER COLUMN id SET DEFAULT nextval('public.files_id_seq'::regclass);
 
 
 --
--- Name: folders id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: folders id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.folders ALTER COLUMN id SET DEFAULT nextval('public.folders_id_seq'::regclass);
 
 
 --
--- Name: mount_tracking_assignments id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: mount_tracking_assignments id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.mount_tracking_assignments ALTER COLUMN id SET DEFAULT nextval('public.mount_tracking_assignments_id_seq'::regclass);
 
 
 --
--- Name: organization_invitations id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.organization_invitations ALTER COLUMN id SET DEFAULT nextval('public.organization_invitations_id_seq'::regclass);
-
-
---
--- Name: organizations id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organizations id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.organizations ALTER COLUMN id SET DEFAULT nextval('public.organizations_id_seq'::regclass);
 
 
 --
--- Name: permissions id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.permissions ALTER COLUMN id SET DEFAULT nextval('public.permissions_id_seq'::regclass);
-
-
---
--- Name: role_permissions id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.role_permissions ALTER COLUMN id SET DEFAULT nextval('public.role_permissions_id_seq'::regclass);
-
-
---
--- Name: saved_searches id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: saved_searches id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.saved_searches ALTER COLUMN id SET DEFAULT nextval('public.saved_searches_id_seq'::regclass);
 
 
 --
--- Name: scan_errors id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: scan_checkpoints id; Type: DEFAULT; Schema: public; Owner: volumeviz
+--
+
+ALTER TABLE ONLY public.scan_checkpoints ALTER COLUMN id SET DEFAULT nextval('public.scan_checkpoints_id_seq'::regclass);
+
+
+--
+-- Name: scan_errors id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_errors ALTER COLUMN id SET DEFAULT nextval('public.scan_errors_id_seq'::regclass);
 
 
 --
--- Name: scan_performance_metrics id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: scan_performance_metrics id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_performance_metrics ALTER COLUMN id SET DEFAULT nextval('public.scan_performance_metrics_id_seq'::regclass);
 
 
 --
--- Name: scan_phase_steps id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: scan_phase_steps id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_phase_steps ALTER COLUMN id SET DEFAULT nextval('public.scan_phase_steps_id_seq'::regclass);
 
 
 --
--- Name: scan_phases id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: scan_phases id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_phases ALTER COLUMN id SET DEFAULT nextval('public.scan_phases_id_seq'::regclass);
 
 
 --
--- Name: stats_jobs id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: stats_jobs id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.stats_jobs ALTER COLUMN id SET DEFAULT nextval('public.stats_jobs_id_seq'::regclass);
 
 
 --
--- Name: tracking_rule_conditions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tracking_rule_conditions id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rule_conditions ALTER COLUMN id SET DEFAULT nextval('public.tracking_rule_conditions_id_seq'::regclass);
 
 
 --
--- Name: tracking_rule_evaluations id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tracking_rule_evaluations id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rule_evaluations ALTER COLUMN id SET DEFAULT nextval('public.tracking_rule_evaluations_id_seq'::regclass);
 
 
 --
--- Name: tracking_rule_templates id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tracking_rule_templates id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rule_templates ALTER COLUMN id SET DEFAULT nextval('public.tracking_rule_templates_id_seq'::regclass);
 
 
 --
--- Name: tracking_rules id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tracking_rules id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rules ALTER COLUMN id SET DEFAULT nextval('public.tracking_rules_id_seq'::regclass);
 
 
 --
--- Name: usage_snapshots id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: usage_snapshots id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.usage_snapshots ALTER COLUMN id SET DEFAULT nextval('public.usage_snapshots_id_seq'::regclass);
 
 
 --
--- Name: user_activity_log id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: volume_directory_snapshots id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
-ALTER TABLE ONLY public.user_activity_log ALTER COLUMN id SET DEFAULT nextval('public.user_activity_log_id_seq'::regclass);
-
-
---
--- Name: user_permissions id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_permissions ALTER COLUMN id SET DEFAULT nextval('public.user_permissions_id_seq'::regclass);
+ALTER TABLE ONLY public.volume_directory_snapshots ALTER COLUMN id SET DEFAULT nextval('public.volume_directory_snapshots_id_seq'::regclass);
 
 
 --
--- Name: user_preferences id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_preferences ALTER COLUMN id SET DEFAULT nextval('public.user_preferences_id_seq'::regclass);
-
-
---
--- Name: user_sessions id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_sessions ALTER COLUMN id SET DEFAULT nextval('public.user_sessions_id_seq'::regclass);
-
-
---
--- Name: users id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
-
-
---
--- Name: volume_sizes id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: volume_sizes id; Type: DEFAULT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.volume_sizes ALTER COLUMN id SET DEFAULT nextval('public.volume_sizes_id_seq'::regclass);
 
 
 --
--- Name: alert_deliveries alert_deliveries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: volume_snapshots id; Type: DEFAULT; Schema: public; Owner: volumeviz
+--
+
+ALTER TABLE ONLY public.volume_snapshots ALTER COLUMN id SET DEFAULT nextval('public.volume_snapshots_id_seq'::regclass);
+
+
+--
+-- Name: alert_deliveries alert_deliveries_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_deliveries
@@ -2342,7 +2131,7 @@ ALTER TABLE ONLY public.alert_deliveries
 
 
 --
--- Name: alert_destinations alert_destinations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: alert_destinations alert_destinations_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_destinations
@@ -2350,7 +2139,7 @@ ALTER TABLE ONLY public.alert_destinations
 
 
 --
--- Name: alert_routes alert_routes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: alert_routes alert_routes_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_routes
@@ -2358,7 +2147,7 @@ ALTER TABLE ONLY public.alert_routes
 
 
 --
--- Name: alert_routes alert_routes_rule_id_destination_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: alert_routes alert_routes_rule_id_destination_id_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_routes
@@ -2366,7 +2155,7 @@ ALTER TABLE ONLY public.alert_routes
 
 
 --
--- Name: alert_rules alert_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: alert_rules alert_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_rules
@@ -2374,7 +2163,7 @@ ALTER TABLE ONLY public.alert_rules
 
 
 --
--- Name: alerts alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: alerts alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alerts
@@ -2382,15 +2171,7 @@ ALTER TABLE ONLY public.alerts
 
 
 --
--- Name: audit_logs audit_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.audit_logs
-    ADD CONSTRAINT audit_logs_pkey PRIMARY KEY (id);
-
-
---
--- Name: daily_stats daily_stats_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: daily_stats daily_stats_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.daily_stats
@@ -2398,7 +2179,7 @@ ALTER TABLE ONLY public.daily_stats
 
 
 --
--- Name: daily_stats daily_stats_volume_id_date_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: daily_stats daily_stats_volume_id_date_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.daily_stats
@@ -2406,7 +2187,7 @@ ALTER TABLE ONLY public.daily_stats
 
 
 --
--- Name: docker_mount_attachments docker_mount_attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: docker_mount_attachments docker_mount_attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_attachments
@@ -2414,7 +2195,7 @@ ALTER TABLE ONLY public.docker_mount_attachments
 
 
 --
--- Name: docker_mount_catalog docker_mount_catalog_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: docker_mount_catalog docker_mount_catalog_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_catalog
@@ -2422,7 +2203,7 @@ ALTER TABLE ONLY public.docker_mount_catalog
 
 
 --
--- Name: docker_mount_statistics docker_mount_statistics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: docker_mount_statistics docker_mount_statistics_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_statistics
@@ -2430,7 +2211,7 @@ ALTER TABLE ONLY public.docker_mount_statistics
 
 
 --
--- Name: docker_projects docker_projects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: docker_projects docker_projects_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_projects
@@ -2438,7 +2219,7 @@ ALTER TABLE ONLY public.docker_projects
 
 
 --
--- Name: docker_projects docker_projects_project_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: docker_projects docker_projects_project_name_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_projects
@@ -2446,7 +2227,7 @@ ALTER TABLE ONLY public.docker_projects
 
 
 --
--- Name: file_metadata file_metadata_file_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: file_metadata file_metadata_file_id_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.file_metadata
@@ -2454,7 +2235,7 @@ ALTER TABLE ONLY public.file_metadata
 
 
 --
--- Name: file_metadata file_metadata_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: file_metadata file_metadata_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.file_metadata
@@ -2462,7 +2243,7 @@ ALTER TABLE ONLY public.file_metadata
 
 
 --
--- Name: file_previews file_previews_file_id_preview_type_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: file_previews file_previews_file_id_preview_type_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.file_previews
@@ -2470,7 +2251,7 @@ ALTER TABLE ONLY public.file_previews
 
 
 --
--- Name: file_previews file_previews_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: file_previews file_previews_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.file_previews
@@ -2478,7 +2259,7 @@ ALTER TABLE ONLY public.file_previews
 
 
 --
--- Name: files files_path_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: files files_path_hash_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.files
@@ -2486,7 +2267,7 @@ ALTER TABLE ONLY public.files
 
 
 --
--- Name: files files_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: files files_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.files
@@ -2494,7 +2275,7 @@ ALTER TABLE ONLY public.files
 
 
 --
--- Name: folders folders_path_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: folders folders_path_hash_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.folders
@@ -2502,7 +2283,7 @@ ALTER TABLE ONLY public.folders
 
 
 --
--- Name: folders folders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: folders folders_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.folders
@@ -2510,7 +2291,7 @@ ALTER TABLE ONLY public.folders
 
 
 --
--- Name: folders folders_volume_id_path_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: folders folders_volume_id_path_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.folders
@@ -2518,7 +2299,7 @@ ALTER TABLE ONLY public.folders
 
 
 --
--- Name: mount_tracking_assignments mount_tracking_assignments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: mount_tracking_assignments mount_tracking_assignments_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.mount_tracking_assignments
@@ -2526,31 +2307,7 @@ ALTER TABLE ONLY public.mount_tracking_assignments
 
 
 --
--- Name: organization_invitations organization_invitations_organization_id_email_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.organization_invitations
-    ADD CONSTRAINT organization_invitations_organization_id_email_key UNIQUE (organization_id, email);
-
-
---
--- Name: organization_invitations organization_invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.organization_invitations
-    ADD CONSTRAINT organization_invitations_pkey PRIMARY KEY (id);
-
-
---
--- Name: organization_invitations organization_invitations_token_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.organization_invitations
-    ADD CONSTRAINT organization_invitations_token_key UNIQUE (token);
-
-
---
--- Name: organizations organizations_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organizations organizations_name_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.organizations
@@ -2558,7 +2315,7 @@ ALTER TABLE ONLY public.organizations
 
 
 --
--- Name: organizations organizations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organizations organizations_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.organizations
@@ -2566,7 +2323,7 @@ ALTER TABLE ONLY public.organizations
 
 
 --
--- Name: organizations organizations_subdomain_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organizations organizations_subdomain_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.organizations
@@ -2574,47 +2331,7 @@ ALTER TABLE ONLY public.organizations
 
 
 --
--- Name: permissions permissions_name_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.permissions
-    ADD CONSTRAINT permissions_name_key UNIQUE (name);
-
-
---
--- Name: permissions permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.permissions
-    ADD CONSTRAINT permissions_pkey PRIMARY KEY (id);
-
-
---
--- Name: permissions permissions_resource_action_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.permissions
-    ADD CONSTRAINT permissions_resource_action_key UNIQUE (resource, action);
-
-
---
--- Name: role_permissions role_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.role_permissions
-    ADD CONSTRAINT role_permissions_pkey PRIMARY KEY (id);
-
-
---
--- Name: role_permissions role_permissions_role_permission_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.role_permissions
-    ADD CONSTRAINT role_permissions_role_permission_id_key UNIQUE (role, permission_id);
-
-
---
--- Name: saved_searches saved_searches_name_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: saved_searches saved_searches_name_unique; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.saved_searches
@@ -2622,7 +2339,7 @@ ALTER TABLE ONLY public.saved_searches
 
 
 --
--- Name: saved_searches saved_searches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: saved_searches saved_searches_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.saved_searches
@@ -2630,7 +2347,15 @@ ALTER TABLE ONLY public.saved_searches
 
 
 --
--- Name: scan_errors scan_errors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_checkpoints scan_checkpoints_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
+--
+
+ALTER TABLE ONLY public.scan_checkpoints
+    ADD CONSTRAINT scan_checkpoints_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: scan_errors scan_errors_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_errors
@@ -2638,7 +2363,7 @@ ALTER TABLE ONLY public.scan_errors
 
 
 --
--- Name: scan_jobs scan_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_jobs scan_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_jobs
@@ -2646,7 +2371,7 @@ ALTER TABLE ONLY public.scan_jobs
 
 
 --
--- Name: scan_performance_metrics scan_performance_metrics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_performance_metrics scan_performance_metrics_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_performance_metrics
@@ -2654,7 +2379,7 @@ ALTER TABLE ONLY public.scan_performance_metrics
 
 
 --
--- Name: scan_phase_steps scan_phase_steps_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_phase_steps scan_phase_steps_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_phase_steps
@@ -2662,7 +2387,7 @@ ALTER TABLE ONLY public.scan_phase_steps
 
 
 --
--- Name: scan_phases scan_phases_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_phases scan_phases_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_phases
@@ -2670,7 +2395,15 @@ ALTER TABLE ONLY public.scan_phases
 
 
 --
--- Name: stats_jobs stats_jobs_job_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
+--
+
+ALTER TABLE ONLY public.schema_migrations
+    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: stats_jobs stats_jobs_job_id_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.stats_jobs
@@ -2678,7 +2411,7 @@ ALTER TABLE ONLY public.stats_jobs
 
 
 --
--- Name: stats_jobs stats_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: stats_jobs stats_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.stats_jobs
@@ -2686,7 +2419,7 @@ ALTER TABLE ONLY public.stats_jobs
 
 
 --
--- Name: tracking_rule_conditions tracking_rule_conditions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tracking_rule_conditions tracking_rule_conditions_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rule_conditions
@@ -2694,7 +2427,7 @@ ALTER TABLE ONLY public.tracking_rule_conditions
 
 
 --
--- Name: tracking_rule_evaluations tracking_rule_evaluations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tracking_rule_evaluations tracking_rule_evaluations_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rule_evaluations
@@ -2702,7 +2435,7 @@ ALTER TABLE ONLY public.tracking_rule_evaluations
 
 
 --
--- Name: tracking_rule_templates tracking_rule_templates_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tracking_rule_templates tracking_rule_templates_name_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rule_templates
@@ -2710,7 +2443,7 @@ ALTER TABLE ONLY public.tracking_rule_templates
 
 
 --
--- Name: tracking_rule_templates tracking_rule_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tracking_rule_templates tracking_rule_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rule_templates
@@ -2718,7 +2451,7 @@ ALTER TABLE ONLY public.tracking_rule_templates
 
 
 --
--- Name: tracking_rules tracking_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tracking_rules tracking_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rules
@@ -2726,7 +2459,7 @@ ALTER TABLE ONLY public.tracking_rules
 
 
 --
--- Name: docker_mount_attachments unique_active_attachment; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: docker_mount_attachments unique_active_attachment; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_attachments
@@ -2734,7 +2467,7 @@ ALTER TABLE ONLY public.docker_mount_attachments
 
 
 --
--- Name: docker_mount_catalog unique_mount_id; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: docker_mount_catalog unique_mount_id; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_catalog
@@ -2742,7 +2475,15 @@ ALTER TABLE ONLY public.docker_mount_catalog
 
 
 --
--- Name: usage_snapshots usage_snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_checkpoints unique_scan_checkpoint; Type: CONSTRAINT; Schema: public; Owner: volumeviz
+--
+
+ALTER TABLE ONLY public.scan_checkpoints
+    ADD CONSTRAINT unique_scan_checkpoint UNIQUE (scan_id, checkpoint_type);
+
+
+--
+-- Name: usage_snapshots usage_snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.usage_snapshots
@@ -2750,7 +2491,7 @@ ALTER TABLE ONLY public.usage_snapshots
 
 
 --
--- Name: usage_snapshots usage_snapshots_volume_id_snapshot_date_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: usage_snapshots usage_snapshots_volume_id_snapshot_date_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.usage_snapshots
@@ -2758,87 +2499,15 @@ ALTER TABLE ONLY public.usage_snapshots
 
 
 --
--- Name: user_activity_log user_activity_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: volume_directory_snapshots volume_directory_snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
-ALTER TABLE ONLY public.user_activity_log
-    ADD CONSTRAINT user_activity_log_pkey PRIMARY KEY (id);
-
-
---
--- Name: user_permissions user_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_permissions
-    ADD CONSTRAINT user_permissions_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.volume_directory_snapshots
+    ADD CONSTRAINT volume_directory_snapshots_pkey PRIMARY KEY (id);
 
 
 --
--- Name: user_permissions user_permissions_user_id_permission_id_resource_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_permissions
-    ADD CONSTRAINT user_permissions_user_id_permission_id_resource_id_key UNIQUE (user_id, permission_id, resource_id);
-
-
---
--- Name: user_preferences user_preferences_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_preferences
-    ADD CONSTRAINT user_preferences_pkey PRIMARY KEY (id);
-
-
---
--- Name: user_preferences user_preferences_user_id_preference_key_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_preferences
-    ADD CONSTRAINT user_preferences_user_id_preference_key_key UNIQUE (user_id, preference_key);
-
-
---
--- Name: user_sessions user_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_sessions
-    ADD CONSTRAINT user_sessions_pkey PRIMARY KEY (id);
-
-
---
--- Name: user_sessions user_sessions_session_token_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_sessions
-    ADD CONSTRAINT user_sessions_session_token_key UNIQUE (session_token);
-
-
---
--- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_email_key UNIQUE (email);
-
-
---
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
-
-
---
--- Name: users users_username_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_username_key UNIQUE (username);
-
-
---
--- Name: volume_sizes volume_sizes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: volume_sizes volume_sizes_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.volume_sizes
@@ -2846,7 +2515,7 @@ ALTER TABLE ONLY public.volume_sizes
 
 
 --
--- Name: volume_sizes volume_sizes_volume_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: volume_sizes volume_sizes_volume_id_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.volume_sizes
@@ -2854,7 +2523,15 @@ ALTER TABLE ONLY public.volume_sizes
 
 
 --
--- Name: volumes volumes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: volume_snapshots volume_snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
+--
+
+ALTER TABLE ONLY public.volume_snapshots
+    ADD CONSTRAINT volume_snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: volumes volumes_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.volumes
@@ -2862,889 +2539,742 @@ ALTER TABLE ONLY public.volumes
 
 
 --
--- Name: idx_alert_deliveries_alert_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_alert_deliveries_alert_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_alert_deliveries_alert_id ON public.alert_deliveries USING btree (alert_id);
 
 
 --
--- Name: idx_alert_deliveries_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_alert_deliveries_status; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_alert_deliveries_status ON public.alert_deliveries USING btree (status);
 
 
 --
--- Name: idx_alert_rules_enabled; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_alert_rules_enabled; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_alert_rules_enabled ON public.alert_rules USING btree (is_enabled);
 
 
 --
--- Name: idx_alerts_organization_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_alerts_organization_id ON public.alerts USING btree (organization_id);
-
-
---
--- Name: idx_alerts_resolved; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_alerts_resolved; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_alerts_resolved ON public.alerts USING btree (is_resolved);
 
 
 --
--- Name: idx_alerts_rule_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_alerts_rule_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_alerts_rule_id ON public.alerts USING btree (rule_id);
 
 
 --
--- Name: idx_alerts_volume_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_alerts_volume_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_alerts_volume_id ON public.alerts USING btree (volume_id);
 
 
 --
--- Name: idx_alerts_volume_org; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_alerts_volume_org ON public.alerts USING btree (volume_id, organization_id);
-
-
---
--- Name: idx_audit_logs_created; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_audit_logs_created ON public.audit_logs USING btree (created_at DESC);
-
-
---
--- Name: idx_audit_logs_org_created; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_audit_logs_org_created ON public.audit_logs USING btree (organization_id, created_at DESC);
-
-
---
--- Name: idx_audit_logs_user_created; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_audit_logs_user_created ON public.audit_logs USING btree (user_id, created_at DESC);
-
-
---
--- Name: idx_daily_stats_date; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_daily_stats_date; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_daily_stats_date ON public.daily_stats USING btree (date);
 
 
 --
--- Name: idx_daily_stats_organization_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_daily_stats_organization_id ON public.daily_stats USING btree (organization_id);
-
-
---
--- Name: idx_daily_stats_volume_date; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_daily_stats_volume_date; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_daily_stats_volume_date ON public.daily_stats USING btree (volume_id, date);
 
 
 --
--- Name: idx_daily_stats_volume_org; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_daily_stats_volume_org ON public.daily_stats USING btree (volume_id, organization_id);
-
-
---
--- Name: idx_docker_mount_attachments_active; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_attachments_active; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_attachments_active ON public.docker_mount_attachments USING btree (is_active) WHERE (is_active = true);
 
 
 --
--- Name: idx_docker_mount_attachments_compose_project; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_attachments_compose_project; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_attachments_compose_project ON public.docker_mount_attachments USING btree (container_compose_project) WHERE (container_compose_project IS NOT NULL);
 
 
 --
--- Name: idx_docker_mount_attachments_compose_service; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_attachments_compose_service; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_attachments_compose_service ON public.docker_mount_attachments USING btree (container_compose_service) WHERE (container_compose_service IS NOT NULL);
 
 
 --
--- Name: idx_docker_mount_attachments_container_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_attachments_container_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_attachments_container_id ON public.docker_mount_attachments USING btree (container_id);
 
 
 --
--- Name: idx_docker_mount_attachments_mount_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_attachments_mount_catalog_id; Type: INDEX; Schema: public; Owner: volumeviz
+--
+
+CREATE INDEX idx_docker_mount_attachments_mount_catalog_id ON public.docker_mount_attachments USING btree (mount_catalog_id) WHERE (mount_catalog_id IS NOT NULL);
+
+
+--
+-- Name: idx_docker_mount_attachments_mount_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_attachments_mount_id ON public.docker_mount_attachments USING btree (mount_catalog_id);
 
 
 --
--- Name: idx_docker_mount_catalog_compose_project; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_catalog_compose_project; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_catalog_compose_project ON public.docker_mount_catalog USING btree (compose_project) WHERE (compose_project IS NOT NULL);
 
 
 --
--- Name: idx_docker_mount_catalog_last_seen; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_catalog_last_seen; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_catalog_last_seen ON public.docker_mount_catalog USING btree (last_seen_at);
 
 
 --
--- Name: idx_docker_mount_catalog_mount_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_catalog_mount_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_catalog_mount_id ON public.docker_mount_catalog USING btree (mount_id);
 
 
 --
--- Name: idx_docker_mount_catalog_mount_type; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_catalog_mount_type; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_catalog_mount_type ON public.docker_mount_catalog USING btree (mount_type);
 
 
 --
--- Name: idx_docker_mount_catalog_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_catalog_organization_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_catalog_organization_id ON public.docker_mount_catalog USING btree (organization_id);
 
 
 --
--- Name: idx_docker_mount_catalog_orphaned; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_catalog_orphaned; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_catalog_orphaned ON public.docker_mount_catalog USING btree (is_orphaned) WHERE (is_orphaned = true);
 
 
 --
--- Name: idx_docker_mount_catalog_tracked; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_catalog_tracked; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_catalog_tracked ON public.docker_mount_catalog USING btree (is_tracked);
 
 
 --
--- Name: idx_docker_mount_catalog_volume_name; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_docker_mount_catalog_volume_name; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_docker_mount_catalog_volume_name ON public.docker_mount_catalog USING btree (volume_name) WHERE (volume_name IS NOT NULL);
 
 
 --
--- Name: idx_file_metadata_extracted; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_file_metadata_extracted; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_file_metadata_extracted ON public.file_metadata USING btree (extracted_at);
 
 
 --
--- Name: idx_file_metadata_file_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_file_metadata_file_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_file_metadata_file_id ON public.file_metadata USING btree (file_id);
 
 
 --
--- Name: idx_file_previews_file_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_file_previews_file_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_file_previews_file_id ON public.file_previews USING btree (file_id);
 
 
 --
--- Name: idx_file_previews_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_file_previews_status; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_file_previews_status ON public.file_previews USING btree (status);
 
 
 --
--- Name: idx_files_content_hash; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_files_content_hash; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_files_content_hash ON public.files USING btree (content_hash) WHERE (content_hash IS NOT NULL);
 
 
 --
--- Name: idx_files_extension; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_files_extension; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_files_extension ON public.files USING btree (extension);
 
 
 --
--- Name: idx_files_folder_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_files_folder_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_files_folder_id ON public.files USING btree (folder_id);
 
 
 --
--- Name: idx_files_media_kind; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_files_media_kind; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_files_media_kind ON public.files USING btree (media_kind) WHERE (media_kind IS NOT NULL);
 
 
 --
--- Name: idx_files_mime; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_files_mime; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_files_mime ON public.files USING btree (mime);
 
 
 --
--- Name: idx_files_modified; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_files_modified; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_files_modified ON public.files USING btree (modified_at);
 
 
 --
--- Name: idx_files_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_files_organization_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_files_organization_id ON public.files USING btree (organization_id);
 
 
 --
--- Name: idx_files_path_hash; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_files_path_hash; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_files_path_hash ON public.files USING btree (path_hash);
 
 
 --
--- Name: idx_files_size; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_files_size; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_files_size ON public.files USING btree (size_bytes);
 
 
 --
--- Name: idx_files_volume_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_files_volume_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_files_volume_id ON public.files USING btree (volume_id);
 
 
 --
--- Name: idx_files_volume_org; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_files_volume_org ON public.files USING btree (volume_id, organization_id);
-
-
---
--- Name: idx_folders_media; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_folders_media; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_folders_media ON public.folders USING btree (volume_id, has_media_files) WHERE (has_media_files = true);
 
 
 --
--- Name: idx_folders_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_folders_organization_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_folders_organization_id ON public.folders USING btree (organization_id);
 
 
 --
--- Name: idx_folders_parent_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_folders_parent_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_folders_parent_id ON public.folders USING btree (parent_id);
 
 
 --
--- Name: idx_folders_path_hash; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_folders_path_hash; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_folders_path_hash ON public.folders USING btree (path_hash);
 
 
 --
--- Name: idx_folders_volume_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_folders_volume_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_folders_volume_id ON public.folders USING btree (volume_id);
 
 
 --
--- Name: idx_folders_volume_org; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_folders_volume_org ON public.folders USING btree (volume_id, organization_id);
-
-
---
--- Name: idx_mount_assignments_action; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_mount_assignments_action; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_mount_assignments_action ON public.mount_tracking_assignments USING btree (action) WHERE (is_active = true);
 
 
 --
--- Name: idx_mount_assignments_active; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_mount_assignments_active; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_mount_assignments_active ON public.mount_tracking_assignments USING btree (is_active, assigned_at DESC);
 
 
 --
--- Name: idx_mount_assignments_mount_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_mount_assignments_mount_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_mount_assignments_mount_id ON public.mount_tracking_assignments USING btree (mount_catalog_id);
 
 
 --
--- Name: idx_mount_assignments_rule_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_mount_assignments_rule_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_mount_assignments_rule_id ON public.mount_tracking_assignments USING btree (rule_id);
 
 
 --
--- Name: idx_mount_assignments_unique_active; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_mount_assignments_unique_active; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE UNIQUE INDEX idx_mount_assignments_unique_active ON public.mount_tracking_assignments USING btree (mount_catalog_id) WHERE (is_active = true);
 
 
 --
--- Name: idx_organization_invitations_org_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_organizations_is_active; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
-CREATE INDEX idx_organization_invitations_org_status ON public.organization_invitations USING btree (organization_id, status);
-
-
---
--- Name: idx_organization_invitations_token; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_organization_invitations_token ON public.organization_invitations USING btree (token);
+CREATE INDEX idx_organizations_is_active ON public.organizations USING btree (is_active) WHERE (is_active = true);
 
 
 --
--- Name: idx_role_permissions_role; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_organizations_name; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
-CREATE INDEX idx_role_permissions_role ON public.role_permissions USING btree (role);
+CREATE INDEX idx_organizations_name ON public.organizations USING btree (name);
 
 
 --
--- Name: idx_rule_conditions_field; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rule_conditions_field; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_rule_conditions_field ON public.tracking_rule_conditions USING btree (field_name);
 
 
 --
--- Name: idx_rule_conditions_rule_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rule_conditions_rule_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_rule_conditions_rule_id ON public.tracking_rule_conditions USING btree (rule_id);
 
 
 --
--- Name: idx_rule_evaluations_rule_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rule_evaluations_rule_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_rule_evaluations_rule_id ON public.tracking_rule_evaluations USING btree (rule_id);
 
 
 --
--- Name: idx_rule_evaluations_started; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rule_evaluations_started; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_rule_evaluations_started ON public.tracking_rule_evaluations USING btree (started_at DESC);
 
 
 --
--- Name: idx_rule_evaluations_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rule_evaluations_status; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_rule_evaluations_status ON public.tracking_rule_evaluations USING btree (status);
 
 
 --
--- Name: idx_rule_evaluations_type; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rule_evaluations_type; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_rule_evaluations_type ON public.tracking_rule_evaluations USING btree (evaluation_type);
 
 
 --
--- Name: idx_rule_templates_builtin; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rule_templates_builtin; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_rule_templates_builtin ON public.tracking_rule_templates USING btree (is_builtin);
 
 
 --
--- Name: idx_rule_templates_category; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rule_templates_category; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_rule_templates_category ON public.tracking_rule_templates USING btree (category);
 
 
 --
--- Name: idx_saved_searches_is_public; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_saved_searches_is_public; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_saved_searches_is_public ON public.saved_searches USING btree (is_public);
 
 
 --
--- Name: idx_saved_searches_last_run_at; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_saved_searches_last_run_at; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_saved_searches_last_run_at ON public.saved_searches USING btree (last_run_at DESC) WHERE (last_run_at IS NOT NULL);
 
 
 --
--- Name: idx_saved_searches_name; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_saved_searches_name; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_saved_searches_name ON public.saved_searches USING btree (name);
 
 
 --
--- Name: idx_saved_searches_organization_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_saved_searches_organization_id ON public.saved_searches USING btree (organization_id);
-
-
---
--- Name: idx_saved_searches_tags; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_saved_searches_tags; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_saved_searches_tags ON public.saved_searches USING gin (tags);
 
 
 --
--- Name: idx_saved_searches_updated_at; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_saved_searches_updated_at; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_saved_searches_updated_at ON public.saved_searches USING btree (updated_at DESC);
 
 
 --
--- Name: idx_scan_errors_occurred_at; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_scan_checkpoints_created_at; Type: INDEX; Schema: public; Owner: volumeviz
+--
+
+CREATE INDEX idx_scan_checkpoints_created_at ON public.scan_checkpoints USING btree (created_at);
+
+
+--
+-- Name: idx_scan_checkpoints_scan_id; Type: INDEX; Schema: public; Owner: volumeviz
+--
+
+CREATE INDEX idx_scan_checkpoints_scan_id ON public.scan_checkpoints USING btree (scan_id);
+
+
+--
+-- Name: idx_scan_checkpoints_updated_at; Type: INDEX; Schema: public; Owner: volumeviz
+--
+
+CREATE INDEX idx_scan_checkpoints_updated_at ON public.scan_checkpoints USING btree (updated_at DESC);
+
+
+--
+-- Name: idx_scan_checkpoints_volume_id; Type: INDEX; Schema: public; Owner: volumeviz
+--
+
+CREATE INDEX idx_scan_checkpoints_volume_id ON public.scan_checkpoints USING btree (volume_id);
+
+
+--
+-- Name: idx_scan_errors_occurred_at; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_scan_errors_occurred_at ON public.scan_errors USING btree (occurred_at DESC);
 
 
 --
--- Name: idx_scan_errors_phase; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_scan_errors_phase; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_scan_errors_phase ON public.scan_errors USING btree (scan_id, phase_name);
 
 
 --
--- Name: idx_scan_errors_scan_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_scan_errors_scan_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_scan_errors_scan_id ON public.scan_errors USING btree (scan_id);
 
 
 --
--- Name: idx_scan_errors_severity; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_scan_errors_severity; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_scan_errors_severity ON public.scan_errors USING btree (severity) WHERE (severity = ANY (ARRAY['error'::text, 'critical'::text]));
 
 
 --
--- Name: idx_scan_jobs_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_scan_jobs_organization_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_scan_jobs_organization_id ON public.scan_jobs USING btree (organization_id);
 
 
 --
--- Name: idx_scan_jobs_started; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_scan_jobs_started; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_scan_jobs_started ON public.scan_jobs USING btree (started_at);
 
 
 --
--- Name: idx_scan_jobs_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_scan_jobs_status; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_scan_jobs_status ON public.scan_jobs USING btree (status);
 
 
 --
--- Name: idx_scan_jobs_volume_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_scan_jobs_volume_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_scan_jobs_volume_id ON public.scan_jobs USING btree (volume_id);
 
 
 --
--- Name: idx_scan_jobs_volume_org; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_scan_jobs_volume_org ON public.scan_jobs USING btree (volume_id, organization_id);
-
-
---
--- Name: idx_stats_jobs_created_at; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_stats_jobs_created_at; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_stats_jobs_created_at ON public.stats_jobs USING btree (created_at DESC);
 
 
 --
--- Name: idx_stats_jobs_job_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_stats_jobs_job_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_stats_jobs_job_id ON public.stats_jobs USING btree (job_id);
 
 
 --
--- Name: idx_stats_jobs_org_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_stats_jobs_org_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_stats_jobs_org_id ON public.stats_jobs USING btree (organization_id);
 
 
 --
--- Name: idx_stats_jobs_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_stats_jobs_status; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_stats_jobs_status ON public.stats_jobs USING btree (status);
 
 
 --
--- Name: idx_stats_jobs_volume_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_stats_jobs_volume_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_stats_jobs_volume_id ON public.stats_jobs USING btree (volume_id);
 
 
 --
--- Name: idx_tracking_rules_action; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_tracking_rules_action; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_tracking_rules_action ON public.tracking_rules USING btree (action);
 
 
 --
--- Name: idx_tracking_rules_enabled; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_tracking_rules_enabled; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_tracking_rules_enabled ON public.tracking_rules USING btree (is_enabled);
 
 
 --
--- Name: idx_tracking_rules_priority; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_tracking_rules_priority; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_tracking_rules_priority ON public.tracking_rules USING btree (priority, id) WHERE (is_enabled = true);
 
 
 --
--- Name: idx_tracking_rules_updated; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_tracking_rules_updated; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_tracking_rules_updated ON public.tracking_rules USING btree (updated_at DESC);
 
 
 --
--- Name: idx_user_activity_action; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volume_dir_snapshots_mtime; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
-CREATE INDEX idx_user_activity_action ON public.user_activity_log USING btree (action);
-
-
---
--- Name: idx_user_activity_created; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_user_activity_created ON public.user_activity_log USING btree (created_at);
+CREATE INDEX idx_volume_dir_snapshots_mtime ON public.volume_directory_snapshots USING btree (dir_mtime DESC);
 
 
 --
--- Name: idx_user_activity_resource; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volume_dir_snapshots_path; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
-CREATE INDEX idx_user_activity_resource ON public.user_activity_log USING btree (resource_type, resource_id);
-
-
---
--- Name: idx_user_activity_user_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_user_activity_user_id ON public.user_activity_log USING btree (user_id);
+CREATE INDEX idx_volume_dir_snapshots_path ON public.volume_directory_snapshots USING btree (volume_id, dir_path);
 
 
 --
--- Name: idx_user_permissions_user_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volume_dir_snapshots_snapshot; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
-CREATE INDEX idx_user_permissions_user_id ON public.user_permissions USING btree (user_id);
-
-
---
--- Name: idx_user_preferences_key; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_user_preferences_key ON public.user_preferences USING btree (preference_key);
+CREATE INDEX idx_volume_dir_snapshots_snapshot ON public.volume_directory_snapshots USING btree (snapshot_id);
 
 
 --
--- Name: idx_user_preferences_user_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volume_dir_snapshots_volume; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
-CREATE INDEX idx_user_preferences_user_id ON public.user_preferences USING btree (user_id);
-
-
---
--- Name: idx_user_sessions_active; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_user_sessions_active ON public.user_sessions USING btree (is_active, expires_at) WHERE (is_active = true);
+CREATE INDEX idx_volume_dir_snapshots_volume ON public.volume_directory_snapshots USING btree (volume_id);
 
 
 --
--- Name: idx_user_sessions_expires; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volume_snapshots_created_at; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
-CREATE INDEX idx_user_sessions_expires ON public.user_sessions USING btree (expires_at);
-
-
---
--- Name: idx_user_sessions_jwt_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_user_sessions_jwt_id ON public.user_sessions USING btree (jwt_token_id);
+CREATE INDEX idx_volume_snapshots_created_at ON public.volume_snapshots USING btree (created_at);
 
 
 --
--- Name: idx_user_sessions_token; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volume_snapshots_scan_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
-CREATE INDEX idx_user_sessions_token ON public.user_sessions USING btree (session_token);
-
-
---
--- Name: idx_user_sessions_user_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_user_sessions_user_id ON public.user_sessions USING btree (user_id);
+CREATE INDEX idx_volume_snapshots_scan_id ON public.volume_snapshots USING btree (scan_id);
 
 
 --
--- Name: idx_users_email; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volume_snapshots_snapshot_time; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
-CREATE INDEX idx_users_email ON public.users USING btree (email);
-
-
---
--- Name: idx_users_last_login; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_users_last_login ON public.users USING btree (last_login_at);
+CREATE INDEX idx_volume_snapshots_snapshot_time ON public.volume_snapshots USING btree (snapshot_time DESC);
 
 
 --
--- Name: idx_users_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volume_snapshots_volume_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
-CREATE INDEX idx_users_organization_id ON public.users USING btree (organization_id);
-
-
---
--- Name: idx_users_role; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_users_role ON public.users USING btree (role);
+CREATE INDEX idx_volume_snapshots_volume_id ON public.volume_snapshots USING btree (volume_id);
 
 
 --
--- Name: idx_users_status; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_users_status ON public.users USING btree (status);
-
-
---
--- Name: idx_users_username; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_users_username ON public.users USING btree (username);
-
-
---
--- Name: idx_volumes_active; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volumes_active; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_volumes_active ON public.volumes USING btree (is_active);
 
 
 --
--- Name: idx_volumes_container_count; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volumes_container_count; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_volumes_container_count ON public.volumes USING btree (container_count) WHERE (container_count > 0);
 
 
 --
--- Name: idx_volumes_last_scan; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volumes_last_scan; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_volumes_last_scan ON public.volumes USING btree (last_scan_at);
 
 
 --
--- Name: idx_volumes_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_volumes_organization_id; Type: INDEX; Schema: public; Owner: volumeviz
 --
 
 CREATE INDEX idx_volumes_organization_id ON public.volumes USING btree (organization_id);
 
 
 --
--- Name: alert_destinations alert_destinations_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: alert_destinations alert_destinations_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
 CREATE TRIGGER alert_destinations_updated_at_trigger BEFORE UPDATE ON public.alert_destinations FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: alert_rules alert_rules_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: alert_rules alert_rules_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
 CREATE TRIGGER alert_rules_updated_at_trigger BEFORE UPDATE ON public.alert_rules FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: files audit_files_trigger; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER audit_files_trigger AFTER INSERT OR DELETE OR UPDATE ON public.files FOR EACH ROW EXECUTE FUNCTION public.audit_organization_actions();
-
-
---
--- Name: users audit_users_trigger; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER audit_users_trigger AFTER INSERT OR DELETE OR UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.audit_organization_actions();
-
-
---
--- Name: volumes audit_volumes_trigger; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER audit_volumes_trigger AFTER INSERT OR DELETE OR UPDATE ON public.volumes FOR EACH ROW EXECUTE FUNCTION public.audit_organization_actions();
-
-
---
--- Name: docker_mount_attachments docker_mount_attachments_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: docker_mount_attachments docker_mount_attachments_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
 CREATE TRIGGER docker_mount_attachments_updated_at_trigger BEFORE UPDATE ON public.docker_mount_attachments FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: docker_mount_catalog docker_mount_catalog_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: docker_mount_catalog docker_mount_catalog_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
 CREATE TRIGGER docker_mount_catalog_updated_at_trigger BEFORE UPDATE ON public.docker_mount_catalog FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: mount_tracking_assignments mount_tracking_assignments_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: mount_tracking_assignments mount_tracking_assignments_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
 CREATE TRIGGER mount_tracking_assignments_updated_at_trigger BEFORE UPDATE ON public.mount_tracking_assignments FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: saved_searches saved_searches_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: saved_searches saved_searches_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
 CREATE TRIGGER saved_searches_updated_at_trigger BEFORE UPDATE ON public.saved_searches FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: tracking_rule_conditions tracking_rule_conditions_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: tracking_rule_conditions tracking_rule_conditions_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
 CREATE TRIGGER tracking_rule_conditions_updated_at_trigger BEFORE UPDATE ON public.tracking_rule_conditions FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: tracking_rule_templates tracking_rule_templates_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: tracking_rule_templates tracking_rule_templates_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
 CREATE TRIGGER tracking_rule_templates_updated_at_trigger BEFORE UPDATE ON public.tracking_rule_templates FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: tracking_rules tracking_rules_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: tracking_rules tracking_rules_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
 CREATE TRIGGER tracking_rules_updated_at_trigger BEFORE UPDATE ON public.tracking_rules FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: user_preferences user_preferences_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: scan_checkpoints trigger_update_scan_checkpoint_updated_at; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
-CREATE TRIGGER user_preferences_updated_at_trigger BEFORE UPDATE ON public.user_preferences FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
-
-
---
--- Name: users users_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER users_updated_at_trigger BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+CREATE TRIGGER trigger_update_scan_checkpoint_updated_at BEFORE UPDATE ON public.scan_checkpoints FOR EACH ROW EXECUTE FUNCTION public.update_scan_checkpoint_updated_at();
 
 
 --
--- Name: volumes volumes_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: volumes volumes_updated_at_trigger; Type: TRIGGER; Schema: public; Owner: volumeviz
 --
 
 CREATE TRIGGER volumes_updated_at_trigger BEFORE UPDATE ON public.volumes FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: alert_deliveries alert_deliveries_alert_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: alert_deliveries alert_deliveries_alert_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_deliveries
@@ -3752,7 +3282,7 @@ ALTER TABLE ONLY public.alert_deliveries
 
 
 --
--- Name: alert_deliveries alert_deliveries_destination_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: alert_deliveries alert_deliveries_destination_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_deliveries
@@ -3760,7 +3290,7 @@ ALTER TABLE ONLY public.alert_deliveries
 
 
 --
--- Name: alert_routes alert_routes_destination_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: alert_routes alert_routes_destination_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_routes
@@ -3768,7 +3298,7 @@ ALTER TABLE ONLY public.alert_routes
 
 
 --
--- Name: alert_routes alert_routes_rule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: alert_routes alert_routes_rule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alert_routes
@@ -3776,15 +3306,15 @@ ALTER TABLE ONLY public.alert_routes
 
 
 --
--- Name: alerts alerts_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: alert_rules alert_rules_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
-ALTER TABLE ONLY public.alerts
-    ADD CONSTRAINT alerts_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.alert_rules
+    ADD CONSTRAINT alert_rules_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
 
 
 --
--- Name: alerts alerts_rule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: alerts alerts_rule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alerts
@@ -3792,7 +3322,7 @@ ALTER TABLE ONLY public.alerts
 
 
 --
--- Name: alerts alerts_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: alerts alerts_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.alerts
@@ -3800,23 +3330,7 @@ ALTER TABLE ONLY public.alerts
 
 
 --
--- Name: audit_logs audit_logs_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.audit_logs
-    ADD CONSTRAINT audit_logs_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE SET NULL;
-
-
---
--- Name: daily_stats daily_stats_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.daily_stats
-    ADD CONSTRAINT daily_stats_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
-
-
---
--- Name: daily_stats daily_stats_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: daily_stats daily_stats_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.daily_stats
@@ -3824,7 +3338,7 @@ ALTER TABLE ONLY public.daily_stats
 
 
 --
--- Name: docker_mount_attachments docker_mount_attachments_mount_catalog_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: docker_mount_attachments docker_mount_attachments_mount_catalog_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_attachments
@@ -3832,7 +3346,7 @@ ALTER TABLE ONLY public.docker_mount_attachments
 
 
 --
--- Name: docker_mount_catalog docker_mount_catalog_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: docker_mount_catalog docker_mount_catalog_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_catalog
@@ -3840,7 +3354,7 @@ ALTER TABLE ONLY public.docker_mount_catalog
 
 
 --
--- Name: docker_mount_statistics docker_mount_statistics_mount_catalog_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: docker_mount_statistics docker_mount_statistics_mount_catalog_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.docker_mount_statistics
@@ -3848,7 +3362,7 @@ ALTER TABLE ONLY public.docker_mount_statistics
 
 
 --
--- Name: file_metadata file_metadata_file_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: file_metadata file_metadata_file_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.file_metadata
@@ -3856,7 +3370,7 @@ ALTER TABLE ONLY public.file_metadata
 
 
 --
--- Name: file_previews file_previews_file_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: file_previews file_previews_file_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.file_previews
@@ -3864,7 +3378,7 @@ ALTER TABLE ONLY public.file_previews
 
 
 --
--- Name: files files_folder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: files files_folder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.files
@@ -3872,7 +3386,7 @@ ALTER TABLE ONLY public.files
 
 
 --
--- Name: files files_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: files files_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.files
@@ -3880,7 +3394,7 @@ ALTER TABLE ONLY public.files
 
 
 --
--- Name: files files_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: files files_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.files
@@ -3888,7 +3402,15 @@ ALTER TABLE ONLY public.files
 
 
 --
--- Name: folders folders_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: volume_directory_snapshots fk_snapshot; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
+--
+
+ALTER TABLE ONLY public.volume_directory_snapshots
+    ADD CONSTRAINT fk_snapshot FOREIGN KEY (snapshot_id) REFERENCES public.volume_snapshots(id) ON DELETE CASCADE;
+
+
+--
+-- Name: folders folders_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.folders
@@ -3896,7 +3418,7 @@ ALTER TABLE ONLY public.folders
 
 
 --
--- Name: folders folders_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: folders folders_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.folders
@@ -3904,7 +3426,7 @@ ALTER TABLE ONLY public.folders
 
 
 --
--- Name: folders folders_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: folders folders_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.folders
@@ -3912,7 +3434,7 @@ ALTER TABLE ONLY public.folders
 
 
 --
--- Name: mount_tracking_assignments mount_tracking_assignments_evaluation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: mount_tracking_assignments mount_tracking_assignments_evaluation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.mount_tracking_assignments
@@ -3920,7 +3442,7 @@ ALTER TABLE ONLY public.mount_tracking_assignments
 
 
 --
--- Name: mount_tracking_assignments mount_tracking_assignments_mount_catalog_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: mount_tracking_assignments mount_tracking_assignments_mount_catalog_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.mount_tracking_assignments
@@ -3928,7 +3450,7 @@ ALTER TABLE ONLY public.mount_tracking_assignments
 
 
 --
--- Name: mount_tracking_assignments mount_tracking_assignments_rule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: mount_tracking_assignments mount_tracking_assignments_rule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.mount_tracking_assignments
@@ -3936,23 +3458,7 @@ ALTER TABLE ONLY public.mount_tracking_assignments
 
 
 --
--- Name: organization_invitations organization_invitations_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.organization_invitations
-    ADD CONSTRAINT organization_invitations_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
-
-
---
--- Name: role_permissions role_permissions_permission_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.role_permissions
-    ADD CONSTRAINT role_permissions_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES public.permissions(id) ON DELETE CASCADE;
-
-
---
--- Name: saved_searches saved_searches_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: saved_searches saved_searches_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.saved_searches
@@ -3960,7 +3466,7 @@ ALTER TABLE ONLY public.saved_searches
 
 
 --
--- Name: scan_errors scan_errors_scan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_errors scan_errors_scan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_errors
@@ -3968,7 +3474,7 @@ ALTER TABLE ONLY public.scan_errors
 
 
 --
--- Name: scan_jobs scan_jobs_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_jobs scan_jobs_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_jobs
@@ -3976,7 +3482,7 @@ ALTER TABLE ONLY public.scan_jobs
 
 
 --
--- Name: scan_jobs scan_jobs_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_jobs scan_jobs_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_jobs
@@ -3984,7 +3490,7 @@ ALTER TABLE ONLY public.scan_jobs
 
 
 --
--- Name: scan_performance_metrics scan_performance_metrics_scan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_performance_metrics scan_performance_metrics_scan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_performance_metrics
@@ -3992,7 +3498,7 @@ ALTER TABLE ONLY public.scan_performance_metrics
 
 
 --
--- Name: scan_phase_steps scan_phase_steps_phase_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_phase_steps scan_phase_steps_phase_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_phase_steps
@@ -4000,7 +3506,7 @@ ALTER TABLE ONLY public.scan_phase_steps
 
 
 --
--- Name: scan_phases scan_phases_scan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: scan_phases scan_phases_scan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.scan_phases
@@ -4008,7 +3514,7 @@ ALTER TABLE ONLY public.scan_phases
 
 
 --
--- Name: tracking_rule_conditions tracking_rule_conditions_rule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tracking_rule_conditions tracking_rule_conditions_rule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rule_conditions
@@ -4016,7 +3522,7 @@ ALTER TABLE ONLY public.tracking_rule_conditions
 
 
 --
--- Name: tracking_rule_evaluations tracking_rule_evaluations_rule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tracking_rule_evaluations tracking_rule_evaluations_rule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.tracking_rule_evaluations
@@ -4024,7 +3530,15 @@ ALTER TABLE ONLY public.tracking_rule_evaluations
 
 
 --
--- Name: usage_snapshots usage_snapshots_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tracking_rules tracking_rules_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
+--
+
+ALTER TABLE ONLY public.tracking_rules
+    ADD CONSTRAINT tracking_rules_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: usage_snapshots usage_snapshots_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.usage_snapshots
@@ -4032,55 +3546,7 @@ ALTER TABLE ONLY public.usage_snapshots
 
 
 --
--- Name: user_activity_log user_activity_log_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_activity_log
-    ADD CONSTRAINT user_activity_log_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.user_sessions(id) ON DELETE SET NULL;
-
-
---
--- Name: user_activity_log user_activity_log_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_activity_log
-    ADD CONSTRAINT user_activity_log_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
-
-
---
--- Name: user_permissions user_permissions_permission_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_permissions
-    ADD CONSTRAINT user_permissions_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES public.permissions(id) ON DELETE CASCADE;
-
-
---
--- Name: user_preferences user_preferences_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_preferences
-    ADD CONSTRAINT user_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
--- Name: user_sessions user_sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_sessions
-    ADD CONSTRAINT user_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
--- Name: users users_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
-
-
---
--- Name: volume_sizes volume_sizes_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: volume_sizes volume_sizes_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.volume_sizes
@@ -4088,7 +3554,7 @@ ALTER TABLE ONLY public.volume_sizes
 
 
 --
--- Name: volumes volumes_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: volumes volumes_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
 ALTER TABLE ONLY public.volumes
@@ -4096,298 +3562,241 @@ ALTER TABLE ONLY public.volumes
 
 
 --
--- Name: alerts; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.alerts ENABLE ROW LEVEL SECURITY;
-
---
--- Name: audit_logs; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-
---
--- Name: audit_logs audit_logs_organization_read; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY audit_logs_organization_read ON public.audit_logs FOR SELECT USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id())));
-
-
---
--- Name: audit_logs audit_logs_system_admin_write; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY audit_logs_system_admin_write ON public.audit_logs FOR INSERT WITH CHECK (public.is_system_admin());
-
-
---
--- Name: daily_stats; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.daily_stats ENABLE ROW LEVEL SECURITY;
-
---
--- Name: docker_mount_catalog; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.docker_mount_catalog ENABLE ROW LEVEL SECURITY;
-
---
--- Name: files; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.files ENABLE ROW LEVEL SECURITY;
-
---
--- Name: files files_organization_isolation; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY files_organization_isolation ON public.files USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL))) WITH CHECK ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL)));
-
-
---
--- Name: folders; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.folders ENABLE ROW LEVEL SECURITY;
-
---
--- Name: folders folders_organization_isolation; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY folders_organization_isolation ON public.folders USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL))) WITH CHECK ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL)));
-
-
---
--- Name: organization_invitations invitations_organization_isolation; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY invitations_organization_isolation ON public.organization_invitations USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()))) WITH CHECK ((public.is_system_admin() OR (organization_id = public.get_current_organization_id())));
-
-
---
--- Name: organization_invitations; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.organization_invitations ENABLE ROW LEVEL SECURITY;
-
---
--- Name: saved_searches; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.saved_searches ENABLE ROW LEVEL SECURITY;
-
---
--- Name: scan_jobs; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.scan_jobs ENABLE ROW LEVEL SECURITY;
-
---
--- Name: users; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-
---
--- Name: users users_organization_isolation; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY users_organization_isolation ON public.users USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()))) WITH CHECK ((public.is_system_admin() OR (organization_id = public.get_current_organization_id())));
-
-
---
--- Name: volumes; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.volumes ENABLE ROW LEVEL SECURITY;
-
---
--- Name: volumes volumes_organization_isolation; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY volumes_organization_isolation ON public.volumes USING ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL))) WITH CHECK ((public.is_system_admin() OR (organization_id = public.get_current_organization_id()) OR (organization_id IS NULL)));
-
-
---
 -- PostgreSQL database dump complete
 --
 
--- Add scan checkpoints for crash recovery and resume capability
--- This enables long-running scans (1TB+ volumes) to resume after crashes/restarts
 
-CREATE TABLE scan_checkpoints (
-    id BIGSERIAL PRIMARY KEY,
-    scan_id TEXT NOT NULL,
-    volume_id TEXT NOT NULL,
-    checkpoint_type TEXT NOT NULL, -- 'volume_scan', 'filesystem_indexing', 'enrichment'
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: volumeviz
+--
 
-    -- Progress state
-    phase TEXT NOT NULL,
-    progress DOUBLE PRECISION NOT NULL DEFAULT 0.0,
-
-    -- Counters
-    items_processed BIGINT NOT NULL DEFAULT 0,
-    bytes_processed BIGINT NOT NULL DEFAULT 0,
-    errors_count BIGINT NOT NULL DEFAULT 0,
-
-    -- Resume position for filesystem indexing
-    last_path TEXT,
-    last_depth INTEGER,
-    last_folder_id BIGINT, -- Resume from this folder in folders table
-    resume_data JSONB, -- Method-specific resume data
-
-    -- Metadata
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    -- Ensure one checkpoint per scan+type combination
-    CONSTRAINT unique_scan_checkpoint UNIQUE (scan_id, checkpoint_type)
+CREATE TABLE public.users (
+    id bigint NOT NULL,
+    organization_id bigint NOT NULL,
+    username character varying(255) NOT NULL,
+    email character varying(255) NOT NULL,
+    password_hash character varying(255) NOT NULL,
+    role character varying(50) DEFAULT 'user'::character varying NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    last_login_at timestamp without time zone
 );
 
--- Indexes for fast checkpoint lookup
-CREATE INDEX idx_scan_checkpoints_scan_id ON scan_checkpoints(scan_id);
-CREATE INDEX idx_scan_checkpoints_volume_id ON scan_checkpoints(volume_id);
-CREATE INDEX idx_scan_checkpoints_updated_at ON scan_checkpoints(updated_at DESC);
+CREATE SEQUENCE public.users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
--- Index for cleanup job (delete checkpoints older than 7 days)
-CREATE INDEX idx_scan_checkpoints_created_at ON scan_checkpoints(created_at);
+ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+ALTER TABLE ONLY public.users ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.users ADD CONSTRAINT users_username_org_unique UNIQUE (username, organization_id);
+ALTER TABLE ONLY public.users ADD CONSTRAINT users_email_org_unique UNIQUE (email, organization_id);
+CREATE INDEX idx_users_organization_id ON public.users USING btree (organization_id);
+CREATE INDEX idx_users_email ON public.users USING btree (email);
+CREATE INDEX idx_users_username ON public.users USING btree (username);
+CREATE INDEX idx_users_role ON public.users USING btree (role);
+CREATE INDEX idx_users_is_active ON public.users USING btree (is_active);
 
--- Note: If scan_jobs table exists in your schema, you may want to add a status column
--- to track interrupted scans. This migration doesn't modify scan_jobs as it may not exist.
+--
+-- Name: permissions; Type: TABLE; Schema: public; Owner: volumeviz
+--
 
--- Function to automatically update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_scan_checkpoint_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Trigger to auto-update updated_at on checkpoint updates
-CREATE TRIGGER trigger_update_scan_checkpoint_updated_at
-    BEFORE UPDATE ON scan_checkpoints
-    FOR EACH ROW
-    EXECUTE FUNCTION update_scan_checkpoint_updated_at();
-
--- Add comment for documentation
-COMMENT ON TABLE scan_checkpoints IS 'Stores periodic checkpoints during volume scans to enable resume capability after crashes or interruptions. Critical for 1TB+ volumes with multi-hour scan times.';
-COMMENT ON COLUMN scan_checkpoints.checkpoint_type IS 'Type of scan phase being checkpointed: volume_scan (size calculation), filesystem_indexing (file/folder crawl), enrichment (media metadata)';
-COMMENT ON COLUMN scan_checkpoints.resume_data IS 'JSON object containing phase-specific data needed to resume. Example: {"method": "diskus", "started_at": "2025-10-05T10:00:00Z"}';
-COMMENT ON COLUMN scan_checkpoints.last_folder_id IS 'ID of last processed folder in folders table. Used to resume filesystem indexing from exact position.';
--- Add volume snapshots for incremental scanning
--- This enables tracking volume state over time and detecting changes
-
-CREATE TABLE volume_snapshots (
-    id BIGSERIAL PRIMARY KEY,
-    volume_id TEXT NOT NULL,
-    scan_id TEXT NOT NULL,
-
-    -- Snapshot metadata
-    snapshot_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    scan_method TEXT NOT NULL, -- 'diskus', 'du', 'native'
-
-    -- Volume state at snapshot time
-    total_size BIGINT NOT NULL DEFAULT 0,
-    file_count BIGINT NOT NULL DEFAULT 0,
-    folder_count BIGINT NOT NULL DEFAULT 0,
-
-    -- For incremental comparison
-    root_mtime TIMESTAMPTZ, -- Root directory modification time
-    content_hash TEXT, -- Hash of directory tree structure (optional)
-
-    -- Statistics
-    scan_duration_ms BIGINT, -- How long the scan took
-    indexing_duration_ms BIGINT, -- How long indexing took
-
-    -- Metadata
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-
-    -- Note: Foreign key to volumes table will be added when volumes table is created
+CREATE TABLE public.permissions (
+    id bigint NOT NULL,
+    role character varying(50) NOT NULL,
+    resource character varying(100) NOT NULL,
+    action character varying(50) NOT NULL,
+    organization_id bigint,
+    created_at timestamp without time zone DEFAULT now() NOT NULL
 );
 
--- Indexes for fast lookups
-CREATE INDEX idx_volume_snapshots_volume_id ON volume_snapshots(volume_id);
-CREATE INDEX idx_volume_snapshots_snapshot_time ON volume_snapshots(snapshot_time DESC);
-CREATE INDEX idx_volume_snapshots_scan_id ON volume_snapshots(scan_id);
+CREATE SEQUENCE public.permissions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
--- Index for cleanup (delete old snapshots) - using simple index instead of partial for compatibility
-CREATE INDEX idx_volume_snapshots_created_at ON volume_snapshots(created_at);
+ALTER SEQUENCE public.permissions_id_seq OWNED BY public.permissions.id;
+ALTER TABLE ONLY public.permissions ALTER COLUMN id SET DEFAULT nextval('public.permissions_id_seq'::regclass);
+ALTER TABLE ONLY public.permissions ADD CONSTRAINT permissions_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.permissions ADD CONSTRAINT permissions_role_resource_action_unique UNIQUE (role, resource, action, organization_id);
+CREATE INDEX idx_permissions_role ON public.permissions USING btree (role);
+CREATE INDEX idx_permissions_organization_id ON public.permissions USING btree (organization_id);
+CREATE INDEX idx_permissions_resource ON public.permissions USING btree (resource);
 
--- Add table to track directory-level changes for faster incremental detection
-CREATE TABLE volume_directory_snapshots (
-    id BIGSERIAL PRIMARY KEY,
-    snapshot_id BIGINT NOT NULL,
-    volume_id TEXT NOT NULL,
+--
+-- Name: roles; Type: TABLE; Schema: public; Owner: volumeviz
+--
 
-    -- Directory information
-    dir_path TEXT NOT NULL, -- Relative path from volume root
-    dir_mtime TIMESTAMPTZ NOT NULL, -- Directory modification time
-    dir_size BIGINT NOT NULL DEFAULT 0, -- Total size of directory
-    file_count INT NOT NULL DEFAULT 0, -- Number of files in directory
-    subdir_count INT NOT NULL DEFAULT 0, -- Number of subdirectories
-
-    -- For change detection
-    content_hash TEXT, -- Hash of directory contents (filenames + sizes)
-
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT fk_snapshot FOREIGN KEY (snapshot_id) REFERENCES volume_snapshots(id) ON DELETE CASCADE
+CREATE TABLE public.roles (
+    id bigint NOT NULL,
+    organization_id bigint NOT NULL,
+    name character varying(100) NOT NULL,
+    description text,
+    is_system boolean DEFAULT false NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL
 );
 
--- Indexes for fast change detection
-CREATE INDEX idx_volume_dir_snapshots_snapshot ON volume_directory_snapshots(snapshot_id);
-CREATE INDEX idx_volume_dir_snapshots_volume ON volume_directory_snapshots(volume_id);
-CREATE INDEX idx_volume_dir_snapshots_path ON volume_directory_snapshots(volume_id, dir_path);
-CREATE INDEX idx_volume_dir_snapshots_mtime ON volume_directory_snapshots(dir_mtime DESC);
+CREATE SEQUENCE public.roles_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
--- Function to get latest snapshot for a volume
-CREATE OR REPLACE FUNCTION get_latest_snapshot(p_volume_id TEXT)
-RETURNS TABLE (
-    snapshot_id BIGINT,
-    snapshot_time TIMESTAMPTZ,
-    total_size BIGINT,
-    file_count BIGINT,
-    folder_count BIGINT
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT id, snapshot_time, total_size, file_count, folder_count
-    FROM volume_snapshots
-    WHERE volume_id = p_volume_id
-    ORDER BY snapshot_time DESC
-    LIMIT 1;
-END;
-$$ LANGUAGE plpgsql;
+ALTER SEQUENCE public.roles_id_seq OWNED BY public.roles.id;
+ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_id_seq'::regclass);
+ALTER TABLE ONLY public.roles ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.roles ADD CONSTRAINT roles_name_org_unique UNIQUE (name, organization_id);
+CREATE INDEX idx_roles_organization_id ON public.roles USING btree (organization_id);
+CREATE INDEX idx_roles_is_system ON public.roles USING btree (is_system);
 
--- Function to cleanup old snapshots (keep last 10 per volume)
-CREATE OR REPLACE FUNCTION cleanup_old_snapshots(p_retention_days INT DEFAULT 90)
-RETURNS INT AS $$
-DECLARE
-    deleted_count INT;
-BEGIN
-    -- Delete snapshots older than retention period, keeping at least last 3 per volume
-    WITH ranked_snapshots AS (
-        SELECT id,
-               ROW_NUMBER() OVER (PARTITION BY volume_id ORDER BY snapshot_time DESC) as rn,
-               created_at
-        FROM volume_snapshots
-    )
-    DELETE FROM volume_snapshots
-    WHERE id IN (
-        SELECT id FROM ranked_snapshots
-        WHERE rn > 10 OR created_at < NOW() - (p_retention_days || ' days')::INTERVAL
-    );
+--
+-- Name: audit_logs; Type: TABLE; Schema: public; Owner: volumeviz
+--
 
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    RETURN deleted_count;
-END;
-$$ LANGUAGE plpgsql;
+CREATE TABLE public.audit_logs (
+    id bigint NOT NULL,
+    organization_id bigint NOT NULL,
+    user_id bigint,
+    action character varying(100) NOT NULL,
+    resource_type character varying(100),
+    resource_id character varying(255),
+    ip_address character varying(45),
+    user_agent text,
+    status character varying(50) NOT NULL,
+    details jsonb,
+    created_at timestamp without time zone DEFAULT now() NOT NULL
+);
 
--- Comments for documentation
-COMMENT ON TABLE volume_snapshots IS 'Stores volume state snapshots for incremental scanning. Enables detecting changes between scans to avoid full rescans of unchanged data.';
-COMMENT ON TABLE volume_directory_snapshots IS 'Stores directory-level snapshots for fine-grained change detection. Allows identifying specific directories that changed.';
-COMMENT ON COLUMN volume_snapshots.content_hash IS 'Optional hash of directory tree structure. Can be used for quick change detection without walking the filesystem.';
-COMMENT ON COLUMN volume_directory_snapshots.content_hash IS 'Hash of directory contents (filenames + sizes). Used to detect if directory contents changed.';
+CREATE SEQUENCE public.audit_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.audit_logs_id_seq OWNED BY public.audit_logs.id;
+ALTER TABLE ONLY public.audit_logs ALTER COLUMN id SET DEFAULT nextval('public.audit_logs_id_seq'::regclass);
+ALTER TABLE ONLY public.audit_logs ADD CONSTRAINT audit_logs_pkey PRIMARY KEY (id);
+CREATE INDEX idx_audit_logs_organization_id ON public.audit_logs USING btree (organization_id);
+CREATE INDEX idx_audit_logs_user_id ON public.audit_logs USING btree (user_id);
+CREATE INDEX idx_audit_logs_action ON public.audit_logs USING btree (action);
+CREATE INDEX idx_audit_logs_resource_type ON public.audit_logs USING btree (resource_type);
+CREATE INDEX idx_audit_logs_created_at ON public.audit_logs USING btree (created_at);
+CREATE INDEX idx_audit_logs_status ON public.audit_logs USING btree (status);
+CREATE INDEX idx_audit_logs_details_gin ON public.audit_logs USING gin (details);
+
+--
+-- Name: recent_audit_events; Type: VIEW; Schema: public; Owner: volumeviz
+--
+
+CREATE OR REPLACE VIEW public.recent_audit_events AS
+SELECT
+    al.id,
+    al.organization_id,
+    al.user_id,
+    u.username,
+    u.email,
+    al.action,
+    al.resource_type,
+    al.resource_id,
+    al.ip_address,
+    al.status,
+    al.details,
+    al.created_at
+FROM public.audit_logs al
+LEFT JOIN public.users u ON al.user_id = u.id
+ORDER BY al.created_at DESC;
+
+--
+-- Name: organization_invitations; Type: TABLE; Schema: public; Owner: volumeviz
+--
+
+CREATE TABLE public.organization_invitations (
+    id bigint NOT NULL,
+    organization_id bigint NOT NULL,
+    email character varying(255) NOT NULL,
+    role character varying(50) DEFAULT 'user'::character varying NOT NULL,
+    token character varying(255) NOT NULL,
+    invited_by bigint,
+    status character varying(50) DEFAULT 'pending'::character varying NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    accepted_at timestamp without time zone,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT valid_status CHECK ((status)::text = ANY ((ARRAY['pending'::character varying, 'accepted'::character varying, 'expired'::character varying, 'revoked'::character varying])::text[]))
+);
+
+CREATE SEQUENCE public.organization_invitations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.organization_invitations_id_seq OWNED BY public.organization_invitations.id;
+ALTER TABLE ONLY public.organization_invitations ALTER COLUMN id SET DEFAULT nextval('public.organization_invitations_id_seq'::regclass);
+ALTER TABLE ONLY public.organization_invitations ADD CONSTRAINT organization_invitations_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.organization_invitations ADD CONSTRAINT organization_invitations_token_key UNIQUE (token);
+CREATE INDEX idx_org_invitations_organization_id ON public.organization_invitations USING btree (organization_id);
+CREATE INDEX idx_org_invitations_email ON public.organization_invitations USING btree (email);
+CREATE INDEX idx_org_invitations_token ON public.organization_invitations USING btree (token);
+CREATE INDEX idx_org_invitations_status ON public.organization_invitations USING btree (status);
+CREATE INDEX idx_org_invitations_invited_by ON public.organization_invitations USING btree (invited_by);
+CREATE INDEX idx_org_invitations_expires_at ON public.organization_invitations USING btree (expires_at);
+
+--
+-- Name: pending_invitations; Type: VIEW; Schema: public; Owner: volumeviz
+--
+
+CREATE OR REPLACE VIEW public.pending_invitations AS
+SELECT
+    oi.id,
+    oi.organization_id,
+    o.name AS organization_name,
+    oi.email,
+    oi.role,
+    oi.token,
+    oi.invited_by,
+    u.username AS invited_by_username,
+    oi.expires_at,
+    oi.created_at
+FROM public.organization_invitations oi
+JOIN public.organizations o ON oi.organization_id = o.id
+LEFT JOIN public.users u ON oi.invited_by = u.id
+WHERE oi.status::text = 'pending'::text
+  AND oi.expires_at > now()
+ORDER BY oi.created_at DESC;
+
+--
+-- Foreign Key Constraints for new tables
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.permissions
+    ADD CONSTRAINT permissions_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.roles
+    ADD CONSTRAINT roles_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.audit_logs
+    ADD CONSTRAINT audit_logs_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.audit_logs
+    ADD CONSTRAINT audit_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY public.organization_invitations
+    ADD CONSTRAINT organization_invitations_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.organization_invitations
+    ADD CONSTRAINT organization_invitations_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES public.users(id) ON DELETE SET NULL;
+

@@ -188,23 +188,6 @@ WHERE s.volume_id = $1 AND v.organization_id = $2
 ORDER BY s.scan_started_at DESC, s.phase_started_at ASC
 LIMIT $3 OFFSET $4;
 
--- name: GetRecentScanErrors :many
-SELECT * FROM recent_scan_errors
-ORDER BY occurred_at DESC
-LIMIT $1 OFFSET $2;
-
--- name: GetRecentScanErrorsByOrganization :many
-SELECT r.* FROM recent_scan_errors r
-JOIN volumes v ON r.volume_id = v.id
-WHERE v.organization_id = $1
-ORDER BY r.occurred_at DESC
-LIMIT $2 OFFSET $3;
-
--- name: GetRecentScanErrorsByScanID :many
-SELECT * FROM recent_scan_errors
-WHERE scan_id = $1
-ORDER BY occurred_at DESC;
-
 -- name: GetScanHistory :many
 SELECT * FROM scan_history
 LIMIT $1 OFFSET $2;

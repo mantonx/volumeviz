@@ -87,12 +87,12 @@ export function ScanProgressDetail({
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
+          <Loader2 className="w-4 h-4 animate-spin text-blue-700 dark:text-blue-400" />
           <span className="font-semibold text-sm text-blue-900 dark:text-blue-100">
             Scanning {volumeName || volumeId}
           </span>
         </div>
-        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+        <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
           {Math.round(overall_progress)}%
         </span>
       </div>
@@ -235,7 +235,7 @@ export function ScanProgressDetail({
 
       {/* Initial state message when scan just started */}
       {scanJustStarted && (
-        <div className="text-xs text-gray-600 dark:text-gray-400 italic">
+        <div className="text-xs text-gray-700 dark:text-gray-300 italic font-medium">
           Initializing scan...
         </div>
       )}
@@ -293,7 +293,7 @@ function PhaseIndicator({ phase }: { phase: ScanPhaseProgress }) {
         {formatPhaseName(phase.phase_name)}
       </span>
       {phase.status === 'running' && (
-        <span className="text-gray-600 dark:text-gray-400 ml-auto">
+        <span className="text-gray-700 dark:text-gray-300 ml-auto font-medium">
           {Math.round(phase.progress)}%
         </span>
       )}

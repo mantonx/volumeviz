@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/netip"
+	"strconv"
 	"time"
 
 	"github.com/mantonx/volumeviz/internal/audit"
@@ -201,7 +202,7 @@ func (sal *SecurityAuditLogger) LogOrganizationSwitch(ctx context.Context, userI
 // logSecurityEvent logs a security event using the audit logger
 func (sal *SecurityAuditLogger) logSecurityEvent(ctx context.Context, event SecurityEvent) {
 	// Convert security event to audit log entry
-	eventData, err := json.Marshal(event)
+	_, err := json.Marshal(event)
 	if err != nil {
 		log.Printf("[SECURITY-AUDIT] Failed to marshal security event: %v", err)
 		return
@@ -216,20 +217,27 @@ func (sal *SecurityAuditLogger) logSecurityEvent(ctx context.Context, event Secu
 	}
 
 	// Create audit log event
+	ipAddrStr := ""
+	if ipAddr != nil {
+		ipAddrStr = ipAddr.String()
+	}
 	auditEvent := audit.Event{
 		Action:       string(event.EventType),
 		ResourceType: event.ResourceType,
 		ResourceID:   event.ResourceID,
-		IPAddress:    ipAddr,
-		UserAgent:    &event.UserAgent,
-		Details:      string(eventData),
+		IPAddress:    ipAddrStr,
+		UserAgent:    event.UserAgent,
+		Details:      event.Details,
 		Timestamp:    event.Timestamp,
+		Status:       "success", // Default to success
 	}
 
 	// Add user and organization context if available
 	if event.UserID != nil {
-		// Convert string to int64 for audit event (assuming UserID format)
-		auditEvent.UserID = nil // TODO: Fix user ID conversion
+		// Convert string to int64 for audit event
+		if userID, err := strconv.ParseInt(*event.UserID, 10, 64); err == nil {
+			auditEvent.UserID = &userID
+		}
 	}
 
 	// Log using audit logger
@@ -245,10 +253,10 @@ func (sal *SecurityAuditLogger) logSecurityEvent(ctx context.Context, event Secu
 func (sal *SecurityAuditLogger) GetSecurityAuditLogs(ctx context.Context, limit int32, offset int32) ([]*audit.Event, error) {
 	// Use audit logger to get events
 	filters := audit.EventFilters{
-		Limit:  int32(limit),
-		Offset: int32(offset),
+		Limit:  limit,
+		Offset: offset,
 	}
-	
+
 	return sal.auditLogger.GetEvents(ctx, filters)
 }
 

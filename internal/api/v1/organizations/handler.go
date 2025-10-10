@@ -1,11 +1,11 @@
 package organizations
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mantonx/volumeviz/internal/api/middleware"
 	organizationsService "github.com/mantonx/volumeviz/internal/services/organizations"
 	"github.com/mantonx/volumeviz/internal/store"
 )
@@ -90,9 +90,15 @@ type UpdateOrganizationRequest struct {
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/v1/organizations/me [get]
 func (h *Handler) GetMyOrganization(c *gin.Context) {
-	orgID, hasOrg := middleware.GetOrganizationID(c.Request.Context())
-	if !hasOrg {
+	// Get organization ID from Gin context (set by auth middleware)
+	orgIDVal, exists := c.Get("organization_id")
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Organization context required"})
+		return
+	}
+	orgID, ok := orgIDVal.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid organization ID type"})
 		return
 	}
 
@@ -147,9 +153,15 @@ func (h *Handler) GetMyOrganization(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/v1/organizations/me [put]
 func (h *Handler) UpdateMyOrganization(c *gin.Context) {
-	orgID, hasOrg := middleware.GetOrganizationID(c.Request.Context())
-	if !hasOrg {
+	// Get organization ID from Gin context (set by auth middleware)
+	orgIDVal, exists := c.Get("organization_id")
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Organization context required"})
+		return
+	}
+	orgID, ok := orgIDVal.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid organization ID type"})
 		return
 	}
 
@@ -263,4 +275,93 @@ func (h *Handler) calculateLimits(org store.Organization, userCount, volumeCount
 	}
 
 	return limits
+}
+
+// GetOrganization returns organization details by ID (for development/testing without auth)
+// @Summary Get organization by ID
+// @Description Get organization details by ID
+// @Tags organizations
+// @Accept json
+// @Produce json
+// @Param id path int true "Organization ID"
+// @Success 200 {object} OrganizationResponse "Organization details"
+// @Failure 404 {object} map[string]interface{} "Organization not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/organizations/{id} [get]
+func (h *Handler) GetOrganization(c *gin.Context) {
+	orgID := c.Param("id")
+
+	// Parse organization ID
+	var id int64
+	if _, err := fmt.Sscanf(orgID, "%d", &id); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization ID"})
+		return
+	}
+
+	// Get organization details
+	org, err := h.store.Organizations().GetOrganizationByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Organization not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, h.convertToResponse(org))
+}
+
+// GetOrganizationStats returns organization statistics by ID
+// @Summary Get organization statistics
+// @Description Get organization usage statistics
+// @Tags organizations
+// @Accept json
+// @Produce json
+// @Param id path int true "Organization ID"
+// @Param include_growth query bool false "Include growth metrics"
+// @Success 200 {object} OrganizationWithStatsResponse "Organization stats"
+// @Failure 404 {object} map[string]interface{} "Organization not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/organizations/{id}/stats [get]
+func (h *Handler) GetOrganizationStats(c *gin.Context) {
+	orgID := c.Param("id")
+
+	// Parse organization ID
+	var id int64
+	if _, err := fmt.Sscanf(orgID, "%d", &id); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization ID"})
+		return
+	}
+
+	// Get organization details
+	org, err := h.store.Organizations().GetOrganizationByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Organization not found"})
+		return
+	}
+
+	// Get organization statistics
+	userCount, err := h.store.Organizations().GetOrganizationUserCount(c.Request.Context(), id)
+	if err != nil {
+		userCount = 0
+	}
+
+	volumeCount, err := h.store.Organizations().GetOrganizationVolumeCount(c.Request.Context(), id)
+	if err != nil {
+		volumeCount = 0
+	}
+
+	storageUsage, err := h.store.Organizations().GetOrganizationStorageUsage(c.Request.Context(), id)
+	if err != nil {
+		storageUsage = 0
+	}
+
+	response := OrganizationWithStatsResponse{
+		Organization: h.convertToResponse(org),
+		Stats: OrganizationStatsResponse{
+			UserCount:    userCount,
+			VolumeCount:  volumeCount,
+			StorageUsage: storageUsage,
+		},
+		Limits: h.calculateLimits(org, userCount, volumeCount, storageUsage),
+	}
+
+	c.JSON(http.StatusOK, response)
 }

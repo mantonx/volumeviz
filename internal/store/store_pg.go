@@ -15,9 +15,17 @@ type pgStore struct {
 	conn *db.PostgreSQLConnection
 }
 
+// PostgreSQLStore is a type alias for accessing PostgreSQL-specific methods
+type PostgreSQLStore = pgStore
+
 // NewPostgreSQLStore creates a new PostgreSQL store
 func NewPostgreSQLStore(conn *db.PostgreSQLConnection) Store {
 	return &pgStore{conn: conn}
+}
+
+// GetPool returns the underlying PostgreSQL connection pool
+func (s *pgStore) GetPool() *pgxpool.Pool {
+	return s.conn.Pool
 }
 
 // WithTx executes a function within a database transaction
@@ -93,19 +101,19 @@ func (s *pgStore) Search() *repo.SearchRepo {
 	return repo.NewSearchRepo(s.conn.Queries)
 }
 
-// Users returns a users repository using the pool connection
-func (s *pgStore) Users() repo.UsersRepo {
-	return repo.NewPostgreSQLUsersRepo(s.conn.Queries, s.conn.Pool)
-}
-
 // Organizations returns an organizations repository using the pool connection
 func (s *pgStore) Organizations() repo.OrganizationsRepo {
 	return repo.NewPostgreSQLOrganizationsRepo(s.conn.Queries, s.conn.Pool)
 }
 
+// Users returns a users repository using the pool connection
+func (s *pgStore) Users() repo.UsersRepository {
+	return repo.NewUsersRepo(s.conn.Pool)
+}
+
 // GetUserByID is a convenience method for getting a user by ID
 func (s *pgStore) GetUserByID(ctx context.Context, id int64) (User, error) {
-	return s.conn.Queries.GetUserByID(ctx, id)
+	return s.Users().GetUserByID(ctx, id)
 }
 
 // GetOrganizationByID is a convenience method for getting an organization by ID
@@ -203,8 +211,16 @@ func (s *pgTxStore) Search() *repo.SearchRepo {
 }
 
 // Users returns a users repository using the transaction connection
-func (s *pgTxStore) Users() repo.UsersRepo {
-	return repo.NewPostgreSQLUsersRepo(s.queries, s.tx)
+func (s *pgTxStore) Users() repo.UsersRepository {
+	// Create a temporary pool from the transaction for the users repo
+	// This is a workaround since NewUsersRepo expects *pgxpool.Pool
+	// TODO: Update NewUsersRepo to accept sqlc.DBTX for proper transaction support
+	config := s.tx.Conn().Config()
+	poolConfig, _ := pgxpool.ParseConfig(config.ConnString())
+	poolConfig.MaxConns = 1
+	poolConfig.MinConns = 1
+	tmpPool, _ := pgxpool.NewWithConfig(context.Background(), poolConfig)
+	return repo.NewUsersRepo(tmpPool)
 }
 
 // Organizations returns an organizations repository using the transaction connection
