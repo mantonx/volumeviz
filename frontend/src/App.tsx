@@ -30,7 +30,12 @@ const UserProfilePage = React.lazy(() => import('@/pages/UserProfilePage'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
 
 // Admin pages
+const AdminDashboardPage = React.lazy(() => import('@/pages/admin/DashboardPage'));
 const AdminUsersPage = React.lazy(() => import('@/pages/admin/UsersPage'));
+const AdminOrganizationsPage = React.lazy(() => import('@/pages/admin/OrganizationsPage'));
+const AdminAuditLogsPage = React.lazy(() => import('@/pages/admin/AuditLogsPage'));
+const AdminPermissionsPage = React.lazy(() => import('@/pages/admin/PermissionsPage'));
+const AdminSystemSettingsPage = React.lazy(() => import('@/pages/admin/SystemSettingsPage'));
 
 // Legacy pages - kept for backward compatibility and Settings integration
 const ExplorerPage = React.lazy(() => import('@/pages/ExplorerPage'));
@@ -142,8 +147,13 @@ const App: React.FC = () => {
                       <RequireAdmin>
                         <AdminLayout>
                           <Routes>
+                            <Route index element={<AdminDashboardPage />} />
                             <Route path="users" element={<AdminUsersPage />} />
-                            <Route path="*" element={<Navigate to="/admin/users" replace />} />
+                            <Route path="organizations" element={<AdminOrganizationsPage />} />
+                            <Route path="audit" element={<AdminAuditLogsPage />} />
+                            <Route path="permissions" element={<AdminPermissionsPage />} />
+                            <Route path="settings" element={<AdminSystemSettingsPage />} />
+                            <Route path="*" element={<Navigate to="/admin" replace />} />
                           </Routes>
                         </AdminLayout>
                       </RequireAdmin>

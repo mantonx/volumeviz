@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   ChevronLeft,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils';
@@ -35,6 +36,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  {
+    name: 'Dashboard',
+    path: '/admin',
+    icon: LayoutDashboard,
+    description: 'Admin overview',
+  },
   {
     name: 'Users',
     path: '/admin/users',
