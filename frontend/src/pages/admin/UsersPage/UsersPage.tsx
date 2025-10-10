@@ -37,10 +37,20 @@ export const UsersPage: React.FC = () => {
     const fetchUsers = async () => {
       try {
         const response = await getUsers({ page: 1, page_size: 100 });
-        const data = response.data as any;
-        setUsers(data?.data || []);
+        // The API returns { data: [...], page, page_size, total }
+        // But response.data seems to BE the array directly in the logs
+        // Let's check if response.data is an array or object
+        const responseData = response.data as any;
+
+        if (Array.isArray(responseData)) {
+          // response.data is directly the array
+          setUsers(responseData);
+        } else {
+          // response.data is the paged response object
+          setUsers(responseData?.data || []);
+        }
       } catch (err: any) {
-        console.error('Failed to fetch users:', err);
+        console.error('[UsersPage] Failed to fetch users:', err);
         setError(err.message || 'Failed to load users');
       } finally {
         setLoading(false);
@@ -54,6 +64,28 @@ export const UsersPage: React.FC = () => {
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading users...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 dark:text-red-400">Error: {error}</p>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Please check the console for details</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
