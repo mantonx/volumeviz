@@ -10,6 +10,7 @@ type VolumeV1 struct {
 	Driver             string              `json:"driver" example:"local"`
 	CreatedAt          time.Time           `json:"created_at" example:"2023-01-01T10:00:00Z"`
 	Labels             map[string]string   `json:"labels,omitempty" example:"com.docker.compose.project:media"`
+	Options            map[string]string   `json:"options,omitempty" example:"type:none,device:/mnt/media"`
 	Scope              string              `json:"scope" example:"local"`
 	Mountpoint         string              `json:"mountpoint" example:"/var/lib/docker/volumes/tv-shows-readonly/_data"`
 	SizeBytes          *int64              `json:"size_bytes,omitempty" example:"1073741824"`

@@ -1033,4 +1033,12 @@ type Volumes struct {
 	CreatedAt      time.Time          `json:"created_at"`
 	UpdatedAt      time.Time          `json:"updated_at"`
 	OrganizationID pgtype.Int8        `json:"organization_id"`
+	// Docker volume driver (local, nfs, cifs, etc.)
+	Driver pgtype.Text `json:"driver"`
+	// Docker volume scope (local or global)
+	Scope pgtype.Text `json:"scope"`
+	// Docker volume labels as JSON object
+	Labels []byte `json:"labels"`
+	// Driver-specific options (e.g., device path for bind mounts)
+	Options []byte `json:"options"`
 }

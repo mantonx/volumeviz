@@ -235,6 +235,31 @@ func (r *volumesRepo) SoftDeleteVolume(ctx context.Context, organizationID int64
 
 func (r *volumesRepo) UpsertVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error) {
 	now := time.Now()
+
+	// Convert labels map to JSON bytes
+	var labelsJSON []byte
+	if params.Labels != nil && len(params.Labels) > 0 {
+		var err error
+		labelsJSON, err = json.Marshal(params.Labels)
+		if err != nil {
+			labelsJSON = []byte("{}")
+		}
+	} else {
+		labelsJSON = []byte("{}")
+	}
+
+	// Convert options map to JSON bytes
+	var optionsJSON []byte
+	if params.Options != nil && len(params.Options) > 0 {
+		var err error
+		optionsJSON, err = json.Marshal(params.Options)
+		if err != nil {
+			optionsJSON = []byte("{}")
+		}
+	} else {
+		optionsJSON = []byte("{}")
+	}
+
 	result, err := r.queries.UpsertVolume(ctx, sqlc.UpsertVolumeParams{
 		VolumeID:       params.VolumeID,
 		DisplayName:    pgtype.Text{String: params.Name, Valid: params.Name != ""},
@@ -250,6 +275,10 @@ func (r *volumesRepo) UpsertVolume(ctx context.Context, organizationID int64, pa
 		LastScanAt:     pgtype.Timestamptz{Valid: false}, // No scan yet
 		LastModifiedAt: pgtype.Timestamptz{Valid: false}, // Will be detected later
 		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true}, // Organization context
+		Driver:         pgtype.Text{String: params.Driver, Valid: params.Driver != ""},
+		Scope:          pgtype.Text{String: params.Scope, Valid: params.Scope != ""},
+		Labels:         labelsJSON,
+		Options:        optionsJSON,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert volume: %w", err)
@@ -258,7 +287,11 @@ func (r *volumesRepo) UpsertVolume(ctx context.Context, organizationID int64, pa
 	return &models.Volume{
 		VolumeID:   result.VolumeID,
 		Name:       pgTextToString(result.DisplayName),
+		Driver:     pgTextToString(result.Driver),
+		Scope:      pgTextToString(result.Scope),
 		Mountpoint: result.MountPoint,
+		Labels:     params.Labels, // Pass through original map
+		Options:    params.Options, // Pass through original map
 		IsActive:   pgBoolToBool(result.IsActive),
 		CreatedAt:  result.CreatedAt,
 		UpdatedAt:  result.UpdatedAt,

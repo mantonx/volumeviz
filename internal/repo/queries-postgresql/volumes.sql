@@ -94,11 +94,13 @@ WHERE volume_id = $1 AND organization_id = $2;
 INSERT INTO volumes (
     volume_id, display_name, mount_point, container_names, is_active,
     total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type,
-    container_count, first_seen_at, last_scan_at, last_modified_at, organization_id
+    container_count, first_seen_at, last_scan_at, last_modified_at, organization_id,
+    driver, scope, labels, options
 ) VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9,
-    $10, $11, $12, $13, $14
+    $10, $11, $12, $13, $14,
+    $15, $16, $17, $18
 ) ON CONFLICT (volume_id) DO UPDATE SET
     display_name = EXCLUDED.display_name,
     mount_point = EXCLUDED.mount_point,
@@ -112,6 +114,11 @@ INSERT INTO volumes (
     container_count = COALESCE(EXCLUDED.container_count, volumes.container_count),
     last_scan_at = COALESCE(EXCLUDED.last_scan_at, volumes.last_scan_at),
     last_modified_at = COALESCE(EXCLUDED.last_modified_at, volumes.last_modified_at),
+    -- Update Docker metadata fields
+    driver = EXCLUDED.driver,
+    scope = EXCLUDED.scope,
+    labels = EXCLUDED.labels,
+    options = EXCLUDED.options,
     updated_at = NOW()
 RETURNING *;
 

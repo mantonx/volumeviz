@@ -102,7 +102,7 @@ INSERT INTO volumes (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9,
     $10, $11, $12, $13, $14
-) RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id
+) RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options
 `
 
 type CreateVolumeParams struct {
@@ -158,6 +158,10 @@ func (q *Queries) CreateVolume(ctx context.Context, arg CreateVolumeParams) (Vol
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
 	)
 	return i, err
 }
@@ -256,7 +260,7 @@ func (q *Queries) GetContainerByContainerID(ctx context.Context, containerID str
 }
 
 const getVolume = `-- name: GetVolume :one
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id FROM volumes WHERE volume_id = $1 AND organization_id = $2
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes WHERE volume_id = $1 AND organization_id = $2
 `
 
 type GetVolumeParams struct {
@@ -284,12 +288,16 @@ func (q *Queries) GetVolume(ctx context.Context, arg GetVolumeParams) (Volumes, 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
 	)
 	return i, err
 }
 
 const getVolumeByID = `-- name: GetVolumeByID :one
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id FROM volumes WHERE volume_id = $1 AND organization_id = $2
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes WHERE volume_id = $1 AND organization_id = $2
 `
 
 type GetVolumeByIDParams struct {
@@ -317,12 +325,16 @@ func (q *Queries) GetVolumeByID(ctx context.Context, arg GetVolumeByIDParams) (V
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
 	)
 	return i, err
 }
 
 const getVolumeByOrg = `-- name: GetVolumeByOrg :one
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id FROM volumes WHERE volume_id = $1 AND organization_id = $2
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes WHERE volume_id = $1 AND organization_id = $2
 `
 
 type GetVolumeByOrgParams struct {
@@ -350,12 +362,16 @@ func (q *Queries) GetVolumeByOrg(ctx context.Context, arg GetVolumeByOrgParams) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
 	)
 	return i, err
 }
 
 const getVolumeByVolumeID = `-- name: GetVolumeByVolumeID :one
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id FROM volumes WHERE volume_id = $1 AND organization_id = $2
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes WHERE volume_id = $1 AND organization_id = $2
 `
 
 type GetVolumeByVolumeIDParams struct {
@@ -383,6 +399,10 @@ func (q *Queries) GetVolumeByVolumeID(ctx context.Context, arg GetVolumeByVolume
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
 	)
 	return i, err
 }
@@ -474,7 +494,7 @@ func (q *Queries) GetVolumeStats(ctx context.Context, arg GetVolumeStatsParams) 
 }
 
 const getVolumeSystemLevel = `-- name: GetVolumeSystemLevel :one
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id FROM volumes WHERE volume_id = $1
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes WHERE volume_id = $1
 `
 
 func (q *Queries) GetVolumeSystemLevel(ctx context.Context, volumeID string) (Volumes, error) {
@@ -497,12 +517,16 @@ func (q *Queries) GetVolumeSystemLevel(ctx context.Context, volumeID string) (Vo
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
 	)
 	return i, err
 }
 
 const listActiveVolumes = `-- name: ListActiveVolumes :many
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id FROM volumes 
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes 
 WHERE is_active = true AND organization_id = $1
 ORDER BY volume_id
 `
@@ -533,6 +557,10 @@ func (q *Queries) ListActiveVolumes(ctx context.Context, organizationID pgtype.I
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.OrganizationID,
+			&i.Driver,
+			&i.Scope,
+			&i.Labels,
+			&i.Options,
 		); err != nil {
 			return nil, err
 		}
@@ -545,7 +573,7 @@ func (q *Queries) ListActiveVolumes(ctx context.Context, organizationID pgtype.I
 }
 
 const listAllVolumes = `-- name: ListAllVolumes :many
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id FROM volumes 
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes 
 ORDER BY volume_id
 LIMIT $1 OFFSET $2
 `
@@ -581,6 +609,10 @@ func (q *Queries) ListAllVolumes(ctx context.Context, arg ListAllVolumesParams) 
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.OrganizationID,
+			&i.Driver,
+			&i.Scope,
+			&i.Labels,
+			&i.Options,
 		); err != nil {
 			return nil, err
 		}
@@ -593,7 +625,7 @@ func (q *Queries) ListAllVolumes(ctx context.Context, arg ListAllVolumesParams) 
 }
 
 const listVolumes = `-- name: ListVolumes :many
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id FROM volumes 
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes 
 WHERE organization_id = $1
 ORDER BY volume_id
 LIMIT $2 OFFSET $3
@@ -631,6 +663,10 @@ func (q *Queries) ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Vol
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.OrganizationID,
+			&i.Driver,
+			&i.Scope,
+			&i.Labels,
+			&i.Options,
 		); err != nil {
 			return nil, err
 		}
@@ -644,7 +680,7 @@ func (q *Queries) ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Vol
 
 const listVolumesWithCounts = `-- name: ListVolumesWithCounts :many
 SELECT
-    v.volume_id, v.display_name, v.mount_point, v.container_names, v.is_active, v.total_size_bytes, v.used_size_bytes, v.free_size_bytes, v.filesystem_type, v.container_count, v.first_seen_at, v.last_scan_at, v.last_modified_at, v.created_at, v.updated_at, v.organization_id,
+    v.volume_id, v.display_name, v.mount_point, v.container_names, v.is_active, v.total_size_bytes, v.used_size_bytes, v.free_size_bytes, v.filesystem_type, v.container_count, v.first_seen_at, v.last_scan_at, v.last_modified_at, v.created_at, v.updated_at, v.organization_id, v.driver, v.scope, v.labels, v.options,
     COALESCE(COUNT(DISTINCT f.id), 0)::bigint as file_count,
     COALESCE(COUNT(DISTINCT fo.id), 0)::bigint as folder_count
 FROM volumes v
@@ -679,6 +715,10 @@ type ListVolumesWithCountsRow struct {
 	CreatedAt      time.Time          `json:"created_at"`
 	UpdatedAt      time.Time          `json:"updated_at"`
 	OrganizationID pgtype.Int8        `json:"organization_id"`
+	Driver         pgtype.Text        `json:"driver"`
+	Scope          pgtype.Text        `json:"scope"`
+	Labels         []byte             `json:"labels"`
+	Options        []byte             `json:"options"`
 	FileCount      int64              `json:"file_count"`
 	FolderCount    int64              `json:"folder_count"`
 }
@@ -709,6 +749,10 @@ func (q *Queries) ListVolumesWithCounts(ctx context.Context, arg ListVolumesWith
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.OrganizationID,
+			&i.Driver,
+			&i.Scope,
+			&i.Labels,
+			&i.Options,
 			&i.FileCount,
 			&i.FolderCount,
 		); err != nil {
@@ -829,7 +873,7 @@ SET
     last_modified_at = $12,
     updated_at = NOW()
 WHERE volume_id = $1 AND organization_id = $13
-RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options
 `
 
 type UpdateVolumeParams struct {
@@ -882,6 +926,10 @@ func (q *Queries) UpdateVolume(ctx context.Context, arg UpdateVolumeParams) (Vol
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
 	)
 	return i, err
 }
@@ -895,7 +943,7 @@ SET
     last_scan_at = NOW(),
     updated_at = NOW()
 WHERE volume_id = $1 AND organization_id = $5
-RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options
 `
 
 type UpdateVolumeStatsParams struct {
@@ -932,6 +980,10 @@ func (q *Queries) UpdateVolumeStats(ctx context.Context, arg UpdateVolumeStatsPa
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
 	)
 	return i, err
 }
@@ -998,11 +1050,13 @@ const upsertVolume = `-- name: UpsertVolume :one
 INSERT INTO volumes (
     volume_id, display_name, mount_point, container_names, is_active,
     total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type,
-    container_count, first_seen_at, last_scan_at, last_modified_at, organization_id
+    container_count, first_seen_at, last_scan_at, last_modified_at, organization_id,
+    driver, scope, labels, options
 ) VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9,
-    $10, $11, $12, $13, $14
+    $10, $11, $12, $13, $14,
+    $15, $16, $17, $18
 ) ON CONFLICT (volume_id) DO UPDATE SET
     display_name = EXCLUDED.display_name,
     mount_point = EXCLUDED.mount_point,
@@ -1016,8 +1070,13 @@ INSERT INTO volumes (
     container_count = COALESCE(EXCLUDED.container_count, volumes.container_count),
     last_scan_at = COALESCE(EXCLUDED.last_scan_at, volumes.last_scan_at),
     last_modified_at = COALESCE(EXCLUDED.last_modified_at, volumes.last_modified_at),
+    -- Update Docker metadata fields
+    driver = EXCLUDED.driver,
+    scope = EXCLUDED.scope,
+    labels = EXCLUDED.labels,
+    options = EXCLUDED.options,
     updated_at = NOW()
-RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options
 `
 
 type UpsertVolumeParams struct {
@@ -1035,6 +1094,10 @@ type UpsertVolumeParams struct {
 	LastScanAt     pgtype.Timestamptz `json:"last_scan_at"`
 	LastModifiedAt pgtype.Timestamptz `json:"last_modified_at"`
 	OrganizationID pgtype.Int8        `json:"organization_id"`
+	Driver         pgtype.Text        `json:"driver"`
+	Scope          pgtype.Text        `json:"scope"`
+	Labels         []byte             `json:"labels"`
+	Options        []byte             `json:"options"`
 }
 
 func (q *Queries) UpsertVolume(ctx context.Context, arg UpsertVolumeParams) (Volumes, error) {
@@ -1053,6 +1116,10 @@ func (q *Queries) UpsertVolume(ctx context.Context, arg UpsertVolumeParams) (Vol
 		arg.LastScanAt,
 		arg.LastModifiedAt,
 		arg.OrganizationID,
+		arg.Driver,
+		arg.Scope,
+		arg.Labels,
+		arg.Options,
 	)
 	var i Volumes
 	err := row.Scan(
@@ -1072,6 +1139,10 @@ func (q *Queries) UpsertVolume(ctx context.Context, arg UpsertVolumeParams) (Vol
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
 	)
 	return i, err
 }

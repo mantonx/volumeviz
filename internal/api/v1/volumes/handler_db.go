@@ -4,6 +4,7 @@ package volumes
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -137,10 +138,38 @@ func (h *Handler) getVolumesFromDatabase(ctx context.Context, pagination *apiuti
 
 // convertDBVolumeToAPI converts a database volume to API format
 func (h *Handler) convertDBVolumeToAPI(dbVol sqlc.Volumes) models.VolumeV1 {
-	// Extract driver (filesystem type)
+	// Extract driver from new driver column (fallback to filesystem type)
 	driver := "local"
-	if dbVol.FilesystemType.Valid {
+	if dbVol.Driver.Valid && dbVol.Driver.String != "" {
+		driver = dbVol.Driver.String
+	} else if dbVol.FilesystemType.Valid {
 		driver = dbVol.FilesystemType.String
+	}
+
+	// Extract scope
+	scope := "local"
+	if dbVol.Scope.Valid && dbVol.Scope.String != "" {
+		scope = dbVol.Scope.String
+	}
+
+	// Parse labels from JSONB
+	labels := make(map[string]string)
+	if len(dbVol.Labels) > 0 && string(dbVol.Labels) != "{}" {
+		_ = json.Unmarshal(dbVol.Labels, &labels)
+	}
+
+	// Parse options from JSONB
+	options := make(map[string]string)
+	if len(dbVol.Options) > 0 && string(dbVol.Options) != "{}" {
+		_ = json.Unmarshal(dbVol.Options, &options)
+	}
+
+	// Determine mount point display
+	// For bind mounts (type=none), show the actual device path instead of Docker internal path
+	mountpoint := dbVol.MountPoint
+	if options["type"] == "none" && options["device"] != "" {
+		// This is a bind mount - show the actual source path
+		mountpoint = options["device"]
 	}
 
 	// Extract size
@@ -171,10 +200,11 @@ func (h *Handler) convertDBVolumeToAPI(dbVol sqlc.Volumes) models.VolumeV1 {
 	return models.VolumeV1{
 		Name:             dbVol.VolumeID,
 		Driver:           driver,
-		CreatedAt:        dbVol.CreatedAt, // CreatedAt is time.Time, not pgtype
-		Labels:           make(map[string]string), // TODO: Store labels in DB
-		Scope:            "local",
-		Mountpoint:       dbVol.MountPoint,
+		CreatedAt:        dbVol.CreatedAt,
+		Labels:           labels,
+		Scope:            scope,
+		Mountpoint:       mountpoint, // Shows actual device path for bind mounts
+		Options:          options,     // Include options for frontend inspection
 		SizeBytes:        sizeBytes,
 		LastScanAt:       lastScanAt,
 		AttachmentsCount: containerCount,

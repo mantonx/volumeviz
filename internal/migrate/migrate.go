@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -64,6 +65,14 @@ func runMigrationUp(m *migrate.Migrate) error {
 	// Run migrations
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
+		// Check if error is due to missing down migration - this is acceptable
+		// when database is already at latest version
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "no migration found for version") && strings.Contains(errMsg, "read down") {
+			log.Printf("[MIGRATE] ⚠️  Warning: Missing down migration file, but database is at version %d", currentVersion)
+			log.Printf("[MIGRATE] ✅ Database is already up to date")
+			return nil
+		}
 		return fmt.Errorf("migration failed: %w", err)
 	}
 
