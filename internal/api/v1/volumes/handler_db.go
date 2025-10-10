@@ -82,34 +82,53 @@ func (h *Handler) getVolumesFromDatabase(ctx context.Context, pagination *apiuti
 			continue
 		}
 
+		var apiVol models.VolumeV1
+		fromCache := false
+
 		// Check if we have this volume in cache
 		if cachedVol, found := cachedVolumes[dbVol.VolumeID]; found {
-			// Use cached version
-			apiVolumes = append(apiVolumes, cachedVol)
-			continue
+			// Use cached version as base
+			apiVol = cachedVol
+			fromCache = true
+		} else {
+			// Cache miss - convert from DB
+			apiVol = h.convertDBVolumeToAPI(dbVol)
 		}
 
-		// Cache miss - convert from DB
-		apiVol := h.convertDBVolumeToAPI(dbVol)
-
-		// Enhance with additional data if needed
+		// Always enhance with real-time data (file counts, filesystem capacity)
+		// This ensures counts are always fresh, even for cached volumes
 		if h.store != nil {
-			// Get filesystem capacity from scan results
-			if fsInfo, err := h.store.Stats().GetVolumeFilesystemCapacity(ctx, dbVol.VolumeID); err == nil && fsInfo != nil {
-				apiVol.FilesystemCapacity = &models.FilesystemCapacity{
-					TotalBytes:     fsInfo.TotalBytes,
-					AvailableBytes: fsInfo.AvailableBytes,
-					UsedBytes:      fsInfo.UsedBytes,
-					UsagePercent:   fsInfo.UsagePercent,
-					BlockSize:      fsInfo.BlockSize,
-					TotalBlocks:    fsInfo.TotalBlocks,
-					FreeBlocks:     fsInfo.FreeBlocks,
+			// Get filesystem capacity from scan results (if not from cache, or to refresh)
+			if !fromCache {
+				if fsInfo, err := h.store.Stats().GetVolumeFilesystemCapacity(ctx, dbVol.VolumeID); err == nil && fsInfo != nil {
+					apiVol.FilesystemCapacity = &models.FilesystemCapacity{
+						TotalBytes:     fsInfo.TotalBytes,
+						AvailableBytes: fsInfo.AvailableBytes,
+						UsedBytes:      fsInfo.UsedBytes,
+						UsagePercent:   fsInfo.UsagePercent,
+						BlockSize:      fsInfo.BlockSize,
+						TotalBlocks:    fsInfo.TotalBlocks,
+						FreeBlocks:     fsInfo.FreeBlocks,
+					}
 				}
+			}
+
+			// Get file and folder counts from database (always fresh)
+			fileCount, fileErr := h.store.Files().CountFilesByVolume(ctx, dbVol.VolumeID)
+			if fileErr == nil && fileCount > 0 {
+				apiVol.FileCount = &fileCount
+			}
+
+			folderCount, folderErr := h.store.Folders().CountFoldersByVolume(ctx, dbVol.VolumeID)
+			if folderErr == nil && folderCount > 0 {
+				apiVol.FolderCount = &folderCount
 			}
 		}
 
 		apiVolumes = append(apiVolumes, apiVol)
-		freshVolumes = append(freshVolumes, apiVol)
+		if !fromCache {
+			freshVolumes = append(freshVolumes, apiVol)
+		}
 	}
 
 	// Update cache with freshly fetched volumes (Phase 3)

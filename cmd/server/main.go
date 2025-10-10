@@ -481,7 +481,7 @@ func main() {
 
 		// Set cache on volumes handler
 		apiRouter.VolumesHandler().SetCache(volumeCache)
-		log.Printf("[INFO] Volume cache integrated with API handler")
+		log.Printf("[INFO] Volume cache integrated with volumes handler")
 	}
 
 	// Integrate broadcaster and cache with worker pool (Phase 3)

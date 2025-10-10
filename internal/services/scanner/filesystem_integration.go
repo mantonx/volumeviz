@@ -193,10 +193,49 @@ func (vs *VolumeScanner) performFilesystemIndexingAsync(ctx context.Context, vol
 			vs.logger.Printf("Filesystem indexing failed for volume %s: %v (duration: %v)",
 				volumeID, err, duration)
 		}
-	} else {
-		if vs.logger != nil {
-			vs.logger.Printf("Filesystem indexing completed for volume %s (duration: %v)",
-				volumeID, duration)
+		return
+	}
+
+	if vs.logger != nil {
+		vs.logger.Printf("Filesystem indexing completed for volume %s (duration: %v)",
+			volumeID, duration)
+	}
+
+	// Get indexing progress/stats
+	progress := vs.filesystemIndexer.GetProgress()
+	if progress != nil && vs.logger != nil {
+		vs.logger.Printf("Filesystem indexing stats for volume %s: %d folders, %d files, %d bytes processed",
+			volumeID, progress.FoldersScanned, progress.FilesScanned, progress.BytesProcessed)
+	}
+
+	// Update last_scanned timestamp for the volume
+	if vs.volumesRepo != nil {
+		// Use a fresh context to avoid cancellation issues from the indexing timeout
+		updateCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Scanner service uses system-level operations with intelligent organization assignment
+		// First get the volume to determine its organization context
+		volume, volErr := vs.store.Volumes().GetVolumeByVolumeIDSystemLevel(updateCtx, volumeID)
+		organizationID := int64(1) // Default fallback
+		if volErr == nil && volume != nil && volume.OrganizationID != nil {
+			organizationID = *volume.OrganizationID
 		}
+
+		if err := vs.volumesRepo.UpdateLastScanned(updateCtx, organizationID, volumeID, time.Now()); err != nil {
+			if vs.logger != nil {
+				vs.logger.Printf("Failed to update last_scanned for volume %s: %v", volumeID, err)
+			}
+		} else {
+			if vs.logger != nil {
+				vs.logger.Printf("Successfully updated last_scanned for volume %s", volumeID)
+			}
+		}
+	}
+
+	// Trigger media enrichment if enabled
+	if vs.enrichmentManager != nil && vs.enrichmentManager.IsEnabled() {
+		// Use background context so enrichment can continue after scan completes
+		go vs.performMediaEnrichment(context.Background(), volumeID)
 	}
 }

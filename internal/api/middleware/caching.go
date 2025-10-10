@@ -46,10 +46,11 @@ func setCacheHeaders(c *gin.Context) {
 		c.Header("Cache-Control", "public, max-age=600") // 10 minutes
 		c.Header("Vary", "Accept-Encoding")
 
-	case strings.Contains(path, "/volumes/") && !strings.Contains(path, "/scan"):
-		// Volume info can be cached longer
-		c.Header("Cache-Control", "public, max-age=1800") // 30 minutes
-		c.Header("Vary", "Accept-Encoding")
+	case strings.Contains(path, "/volumes"):
+		// NO CACHING for volumes - file counts change frequently
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
 
 	case strings.Contains(path, "/openapi/") || strings.Contains(path, "/docs"):
 		// API docs can be cached for a long time

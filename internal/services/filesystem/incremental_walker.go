@@ -372,9 +372,23 @@ func (w *IncrementalWalker) initializeProgress(scanID string, totalFiles, totalF
 	}
 	w.indexer.progressMutex.Unlock()
 
-	// Update database progress
+	// Update database progress with total counts
 	if scanID != "" && w.indexer.progressTracker != nil {
+		// First set the phase to running
 		w.indexer.progressTracker.UpdatePhaseStatus(context.Background(), scanID, "filesystem_indexing", "running", "")
+
+		// Then update with total items (files + folders) so progress is accurate from the start
+		w.indexer.progressTracker.QueueProgressUpdate(scanID, &IndexingProgress{
+			VolumeID:      w.volumeID,
+			ScanID:        scanID,
+			TotalFiles:    totalFiles,
+			TotalFolders:  totalFolders,
+			FilesScanned:  0,
+			FoldersScanned: 0,
+		})
+
+		log.Printf("[WALKER] Initialized database progress with %d total items (files: %d, folders: %d)",
+			totalFiles+totalFolders, totalFiles, totalFolders)
 	}
 }
 

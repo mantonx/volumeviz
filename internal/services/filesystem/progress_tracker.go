@@ -130,16 +130,39 @@ func (pt *ProgressTracker) UpdatePhaseStatus(ctx context.Context, scanID, phaseN
 	scanProgressRepo := pt.store.ScanProgress()
 
 	if status == "completed" {
-		// IMPORTANT: Set progress to 100% when completing a phase
-		// This fixes the bug where progress might be stuck at a lower value due to dynamic item_total changes
-		completedProgress := 100
-		err := scanProgressRepo.UpdateScanPhaseProgress(ctx, models.UpdateScanPhaseParams{
-			ScanID:    scanID,
-			PhaseName: phaseName,
-			Progress:  &completedProgress,
-		})
-		if err != nil {
-			fmt.Printf("Failed to set progress to 100%% for %s phase: %v\n", phaseName, err)
+		// Calculate actual progress from items before completing
+		// This ensures progress_percent accurately reflects items processed, not just status
+		phases, err := scanProgressRepo.GetScanPhasesByID(ctx, scanID)
+		if err == nil {
+			for _, phase := range phases {
+				if phase.PhaseName == phaseName {
+					// Calculate progress from actual items if available
+					var calculatedProgress int
+					if phase.ItemsTotal > 0 {
+						calculatedProgress = int((phase.ItemsProcessed * 100) / phase.ItemsTotal)
+						if calculatedProgress > 100 {
+							calculatedProgress = 100
+						}
+					} else {
+						// No items tracked - assume 100% since phase is completing
+						calculatedProgress = 100
+					}
+
+					// Update progress to match actual item-based calculation
+					err := scanProgressRepo.UpdateScanPhaseProgress(ctx, models.UpdateScanPhaseParams{
+						ScanID:    scanID,
+						PhaseName: phaseName,
+						Progress:  &calculatedProgress,
+					})
+					if err != nil {
+						fmt.Printf("Failed to update progress for %s phase: %v\n", phaseName, err)
+					} else {
+						fmt.Printf("Updated %s phase progress to %d%% (based on %d/%d items)\n",
+							phaseName, calculatedProgress, phase.ItemsProcessed, phase.ItemsTotal)
+					}
+					break
+				}
+			}
 		}
 
 		// Use CompleteScanPhase for proper completion handling

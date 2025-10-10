@@ -190,8 +190,8 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="px-6 py-3 text-left">
                 <input
@@ -204,22 +204,22 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
                   onChange={handleSelectAll}
                 />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 Volume
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 Size
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 Files
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 Containers
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 Last Scanned
               </th>
               <th className="relative px-6 py-3">
@@ -227,7 +227,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
             {volumes.flatMap((volume) => {
               // Use volume.name as unique identifier (API doesn't return 'id')
               const volumeId = volume.name;
@@ -241,8 +241,8 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
                 <tr
                   key={`row-${volumeId}`}
                   className={cn(
-                    'hover:bg-gray-50 cursor-pointer',
-                    isSelected && 'bg-blue-50',
+                    'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer',
+                    isSelected && 'bg-blue-50 dark:bg-blue-900',
                   )}
                 >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -285,7 +285,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
                             {volume.name}
                           </button>
                           <div
-                            className="text-sm text-gray-500 truncate max-w-xs"
+                            className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-xs"
                             title={volume.path}
                           >
                             {volume.path}
@@ -306,11 +306,11 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
                     </td>
 
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {formatBytes(volume.size_bytes)}
                       </div>
                       {volume.quota_bytes && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-600 dark:text-gray-300">
                           {sizePercentage.toFixed(1)}% of{' '}
                           {formatBytes(volume.quota_bytes)}
                         </div>
@@ -324,10 +324,10 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
                           <span>Scanning...</span>
                         </span>
                       ) : volume.file_count !== null && volume.file_count !== undefined ? (
-                        <div className="text-gray-900 dark:text-white">
-                          <div className="font-medium">{volume.file_count.toLocaleString()} files</div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{volume.file_count.toLocaleString()} files</div>
                           {volume.last_scan_at && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            <div className="text-xs text-gray-600 dark:text-gray-300 mt-0.5">
                               {formatDistanceToNow(new Date(volume.last_scan_at), { addSuffix: true })}
                             </div>
                           )}
@@ -337,13 +337,13 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
                       )}
                     </td>
 
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {volume.container_count || '—'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {volume.attachments_count || '—'}
                     </td>
 
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {volume.last_scanned_at
-                        ? new Date(volume.last_scanned_at).toLocaleDateString()
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                      {volume.last_scan_at
+                        ? new Date(volume.last_scan_at).toLocaleDateString()
                         : '—'}
                     </td>
 

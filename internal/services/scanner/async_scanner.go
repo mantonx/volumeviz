@@ -293,6 +293,7 @@ func (vs *VolumeScanner) GetScanProgress(scanID string) (*interfaces.ScanProgres
 				progress.Phases["filesystem_indexing"].Progress = progress.PhaseProgress
 				progress.Phases["filesystem_indexing"].StartedAt = &indexingProgress.StartedAt
 				progress.Phases["filesystem_indexing"].ItemsProcessed = indexingProgress.FilesScanned
+				progress.Phases["filesystem_indexing"].ItemsTotal = indexingProgress.TotalFiles
 
 				if indexingProgress.LastError != "" {
 					progress.Phases["filesystem_indexing"].Error = indexingProgress.LastError
@@ -367,50 +368,91 @@ func (vs *VolumeScanner) GetScanProgressByVolume(volumeID string) (*interfaces.S
 
 // calculatePhaseProgress calculates phase progress based on indexing data
 func (vs *VolumeScanner) calculatePhaseProgress(indexing *filesystem.IndexingProgress) float64 {
-	// For now, use a simple heuristic based on elapsed time and activity
-	// This could be enhanced with better estimation algorithms
+	// PRIORITY 1: Use actual item counts if we know the total (most accurate)
+	if indexing.TotalFiles > 0 {
+		progress := float64(indexing.FilesScanned) / float64(indexing.TotalFiles)
+		// Ensure progress is bounded [0.0, 1.0]
+		if progress > 1.0 {
+			return 1.0
+		}
+		if progress < 0.0 {
+			return 0.0
+		}
+		return progress
+	}
+
+	// PRIORITY 2: If we're scanning but don't know total yet, use time-based heuristic
 	elapsed := time.Since(indexing.StartedAt).Seconds()
 
-	// Estimate progress based on processing rate
+	// Estimate progress based on processing rate and elapsed time
 	if elapsed > 0 && indexing.FilesScanned > 0 {
 		rate := float64(indexing.FilesScanned) / elapsed
 		if rate > 0 {
-			// Rough estimate: assume 10 files per second as baseline
+			// Heuristic: progress = elapsed / (elapsed + estimated_remaining)
+			// Assume 60 seconds of remaining work as a baseline
 			progress := elapsed / (elapsed + 60)
 			if progress > 0.95 {
-				return 0.95 // Cap at 95% until completion
+				return 0.95 // Cap at 95% until we know the actual total
 			}
 			return progress
 		}
 	}
 
-	// Fallback to time-based estimation
-	progress := elapsed / 300.0 // Assume 5 minutes max
+	// PRIORITY 3: Fallback to pure time-based estimation (least accurate)
+	// Assume scan will complete within 5 minutes
+	progress := elapsed / 300.0
 	if progress > 0.95 {
 		return 0.95 // Cap at 95%
 	}
 	return progress
 }
 
-// calculateOverallProgress calculates overall progress from phases
+// calculateOverallProgress calculates overall progress from phases using a hybrid approach
+// that combines actual item counts with phase-specific complexity weights
 func (vs *VolumeScanner) calculateOverallProgress(phases map[string]*interfaces.PhaseInfo) float64 {
 	if phases == nil {
 		return 0.0
 	}
 
-	// Weight each phase (volume_scan: 10%, filesystem_indexing: 80%, media_enrichment: 10%)
-	weights := map[string]float64{
-		"volume_scan":         0.1,
-		"filesystem_indexing": 0.8,
-		"media_enrichment":    0.1,
+	// Complexity weights reflect the relative work per item in each phase
+	// volume_scan: 1.0 (quick metadata query)
+	// filesystem_indexing: 1.0 (file stat + DB insert)
+	// media_enrichment: 2.0 (ffprobe/exif extraction + thumbnail generation - 2x heavier)
+	complexityWeights := map[string]float64{
+		"volume_scan":         1.0,
+		"filesystem_indexing": 1.0,
+		"media_enrichment":    2.0,
 	}
 
-	var totalProgress float64
-	for phaseName, weight := range weights {
-		if phase, exists := phases[phaseName]; exists {
-			totalProgress += phase.Progress * weight
+	var totalWeightedItems float64
+	var processedWeightedItems float64
+
+	for phaseName, phase := range phases {
+		// Get complexity weight for this phase (default to 1.0 if not specified)
+		weight := complexityWeights[phaseName]
+		if weight == 0 {
+			weight = 1.0
 		}
+
+		// Weight the items by complexity
+		totalWeightedItems += float64(phase.ItemsTotal) * weight
+		processedWeightedItems += float64(phase.ItemsProcessed) * weight
 	}
 
-	return totalProgress
+	// Avoid division by zero
+	if totalWeightedItems == 0 {
+		return 0.0
+	}
+
+	progress := processedWeightedItems / totalWeightedItems
+
+	// Ensure progress is bounded [0.0, 1.0]
+	if progress > 1.0 {
+		return 1.0
+	}
+	if progress < 0.0 {
+		return 0.0
+	}
+
+	return progress
 }

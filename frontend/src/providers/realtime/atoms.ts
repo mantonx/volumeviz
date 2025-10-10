@@ -116,7 +116,7 @@ export const addErrorEventAtom = atom(null, (get, set, error: ErrorEvent) => {
   set(errorEventsAtom, [error, ...current.slice(0, 19)]); // Keep last 20
 });
 
-// Update scan progress for a specific volume
+// Update scan progress for a specific volume with monotonic progress guarantee
 export const updateScanProgressAtom = atom(
   null,
   (
@@ -125,9 +125,33 @@ export const updateScanProgressAtom = atom(
     { volumeId, progress }: { volumeId: string; progress: ScanProgressData },
   ) => {
     const current = get(scanProgressAtom);
+    const existingProgress = current[volumeId];
+
+    // Ensure monotonic progress: never decrease unless scan is reset
+    let adjustedProgress = progress;
+    if (existingProgress && progress.overall_progress < existingProgress.overall_progress) {
+      // Only allow progress to decrease if scan_id changed (new scan started)
+      if (progress.scan_id === existingProgress.scan_id) {
+        // Same scan - preserve higher progress value and skip this update
+        console.warn(
+          `[Scan Progress] Monotonic violation detected for ${volumeId}: ${existingProgress.overall_progress}% → ${progress.overall_progress}%. Keeping higher value.`
+        );
+        adjustedProgress = {
+          ...progress,
+          overall_progress: existingProgress.overall_progress,
+        };
+      }
+    }
+
+    // Round progress to nearest 1% to reduce visual jitter
+    adjustedProgress = {
+      ...adjustedProgress,
+      overall_progress: Math.round(adjustedProgress.overall_progress),
+    };
+
     set(scanProgressAtom, {
       ...current,
-      [volumeId]: progress,
+      [volumeId]: adjustedProgress,
     });
   },
 );

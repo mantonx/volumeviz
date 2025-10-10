@@ -174,6 +174,11 @@ func (r *scanProgressRepo) UpdateScanPhaseProgress(ctx context.Context, params m
 			items_failed = COALESCE($7, items_failed),
 			current_item = COALESCE($8, current_item),
 			throughput_items_per_sec = COALESCE($9, throughput_items_per_sec),
+			-- Set started_at to NOW() when status changes to 'running' (if not already set)
+			started_at = CASE
+				WHEN $3 = 'running' AND started_at IS NULL THEN NOW()
+				ELSE started_at
+			END,
 			updated_at = NOW()
 		WHERE scan_id = $1 AND phase_name = $2`
 

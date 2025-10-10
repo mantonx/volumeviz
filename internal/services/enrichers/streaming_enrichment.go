@@ -188,11 +188,34 @@ func (m *Manager) processFilesBatched(ctx context.Context, volumeID, scanID stri
 		progress.ProcessedFiles = filesProcessed
 		progress.LastUpdate = time.Now()
 
-		// Calculate throughput (files per second)
-		elapsed := time.Since(progress.StartedAt).Seconds()
-		if elapsed > 0 {
-			progress.FilesPerSecond = float64(filesProcessed) / elapsed
+		// Calculate throughput (files per second) using database started_at for accuracy
+		// This prevents inflated throughput when enrichment resumes from a previous run
+		var throughput float64
+		if scanID != "" && m.store != nil {
+			scanProgressRepo := m.store.ScanProgress()
+			phases, err := scanProgressRepo.GetScanPhasesByID(context.Background(), scanID)
+			if err == nil {
+				for _, phase := range phases {
+					if phase.PhaseName == "media_enrichment" && phase.StartedAt != nil {
+						elapsed := time.Since(*phase.StartedAt).Seconds()
+						if elapsed > 0 {
+							throughput = float64(filesProcessed) / elapsed
+						}
+						break
+					}
+				}
+			}
 		}
+
+		// Fallback to in-memory StartedAt if database lookup failed
+		if throughput == 0 {
+			elapsed := time.Since(progress.StartedAt).Seconds()
+			if elapsed > 0 {
+				throughput = float64(filesProcessed) / elapsed
+			}
+		}
+
+		progress.FilesPerSecond = throughput
 
 		// Calculate progress percentage (using processed files vs total)
 		var progressPercent float64

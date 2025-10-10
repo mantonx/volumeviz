@@ -14,6 +14,7 @@ import {
   addErrorEventAtom,
   addHistoricalUpdateAtom,
   updateScanProgressAtom,
+  removeScanProgressAtom,
   updateSystemHealthAtom,
   updateSystemStatisticsAtom,
 } from './atoms';
@@ -46,6 +47,7 @@ const createVolumeVizMessageHandlers = (
   addErrorEvent: any,
   updateScanProgress: any,
   addCapacityAlert: any,
+  removeScanProgress: any,
 ): MessageHandler[] => [
   {
     type: 'scan.progress',
@@ -55,6 +57,47 @@ const createVolumeVizMessageHandlers = (
           volumeId: data.volume_id,
           progress: data,
         });
+      }
+    },
+  },
+  {
+    type: 'scan.completed',
+    handler: (data) => {
+      logger.debug('[RealtimeProvider] scan.completed handler triggered:', data);
+      if (data?.volume_id) {
+        // Update one final time with completed status
+        updateScanProgress({
+          volumeId: data.volume_id,
+          progress: {
+            ...data,
+            overall_status: 'completed',
+            overall_progress: 100,
+          },
+        });
+        // Remove from atom after a short delay to allow UI to show completion
+        setTimeout(() => {
+          removeScanProgress(data.volume_id);
+        }, 3000);
+      }
+    },
+  },
+  {
+    type: 'scan.failed',
+    handler: (data) => {
+      logger.debug('[RealtimeProvider] scan.failed handler triggered:', data);
+      if (data?.volume_id) {
+        // Update with failed status
+        updateScanProgress({
+          volumeId: data.volume_id,
+          progress: {
+            ...data,
+            overall_status: 'failed',
+          },
+        });
+        // Remove from atom after a delay to allow user to see the error
+        setTimeout(() => {
+          removeScanProgress(data.volume_id);
+        }, 5000);
       }
     },
   },
@@ -114,60 +157,31 @@ const createVolumeVizMessageHandlers = (
     type: 'volume.state',
     handler: (data) => {
       logger.debug('[RealtimeProvider] volume.state handler triggered:', data);
-      // Convert volume state to scan progress format for the atom
-      if (data?.volume_id) {
-        const progressData = {
-          scan_id: 'current-state',
-          volume_id: data.volume_id,
-          overall_status: data.status || 'idle',
-          overall_progress: 100, // Volume state is current state, so 100%
-          phases: [],
-          recent_errors: [],
-          started_at: data.last_scanned || new Date().toISOString(),
-          metadata: {
-            message: data.message || 'Current volume state',
-            volume_name: data.volume_name,
-            total_size: data.total_size,
-            driver: data.driver,
-            mountpoint: data.mountpoint,
-            is_active: data.is_active,
-          },
-        };
-        logger.debug('[RealtimeProvider] Calling updateScanProgress with:', {
-          volumeId: data.volume_id,
-          progress: progressData,
-        });
-        updateScanProgress({
-          volumeId: data.volume_id,
-          progress: progressData,
-        });
-      }
+      // volume.state is a periodic broadcast of current volume status
+      // Do NOT update scan progress unless volume is actually scanning
+      // These periodic updates were causing the progress UI to flicker
     },
   },
   {
     type: 'scan.status',
     handler: (data) => {
       logger.debug('[RealtimeProvider] scan.status handler triggered:', data);
-      // Convert scan status to scan progress format for the atom
-      if (data?.volume_id) {
+      // Only update scan progress if there's actual scan activity
+      if (data?.volume_id && data?.status === 'running') {
         const progressData = {
-          scan_id: 'status-update',
+          scan_id: data.scan_id || 'status-update',
           volume_id: data.volume_id,
-          overall_status: data.status || 'idle',
-          overall_progress: data.progress || 100,
-          phases: [],
+          overall_status: data.status,
+          overall_progress: data.progress || 0,
+          phases: data.phases || [],
           recent_errors: [],
-          started_at: data.last_scanned || new Date().toISOString(),
+          started_at: data.started_at || new Date().toISOString(),
           metadata: {
-            message: data.message || 'Current scan status',
+            message: data.message || 'Scan in progress',
             volume_name: data.volume_name,
-            total_size: data.total_size,
-            driver: data.driver,
-            mountpoint: data.mountpoint,
-            is_active: data.is_active,
           },
         };
-        logger.debug('[RealtimeProvider] Calling updateScanProgress with:', {
+        logger.debug('[RealtimeProvider] Updating scan progress for running scan:', {
           volumeId: data.volume_id,
           progress: progressData,
         });
@@ -543,6 +557,7 @@ export function RealtimeProvider({
   const [, addErrorEvent] = useAtom(addErrorEventAtom);
   const [, updateScanProgress] = useAtom(updateScanProgressAtom);
   const [, addCapacityAlert] = useAtom(addCapacityAlertAtom);
+  const [, removeScanProgress] = useAtom(removeScanProgressAtom);
 
   // Get JWT token from localStorage and append to WebSocket URL
   const authenticatedWebSocketUrl = React.useMemo(() => {
@@ -582,6 +597,7 @@ export function RealtimeProvider({
         addErrorEvent,
         updateScanProgress,
         addCapacityAlert,
+        removeScanProgress,
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

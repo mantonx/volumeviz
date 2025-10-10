@@ -143,8 +143,9 @@ type PhaseInfo struct {
 	StartedAt      *time.Time    `json:"started_at,omitempty"`
 	CompletedAt    *time.Time    `json:"completed_at,omitempty"`
 	Duration       time.Duration `json:"duration,omitempty"`
-	Progress       float64       `json:"progress"` // 0.0 to 1.0
+	Progress       float64       `json:"progress"`         // 0.0 to 1.0
 	ItemsProcessed int64         `json:"items_processed,omitempty"`
+	ItemsTotal     int64         `json:"items_total,omitempty"` // Total items to process (if known)
 	Error          string        `json:"error,omitempty"`
 }
 

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useScanProgress } from '@/hooks/useScanProgress';
 import { cn } from '@/utils';
-import { formatBytes } from '@/utils/formatters';
+import { formatBytes, formatDuration } from '@/utils/formatters';
 import { Clock, FileText, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { ScanPhaseProgress } from '@/providers/realtime/types';
 
@@ -51,7 +51,15 @@ export function ScanProgressDetail({
       (p) => p.phase_name === 'filesystem_indexing' || p.phase_name === 'media_enrichment'
     );
 
-    const runningPhases = meaningfulPhases.filter((p) => p.status === 'running');
+    // Only show phases that are actively running
+    // IMPORTANT: Trust the status field - if status is 'running', show the phase
+    // Don't try to second-guess completion based on items_processed >= items_total
+    // because items_total can change during rescans, causing phases to appear/disappear
+    const runningPhases = meaningfulPhases.filter((p) => {
+      // Show all phases with status 'running'
+      return p.status === 'running';
+    });
+
     const allPhasesPending = meaningfulPhases.every((p) => p.status === 'pending');
     const hasNoProgress = (data.overall_progress || 0) === 0 && meaningfulPhases.every((p) => p.progress === 0);
     const scanJustStarted = allPhasesPending && hasNoProgress;
@@ -120,7 +128,10 @@ export function ScanProgressDetail({
             <StatCard label="Total Size" value={formatBytes(scanData.totalBytesTotal)} />
           )}
           {scanData.performance_stats?.elapsed_seconds && (
-            <StatCard label="Elapsed Time" value={formatTimeRemaining(scanData.performance_stats.elapsed_seconds)} />
+            <StatCard label="Elapsed Time" value={formatDuration(scanData.performance_stats.elapsed_seconds * 1000)} />
+          )}
+          {scanData.performance_stats?.estimated_remaining_seconds > 0 && (
+            <StatCard label="Remaining" value={formatDuration(scanData.performance_stats.estimated_remaining_seconds * 1000)} />
           )}
         </div>
       )}
@@ -174,61 +185,72 @@ const StatCard = React.memo<{ label: string; value: string }>(({ label, value })
   </div>
 ));
 
-const PhaseDisplay = React.memo<{ phase: ScanPhaseProgress }>(({ phase }) => (
-  <div className="mb-3 bg-white dark:bg-gray-800 rounded p-3 border border-blue-100 dark:border-blue-900">
-    <div className="flex items-center justify-between mb-2">
-      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-        {formatPhaseName(phase.phase_name)}
-      </span>
-      <span className="text-xs text-gray-600 dark:text-gray-400">
-        {Math.round(phase.progress)}%
-      </span>
-    </div>
+const PhaseDisplay = React.memo<{ phase: ScanPhaseProgress }>(({ phase }) => {
+  // Calculate progress from actual items (more accurate than stored progress field)
+  let displayProgress = phase.progress;
+  if (phase.items_total > 0) {
+    displayProgress = (phase.items_processed / phase.items_total) * 100;
+  }
 
-    {/* Phase Progress Bar */}
-    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-2">
-      <div
-        className="h-full bg-blue-500 transition-all duration-300"
-        style={{ width: `${Math.min(phase.progress, 100)}%` }}
-      />
-    </div>
+  // Cap at 99% if status is still 'running' to indicate ongoing work
+  const safeProgress = displayProgress >= 100 && phase.status === 'running' ? 99 : displayProgress;
 
-    {/* Current Sub-Phase */}
-    {phase.sub_phase && (
-      <div className="mb-2 flex items-center gap-2 text-xs">
-        <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded font-medium">
-          {formatSubPhaseName(phase.sub_phase)}
+  return (
+    <div className="mb-3 bg-white dark:bg-gray-800 rounded p-3 border border-blue-100 dark:border-blue-900">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {formatPhaseName(phase.phase_name)}
+        </span>
+        <span className="text-xs text-gray-600 dark:text-gray-400">
+          {Math.round(safeProgress)}%
         </span>
       </div>
-    )}
 
-    {/* Phase Details */}
-    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
-      {phase.items_total > 0 && (
-        <div className="flex items-center gap-1">
-          <FileText className="w-3 h-3" />
-          <span>
-            {phase.items_processed.toLocaleString()} / {phase.items_total.toLocaleString()} items
+      {/* Phase Progress Bar */}
+      <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-2">
+        <div
+          className="h-full bg-blue-500 transition-all duration-300"
+          style={{ width: `${Math.min(safeProgress, 100)}%` }}
+        />
+      </div>
+
+      {/* Current Sub-Phase */}
+      {phase.sub_phase && (
+        <div className="mb-2 flex items-center gap-2 text-xs">
+          <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded font-medium">
+            {formatSubPhaseName(phase.sub_phase)}
           </span>
         </div>
       )}
-      {phase.bytes_total > 0 && (
-        <div>
-          {formatBytes(phase.bytes_processed)} / {formatBytes(phase.bytes_total)}
+
+      {/* Phase Details */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
+        {phase.items_total > 0 && (
+          <div className="flex items-center gap-1">
+            <FileText className="w-3 h-3" />
+            <span>
+              {phase.items_processed.toLocaleString()} / {phase.items_total.toLocaleString()} items
+            </span>
+          </div>
+        )}
+        {phase.bytes_total > 0 && (
+          <div>
+            {formatBytes(phase.bytes_processed)} / {formatBytes(phase.bytes_total)}
+          </div>
+        )}
+        {phase.items_per_second > 0 && <div>{Math.round(phase.items_per_second)} items/sec</div>}
+        {phase.bytes_per_second > 0 && <div>{formatBytes(phase.bytes_per_second)}/sec</div>}
+      </div>
+
+      {/* Current Item */}
+      {phase.current_item && (
+        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate" title={phase.current_item}>
+          {truncateFilePath(phase.current_item)}
         </div>
       )}
-      {phase.items_per_second > 0 && <div>{Math.round(phase.items_per_second)} items/sec</div>}
-      {phase.bytes_per_second > 0 && <div>{formatBytes(phase.bytes_per_second)}/sec</div>}
     </div>
-
-    {/* Current Item */}
-    {phase.current_item && (
-      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
-        {phase.current_item.replace(/^\[.*?\]\s*/, '').replace(/^Processing:\s*/, '').trim()}
-      </div>
-    )}
-  </div>
-));
+  );
+});
 
 const PhaseIndicator = React.memo<{ phase: ScanPhaseProgress }>(({ phase }) => {
   const getIcon = () => {
@@ -308,4 +330,29 @@ function formatTimeRemaining(seconds: number): string {
   } else {
     return `${secs}s remaining`;
   }
+}
+
+/**
+ * Truncate file path to show last 2-3 meaningful segments
+ * Examples:
+ *   /var/lib/docker/volumes/movies/_data/Film/poster.jpg -> .../Film/poster.jpg
+ *   [Phase] Processing: /long/path/file.txt -> .../file.txt
+ */
+function truncateFilePath(path: string): string {
+  if (!path) return '';
+
+  // Remove common prefixes like "[Phase] Processing: "
+  let cleanPath = path.replace(/^\[.*?\]\s*/, '').replace(/^Processing:\s*/, '').trim();
+
+  // Split by path separator
+  const segments = cleanPath.split('/').filter(s => s.length > 0);
+
+  // If path is short enough, return as-is
+  if (segments.length <= 3) {
+    return cleanPath;
+  }
+
+  // Return last 2-3 segments with ellipsis
+  const lastSegments = segments.slice(-2);
+  return `.../${lastSegments.join('/')}`;
 }
