@@ -27,6 +27,7 @@ import (
 	"github.com/mantonx/volumeviz/internal/api/v1/stats"
 	"github.com/mantonx/volumeviz/internal/api/v1/system"
 	"github.com/mantonx/volumeviz/internal/api/v1/trends"
+	"github.com/mantonx/volumeviz/internal/api/v1/users"
 	"github.com/mantonx/volumeviz/internal/api/v1/volumes"
 	"github.com/mantonx/volumeviz/internal/config"
 	volumeConfig "github.com/mantonx/volumeviz/internal/config"
@@ -672,6 +673,11 @@ func (r *Router) setupRoutes(config *config.Config) {
 			authMiddleware := middleware.AuthMiddleware(authConfig)
 			organizationRouter.RegisterRoutes(v1, authMiddleware)
 			log.Printf("[INFO] Organization routes registered")
+
+			// Users management routes (admin only)
+			usersRouter := users.NewRouter(r.store)
+			usersRouter.RegisterRoutes(v1, authMiddleware)
+			log.Printf("[INFO] Users management routes registered")
 		} else {
 			log.Printf("[WARNING] Organization routes not registered - JWT manager not initialized")
 		}
