@@ -323,3 +323,132 @@ func (h *Handler) isSystemVolumeByName(volumeName string) bool {
 func (h *Handler) isSystemVolumeByCoreModel(vol coremodels.Volume) bool {
 	return h.isSystemVolume(vol)
 }
+
+// getVolumeFromDatabase retrieves a single volume from database with all details
+func (h *Handler) getVolumeFromDatabase(ctx context.Context, volumeName string) (*models.VolumeDetailV1, error) {
+	// Get organization ID from context
+	orgID, hasOrg := middleware.GetOrganizationID(ctx)
+	if !hasOrg {
+		orgID = 1 // Default organization
+	}
+
+	queries, ok := h.store.Queries().(*sqlc.Queries)
+	if !ok {
+		return nil, nil // Signal to use Docker API fallback
+	}
+
+	// Get volume from database
+	dbVol, err := queries.GetVolumeByVolumeID(ctx, sqlc.GetVolumeByVolumeIDParams{
+		VolumeID:       volumeName,
+		OrganizationID: pgtype.Int8{Int64: orgID, Valid: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse labels from JSONB
+	labels := make(map[string]string)
+	if len(dbVol.Labels) > 0 && string(dbVol.Labels) != "{}" {
+		_ = json.Unmarshal(dbVol.Labels, &labels)
+	}
+
+	// Parse options from JSONB
+	options := make(map[string]string)
+	if len(dbVol.Options) > 0 && string(dbVol.Options) != "{}" {
+		_ = json.Unmarshal(dbVol.Options, &options)
+	}
+
+	// Determine volume type and mount point display
+	volumeType := "local"
+	mountpoint := dbVol.MountPoint
+
+	if typeOpt, hasType := options["type"]; hasType && typeOpt == "none" {
+		if deviceOpt, hasDevice := options["device"]; hasDevice && deviceOpt != "" {
+			mountpoint = deviceOpt
+			if isNetworkPath(deviceOpt) {
+				volumeType = "network"
+			} else {
+				volumeType = "bind"
+			}
+		}
+	}
+
+	// Get container attachments from Docker (fallback since we don't have a direct query)
+	attachments := []models.AttachmentV1{}
+	if containers, err := h.dockerService.GetVolumeContainers(ctx, volumeName); err == nil {
+		for _, container := range containers {
+			attachments = append(attachments, models.AttachmentV1{
+				ContainerID:   container.ContainerID,
+				ContainerName: container.Name,
+				MountPath:     container.MountPath,
+				RW:            container.AccessMode == "rw",
+			})
+		}
+	}
+
+	// Get filesystem capacity
+	var filesystemCapacity *models.FilesystemCapacity
+	if fsInfo, err := h.store.Stats().GetVolumeFilesystemCapacity(ctx, volumeName); err == nil && fsInfo != nil {
+		filesystemCapacity = &models.FilesystemCapacity{
+			TotalBytes:     fsInfo.TotalBytes,
+			AvailableBytes: fsInfo.AvailableBytes,
+			UsedBytes:      fsInfo.UsedBytes,
+			UsagePercent:   fsInfo.UsagePercent,
+			BlockSize:      fsInfo.BlockSize,
+			TotalBlocks:    fsInfo.TotalBlocks,
+			FreeBlocks:     fsInfo.FreeBlocks,
+		}
+	}
+
+	// Get latest scan status
+	var scanStatus *string
+	var scanProgress *int
+	var lastScanID *string
+	if latestScans, err := queries.ListScanJobsByVolume(ctx, sqlc.ListScanJobsByVolumeParams{
+		VolumeID: pgtype.Text{String: volumeName, Valid: true},
+		Limit:    1,
+		Offset:   0,
+	}); err == nil && len(latestScans) > 0 {
+		latestScan := latestScans[0]
+		scanStatus = &latestScan.Status
+		lastScanID = &latestScan.ScanID
+		if latestScan.TotalFiles.Valid && latestScan.ScannedFiles.Valid && latestScan.TotalFiles.Int64 > 0 {
+			progress := int((latestScan.ScannedFiles.Int64 * 100) / latestScan.TotalFiles.Int64)
+			scanProgress = &progress
+		}
+	}
+
+	// Convert size to pointer
+	var sizeBytes *int64
+	if dbVol.TotalSizeBytes.Valid {
+		sizeBytes = &dbVol.TotalSizeBytes.Int64
+	}
+
+	// Convert LastScanAt to pointer
+	var lastScanAt *time.Time
+	if dbVol.LastScanAt.Valid {
+		lastScanAt = &dbVol.LastScanAt.Time
+	}
+
+	return &models.VolumeDetailV1{
+		Name:               dbVol.VolumeID,
+		Driver:             dbVol.Driver.String,
+		VolumeType:         volumeType,
+		CreatedAt:          dbVol.CreatedAt,
+		Labels:             labels,
+		Scope:              dbVol.Scope.String,
+		Mountpoint:         mountpoint,
+		SizeBytes:          sizeBytes,
+		LastScanAt:         lastScanAt,
+		Attachments:        attachments,
+		IsSystem:           h.isSystemVolumeByName(volumeName),
+		IsOrphaned:         len(attachments) == 0,
+		FilesystemCapacity: filesystemCapacity,
+		ScanStatus:         scanStatus,
+		ScanProgress:       scanProgress,
+		LastScanID:         lastScanID,
+		Meta: map[string]interface{}{
+			"driver_opts": options,
+		},
+	}, nil
+}

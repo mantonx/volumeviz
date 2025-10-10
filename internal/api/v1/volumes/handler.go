@@ -816,7 +816,16 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		return
 	}
 
-	// Get volume from Docker as the source of truth for volume metadata
+	// Try database first for better performance (avoids Docker API calls)
+	if h.store != nil {
+		if volumeDetail, err := h.getVolumeFromDatabase(ctx, volumeName); err == nil && volumeDetail != nil {
+			c.JSON(http.StatusOK, volumeDetail)
+			return
+		}
+		// If not found in database or error, fall through to Docker API
+	}
+
+	// Fallback: Get volume from Docker as the source of truth for volume metadata
 	volume, err := h.dockerService.GetVolume(ctx, volumeName)
 
 	if err != nil {
