@@ -183,6 +183,7 @@ type FolderNode struct {
 type FolderBrowsingRequest struct {
 	VolumeID        string `form:"volume_id" json:"volume_id" binding:"required" example:"vol_123"`
 	Path            string `form:"path" json:"path" example:"/home/user/documents"`
+	Search          string `form:"search" json:"search" example:"matrix"`
 	IncludeParent   bool   `form:"include_parent,default=false" json:"include_parent" example:"true"`
 	IncludeChildren bool   `form:"include_children,default=true" json:"include_children" example:"true"`
 	Page            int    `form:"page,default=1" json:"page" example:"1"`
@@ -320,22 +321,43 @@ func (h *Handler) GetFilesByFolder(c *gin.Context) {
 	// Get files and folders from store
 	fileRepo := h.store.Files()
 	folderRepo := h.store.Folders()
+	volumeRepo := h.store.Volumes()
+	ctx := c.Request.Context()
+
+	// Get volume to determine mountpoint for path normalization
+	orgID, hasOrgID := middleware.GetOrganizationID(ctx)
+	var volume *models.Volume
+	var err error
+
+	if hasOrgID {
+		volume, err = volumeRepo.GetVolumeByVolumeID(ctx, orgID, req.VolumeID)
+	} else {
+		// Fallback: try to get volume without org filter (for development/testing)
+		volume, err = volumeRepo.GetVolumeByVolumeID(ctx, 1, req.VolumeID)
+	}
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Volume not found", "details": err.Error()})
+		return
+	}
+
+	// Volume mountpoint is like "/var/lib/docker/volumes/volumeviz_movies_dev/_data"
+	mountpoint := volume.Mountpoint
 
 	var files []*models.File
 	var folders []*models.Folder
 	var totalCount int
-	var err error
 
 	if req.Path == "" || req.Path == "/" {
 		// List files at volume root with database-level pagination
-		files, err = fileRepo.ListFilesByVolume(c.Request.Context(), req.VolumeID, int32(req.Limit), int32(offset))
+		files, err = fileRepo.ListFilesByVolume(ctx, req.VolumeID, int32(req.Limit), int32(offset))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve files", "details": err.Error()})
 			return
 		}
 
 		// Also get root folders
-		folders, err = folderRepo.GetRootFolders(c.Request.Context(), req.VolumeID)
+		folders, err = folderRepo.GetRootFolders(ctx, req.VolumeID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve folders", "details": err.Error()})
 			return
@@ -344,8 +366,11 @@ func (h *Handler) GetFilesByFolder(c *gin.Context) {
 		// Total count includes both files and folders
 		totalCount = len(files) + len(folders)
 	} else {
+		// Convert relative path back to full path for database lookup
+		fullPath := mountpoint + req.Path
+
 		// Get folder by path first
-		folder, err := folderRepo.GetFolderByPath(c.Request.Context(), req.VolumeID, req.Path)
+		folder, err := folderRepo.GetFolderByPath(ctx, req.VolumeID, fullPath)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Folder not found", "details": err.Error()})
 			return
@@ -897,6 +922,7 @@ func getMediaTypeFromExtension(ext string) string {
 // @Produce json
 // @Param volume_id query string true "Volume ID" example(vol_123)
 // @Param path query string false "Folder path to browse" example(/home/user/documents)
+// @Param search query string false "Search folders by name (case-insensitive)" example(matrix)
 // @Param include_parent query bool false "Include parent folder info" example(true)
 // @Param include_children query bool false "Include child folders" example(true)
 // @Param page query int false "Page number (default: 1)" example(1)
@@ -1005,37 +1031,61 @@ func (h *Handler) GetFolderBrowsing(c *gin.Context) {
 	// Include children if requested
 	if req.IncludeChildren {
 		var childFolders []*models.Folder
+		var totalChildren int
 
-		if currentFolder == nil {
-			// For root path ("/"), we want to show children of the volume's _data folder
-			// not the _data folder itself
-			rootFolders, err := folderRepo.GetRootFolders(ctx, req.VolumeID)
-			if err == nil && len(rootFolders) > 0 {
-				// Get children of the first root folder (_data)
-				dataFolder := rootFolders[0]
-				childFolders, err = folderRepo.ListFoldersByParent(ctx, req.VolumeID, &dataFolder.ID)
+		// If search query is provided, search across all folders
+		if req.Search != "" {
+			// Use database-level pagination for search
+			offset := int32((req.Page - 1) * req.Limit)
+			childFolders, err = folderRepo.SearchFoldersByName(ctx, req.VolumeID, req.Search, int32(req.Limit), offset)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search folders", "details": err.Error()})
+				return
+			}
+
+			// Get total count for search results (for pagination)
+			// Note: This is a simplified approach - for better performance, add a CountSearchResults method
+			allResults, err := folderRepo.SearchFoldersByName(ctx, req.VolumeID, req.Search, 10000, 0)
+			if err == nil {
+				totalChildren = len(allResults)
+			} else {
+				totalChildren = len(childFolders)
 			}
 		} else {
-			// Get child folders
-			childFolders, err = folderRepo.ListFoldersByParent(ctx, req.VolumeID, &currentFolder.ID)
-		}
-
-		if err == nil {
-			// Apply pagination to children
-			offset := (req.Page - 1) * req.Limit
-			totalChildren := len(childFolders)
-
-			if offset < totalChildren {
-				end := offset + req.Limit
-				if end > totalChildren {
-					end = totalChildren
+			// Normal browsing (no search)
+			if currentFolder == nil {
+				// For root path ("/"), we want to show children of the volume's _data folder
+				// not the _data folder itself
+				rootFolders, err := folderRepo.GetRootFolders(ctx, req.VolumeID)
+				if err == nil && len(rootFolders) > 0 {
+					// Get children of the first root folder (_data)
+					dataFolder := rootFolders[0]
+					childFolders, err = folderRepo.ListFoldersByParent(ctx, req.VolumeID, &dataFolder.ID)
 				}
-				childFolders = childFolders[offset:end]
 			} else {
-				childFolders = []*models.Folder{}
+				// Get child folders
+				childFolders, err = folderRepo.ListFoldersByParent(ctx, req.VolumeID, &currentFolder.ID)
 			}
 
-			// Convert to response format with normalized paths
+			if err == nil {
+				// Apply pagination to children (in-memory pagination for browsing)
+				offset := (req.Page - 1) * req.Limit
+				totalChildren = len(childFolders)
+
+				if offset < totalChildren {
+					end := offset + req.Limit
+					if end > totalChildren {
+						end = totalChildren
+					}
+					childFolders = childFolders[offset:end]
+				} else {
+					childFolders = []*models.Folder{}
+				}
+			}
+		}
+
+		// Convert to response format with normalized paths (applies to both search and browse)
+		if err == nil {
 			for _, folder := range childFolders {
 				child := FolderBrowsingItem{
 					ID:          folder.ID,

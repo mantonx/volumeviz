@@ -440,3 +440,22 @@ func (r *FoldersRepo) CreateFolderHierarchy(ctx context.Context, volumeID, fullP
 
 	return lastFolder, nil
 }
+
+// SearchFoldersByName searches for folders by name (case-insensitive)
+func (r *FoldersRepo) SearchFoldersByName(ctx context.Context, volumeID, searchQuery string, limit, offset int32) ([]*models.Folder, error) {
+	folders, err := r.queries.SearchFoldersByName(ctx, sqlc.SearchFoldersByNameParams{
+		VolumeID: volumeID,
+		Column2:  pgtype.Text{String: searchQuery, Valid: true},
+		Limit:    limit,
+		Offset:   offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*models.Folder, len(folders))
+	for i, folder := range folders {
+		result[i] = r.convertToFolder(folder)
+	}
+	return result, nil
+}

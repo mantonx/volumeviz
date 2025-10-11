@@ -500,6 +500,7 @@ type Querier interface {
 	// Search queries for PostgreSQL
 	SearchFiles(ctx context.Context, arg SearchFilesParams) ([]SearchFilesRow, error)
 	SearchFilesByName(ctx context.Context, arg SearchFilesByNameParams) ([]Files, error)
+	SearchFoldersByName(ctx context.Context, arg SearchFoldersByNameParams) ([]Folders, error)
 	SearchFoldersSimple(ctx context.Context, arg SearchFoldersSimpleParams) ([]Folders, error)
 	SetUserActive(ctx context.Context, arg SetUserActiveParams) error
 	SoftDeleteVolume(ctx context.Context, arg SoftDeleteVolumeParams) error

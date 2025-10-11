@@ -158,3 +158,9 @@ INSERT INTO folders (
     subfolder_count, media_file_count, has_media_files,
     modified_at, accessed_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
+
+-- name: SearchFoldersByName :many
+SELECT * FROM folders
+WHERE volume_id = $1 AND name ILIKE '%' || $2 || '%'
+ORDER BY name
+LIMIT $3 OFFSET $4;

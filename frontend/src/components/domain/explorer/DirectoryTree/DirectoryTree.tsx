@@ -6,13 +6,14 @@
  *
  * Features:
  * - Lazy loading of subdirectories
+ * - Infinite scroll pagination for large folder lists
  * - Expand/collapse state management
  * - Keyboard navigation
  * - Loading states
  * - Error handling
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { customFetchClient } from '@/api/fetch-client';
@@ -21,6 +22,7 @@ export interface DirectoryTreeProps {
   volumeId: string;
   onPathSelect?: (path: string) => void;
   selectedPath?: string;
+  searchQuery?: string;
   className?: string;
 }
 
@@ -47,6 +49,74 @@ interface FolderBrowsingResponse {
 }
 
 /**
+ * Hook to manage paginated folder loading with infinite scroll and server-side search
+ */
+function usePaginatedFolders(volumeId: string, path: string, searchQuery: string, enabled: boolean) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allChildren, setAllChildren] = useState<FolderNode[]>([]);
+  const [totalChildren, setTotalChildren] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const { data, isLoading, error, isFetching } = useQuery({
+    queryKey: ['folder-browse', volumeId, path, currentPage, searchQuery],
+    queryFn: async () => {
+      const searchParam = searchQuery.trim() ? `&search=${encodeURIComponent(searchQuery)}` : '';
+      const response = await customFetchClient<FolderBrowsingResponse>(
+        `/explorer/browse?volume_id=${volumeId}&path=${encodeURIComponent(path)}&include_children=true&limit=100&page=${currentPage}${searchParam}`,
+      );
+      return response;
+    },
+    enabled: enabled,
+  });
+
+  // Accumulate children from all pages
+  useEffect(() => {
+    if (data?.children) {
+      setAllChildren((prev) => {
+        // If page 1, replace all; otherwise append
+        if (currentPage === 1) {
+          return data.children;
+        }
+        // Deduplicate by path
+        const existingPaths = new Set(prev.map((f) => f.path));
+        const newChildren = data.children.filter((f) => !existingPaths.has(f.path));
+        return [...prev, ...newChildren];
+      });
+      setTotalChildren(data.total_children);
+      setTotalPages(data.total_pages);
+    }
+  }, [data, currentPage]);
+
+  // Reset when path or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setAllChildren([]);
+    setTotalChildren(0);
+    setTotalPages(0);
+  }, [volumeId, path, searchQuery]);
+
+  const loadMore = useCallback(() => {
+    if (currentPage < totalPages && !isFetching) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  }, [currentPage, totalPages, isFetching]);
+
+  const hasMore = currentPage < totalPages;
+  const showingCount = allChildren.length;
+
+  return {
+    children: allChildren,
+    isLoading,
+    error,
+    isFetching,
+    hasMore,
+    loadMore,
+    totalChildren,
+    showingCount,
+  };
+}
+
+/**
  * TreeNode component - represents a single folder in the tree
  */
 interface TreeNodeProps {
@@ -70,18 +140,40 @@ function TreeNode({
 }: TreeNodeProps) {
   const isExpanded = expandedPaths.has(node.path);
   const isSelected = selectedPath === node.path;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Fetch children when expanded
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['folder-browse', volumeId, node.path],
-    queryFn: async () => {
-      const response = await customFetchClient<FolderBrowsingResponse>(
-        `/explorer/browse?volume_id=${volumeId}&path=${encodeURIComponent(node.path)}&include_children=true&limit=100`,
-      );
-      return response;
-    },
-    enabled: isExpanded && node.hasChildren,
-  });
+  // Use paginated folder hook (no search for expanded nodes)
+  const {
+    children,
+    isLoading,
+    error,
+    isFetching,
+    hasMore,
+    loadMore,
+    totalChildren,
+    showingCount,
+  } = usePaginatedFolders(volumeId, node.path, '', isExpanded && node.hasChildren);
+
+  // Infinite scroll detection
+  useEffect(() => {
+    if (!isExpanded || !hasMore || isFetching) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [isExpanded, hasMore, isFetching, loadMore]);
 
   const handleToggle = useCallback(
     (e: React.MouseEvent) => {
@@ -97,10 +189,8 @@ function TreeNode({
     onPathSelect?.(node.path);
   }, [node.path, onPathSelect]);
 
-  const children = data?.children || [];
-
   return (
-    <div className="select-none">
+    <div className="select-none" ref={containerRef}>
       {/* Current node */}
       <div
         className={`
@@ -117,7 +207,7 @@ function TreeNode({
           className="p-0.5 hover:bg-gray-200 hover:bg-surface-hover rounded"
           disabled={!node.hasChildren}
         >
-          {isLoading ? (
+          {isLoading && children.length === 0 ? (
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
           ) : node.hasChildren ? (
             isExpanded ? (
@@ -171,6 +261,24 @@ function TreeNode({
               onToggleExpand={onToggleExpand}
             />
           ))}
+
+          {/* Infinite scroll trigger & loading indicator */}
+          {hasMore && (
+            <div
+              ref={loadMoreRef}
+              className="text-xs text-tertiary py-2 text-center italic"
+              style={{ paddingLeft: `${(level + 1) * 16 + 8}px` }}
+            >
+              {isFetching ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Loading more...</span>
+                </div>
+              ) : (
+                <span>Showing {showingCount} of {totalChildren} folders</span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -188,30 +296,52 @@ function TreeNode({
 }
 
 /**
- * DirectoryTree component - main tree container
+ * DirectoryTree component - main tree container with infinite scroll
  */
 export function DirectoryTree({
   volumeId,
   onPathSelect,
   selectedPath,
+  searchQuery = '',
   className = '',
 }: DirectoryTreeProps) {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set(['/']));
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Fetch root level folders
+  // Use paginated folder hook for root (with server-side search)
   const {
-    data: rootData,
+    children: rootFolders,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ['folder-browse-root', volumeId],
-    queryFn: async () => {
-      const response = await customFetchClient<FolderBrowsingResponse>(
-        `/explorer/browse?volume_id=${volumeId}&path=/&include_children=true&limit=100`,
-      );
-      return response;
-    },
-  });
+    isFetching,
+    hasMore,
+    loadMore,
+    totalChildren,
+    showingCount,
+  } = usePaginatedFolders(volumeId, '/', searchQuery, true);
+
+  // No client-side filtering needed - server does the search
+  const filteredRootFolders = rootFolders;
+
+  // Infinite scroll detection for root folders
+  useEffect(() => {
+    if (!hasMore || isFetching) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, isFetching, loadMore]);
 
   const handleToggleExpand = useCallback((path: string) => {
     setExpandedPaths((prev) => {
@@ -225,9 +355,7 @@ export function DirectoryTree({
     });
   }, []);
 
-  const rootFolders = useMemo(() => rootData?.children || [], [rootData]);
-
-  if (isLoading) {
+  if (isLoading && rootFolders.length === 0) {
     return (
       <div className={`p-4 ${className}`}>
         <div className="flex items-center gap-2 text-secondary">
@@ -248,7 +376,7 @@ export function DirectoryTree({
     );
   }
 
-  if (rootFolders.length === 0) {
+  if (rootFolders.length === 0 && !isLoading) {
     return (
       <div className={`p-4 ${className}`}>
         <div className="text-sm text-tertiary italic">
@@ -258,39 +386,118 @@ export function DirectoryTree({
     );
   }
 
+  // Show "no matches" if search is active but no results
+  if (searchQuery.trim() && filteredRootFolders.length === 0 && !isLoading) {
+    return (
+      <div className={`flex flex-col h-full ${className}`}>
+        {/* Folder count header */}
+        <div className="px-3 py-2 border-b border-border bg-surface-subtle">
+          <div className="text-xs text-secondary font-medium">
+            {showingCount === totalChildren ? (
+              <span>All {totalChildren} folders loaded ✓</span>
+            ) : (
+              <span>Showing {showingCount} of {totalChildren} folders</span>
+            )}
+          </div>
+        </div>
+        <div className="p-4 text-center">
+          <div className="text-sm text-tertiary italic">
+            No folders match "{searchQuery}"
+          </div>
+          <div className="text-xs text-tertiary mt-1">
+            Loaded {showingCount} of {totalChildren} folders
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`overflow-y-auto ${className}`}>
-      {/* Root node */}
-      <div
-        className={`
-          flex items-center gap-2 py-2 px-2 mb-1 rounded cursor-pointer
-          hover:bg-surface-hover transition-colors
-          ${selectedPath === '/' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' : ''}
-        `}
-        onClick={() => onPathSelect?.('/')}
-      >
-        <FolderOpen className="h-4 w-4 text-blue-500" />
-        <span className="text-sm font-semibold">Root</span>
-        {rootFolders.length > 0 && (
-          <span className="text-xs text-tertiary">
-            {rootFolders.length}
-          </span>
+    <div className={`flex flex-col h-full ${className}`}>
+      {/* Folder count header */}
+      {totalChildren > 0 && (
+        <div className="px-3 py-2 border-b border-border bg-surface-subtle">
+          <div className="text-xs text-secondary font-medium">
+            {searchQuery.trim() ? (
+              <span>
+                {filteredRootFolders.length} matching folder{filteredRootFolders.length !== 1 ? 's' : ''}
+                {' '}(of {showingCount} loaded)
+              </span>
+            ) : showingCount === totalChildren ? (
+              <span>All {totalChildren} folders loaded ✓</span>
+            ) : (
+              <span>Showing {showingCount} of {totalChildren} folders</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Scrollable tree content */}
+      <div className="overflow-y-auto flex-1">
+        {/* Root node */}
+        <div
+          className={`
+            flex items-center gap-2 py-2 px-2 mb-1 rounded cursor-pointer
+            hover:bg-surface-hover transition-colors
+            ${selectedPath === '/' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' : ''}
+          `}
+          onClick={() => onPathSelect?.('/')}
+        >
+          <FolderOpen className="h-4 w-4 text-blue-500" />
+          <span className="text-sm font-semibold">Root</span>
+          {filteredRootFolders.length > 0 && (
+            <span className="text-xs text-tertiary">
+              {filteredRootFolders.length}
+            </span>
+          )}
+        </div>
+
+        {/* Child folders */}
+        {filteredRootFolders.map((folder) => (
+          <TreeNode
+            key={folder.path}
+            node={folder}
+            volumeId={volumeId}
+            level={0}
+            selectedPath={selectedPath}
+            onPathSelect={onPathSelect}
+            expandedPaths={expandedPaths}
+            onToggleExpand={handleToggleExpand}
+          />
+        ))}
+
+        {/* Infinite scroll trigger & loading indicator for root */}
+        {hasMore && !searchQuery.trim() && (
+          <div
+            ref={loadMoreRef}
+            className="text-xs text-tertiary py-3 text-center italic"
+          >
+            {isFetching ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Loading more folders...</span>
+              </div>
+            ) : (
+              <span className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline" onClick={loadMore}>
+                Load more folders...
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Show load more for search results */}
+        {searchQuery.trim() && hasMore && (
+          <div className="text-xs text-tertiary py-3 text-center italic">
+            Showing {showingCount} of {totalChildren} matching folders.
+            <button
+              onClick={loadMore}
+              className="ml-1 text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Load more results
+            </button>
+          </div>
         )}
       </div>
-
-      {/* Child folders */}
-      {rootFolders.map((folder) => (
-        <TreeNode
-          key={folder.path}
-          node={folder}
-          volumeId={volumeId}
-          level={0}
-          selectedPath={selectedPath}
-          onPathSelect={onPathSelect}
-          expandedPaths={expandedPaths}
-          onToggleExpand={handleToggleExpand}
-        />
-      ))}
     </div>
   );
 }

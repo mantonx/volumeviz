@@ -414,12 +414,6 @@ export function ExplorerPage({
                 <span>Analytics</span>
               </button>
             </div>
-            {isConnected && (
-              <div className="flex items-center text-green-600 text-sm">
-                <div className="w-2 h-2 bg-green-600 rounded-full mr-2" />
-                Live Updates
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -438,6 +432,7 @@ export function ExplorerPage({
                 volumeId={volumeId}
                 selectedPath={currentPath}
                 onPathSelect={handleFolderClick}
+                searchQuery={searchQuery}
                 className="flex-1"
               />
             </Card>
@@ -599,9 +594,6 @@ export function ExplorerPage({
           <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
             <div className="flex items-center gap-4">
               <span>{filteredFiles.length} items in current folder</span>
-            </div>
-            <div className="flex items-center gap-4">
-              {isConnected && <span>🔄 Live updates active</span>}
             </div>
           </div>
         </div>

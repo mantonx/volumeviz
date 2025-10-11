@@ -775,6 +775,63 @@ func (q *Queries) ListSubfolders(ctx context.Context, parentID pgtype.Int8) ([]F
 	return items, nil
 }
 
+const searchFoldersByName = `-- name: SearchFoldersByName :many
+SELECT id, volume_id, parent_id, path, name, path_hash, size_bytes, size_bytes_recursive, file_count, file_count_recursive, subfolder_count, media_file_count, has_media_files, created_at, modified_at, accessed_at, organization_id FROM folders
+WHERE volume_id = $1 AND name ILIKE '%' || $2 || '%'
+ORDER BY name
+LIMIT $3 OFFSET $4
+`
+
+type SearchFoldersByNameParams struct {
+	VolumeID string      `json:"volume_id"`
+	Column2  pgtype.Text `json:"column_2"`
+	Limit    int32       `json:"limit"`
+	Offset   int32       `json:"offset"`
+}
+
+func (q *Queries) SearchFoldersByName(ctx context.Context, arg SearchFoldersByNameParams) ([]Folders, error) {
+	rows, err := q.db.Query(ctx, searchFoldersByName,
+		arg.VolumeID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Folders{}
+	for rows.Next() {
+		var i Folders
+		if err := rows.Scan(
+			&i.ID,
+			&i.VolumeID,
+			&i.ParentID,
+			&i.Path,
+			&i.Name,
+			&i.PathHash,
+			&i.SizeBytes,
+			&i.SizeBytesRecursive,
+			&i.FileCount,
+			&i.FileCountRecursive,
+			&i.SubfolderCount,
+			&i.MediaFileCount,
+			&i.HasMediaFiles,
+			&i.CreatedAt,
+			&i.ModifiedAt,
+			&i.AccessedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateFolder = `-- name: UpdateFolder :one
 UPDATE folders
 SET 
