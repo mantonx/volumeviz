@@ -61,39 +61,68 @@
 
 ### Priority 1: Make Browse Tab Fully Functional
 
+**✅ COMPLETED:**
+- [x] Directory tree loads with normalized paths (`/Movies` instead of `/var/lib/docker/volumes/.../Movies`)
+- [x] Browse endpoint returns relative paths from volume root
+- [x] Fixed orphaned folder issues in database
+- [x] Scanner prevents future orphaned folders
+
+**🔴 CRITICAL ISSUE - Directory Tree Pagination:**
+- **Problem:** Tree only shows first 100 folders out of 2153 total
+- **Impact:** Users cannot browse 95% of their content!
+- **User Experience:** Confusing - missing folders with no indication why
+- **Solutions:**
+  1. **Infinite scroll in tree** (lazy load more as user scrolls)
+  2. **Search/filter in tree** (search by folder name)
+  3. **Pagination controls** ("Load more" button)
+  4. **Hybrid: Search + infinite scroll**
+
+**Recommended Approach:**
+- Add search bar above directory tree
+- Implement infinite scroll (load 100 at a time as user scrolls)
+- Show count: "Showing 100 of 2153 folders" with "Load More" button
+- Cache loaded folders for performance
+
 **Current Problems:**
-- Directory tree shows but clicking folders doesn't navigate
+- Directory tree pagination maxes out at 100 folders ⚠️ CRITICAL
+- Clicking folders may not navigate properly (needs testing)
 - Main file panel may be empty
 - No visual feedback for user actions
 - No error handling
 
 **Tasks:**
-1. [ ] **Test actual navigation flow**
+1. [ ] **Fix directory tree pagination (CRITICAL)**
+   - Add infinite scroll or "Load More" button
+   - Add search/filter for folder names
+   - Show folder count indicator
+   - Cache loaded folders
+
+2. [ ] **Test actual navigation flow**
    - Click on folder in tree
    - Verify main panel updates with files
    - Verify URL updates with path
    - Check breadcrumb navigation
 
-2. [ ] **Add visual feedback**
+3. [ ] **Add visual feedback**
    - Active state for selected folder in tree
    - Loading skeleton while fetching files
    - Empty state when folder has no files
    - Error state when API fails
 
-3. [ ] **Fix file display**
+4. [ ] **Fix file display**
    - Ensure files show in main panel
    - Add file metadata columns (size, modified, type)
    - Make file rows clickable
    - Add file icon based on type
 
-4. [ ] **Add basic interactions**
+5. [ ] **Add basic interactions**
    - Click file to view metadata
    - Breadcrumb navigation
    - "Go up" button
    - Refresh button
 
-**Estimated Effort:** 1-2 days
-**Impact:** HIGH - makes browse tab usable
+**Estimated Effort:** 2-3 days (with pagination fix)
+**Impact:** CRITICAL - makes browse tab actually usable for large volumes
 
 ---
 
