@@ -925,14 +925,54 @@ func (h *Handler) GetFolderBrowsing(c *gin.Context) {
 	}
 
 	folderRepo := h.store.Folders()
+	volumeRepo := h.store.Volumes()
 	ctx := c.Request.Context()
 
-	var currentFolder *models.Folder
+	// Get volume to determine mountpoint for path normalization
+	orgID, hasOrgID := middleware.GetOrganizationID(ctx)
+	var volume *models.Volume
 	var err error
 
+	if hasOrgID {
+		volume, err = volumeRepo.GetVolumeByVolumeID(ctx, orgID, req.VolumeID)
+	} else {
+		// Fallback: try to get volume without org filter (for development/testing)
+		volume, err = volumeRepo.GetVolumeByVolumeID(ctx, 1, req.VolumeID)
+	}
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Volume not found", "details": err.Error()})
+		return
+	}
+
+	// Volume mountpoint is like "/var/lib/docker/volumes/volumeviz_movies_dev/_data"
+	// We want to normalize paths to be relative to this
+	mountpoint := volume.Mountpoint
+
+	// Helper function to normalize paths to be relative to volume mountpoint
+	normalizePath := func(fullPath string) string {
+		if fullPath == mountpoint {
+			return "/"
+		}
+		// Strip mountpoint prefix to get relative path
+		if len(fullPath) > len(mountpoint) && fullPath[:len(mountpoint)] == mountpoint {
+			relativePath := fullPath[len(mountpoint):]
+			if relativePath == "" {
+				return "/"
+			}
+			return relativePath
+		}
+		// Fallback: return the path as-is if it doesn't match mountpoint
+		return fullPath
+	}
+
+	var currentFolder *models.Folder
+
 	if req.Path != "" && req.Path != "/" {
+		// Convert relative path back to full path for database lookup
+		fullPath := mountpoint + req.Path
 		// Get current folder
-		currentFolder, err = folderRepo.GetFolderByPath(ctx, req.VolumeID, req.Path)
+		currentFolder, err = folderRepo.GetFolderByPath(ctx, req.VolumeID, fullPath)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Folder not found", "details": err.Error()})
 			return
@@ -953,7 +993,7 @@ func (h *Handler) GetFolderBrowsing(c *gin.Context) {
 			response.Parent = &FolderBrowsingItem{
 				ID:          parentFolder.ID,
 				Name:        parentFolder.Name,
-				Path:        parentFolder.Path,
+				Path:        normalizePath(parentFolder.Path), // Normalize to relative path
 				FileCount:   parentFolder.FileCount,
 				FolderCount: parentFolder.DirCount,
 				TotalSize:   parentFolder.SizeBytesRecursive,
@@ -995,12 +1035,12 @@ func (h *Handler) GetFolderBrowsing(c *gin.Context) {
 				childFolders = []*models.Folder{}
 			}
 
-			// Convert to response format
+			// Convert to response format with normalized paths
 			for _, folder := range childFolders {
 				child := FolderBrowsingItem{
 					ID:          folder.ID,
 					Name:        folder.Name,
-					Path:        folder.Path,
+					Path:        normalizePath(folder.Path), // Normalize to relative path
 					FileCount:   folder.FileCount,
 					FolderCount: folder.DirCount,
 					TotalSize:   folder.SizeBytesRecursive,
@@ -1020,7 +1060,7 @@ func (h *Handler) GetFolderBrowsing(c *gin.Context) {
 		response.Current = &FolderBrowsingItem{
 			ID:          currentFolder.ID,
 			Name:        currentFolder.Name,
-			Path:        currentFolder.Path,
+			Path:        normalizePath(currentFolder.Path), // Normalize to relative path
 			FileCount:   currentFolder.FileCount,
 			FolderCount: currentFolder.DirCount,
 			TotalSize:   currentFolder.SizeBytesRecursive,
