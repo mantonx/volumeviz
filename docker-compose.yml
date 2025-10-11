@@ -52,10 +52,11 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: backend-builder
+      dockerfile: ${DOCKERFILE:-Dockerfile.dev}
+      target: ${BUILD_TARGET:-}
     container_name: volumeviz-api
-    command: ["/app/volumeviz"]
+    command: ${BACKEND_COMMAND:-air}
+    working_dir: /app
     environment:
       # Server configuration
       SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
@@ -97,7 +98,13 @@ services:
       # Metrics
       ENABLE_METRICS: ${ENABLE_METRICS:-true}
       METRICS_PORT: ${METRICS_PORT:-9090}
+
+      # Go build cache for Air hot reloading
+      GOCACHE: /tmp/gocache
+      GOMODCACHE: /tmp/gomodcache
     volumes:
+      # Source code for hot reloading (development mode)
+      - .:/app
       # Docker API access
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # Docker volumes directory for direct scanning
