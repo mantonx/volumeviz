@@ -2010,7 +2010,7 @@ export type GetAlertsRulesParams = {
   enabled?: boolean;
 };
 
-export type GetApiV1DuplicatesDetectParams = {
+export type GetDuplicatesDetectParams = {
   /**
    * Volume ID
    */
@@ -2033,7 +2033,7 @@ export type GetApiV1DuplicatesDetectParams = {
   includeEmpty?: boolean;
 };
 
-export type GetApiV1DuplicatesDetectBySizeParams = {
+export type GetDuplicatesDetectBySizeParams = {
   /**
    * Volume ID
    */
@@ -2056,7 +2056,7 @@ export type GetApiV1DuplicatesDetectBySizeParams = {
   includeEmpty?: boolean;
 };
 
-export type GetApiV1ExplorerBrowseParams = {
+export type GetExplorerBrowseParams = {
   /**
    * Volume ID
    */
@@ -2083,13 +2083,13 @@ export type GetApiV1ExplorerBrowseParams = {
   limit?: number;
 };
 
-export type GetApiV1ExplorerBrowse400 = { [key: string]: unknown };
+export type GetExplorerBrowse400 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerBrowse404 = { [key: string]: unknown };
+export type GetExplorerBrowse404 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerBrowse500 = { [key: string]: unknown };
+export type GetExplorerBrowse500 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesParams = {
+export type GetExplorerFilesParams = {
   /**
    * Volume ID
    */
@@ -2128,13 +2128,13 @@ export type GetApiV1ExplorerFilesParams = {
   max_size?: number;
 };
 
-export type GetApiV1ExplorerFiles400 = { [key: string]: unknown };
+export type GetExplorerFiles400 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFiles404 = { [key: string]: unknown };
+export type GetExplorerFiles404 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFiles500 = { [key: string]: unknown };
+export type GetExplorerFiles500 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesByExtensionParams = {
+export type GetExplorerFilesByExtensionParams = {
   /**
    * Volume ID
    */
@@ -2153,13 +2153,13 @@ export type GetApiV1ExplorerFilesByExtensionParams = {
   limit?: number;
 };
 
-export type GetApiV1ExplorerFilesByExtension400 = { [key: string]: unknown };
+export type GetExplorerFilesByExtension400 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesByExtension404 = { [key: string]: unknown };
+export type GetExplorerFilesByExtension404 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesByExtension500 = { [key: string]: unknown };
+export type GetExplorerFilesByExtension500 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesByMediaTypeParams = {
+export type GetExplorerFilesByMediaTypeParams = {
   /**
    * Volume ID
    */
@@ -2178,13 +2178,13 @@ export type GetApiV1ExplorerFilesByMediaTypeParams = {
   limit?: number;
 };
 
-export type GetApiV1ExplorerFilesByMediaType400 = { [key: string]: unknown };
+export type GetExplorerFilesByMediaType400 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesByMediaType404 = { [key: string]: unknown };
+export type GetExplorerFilesByMediaType404 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesByMediaType500 = { [key: string]: unknown };
+export type GetExplorerFilesByMediaType500 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesPaginatedParams = {
+export type GetExplorerFilesPaginatedParams = {
   /**
    * Volume ID
    */
@@ -2227,13 +2227,13 @@ export type GetApiV1ExplorerFilesPaginatedParams = {
   max_size?: number;
 };
 
-export type GetApiV1ExplorerFilesPaginated400 = { [key: string]: unknown };
+export type GetExplorerFilesPaginated400 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesPaginated404 = { [key: string]: unknown };
+export type GetExplorerFilesPaginated404 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesPaginated500 = { [key: string]: unknown };
+export type GetExplorerFilesPaginated500 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesRecentParams = {
+export type GetExplorerFilesRecentParams = {
   /**
    * Volume ID
    */
@@ -2248,13 +2248,13 @@ export type GetApiV1ExplorerFilesRecentParams = {
   limit?: number;
 };
 
-export type GetApiV1ExplorerFilesRecent400 = { [key: string]: unknown };
+export type GetExplorerFilesRecent400 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesRecent404 = { [key: string]: unknown };
+export type GetExplorerFilesRecent404 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesRecent500 = { [key: string]: unknown };
+export type GetExplorerFilesRecent500 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesSearchParams = {
+export type GetExplorerFilesSearchParams = {
   /**
    * Volume ID
    */
@@ -2269,13 +2269,13 @@ export type GetApiV1ExplorerFilesSearchParams = {
   limit?: number;
 };
 
-export type GetApiV1ExplorerFilesSearch400 = { [key: string]: unknown };
+export type GetExplorerFilesSearch400 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesSearch404 = { [key: string]: unknown };
+export type GetExplorerFilesSearch404 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerFilesSearch500 = { [key: string]: unknown };
+export type GetExplorerFilesSearch500 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerTreeParams = {
+export type GetExplorerTreeParams = {
   /**
    * Volume ID
    */
@@ -2294,13 +2294,13 @@ export type GetApiV1ExplorerTreeParams = {
   dirs_only?: boolean;
 };
 
-export type GetApiV1ExplorerTree400 = { [key: string]: unknown };
+export type GetExplorerTree400 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerTree404 = { [key: string]: unknown };
+export type GetExplorerTree404 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerTree500 = { [key: string]: unknown };
+export type GetExplorerTree500 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerTreeChildrenParams = {
+export type GetExplorerTreeChildrenParams = {
   /**
    * Volume ID
    */
@@ -2323,13 +2323,13 @@ export type GetApiV1ExplorerTreeChildrenParams = {
   limit?: number;
 };
 
-export type GetApiV1ExplorerTreeChildren400 = { [key: string]: unknown };
+export type GetExplorerTreeChildren400 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerTreeChildren404 = { [key: string]: unknown };
+export type GetExplorerTreeChildren404 = { [key: string]: unknown };
 
-export type GetApiV1ExplorerTreeChildren500 = { [key: string]: unknown };
+export type GetExplorerTreeChildren500 = { [key: string]: unknown };
 
-export type GetApiV1FsAggregateParams = {
+export type GetFsAggregateParams = {
   /**
    * Volume ID
    */
@@ -2347,7 +2347,7 @@ export type GetApiV1FsAggregateParams = {
   /**
    * Statistic to aggregate
    */
-  stat?: GetApiV1FsAggregateStat;
+  stat?: GetFsAggregateStat;
   /**
    * Minimum size filter in bytes
    */
@@ -2359,16 +2359,16 @@ export type GetApiV1FsAggregateParams = {
   limit?: number;
 };
 
-export type GetApiV1FsAggregateStat =
-  (typeof GetApiV1FsAggregateStat)[keyof typeof GetApiV1FsAggregateStat];
+export type GetFsAggregateStat =
+  (typeof GetFsAggregateStat)[keyof typeof GetFsAggregateStat];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetApiV1FsAggregateStat = {
+export const GetFsAggregateStat = {
   size: 'size',
   count: 'count',
 } as const;
 
-export type GetApiV1MetadataFilesByDurationParams = {
+export type GetMetadataFilesByDurationParams = {
   /**
    * Volume ID
    */
@@ -2391,11 +2391,11 @@ export type GetApiV1MetadataFilesByDurationParams = {
   limit?: number;
 };
 
-export type GetApiV1MetadataFilesByDuration400 = { [key: string]: unknown };
+export type GetMetadataFilesByDuration400 = { [key: string]: unknown };
 
-export type GetApiV1MetadataFilesByDuration500 = { [key: string]: unknown };
+export type GetMetadataFilesByDuration500 = { [key: string]: unknown };
 
-export type GetApiV1MetadataFilesByLocationParams = {
+export type GetMetadataFilesByLocationParams = {
   /**
    * Volume ID
    */
@@ -2426,11 +2426,11 @@ export type GetApiV1MetadataFilesByLocationParams = {
   limit?: number;
 };
 
-export type GetApiV1MetadataFilesByLocation400 = { [key: string]: unknown };
+export type GetMetadataFilesByLocation400 = { [key: string]: unknown };
 
-export type GetApiV1MetadataFilesByLocation500 = { [key: string]: unknown };
+export type GetMetadataFilesByLocation500 = { [key: string]: unknown };
 
-export type GetApiV1MetadataFilesByMediaKindParams = {
+export type GetMetadataFilesByMediaKindParams = {
   /**
    * Volume ID
    */
@@ -2449,15 +2449,15 @@ export type GetApiV1MetadataFilesByMediaKindParams = {
   limit?: number;
 };
 
-export type GetApiV1MetadataFilesByMediaKind200 = { [key: string]: unknown };
+export type GetMetadataFilesByMediaKind200 = { [key: string]: unknown };
 
-export type GetApiV1MetadataFilesByMediaKind400 = { [key: string]: unknown };
+export type GetMetadataFilesByMediaKind400 = { [key: string]: unknown };
 
-export type GetApiV1MetadataFilesByMediaKind404 = { [key: string]: unknown };
+export type GetMetadataFilesByMediaKind404 = { [key: string]: unknown };
 
-export type GetApiV1MetadataFilesByMediaKind500 = { [key: string]: unknown };
+export type GetMetadataFilesByMediaKind500 = { [key: string]: unknown };
 
-export type GetApiV1MetadataFilesByResolutionParams = {
+export type GetMetadataFilesByResolutionParams = {
   /**
    * Volume ID
    */
@@ -2496,11 +2496,11 @@ export type GetApiV1MetadataFilesByResolutionParams = {
   limit?: number;
 };
 
-export type GetApiV1MetadataFilesByResolution400 = { [key: string]: unknown };
+export type GetMetadataFilesByResolution400 = { [key: string]: unknown };
 
-export type GetApiV1MetadataFilesByResolution500 = { [key: string]: unknown };
+export type GetMetadataFilesByResolution500 = { [key: string]: unknown };
 
-export type GetApiV1MountsParams = {
+export type GetMountsParams = {
   /**
    * Page number (default: 1)
    * @minimum 1
@@ -2539,85 +2539,84 @@ export type GetApiV1MountsParams = {
   /**
    * Filter by mount type
    */
-  type?: GetApiV1MountsType;
+  type?: GetMountsType;
   /**
    * Filter by status
    */
-  status?: GetApiV1MountsStatus;
+  status?: GetMountsStatus;
   /**
    * Filter by orphaned status
    */
-  is_orphaned?: GetApiV1MountsIsOrphaned;
+  is_orphaned?: GetMountsIsOrphaned;
   /**
    * Filter by tracking status
    */
-  is_tracked?: GetApiV1MountsIsTracked;
+  is_tracked?: GetMountsIsTracked;
 };
 
-export type GetApiV1MountsType =
-  (typeof GetApiV1MountsType)[keyof typeof GetApiV1MountsType];
+export type GetMountsType = (typeof GetMountsType)[keyof typeof GetMountsType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetApiV1MountsType = {
+export const GetMountsType = {
   volume: 'volume',
   bind: 'bind',
   tmpfs: 'tmpfs',
 } as const;
 
-export type GetApiV1MountsStatus =
-  (typeof GetApiV1MountsStatus)[keyof typeof GetApiV1MountsStatus];
+export type GetMountsStatus =
+  (typeof GetMountsStatus)[keyof typeof GetMountsStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetApiV1MountsStatus = {
+export const GetMountsStatus = {
   orphaned: 'orphaned',
   active: 'active',
 } as const;
 
-export type GetApiV1MountsIsOrphaned =
-  (typeof GetApiV1MountsIsOrphaned)[keyof typeof GetApiV1MountsIsOrphaned];
+export type GetMountsIsOrphaned =
+  (typeof GetMountsIsOrphaned)[keyof typeof GetMountsIsOrphaned];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetApiV1MountsIsOrphaned = {
+export const GetMountsIsOrphaned = {
   true: 'true',
   false: 'false',
 } as const;
 
-export type GetApiV1MountsIsTracked =
-  (typeof GetApiV1MountsIsTracked)[keyof typeof GetApiV1MountsIsTracked];
+export type GetMountsIsTracked =
+  (typeof GetMountsIsTracked)[keyof typeof GetMountsIsTracked];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetApiV1MountsIsTracked = {
+export const GetMountsIsTracked = {
   true: 'true',
   false: 'false',
 } as const;
 
-export type GetApiV1Mounts200 = { [key: string]: unknown };
+export type GetMounts200 = { [key: string]: unknown };
 
-export type GetApiV1Mounts400 = { [key: string]: unknown };
+export type GetMounts400 = { [key: string]: unknown };
 
-export type GetApiV1Mounts500 = { [key: string]: unknown };
+export type GetMounts500 = { [key: string]: unknown };
 
-export type GetApiV1MountsId400 = { [key: string]: unknown };
+export type GetMountsId400 = { [key: string]: unknown };
 
-export type GetApiV1MountsId404 = { [key: string]: unknown };
+export type GetMountsId404 = { [key: string]: unknown };
 
-export type GetApiV1MountsId500 = { [key: string]: unknown };
+export type GetMountsId500 = { [key: string]: unknown };
 
-export type PutApiV1MountsMountIdTrackingBody = { [key: string]: unknown };
+export type PutMountsMountIdTrackingBody = { [key: string]: unknown };
 
-export type PutApiV1MountsMountIdTracking400 = { [key: string]: unknown };
+export type PutMountsMountIdTracking400 = { [key: string]: unknown };
 
-export type PutApiV1MountsMountIdTracking404 = { [key: string]: unknown };
+export type PutMountsMountIdTracking404 = { [key: string]: unknown };
 
-export type PutApiV1MountsMountIdTracking501 = { [key: string]: unknown };
+export type PutMountsMountIdTracking501 = { [key: string]: unknown };
 
-export type PostApiV1MountsDiscover400 = { [key: string]: unknown };
+export type PostMountsDiscover400 = { [key: string]: unknown };
 
-export type PostApiV1MountsDiscover500 = { [key: string]: unknown };
+export type PostMountsDiscover500 = { [key: string]: unknown };
 
-export type GetApiV1MountsSummary500 = { [key: string]: unknown };
+export type GetMountsSummary500 = { [key: string]: unknown };
 
-export type GetApiV1OperationsParams = {
+export type GetOperationsParams = {
   /**
    * Volume ID
    */
@@ -2632,47 +2631,69 @@ export type GetApiV1OperationsParams = {
   page_size?: number;
 };
 
-export type PostApiV1OperationsCleanupParams = {
+export type PostOperationsCleanupParams = {
   /**
    * Retention period in days
    */
   retention_days?: number;
 };
 
-export type PostApiV1OperationsCleanup200 = { [key: string]: unknown };
+export type PostOperationsCleanup200 = { [key: string]: unknown };
 
-export type GetApiV1OrganizationsId404 = { [key: string]: unknown };
+export type GetOrganizationsId404 = { [key: string]: unknown };
 
-export type GetApiV1OrganizationsId500 = { [key: string]: unknown };
+export type GetOrganizationsId500 = { [key: string]: unknown };
 
-export type GetApiV1OrganizationsIdStatsParams = {
+export type DeleteOrganizationsId400 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId401 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId403 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId404 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId409 = { [key: string]: unknown };
+
+export type DeleteOrganizationsId500 = { [key: string]: unknown };
+
+export type PutOrganizationsId400 = { [key: string]: unknown };
+
+export type PutOrganizationsId401 = { [key: string]: unknown };
+
+export type PutOrganizationsId403 = { [key: string]: unknown };
+
+export type PutOrganizationsId404 = { [key: string]: unknown };
+
+export type PutOrganizationsId500 = { [key: string]: unknown };
+
+export type GetOrganizationsIdStatsParams = {
   /**
    * Include growth metrics
    */
   include_growth?: boolean;
 };
 
-export type GetApiV1OrganizationsIdStats404 = { [key: string]: unknown };
+export type GetOrganizationsIdStats404 = { [key: string]: unknown };
 
-export type GetApiV1OrganizationsIdStats500 = { [key: string]: unknown };
+export type GetOrganizationsIdStats500 = { [key: string]: unknown };
 
-export type GetApiV1OrganizationsMe401 = { [key: string]: unknown };
+export type GetOrganizationsMe401 = { [key: string]: unknown };
 
-export type GetApiV1OrganizationsMe404 = { [key: string]: unknown };
+export type GetOrganizationsMe404 = { [key: string]: unknown };
 
-export type GetApiV1OrganizationsMe500 = { [key: string]: unknown };
+export type GetOrganizationsMe500 = { [key: string]: unknown };
 
-export type PutApiV1OrganizationsMe400 = { [key: string]: unknown };
+export type PutOrganizationsMe400 = { [key: string]: unknown };
 
-export type PutApiV1OrganizationsMe401 = { [key: string]: unknown };
+export type PutOrganizationsMe401 = { [key: string]: unknown };
 
-export type PutApiV1OrganizationsMe403 = { [key: string]: unknown };
+export type PutOrganizationsMe403 = { [key: string]: unknown };
 
-export type PutApiV1OrganizationsMe404 = { [key: string]: unknown };
+export type PutOrganizationsMe404 = { [key: string]: unknown };
 
-export type PutApiV1OrganizationsMe500 = { [key: string]: unknown };
+export type PutOrganizationsMe500 = { [key: string]: unknown };
 
-export type GetApiV1RulesParams = {
+export type GetRulesParams = {
   /**
    * Filter by enabled status
    */
@@ -2683,7 +2704,7 @@ export type GetApiV1RulesParams = {
   action?: string;
 };
 
-export type GetApiV1RulesTemplatesParams = {
+export type GetRulesTemplatesParams = {
   /**
    * Filter by template category
    */
@@ -2694,27 +2715,27 @@ export type GetApiV1RulesTemplatesParams = {
   builtin?: boolean;
 };
 
-export type GetApiV1SchedulerJobs200 = {
+export type GetSchedulerJobs200 = {
   [key: string]: GithubComMantonxVolumevizInternalServicesSchedulerJobStatus;
 };
 
-export type GetApiV1SchedulerJobsName404 = { [key: string]: string };
+export type GetSchedulerJobsName404 = { [key: string]: string };
 
-export type PostApiV1SchedulerJobsNameDisable200 = { [key: string]: string };
+export type PostSchedulerJobsNameDisable200 = { [key: string]: string };
 
-export type PostApiV1SchedulerJobsNameDisable404 = { [key: string]: string };
+export type PostSchedulerJobsNameDisable404 = { [key: string]: string };
 
-export type PostApiV1SchedulerJobsNameEnable200 = { [key: string]: string };
+export type PostSchedulerJobsNameEnable200 = { [key: string]: string };
 
-export type PostApiV1SchedulerJobsNameEnable404 = { [key: string]: string };
+export type PostSchedulerJobsNameEnable404 = { [key: string]: string };
 
-export type PostApiV1SchedulerJobsNameRun200 = { [key: string]: string };
+export type PostSchedulerJobsNameRun200 = { [key: string]: string };
 
-export type PostApiV1SchedulerJobsNameRun404 = { [key: string]: string };
+export type PostSchedulerJobsNameRun404 = { [key: string]: string };
 
-export type PostApiV1SchedulerJobsNameRun500 = { [key: string]: string };
+export type PostSchedulerJobsNameRun500 = { [key: string]: string };
 
-export type GetApiV1SearchFilesParams = {
+export type GetSearchFilesParams = {
   /**
    * Text search query
    */
@@ -2809,7 +2830,7 @@ export type GetApiV1SearchFilesParams = {
   order?: string;
 };
 
-export type GetApiV1SearchSavedParams = {
+export type GetSearchSavedParams = {
   /**
    * Page number
    */
@@ -2824,7 +2845,7 @@ export type GetApiV1SearchSavedParams = {
   tags?: string[];
 };
 
-export type GetApiV1SearchSuggestionsParams = {
+export type GetSearchSuggestionsParams = {
   /**
    * Partial query string
    */
@@ -2945,28 +2966,6 @@ export type PostOrganizations403 = { [key: string]: unknown };
 export type PostOrganizations409 = { [key: string]: unknown };
 
 export type PostOrganizations500 = { [key: string]: unknown };
-
-export type DeleteOrganizationsId400 = { [key: string]: unknown };
-
-export type DeleteOrganizationsId401 = { [key: string]: unknown };
-
-export type DeleteOrganizationsId403 = { [key: string]: unknown };
-
-export type DeleteOrganizationsId404 = { [key: string]: unknown };
-
-export type DeleteOrganizationsId409 = { [key: string]: unknown };
-
-export type DeleteOrganizationsId500 = { [key: string]: unknown };
-
-export type PutOrganizationsId400 = { [key: string]: unknown };
-
-export type PutOrganizationsId401 = { [key: string]: unknown };
-
-export type PutOrganizationsId403 = { [key: string]: unknown };
-
-export type PutOrganizationsId404 = { [key: string]: unknown };
-
-export type PutOrganizationsId500 = { [key: string]: unknown };
 
 export type PostPreviews400 = { [key: string]: unknown };
 
@@ -6998,89 +6997,80 @@ export const usePostAlertsRulesIdTest = <
  * Get information about available real-time communication methods
  * @summary Get real-time diagnostics
  */
-export type getApiV1DiagRealtimeResponse200 = {
+export type getDiagRealtimeResponse200 = {
   data: InternalApiV1DiagRealtimeDiagnostics;
   status: 200;
 };
 
-export type getApiV1DiagRealtimeResponseComposite =
-  getApiV1DiagRealtimeResponse200;
+export type getDiagRealtimeResponseComposite = getDiagRealtimeResponse200;
 
-export type getApiV1DiagRealtimeResponse =
-  getApiV1DiagRealtimeResponseComposite & {
-    headers: Headers;
-  };
-
-export const getGetApiV1DiagRealtimeUrl = () => {
-  return `/api/v1/diag/realtime`;
+export type getDiagRealtimeResponse = getDiagRealtimeResponseComposite & {
+  headers: Headers;
 };
 
-export const getApiV1DiagRealtime = async (
+export const getGetDiagRealtimeUrl = () => {
+  return `/diag/realtime`;
+};
+
+export const getDiagRealtime = async (
   options?: RequestInit,
-): Promise<getApiV1DiagRealtimeResponse> => {
-  return customFetchClient<getApiV1DiagRealtimeResponse>(
-    getGetApiV1DiagRealtimeUrl(),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
+): Promise<getDiagRealtimeResponse> => {
+  return customFetchClient<getDiagRealtimeResponse>(getGetDiagRealtimeUrl(), {
+    ...options,
+    method: 'GET',
+  });
 };
 
-export const getGetApiV1DiagRealtimeQueryKey = () => {
-  return [`/api/v1/diag/realtime`] as const;
+export const getGetDiagRealtimeQueryKey = () => {
+  return [`/diag/realtime`] as const;
 };
 
-export const getGetApiV1DiagRealtimeQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+export const getGetDiagRealtimeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDiagRealtime>>,
   TError = unknown,
 >(options?: {
   query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
-      TError,
-      TData
-    >
+    UseQueryOptions<Awaited<ReturnType<typeof getDiagRealtime>>, TError, TData>
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetApiV1DiagRealtimeQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetDiagRealtimeQueryKey();
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1DiagRealtime>>
-  > = ({ signal }) => getApiV1DiagRealtime({ signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getDiagRealtime>>> = ({
+    signal,
+  }) => getDiagRealtime({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+    Awaited<ReturnType<typeof getDiagRealtime>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1DiagRealtimeQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1DiagRealtime>>
+export type GetDiagRealtimeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDiagRealtime>>
 >;
-export type GetApiV1DiagRealtimeQueryError = unknown;
+export type GetDiagRealtimeQueryError = unknown;
 
-export function useGetApiV1DiagRealtime<
-  TData = Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+export function useGetDiagRealtime<
+  TData = Awaited<ReturnType<typeof getDiagRealtime>>,
   TError = unknown,
 >(
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+        Awaited<ReturnType<typeof getDiagRealtime>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+          Awaited<ReturnType<typeof getDiagRealtime>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1DiagRealtime>>
+          Awaited<ReturnType<typeof getDiagRealtime>>
         >,
         'initialData'
       >;
@@ -7090,23 +7080,23 @@ export function useGetApiV1DiagRealtime<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1DiagRealtime<
-  TData = Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+export function useGetDiagRealtime<
+  TData = Awaited<ReturnType<typeof getDiagRealtime>>,
   TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+        Awaited<ReturnType<typeof getDiagRealtime>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+          Awaited<ReturnType<typeof getDiagRealtime>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1DiagRealtime>>
+          Awaited<ReturnType<typeof getDiagRealtime>>
         >,
         'initialData'
       >;
@@ -7116,14 +7106,14 @@ export function useGetApiV1DiagRealtime<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1DiagRealtime<
-  TData = Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+export function useGetDiagRealtime<
+  TData = Awaited<ReturnType<typeof getDiagRealtime>>,
   TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+        Awaited<ReturnType<typeof getDiagRealtime>>,
         TError,
         TData
       >
@@ -7138,14 +7128,14 @@ export function useGetApiV1DiagRealtime<
  * @summary Get real-time diagnostics
  */
 
-export function useGetApiV1DiagRealtime<
-  TData = Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+export function useGetDiagRealtime<
+  TData = Awaited<ReturnType<typeof getDiagRealtime>>,
   TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DiagRealtime>>,
+        Awaited<ReturnType<typeof getDiagRealtime>>,
         TError,
         TData
       >
@@ -7156,7 +7146,7 @@ export function useGetApiV1DiagRealtime<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1DiagRealtimeQueryOptions(options);
+  const queryOptions = getGetDiagRealtimeQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -7172,33 +7162,33 @@ export function useGetApiV1DiagRealtime<
  * Find duplicate files by content hash in the specified volume and path
  * @summary Detect duplicate files
  */
-export type getApiV1DuplicatesDetectResponse200 = {
+export type getDuplicatesDetectResponse200 = {
   data: DuplicatesDuplicateDetectionResponse;
   status: 200;
 };
 
-export type getApiV1DuplicatesDetectResponse400 = {
+export type getDuplicatesDetectResponse400 = {
   data: GithubComMantonxVolumevizInternalModelsErrorResponse;
   status: 400;
 };
 
-export type getApiV1DuplicatesDetectResponse500 = {
+export type getDuplicatesDetectResponse500 = {
   data: GithubComMantonxVolumevizInternalModelsErrorResponse;
   status: 500;
 };
 
-export type getApiV1DuplicatesDetectResponseComposite =
-  | getApiV1DuplicatesDetectResponse200
-  | getApiV1DuplicatesDetectResponse400
-  | getApiV1DuplicatesDetectResponse500;
+export type getDuplicatesDetectResponseComposite =
+  | getDuplicatesDetectResponse200
+  | getDuplicatesDetectResponse400
+  | getDuplicatesDetectResponse500;
 
-export type getApiV1DuplicatesDetectResponse =
-  getApiV1DuplicatesDetectResponseComposite & {
+export type getDuplicatesDetectResponse =
+  getDuplicatesDetectResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1DuplicatesDetectUrl = (
-  params: GetApiV1DuplicatesDetectParams,
+export const getGetDuplicatesDetectUrl = (
+  params: GetDuplicatesDetectParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -7211,16 +7201,16 @@ export const getGetApiV1DuplicatesDetectUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/duplicates/detect?${stringifiedParams}`
-    : `/api/v1/duplicates/detect`;
+    ? `/duplicates/detect?${stringifiedParams}`
+    : `/duplicates/detect`;
 };
 
-export const getApiV1DuplicatesDetect = async (
-  params: GetApiV1DuplicatesDetectParams,
+export const getDuplicatesDetect = async (
+  params: GetDuplicatesDetectParams,
   options?: RequestInit,
-): Promise<getApiV1DuplicatesDetectResponse> => {
-  return customFetchClient<getApiV1DuplicatesDetectResponse>(
-    getGetApiV1DuplicatesDetectUrl(params),
+): Promise<getDuplicatesDetectResponse> => {
+  return customFetchClient<getDuplicatesDetectResponse>(
+    getGetDuplicatesDetectUrl(params),
     {
       ...options,
       method: 'GET',
@@ -7228,23 +7218,23 @@ export const getApiV1DuplicatesDetect = async (
   );
 };
 
-export const getGetApiV1DuplicatesDetectQueryKey = (
-  params?: GetApiV1DuplicatesDetectParams,
+export const getGetDuplicatesDetectQueryKey = (
+  params?: GetDuplicatesDetectParams,
 ) => {
-  return [`/api/v1/duplicates/detect`, ...(params ? [params] : [])] as const;
+  return [`/duplicates/detect`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1DuplicatesDetectQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+export const getGetDuplicatesDetectQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDuplicatesDetect>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1DuplicatesDetectParams,
+  params: GetDuplicatesDetectParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+        Awaited<ReturnType<typeof getDuplicatesDetect>>,
         TError,
         TData
       >
@@ -7255,47 +7245,47 @@ export const getGetApiV1DuplicatesDetectQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1DuplicatesDetectQueryKey(params);
+    queryOptions?.queryKey ?? getGetDuplicatesDetectQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>
+    Awaited<ReturnType<typeof getDuplicatesDetect>>
   > = ({ signal }) =>
-    getApiV1DuplicatesDetect(params, { signal, ...requestOptions });
+    getDuplicatesDetect(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+    Awaited<ReturnType<typeof getDuplicatesDetect>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1DuplicatesDetectQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>
+export type GetDuplicatesDetectQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDuplicatesDetect>>
 >;
-export type GetApiV1DuplicatesDetectQueryError =
+export type GetDuplicatesDetectQueryError =
   | GithubComMantonxVolumevizInternalModelsErrorResponse
   | GithubComMantonxVolumevizInternalModelsErrorResponse;
 
-export function useGetApiV1DuplicatesDetect<
-  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+export function useGetDuplicatesDetect<
+  TData = Awaited<ReturnType<typeof getDuplicatesDetect>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1DuplicatesDetectParams,
+  params: GetDuplicatesDetectParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+        Awaited<ReturnType<typeof getDuplicatesDetect>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+          Awaited<ReturnType<typeof getDuplicatesDetect>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>
+          Awaited<ReturnType<typeof getDuplicatesDetect>>
         >,
         'initialData'
       >;
@@ -7305,26 +7295,26 @@ export function useGetApiV1DuplicatesDetect<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1DuplicatesDetect<
-  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+export function useGetDuplicatesDetect<
+  TData = Awaited<ReturnType<typeof getDuplicatesDetect>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1DuplicatesDetectParams,
+  params: GetDuplicatesDetectParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+        Awaited<ReturnType<typeof getDuplicatesDetect>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+          Awaited<ReturnType<typeof getDuplicatesDetect>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>
+          Awaited<ReturnType<typeof getDuplicatesDetect>>
         >,
         'initialData'
       >;
@@ -7334,17 +7324,17 @@ export function useGetApiV1DuplicatesDetect<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1DuplicatesDetect<
-  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+export function useGetDuplicatesDetect<
+  TData = Awaited<ReturnType<typeof getDuplicatesDetect>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1DuplicatesDetectParams,
+  params: GetDuplicatesDetectParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+        Awaited<ReturnType<typeof getDuplicatesDetect>>,
         TError,
         TData
       >
@@ -7359,17 +7349,17 @@ export function useGetApiV1DuplicatesDetect<
  * @summary Detect duplicate files
  */
 
-export function useGetApiV1DuplicatesDetect<
-  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+export function useGetDuplicatesDetect<
+  TData = Awaited<ReturnType<typeof getDuplicatesDetect>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1DuplicatesDetectParams,
+  params: GetDuplicatesDetectParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DuplicatesDetect>>,
+        Awaited<ReturnType<typeof getDuplicatesDetect>>,
         TError,
         TData
       >
@@ -7380,7 +7370,7 @@ export function useGetApiV1DuplicatesDetect<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1DuplicatesDetectQueryOptions(params, options);
+  const queryOptions = getGetDuplicatesDetectQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -7396,33 +7386,33 @@ export function useGetApiV1DuplicatesDetect<
  * Find potential duplicate files by matching file sizes (faster than hash-based detection)
  * @summary Detect potential duplicates by file size
  */
-export type getApiV1DuplicatesDetectBySizeResponse200 = {
+export type getDuplicatesDetectBySizeResponse200 = {
   data: DuplicatesDuplicateDetectionResponse;
   status: 200;
 };
 
-export type getApiV1DuplicatesDetectBySizeResponse400 = {
+export type getDuplicatesDetectBySizeResponse400 = {
   data: GithubComMantonxVolumevizInternalModelsErrorResponse;
   status: 400;
 };
 
-export type getApiV1DuplicatesDetectBySizeResponse500 = {
+export type getDuplicatesDetectBySizeResponse500 = {
   data: GithubComMantonxVolumevizInternalModelsErrorResponse;
   status: 500;
 };
 
-export type getApiV1DuplicatesDetectBySizeResponseComposite =
-  | getApiV1DuplicatesDetectBySizeResponse200
-  | getApiV1DuplicatesDetectBySizeResponse400
-  | getApiV1DuplicatesDetectBySizeResponse500;
+export type getDuplicatesDetectBySizeResponseComposite =
+  | getDuplicatesDetectBySizeResponse200
+  | getDuplicatesDetectBySizeResponse400
+  | getDuplicatesDetectBySizeResponse500;
 
-export type getApiV1DuplicatesDetectBySizeResponse =
-  getApiV1DuplicatesDetectBySizeResponseComposite & {
+export type getDuplicatesDetectBySizeResponse =
+  getDuplicatesDetectBySizeResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1DuplicatesDetectBySizeUrl = (
-  params: GetApiV1DuplicatesDetectBySizeParams,
+export const getGetDuplicatesDetectBySizeUrl = (
+  params: GetDuplicatesDetectBySizeParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -7435,16 +7425,16 @@ export const getGetApiV1DuplicatesDetectBySizeUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/duplicates/detect-by-size?${stringifiedParams}`
-    : `/api/v1/duplicates/detect-by-size`;
+    ? `/duplicates/detect-by-size?${stringifiedParams}`
+    : `/duplicates/detect-by-size`;
 };
 
-export const getApiV1DuplicatesDetectBySize = async (
-  params: GetApiV1DuplicatesDetectBySizeParams,
+export const getDuplicatesDetectBySize = async (
+  params: GetDuplicatesDetectBySizeParams,
   options?: RequestInit,
-): Promise<getApiV1DuplicatesDetectBySizeResponse> => {
-  return customFetchClient<getApiV1DuplicatesDetectBySizeResponse>(
-    getGetApiV1DuplicatesDetectBySizeUrl(params),
+): Promise<getDuplicatesDetectBySizeResponse> => {
+  return customFetchClient<getDuplicatesDetectBySizeResponse>(
+    getGetDuplicatesDetectBySizeUrl(params),
     {
       ...options,
       method: 'GET',
@@ -7452,26 +7442,23 @@ export const getApiV1DuplicatesDetectBySize = async (
   );
 };
 
-export const getGetApiV1DuplicatesDetectBySizeQueryKey = (
-  params?: GetApiV1DuplicatesDetectBySizeParams,
+export const getGetDuplicatesDetectBySizeQueryKey = (
+  params?: GetDuplicatesDetectBySizeParams,
 ) => {
-  return [
-    `/api/v1/duplicates/detect-by-size`,
-    ...(params ? [params] : []),
-  ] as const;
+  return [`/duplicates/detect-by-size`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1DuplicatesDetectBySizeQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+export const getGetDuplicatesDetectBySizeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1DuplicatesDetectBySizeParams,
+  params: GetDuplicatesDetectBySizeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+        Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
         TError,
         TData
       >
@@ -7482,47 +7469,47 @@ export const getGetApiV1DuplicatesDetectBySizeQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1DuplicatesDetectBySizeQueryKey(params);
+    queryOptions?.queryKey ?? getGetDuplicatesDetectBySizeQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>
+    Awaited<ReturnType<typeof getDuplicatesDetectBySize>>
   > = ({ signal }) =>
-    getApiV1DuplicatesDetectBySize(params, { signal, ...requestOptions });
+    getDuplicatesDetectBySize(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+    Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1DuplicatesDetectBySizeQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>
+export type GetDuplicatesDetectBySizeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDuplicatesDetectBySize>>
 >;
-export type GetApiV1DuplicatesDetectBySizeQueryError =
+export type GetDuplicatesDetectBySizeQueryError =
   | GithubComMantonxVolumevizInternalModelsErrorResponse
   | GithubComMantonxVolumevizInternalModelsErrorResponse;
 
-export function useGetApiV1DuplicatesDetectBySize<
-  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+export function useGetDuplicatesDetectBySize<
+  TData = Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1DuplicatesDetectBySizeParams,
+  params: GetDuplicatesDetectBySizeParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+        Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+          Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>
+          Awaited<ReturnType<typeof getDuplicatesDetectBySize>>
         >,
         'initialData'
       >;
@@ -7532,26 +7519,26 @@ export function useGetApiV1DuplicatesDetectBySize<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1DuplicatesDetectBySize<
-  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+export function useGetDuplicatesDetectBySize<
+  TData = Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1DuplicatesDetectBySizeParams,
+  params: GetDuplicatesDetectBySizeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+        Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+          Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>
+          Awaited<ReturnType<typeof getDuplicatesDetectBySize>>
         >,
         'initialData'
       >;
@@ -7561,17 +7548,17 @@ export function useGetApiV1DuplicatesDetectBySize<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1DuplicatesDetectBySize<
-  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+export function useGetDuplicatesDetectBySize<
+  TData = Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1DuplicatesDetectBySizeParams,
+  params: GetDuplicatesDetectBySizeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+        Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
         TError,
         TData
       >
@@ -7586,17 +7573,17 @@ export function useGetApiV1DuplicatesDetectBySize<
  * @summary Detect potential duplicates by file size
  */
 
-export function useGetApiV1DuplicatesDetectBySize<
-  TData = Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+export function useGetDuplicatesDetectBySize<
+  TData = Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1DuplicatesDetectBySizeParams,
+  params: GetDuplicatesDetectBySizeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1DuplicatesDetectBySize>>,
+        Awaited<ReturnType<typeof getDuplicatesDetectBySize>>,
         TError,
         TData
       >
@@ -7607,7 +7594,7 @@ export function useGetApiV1DuplicatesDetectBySize<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1DuplicatesDetectBySizeQueryOptions(
+  const queryOptions = getGetDuplicatesDetectBySizeQueryOptions(
     params,
     options,
   );
@@ -7626,42 +7613,42 @@ export function useGetApiV1DuplicatesDetectBySize<
  * Verify a size-based duplicate group by calculating and comparing file hashes
  * @summary Verify a duplicate group with hash comparison
  */
-export type postApiV1DuplicatesVerifyGroupIdResponse200 = {
+export type postDuplicatesVerifyGroupIdResponse200 = {
   data: DuplicatesDuplicateGroup;
   status: 200;
 };
 
-export type postApiV1DuplicatesVerifyGroupIdResponse400 = {
+export type postDuplicatesVerifyGroupIdResponse400 = {
   data: GithubComMantonxVolumevizInternalModelsErrorResponse;
   status: 400;
 };
 
-export type postApiV1DuplicatesVerifyGroupIdResponse500 = {
+export type postDuplicatesVerifyGroupIdResponse500 = {
   data: GithubComMantonxVolumevizInternalModelsErrorResponse;
   status: 500;
 };
 
-export type postApiV1DuplicatesVerifyGroupIdResponseComposite =
-  | postApiV1DuplicatesVerifyGroupIdResponse200
-  | postApiV1DuplicatesVerifyGroupIdResponse400
-  | postApiV1DuplicatesVerifyGroupIdResponse500;
+export type postDuplicatesVerifyGroupIdResponseComposite =
+  | postDuplicatesVerifyGroupIdResponse200
+  | postDuplicatesVerifyGroupIdResponse400
+  | postDuplicatesVerifyGroupIdResponse500;
 
-export type postApiV1DuplicatesVerifyGroupIdResponse =
-  postApiV1DuplicatesVerifyGroupIdResponseComposite & {
+export type postDuplicatesVerifyGroupIdResponse =
+  postDuplicatesVerifyGroupIdResponseComposite & {
     headers: Headers;
   };
 
-export const getPostApiV1DuplicatesVerifyGroupIdUrl = (groupId: string) => {
-  return `/api/v1/duplicates/verify/${groupId}`;
+export const getPostDuplicatesVerifyGroupIdUrl = (groupId: string) => {
+  return `/duplicates/verify/${groupId}`;
 };
 
-export const postApiV1DuplicatesVerifyGroupId = async (
+export const postDuplicatesVerifyGroupId = async (
   groupId: string,
   duplicatesDuplicateGroup: DuplicatesDuplicateGroup,
   options?: RequestInit,
-): Promise<postApiV1DuplicatesVerifyGroupIdResponse> => {
-  return customFetchClient<postApiV1DuplicatesVerifyGroupIdResponse>(
-    getPostApiV1DuplicatesVerifyGroupIdUrl(groupId),
+): Promise<postDuplicatesVerifyGroupIdResponse> => {
+  return customFetchClient<postDuplicatesVerifyGroupIdResponse>(
+    getPostDuplicatesVerifyGroupIdUrl(groupId),
     {
       ...options,
       method: 'POST',
@@ -7671,26 +7658,26 @@ export const postApiV1DuplicatesVerifyGroupId = async (
   );
 };
 
-export const getPostApiV1DuplicatesVerifyGroupIdMutationOptions = <
+export const getPostDuplicatesVerifyGroupIdMutationOptions = <
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>,
+    Awaited<ReturnType<typeof postDuplicatesVerifyGroupId>>,
     TError,
     { groupId: string; data: DuplicatesDuplicateGroup },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>,
+  Awaited<ReturnType<typeof postDuplicatesVerifyGroupId>>,
   TError,
   { groupId: string; data: DuplicatesDuplicateGroup },
   TContext
 > => {
-  const mutationKey = ['postApiV1DuplicatesVerifyGroupId'];
+  const mutationKey = ['postDuplicatesVerifyGroupId'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -7700,30 +7687,29 @@ export const getPostApiV1DuplicatesVerifyGroupIdMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>,
+    Awaited<ReturnType<typeof postDuplicatesVerifyGroupId>>,
     { groupId: string; data: DuplicatesDuplicateGroup }
   > = (props) => {
     const { groupId, data } = props ?? {};
 
-    return postApiV1DuplicatesVerifyGroupId(groupId, data, requestOptions);
+    return postDuplicatesVerifyGroupId(groupId, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1DuplicatesVerifyGroupIdMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>
+export type PostDuplicatesVerifyGroupIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postDuplicatesVerifyGroupId>>
 >;
-export type PostApiV1DuplicatesVerifyGroupIdMutationBody =
-  DuplicatesDuplicateGroup;
-export type PostApiV1DuplicatesVerifyGroupIdMutationError =
+export type PostDuplicatesVerifyGroupIdMutationBody = DuplicatesDuplicateGroup;
+export type PostDuplicatesVerifyGroupIdMutationError =
   | GithubComMantonxVolumevizInternalModelsErrorResponse
   | GithubComMantonxVolumevizInternalModelsErrorResponse;
 
 /**
  * @summary Verify a duplicate group with hash comparison
  */
-export const usePostApiV1DuplicatesVerifyGroupId = <
+export const usePostDuplicatesVerifyGroupId = <
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
@@ -7731,7 +7717,7 @@ export const usePostApiV1DuplicatesVerifyGroupId = <
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>,
+      Awaited<ReturnType<typeof postDuplicatesVerifyGroupId>>,
       TError,
       { groupId: string; data: DuplicatesDuplicateGroup },
       TContext
@@ -7740,13 +7726,13 @@ export const usePostApiV1DuplicatesVerifyGroupId = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1DuplicatesVerifyGroupId>>,
+  Awaited<ReturnType<typeof postDuplicatesVerifyGroupId>>,
   TError,
   { groupId: string; data: DuplicatesDuplicateGroup },
   TContext
 > => {
   const mutationOptions =
-    getPostApiV1DuplicatesVerifyGroupIdMutationOptions(options);
+    getPostDuplicatesVerifyGroupIdMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -7755,40 +7741,37 @@ export const usePostApiV1DuplicatesVerifyGroupId = <
  * Browse folders with parent/child relationships for navigation breadcrumbs and tree structure
  * @summary Browse folder hierarchy
  */
-export type getApiV1ExplorerBrowseResponse200 = {
+export type getExplorerBrowseResponse200 = {
   data: InternalApiV1ExplorerFolderBrowsingResponse;
   status: 200;
 };
 
-export type getApiV1ExplorerBrowseResponse400 = {
-  data: GetApiV1ExplorerBrowse400;
+export type getExplorerBrowseResponse400 = {
+  data: GetExplorerBrowse400;
   status: 400;
 };
 
-export type getApiV1ExplorerBrowseResponse404 = {
-  data: GetApiV1ExplorerBrowse404;
+export type getExplorerBrowseResponse404 = {
+  data: GetExplorerBrowse404;
   status: 404;
 };
 
-export type getApiV1ExplorerBrowseResponse500 = {
-  data: GetApiV1ExplorerBrowse500;
+export type getExplorerBrowseResponse500 = {
+  data: GetExplorerBrowse500;
   status: 500;
 };
 
-export type getApiV1ExplorerBrowseResponseComposite =
-  | getApiV1ExplorerBrowseResponse200
-  | getApiV1ExplorerBrowseResponse400
-  | getApiV1ExplorerBrowseResponse404
-  | getApiV1ExplorerBrowseResponse500;
+export type getExplorerBrowseResponseComposite =
+  | getExplorerBrowseResponse200
+  | getExplorerBrowseResponse400
+  | getExplorerBrowseResponse404
+  | getExplorerBrowseResponse500;
 
-export type getApiV1ExplorerBrowseResponse =
-  getApiV1ExplorerBrowseResponseComposite & {
-    headers: Headers;
-  };
+export type getExplorerBrowseResponse = getExplorerBrowseResponseComposite & {
+  headers: Headers;
+};
 
-export const getGetApiV1ExplorerBrowseUrl = (
-  params: GetApiV1ExplorerBrowseParams,
-) => {
+export const getGetExplorerBrowseUrl = (params: GetExplorerBrowseParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -7800,16 +7783,16 @@ export const getGetApiV1ExplorerBrowseUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/explorer/browse?${stringifiedParams}`
-    : `/api/v1/explorer/browse`;
+    ? `/explorer/browse?${stringifiedParams}`
+    : `/explorer/browse`;
 };
 
-export const getApiV1ExplorerBrowse = async (
-  params: GetApiV1ExplorerBrowseParams,
+export const getExplorerBrowse = async (
+  params: GetExplorerBrowseParams,
   options?: RequestInit,
-): Promise<getApiV1ExplorerBrowseResponse> => {
-  return customFetchClient<getApiV1ExplorerBrowseResponse>(
-    getGetApiV1ExplorerBrowseUrl(params),
+): Promise<getExplorerBrowseResponse> => {
+  return customFetchClient<getExplorerBrowseResponse>(
+    getGetExplorerBrowseUrl(params),
     {
       ...options,
       method: 'GET',
@@ -7817,24 +7800,21 @@ export const getApiV1ExplorerBrowse = async (
   );
 };
 
-export const getGetApiV1ExplorerBrowseQueryKey = (
-  params?: GetApiV1ExplorerBrowseParams,
+export const getGetExplorerBrowseQueryKey = (
+  params?: GetExplorerBrowseParams,
 ) => {
-  return [`/api/v1/explorer/browse`, ...(params ? [params] : [])] as const;
+  return [`/explorer/browse`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1ExplorerBrowseQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
-  TError =
-    | GetApiV1ExplorerBrowse400
-    | GetApiV1ExplorerBrowse404
-    | GetApiV1ExplorerBrowse500,
+export const getGetExplorerBrowseQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExplorerBrowse>>,
+  TError = GetExplorerBrowse400 | GetExplorerBrowse404 | GetExplorerBrowse500,
 >(
-  params: GetApiV1ExplorerBrowseParams,
+  params: GetExplorerBrowseParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
+        Awaited<ReturnType<typeof getExplorerBrowse>>,
         TError,
         TData
       >
@@ -7845,49 +7825,45 @@ export const getGetApiV1ExplorerBrowseQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1ExplorerBrowseQueryKey(params);
+    queryOptions?.queryKey ?? getGetExplorerBrowseQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>
-  > = ({ signal }) =>
-    getApiV1ExplorerBrowse(params, { signal, ...requestOptions });
+    Awaited<ReturnType<typeof getExplorerBrowse>>
+  > = ({ signal }) => getExplorerBrowse(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
+    Awaited<ReturnType<typeof getExplorerBrowse>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1ExplorerBrowseQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>
+export type GetExplorerBrowseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExplorerBrowse>>
 >;
-export type GetApiV1ExplorerBrowseQueryError =
-  | GetApiV1ExplorerBrowse400
-  | GetApiV1ExplorerBrowse404
-  | GetApiV1ExplorerBrowse500;
+export type GetExplorerBrowseQueryError =
+  | GetExplorerBrowse400
+  | GetExplorerBrowse404
+  | GetExplorerBrowse500;
 
-export function useGetApiV1ExplorerBrowse<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
-  TError =
-    | GetApiV1ExplorerBrowse400
-    | GetApiV1ExplorerBrowse404
-    | GetApiV1ExplorerBrowse500,
+export function useGetExplorerBrowse<
+  TData = Awaited<ReturnType<typeof getExplorerBrowse>>,
+  TError = GetExplorerBrowse400 | GetExplorerBrowse404 | GetExplorerBrowse500,
 >(
-  params: GetApiV1ExplorerBrowseParams,
+  params: GetExplorerBrowseParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
+        Awaited<ReturnType<typeof getExplorerBrowse>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
+          Awaited<ReturnType<typeof getExplorerBrowse>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>
+          Awaited<ReturnType<typeof getExplorerBrowse>>
         >,
         'initialData'
       >;
@@ -7897,27 +7873,24 @@ export function useGetApiV1ExplorerBrowse<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerBrowse<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
-  TError =
-    | GetApiV1ExplorerBrowse400
-    | GetApiV1ExplorerBrowse404
-    | GetApiV1ExplorerBrowse500,
+export function useGetExplorerBrowse<
+  TData = Awaited<ReturnType<typeof getExplorerBrowse>>,
+  TError = GetExplorerBrowse400 | GetExplorerBrowse404 | GetExplorerBrowse500,
 >(
-  params: GetApiV1ExplorerBrowseParams,
+  params: GetExplorerBrowseParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
+        Awaited<ReturnType<typeof getExplorerBrowse>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
+          Awaited<ReturnType<typeof getExplorerBrowse>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>
+          Awaited<ReturnType<typeof getExplorerBrowse>>
         >,
         'initialData'
       >;
@@ -7927,18 +7900,15 @@ export function useGetApiV1ExplorerBrowse<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerBrowse<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
-  TError =
-    | GetApiV1ExplorerBrowse400
-    | GetApiV1ExplorerBrowse404
-    | GetApiV1ExplorerBrowse500,
+export function useGetExplorerBrowse<
+  TData = Awaited<ReturnType<typeof getExplorerBrowse>>,
+  TError = GetExplorerBrowse400 | GetExplorerBrowse404 | GetExplorerBrowse500,
 >(
-  params: GetApiV1ExplorerBrowseParams,
+  params: GetExplorerBrowseParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
+        Awaited<ReturnType<typeof getExplorerBrowse>>,
         TError,
         TData
       >
@@ -7953,18 +7923,15 @@ export function useGetApiV1ExplorerBrowse<
  * @summary Browse folder hierarchy
  */
 
-export function useGetApiV1ExplorerBrowse<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
-  TError =
-    | GetApiV1ExplorerBrowse400
-    | GetApiV1ExplorerBrowse404
-    | GetApiV1ExplorerBrowse500,
+export function useGetExplorerBrowse<
+  TData = Awaited<ReturnType<typeof getExplorerBrowse>>,
+  TError = GetExplorerBrowse400 | GetExplorerBrowse404 | GetExplorerBrowse500,
 >(
-  params: GetApiV1ExplorerBrowseParams,
+  params: GetExplorerBrowseParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerBrowse>>,
+        Awaited<ReturnType<typeof getExplorerBrowse>>,
         TError,
         TData
       >
@@ -7975,7 +7942,7 @@ export function useGetApiV1ExplorerBrowse<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1ExplorerBrowseQueryOptions(params, options);
+  const queryOptions = getGetExplorerBrowseQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -7991,40 +7958,37 @@ export function useGetApiV1ExplorerBrowse<
  * Retrieve files and directories within a specific folder path with pagination, sorting, and filtering support
  * @summary Get files in folder
  */
-export type getApiV1ExplorerFilesResponse200 = {
+export type getExplorerFilesResponse200 = {
   data: InternalApiV1ExplorerGetFilesByFolderResponse;
   status: 200;
 };
 
-export type getApiV1ExplorerFilesResponse400 = {
-  data: GetApiV1ExplorerFiles400;
+export type getExplorerFilesResponse400 = {
+  data: GetExplorerFiles400;
   status: 400;
 };
 
-export type getApiV1ExplorerFilesResponse404 = {
-  data: GetApiV1ExplorerFiles404;
+export type getExplorerFilesResponse404 = {
+  data: GetExplorerFiles404;
   status: 404;
 };
 
-export type getApiV1ExplorerFilesResponse500 = {
-  data: GetApiV1ExplorerFiles500;
+export type getExplorerFilesResponse500 = {
+  data: GetExplorerFiles500;
   status: 500;
 };
 
-export type getApiV1ExplorerFilesResponseComposite =
-  | getApiV1ExplorerFilesResponse200
-  | getApiV1ExplorerFilesResponse400
-  | getApiV1ExplorerFilesResponse404
-  | getApiV1ExplorerFilesResponse500;
+export type getExplorerFilesResponseComposite =
+  | getExplorerFilesResponse200
+  | getExplorerFilesResponse400
+  | getExplorerFilesResponse404
+  | getExplorerFilesResponse500;
 
-export type getApiV1ExplorerFilesResponse =
-  getApiV1ExplorerFilesResponseComposite & {
-    headers: Headers;
-  };
+export type getExplorerFilesResponse = getExplorerFilesResponseComposite & {
+  headers: Headers;
+};
 
-export const getGetApiV1ExplorerFilesUrl = (
-  params: GetApiV1ExplorerFilesParams,
-) => {
+export const getGetExplorerFilesUrl = (params: GetExplorerFilesParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -8036,16 +8000,16 @@ export const getGetApiV1ExplorerFilesUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/explorer/files?${stringifiedParams}`
-    : `/api/v1/explorer/files`;
+    ? `/explorer/files?${stringifiedParams}`
+    : `/explorer/files`;
 };
 
-export const getApiV1ExplorerFiles = async (
-  params: GetApiV1ExplorerFilesParams,
+export const getExplorerFiles = async (
+  params: GetExplorerFilesParams,
   options?: RequestInit,
-): Promise<getApiV1ExplorerFilesResponse> => {
-  return customFetchClient<getApiV1ExplorerFilesResponse>(
-    getGetApiV1ExplorerFilesUrl(params),
+): Promise<getExplorerFilesResponse> => {
+  return customFetchClient<getExplorerFilesResponse>(
+    getGetExplorerFilesUrl(params),
     {
       ...options,
       method: 'GET',
@@ -8053,24 +8017,21 @@ export const getApiV1ExplorerFiles = async (
   );
 };
 
-export const getGetApiV1ExplorerFilesQueryKey = (
-  params?: GetApiV1ExplorerFilesParams,
+export const getGetExplorerFilesQueryKey = (
+  params?: GetExplorerFilesParams,
 ) => {
-  return [`/api/v1/explorer/files`, ...(params ? [params] : [])] as const;
+  return [`/explorer/files`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1ExplorerFilesQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
-  TError =
-    | GetApiV1ExplorerFiles400
-    | GetApiV1ExplorerFiles404
-    | GetApiV1ExplorerFiles500,
+export const getGetExplorerFilesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExplorerFiles>>,
+  TError = GetExplorerFiles400 | GetExplorerFiles404 | GetExplorerFiles500,
 >(
-  params: GetApiV1ExplorerFilesParams,
+  params: GetExplorerFilesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
+        Awaited<ReturnType<typeof getExplorerFiles>>,
         TError,
         TData
       >
@@ -8081,49 +8042,45 @@ export const getGetApiV1ExplorerFilesQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1ExplorerFilesQueryKey(params);
+    queryOptions?.queryKey ?? getGetExplorerFilesQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1ExplorerFiles>>
-  > = ({ signal }) =>
-    getApiV1ExplorerFiles(params, { signal, ...requestOptions });
+    Awaited<ReturnType<typeof getExplorerFiles>>
+  > = ({ signal }) => getExplorerFiles(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
+    Awaited<ReturnType<typeof getExplorerFiles>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1ExplorerFilesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1ExplorerFiles>>
+export type GetExplorerFilesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExplorerFiles>>
 >;
-export type GetApiV1ExplorerFilesQueryError =
-  | GetApiV1ExplorerFiles400
-  | GetApiV1ExplorerFiles404
-  | GetApiV1ExplorerFiles500;
+export type GetExplorerFilesQueryError =
+  | GetExplorerFiles400
+  | GetExplorerFiles404
+  | GetExplorerFiles500;
 
-export function useGetApiV1ExplorerFiles<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
-  TError =
-    | GetApiV1ExplorerFiles400
-    | GetApiV1ExplorerFiles404
-    | GetApiV1ExplorerFiles500,
+export function useGetExplorerFiles<
+  TData = Awaited<ReturnType<typeof getExplorerFiles>>,
+  TError = GetExplorerFiles400 | GetExplorerFiles404 | GetExplorerFiles500,
 >(
-  params: GetApiV1ExplorerFilesParams,
+  params: GetExplorerFilesParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
+        Awaited<ReturnType<typeof getExplorerFiles>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
+          Awaited<ReturnType<typeof getExplorerFiles>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFiles>>
+          Awaited<ReturnType<typeof getExplorerFiles>>
         >,
         'initialData'
       >;
@@ -8133,27 +8090,24 @@ export function useGetApiV1ExplorerFiles<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFiles<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
-  TError =
-    | GetApiV1ExplorerFiles400
-    | GetApiV1ExplorerFiles404
-    | GetApiV1ExplorerFiles500,
+export function useGetExplorerFiles<
+  TData = Awaited<ReturnType<typeof getExplorerFiles>>,
+  TError = GetExplorerFiles400 | GetExplorerFiles404 | GetExplorerFiles500,
 >(
-  params: GetApiV1ExplorerFilesParams,
+  params: GetExplorerFilesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
+        Awaited<ReturnType<typeof getExplorerFiles>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
+          Awaited<ReturnType<typeof getExplorerFiles>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFiles>>
+          Awaited<ReturnType<typeof getExplorerFiles>>
         >,
         'initialData'
       >;
@@ -8163,18 +8117,15 @@ export function useGetApiV1ExplorerFiles<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFiles<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
-  TError =
-    | GetApiV1ExplorerFiles400
-    | GetApiV1ExplorerFiles404
-    | GetApiV1ExplorerFiles500,
+export function useGetExplorerFiles<
+  TData = Awaited<ReturnType<typeof getExplorerFiles>>,
+  TError = GetExplorerFiles400 | GetExplorerFiles404 | GetExplorerFiles500,
 >(
-  params: GetApiV1ExplorerFilesParams,
+  params: GetExplorerFilesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
+        Awaited<ReturnType<typeof getExplorerFiles>>,
         TError,
         TData
       >
@@ -8189,18 +8140,15 @@ export function useGetApiV1ExplorerFiles<
  * @summary Get files in folder
  */
 
-export function useGetApiV1ExplorerFiles<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
-  TError =
-    | GetApiV1ExplorerFiles400
-    | GetApiV1ExplorerFiles404
-    | GetApiV1ExplorerFiles500,
+export function useGetExplorerFiles<
+  TData = Awaited<ReturnType<typeof getExplorerFiles>>,
+  TError = GetExplorerFiles400 | GetExplorerFiles404 | GetExplorerFiles500,
 >(
-  params: GetApiV1ExplorerFilesParams,
+  params: GetExplorerFilesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFiles>>,
+        Awaited<ReturnType<typeof getExplorerFiles>>,
         TError,
         TData
       >
@@ -8211,7 +8159,7 @@ export function useGetApiV1ExplorerFiles<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1ExplorerFilesQueryOptions(params, options);
+  const queryOptions = getGetExplorerFilesQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -8227,39 +8175,39 @@ export function useGetApiV1ExplorerFiles<
  * Retrieve files filtered by file extension with pagination support
  * @summary Get files by extension
  */
-export type getApiV1ExplorerFilesByExtensionResponse200 = {
+export type getExplorerFilesByExtensionResponse200 = {
   data: InternalApiV1ExplorerGetFilesByFolderResponse;
   status: 200;
 };
 
-export type getApiV1ExplorerFilesByExtensionResponse400 = {
-  data: GetApiV1ExplorerFilesByExtension400;
+export type getExplorerFilesByExtensionResponse400 = {
+  data: GetExplorerFilesByExtension400;
   status: 400;
 };
 
-export type getApiV1ExplorerFilesByExtensionResponse404 = {
-  data: GetApiV1ExplorerFilesByExtension404;
+export type getExplorerFilesByExtensionResponse404 = {
+  data: GetExplorerFilesByExtension404;
   status: 404;
 };
 
-export type getApiV1ExplorerFilesByExtensionResponse500 = {
-  data: GetApiV1ExplorerFilesByExtension500;
+export type getExplorerFilesByExtensionResponse500 = {
+  data: GetExplorerFilesByExtension500;
   status: 500;
 };
 
-export type getApiV1ExplorerFilesByExtensionResponseComposite =
-  | getApiV1ExplorerFilesByExtensionResponse200
-  | getApiV1ExplorerFilesByExtensionResponse400
-  | getApiV1ExplorerFilesByExtensionResponse404
-  | getApiV1ExplorerFilesByExtensionResponse500;
+export type getExplorerFilesByExtensionResponseComposite =
+  | getExplorerFilesByExtensionResponse200
+  | getExplorerFilesByExtensionResponse400
+  | getExplorerFilesByExtensionResponse404
+  | getExplorerFilesByExtensionResponse500;
 
-export type getApiV1ExplorerFilesByExtensionResponse =
-  getApiV1ExplorerFilesByExtensionResponseComposite & {
+export type getExplorerFilesByExtensionResponse =
+  getExplorerFilesByExtensionResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1ExplorerFilesByExtensionUrl = (
-  params: GetApiV1ExplorerFilesByExtensionParams,
+export const getGetExplorerFilesByExtensionUrl = (
+  params: GetExplorerFilesByExtensionParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -8272,16 +8220,16 @@ export const getGetApiV1ExplorerFilesByExtensionUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/explorer/files/by-extension?${stringifiedParams}`
-    : `/api/v1/explorer/files/by-extension`;
+    ? `/explorer/files/by-extension?${stringifiedParams}`
+    : `/explorer/files/by-extension`;
 };
 
-export const getApiV1ExplorerFilesByExtension = async (
-  params: GetApiV1ExplorerFilesByExtensionParams,
+export const getExplorerFilesByExtension = async (
+  params: GetExplorerFilesByExtensionParams,
   options?: RequestInit,
-): Promise<getApiV1ExplorerFilesByExtensionResponse> => {
-  return customFetchClient<getApiV1ExplorerFilesByExtensionResponse>(
-    getGetApiV1ExplorerFilesByExtensionUrl(params),
+): Promise<getExplorerFilesByExtensionResponse> => {
+  return customFetchClient<getExplorerFilesByExtensionResponse>(
+    getGetExplorerFilesByExtensionUrl(params),
     {
       ...options,
       method: 'GET',
@@ -8289,27 +8237,24 @@ export const getApiV1ExplorerFilesByExtension = async (
   );
 };
 
-export const getGetApiV1ExplorerFilesByExtensionQueryKey = (
-  params?: GetApiV1ExplorerFilesByExtensionParams,
+export const getGetExplorerFilesByExtensionQueryKey = (
+  params?: GetExplorerFilesByExtensionParams,
 ) => {
-  return [
-    `/api/v1/explorer/files/by-extension`,
-    ...(params ? [params] : []),
-  ] as const;
+  return [`/explorer/files/by-extension`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1ExplorerFilesByExtensionQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+export const getGetExplorerFilesByExtensionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
   TError =
-    | GetApiV1ExplorerFilesByExtension400
-    | GetApiV1ExplorerFilesByExtension404
-    | GetApiV1ExplorerFilesByExtension500,
+    | GetExplorerFilesByExtension400
+    | GetExplorerFilesByExtension404
+    | GetExplorerFilesByExtension500,
 >(
-  params: GetApiV1ExplorerFilesByExtensionParams,
+  params: GetExplorerFilesByExtensionParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+        Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
         TError,
         TData
       >
@@ -8320,50 +8265,49 @@ export const getGetApiV1ExplorerFilesByExtensionQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ??
-    getGetApiV1ExplorerFilesByExtensionQueryKey(params);
+    queryOptions?.queryKey ?? getGetExplorerFilesByExtensionQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>
+    Awaited<ReturnType<typeof getExplorerFilesByExtension>>
   > = ({ signal }) =>
-    getApiV1ExplorerFilesByExtension(params, { signal, ...requestOptions });
+    getExplorerFilesByExtension(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+    Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1ExplorerFilesByExtensionQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>
+export type GetExplorerFilesByExtensionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExplorerFilesByExtension>>
 >;
-export type GetApiV1ExplorerFilesByExtensionQueryError =
-  | GetApiV1ExplorerFilesByExtension400
-  | GetApiV1ExplorerFilesByExtension404
-  | GetApiV1ExplorerFilesByExtension500;
+export type GetExplorerFilesByExtensionQueryError =
+  | GetExplorerFilesByExtension400
+  | GetExplorerFilesByExtension404
+  | GetExplorerFilesByExtension500;
 
-export function useGetApiV1ExplorerFilesByExtension<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+export function useGetExplorerFilesByExtension<
+  TData = Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
   TError =
-    | GetApiV1ExplorerFilesByExtension400
-    | GetApiV1ExplorerFilesByExtension404
-    | GetApiV1ExplorerFilesByExtension500,
+    | GetExplorerFilesByExtension400
+    | GetExplorerFilesByExtension404
+    | GetExplorerFilesByExtension500,
 >(
-  params: GetApiV1ExplorerFilesByExtensionParams,
+  params: GetExplorerFilesByExtensionParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+        Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+          Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>
+          Awaited<ReturnType<typeof getExplorerFilesByExtension>>
         >,
         'initialData'
       >;
@@ -8373,27 +8317,27 @@ export function useGetApiV1ExplorerFilesByExtension<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFilesByExtension<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+export function useGetExplorerFilesByExtension<
+  TData = Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
   TError =
-    | GetApiV1ExplorerFilesByExtension400
-    | GetApiV1ExplorerFilesByExtension404
-    | GetApiV1ExplorerFilesByExtension500,
+    | GetExplorerFilesByExtension400
+    | GetExplorerFilesByExtension404
+    | GetExplorerFilesByExtension500,
 >(
-  params: GetApiV1ExplorerFilesByExtensionParams,
+  params: GetExplorerFilesByExtensionParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+        Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+          Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>
+          Awaited<ReturnType<typeof getExplorerFilesByExtension>>
         >,
         'initialData'
       >;
@@ -8403,18 +8347,18 @@ export function useGetApiV1ExplorerFilesByExtension<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFilesByExtension<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+export function useGetExplorerFilesByExtension<
+  TData = Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
   TError =
-    | GetApiV1ExplorerFilesByExtension400
-    | GetApiV1ExplorerFilesByExtension404
-    | GetApiV1ExplorerFilesByExtension500,
+    | GetExplorerFilesByExtension400
+    | GetExplorerFilesByExtension404
+    | GetExplorerFilesByExtension500,
 >(
-  params: GetApiV1ExplorerFilesByExtensionParams,
+  params: GetExplorerFilesByExtensionParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+        Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
         TError,
         TData
       >
@@ -8429,18 +8373,18 @@ export function useGetApiV1ExplorerFilesByExtension<
  * @summary Get files by extension
  */
 
-export function useGetApiV1ExplorerFilesByExtension<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+export function useGetExplorerFilesByExtension<
+  TData = Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
   TError =
-    | GetApiV1ExplorerFilesByExtension400
-    | GetApiV1ExplorerFilesByExtension404
-    | GetApiV1ExplorerFilesByExtension500,
+    | GetExplorerFilesByExtension400
+    | GetExplorerFilesByExtension404
+    | GetExplorerFilesByExtension500,
 >(
-  params: GetApiV1ExplorerFilesByExtensionParams,
+  params: GetExplorerFilesByExtensionParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesByExtension>>,
+        Awaited<ReturnType<typeof getExplorerFilesByExtension>>,
         TError,
         TData
       >
@@ -8451,7 +8395,7 @@ export function useGetApiV1ExplorerFilesByExtension<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1ExplorerFilesByExtensionQueryOptions(
+  const queryOptions = getGetExplorerFilesByExtensionQueryOptions(
     params,
     options,
   );
@@ -8470,39 +8414,39 @@ export function useGetApiV1ExplorerFilesByExtension<
  * Retrieve files filtered by media type (MIME type) with pagination support
  * @summary Get files by media type
  */
-export type getApiV1ExplorerFilesByMediaTypeResponse200 = {
+export type getExplorerFilesByMediaTypeResponse200 = {
   data: InternalApiV1ExplorerGetFilesByFolderResponse;
   status: 200;
 };
 
-export type getApiV1ExplorerFilesByMediaTypeResponse400 = {
-  data: GetApiV1ExplorerFilesByMediaType400;
+export type getExplorerFilesByMediaTypeResponse400 = {
+  data: GetExplorerFilesByMediaType400;
   status: 400;
 };
 
-export type getApiV1ExplorerFilesByMediaTypeResponse404 = {
-  data: GetApiV1ExplorerFilesByMediaType404;
+export type getExplorerFilesByMediaTypeResponse404 = {
+  data: GetExplorerFilesByMediaType404;
   status: 404;
 };
 
-export type getApiV1ExplorerFilesByMediaTypeResponse500 = {
-  data: GetApiV1ExplorerFilesByMediaType500;
+export type getExplorerFilesByMediaTypeResponse500 = {
+  data: GetExplorerFilesByMediaType500;
   status: 500;
 };
 
-export type getApiV1ExplorerFilesByMediaTypeResponseComposite =
-  | getApiV1ExplorerFilesByMediaTypeResponse200
-  | getApiV1ExplorerFilesByMediaTypeResponse400
-  | getApiV1ExplorerFilesByMediaTypeResponse404
-  | getApiV1ExplorerFilesByMediaTypeResponse500;
+export type getExplorerFilesByMediaTypeResponseComposite =
+  | getExplorerFilesByMediaTypeResponse200
+  | getExplorerFilesByMediaTypeResponse400
+  | getExplorerFilesByMediaTypeResponse404
+  | getExplorerFilesByMediaTypeResponse500;
 
-export type getApiV1ExplorerFilesByMediaTypeResponse =
-  getApiV1ExplorerFilesByMediaTypeResponseComposite & {
+export type getExplorerFilesByMediaTypeResponse =
+  getExplorerFilesByMediaTypeResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1ExplorerFilesByMediaTypeUrl = (
-  params: GetApiV1ExplorerFilesByMediaTypeParams,
+export const getGetExplorerFilesByMediaTypeUrl = (
+  params: GetExplorerFilesByMediaTypeParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -8515,16 +8459,16 @@ export const getGetApiV1ExplorerFilesByMediaTypeUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/explorer/files/by-media-type?${stringifiedParams}`
-    : `/api/v1/explorer/files/by-media-type`;
+    ? `/explorer/files/by-media-type?${stringifiedParams}`
+    : `/explorer/files/by-media-type`;
 };
 
-export const getApiV1ExplorerFilesByMediaType = async (
-  params: GetApiV1ExplorerFilesByMediaTypeParams,
+export const getExplorerFilesByMediaType = async (
+  params: GetExplorerFilesByMediaTypeParams,
   options?: RequestInit,
-): Promise<getApiV1ExplorerFilesByMediaTypeResponse> => {
-  return customFetchClient<getApiV1ExplorerFilesByMediaTypeResponse>(
-    getGetApiV1ExplorerFilesByMediaTypeUrl(params),
+): Promise<getExplorerFilesByMediaTypeResponse> => {
+  return customFetchClient<getExplorerFilesByMediaTypeResponse>(
+    getGetExplorerFilesByMediaTypeUrl(params),
     {
       ...options,
       method: 'GET',
@@ -8532,27 +8476,27 @@ export const getApiV1ExplorerFilesByMediaType = async (
   );
 };
 
-export const getGetApiV1ExplorerFilesByMediaTypeQueryKey = (
-  params?: GetApiV1ExplorerFilesByMediaTypeParams,
+export const getGetExplorerFilesByMediaTypeQueryKey = (
+  params?: GetExplorerFilesByMediaTypeParams,
 ) => {
   return [
-    `/api/v1/explorer/files/by-media-type`,
+    `/explorer/files/by-media-type`,
     ...(params ? [params] : []),
   ] as const;
 };
 
-export const getGetApiV1ExplorerFilesByMediaTypeQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+export const getGetExplorerFilesByMediaTypeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
   TError =
-    | GetApiV1ExplorerFilesByMediaType400
-    | GetApiV1ExplorerFilesByMediaType404
-    | GetApiV1ExplorerFilesByMediaType500,
+    | GetExplorerFilesByMediaType400
+    | GetExplorerFilesByMediaType404
+    | GetExplorerFilesByMediaType500,
 >(
-  params: GetApiV1ExplorerFilesByMediaTypeParams,
+  params: GetExplorerFilesByMediaTypeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+        Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
         TError,
         TData
       >
@@ -8563,50 +8507,49 @@ export const getGetApiV1ExplorerFilesByMediaTypeQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ??
-    getGetApiV1ExplorerFilesByMediaTypeQueryKey(params);
+    queryOptions?.queryKey ?? getGetExplorerFilesByMediaTypeQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>
+    Awaited<ReturnType<typeof getExplorerFilesByMediaType>>
   > = ({ signal }) =>
-    getApiV1ExplorerFilesByMediaType(params, { signal, ...requestOptions });
+    getExplorerFilesByMediaType(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+    Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1ExplorerFilesByMediaTypeQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>
+export type GetExplorerFilesByMediaTypeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExplorerFilesByMediaType>>
 >;
-export type GetApiV1ExplorerFilesByMediaTypeQueryError =
-  | GetApiV1ExplorerFilesByMediaType400
-  | GetApiV1ExplorerFilesByMediaType404
-  | GetApiV1ExplorerFilesByMediaType500;
+export type GetExplorerFilesByMediaTypeQueryError =
+  | GetExplorerFilesByMediaType400
+  | GetExplorerFilesByMediaType404
+  | GetExplorerFilesByMediaType500;
 
-export function useGetApiV1ExplorerFilesByMediaType<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+export function useGetExplorerFilesByMediaType<
+  TData = Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
   TError =
-    | GetApiV1ExplorerFilesByMediaType400
-    | GetApiV1ExplorerFilesByMediaType404
-    | GetApiV1ExplorerFilesByMediaType500,
+    | GetExplorerFilesByMediaType400
+    | GetExplorerFilesByMediaType404
+    | GetExplorerFilesByMediaType500,
 >(
-  params: GetApiV1ExplorerFilesByMediaTypeParams,
+  params: GetExplorerFilesByMediaTypeParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+        Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+          Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>
+          Awaited<ReturnType<typeof getExplorerFilesByMediaType>>
         >,
         'initialData'
       >;
@@ -8616,27 +8559,27 @@ export function useGetApiV1ExplorerFilesByMediaType<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFilesByMediaType<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+export function useGetExplorerFilesByMediaType<
+  TData = Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
   TError =
-    | GetApiV1ExplorerFilesByMediaType400
-    | GetApiV1ExplorerFilesByMediaType404
-    | GetApiV1ExplorerFilesByMediaType500,
+    | GetExplorerFilesByMediaType400
+    | GetExplorerFilesByMediaType404
+    | GetExplorerFilesByMediaType500,
 >(
-  params: GetApiV1ExplorerFilesByMediaTypeParams,
+  params: GetExplorerFilesByMediaTypeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+        Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+          Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>
+          Awaited<ReturnType<typeof getExplorerFilesByMediaType>>
         >,
         'initialData'
       >;
@@ -8646,18 +8589,18 @@ export function useGetApiV1ExplorerFilesByMediaType<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFilesByMediaType<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+export function useGetExplorerFilesByMediaType<
+  TData = Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
   TError =
-    | GetApiV1ExplorerFilesByMediaType400
-    | GetApiV1ExplorerFilesByMediaType404
-    | GetApiV1ExplorerFilesByMediaType500,
+    | GetExplorerFilesByMediaType400
+    | GetExplorerFilesByMediaType404
+    | GetExplorerFilesByMediaType500,
 >(
-  params: GetApiV1ExplorerFilesByMediaTypeParams,
+  params: GetExplorerFilesByMediaTypeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+        Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
         TError,
         TData
       >
@@ -8672,18 +8615,18 @@ export function useGetApiV1ExplorerFilesByMediaType<
  * @summary Get files by media type
  */
 
-export function useGetApiV1ExplorerFilesByMediaType<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+export function useGetExplorerFilesByMediaType<
+  TData = Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
   TError =
-    | GetApiV1ExplorerFilesByMediaType400
-    | GetApiV1ExplorerFilesByMediaType404
-    | GetApiV1ExplorerFilesByMediaType500,
+    | GetExplorerFilesByMediaType400
+    | GetExplorerFilesByMediaType404
+    | GetExplorerFilesByMediaType500,
 >(
-  params: GetApiV1ExplorerFilesByMediaTypeParams,
+  params: GetExplorerFilesByMediaTypeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesByMediaType>>,
+        Awaited<ReturnType<typeof getExplorerFilesByMediaType>>,
         TError,
         TData
       >
@@ -8694,7 +8637,7 @@ export function useGetApiV1ExplorerFilesByMediaType<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1ExplorerFilesByMediaTypeQueryOptions(
+  const queryOptions = getGetExplorerFilesByMediaTypeQueryOptions(
     params,
     options,
   );
@@ -8713,39 +8656,39 @@ export function useGetApiV1ExplorerFilesByMediaType<
  * Enhanced file listing endpoint with database-level pagination, advanced filtering, and performance optimizations
  * @summary Get files with optimized pagination
  */
-export type getApiV1ExplorerFilesPaginatedResponse200 = {
+export type getExplorerFilesPaginatedResponse200 = {
   data: InternalApiV1ExplorerPaginatedFileResponse;
   status: 200;
 };
 
-export type getApiV1ExplorerFilesPaginatedResponse400 = {
-  data: GetApiV1ExplorerFilesPaginated400;
+export type getExplorerFilesPaginatedResponse400 = {
+  data: GetExplorerFilesPaginated400;
   status: 400;
 };
 
-export type getApiV1ExplorerFilesPaginatedResponse404 = {
-  data: GetApiV1ExplorerFilesPaginated404;
+export type getExplorerFilesPaginatedResponse404 = {
+  data: GetExplorerFilesPaginated404;
   status: 404;
 };
 
-export type getApiV1ExplorerFilesPaginatedResponse500 = {
-  data: GetApiV1ExplorerFilesPaginated500;
+export type getExplorerFilesPaginatedResponse500 = {
+  data: GetExplorerFilesPaginated500;
   status: 500;
 };
 
-export type getApiV1ExplorerFilesPaginatedResponseComposite =
-  | getApiV1ExplorerFilesPaginatedResponse200
-  | getApiV1ExplorerFilesPaginatedResponse400
-  | getApiV1ExplorerFilesPaginatedResponse404
-  | getApiV1ExplorerFilesPaginatedResponse500;
+export type getExplorerFilesPaginatedResponseComposite =
+  | getExplorerFilesPaginatedResponse200
+  | getExplorerFilesPaginatedResponse400
+  | getExplorerFilesPaginatedResponse404
+  | getExplorerFilesPaginatedResponse500;
 
-export type getApiV1ExplorerFilesPaginatedResponse =
-  getApiV1ExplorerFilesPaginatedResponseComposite & {
+export type getExplorerFilesPaginatedResponse =
+  getExplorerFilesPaginatedResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1ExplorerFilesPaginatedUrl = (
-  params: GetApiV1ExplorerFilesPaginatedParams,
+export const getGetExplorerFilesPaginatedUrl = (
+  params: GetExplorerFilesPaginatedParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -8758,16 +8701,16 @@ export const getGetApiV1ExplorerFilesPaginatedUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/explorer/files/paginated?${stringifiedParams}`
-    : `/api/v1/explorer/files/paginated`;
+    ? `/explorer/files/paginated?${stringifiedParams}`
+    : `/explorer/files/paginated`;
 };
 
-export const getApiV1ExplorerFilesPaginated = async (
-  params: GetApiV1ExplorerFilesPaginatedParams,
+export const getExplorerFilesPaginated = async (
+  params: GetExplorerFilesPaginatedParams,
   options?: RequestInit,
-): Promise<getApiV1ExplorerFilesPaginatedResponse> => {
-  return customFetchClient<getApiV1ExplorerFilesPaginatedResponse>(
-    getGetApiV1ExplorerFilesPaginatedUrl(params),
+): Promise<getExplorerFilesPaginatedResponse> => {
+  return customFetchClient<getExplorerFilesPaginatedResponse>(
+    getGetExplorerFilesPaginatedUrl(params),
     {
       ...options,
       method: 'GET',
@@ -8775,27 +8718,24 @@ export const getApiV1ExplorerFilesPaginated = async (
   );
 };
 
-export const getGetApiV1ExplorerFilesPaginatedQueryKey = (
-  params?: GetApiV1ExplorerFilesPaginatedParams,
+export const getGetExplorerFilesPaginatedQueryKey = (
+  params?: GetExplorerFilesPaginatedParams,
 ) => {
-  return [
-    `/api/v1/explorer/files/paginated`,
-    ...(params ? [params] : []),
-  ] as const;
+  return [`/explorer/files/paginated`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1ExplorerFilesPaginatedQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+export const getGetExplorerFilesPaginatedQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
   TError =
-    | GetApiV1ExplorerFilesPaginated400
-    | GetApiV1ExplorerFilesPaginated404
-    | GetApiV1ExplorerFilesPaginated500,
+    | GetExplorerFilesPaginated400
+    | GetExplorerFilesPaginated404
+    | GetExplorerFilesPaginated500,
 >(
-  params: GetApiV1ExplorerFilesPaginatedParams,
+  params: GetExplorerFilesPaginatedParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+        Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
         TError,
         TData
       >
@@ -8806,49 +8746,49 @@ export const getGetApiV1ExplorerFilesPaginatedQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1ExplorerFilesPaginatedQueryKey(params);
+    queryOptions?.queryKey ?? getGetExplorerFilesPaginatedQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>
+    Awaited<ReturnType<typeof getExplorerFilesPaginated>>
   > = ({ signal }) =>
-    getApiV1ExplorerFilesPaginated(params, { signal, ...requestOptions });
+    getExplorerFilesPaginated(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+    Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1ExplorerFilesPaginatedQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>
+export type GetExplorerFilesPaginatedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExplorerFilesPaginated>>
 >;
-export type GetApiV1ExplorerFilesPaginatedQueryError =
-  | GetApiV1ExplorerFilesPaginated400
-  | GetApiV1ExplorerFilesPaginated404
-  | GetApiV1ExplorerFilesPaginated500;
+export type GetExplorerFilesPaginatedQueryError =
+  | GetExplorerFilesPaginated400
+  | GetExplorerFilesPaginated404
+  | GetExplorerFilesPaginated500;
 
-export function useGetApiV1ExplorerFilesPaginated<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+export function useGetExplorerFilesPaginated<
+  TData = Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
   TError =
-    | GetApiV1ExplorerFilesPaginated400
-    | GetApiV1ExplorerFilesPaginated404
-    | GetApiV1ExplorerFilesPaginated500,
+    | GetExplorerFilesPaginated400
+    | GetExplorerFilesPaginated404
+    | GetExplorerFilesPaginated500,
 >(
-  params: GetApiV1ExplorerFilesPaginatedParams,
+  params: GetExplorerFilesPaginatedParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+        Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+          Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>
+          Awaited<ReturnType<typeof getExplorerFilesPaginated>>
         >,
         'initialData'
       >;
@@ -8858,27 +8798,27 @@ export function useGetApiV1ExplorerFilesPaginated<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFilesPaginated<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+export function useGetExplorerFilesPaginated<
+  TData = Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
   TError =
-    | GetApiV1ExplorerFilesPaginated400
-    | GetApiV1ExplorerFilesPaginated404
-    | GetApiV1ExplorerFilesPaginated500,
+    | GetExplorerFilesPaginated400
+    | GetExplorerFilesPaginated404
+    | GetExplorerFilesPaginated500,
 >(
-  params: GetApiV1ExplorerFilesPaginatedParams,
+  params: GetExplorerFilesPaginatedParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+        Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+          Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>
+          Awaited<ReturnType<typeof getExplorerFilesPaginated>>
         >,
         'initialData'
       >;
@@ -8888,18 +8828,18 @@ export function useGetApiV1ExplorerFilesPaginated<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFilesPaginated<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+export function useGetExplorerFilesPaginated<
+  TData = Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
   TError =
-    | GetApiV1ExplorerFilesPaginated400
-    | GetApiV1ExplorerFilesPaginated404
-    | GetApiV1ExplorerFilesPaginated500,
+    | GetExplorerFilesPaginated400
+    | GetExplorerFilesPaginated404
+    | GetExplorerFilesPaginated500,
 >(
-  params: GetApiV1ExplorerFilesPaginatedParams,
+  params: GetExplorerFilesPaginatedParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+        Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
         TError,
         TData
       >
@@ -8914,18 +8854,18 @@ export function useGetApiV1ExplorerFilesPaginated<
  * @summary Get files with optimized pagination
  */
 
-export function useGetApiV1ExplorerFilesPaginated<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+export function useGetExplorerFilesPaginated<
+  TData = Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
   TError =
-    | GetApiV1ExplorerFilesPaginated400
-    | GetApiV1ExplorerFilesPaginated404
-    | GetApiV1ExplorerFilesPaginated500,
+    | GetExplorerFilesPaginated400
+    | GetExplorerFilesPaginated404
+    | GetExplorerFilesPaginated500,
 >(
-  params: GetApiV1ExplorerFilesPaginatedParams,
+  params: GetExplorerFilesPaginatedParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesPaginated>>,
+        Awaited<ReturnType<typeof getExplorerFilesPaginated>>,
         TError,
         TData
       >
@@ -8936,7 +8876,7 @@ export function useGetApiV1ExplorerFilesPaginated<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1ExplorerFilesPaginatedQueryOptions(
+  const queryOptions = getGetExplorerFilesPaginatedQueryOptions(
     params,
     options,
   );
@@ -8955,39 +8895,39 @@ export function useGetApiV1ExplorerFilesPaginated<
  * Retrieve files that were modified within the specified number of days
  * @summary Get recent files
  */
-export type getApiV1ExplorerFilesRecentResponse200 = {
+export type getExplorerFilesRecentResponse200 = {
   data: InternalApiV1ExplorerGetFilesByFolderResponse;
   status: 200;
 };
 
-export type getApiV1ExplorerFilesRecentResponse400 = {
-  data: GetApiV1ExplorerFilesRecent400;
+export type getExplorerFilesRecentResponse400 = {
+  data: GetExplorerFilesRecent400;
   status: 400;
 };
 
-export type getApiV1ExplorerFilesRecentResponse404 = {
-  data: GetApiV1ExplorerFilesRecent404;
+export type getExplorerFilesRecentResponse404 = {
+  data: GetExplorerFilesRecent404;
   status: 404;
 };
 
-export type getApiV1ExplorerFilesRecentResponse500 = {
-  data: GetApiV1ExplorerFilesRecent500;
+export type getExplorerFilesRecentResponse500 = {
+  data: GetExplorerFilesRecent500;
   status: 500;
 };
 
-export type getApiV1ExplorerFilesRecentResponseComposite =
-  | getApiV1ExplorerFilesRecentResponse200
-  | getApiV1ExplorerFilesRecentResponse400
-  | getApiV1ExplorerFilesRecentResponse404
-  | getApiV1ExplorerFilesRecentResponse500;
+export type getExplorerFilesRecentResponseComposite =
+  | getExplorerFilesRecentResponse200
+  | getExplorerFilesRecentResponse400
+  | getExplorerFilesRecentResponse404
+  | getExplorerFilesRecentResponse500;
 
-export type getApiV1ExplorerFilesRecentResponse =
-  getApiV1ExplorerFilesRecentResponseComposite & {
+export type getExplorerFilesRecentResponse =
+  getExplorerFilesRecentResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1ExplorerFilesRecentUrl = (
-  params: GetApiV1ExplorerFilesRecentParams,
+export const getGetExplorerFilesRecentUrl = (
+  params: GetExplorerFilesRecentParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -9000,16 +8940,16 @@ export const getGetApiV1ExplorerFilesRecentUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/explorer/files/recent?${stringifiedParams}`
-    : `/api/v1/explorer/files/recent`;
+    ? `/explorer/files/recent?${stringifiedParams}`
+    : `/explorer/files/recent`;
 };
 
-export const getApiV1ExplorerFilesRecent = async (
-  params: GetApiV1ExplorerFilesRecentParams,
+export const getExplorerFilesRecent = async (
+  params: GetExplorerFilesRecentParams,
   options?: RequestInit,
-): Promise<getApiV1ExplorerFilesRecentResponse> => {
-  return customFetchClient<getApiV1ExplorerFilesRecentResponse>(
-    getGetApiV1ExplorerFilesRecentUrl(params),
+): Promise<getExplorerFilesRecentResponse> => {
+  return customFetchClient<getExplorerFilesRecentResponse>(
+    getGetExplorerFilesRecentUrl(params),
     {
       ...options,
       method: 'GET',
@@ -9017,27 +8957,24 @@ export const getApiV1ExplorerFilesRecent = async (
   );
 };
 
-export const getGetApiV1ExplorerFilesRecentQueryKey = (
-  params?: GetApiV1ExplorerFilesRecentParams,
+export const getGetExplorerFilesRecentQueryKey = (
+  params?: GetExplorerFilesRecentParams,
 ) => {
-  return [
-    `/api/v1/explorer/files/recent`,
-    ...(params ? [params] : []),
-  ] as const;
+  return [`/explorer/files/recent`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1ExplorerFilesRecentQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+export const getGetExplorerFilesRecentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExplorerFilesRecent>>,
   TError =
-    | GetApiV1ExplorerFilesRecent400
-    | GetApiV1ExplorerFilesRecent404
-    | GetApiV1ExplorerFilesRecent500,
+    | GetExplorerFilesRecent400
+    | GetExplorerFilesRecent404
+    | GetExplorerFilesRecent500,
 >(
-  params: GetApiV1ExplorerFilesRecentParams,
+  params: GetExplorerFilesRecentParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+        Awaited<ReturnType<typeof getExplorerFilesRecent>>,
         TError,
         TData
       >
@@ -9048,49 +8985,49 @@ export const getGetApiV1ExplorerFilesRecentQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1ExplorerFilesRecentQueryKey(params);
+    queryOptions?.queryKey ?? getGetExplorerFilesRecentQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>
+    Awaited<ReturnType<typeof getExplorerFilesRecent>>
   > = ({ signal }) =>
-    getApiV1ExplorerFilesRecent(params, { signal, ...requestOptions });
+    getExplorerFilesRecent(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+    Awaited<ReturnType<typeof getExplorerFilesRecent>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1ExplorerFilesRecentQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>
+export type GetExplorerFilesRecentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExplorerFilesRecent>>
 >;
-export type GetApiV1ExplorerFilesRecentQueryError =
-  | GetApiV1ExplorerFilesRecent400
-  | GetApiV1ExplorerFilesRecent404
-  | GetApiV1ExplorerFilesRecent500;
+export type GetExplorerFilesRecentQueryError =
+  | GetExplorerFilesRecent400
+  | GetExplorerFilesRecent404
+  | GetExplorerFilesRecent500;
 
-export function useGetApiV1ExplorerFilesRecent<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+export function useGetExplorerFilesRecent<
+  TData = Awaited<ReturnType<typeof getExplorerFilesRecent>>,
   TError =
-    | GetApiV1ExplorerFilesRecent400
-    | GetApiV1ExplorerFilesRecent404
-    | GetApiV1ExplorerFilesRecent500,
+    | GetExplorerFilesRecent400
+    | GetExplorerFilesRecent404
+    | GetExplorerFilesRecent500,
 >(
-  params: GetApiV1ExplorerFilesRecentParams,
+  params: GetExplorerFilesRecentParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+        Awaited<ReturnType<typeof getExplorerFilesRecent>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+          Awaited<ReturnType<typeof getExplorerFilesRecent>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>
+          Awaited<ReturnType<typeof getExplorerFilesRecent>>
         >,
         'initialData'
       >;
@@ -9100,27 +9037,27 @@ export function useGetApiV1ExplorerFilesRecent<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFilesRecent<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+export function useGetExplorerFilesRecent<
+  TData = Awaited<ReturnType<typeof getExplorerFilesRecent>>,
   TError =
-    | GetApiV1ExplorerFilesRecent400
-    | GetApiV1ExplorerFilesRecent404
-    | GetApiV1ExplorerFilesRecent500,
+    | GetExplorerFilesRecent400
+    | GetExplorerFilesRecent404
+    | GetExplorerFilesRecent500,
 >(
-  params: GetApiV1ExplorerFilesRecentParams,
+  params: GetExplorerFilesRecentParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+        Awaited<ReturnType<typeof getExplorerFilesRecent>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+          Awaited<ReturnType<typeof getExplorerFilesRecent>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>
+          Awaited<ReturnType<typeof getExplorerFilesRecent>>
         >,
         'initialData'
       >;
@@ -9130,18 +9067,18 @@ export function useGetApiV1ExplorerFilesRecent<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFilesRecent<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+export function useGetExplorerFilesRecent<
+  TData = Awaited<ReturnType<typeof getExplorerFilesRecent>>,
   TError =
-    | GetApiV1ExplorerFilesRecent400
-    | GetApiV1ExplorerFilesRecent404
-    | GetApiV1ExplorerFilesRecent500,
+    | GetExplorerFilesRecent400
+    | GetExplorerFilesRecent404
+    | GetExplorerFilesRecent500,
 >(
-  params: GetApiV1ExplorerFilesRecentParams,
+  params: GetExplorerFilesRecentParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+        Awaited<ReturnType<typeof getExplorerFilesRecent>>,
         TError,
         TData
       >
@@ -9156,18 +9093,18 @@ export function useGetApiV1ExplorerFilesRecent<
  * @summary Get recent files
  */
 
-export function useGetApiV1ExplorerFilesRecent<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+export function useGetExplorerFilesRecent<
+  TData = Awaited<ReturnType<typeof getExplorerFilesRecent>>,
   TError =
-    | GetApiV1ExplorerFilesRecent400
-    | GetApiV1ExplorerFilesRecent404
-    | GetApiV1ExplorerFilesRecent500,
+    | GetExplorerFilesRecent400
+    | GetExplorerFilesRecent404
+    | GetExplorerFilesRecent500,
 >(
-  params: GetApiV1ExplorerFilesRecentParams,
+  params: GetExplorerFilesRecentParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesRecent>>,
+        Awaited<ReturnType<typeof getExplorerFilesRecent>>,
         TError,
         TData
       >
@@ -9178,10 +9115,7 @@ export function useGetApiV1ExplorerFilesRecent<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1ExplorerFilesRecentQueryOptions(
-    params,
-    options,
-  );
+  const queryOptions = getGetExplorerFilesRecentQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -9197,39 +9131,39 @@ export function useGetApiV1ExplorerFilesRecent<
  * Search for files by name pattern with fuzzy matching support
  * @summary Search files by name
  */
-export type getApiV1ExplorerFilesSearchResponse200 = {
+export type getExplorerFilesSearchResponse200 = {
   data: InternalApiV1ExplorerGetFilesByFolderResponse;
   status: 200;
 };
 
-export type getApiV1ExplorerFilesSearchResponse400 = {
-  data: GetApiV1ExplorerFilesSearch400;
+export type getExplorerFilesSearchResponse400 = {
+  data: GetExplorerFilesSearch400;
   status: 400;
 };
 
-export type getApiV1ExplorerFilesSearchResponse404 = {
-  data: GetApiV1ExplorerFilesSearch404;
+export type getExplorerFilesSearchResponse404 = {
+  data: GetExplorerFilesSearch404;
   status: 404;
 };
 
-export type getApiV1ExplorerFilesSearchResponse500 = {
-  data: GetApiV1ExplorerFilesSearch500;
+export type getExplorerFilesSearchResponse500 = {
+  data: GetExplorerFilesSearch500;
   status: 500;
 };
 
-export type getApiV1ExplorerFilesSearchResponseComposite =
-  | getApiV1ExplorerFilesSearchResponse200
-  | getApiV1ExplorerFilesSearchResponse400
-  | getApiV1ExplorerFilesSearchResponse404
-  | getApiV1ExplorerFilesSearchResponse500;
+export type getExplorerFilesSearchResponseComposite =
+  | getExplorerFilesSearchResponse200
+  | getExplorerFilesSearchResponse400
+  | getExplorerFilesSearchResponse404
+  | getExplorerFilesSearchResponse500;
 
-export type getApiV1ExplorerFilesSearchResponse =
-  getApiV1ExplorerFilesSearchResponseComposite & {
+export type getExplorerFilesSearchResponse =
+  getExplorerFilesSearchResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1ExplorerFilesSearchUrl = (
-  params: GetApiV1ExplorerFilesSearchParams,
+export const getGetExplorerFilesSearchUrl = (
+  params: GetExplorerFilesSearchParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -9242,16 +9176,16 @@ export const getGetApiV1ExplorerFilesSearchUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/explorer/files/search?${stringifiedParams}`
-    : `/api/v1/explorer/files/search`;
+    ? `/explorer/files/search?${stringifiedParams}`
+    : `/explorer/files/search`;
 };
 
-export const getApiV1ExplorerFilesSearch = async (
-  params: GetApiV1ExplorerFilesSearchParams,
+export const getExplorerFilesSearch = async (
+  params: GetExplorerFilesSearchParams,
   options?: RequestInit,
-): Promise<getApiV1ExplorerFilesSearchResponse> => {
-  return customFetchClient<getApiV1ExplorerFilesSearchResponse>(
-    getGetApiV1ExplorerFilesSearchUrl(params),
+): Promise<getExplorerFilesSearchResponse> => {
+  return customFetchClient<getExplorerFilesSearchResponse>(
+    getGetExplorerFilesSearchUrl(params),
     {
       ...options,
       method: 'GET',
@@ -9259,27 +9193,24 @@ export const getApiV1ExplorerFilesSearch = async (
   );
 };
 
-export const getGetApiV1ExplorerFilesSearchQueryKey = (
-  params?: GetApiV1ExplorerFilesSearchParams,
+export const getGetExplorerFilesSearchQueryKey = (
+  params?: GetExplorerFilesSearchParams,
 ) => {
-  return [
-    `/api/v1/explorer/files/search`,
-    ...(params ? [params] : []),
-  ] as const;
+  return [`/explorer/files/search`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1ExplorerFilesSearchQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+export const getGetExplorerFilesSearchQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExplorerFilesSearch>>,
   TError =
-    | GetApiV1ExplorerFilesSearch400
-    | GetApiV1ExplorerFilesSearch404
-    | GetApiV1ExplorerFilesSearch500,
+    | GetExplorerFilesSearch400
+    | GetExplorerFilesSearch404
+    | GetExplorerFilesSearch500,
 >(
-  params: GetApiV1ExplorerFilesSearchParams,
+  params: GetExplorerFilesSearchParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+        Awaited<ReturnType<typeof getExplorerFilesSearch>>,
         TError,
         TData
       >
@@ -9290,49 +9221,49 @@ export const getGetApiV1ExplorerFilesSearchQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1ExplorerFilesSearchQueryKey(params);
+    queryOptions?.queryKey ?? getGetExplorerFilesSearchQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>
+    Awaited<ReturnType<typeof getExplorerFilesSearch>>
   > = ({ signal }) =>
-    getApiV1ExplorerFilesSearch(params, { signal, ...requestOptions });
+    getExplorerFilesSearch(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+    Awaited<ReturnType<typeof getExplorerFilesSearch>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1ExplorerFilesSearchQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>
+export type GetExplorerFilesSearchQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExplorerFilesSearch>>
 >;
-export type GetApiV1ExplorerFilesSearchQueryError =
-  | GetApiV1ExplorerFilesSearch400
-  | GetApiV1ExplorerFilesSearch404
-  | GetApiV1ExplorerFilesSearch500;
+export type GetExplorerFilesSearchQueryError =
+  | GetExplorerFilesSearch400
+  | GetExplorerFilesSearch404
+  | GetExplorerFilesSearch500;
 
-export function useGetApiV1ExplorerFilesSearch<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+export function useGetExplorerFilesSearch<
+  TData = Awaited<ReturnType<typeof getExplorerFilesSearch>>,
   TError =
-    | GetApiV1ExplorerFilesSearch400
-    | GetApiV1ExplorerFilesSearch404
-    | GetApiV1ExplorerFilesSearch500,
+    | GetExplorerFilesSearch400
+    | GetExplorerFilesSearch404
+    | GetExplorerFilesSearch500,
 >(
-  params: GetApiV1ExplorerFilesSearchParams,
+  params: GetExplorerFilesSearchParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+        Awaited<ReturnType<typeof getExplorerFilesSearch>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+          Awaited<ReturnType<typeof getExplorerFilesSearch>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>
+          Awaited<ReturnType<typeof getExplorerFilesSearch>>
         >,
         'initialData'
       >;
@@ -9342,27 +9273,27 @@ export function useGetApiV1ExplorerFilesSearch<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFilesSearch<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+export function useGetExplorerFilesSearch<
+  TData = Awaited<ReturnType<typeof getExplorerFilesSearch>>,
   TError =
-    | GetApiV1ExplorerFilesSearch400
-    | GetApiV1ExplorerFilesSearch404
-    | GetApiV1ExplorerFilesSearch500,
+    | GetExplorerFilesSearch400
+    | GetExplorerFilesSearch404
+    | GetExplorerFilesSearch500,
 >(
-  params: GetApiV1ExplorerFilesSearchParams,
+  params: GetExplorerFilesSearchParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+        Awaited<ReturnType<typeof getExplorerFilesSearch>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+          Awaited<ReturnType<typeof getExplorerFilesSearch>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>
+          Awaited<ReturnType<typeof getExplorerFilesSearch>>
         >,
         'initialData'
       >;
@@ -9372,18 +9303,18 @@ export function useGetApiV1ExplorerFilesSearch<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerFilesSearch<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+export function useGetExplorerFilesSearch<
+  TData = Awaited<ReturnType<typeof getExplorerFilesSearch>>,
   TError =
-    | GetApiV1ExplorerFilesSearch400
-    | GetApiV1ExplorerFilesSearch404
-    | GetApiV1ExplorerFilesSearch500,
+    | GetExplorerFilesSearch400
+    | GetExplorerFilesSearch404
+    | GetExplorerFilesSearch500,
 >(
-  params: GetApiV1ExplorerFilesSearchParams,
+  params: GetExplorerFilesSearchParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+        Awaited<ReturnType<typeof getExplorerFilesSearch>>,
         TError,
         TData
       >
@@ -9398,18 +9329,18 @@ export function useGetApiV1ExplorerFilesSearch<
  * @summary Search files by name
  */
 
-export function useGetApiV1ExplorerFilesSearch<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+export function useGetExplorerFilesSearch<
+  TData = Awaited<ReturnType<typeof getExplorerFilesSearch>>,
   TError =
-    | GetApiV1ExplorerFilesSearch400
-    | GetApiV1ExplorerFilesSearch404
-    | GetApiV1ExplorerFilesSearch500,
+    | GetExplorerFilesSearch400
+    | GetExplorerFilesSearch404
+    | GetExplorerFilesSearch500,
 >(
-  params: GetApiV1ExplorerFilesSearchParams,
+  params: GetExplorerFilesSearchParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerFilesSearch>>,
+        Awaited<ReturnType<typeof getExplorerFilesSearch>>,
         TError,
         TData
       >
@@ -9420,10 +9351,7 @@ export function useGetApiV1ExplorerFilesSearch<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1ExplorerFilesSearchQueryOptions(
-    params,
-    options,
-  );
+  const queryOptions = getGetExplorerFilesSearchQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -9439,40 +9367,37 @@ export function useGetApiV1ExplorerFilesSearch<
  * Retrieve hierarchical folder structure with optional depth limit and directory-only filtering
  * @summary Get folder tree
  */
-export type getApiV1ExplorerTreeResponse200 = {
+export type getExplorerTreeResponse200 = {
   data: InternalApiV1ExplorerGetFolderTreeResponse;
   status: 200;
 };
 
-export type getApiV1ExplorerTreeResponse400 = {
-  data: GetApiV1ExplorerTree400;
+export type getExplorerTreeResponse400 = {
+  data: GetExplorerTree400;
   status: 400;
 };
 
-export type getApiV1ExplorerTreeResponse404 = {
-  data: GetApiV1ExplorerTree404;
+export type getExplorerTreeResponse404 = {
+  data: GetExplorerTree404;
   status: 404;
 };
 
-export type getApiV1ExplorerTreeResponse500 = {
-  data: GetApiV1ExplorerTree500;
+export type getExplorerTreeResponse500 = {
+  data: GetExplorerTree500;
   status: 500;
 };
 
-export type getApiV1ExplorerTreeResponseComposite =
-  | getApiV1ExplorerTreeResponse200
-  | getApiV1ExplorerTreeResponse400
-  | getApiV1ExplorerTreeResponse404
-  | getApiV1ExplorerTreeResponse500;
+export type getExplorerTreeResponseComposite =
+  | getExplorerTreeResponse200
+  | getExplorerTreeResponse400
+  | getExplorerTreeResponse404
+  | getExplorerTreeResponse500;
 
-export type getApiV1ExplorerTreeResponse =
-  getApiV1ExplorerTreeResponseComposite & {
-    headers: Headers;
-  };
+export type getExplorerTreeResponse = getExplorerTreeResponseComposite & {
+  headers: Headers;
+};
 
-export const getGetApiV1ExplorerTreeUrl = (
-  params: GetApiV1ExplorerTreeParams,
-) => {
+export const getGetExplorerTreeUrl = (params: GetExplorerTreeParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -9484,16 +9409,16 @@ export const getGetApiV1ExplorerTreeUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/explorer/tree?${stringifiedParams}`
-    : `/api/v1/explorer/tree`;
+    ? `/explorer/tree?${stringifiedParams}`
+    : `/explorer/tree`;
 };
 
-export const getApiV1ExplorerTree = async (
-  params: GetApiV1ExplorerTreeParams,
+export const getExplorerTree = async (
+  params: GetExplorerTreeParams,
   options?: RequestInit,
-): Promise<getApiV1ExplorerTreeResponse> => {
-  return customFetchClient<getApiV1ExplorerTreeResponse>(
-    getGetApiV1ExplorerTreeUrl(params),
+): Promise<getExplorerTreeResponse> => {
+  return customFetchClient<getExplorerTreeResponse>(
+    getGetExplorerTreeUrl(params),
     {
       ...options,
       method: 'GET',
@@ -9501,24 +9426,19 @@ export const getApiV1ExplorerTree = async (
   );
 };
 
-export const getGetApiV1ExplorerTreeQueryKey = (
-  params?: GetApiV1ExplorerTreeParams,
-) => {
-  return [`/api/v1/explorer/tree`, ...(params ? [params] : [])] as const;
+export const getGetExplorerTreeQueryKey = (params?: GetExplorerTreeParams) => {
+  return [`/explorer/tree`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1ExplorerTreeQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
-  TError =
-    | GetApiV1ExplorerTree400
-    | GetApiV1ExplorerTree404
-    | GetApiV1ExplorerTree500,
+export const getGetExplorerTreeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExplorerTree>>,
+  TError = GetExplorerTree400 | GetExplorerTree404 | GetExplorerTree500,
 >(
-  params: GetApiV1ExplorerTreeParams,
+  params: GetExplorerTreeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
+        Awaited<ReturnType<typeof getExplorerTree>>,
         TError,
         TData
       >
@@ -9528,50 +9448,45 @@ export const getGetApiV1ExplorerTreeQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1ExplorerTreeQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getGetExplorerTreeQueryKey(params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1ExplorerTree>>
-  > = ({ signal }) =>
-    getApiV1ExplorerTree(params, { signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getExplorerTree>>> = ({
+    signal,
+  }) => getExplorerTree(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
+    Awaited<ReturnType<typeof getExplorerTree>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1ExplorerTreeQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1ExplorerTree>>
+export type GetExplorerTreeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExplorerTree>>
 >;
-export type GetApiV1ExplorerTreeQueryError =
-  | GetApiV1ExplorerTree400
-  | GetApiV1ExplorerTree404
-  | GetApiV1ExplorerTree500;
+export type GetExplorerTreeQueryError =
+  | GetExplorerTree400
+  | GetExplorerTree404
+  | GetExplorerTree500;
 
-export function useGetApiV1ExplorerTree<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
-  TError =
-    | GetApiV1ExplorerTree400
-    | GetApiV1ExplorerTree404
-    | GetApiV1ExplorerTree500,
+export function useGetExplorerTree<
+  TData = Awaited<ReturnType<typeof getExplorerTree>>,
+  TError = GetExplorerTree400 | GetExplorerTree404 | GetExplorerTree500,
 >(
-  params: GetApiV1ExplorerTreeParams,
+  params: GetExplorerTreeParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
+        Awaited<ReturnType<typeof getExplorerTree>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
+          Awaited<ReturnType<typeof getExplorerTree>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerTree>>
+          Awaited<ReturnType<typeof getExplorerTree>>
         >,
         'initialData'
       >;
@@ -9581,27 +9496,24 @@ export function useGetApiV1ExplorerTree<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerTree<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
-  TError =
-    | GetApiV1ExplorerTree400
-    | GetApiV1ExplorerTree404
-    | GetApiV1ExplorerTree500,
+export function useGetExplorerTree<
+  TData = Awaited<ReturnType<typeof getExplorerTree>>,
+  TError = GetExplorerTree400 | GetExplorerTree404 | GetExplorerTree500,
 >(
-  params: GetApiV1ExplorerTreeParams,
+  params: GetExplorerTreeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
+        Awaited<ReturnType<typeof getExplorerTree>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
+          Awaited<ReturnType<typeof getExplorerTree>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerTree>>
+          Awaited<ReturnType<typeof getExplorerTree>>
         >,
         'initialData'
       >;
@@ -9611,18 +9523,15 @@ export function useGetApiV1ExplorerTree<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerTree<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
-  TError =
-    | GetApiV1ExplorerTree400
-    | GetApiV1ExplorerTree404
-    | GetApiV1ExplorerTree500,
+export function useGetExplorerTree<
+  TData = Awaited<ReturnType<typeof getExplorerTree>>,
+  TError = GetExplorerTree400 | GetExplorerTree404 | GetExplorerTree500,
 >(
-  params: GetApiV1ExplorerTreeParams,
+  params: GetExplorerTreeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
+        Awaited<ReturnType<typeof getExplorerTree>>,
         TError,
         TData
       >
@@ -9637,18 +9546,15 @@ export function useGetApiV1ExplorerTree<
  * @summary Get folder tree
  */
 
-export function useGetApiV1ExplorerTree<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
-  TError =
-    | GetApiV1ExplorerTree400
-    | GetApiV1ExplorerTree404
-    | GetApiV1ExplorerTree500,
+export function useGetExplorerTree<
+  TData = Awaited<ReturnType<typeof getExplorerTree>>,
+  TError = GetExplorerTree400 | GetExplorerTree404 | GetExplorerTree500,
 >(
-  params: GetApiV1ExplorerTreeParams,
+  params: GetExplorerTreeParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerTree>>,
+        Awaited<ReturnType<typeof getExplorerTree>>,
         TError,
         TData
       >
@@ -9659,7 +9565,7 @@ export function useGetApiV1ExplorerTree<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1ExplorerTreeQueryOptions(params, options);
+  const queryOptions = getGetExplorerTreeQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -9675,39 +9581,39 @@ export function useGetApiV1ExplorerTree<
  * Get immediate children of a folder path for lazy tree loading with pagination support
  * @summary Get tree children
  */
-export type getApiV1ExplorerTreeChildrenResponse200 = {
+export type getExplorerTreeChildrenResponse200 = {
   data: InternalApiV1ExplorerGetTreeChildrenResponse;
   status: 200;
 };
 
-export type getApiV1ExplorerTreeChildrenResponse400 = {
-  data: GetApiV1ExplorerTreeChildren400;
+export type getExplorerTreeChildrenResponse400 = {
+  data: GetExplorerTreeChildren400;
   status: 400;
 };
 
-export type getApiV1ExplorerTreeChildrenResponse404 = {
-  data: GetApiV1ExplorerTreeChildren404;
+export type getExplorerTreeChildrenResponse404 = {
+  data: GetExplorerTreeChildren404;
   status: 404;
 };
 
-export type getApiV1ExplorerTreeChildrenResponse500 = {
-  data: GetApiV1ExplorerTreeChildren500;
+export type getExplorerTreeChildrenResponse500 = {
+  data: GetExplorerTreeChildren500;
   status: 500;
 };
 
-export type getApiV1ExplorerTreeChildrenResponseComposite =
-  | getApiV1ExplorerTreeChildrenResponse200
-  | getApiV1ExplorerTreeChildrenResponse400
-  | getApiV1ExplorerTreeChildrenResponse404
-  | getApiV1ExplorerTreeChildrenResponse500;
+export type getExplorerTreeChildrenResponseComposite =
+  | getExplorerTreeChildrenResponse200
+  | getExplorerTreeChildrenResponse400
+  | getExplorerTreeChildrenResponse404
+  | getExplorerTreeChildrenResponse500;
 
-export type getApiV1ExplorerTreeChildrenResponse =
-  getApiV1ExplorerTreeChildrenResponseComposite & {
+export type getExplorerTreeChildrenResponse =
+  getExplorerTreeChildrenResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1ExplorerTreeChildrenUrl = (
-  params: GetApiV1ExplorerTreeChildrenParams,
+export const getGetExplorerTreeChildrenUrl = (
+  params: GetExplorerTreeChildrenParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -9720,16 +9626,16 @@ export const getGetApiV1ExplorerTreeChildrenUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/explorer/tree/children?${stringifiedParams}`
-    : `/api/v1/explorer/tree/children`;
+    ? `/explorer/tree/children?${stringifiedParams}`
+    : `/explorer/tree/children`;
 };
 
-export const getApiV1ExplorerTreeChildren = async (
-  params: GetApiV1ExplorerTreeChildrenParams,
+export const getExplorerTreeChildren = async (
+  params: GetExplorerTreeChildrenParams,
   options?: RequestInit,
-): Promise<getApiV1ExplorerTreeChildrenResponse> => {
-  return customFetchClient<getApiV1ExplorerTreeChildrenResponse>(
-    getGetApiV1ExplorerTreeChildrenUrl(params),
+): Promise<getExplorerTreeChildrenResponse> => {
+  return customFetchClient<getExplorerTreeChildrenResponse>(
+    getGetExplorerTreeChildrenUrl(params),
     {
       ...options,
       method: 'GET',
@@ -9737,27 +9643,24 @@ export const getApiV1ExplorerTreeChildren = async (
   );
 };
 
-export const getGetApiV1ExplorerTreeChildrenQueryKey = (
-  params?: GetApiV1ExplorerTreeChildrenParams,
+export const getGetExplorerTreeChildrenQueryKey = (
+  params?: GetExplorerTreeChildrenParams,
 ) => {
-  return [
-    `/api/v1/explorer/tree/children`,
-    ...(params ? [params] : []),
-  ] as const;
+  return [`/explorer/tree/children`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1ExplorerTreeChildrenQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+export const getGetExplorerTreeChildrenQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExplorerTreeChildren>>,
   TError =
-    | GetApiV1ExplorerTreeChildren400
-    | GetApiV1ExplorerTreeChildren404
-    | GetApiV1ExplorerTreeChildren500,
+    | GetExplorerTreeChildren400
+    | GetExplorerTreeChildren404
+    | GetExplorerTreeChildren500,
 >(
-  params: GetApiV1ExplorerTreeChildrenParams,
+  params: GetExplorerTreeChildrenParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+        Awaited<ReturnType<typeof getExplorerTreeChildren>>,
         TError,
         TData
       >
@@ -9768,49 +9671,49 @@ export const getGetApiV1ExplorerTreeChildrenQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1ExplorerTreeChildrenQueryKey(params);
+    queryOptions?.queryKey ?? getGetExplorerTreeChildrenQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>
+    Awaited<ReturnType<typeof getExplorerTreeChildren>>
   > = ({ signal }) =>
-    getApiV1ExplorerTreeChildren(params, { signal, ...requestOptions });
+    getExplorerTreeChildren(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+    Awaited<ReturnType<typeof getExplorerTreeChildren>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1ExplorerTreeChildrenQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>
+export type GetExplorerTreeChildrenQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExplorerTreeChildren>>
 >;
-export type GetApiV1ExplorerTreeChildrenQueryError =
-  | GetApiV1ExplorerTreeChildren400
-  | GetApiV1ExplorerTreeChildren404
-  | GetApiV1ExplorerTreeChildren500;
+export type GetExplorerTreeChildrenQueryError =
+  | GetExplorerTreeChildren400
+  | GetExplorerTreeChildren404
+  | GetExplorerTreeChildren500;
 
-export function useGetApiV1ExplorerTreeChildren<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+export function useGetExplorerTreeChildren<
+  TData = Awaited<ReturnType<typeof getExplorerTreeChildren>>,
   TError =
-    | GetApiV1ExplorerTreeChildren400
-    | GetApiV1ExplorerTreeChildren404
-    | GetApiV1ExplorerTreeChildren500,
+    | GetExplorerTreeChildren400
+    | GetExplorerTreeChildren404
+    | GetExplorerTreeChildren500,
 >(
-  params: GetApiV1ExplorerTreeChildrenParams,
+  params: GetExplorerTreeChildrenParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+        Awaited<ReturnType<typeof getExplorerTreeChildren>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+          Awaited<ReturnType<typeof getExplorerTreeChildren>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>
+          Awaited<ReturnType<typeof getExplorerTreeChildren>>
         >,
         'initialData'
       >;
@@ -9820,27 +9723,27 @@ export function useGetApiV1ExplorerTreeChildren<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerTreeChildren<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+export function useGetExplorerTreeChildren<
+  TData = Awaited<ReturnType<typeof getExplorerTreeChildren>>,
   TError =
-    | GetApiV1ExplorerTreeChildren400
-    | GetApiV1ExplorerTreeChildren404
-    | GetApiV1ExplorerTreeChildren500,
+    | GetExplorerTreeChildren400
+    | GetExplorerTreeChildren404
+    | GetExplorerTreeChildren500,
 >(
-  params: GetApiV1ExplorerTreeChildrenParams,
+  params: GetExplorerTreeChildrenParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+        Awaited<ReturnType<typeof getExplorerTreeChildren>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+          Awaited<ReturnType<typeof getExplorerTreeChildren>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>
+          Awaited<ReturnType<typeof getExplorerTreeChildren>>
         >,
         'initialData'
       >;
@@ -9850,18 +9753,18 @@ export function useGetApiV1ExplorerTreeChildren<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1ExplorerTreeChildren<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+export function useGetExplorerTreeChildren<
+  TData = Awaited<ReturnType<typeof getExplorerTreeChildren>>,
   TError =
-    | GetApiV1ExplorerTreeChildren400
-    | GetApiV1ExplorerTreeChildren404
-    | GetApiV1ExplorerTreeChildren500,
+    | GetExplorerTreeChildren400
+    | GetExplorerTreeChildren404
+    | GetExplorerTreeChildren500,
 >(
-  params: GetApiV1ExplorerTreeChildrenParams,
+  params: GetExplorerTreeChildrenParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+        Awaited<ReturnType<typeof getExplorerTreeChildren>>,
         TError,
         TData
       >
@@ -9876,18 +9779,18 @@ export function useGetApiV1ExplorerTreeChildren<
  * @summary Get tree children
  */
 
-export function useGetApiV1ExplorerTreeChildren<
-  TData = Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+export function useGetExplorerTreeChildren<
+  TData = Awaited<ReturnType<typeof getExplorerTreeChildren>>,
   TError =
-    | GetApiV1ExplorerTreeChildren400
-    | GetApiV1ExplorerTreeChildren404
-    | GetApiV1ExplorerTreeChildren500,
+    | GetExplorerTreeChildren400
+    | GetExplorerTreeChildren404
+    | GetExplorerTreeChildren500,
 >(
-  params: GetApiV1ExplorerTreeChildrenParams,
+  params: GetExplorerTreeChildrenParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1ExplorerTreeChildren>>,
+        Awaited<ReturnType<typeof getExplorerTreeChildren>>,
         TError,
         TData
       >
@@ -9898,10 +9801,7 @@ export function useGetApiV1ExplorerTreeChildren<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1ExplorerTreeChildrenQueryOptions(
-    params,
-    options,
-  );
+  const queryOptions = getGetExplorerTreeChildrenQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -9917,34 +9817,31 @@ export function useGetApiV1ExplorerTreeChildren<
  * Get hierarchical file system data with aggregated sizes and counts for visualization
  * @summary Get aggregated file system data
  */
-export type getApiV1FsAggregateResponse200 = {
+export type getFsAggregateResponse200 = {
   data: AggregateResponse;
   status: 200;
 };
 
-export type getApiV1FsAggregateResponse400 = {
+export type getFsAggregateResponse400 = {
   data: GithubComMantonxVolumevizInternalModelsErrorResponse;
   status: 400;
 };
 
-export type getApiV1FsAggregateResponse500 = {
+export type getFsAggregateResponse500 = {
   data: GithubComMantonxVolumevizInternalModelsErrorResponse;
   status: 500;
 };
 
-export type getApiV1FsAggregateResponseComposite =
-  | getApiV1FsAggregateResponse200
-  | getApiV1FsAggregateResponse400
-  | getApiV1FsAggregateResponse500;
+export type getFsAggregateResponseComposite =
+  | getFsAggregateResponse200
+  | getFsAggregateResponse400
+  | getFsAggregateResponse500;
 
-export type getApiV1FsAggregateResponse =
-  getApiV1FsAggregateResponseComposite & {
-    headers: Headers;
-  };
+export type getFsAggregateResponse = getFsAggregateResponseComposite & {
+  headers: Headers;
+};
 
-export const getGetApiV1FsAggregateUrl = (
-  params: GetApiV1FsAggregateParams,
-) => {
+export const getGetFsAggregateUrl = (params: GetFsAggregateParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -9956,16 +9853,16 @@ export const getGetApiV1FsAggregateUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/fs/aggregate?${stringifiedParams}`
-    : `/api/v1/fs/aggregate`;
+    ? `/fs/aggregate?${stringifiedParams}`
+    : `/fs/aggregate`;
 };
 
-export const getApiV1FsAggregate = async (
-  params: GetApiV1FsAggregateParams,
+export const getFsAggregate = async (
+  params: GetFsAggregateParams,
   options?: RequestInit,
-): Promise<getApiV1FsAggregateResponse> => {
-  return customFetchClient<getApiV1FsAggregateResponse>(
-    getGetApiV1FsAggregateUrl(params),
+): Promise<getFsAggregateResponse> => {
+  return customFetchClient<getFsAggregateResponse>(
+    getGetFsAggregateUrl(params),
     {
       ...options,
       method: 'GET',
@@ -9973,74 +9870,62 @@ export const getApiV1FsAggregate = async (
   );
 };
 
-export const getGetApiV1FsAggregateQueryKey = (
-  params?: GetApiV1FsAggregateParams,
-) => {
-  return [`/api/v1/fs/aggregate`, ...(params ? [params] : [])] as const;
+export const getGetFsAggregateQueryKey = (params?: GetFsAggregateParams) => {
+  return [`/fs/aggregate`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1FsAggregateQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+export const getGetFsAggregateQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFsAggregate>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1FsAggregateParams,
+  params: GetFsAggregateParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1FsAggregate>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getFsAggregate>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1FsAggregateQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getGetFsAggregateQueryKey(params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1FsAggregate>>
-  > = ({ signal }) =>
-    getApiV1FsAggregate(params, { signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getFsAggregate>>> = ({
+    signal,
+  }) => getFsAggregate(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+    Awaited<ReturnType<typeof getFsAggregate>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1FsAggregateQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1FsAggregate>>
+export type GetFsAggregateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFsAggregate>>
 >;
-export type GetApiV1FsAggregateQueryError =
+export type GetFsAggregateQueryError =
   | GithubComMantonxVolumevizInternalModelsErrorResponse
   | GithubComMantonxVolumevizInternalModelsErrorResponse;
 
-export function useGetApiV1FsAggregate<
-  TData = Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+export function useGetFsAggregate<
+  TData = Awaited<ReturnType<typeof getFsAggregate>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1FsAggregateParams,
+  params: GetFsAggregateParams,
   options: {
     query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1FsAggregate>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getFsAggregate>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+          Awaited<ReturnType<typeof getFsAggregate>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1FsAggregate>>
+          Awaited<ReturnType<typeof getFsAggregate>>
         >,
         'initialData'
       >;
@@ -10050,26 +9935,22 @@ export function useGetApiV1FsAggregate<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1FsAggregate<
-  TData = Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+export function useGetFsAggregate<
+  TData = Awaited<ReturnType<typeof getFsAggregate>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1FsAggregateParams,
+  params: GetFsAggregateParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1FsAggregate>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getFsAggregate>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+          Awaited<ReturnType<typeof getFsAggregate>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1FsAggregate>>
+          Awaited<ReturnType<typeof getFsAggregate>>
         >,
         'initialData'
       >;
@@ -10079,20 +9960,16 @@ export function useGetApiV1FsAggregate<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1FsAggregate<
-  TData = Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+export function useGetFsAggregate<
+  TData = Awaited<ReturnType<typeof getFsAggregate>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1FsAggregateParams,
+  params: GetFsAggregateParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1FsAggregate>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getFsAggregate>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -10104,20 +9981,16 @@ export function useGetApiV1FsAggregate<
  * @summary Get aggregated file system data
  */
 
-export function useGetApiV1FsAggregate<
-  TData = Awaited<ReturnType<typeof getApiV1FsAggregate>>,
+export function useGetFsAggregate<
+  TData = Awaited<ReturnType<typeof getFsAggregate>>,
   TError =
     | GithubComMantonxVolumevizInternalModelsErrorResponse
     | GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
-  params: GetApiV1FsAggregateParams,
+  params: GetFsAggregateParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1FsAggregate>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getFsAggregate>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -10125,7 +9998,7 @@ export function useGetApiV1FsAggregate<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1FsAggregateQueryOptions(params, options);
+  const queryOptions = getGetFsAggregateQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -10141,33 +10014,33 @@ export function useGetApiV1FsAggregate<
  * Retrieve files filtered by video/audio duration with pagination support
  * @summary Get files by duration
  */
-export type getApiV1MetadataFilesByDurationResponse200 = {
+export type getMetadataFilesByDurationResponse200 = {
   data: InternalApiV1MetadataGetFilesByDurationResponse;
   status: 200;
 };
 
-export type getApiV1MetadataFilesByDurationResponse400 = {
-  data: GetApiV1MetadataFilesByDuration400;
+export type getMetadataFilesByDurationResponse400 = {
+  data: GetMetadataFilesByDuration400;
   status: 400;
 };
 
-export type getApiV1MetadataFilesByDurationResponse500 = {
-  data: GetApiV1MetadataFilesByDuration500;
+export type getMetadataFilesByDurationResponse500 = {
+  data: GetMetadataFilesByDuration500;
   status: 500;
 };
 
-export type getApiV1MetadataFilesByDurationResponseComposite =
-  | getApiV1MetadataFilesByDurationResponse200
-  | getApiV1MetadataFilesByDurationResponse400
-  | getApiV1MetadataFilesByDurationResponse500;
+export type getMetadataFilesByDurationResponseComposite =
+  | getMetadataFilesByDurationResponse200
+  | getMetadataFilesByDurationResponse400
+  | getMetadataFilesByDurationResponse500;
 
-export type getApiV1MetadataFilesByDurationResponse =
-  getApiV1MetadataFilesByDurationResponseComposite & {
+export type getMetadataFilesByDurationResponse =
+  getMetadataFilesByDurationResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1MetadataFilesByDurationUrl = (
-  params: GetApiV1MetadataFilesByDurationParams,
+export const getGetMetadataFilesByDurationUrl = (
+  params: GetMetadataFilesByDurationParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -10180,16 +10053,16 @@ export const getGetApiV1MetadataFilesByDurationUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/metadata/files/by-duration?${stringifiedParams}`
-    : `/api/v1/metadata/files/by-duration`;
+    ? `/metadata/files/by-duration?${stringifiedParams}`
+    : `/metadata/files/by-duration`;
 };
 
-export const getApiV1MetadataFilesByDuration = async (
-  params: GetApiV1MetadataFilesByDurationParams,
+export const getMetadataFilesByDuration = async (
+  params: GetMetadataFilesByDurationParams,
   options?: RequestInit,
-): Promise<getApiV1MetadataFilesByDurationResponse> => {
-  return customFetchClient<getApiV1MetadataFilesByDurationResponse>(
-    getGetApiV1MetadataFilesByDurationUrl(params),
+): Promise<getMetadataFilesByDurationResponse> => {
+  return customFetchClient<getMetadataFilesByDurationResponse>(
+    getGetMetadataFilesByDurationUrl(params),
     {
       ...options,
       method: 'GET',
@@ -10197,26 +10070,21 @@ export const getApiV1MetadataFilesByDuration = async (
   );
 };
 
-export const getGetApiV1MetadataFilesByDurationQueryKey = (
-  params?: GetApiV1MetadataFilesByDurationParams,
+export const getGetMetadataFilesByDurationQueryKey = (
+  params?: GetMetadataFilesByDurationParams,
 ) => {
-  return [
-    `/api/v1/metadata/files/by-duration`,
-    ...(params ? [params] : []),
-  ] as const;
+  return [`/metadata/files/by-duration`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1MetadataFilesByDurationQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
-  TError =
-    | GetApiV1MetadataFilesByDuration400
-    | GetApiV1MetadataFilesByDuration500,
+export const getGetMetadataFilesByDurationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
+  TError = GetMetadataFilesByDuration400 | GetMetadataFilesByDuration500,
 >(
-  params: GetApiV1MetadataFilesByDurationParams,
+  params: GetMetadataFilesByDurationParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
+        Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
         TError,
         TData
       >
@@ -10227,48 +10095,45 @@ export const getGetApiV1MetadataFilesByDurationQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ??
-    getGetApiV1MetadataFilesByDurationQueryKey(params);
+    queryOptions?.queryKey ?? getGetMetadataFilesByDurationQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>
+    Awaited<ReturnType<typeof getMetadataFilesByDuration>>
   > = ({ signal }) =>
-    getApiV1MetadataFilesByDuration(params, { signal, ...requestOptions });
+    getMetadataFilesByDuration(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
+    Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1MetadataFilesByDurationQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>
+export type GetMetadataFilesByDurationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMetadataFilesByDuration>>
 >;
-export type GetApiV1MetadataFilesByDurationQueryError =
-  | GetApiV1MetadataFilesByDuration400
-  | GetApiV1MetadataFilesByDuration500;
+export type GetMetadataFilesByDurationQueryError =
+  | GetMetadataFilesByDuration400
+  | GetMetadataFilesByDuration500;
 
-export function useGetApiV1MetadataFilesByDuration<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
-  TError =
-    | GetApiV1MetadataFilesByDuration400
-    | GetApiV1MetadataFilesByDuration500,
+export function useGetMetadataFilesByDuration<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
+  TError = GetMetadataFilesByDuration400 | GetMetadataFilesByDuration500,
 >(
-  params: GetApiV1MetadataFilesByDurationParams,
+  params: GetMetadataFilesByDurationParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
+        Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
+          Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>
+          Awaited<ReturnType<typeof getMetadataFilesByDuration>>
         >,
         'initialData'
       >;
@@ -10278,26 +10143,24 @@ export function useGetApiV1MetadataFilesByDuration<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MetadataFilesByDuration<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
-  TError =
-    | GetApiV1MetadataFilesByDuration400
-    | GetApiV1MetadataFilesByDuration500,
+export function useGetMetadataFilesByDuration<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
+  TError = GetMetadataFilesByDuration400 | GetMetadataFilesByDuration500,
 >(
-  params: GetApiV1MetadataFilesByDurationParams,
+  params: GetMetadataFilesByDurationParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
+        Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
+          Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>
+          Awaited<ReturnType<typeof getMetadataFilesByDuration>>
         >,
         'initialData'
       >;
@@ -10307,17 +10170,15 @@ export function useGetApiV1MetadataFilesByDuration<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MetadataFilesByDuration<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
-  TError =
-    | GetApiV1MetadataFilesByDuration400
-    | GetApiV1MetadataFilesByDuration500,
+export function useGetMetadataFilesByDuration<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
+  TError = GetMetadataFilesByDuration400 | GetMetadataFilesByDuration500,
 >(
-  params: GetApiV1MetadataFilesByDurationParams,
+  params: GetMetadataFilesByDurationParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
+        Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
         TError,
         TData
       >
@@ -10332,17 +10193,15 @@ export function useGetApiV1MetadataFilesByDuration<
  * @summary Get files by duration
  */
 
-export function useGetApiV1MetadataFilesByDuration<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
-  TError =
-    | GetApiV1MetadataFilesByDuration400
-    | GetApiV1MetadataFilesByDuration500,
+export function useGetMetadataFilesByDuration<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
+  TError = GetMetadataFilesByDuration400 | GetMetadataFilesByDuration500,
 >(
-  params: GetApiV1MetadataFilesByDurationParams,
+  params: GetMetadataFilesByDurationParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByDuration>>,
+        Awaited<ReturnType<typeof getMetadataFilesByDuration>>,
         TError,
         TData
       >
@@ -10353,7 +10212,7 @@ export function useGetApiV1MetadataFilesByDuration<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1MetadataFilesByDurationQueryOptions(
+  const queryOptions = getGetMetadataFilesByDurationQueryOptions(
     params,
     options,
   );
@@ -10372,33 +10231,33 @@ export function useGetApiV1MetadataFilesByDuration<
  * Retrieve files filtered by GPS coordinates with pagination support
  * @summary Get files by location
  */
-export type getApiV1MetadataFilesByLocationResponse200 = {
+export type getMetadataFilesByLocationResponse200 = {
   data: InternalApiV1MetadataGetFilesByLocationResponse;
   status: 200;
 };
 
-export type getApiV1MetadataFilesByLocationResponse400 = {
-  data: GetApiV1MetadataFilesByLocation400;
+export type getMetadataFilesByLocationResponse400 = {
+  data: GetMetadataFilesByLocation400;
   status: 400;
 };
 
-export type getApiV1MetadataFilesByLocationResponse500 = {
-  data: GetApiV1MetadataFilesByLocation500;
+export type getMetadataFilesByLocationResponse500 = {
+  data: GetMetadataFilesByLocation500;
   status: 500;
 };
 
-export type getApiV1MetadataFilesByLocationResponseComposite =
-  | getApiV1MetadataFilesByLocationResponse200
-  | getApiV1MetadataFilesByLocationResponse400
-  | getApiV1MetadataFilesByLocationResponse500;
+export type getMetadataFilesByLocationResponseComposite =
+  | getMetadataFilesByLocationResponse200
+  | getMetadataFilesByLocationResponse400
+  | getMetadataFilesByLocationResponse500;
 
-export type getApiV1MetadataFilesByLocationResponse =
-  getApiV1MetadataFilesByLocationResponseComposite & {
+export type getMetadataFilesByLocationResponse =
+  getMetadataFilesByLocationResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1MetadataFilesByLocationUrl = (
-  params: GetApiV1MetadataFilesByLocationParams,
+export const getGetMetadataFilesByLocationUrl = (
+  params: GetMetadataFilesByLocationParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -10411,16 +10270,16 @@ export const getGetApiV1MetadataFilesByLocationUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/metadata/files/by-location?${stringifiedParams}`
-    : `/api/v1/metadata/files/by-location`;
+    ? `/metadata/files/by-location?${stringifiedParams}`
+    : `/metadata/files/by-location`;
 };
 
-export const getApiV1MetadataFilesByLocation = async (
-  params: GetApiV1MetadataFilesByLocationParams,
+export const getMetadataFilesByLocation = async (
+  params: GetMetadataFilesByLocationParams,
   options?: RequestInit,
-): Promise<getApiV1MetadataFilesByLocationResponse> => {
-  return customFetchClient<getApiV1MetadataFilesByLocationResponse>(
-    getGetApiV1MetadataFilesByLocationUrl(params),
+): Promise<getMetadataFilesByLocationResponse> => {
+  return customFetchClient<getMetadataFilesByLocationResponse>(
+    getGetMetadataFilesByLocationUrl(params),
     {
       ...options,
       method: 'GET',
@@ -10428,26 +10287,21 @@ export const getApiV1MetadataFilesByLocation = async (
   );
 };
 
-export const getGetApiV1MetadataFilesByLocationQueryKey = (
-  params?: GetApiV1MetadataFilesByLocationParams,
+export const getGetMetadataFilesByLocationQueryKey = (
+  params?: GetMetadataFilesByLocationParams,
 ) => {
-  return [
-    `/api/v1/metadata/files/by-location`,
-    ...(params ? [params] : []),
-  ] as const;
+  return [`/metadata/files/by-location`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1MetadataFilesByLocationQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
-  TError =
-    | GetApiV1MetadataFilesByLocation400
-    | GetApiV1MetadataFilesByLocation500,
+export const getGetMetadataFilesByLocationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
+  TError = GetMetadataFilesByLocation400 | GetMetadataFilesByLocation500,
 >(
-  params: GetApiV1MetadataFilesByLocationParams,
+  params: GetMetadataFilesByLocationParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
+        Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
         TError,
         TData
       >
@@ -10458,48 +10312,45 @@ export const getGetApiV1MetadataFilesByLocationQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ??
-    getGetApiV1MetadataFilesByLocationQueryKey(params);
+    queryOptions?.queryKey ?? getGetMetadataFilesByLocationQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>
+    Awaited<ReturnType<typeof getMetadataFilesByLocation>>
   > = ({ signal }) =>
-    getApiV1MetadataFilesByLocation(params, { signal, ...requestOptions });
+    getMetadataFilesByLocation(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
+    Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1MetadataFilesByLocationQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>
+export type GetMetadataFilesByLocationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMetadataFilesByLocation>>
 >;
-export type GetApiV1MetadataFilesByLocationQueryError =
-  | GetApiV1MetadataFilesByLocation400
-  | GetApiV1MetadataFilesByLocation500;
+export type GetMetadataFilesByLocationQueryError =
+  | GetMetadataFilesByLocation400
+  | GetMetadataFilesByLocation500;
 
-export function useGetApiV1MetadataFilesByLocation<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
-  TError =
-    | GetApiV1MetadataFilesByLocation400
-    | GetApiV1MetadataFilesByLocation500,
+export function useGetMetadataFilesByLocation<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
+  TError = GetMetadataFilesByLocation400 | GetMetadataFilesByLocation500,
 >(
-  params: GetApiV1MetadataFilesByLocationParams,
+  params: GetMetadataFilesByLocationParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
+        Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
+          Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>
+          Awaited<ReturnType<typeof getMetadataFilesByLocation>>
         >,
         'initialData'
       >;
@@ -10509,26 +10360,24 @@ export function useGetApiV1MetadataFilesByLocation<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MetadataFilesByLocation<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
-  TError =
-    | GetApiV1MetadataFilesByLocation400
-    | GetApiV1MetadataFilesByLocation500,
+export function useGetMetadataFilesByLocation<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
+  TError = GetMetadataFilesByLocation400 | GetMetadataFilesByLocation500,
 >(
-  params: GetApiV1MetadataFilesByLocationParams,
+  params: GetMetadataFilesByLocationParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
+        Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
+          Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>
+          Awaited<ReturnType<typeof getMetadataFilesByLocation>>
         >,
         'initialData'
       >;
@@ -10538,17 +10387,15 @@ export function useGetApiV1MetadataFilesByLocation<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MetadataFilesByLocation<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
-  TError =
-    | GetApiV1MetadataFilesByLocation400
-    | GetApiV1MetadataFilesByLocation500,
+export function useGetMetadataFilesByLocation<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
+  TError = GetMetadataFilesByLocation400 | GetMetadataFilesByLocation500,
 >(
-  params: GetApiV1MetadataFilesByLocationParams,
+  params: GetMetadataFilesByLocationParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
+        Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
         TError,
         TData
       >
@@ -10563,17 +10410,15 @@ export function useGetApiV1MetadataFilesByLocation<
  * @summary Get files by location
  */
 
-export function useGetApiV1MetadataFilesByLocation<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
-  TError =
-    | GetApiV1MetadataFilesByLocation400
-    | GetApiV1MetadataFilesByLocation500,
+export function useGetMetadataFilesByLocation<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
+  TError = GetMetadataFilesByLocation400 | GetMetadataFilesByLocation500,
 >(
-  params: GetApiV1MetadataFilesByLocationParams,
+  params: GetMetadataFilesByLocationParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByLocation>>,
+        Awaited<ReturnType<typeof getMetadataFilesByLocation>>,
         TError,
         TData
       >
@@ -10584,7 +10429,7 @@ export function useGetApiV1MetadataFilesByLocation<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1MetadataFilesByLocationQueryOptions(
+  const queryOptions = getGetMetadataFilesByLocationQueryOptions(
     params,
     options,
   );
@@ -10603,39 +10448,39 @@ export function useGetApiV1MetadataFilesByLocation<
  * Retrieve files filtered by media kind (video, image, audio, document, etc.) with pagination
  * @summary Get files by media kind
  */
-export type getApiV1MetadataFilesByMediaKindResponse200 = {
-  data: GetApiV1MetadataFilesByMediaKind200;
+export type getMetadataFilesByMediaKindResponse200 = {
+  data: GetMetadataFilesByMediaKind200;
   status: 200;
 };
 
-export type getApiV1MetadataFilesByMediaKindResponse400 = {
-  data: GetApiV1MetadataFilesByMediaKind400;
+export type getMetadataFilesByMediaKindResponse400 = {
+  data: GetMetadataFilesByMediaKind400;
   status: 400;
 };
 
-export type getApiV1MetadataFilesByMediaKindResponse404 = {
-  data: GetApiV1MetadataFilesByMediaKind404;
+export type getMetadataFilesByMediaKindResponse404 = {
+  data: GetMetadataFilesByMediaKind404;
   status: 404;
 };
 
-export type getApiV1MetadataFilesByMediaKindResponse500 = {
-  data: GetApiV1MetadataFilesByMediaKind500;
+export type getMetadataFilesByMediaKindResponse500 = {
+  data: GetMetadataFilesByMediaKind500;
   status: 500;
 };
 
-export type getApiV1MetadataFilesByMediaKindResponseComposite =
-  | getApiV1MetadataFilesByMediaKindResponse200
-  | getApiV1MetadataFilesByMediaKindResponse400
-  | getApiV1MetadataFilesByMediaKindResponse404
-  | getApiV1MetadataFilesByMediaKindResponse500;
+export type getMetadataFilesByMediaKindResponseComposite =
+  | getMetadataFilesByMediaKindResponse200
+  | getMetadataFilesByMediaKindResponse400
+  | getMetadataFilesByMediaKindResponse404
+  | getMetadataFilesByMediaKindResponse500;
 
-export type getApiV1MetadataFilesByMediaKindResponse =
-  getApiV1MetadataFilesByMediaKindResponseComposite & {
+export type getMetadataFilesByMediaKindResponse =
+  getMetadataFilesByMediaKindResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1MetadataFilesByMediaKindUrl = (
-  params: GetApiV1MetadataFilesByMediaKindParams,
+export const getGetMetadataFilesByMediaKindUrl = (
+  params: GetMetadataFilesByMediaKindParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -10648,16 +10493,16 @@ export const getGetApiV1MetadataFilesByMediaKindUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/metadata/files/by-media-kind?${stringifiedParams}`
-    : `/api/v1/metadata/files/by-media-kind`;
+    ? `/metadata/files/by-media-kind?${stringifiedParams}`
+    : `/metadata/files/by-media-kind`;
 };
 
-export const getApiV1MetadataFilesByMediaKind = async (
-  params: GetApiV1MetadataFilesByMediaKindParams,
+export const getMetadataFilesByMediaKind = async (
+  params: GetMetadataFilesByMediaKindParams,
   options?: RequestInit,
-): Promise<getApiV1MetadataFilesByMediaKindResponse> => {
-  return customFetchClient<getApiV1MetadataFilesByMediaKindResponse>(
-    getGetApiV1MetadataFilesByMediaKindUrl(params),
+): Promise<getMetadataFilesByMediaKindResponse> => {
+  return customFetchClient<getMetadataFilesByMediaKindResponse>(
+    getGetMetadataFilesByMediaKindUrl(params),
     {
       ...options,
       method: 'GET',
@@ -10665,27 +10510,27 @@ export const getApiV1MetadataFilesByMediaKind = async (
   );
 };
 
-export const getGetApiV1MetadataFilesByMediaKindQueryKey = (
-  params?: GetApiV1MetadataFilesByMediaKindParams,
+export const getGetMetadataFilesByMediaKindQueryKey = (
+  params?: GetMetadataFilesByMediaKindParams,
 ) => {
   return [
-    `/api/v1/metadata/files/by-media-kind`,
+    `/metadata/files/by-media-kind`,
     ...(params ? [params] : []),
   ] as const;
 };
 
-export const getGetApiV1MetadataFilesByMediaKindQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+export const getGetMetadataFilesByMediaKindQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
   TError =
-    | GetApiV1MetadataFilesByMediaKind400
-    | GetApiV1MetadataFilesByMediaKind404
-    | GetApiV1MetadataFilesByMediaKind500,
+    | GetMetadataFilesByMediaKind400
+    | GetMetadataFilesByMediaKind404
+    | GetMetadataFilesByMediaKind500,
 >(
-  params: GetApiV1MetadataFilesByMediaKindParams,
+  params: GetMetadataFilesByMediaKindParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+        Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
         TError,
         TData
       >
@@ -10696,50 +10541,49 @@ export const getGetApiV1MetadataFilesByMediaKindQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ??
-    getGetApiV1MetadataFilesByMediaKindQueryKey(params);
+    queryOptions?.queryKey ?? getGetMetadataFilesByMediaKindQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>
+    Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>
   > = ({ signal }) =>
-    getApiV1MetadataFilesByMediaKind(params, { signal, ...requestOptions });
+    getMetadataFilesByMediaKind(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+    Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1MetadataFilesByMediaKindQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>
+export type GetMetadataFilesByMediaKindQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>
 >;
-export type GetApiV1MetadataFilesByMediaKindQueryError =
-  | GetApiV1MetadataFilesByMediaKind400
-  | GetApiV1MetadataFilesByMediaKind404
-  | GetApiV1MetadataFilesByMediaKind500;
+export type GetMetadataFilesByMediaKindQueryError =
+  | GetMetadataFilesByMediaKind400
+  | GetMetadataFilesByMediaKind404
+  | GetMetadataFilesByMediaKind500;
 
-export function useGetApiV1MetadataFilesByMediaKind<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+export function useGetMetadataFilesByMediaKind<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
   TError =
-    | GetApiV1MetadataFilesByMediaKind400
-    | GetApiV1MetadataFilesByMediaKind404
-    | GetApiV1MetadataFilesByMediaKind500,
+    | GetMetadataFilesByMediaKind400
+    | GetMetadataFilesByMediaKind404
+    | GetMetadataFilesByMediaKind500,
 >(
-  params: GetApiV1MetadataFilesByMediaKindParams,
+  params: GetMetadataFilesByMediaKindParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+        Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+          Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>
+          Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>
         >,
         'initialData'
       >;
@@ -10749,27 +10593,27 @@ export function useGetApiV1MetadataFilesByMediaKind<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MetadataFilesByMediaKind<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+export function useGetMetadataFilesByMediaKind<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
   TError =
-    | GetApiV1MetadataFilesByMediaKind400
-    | GetApiV1MetadataFilesByMediaKind404
-    | GetApiV1MetadataFilesByMediaKind500,
+    | GetMetadataFilesByMediaKind400
+    | GetMetadataFilesByMediaKind404
+    | GetMetadataFilesByMediaKind500,
 >(
-  params: GetApiV1MetadataFilesByMediaKindParams,
+  params: GetMetadataFilesByMediaKindParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+        Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+          Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>
+          Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>
         >,
         'initialData'
       >;
@@ -10779,18 +10623,18 @@ export function useGetApiV1MetadataFilesByMediaKind<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MetadataFilesByMediaKind<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+export function useGetMetadataFilesByMediaKind<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
   TError =
-    | GetApiV1MetadataFilesByMediaKind400
-    | GetApiV1MetadataFilesByMediaKind404
-    | GetApiV1MetadataFilesByMediaKind500,
+    | GetMetadataFilesByMediaKind400
+    | GetMetadataFilesByMediaKind404
+    | GetMetadataFilesByMediaKind500,
 >(
-  params: GetApiV1MetadataFilesByMediaKindParams,
+  params: GetMetadataFilesByMediaKindParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+        Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
         TError,
         TData
       >
@@ -10805,18 +10649,18 @@ export function useGetApiV1MetadataFilesByMediaKind<
  * @summary Get files by media kind
  */
 
-export function useGetApiV1MetadataFilesByMediaKind<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+export function useGetMetadataFilesByMediaKind<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
   TError =
-    | GetApiV1MetadataFilesByMediaKind400
-    | GetApiV1MetadataFilesByMediaKind404
-    | GetApiV1MetadataFilesByMediaKind500,
+    | GetMetadataFilesByMediaKind400
+    | GetMetadataFilesByMediaKind404
+    | GetMetadataFilesByMediaKind500,
 >(
-  params: GetApiV1MetadataFilesByMediaKindParams,
+  params: GetMetadataFilesByMediaKindParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByMediaKind>>,
+        Awaited<ReturnType<typeof getMetadataFilesByMediaKind>>,
         TError,
         TData
       >
@@ -10827,7 +10671,7 @@ export function useGetApiV1MetadataFilesByMediaKind<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1MetadataFilesByMediaKindQueryOptions(
+  const queryOptions = getGetMetadataFilesByMediaKindQueryOptions(
     params,
     options,
   );
@@ -10846,33 +10690,33 @@ export function useGetApiV1MetadataFilesByMediaKind<
  * Retrieve files filtered by image/video resolution with pagination support
  * @summary Get files by resolution
  */
-export type getApiV1MetadataFilesByResolutionResponse200 = {
+export type getMetadataFilesByResolutionResponse200 = {
   data: InternalApiV1MetadataGetFilesByResolutionResponse;
   status: 200;
 };
 
-export type getApiV1MetadataFilesByResolutionResponse400 = {
-  data: GetApiV1MetadataFilesByResolution400;
+export type getMetadataFilesByResolutionResponse400 = {
+  data: GetMetadataFilesByResolution400;
   status: 400;
 };
 
-export type getApiV1MetadataFilesByResolutionResponse500 = {
-  data: GetApiV1MetadataFilesByResolution500;
+export type getMetadataFilesByResolutionResponse500 = {
+  data: GetMetadataFilesByResolution500;
   status: 500;
 };
 
-export type getApiV1MetadataFilesByResolutionResponseComposite =
-  | getApiV1MetadataFilesByResolutionResponse200
-  | getApiV1MetadataFilesByResolutionResponse400
-  | getApiV1MetadataFilesByResolutionResponse500;
+export type getMetadataFilesByResolutionResponseComposite =
+  | getMetadataFilesByResolutionResponse200
+  | getMetadataFilesByResolutionResponse400
+  | getMetadataFilesByResolutionResponse500;
 
-export type getApiV1MetadataFilesByResolutionResponse =
-  getApiV1MetadataFilesByResolutionResponseComposite & {
+export type getMetadataFilesByResolutionResponse =
+  getMetadataFilesByResolutionResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1MetadataFilesByResolutionUrl = (
-  params: GetApiV1MetadataFilesByResolutionParams,
+export const getGetMetadataFilesByResolutionUrl = (
+  params: GetMetadataFilesByResolutionParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -10885,16 +10729,16 @@ export const getGetApiV1MetadataFilesByResolutionUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/metadata/files/by-resolution?${stringifiedParams}`
-    : `/api/v1/metadata/files/by-resolution`;
+    ? `/metadata/files/by-resolution?${stringifiedParams}`
+    : `/metadata/files/by-resolution`;
 };
 
-export const getApiV1MetadataFilesByResolution = async (
-  params: GetApiV1MetadataFilesByResolutionParams,
+export const getMetadataFilesByResolution = async (
+  params: GetMetadataFilesByResolutionParams,
   options?: RequestInit,
-): Promise<getApiV1MetadataFilesByResolutionResponse> => {
-  return customFetchClient<getApiV1MetadataFilesByResolutionResponse>(
-    getGetApiV1MetadataFilesByResolutionUrl(params),
+): Promise<getMetadataFilesByResolutionResponse> => {
+  return customFetchClient<getMetadataFilesByResolutionResponse>(
+    getGetMetadataFilesByResolutionUrl(params),
     {
       ...options,
       method: 'GET',
@@ -10902,26 +10746,24 @@ export const getApiV1MetadataFilesByResolution = async (
   );
 };
 
-export const getGetApiV1MetadataFilesByResolutionQueryKey = (
-  params?: GetApiV1MetadataFilesByResolutionParams,
+export const getGetMetadataFilesByResolutionQueryKey = (
+  params?: GetMetadataFilesByResolutionParams,
 ) => {
   return [
-    `/api/v1/metadata/files/by-resolution`,
+    `/metadata/files/by-resolution`,
     ...(params ? [params] : []),
   ] as const;
 };
 
-export const getGetApiV1MetadataFilesByResolutionQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
-  TError =
-    | GetApiV1MetadataFilesByResolution400
-    | GetApiV1MetadataFilesByResolution500,
+export const getGetMetadataFilesByResolutionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
+  TError = GetMetadataFilesByResolution400 | GetMetadataFilesByResolution500,
 >(
-  params: GetApiV1MetadataFilesByResolutionParams,
+  params: GetMetadataFilesByResolutionParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
+        Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
         TError,
         TData
       >
@@ -10932,48 +10774,45 @@ export const getGetApiV1MetadataFilesByResolutionQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ??
-    getGetApiV1MetadataFilesByResolutionQueryKey(params);
+    queryOptions?.queryKey ?? getGetMetadataFilesByResolutionQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>
+    Awaited<ReturnType<typeof getMetadataFilesByResolution>>
   > = ({ signal }) =>
-    getApiV1MetadataFilesByResolution(params, { signal, ...requestOptions });
+    getMetadataFilesByResolution(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
+    Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1MetadataFilesByResolutionQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>
+export type GetMetadataFilesByResolutionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMetadataFilesByResolution>>
 >;
-export type GetApiV1MetadataFilesByResolutionQueryError =
-  | GetApiV1MetadataFilesByResolution400
-  | GetApiV1MetadataFilesByResolution500;
+export type GetMetadataFilesByResolutionQueryError =
+  | GetMetadataFilesByResolution400
+  | GetMetadataFilesByResolution500;
 
-export function useGetApiV1MetadataFilesByResolution<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
-  TError =
-    | GetApiV1MetadataFilesByResolution400
-    | GetApiV1MetadataFilesByResolution500,
+export function useGetMetadataFilesByResolution<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
+  TError = GetMetadataFilesByResolution400 | GetMetadataFilesByResolution500,
 >(
-  params: GetApiV1MetadataFilesByResolutionParams,
+  params: GetMetadataFilesByResolutionParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
+        Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
+          Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>
+          Awaited<ReturnType<typeof getMetadataFilesByResolution>>
         >,
         'initialData'
       >;
@@ -10983,26 +10822,24 @@ export function useGetApiV1MetadataFilesByResolution<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MetadataFilesByResolution<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
-  TError =
-    | GetApiV1MetadataFilesByResolution400
-    | GetApiV1MetadataFilesByResolution500,
+export function useGetMetadataFilesByResolution<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
+  TError = GetMetadataFilesByResolution400 | GetMetadataFilesByResolution500,
 >(
-  params: GetApiV1MetadataFilesByResolutionParams,
+  params: GetMetadataFilesByResolutionParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
+        Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
+          Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>
+          Awaited<ReturnType<typeof getMetadataFilesByResolution>>
         >,
         'initialData'
       >;
@@ -11012,17 +10849,15 @@ export function useGetApiV1MetadataFilesByResolution<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MetadataFilesByResolution<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
-  TError =
-    | GetApiV1MetadataFilesByResolution400
-    | GetApiV1MetadataFilesByResolution500,
+export function useGetMetadataFilesByResolution<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
+  TError = GetMetadataFilesByResolution400 | GetMetadataFilesByResolution500,
 >(
-  params: GetApiV1MetadataFilesByResolutionParams,
+  params: GetMetadataFilesByResolutionParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
+        Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
         TError,
         TData
       >
@@ -11037,17 +10872,15 @@ export function useGetApiV1MetadataFilesByResolution<
  * @summary Get files by resolution
  */
 
-export function useGetApiV1MetadataFilesByResolution<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
-  TError =
-    | GetApiV1MetadataFilesByResolution400
-    | GetApiV1MetadataFilesByResolution500,
+export function useGetMetadataFilesByResolution<
+  TData = Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
+  TError = GetMetadataFilesByResolution400 | GetMetadataFilesByResolution500,
 >(
-  params: GetApiV1MetadataFilesByResolutionParams,
+  params: GetMetadataFilesByResolutionParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilesByResolution>>,
+        Awaited<ReturnType<typeof getMetadataFilesByResolution>>,
         TError,
         TData
       >
@@ -11058,7 +10891,7 @@ export function useGetApiV1MetadataFilesByResolution<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1MetadataFilesByResolutionQueryOptions(
+  const queryOptions = getGetMetadataFilesByResolutionQueryOptions(
     params,
     options,
   );
@@ -11077,34 +10910,33 @@ export function useGetApiV1MetadataFilesByResolution<
  * Get available MIME types, media kinds, and extensions for filter dropdowns
  * @summary Get filter metadata
  */
-export type getApiV1MetadataFiltersResponse200 = {
+export type getMetadataFiltersResponse200 = {
   data: FilterMetadataResponse;
   status: 200;
 };
 
-export type getApiV1MetadataFiltersResponse500 = {
+export type getMetadataFiltersResponse500 = {
   data: GithubComMantonxVolumevizInternalModelsErrorResponse;
   status: 500;
 };
 
-export type getApiV1MetadataFiltersResponseComposite =
-  | getApiV1MetadataFiltersResponse200
-  | getApiV1MetadataFiltersResponse500;
+export type getMetadataFiltersResponseComposite =
+  | getMetadataFiltersResponse200
+  | getMetadataFiltersResponse500;
 
-export type getApiV1MetadataFiltersResponse =
-  getApiV1MetadataFiltersResponseComposite & {
-    headers: Headers;
-  };
-
-export const getGetApiV1MetadataFiltersUrl = () => {
-  return `/api/v1/metadata/filters`;
+export type getMetadataFiltersResponse = getMetadataFiltersResponseComposite & {
+  headers: Headers;
 };
 
-export const getApiV1MetadataFilters = async (
+export const getGetMetadataFiltersUrl = () => {
+  return `/metadata/filters`;
+};
+
+export const getMetadataFilters = async (
   options?: RequestInit,
-): Promise<getApiV1MetadataFiltersResponse> => {
-  return customFetchClient<getApiV1MetadataFiltersResponse>(
-    getGetApiV1MetadataFiltersUrl(),
+): Promise<getMetadataFiltersResponse> => {
+  return customFetchClient<getMetadataFiltersResponse>(
+    getGetMetadataFiltersUrl(),
     {
       ...options,
       method: 'GET',
@@ -11112,17 +10944,17 @@ export const getApiV1MetadataFilters = async (
   );
 };
 
-export const getGetApiV1MetadataFiltersQueryKey = () => {
-  return [`/api/v1/metadata/filters`] as const;
+export const getGetMetadataFiltersQueryKey = () => {
+  return [`/metadata/filters`] as const;
 };
 
-export const getGetApiV1MetadataFiltersQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+export const getGetMetadataFiltersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMetadataFilters>>,
   TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
-      Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+      Awaited<ReturnType<typeof getMetadataFilters>>,
       TError,
       TData
     >
@@ -11131,43 +10963,42 @@ export const getGetApiV1MetadataFiltersQueryOptions = <
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1MetadataFiltersQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetMetadataFiltersQueryKey();
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1MetadataFilters>>
-  > = ({ signal }) => getApiV1MetadataFilters({ signal, ...requestOptions });
+    Awaited<ReturnType<typeof getMetadataFilters>>
+  > = ({ signal }) => getMetadataFilters({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+    Awaited<ReturnType<typeof getMetadataFilters>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1MetadataFiltersQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1MetadataFilters>>
+export type GetMetadataFiltersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMetadataFilters>>
 >;
-export type GetApiV1MetadataFiltersQueryError =
+export type GetMetadataFiltersQueryError =
   GithubComMantonxVolumevizInternalModelsErrorResponse;
 
-export function useGetApiV1MetadataFilters<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+export function useGetMetadataFilters<
+  TData = Awaited<ReturnType<typeof getMetadataFilters>>,
   TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+        Awaited<ReturnType<typeof getMetadataFilters>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+          Awaited<ReturnType<typeof getMetadataFilters>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MetadataFilters>>
+          Awaited<ReturnType<typeof getMetadataFilters>>
         >,
         'initialData'
       >;
@@ -11177,23 +11008,23 @@ export function useGetApiV1MetadataFilters<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MetadataFilters<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+export function useGetMetadataFilters<
+  TData = Awaited<ReturnType<typeof getMetadataFilters>>,
   TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+        Awaited<ReturnType<typeof getMetadataFilters>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+          Awaited<ReturnType<typeof getMetadataFilters>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MetadataFilters>>
+          Awaited<ReturnType<typeof getMetadataFilters>>
         >,
         'initialData'
       >;
@@ -11203,14 +11034,14 @@ export function useGetApiV1MetadataFilters<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MetadataFilters<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+export function useGetMetadataFilters<
+  TData = Awaited<ReturnType<typeof getMetadataFilters>>,
   TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+        Awaited<ReturnType<typeof getMetadataFilters>>,
         TError,
         TData
       >
@@ -11225,14 +11056,14 @@ export function useGetApiV1MetadataFilters<
  * @summary Get filter metadata
  */
 
-export function useGetApiV1MetadataFilters<
-  TData = Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+export function useGetMetadataFilters<
+  TData = Awaited<ReturnType<typeof getMetadataFilters>>,
   TError = GithubComMantonxVolumevizInternalModelsErrorResponse,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MetadataFilters>>,
+        Awaited<ReturnType<typeof getMetadataFilters>>,
         TError,
         TData
       >
@@ -11243,7 +11074,7 @@ export function useGetApiV1MetadataFilters<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1MetadataFiltersQueryOptions(options);
+  const queryOptions = getGetMetadataFiltersQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -11259,31 +11090,31 @@ export function useGetApiV1MetadataFilters<
  * Returns paginated list of Docker mount catalog entries with advanced filtering, search, and sorting capabilities
  * @summary List mount catalog entries
  */
-export type getApiV1MountsResponse200 = {
-  data: GetApiV1Mounts200;
+export type getMountsResponse200 = {
+  data: GetMounts200;
   status: 200;
 };
 
-export type getApiV1MountsResponse400 = {
-  data: GetApiV1Mounts400;
+export type getMountsResponse400 = {
+  data: GetMounts400;
   status: 400;
 };
 
-export type getApiV1MountsResponse500 = {
-  data: GetApiV1Mounts500;
+export type getMountsResponse500 = {
+  data: GetMounts500;
   status: 500;
 };
 
-export type getApiV1MountsResponseComposite =
-  | getApiV1MountsResponse200
-  | getApiV1MountsResponse400
-  | getApiV1MountsResponse500;
+export type getMountsResponseComposite =
+  | getMountsResponse200
+  | getMountsResponse400
+  | getMountsResponse500;
 
-export type getApiV1MountsResponse = getApiV1MountsResponseComposite & {
+export type getMountsResponse = getMountsResponseComposite & {
   headers: Headers;
 };
 
-export const getGetApiV1MountsUrl = (params?: GetApiV1MountsParams) => {
+export const getGetMountsUrl = (params?: GetMountsParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -11295,73 +11126,70 @@ export const getGetApiV1MountsUrl = (params?: GetApiV1MountsParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/mounts?${stringifiedParams}`
-    : `/api/v1/mounts`;
+    ? `/mounts?${stringifiedParams}`
+    : `/mounts`;
 };
 
-export const getApiV1Mounts = async (
-  params?: GetApiV1MountsParams,
+export const getMounts = async (
+  params?: GetMountsParams,
   options?: RequestInit,
-): Promise<getApiV1MountsResponse> => {
-  return customFetchClient<getApiV1MountsResponse>(
-    getGetApiV1MountsUrl(params),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
+): Promise<getMountsResponse> => {
+  return customFetchClient<getMountsResponse>(getGetMountsUrl(params), {
+    ...options,
+    method: 'GET',
+  });
 };
 
-export const getGetApiV1MountsQueryKey = (params?: GetApiV1MountsParams) => {
-  return [`/api/v1/mounts`, ...(params ? [params] : [])] as const;
+export const getGetMountsQueryKey = (params?: GetMountsParams) => {
+  return [`/mounts`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1MountsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1Mounts>>,
-  TError = GetApiV1Mounts400 | GetApiV1Mounts500,
+export const getGetMountsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMounts>>,
+  TError = GetMounts400 | GetMounts500,
 >(
-  params?: GetApiV1MountsParams,
+  params?: GetMountsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getApiV1Mounts>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof getMounts>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetApiV1MountsQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getGetMountsQueryKey(params);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1Mounts>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMounts>>> = ({
     signal,
-  }) => getApiV1Mounts(params, { signal, ...requestOptions });
+  }) => getMounts(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1Mounts>>,
+    Awaited<ReturnType<typeof getMounts>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1MountsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1Mounts>>
+export type GetMountsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMounts>>
 >;
-export type GetApiV1MountsQueryError = GetApiV1Mounts400 | GetApiV1Mounts500;
+export type GetMountsQueryError = GetMounts400 | GetMounts500;
 
-export function useGetApiV1Mounts<
-  TData = Awaited<ReturnType<typeof getApiV1Mounts>>,
-  TError = GetApiV1Mounts400 | GetApiV1Mounts500,
+export function useGetMounts<
+  TData = Awaited<ReturnType<typeof getMounts>>,
+  TError = GetMounts400 | GetMounts500,
 >(
-  params: undefined | GetApiV1MountsParams,
+  params: undefined | GetMountsParams,
   options: {
     query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getApiV1Mounts>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof getMounts>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1Mounts>>,
+          Awaited<ReturnType<typeof getMounts>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1Mounts>>
+          Awaited<ReturnType<typeof getMounts>>
         >,
         'initialData'
       >;
@@ -11371,20 +11199,20 @@ export function useGetApiV1Mounts<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1Mounts<
-  TData = Awaited<ReturnType<typeof getApiV1Mounts>>,
-  TError = GetApiV1Mounts400 | GetApiV1Mounts500,
+export function useGetMounts<
+  TData = Awaited<ReturnType<typeof getMounts>>,
+  TError = GetMounts400 | GetMounts500,
 >(
-  params?: GetApiV1MountsParams,
+  params?: GetMountsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getApiV1Mounts>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof getMounts>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1Mounts>>,
+          Awaited<ReturnType<typeof getMounts>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1Mounts>>
+          Awaited<ReturnType<typeof getMounts>>
         >,
         'initialData'
       >;
@@ -11394,14 +11222,14 @@ export function useGetApiV1Mounts<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1Mounts<
-  TData = Awaited<ReturnType<typeof getApiV1Mounts>>,
-  TError = GetApiV1Mounts400 | GetApiV1Mounts500,
+export function useGetMounts<
+  TData = Awaited<ReturnType<typeof getMounts>>,
+  TError = GetMounts400 | GetMounts500,
 >(
-  params?: GetApiV1MountsParams,
+  params?: GetMountsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getApiV1Mounts>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof getMounts>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -11413,14 +11241,14 @@ export function useGetApiV1Mounts<
  * @summary List mount catalog entries
  */
 
-export function useGetApiV1Mounts<
-  TData = Awaited<ReturnType<typeof getApiV1Mounts>>,
-  TError = GetApiV1Mounts400 | GetApiV1Mounts500,
+export function useGetMounts<
+  TData = Awaited<ReturnType<typeof getMounts>>,
+  TError = GetMounts400 | GetMounts500,
 >(
-  params?: GetApiV1MountsParams,
+  params?: GetMountsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getApiV1Mounts>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof getMounts>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -11428,7 +11256,7 @@ export function useGetApiV1Mounts<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1MountsQueryOptions(params, options);
+  const queryOptions = getGetMountsQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -11444,80 +11272,73 @@ export function useGetApiV1Mounts<
  * Returns detailed metadata for a specific mount including volume info, compose metadata, and tracking status
  * @summary Get mount details
  */
-export type getApiV1MountsIdResponse200 = {
+export type getMountsIdResponse200 = {
   data: InternalApiV1MountsMountCatalogResponse;
   status: 200;
 };
 
-export type getApiV1MountsIdResponse400 = {
-  data: GetApiV1MountsId400;
+export type getMountsIdResponse400 = {
+  data: GetMountsId400;
   status: 400;
 };
 
-export type getApiV1MountsIdResponse404 = {
-  data: GetApiV1MountsId404;
+export type getMountsIdResponse404 = {
+  data: GetMountsId404;
   status: 404;
 };
 
-export type getApiV1MountsIdResponse500 = {
-  data: GetApiV1MountsId500;
+export type getMountsIdResponse500 = {
+  data: GetMountsId500;
   status: 500;
 };
 
-export type getApiV1MountsIdResponseComposite =
-  | getApiV1MountsIdResponse200
-  | getApiV1MountsIdResponse400
-  | getApiV1MountsIdResponse404
-  | getApiV1MountsIdResponse500;
+export type getMountsIdResponseComposite =
+  | getMountsIdResponse200
+  | getMountsIdResponse400
+  | getMountsIdResponse404
+  | getMountsIdResponse500;
 
-export type getApiV1MountsIdResponse = getApiV1MountsIdResponseComposite & {
+export type getMountsIdResponse = getMountsIdResponseComposite & {
   headers: Headers;
 };
 
-export const getGetApiV1MountsIdUrl = (id: string) => {
-  return `/api/v1/mounts/${id}`;
+export const getGetMountsIdUrl = (id: string) => {
+  return `/mounts/${id}`;
 };
 
-export const getApiV1MountsId = async (
+export const getMountsId = async (
   id: string,
   options?: RequestInit,
-): Promise<getApiV1MountsIdResponse> => {
-  return customFetchClient<getApiV1MountsIdResponse>(
-    getGetApiV1MountsIdUrl(id),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
+): Promise<getMountsIdResponse> => {
+  return customFetchClient<getMountsIdResponse>(getGetMountsIdUrl(id), {
+    ...options,
+    method: 'GET',
+  });
 };
 
-export const getGetApiV1MountsIdQueryKey = (id?: string) => {
-  return [`/api/v1/mounts/${id}`] as const;
+export const getGetMountsIdQueryKey = (id?: string) => {
+  return [`/mounts/${id}`] as const;
 };
 
-export const getGetApiV1MountsIdQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1MountsId>>,
-  TError = GetApiV1MountsId400 | GetApiV1MountsId404 | GetApiV1MountsId500,
+export const getGetMountsIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMountsId>>,
+  TError = GetMountsId400 | GetMountsId404 | GetMountsId500,
 >(
   id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MountsId>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getMountsId>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetApiV1MountsIdQueryKey(id);
+  const queryKey = queryOptions?.queryKey ?? getGetMountsIdQueryKey(id);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1MountsId>>
-  > = ({ signal }) => getApiV1MountsId(id, { signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMountsId>>> = ({
+    signal,
+  }) => getMountsId(id, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -11525,38 +11346,34 @@ export const getGetApiV1MountsIdQueryOptions = <
     enabled: !!id,
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1MountsId>>,
+    Awaited<ReturnType<typeof getMountsId>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1MountsIdQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1MountsId>>
+export type GetMountsIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMountsId>>
 >;
-export type GetApiV1MountsIdQueryError =
-  | GetApiV1MountsId400
-  | GetApiV1MountsId404
-  | GetApiV1MountsId500;
+export type GetMountsIdQueryError =
+  | GetMountsId400
+  | GetMountsId404
+  | GetMountsId500;
 
-export function useGetApiV1MountsId<
-  TData = Awaited<ReturnType<typeof getApiV1MountsId>>,
-  TError = GetApiV1MountsId400 | GetApiV1MountsId404 | GetApiV1MountsId500,
+export function useGetMountsId<
+  TData = Awaited<ReturnType<typeof getMountsId>>,
+  TError = GetMountsId400 | GetMountsId404 | GetMountsId500,
 >(
   id: string,
   options: {
     query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MountsId>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getMountsId>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MountsId>>,
+          Awaited<ReturnType<typeof getMountsId>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MountsId>>
+          Awaited<ReturnType<typeof getMountsId>>
         >,
         'initialData'
       >;
@@ -11566,24 +11383,20 @@ export function useGetApiV1MountsId<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MountsId<
-  TData = Awaited<ReturnType<typeof getApiV1MountsId>>,
-  TError = GetApiV1MountsId400 | GetApiV1MountsId404 | GetApiV1MountsId500,
+export function useGetMountsId<
+  TData = Awaited<ReturnType<typeof getMountsId>>,
+  TError = GetMountsId400 | GetMountsId404 | GetMountsId500,
 >(
   id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MountsId>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getMountsId>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MountsId>>,
+          Awaited<ReturnType<typeof getMountsId>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MountsId>>
+          Awaited<ReturnType<typeof getMountsId>>
         >,
         'initialData'
       >;
@@ -11593,18 +11406,14 @@ export function useGetApiV1MountsId<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MountsId<
-  TData = Awaited<ReturnType<typeof getApiV1MountsId>>,
-  TError = GetApiV1MountsId400 | GetApiV1MountsId404 | GetApiV1MountsId500,
+export function useGetMountsId<
+  TData = Awaited<ReturnType<typeof getMountsId>>,
+  TError = GetMountsId400 | GetMountsId404 | GetMountsId500,
 >(
   id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MountsId>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getMountsId>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -11616,18 +11425,14 @@ export function useGetApiV1MountsId<
  * @summary Get mount details
  */
 
-export function useGetApiV1MountsId<
-  TData = Awaited<ReturnType<typeof getApiV1MountsId>>,
-  TError = GetApiV1MountsId400 | GetApiV1MountsId404 | GetApiV1MountsId500,
+export function useGetMountsId<
+  TData = Awaited<ReturnType<typeof getMountsId>>,
+  TError = GetMountsId400 | GetMountsId404 | GetMountsId500,
 >(
   id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MountsId>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getMountsId>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -11635,7 +11440,7 @@ export function useGetApiV1MountsId<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1MountsIdQueryOptions(id, options);
+  const queryOptions = getGetMountsIdQueryOptions(id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -11651,78 +11456,78 @@ export function useGetApiV1MountsId<
  * Enable or disable tracking for a specific mount. When tracking is enabled, the mount will be included in volume scans and analysis.
  * @summary Update mount tracking status
  */
-export type putApiV1MountsMountIdTrackingResponse200 = {
+export type putMountsMountIdTrackingResponse200 = {
   data: InternalApiV1MountsMountCatalogResponse;
   status: 200;
 };
 
-export type putApiV1MountsMountIdTrackingResponse400 = {
-  data: PutApiV1MountsMountIdTracking400;
+export type putMountsMountIdTrackingResponse400 = {
+  data: PutMountsMountIdTracking400;
   status: 400;
 };
 
-export type putApiV1MountsMountIdTrackingResponse404 = {
-  data: PutApiV1MountsMountIdTracking404;
+export type putMountsMountIdTrackingResponse404 = {
+  data: PutMountsMountIdTracking404;
   status: 404;
 };
 
-export type putApiV1MountsMountIdTrackingResponse501 = {
-  data: PutApiV1MountsMountIdTracking501;
+export type putMountsMountIdTrackingResponse501 = {
+  data: PutMountsMountIdTracking501;
   status: 501;
 };
 
-export type putApiV1MountsMountIdTrackingResponseComposite =
-  | putApiV1MountsMountIdTrackingResponse200
-  | putApiV1MountsMountIdTrackingResponse400
-  | putApiV1MountsMountIdTrackingResponse404
-  | putApiV1MountsMountIdTrackingResponse501;
+export type putMountsMountIdTrackingResponseComposite =
+  | putMountsMountIdTrackingResponse200
+  | putMountsMountIdTrackingResponse400
+  | putMountsMountIdTrackingResponse404
+  | putMountsMountIdTrackingResponse501;
 
-export type putApiV1MountsMountIdTrackingResponse =
-  putApiV1MountsMountIdTrackingResponseComposite & {
+export type putMountsMountIdTrackingResponse =
+  putMountsMountIdTrackingResponseComposite & {
     headers: Headers;
   };
 
-export const getPutApiV1MountsMountIdTrackingUrl = (mountId: string) => {
-  return `/api/v1/mounts/${mountId}/tracking`;
+export const getPutMountsMountIdTrackingUrl = (mountId: string) => {
+  return `/mounts/${mountId}/tracking`;
 };
 
-export const putApiV1MountsMountIdTracking = async (
+export const putMountsMountIdTracking = async (
   mountId: string,
-  putApiV1MountsMountIdTrackingBody: PutApiV1MountsMountIdTrackingBody,
+  putMountsMountIdTrackingBody: PutMountsMountIdTrackingBody,
   options?: RequestInit,
-): Promise<putApiV1MountsMountIdTrackingResponse> => {
-  return customFetchClient<putApiV1MountsMountIdTrackingResponse>(
-    getPutApiV1MountsMountIdTrackingUrl(mountId),
+): Promise<putMountsMountIdTrackingResponse> => {
+  return customFetchClient<putMountsMountIdTrackingResponse>(
+    getPutMountsMountIdTrackingUrl(mountId),
     {
       ...options,
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(putApiV1MountsMountIdTrackingBody),
+      body: JSON.stringify(putMountsMountIdTrackingBody),
     },
   );
 };
 
-export const getPutApiV1MountsMountIdTrackingMutationOptions = <
+export const getPutMountsMountIdTrackingMutationOptions = <
   TError =
-    | PutApiV1MountsMountIdTracking400
-    | PutApiV1MountsMountIdTracking404
-    | PutApiV1MountsMountIdTracking501,
+    | PutMountsMountIdTracking400
+    | PutMountsMountIdTracking404
+    | PutMountsMountIdTracking501,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof putApiV1MountsMountIdTracking>>,
+    Awaited<ReturnType<typeof putMountsMountIdTracking>>,
     TError,
-    { mountId: string; data: PutApiV1MountsMountIdTrackingBody },
+    { mountId: string; data: PutMountsMountIdTrackingBody },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof putApiV1MountsMountIdTracking>>,
+  Awaited<ReturnType<typeof putMountsMountIdTracking>>,
   TError,
-  { mountId: string; data: PutApiV1MountsMountIdTrackingBody },
+  { mountId: string; data: PutMountsMountIdTrackingBody },
   TContext
 > => {
-  const mutationKey = ['putApiV1MountsMountIdTracking'];
+  const mutationKey = ['putMountsMountIdTracking'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -11732,55 +11537,53 @@ export const getPutApiV1MountsMountIdTrackingMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof putApiV1MountsMountIdTracking>>,
-    { mountId: string; data: PutApiV1MountsMountIdTrackingBody }
+    Awaited<ReturnType<typeof putMountsMountIdTracking>>,
+    { mountId: string; data: PutMountsMountIdTrackingBody }
   > = (props) => {
     const { mountId, data } = props ?? {};
 
-    return putApiV1MountsMountIdTracking(mountId, data, requestOptions);
+    return putMountsMountIdTracking(mountId, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PutApiV1MountsMountIdTrackingMutationResult = NonNullable<
-  Awaited<ReturnType<typeof putApiV1MountsMountIdTracking>>
+export type PutMountsMountIdTrackingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putMountsMountIdTracking>>
 >;
-export type PutApiV1MountsMountIdTrackingMutationBody =
-  PutApiV1MountsMountIdTrackingBody;
-export type PutApiV1MountsMountIdTrackingMutationError =
-  | PutApiV1MountsMountIdTracking400
-  | PutApiV1MountsMountIdTracking404
-  | PutApiV1MountsMountIdTracking501;
+export type PutMountsMountIdTrackingMutationBody = PutMountsMountIdTrackingBody;
+export type PutMountsMountIdTrackingMutationError =
+  | PutMountsMountIdTracking400
+  | PutMountsMountIdTracking404
+  | PutMountsMountIdTracking501;
 
 /**
  * @summary Update mount tracking status
  */
-export const usePutApiV1MountsMountIdTracking = <
+export const usePutMountsMountIdTracking = <
   TError =
-    | PutApiV1MountsMountIdTracking400
-    | PutApiV1MountsMountIdTracking404
-    | PutApiV1MountsMountIdTracking501,
+    | PutMountsMountIdTracking400
+    | PutMountsMountIdTracking404
+    | PutMountsMountIdTracking501,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof putApiV1MountsMountIdTracking>>,
+      Awaited<ReturnType<typeof putMountsMountIdTracking>>,
       TError,
-      { mountId: string; data: PutApiV1MountsMountIdTrackingBody },
+      { mountId: string; data: PutMountsMountIdTrackingBody },
       TContext
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof putApiV1MountsMountIdTracking>>,
+  Awaited<ReturnType<typeof putMountsMountIdTracking>>,
   TError,
-  { mountId: string; data: PutApiV1MountsMountIdTrackingBody },
+  { mountId: string; data: PutMountsMountIdTrackingBody },
   TContext
 > => {
-  const mutationOptions =
-    getPutApiV1MountsMountIdTrackingMutationOptions(options);
+  const mutationOptions = getPutMountsMountIdTrackingMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -11789,41 +11592,40 @@ export const usePutApiV1MountsMountIdTracking = <
  * Triggers discovery and cataloging of Docker mounts from the Docker Engine. Scans all running containers and volumes to build/update the mount catalog.
  * @summary Trigger mount discovery
  */
-export type postApiV1MountsDiscoverResponse200 = {
+export type postMountsDiscoverResponse200 = {
   data: InternalApiV1MountsDiscoverMountsResponse;
   status: 200;
 };
 
-export type postApiV1MountsDiscoverResponse400 = {
-  data: PostApiV1MountsDiscover400;
+export type postMountsDiscoverResponse400 = {
+  data: PostMountsDiscover400;
   status: 400;
 };
 
-export type postApiV1MountsDiscoverResponse500 = {
-  data: PostApiV1MountsDiscover500;
+export type postMountsDiscoverResponse500 = {
+  data: PostMountsDiscover500;
   status: 500;
 };
 
-export type postApiV1MountsDiscoverResponseComposite =
-  | postApiV1MountsDiscoverResponse200
-  | postApiV1MountsDiscoverResponse400
-  | postApiV1MountsDiscoverResponse500;
+export type postMountsDiscoverResponseComposite =
+  | postMountsDiscoverResponse200
+  | postMountsDiscoverResponse400
+  | postMountsDiscoverResponse500;
 
-export type postApiV1MountsDiscoverResponse =
-  postApiV1MountsDiscoverResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPostApiV1MountsDiscoverUrl = () => {
-  return `/api/v1/mounts/discover`;
+export type postMountsDiscoverResponse = postMountsDiscoverResponseComposite & {
+  headers: Headers;
 };
 
-export const postApiV1MountsDiscover = async (
+export const getPostMountsDiscoverUrl = () => {
+  return `/mounts/discover`;
+};
+
+export const postMountsDiscover = async (
   internalApiV1MountsDiscoverMountsRequest: InternalApiV1MountsDiscoverMountsRequest,
   options?: RequestInit,
-): Promise<postApiV1MountsDiscoverResponse> => {
-  return customFetchClient<postApiV1MountsDiscoverResponse>(
-    getPostApiV1MountsDiscoverUrl(),
+): Promise<postMountsDiscoverResponse> => {
+  return customFetchClient<postMountsDiscoverResponse>(
+    getPostMountsDiscoverUrl(),
     {
       ...options,
       method: 'POST',
@@ -11833,24 +11635,24 @@ export const postApiV1MountsDiscover = async (
   );
 };
 
-export const getPostApiV1MountsDiscoverMutationOptions = <
-  TError = PostApiV1MountsDiscover400 | PostApiV1MountsDiscover500,
+export const getPostMountsDiscoverMutationOptions = <
+  TError = PostMountsDiscover400 | PostMountsDiscover500,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1MountsDiscover>>,
+    Awaited<ReturnType<typeof postMountsDiscover>>,
     TError,
     { data: InternalApiV1MountsDiscoverMountsRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1MountsDiscover>>,
+  Awaited<ReturnType<typeof postMountsDiscover>>,
   TError,
   { data: InternalApiV1MountsDiscoverMountsRequest },
   TContext
 > => {
-  const mutationKey = ['postApiV1MountsDiscover'];
+  const mutationKey = ['postMountsDiscover'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -11860,36 +11662,36 @@ export const getPostApiV1MountsDiscoverMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1MountsDiscover>>,
+    Awaited<ReturnType<typeof postMountsDiscover>>,
     { data: InternalApiV1MountsDiscoverMountsRequest }
   > = (props) => {
     const { data } = props ?? {};
 
-    return postApiV1MountsDiscover(data, requestOptions);
+    return postMountsDiscover(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1MountsDiscoverMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1MountsDiscover>>
+export type PostMountsDiscoverMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postMountsDiscover>>
 >;
-export type PostApiV1MountsDiscoverMutationBody =
+export type PostMountsDiscoverMutationBody =
   InternalApiV1MountsDiscoverMountsRequest;
-export type PostApiV1MountsDiscoverMutationError =
-  | PostApiV1MountsDiscover400
-  | PostApiV1MountsDiscover500;
+export type PostMountsDiscoverMutationError =
+  | PostMountsDiscover400
+  | PostMountsDiscover500;
 
 /**
  * @summary Trigger mount discovery
  */
-export const usePostApiV1MountsDiscover = <
-  TError = PostApiV1MountsDiscover400 | PostApiV1MountsDiscover500,
+export const usePostMountsDiscover = <
+  TError = PostMountsDiscover400 | PostMountsDiscover500,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1MountsDiscover>>,
+      Awaited<ReturnType<typeof postMountsDiscover>>,
       TError,
       { data: InternalApiV1MountsDiscoverMountsRequest },
       TContext
@@ -11898,12 +11700,12 @@ export const usePostApiV1MountsDiscover = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1MountsDiscover>>,
+  Awaited<ReturnType<typeof postMountsDiscover>>,
   TError,
   { data: InternalApiV1MountsDiscoverMountsRequest },
   TContext
 > => {
-  const mutationOptions = getPostApiV1MountsDiscoverMutationOptions(options);
+  const mutationOptions = getPostMountsDiscoverMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -11912,95 +11714,87 @@ export const usePostApiV1MountsDiscover = <
  * Returns summary statistics for the Docker mount catalog including counts by type, orphaned status, and tracking status
  * @summary Get mount catalog summary
  */
-export type getApiV1MountsSummaryResponse200 = {
+export type getMountsSummaryResponse200 = {
   data: InternalApiV1MountsMountCatalogSummaryResponse;
   status: 200;
 };
 
-export type getApiV1MountsSummaryResponse500 = {
-  data: GetApiV1MountsSummary500;
+export type getMountsSummaryResponse500 = {
+  data: GetMountsSummary500;
   status: 500;
 };
 
-export type getApiV1MountsSummaryResponseComposite =
-  | getApiV1MountsSummaryResponse200
-  | getApiV1MountsSummaryResponse500;
+export type getMountsSummaryResponseComposite =
+  | getMountsSummaryResponse200
+  | getMountsSummaryResponse500;
 
-export type getApiV1MountsSummaryResponse =
-  getApiV1MountsSummaryResponseComposite & {
-    headers: Headers;
-  };
-
-export const getGetApiV1MountsSummaryUrl = () => {
-  return `/api/v1/mounts/summary`;
+export type getMountsSummaryResponse = getMountsSummaryResponseComposite & {
+  headers: Headers;
 };
 
-export const getApiV1MountsSummary = async (
+export const getGetMountsSummaryUrl = () => {
+  return `/mounts/summary`;
+};
+
+export const getMountsSummary = async (
   options?: RequestInit,
-): Promise<getApiV1MountsSummaryResponse> => {
-  return customFetchClient<getApiV1MountsSummaryResponse>(
-    getGetApiV1MountsSummaryUrl(),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
+): Promise<getMountsSummaryResponse> => {
+  return customFetchClient<getMountsSummaryResponse>(getGetMountsSummaryUrl(), {
+    ...options,
+    method: 'GET',
+  });
 };
 
-export const getGetApiV1MountsSummaryQueryKey = () => {
-  return [`/api/v1/mounts/summary`] as const;
+export const getGetMountsSummaryQueryKey = () => {
+  return [`/mounts/summary`] as const;
 };
 
-export const getGetApiV1MountsSummaryQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1MountsSummary>>,
-  TError = GetApiV1MountsSummary500,
+export const getGetMountsSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMountsSummary>>,
+  TError = GetMountsSummary500,
 >(options?: {
   query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getApiV1MountsSummary>>,
-      TError,
-      TData
-    >
+    UseQueryOptions<Awaited<ReturnType<typeof getMountsSummary>>, TError, TData>
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetApiV1MountsSummaryQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetMountsSummaryQueryKey();
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1MountsSummary>>
-  > = ({ signal }) => getApiV1MountsSummary({ signal, ...requestOptions });
+    Awaited<ReturnType<typeof getMountsSummary>>
+  > = ({ signal }) => getMountsSummary({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1MountsSummary>>,
+    Awaited<ReturnType<typeof getMountsSummary>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1MountsSummaryQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1MountsSummary>>
+export type GetMountsSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMountsSummary>>
 >;
-export type GetApiV1MountsSummaryQueryError = GetApiV1MountsSummary500;
+export type GetMountsSummaryQueryError = GetMountsSummary500;
 
-export function useGetApiV1MountsSummary<
-  TData = Awaited<ReturnType<typeof getApiV1MountsSummary>>,
-  TError = GetApiV1MountsSummary500,
+export function useGetMountsSummary<
+  TData = Awaited<ReturnType<typeof getMountsSummary>>,
+  TError = GetMountsSummary500,
 >(
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MountsSummary>>,
+        Awaited<ReturnType<typeof getMountsSummary>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MountsSummary>>,
+          Awaited<ReturnType<typeof getMountsSummary>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MountsSummary>>
+          Awaited<ReturnType<typeof getMountsSummary>>
         >,
         'initialData'
       >;
@@ -12010,23 +11804,23 @@ export function useGetApiV1MountsSummary<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MountsSummary<
-  TData = Awaited<ReturnType<typeof getApiV1MountsSummary>>,
-  TError = GetApiV1MountsSummary500,
+export function useGetMountsSummary<
+  TData = Awaited<ReturnType<typeof getMountsSummary>>,
+  TError = GetMountsSummary500,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MountsSummary>>,
+        Awaited<ReturnType<typeof getMountsSummary>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1MountsSummary>>,
+          Awaited<ReturnType<typeof getMountsSummary>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1MountsSummary>>
+          Awaited<ReturnType<typeof getMountsSummary>>
         >,
         'initialData'
       >;
@@ -12036,14 +11830,14 @@ export function useGetApiV1MountsSummary<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1MountsSummary<
-  TData = Awaited<ReturnType<typeof getApiV1MountsSummary>>,
-  TError = GetApiV1MountsSummary500,
+export function useGetMountsSummary<
+  TData = Awaited<ReturnType<typeof getMountsSummary>>,
+  TError = GetMountsSummary500,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MountsSummary>>,
+        Awaited<ReturnType<typeof getMountsSummary>>,
         TError,
         TData
       >
@@ -12058,14 +11852,14 @@ export function useGetApiV1MountsSummary<
  * @summary Get mount catalog summary
  */
 
-export function useGetApiV1MountsSummary<
-  TData = Awaited<ReturnType<typeof getApiV1MountsSummary>>,
-  TError = GetApiV1MountsSummary500,
+export function useGetMountsSummary<
+  TData = Awaited<ReturnType<typeof getMountsSummary>>,
+  TError = GetMountsSummary500,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1MountsSummary>>,
+        Awaited<ReturnType<typeof getMountsSummary>>,
         TError,
         TData
       >
@@ -12076,7 +11870,7 @@ export function useGetApiV1MountsSummary<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1MountsSummaryQueryOptions(options);
+  const queryOptions = getGetMountsSummaryQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -12092,31 +11886,31 @@ export function useGetApiV1MountsSummary<
  * Retrieves paginated list of file operations for undo/rollback
  * @summary Get operation history
  */
-export type getApiV1OperationsResponse200 = {
+export type getOperationsResponse200 = {
   data: OperationHistory;
   status: 200;
 };
 
-export type getApiV1OperationsResponse400 = {
+export type getOperationsResponse400 = {
   data: ErrorResponse;
   status: 400;
 };
 
-export type getApiV1OperationsResponse500 = {
+export type getOperationsResponse500 = {
   data: ErrorResponse;
   status: 500;
 };
 
-export type getApiV1OperationsResponseComposite =
-  | getApiV1OperationsResponse200
-  | getApiV1OperationsResponse400
-  | getApiV1OperationsResponse500;
+export type getOperationsResponseComposite =
+  | getOperationsResponse200
+  | getOperationsResponse400
+  | getOperationsResponse500;
 
-export type getApiV1OperationsResponse = getApiV1OperationsResponseComposite & {
+export type getOperationsResponse = getOperationsResponseComposite & {
   headers: Headers;
 };
 
-export const getGetApiV1OperationsUrl = (params: GetApiV1OperationsParams) => {
+export const getGetOperationsUrl = (params: GetOperationsParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -12128,84 +11922,70 @@ export const getGetApiV1OperationsUrl = (params: GetApiV1OperationsParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/operations?${stringifiedParams}`
-    : `/api/v1/operations`;
+    ? `/operations?${stringifiedParams}`
+    : `/operations`;
 };
 
-export const getApiV1Operations = async (
-  params: GetApiV1OperationsParams,
+export const getOperations = async (
+  params: GetOperationsParams,
   options?: RequestInit,
-): Promise<getApiV1OperationsResponse> => {
-  return customFetchClient<getApiV1OperationsResponse>(
-    getGetApiV1OperationsUrl(params),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
+): Promise<getOperationsResponse> => {
+  return customFetchClient<getOperationsResponse>(getGetOperationsUrl(params), {
+    ...options,
+    method: 'GET',
+  });
 };
 
-export const getGetApiV1OperationsQueryKey = (
-  params?: GetApiV1OperationsParams,
-) => {
-  return [`/api/v1/operations`, ...(params ? [params] : [])] as const;
+export const getGetOperationsQueryKey = (params?: GetOperationsParams) => {
+  return [`/operations`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1OperationsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1Operations>>,
+export const getGetOperationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOperations>>,
   TError = ErrorResponse | ErrorResponse,
 >(
-  params: GetApiV1OperationsParams,
+  params: GetOperationsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1Operations>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getOperations>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1OperationsQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getGetOperationsQueryKey(params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1Operations>>
-  > = ({ signal }) => getApiV1Operations(params, { signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperations>>> = ({
+    signal,
+  }) => getOperations(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1Operations>>,
+    Awaited<ReturnType<typeof getOperations>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1OperationsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1Operations>>
+export type GetOperationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOperations>>
 >;
-export type GetApiV1OperationsQueryError = ErrorResponse | ErrorResponse;
+export type GetOperationsQueryError = ErrorResponse | ErrorResponse;
 
-export function useGetApiV1Operations<
-  TData = Awaited<ReturnType<typeof getApiV1Operations>>,
+export function useGetOperations<
+  TData = Awaited<ReturnType<typeof getOperations>>,
   TError = ErrorResponse | ErrorResponse,
 >(
-  params: GetApiV1OperationsParams,
+  params: GetOperationsParams,
   options: {
     query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1Operations>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getOperations>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1Operations>>,
+          Awaited<ReturnType<typeof getOperations>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1Operations>>
+          Awaited<ReturnType<typeof getOperations>>
         >,
         'initialData'
       >;
@@ -12215,24 +11995,20 @@ export function useGetApiV1Operations<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1Operations<
-  TData = Awaited<ReturnType<typeof getApiV1Operations>>,
+export function useGetOperations<
+  TData = Awaited<ReturnType<typeof getOperations>>,
   TError = ErrorResponse | ErrorResponse,
 >(
-  params: GetApiV1OperationsParams,
+  params: GetOperationsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1Operations>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getOperations>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1Operations>>,
+          Awaited<ReturnType<typeof getOperations>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1Operations>>
+          Awaited<ReturnType<typeof getOperations>>
         >,
         'initialData'
       >;
@@ -12242,18 +12018,14 @@ export function useGetApiV1Operations<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1Operations<
-  TData = Awaited<ReturnType<typeof getApiV1Operations>>,
+export function useGetOperations<
+  TData = Awaited<ReturnType<typeof getOperations>>,
   TError = ErrorResponse | ErrorResponse,
 >(
-  params: GetApiV1OperationsParams,
+  params: GetOperationsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1Operations>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getOperations>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -12265,18 +12037,14 @@ export function useGetApiV1Operations<
  * @summary Get operation history
  */
 
-export function useGetApiV1Operations<
-  TData = Awaited<ReturnType<typeof getApiV1Operations>>,
+export function useGetOperations<
+  TData = Awaited<ReturnType<typeof getOperations>>,
   TError = ErrorResponse | ErrorResponse,
 >(
-  params: GetApiV1OperationsParams,
+  params: GetOperationsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1Operations>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getOperations>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -12284,7 +12052,7 @@ export function useGetApiV1Operations<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1OperationsQueryOptions(params, options);
+  const queryOptions = getGetOperationsQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -12300,41 +12068,40 @@ export function useGetApiV1Operations<
  * Removes an operation from history and cleans up associated backups
  * @summary Delete operation
  */
-export type deleteApiV1OperationsIdResponse204 = {
+export type deleteOperationsIdResponse204 = {
   data: null;
   status: 204;
 };
 
-export type deleteApiV1OperationsIdResponse404 = {
+export type deleteOperationsIdResponse404 = {
   data: ErrorResponse;
   status: 404;
 };
 
-export type deleteApiV1OperationsIdResponse500 = {
+export type deleteOperationsIdResponse500 = {
   data: ErrorResponse;
   status: 500;
 };
 
-export type deleteApiV1OperationsIdResponseComposite =
-  | deleteApiV1OperationsIdResponse204
-  | deleteApiV1OperationsIdResponse404
-  | deleteApiV1OperationsIdResponse500;
+export type deleteOperationsIdResponseComposite =
+  | deleteOperationsIdResponse204
+  | deleteOperationsIdResponse404
+  | deleteOperationsIdResponse500;
 
-export type deleteApiV1OperationsIdResponse =
-  deleteApiV1OperationsIdResponseComposite & {
-    headers: Headers;
-  };
-
-export const getDeleteApiV1OperationsIdUrl = (id: string) => {
-  return `/api/v1/operations/${id}`;
+export type deleteOperationsIdResponse = deleteOperationsIdResponseComposite & {
+  headers: Headers;
 };
 
-export const deleteApiV1OperationsId = async (
+export const getDeleteOperationsIdUrl = (id: string) => {
+  return `/operations/${id}`;
+};
+
+export const deleteOperationsId = async (
   id: string,
   options?: RequestInit,
-): Promise<deleteApiV1OperationsIdResponse> => {
-  return customFetchClient<deleteApiV1OperationsIdResponse>(
-    getDeleteApiV1OperationsIdUrl(id),
+): Promise<deleteOperationsIdResponse> => {
+  return customFetchClient<deleteOperationsIdResponse>(
+    getDeleteOperationsIdUrl(id),
     {
       ...options,
       method: 'DELETE',
@@ -12342,24 +12109,24 @@ export const deleteApiV1OperationsId = async (
   );
 };
 
-export const getDeleteApiV1OperationsIdMutationOptions = <
+export const getDeleteOperationsIdMutationOptions = <
   TError = ErrorResponse | ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteApiV1OperationsId>>,
+    Awaited<ReturnType<typeof deleteOperationsId>>,
     TError,
     { id: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof deleteApiV1OperationsId>>,
+  Awaited<ReturnType<typeof deleteOperationsId>>,
   TError,
   { id: string },
   TContext
 > => {
-  const mutationKey = ['deleteApiV1OperationsId'];
+  const mutationKey = ['deleteOperationsId'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -12369,35 +12136,33 @@ export const getDeleteApiV1OperationsIdMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof deleteApiV1OperationsId>>,
+    Awaited<ReturnType<typeof deleteOperationsId>>,
     { id: string }
   > = (props) => {
     const { id } = props ?? {};
 
-    return deleteApiV1OperationsId(id, requestOptions);
+    return deleteOperationsId(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type DeleteApiV1OperationsIdMutationResult = NonNullable<
-  Awaited<ReturnType<typeof deleteApiV1OperationsId>>
+export type DeleteOperationsIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteOperationsId>>
 >;
 
-export type DeleteApiV1OperationsIdMutationError =
-  | ErrorResponse
-  | ErrorResponse;
+export type DeleteOperationsIdMutationError = ErrorResponse | ErrorResponse;
 
 /**
  * @summary Delete operation
  */
-export const useDeleteApiV1OperationsId = <
+export const useDeleteOperationsId = <
   TError = ErrorResponse | ErrorResponse,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof deleteApiV1OperationsId>>,
+      Awaited<ReturnType<typeof deleteOperationsId>>,
       TError,
       { id: string },
       TContext
@@ -12406,12 +12171,12 @@ export const useDeleteApiV1OperationsId = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof deleteApiV1OperationsId>>,
+  Awaited<ReturnType<typeof deleteOperationsId>>,
   TError,
   { id: string },
   TContext
 > => {
-  const mutationOptions = getDeleteApiV1OperationsIdMutationOptions(options);
+  const mutationOptions = getDeleteOperationsIdMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -12420,61 +12185,57 @@ export const useDeleteApiV1OperationsId = <
  * Retrieves detailed information about a specific operation
  * @summary Get operation details
  */
-export type getApiV1OperationsIdResponse200 = {
+export type getOperationsIdResponse200 = {
   data: Operation;
   status: 200;
 };
 
-export type getApiV1OperationsIdResponse404 = {
+export type getOperationsIdResponse404 = {
   data: ErrorResponse;
   status: 404;
 };
 
-export type getApiV1OperationsIdResponse500 = {
+export type getOperationsIdResponse500 = {
   data: ErrorResponse;
   status: 500;
 };
 
-export type getApiV1OperationsIdResponseComposite =
-  | getApiV1OperationsIdResponse200
-  | getApiV1OperationsIdResponse404
-  | getApiV1OperationsIdResponse500;
+export type getOperationsIdResponseComposite =
+  | getOperationsIdResponse200
+  | getOperationsIdResponse404
+  | getOperationsIdResponse500;
 
-export type getApiV1OperationsIdResponse =
-  getApiV1OperationsIdResponseComposite & {
-    headers: Headers;
-  };
-
-export const getGetApiV1OperationsIdUrl = (id: string) => {
-  return `/api/v1/operations/${id}`;
+export type getOperationsIdResponse = getOperationsIdResponseComposite & {
+  headers: Headers;
 };
 
-export const getApiV1OperationsId = async (
+export const getGetOperationsIdUrl = (id: string) => {
+  return `/operations/${id}`;
+};
+
+export const getOperationsId = async (
   id: string,
   options?: RequestInit,
-): Promise<getApiV1OperationsIdResponse> => {
-  return customFetchClient<getApiV1OperationsIdResponse>(
-    getGetApiV1OperationsIdUrl(id),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
+): Promise<getOperationsIdResponse> => {
+  return customFetchClient<getOperationsIdResponse>(getGetOperationsIdUrl(id), {
+    ...options,
+    method: 'GET',
+  });
 };
 
-export const getGetApiV1OperationsIdQueryKey = (id?: string) => {
-  return [`/api/v1/operations/${id}`] as const;
+export const getGetOperationsIdQueryKey = (id?: string) => {
+  return [`/operations/${id}`] as const;
 };
 
-export const getGetApiV1OperationsIdQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1OperationsId>>,
+export const getGetOperationsIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOperationsId>>,
   TError = ErrorResponse | ErrorResponse,
 >(
   id: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OperationsId>>,
+        Awaited<ReturnType<typeof getOperationsId>>,
         TError,
         TData
       >
@@ -12484,12 +12245,11 @@ export const getGetApiV1OperationsIdQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1OperationsIdQueryKey(id);
+  const queryKey = queryOptions?.queryKey ?? getGetOperationsIdQueryKey(id);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1OperationsId>>
-  > = ({ signal }) => getApiV1OperationsId(id, { signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationsId>>> = ({
+    signal,
+  }) => getOperationsId(id, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -12497,35 +12257,35 @@ export const getGetApiV1OperationsIdQueryOptions = <
     enabled: !!id,
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1OperationsId>>,
+    Awaited<ReturnType<typeof getOperationsId>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1OperationsIdQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1OperationsId>>
+export type GetOperationsIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOperationsId>>
 >;
-export type GetApiV1OperationsIdQueryError = ErrorResponse | ErrorResponse;
+export type GetOperationsIdQueryError = ErrorResponse | ErrorResponse;
 
-export function useGetApiV1OperationsId<
-  TData = Awaited<ReturnType<typeof getApiV1OperationsId>>,
+export function useGetOperationsId<
+  TData = Awaited<ReturnType<typeof getOperationsId>>,
   TError = ErrorResponse | ErrorResponse,
 >(
   id: string,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OperationsId>>,
+        Awaited<ReturnType<typeof getOperationsId>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1OperationsId>>,
+          Awaited<ReturnType<typeof getOperationsId>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1OperationsId>>
+          Awaited<ReturnType<typeof getOperationsId>>
         >,
         'initialData'
       >;
@@ -12535,24 +12295,24 @@ export function useGetApiV1OperationsId<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1OperationsId<
-  TData = Awaited<ReturnType<typeof getApiV1OperationsId>>,
+export function useGetOperationsId<
+  TData = Awaited<ReturnType<typeof getOperationsId>>,
   TError = ErrorResponse | ErrorResponse,
 >(
   id: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OperationsId>>,
+        Awaited<ReturnType<typeof getOperationsId>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1OperationsId>>,
+          Awaited<ReturnType<typeof getOperationsId>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1OperationsId>>
+          Awaited<ReturnType<typeof getOperationsId>>
         >,
         'initialData'
       >;
@@ -12562,15 +12322,15 @@ export function useGetApiV1OperationsId<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1OperationsId<
-  TData = Awaited<ReturnType<typeof getApiV1OperationsId>>,
+export function useGetOperationsId<
+  TData = Awaited<ReturnType<typeof getOperationsId>>,
   TError = ErrorResponse | ErrorResponse,
 >(
   id: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OperationsId>>,
+        Awaited<ReturnType<typeof getOperationsId>>,
         TError,
         TData
       >
@@ -12585,15 +12345,15 @@ export function useGetApiV1OperationsId<
  * @summary Get operation details
  */
 
-export function useGetApiV1OperationsId<
-  TData = Awaited<ReturnType<typeof getApiV1OperationsId>>,
+export function useGetOperationsId<
+  TData = Awaited<ReturnType<typeof getOperationsId>>,
   TError = ErrorResponse | ErrorResponse,
 >(
   id: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OperationsId>>,
+        Awaited<ReturnType<typeof getOperationsId>>,
         TError,
         TData
       >
@@ -12604,7 +12364,7 @@ export function useGetApiV1OperationsId<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1OperationsIdQueryOptions(id, options);
+  const queryOptions = getGetOperationsIdQueryOptions(id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -12620,48 +12380,48 @@ export function useGetApiV1OperationsId<
  * Rolls back a completed operation or specific actions within it
  * @summary Rollback operation
  */
-export type postApiV1OperationsIdRollbackResponse200 = {
+export type postOperationsIdRollbackResponse200 = {
   data: RollbackResponse;
   status: 200;
 };
 
-export type postApiV1OperationsIdRollbackResponse400 = {
+export type postOperationsIdRollbackResponse400 = {
   data: ErrorResponse;
   status: 400;
 };
 
-export type postApiV1OperationsIdRollbackResponse404 = {
+export type postOperationsIdRollbackResponse404 = {
   data: ErrorResponse;
   status: 404;
 };
 
-export type postApiV1OperationsIdRollbackResponse500 = {
+export type postOperationsIdRollbackResponse500 = {
   data: ErrorResponse;
   status: 500;
 };
 
-export type postApiV1OperationsIdRollbackResponseComposite =
-  | postApiV1OperationsIdRollbackResponse200
-  | postApiV1OperationsIdRollbackResponse400
-  | postApiV1OperationsIdRollbackResponse404
-  | postApiV1OperationsIdRollbackResponse500;
+export type postOperationsIdRollbackResponseComposite =
+  | postOperationsIdRollbackResponse200
+  | postOperationsIdRollbackResponse400
+  | postOperationsIdRollbackResponse404
+  | postOperationsIdRollbackResponse500;
 
-export type postApiV1OperationsIdRollbackResponse =
-  postApiV1OperationsIdRollbackResponseComposite & {
+export type postOperationsIdRollbackResponse =
+  postOperationsIdRollbackResponseComposite & {
     headers: Headers;
   };
 
-export const getPostApiV1OperationsIdRollbackUrl = (id: string) => {
-  return `/api/v1/operations/${id}/rollback`;
+export const getPostOperationsIdRollbackUrl = (id: string) => {
+  return `/operations/${id}/rollback`;
 };
 
-export const postApiV1OperationsIdRollback = async (
+export const postOperationsIdRollback = async (
   id: string,
   rollbackRequest: RollbackRequest,
   options?: RequestInit,
-): Promise<postApiV1OperationsIdRollbackResponse> => {
-  return customFetchClient<postApiV1OperationsIdRollbackResponse>(
-    getPostApiV1OperationsIdRollbackUrl(id),
+): Promise<postOperationsIdRollbackResponse> => {
+  return customFetchClient<postOperationsIdRollbackResponse>(
+    getPostOperationsIdRollbackUrl(id),
     {
       ...options,
       method: 'POST',
@@ -12671,24 +12431,24 @@ export const postApiV1OperationsIdRollback = async (
   );
 };
 
-export const getPostApiV1OperationsIdRollbackMutationOptions = <
+export const getPostOperationsIdRollbackMutationOptions = <
   TError = ErrorResponse | ErrorResponse | ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>,
+    Awaited<ReturnType<typeof postOperationsIdRollback>>,
     TError,
     { id: string; data: RollbackRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>,
+  Awaited<ReturnType<typeof postOperationsIdRollback>>,
   TError,
   { id: string; data: RollbackRequest },
   TContext
 > => {
-  const mutationKey = ['postApiV1OperationsIdRollback'];
+  const mutationKey = ['postOperationsIdRollback'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -12698,22 +12458,22 @@ export const getPostApiV1OperationsIdRollbackMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>,
+    Awaited<ReturnType<typeof postOperationsIdRollback>>,
     { id: string; data: RollbackRequest }
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return postApiV1OperationsIdRollback(id, data, requestOptions);
+    return postOperationsIdRollback(id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1OperationsIdRollbackMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>
+export type PostOperationsIdRollbackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postOperationsIdRollback>>
 >;
-export type PostApiV1OperationsIdRollbackMutationBody = RollbackRequest;
-export type PostApiV1OperationsIdRollbackMutationError =
+export type PostOperationsIdRollbackMutationBody = RollbackRequest;
+export type PostOperationsIdRollbackMutationError =
   | ErrorResponse
   | ErrorResponse
   | ErrorResponse;
@@ -12721,13 +12481,13 @@ export type PostApiV1OperationsIdRollbackMutationError =
 /**
  * @summary Rollback operation
  */
-export const usePostApiV1OperationsIdRollback = <
+export const usePostOperationsIdRollback = <
   TError = ErrorResponse | ErrorResponse | ErrorResponse,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>,
+      Awaited<ReturnType<typeof postOperationsIdRollback>>,
       TError,
       { id: string; data: RollbackRequest },
       TContext
@@ -12736,13 +12496,12 @@ export const usePostApiV1OperationsIdRollback = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1OperationsIdRollback>>,
+  Awaited<ReturnType<typeof postOperationsIdRollback>>,
   TError,
   { id: string; data: RollbackRequest },
   TContext
 > => {
-  const mutationOptions =
-    getPostApiV1OperationsIdRollbackMutationOptions(options);
+  const mutationOptions = getPostOperationsIdRollbackMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -12751,33 +12510,33 @@ export const usePostApiV1OperationsIdRollback = <
  * Removes old backup files based on retention policy
  * @summary Cleanup backup files
  */
-export type postApiV1OperationsCleanupResponse200 = {
-  data: PostApiV1OperationsCleanup200;
+export type postOperationsCleanupResponse200 = {
+  data: PostOperationsCleanup200;
   status: 200;
 };
 
-export type postApiV1OperationsCleanupResponse400 = {
+export type postOperationsCleanupResponse400 = {
   data: ErrorResponse;
   status: 400;
 };
 
-export type postApiV1OperationsCleanupResponse500 = {
+export type postOperationsCleanupResponse500 = {
   data: ErrorResponse;
   status: 500;
 };
 
-export type postApiV1OperationsCleanupResponseComposite =
-  | postApiV1OperationsCleanupResponse200
-  | postApiV1OperationsCleanupResponse400
-  | postApiV1OperationsCleanupResponse500;
+export type postOperationsCleanupResponseComposite =
+  | postOperationsCleanupResponse200
+  | postOperationsCleanupResponse400
+  | postOperationsCleanupResponse500;
 
-export type postApiV1OperationsCleanupResponse =
-  postApiV1OperationsCleanupResponseComposite & {
+export type postOperationsCleanupResponse =
+  postOperationsCleanupResponseComposite & {
     headers: Headers;
   };
 
-export const getPostApiV1OperationsCleanupUrl = (
-  params?: PostApiV1OperationsCleanupParams,
+export const getPostOperationsCleanupUrl = (
+  params?: PostOperationsCleanupParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -12790,16 +12549,16 @@ export const getPostApiV1OperationsCleanupUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/operations/cleanup?${stringifiedParams}`
-    : `/api/v1/operations/cleanup`;
+    ? `/operations/cleanup?${stringifiedParams}`
+    : `/operations/cleanup`;
 };
 
-export const postApiV1OperationsCleanup = async (
-  params?: PostApiV1OperationsCleanupParams,
+export const postOperationsCleanup = async (
+  params?: PostOperationsCleanupParams,
   options?: RequestInit,
-): Promise<postApiV1OperationsCleanupResponse> => {
-  return customFetchClient<postApiV1OperationsCleanupResponse>(
-    getPostApiV1OperationsCleanupUrl(params),
+): Promise<postOperationsCleanupResponse> => {
+  return customFetchClient<postOperationsCleanupResponse>(
+    getPostOperationsCleanupUrl(params),
     {
       ...options,
       method: 'POST',
@@ -12807,24 +12566,24 @@ export const postApiV1OperationsCleanup = async (
   );
 };
 
-export const getPostApiV1OperationsCleanupMutationOptions = <
+export const getPostOperationsCleanupMutationOptions = <
   TError = ErrorResponse | ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1OperationsCleanup>>,
+    Awaited<ReturnType<typeof postOperationsCleanup>>,
     TError,
-    { params?: PostApiV1OperationsCleanupParams },
+    { params?: PostOperationsCleanupParams },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1OperationsCleanup>>,
+  Awaited<ReturnType<typeof postOperationsCleanup>>,
   TError,
-  { params?: PostApiV1OperationsCleanupParams },
+  { params?: PostOperationsCleanupParams },
   TContext
 > => {
-  const mutationKey = ['postApiV1OperationsCleanup'];
+  const mutationKey = ['postOperationsCleanup'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -12834,49 +12593,47 @@ export const getPostApiV1OperationsCleanupMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1OperationsCleanup>>,
-    { params?: PostApiV1OperationsCleanupParams }
+    Awaited<ReturnType<typeof postOperationsCleanup>>,
+    { params?: PostOperationsCleanupParams }
   > = (props) => {
     const { params } = props ?? {};
 
-    return postApiV1OperationsCleanup(params, requestOptions);
+    return postOperationsCleanup(params, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1OperationsCleanupMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1OperationsCleanup>>
+export type PostOperationsCleanupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postOperationsCleanup>>
 >;
 
-export type PostApiV1OperationsCleanupMutationError =
-  | ErrorResponse
-  | ErrorResponse;
+export type PostOperationsCleanupMutationError = ErrorResponse | ErrorResponse;
 
 /**
  * @summary Cleanup backup files
  */
-export const usePostApiV1OperationsCleanup = <
+export const usePostOperationsCleanup = <
   TError = ErrorResponse | ErrorResponse,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1OperationsCleanup>>,
+      Awaited<ReturnType<typeof postOperationsCleanup>>,
       TError,
-      { params?: PostApiV1OperationsCleanupParams },
+      { params?: PostOperationsCleanupParams },
       TContext
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1OperationsCleanup>>,
+  Awaited<ReturnType<typeof postOperationsCleanup>>,
   TError,
-  { params?: PostApiV1OperationsCleanupParams },
+  { params?: PostOperationsCleanupParams },
   TContext
 > => {
-  const mutationOptions = getPostApiV1OperationsCleanupMutationOptions(options);
+  const mutationOptions = getPostOperationsCleanupMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -12885,41 +12642,40 @@ export const usePostApiV1OperationsCleanup = <
  * Get organization details by ID
  * @summary Get organization by ID
  */
-export type getApiV1OrganizationsIdResponse200 = {
+export type getOrganizationsIdResponse200 = {
   data: InternalApiV1OrganizationsOrganizationResponse;
   status: 200;
 };
 
-export type getApiV1OrganizationsIdResponse404 = {
-  data: GetApiV1OrganizationsId404;
+export type getOrganizationsIdResponse404 = {
+  data: GetOrganizationsId404;
   status: 404;
 };
 
-export type getApiV1OrganizationsIdResponse500 = {
-  data: GetApiV1OrganizationsId500;
+export type getOrganizationsIdResponse500 = {
+  data: GetOrganizationsId500;
   status: 500;
 };
 
-export type getApiV1OrganizationsIdResponseComposite =
-  | getApiV1OrganizationsIdResponse200
-  | getApiV1OrganizationsIdResponse404
-  | getApiV1OrganizationsIdResponse500;
+export type getOrganizationsIdResponseComposite =
+  | getOrganizationsIdResponse200
+  | getOrganizationsIdResponse404
+  | getOrganizationsIdResponse500;
 
-export type getApiV1OrganizationsIdResponse =
-  getApiV1OrganizationsIdResponseComposite & {
-    headers: Headers;
-  };
-
-export const getGetApiV1OrganizationsIdUrl = (id: number) => {
-  return `/api/v1/organizations/${id}`;
+export type getOrganizationsIdResponse = getOrganizationsIdResponseComposite & {
+  headers: Headers;
 };
 
-export const getApiV1OrganizationsId = async (
+export const getGetOrganizationsIdUrl = (id: number) => {
+  return `/organizations/${id}`;
+};
+
+export const getOrganizationsId = async (
   id: number,
   options?: RequestInit,
-): Promise<getApiV1OrganizationsIdResponse> => {
-  return customFetchClient<getApiV1OrganizationsIdResponse>(
-    getGetApiV1OrganizationsIdUrl(id),
+): Promise<getOrganizationsIdResponse> => {
+  return customFetchClient<getOrganizationsIdResponse>(
+    getGetOrganizationsIdUrl(id),
     {
       ...options,
       method: 'GET',
@@ -12927,19 +12683,19 @@ export const getApiV1OrganizationsId = async (
   );
 };
 
-export const getGetApiV1OrganizationsIdQueryKey = (id?: number) => {
-  return [`/api/v1/organizations/${id}`] as const;
+export const getGetOrganizationsIdQueryKey = (id?: number) => {
+  return [`/organizations/${id}`] as const;
 };
 
-export const getGetApiV1OrganizationsIdQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
-  TError = GetApiV1OrganizationsId404 | GetApiV1OrganizationsId500,
+export const getGetOrganizationsIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOrganizationsId>>,
+  TError = GetOrganizationsId404 | GetOrganizationsId500,
 >(
   id: number,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+        Awaited<ReturnType<typeof getOrganizationsId>>,
         TError,
         TData
       >
@@ -12949,13 +12705,11 @@ export const getGetApiV1OrganizationsIdQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1OrganizationsIdQueryKey(id);
+  const queryKey = queryOptions?.queryKey ?? getGetOrganizationsIdQueryKey(id);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1OrganizationsId>>
-  > = ({ signal }) =>
-    getApiV1OrganizationsId(id, { signal, ...requestOptions });
+    Awaited<ReturnType<typeof getOrganizationsId>>
+  > = ({ signal }) => getOrganizationsId(id, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -12963,37 +12717,37 @@ export const getGetApiV1OrganizationsIdQueryOptions = <
     enabled: !!id,
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+    Awaited<ReturnType<typeof getOrganizationsId>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1OrganizationsIdQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1OrganizationsId>>
+export type GetOrganizationsIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOrganizationsId>>
 >;
-export type GetApiV1OrganizationsIdQueryError =
-  | GetApiV1OrganizationsId404
-  | GetApiV1OrganizationsId500;
+export type GetOrganizationsIdQueryError =
+  | GetOrganizationsId404
+  | GetOrganizationsId500;
 
-export function useGetApiV1OrganizationsId<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
-  TError = GetApiV1OrganizationsId404 | GetApiV1OrganizationsId500,
+export function useGetOrganizationsId<
+  TData = Awaited<ReturnType<typeof getOrganizationsId>>,
+  TError = GetOrganizationsId404 | GetOrganizationsId500,
 >(
   id: number,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+        Awaited<ReturnType<typeof getOrganizationsId>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+          Awaited<ReturnType<typeof getOrganizationsId>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1OrganizationsId>>
+          Awaited<ReturnType<typeof getOrganizationsId>>
         >,
         'initialData'
       >;
@@ -13003,24 +12757,24 @@ export function useGetApiV1OrganizationsId<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1OrganizationsId<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
-  TError = GetApiV1OrganizationsId404 | GetApiV1OrganizationsId500,
+export function useGetOrganizationsId<
+  TData = Awaited<ReturnType<typeof getOrganizationsId>>,
+  TError = GetOrganizationsId404 | GetOrganizationsId500,
 >(
   id: number,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+        Awaited<ReturnType<typeof getOrganizationsId>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+          Awaited<ReturnType<typeof getOrganizationsId>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1OrganizationsId>>
+          Awaited<ReturnType<typeof getOrganizationsId>>
         >,
         'initialData'
       >;
@@ -13030,15 +12784,15 @@ export function useGetApiV1OrganizationsId<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1OrganizationsId<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
-  TError = GetApiV1OrganizationsId404 | GetApiV1OrganizationsId500,
+export function useGetOrganizationsId<
+  TData = Awaited<ReturnType<typeof getOrganizationsId>>,
+  TError = GetOrganizationsId404 | GetOrganizationsId500,
 >(
   id: number,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+        Awaited<ReturnType<typeof getOrganizationsId>>,
         TError,
         TData
       >
@@ -13053,15 +12807,15 @@ export function useGetApiV1OrganizationsId<
  * @summary Get organization by ID
  */
 
-export function useGetApiV1OrganizationsId<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
-  TError = GetApiV1OrganizationsId404 | GetApiV1OrganizationsId500,
+export function useGetOrganizationsId<
+  TData = Awaited<ReturnType<typeof getOrganizationsId>>,
+  TError = GetOrganizationsId404 | GetOrganizationsId500,
 >(
   id: number,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsId>>,
+        Awaited<ReturnType<typeof getOrganizationsId>>,
         TError,
         TData
       >
@@ -13072,7 +12826,7 @@ export function useGetApiV1OrganizationsId<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1OrganizationsIdQueryOptions(id, options);
+  const queryOptions = getGetOrganizationsIdQueryOptions(id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -13085,37 +12839,362 @@ export function useGetApiV1OrganizationsId<
 }
 
 /**
+ * Delete an organization by ID (admin only)
+ * @summary Delete organization
+ */
+export type deleteOrganizationsIdResponse204 = {
+  data: null;
+  status: 204;
+};
+
+export type deleteOrganizationsIdResponse400 = {
+  data: DeleteOrganizationsId400;
+  status: 400;
+};
+
+export type deleteOrganizationsIdResponse401 = {
+  data: DeleteOrganizationsId401;
+  status: 401;
+};
+
+export type deleteOrganizationsIdResponse403 = {
+  data: DeleteOrganizationsId403;
+  status: 403;
+};
+
+export type deleteOrganizationsIdResponse404 = {
+  data: DeleteOrganizationsId404;
+  status: 404;
+};
+
+export type deleteOrganizationsIdResponse409 = {
+  data: DeleteOrganizationsId409;
+  status: 409;
+};
+
+export type deleteOrganizationsIdResponse500 = {
+  data: DeleteOrganizationsId500;
+  status: 500;
+};
+
+export type deleteOrganizationsIdResponseComposite =
+  | deleteOrganizationsIdResponse204
+  | deleteOrganizationsIdResponse400
+  | deleteOrganizationsIdResponse401
+  | deleteOrganizationsIdResponse403
+  | deleteOrganizationsIdResponse404
+  | deleteOrganizationsIdResponse409
+  | deleteOrganizationsIdResponse500;
+
+export type deleteOrganizationsIdResponse =
+  deleteOrganizationsIdResponseComposite & {
+    headers: Headers;
+  };
+
+export const getDeleteOrganizationsIdUrl = (id: number) => {
+  return `/organizations/${id}`;
+};
+
+export const deleteOrganizationsId = async (
+  id: number,
+  options?: RequestInit,
+): Promise<deleteOrganizationsIdResponse> => {
+  return customFetchClient<deleteOrganizationsIdResponse>(
+    getDeleteOrganizationsIdUrl(id),
+    {
+      ...options,
+      method: 'DELETE',
+    },
+  );
+};
+
+export const getDeleteOrganizationsIdMutationOptions = <
+  TError =
+    | DeleteOrganizationsId400
+    | DeleteOrganizationsId401
+    | DeleteOrganizationsId403
+    | DeleteOrganizationsId404
+    | DeleteOrganizationsId409
+    | DeleteOrganizationsId500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOrganizationsId>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteOrganizationsId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ['deleteOrganizationsId'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteOrganizationsId>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteOrganizationsId(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteOrganizationsIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteOrganizationsId>>
+>;
+
+export type DeleteOrganizationsIdMutationError =
+  | DeleteOrganizationsId400
+  | DeleteOrganizationsId401
+  | DeleteOrganizationsId403
+  | DeleteOrganizationsId404
+  | DeleteOrganizationsId409
+  | DeleteOrganizationsId500;
+
+/**
+ * @summary Delete organization
+ */
+export const useDeleteOrganizationsId = <
+  TError =
+    | DeleteOrganizationsId400
+    | DeleteOrganizationsId401
+    | DeleteOrganizationsId403
+    | DeleteOrganizationsId404
+    | DeleteOrganizationsId409
+    | DeleteOrganizationsId500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteOrganizationsId>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteOrganizationsId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationOptions = getDeleteOrganizationsIdMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Update organization details by ID (admin only)
+ * @summary Update organization
+ */
+export type putOrganizationsIdResponse200 = {
+  data: InternalApiV1OrganizationsOrganizationResponse;
+  status: 200;
+};
+
+export type putOrganizationsIdResponse400 = {
+  data: PutOrganizationsId400;
+  status: 400;
+};
+
+export type putOrganizationsIdResponse401 = {
+  data: PutOrganizationsId401;
+  status: 401;
+};
+
+export type putOrganizationsIdResponse403 = {
+  data: PutOrganizationsId403;
+  status: 403;
+};
+
+export type putOrganizationsIdResponse404 = {
+  data: PutOrganizationsId404;
+  status: 404;
+};
+
+export type putOrganizationsIdResponse500 = {
+  data: PutOrganizationsId500;
+  status: 500;
+};
+
+export type putOrganizationsIdResponseComposite =
+  | putOrganizationsIdResponse200
+  | putOrganizationsIdResponse400
+  | putOrganizationsIdResponse401
+  | putOrganizationsIdResponse403
+  | putOrganizationsIdResponse404
+  | putOrganizationsIdResponse500;
+
+export type putOrganizationsIdResponse = putOrganizationsIdResponseComposite & {
+  headers: Headers;
+};
+
+export const getPutOrganizationsIdUrl = (id: number) => {
+  return `/organizations/${id}`;
+};
+
+export const putOrganizationsId = async (
+  id: number,
+  internalApiV1OrganizationsUpdateOrganizationRequestBody: InternalApiV1OrganizationsUpdateOrganizationRequestBody,
+  options?: RequestInit,
+): Promise<putOrganizationsIdResponse> => {
+  return customFetchClient<putOrganizationsIdResponse>(
+    getPutOrganizationsIdUrl(id),
+    {
+      ...options,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(
+        internalApiV1OrganizationsUpdateOrganizationRequestBody,
+      ),
+    },
+  );
+};
+
+export const getPutOrganizationsIdMutationOptions = <
+  TError =
+    | PutOrganizationsId400
+    | PutOrganizationsId401
+    | PutOrganizationsId403
+    | PutOrganizationsId404
+    | PutOrganizationsId500,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof putOrganizationsId>>,
+    TError,
+    {
+      id: number;
+      data: InternalApiV1OrganizationsUpdateOrganizationRequestBody;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetchClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof putOrganizationsId>>,
+  TError,
+  { id: number; data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
+  TContext
+> => {
+  const mutationKey = ['putOrganizationsId'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof putOrganizationsId>>,
+    {
+      id: number;
+      data: InternalApiV1OrganizationsUpdateOrganizationRequestBody;
+    }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return putOrganizationsId(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PutOrganizationsIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putOrganizationsId>>
+>;
+export type PutOrganizationsIdMutationBody =
+  InternalApiV1OrganizationsUpdateOrganizationRequestBody;
+export type PutOrganizationsIdMutationError =
+  | PutOrganizationsId400
+  | PutOrganizationsId401
+  | PutOrganizationsId403
+  | PutOrganizationsId404
+  | PutOrganizationsId500;
+
+/**
+ * @summary Update organization
+ */
+export const usePutOrganizationsId = <
+  TError =
+    | PutOrganizationsId400
+    | PutOrganizationsId401
+    | PutOrganizationsId403
+    | PutOrganizationsId404
+    | PutOrganizationsId500,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof putOrganizationsId>>,
+      TError,
+      {
+        id: number;
+        data: InternalApiV1OrganizationsUpdateOrganizationRequestBody;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetchClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof putOrganizationsId>>,
+  TError,
+  { id: number; data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
+  TContext
+> => {
+  const mutationOptions = getPutOrganizationsIdMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
  * Get organization usage statistics
  * @summary Get organization statistics
  */
-export type getApiV1OrganizationsIdStatsResponse200 = {
+export type getOrganizationsIdStatsResponse200 = {
   data: InternalApiV1OrganizationsOrganizationWithStatsResponse;
   status: 200;
 };
 
-export type getApiV1OrganizationsIdStatsResponse404 = {
-  data: GetApiV1OrganizationsIdStats404;
+export type getOrganizationsIdStatsResponse404 = {
+  data: GetOrganizationsIdStats404;
   status: 404;
 };
 
-export type getApiV1OrganizationsIdStatsResponse500 = {
-  data: GetApiV1OrganizationsIdStats500;
+export type getOrganizationsIdStatsResponse500 = {
+  data: GetOrganizationsIdStats500;
   status: 500;
 };
 
-export type getApiV1OrganizationsIdStatsResponseComposite =
-  | getApiV1OrganizationsIdStatsResponse200
-  | getApiV1OrganizationsIdStatsResponse404
-  | getApiV1OrganizationsIdStatsResponse500;
+export type getOrganizationsIdStatsResponseComposite =
+  | getOrganizationsIdStatsResponse200
+  | getOrganizationsIdStatsResponse404
+  | getOrganizationsIdStatsResponse500;
 
-export type getApiV1OrganizationsIdStatsResponse =
-  getApiV1OrganizationsIdStatsResponseComposite & {
+export type getOrganizationsIdStatsResponse =
+  getOrganizationsIdStatsResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1OrganizationsIdStatsUrl = (
+export const getGetOrganizationsIdStatsUrl = (
   id: number,
-  params?: GetApiV1OrganizationsIdStatsParams,
+  params?: GetOrganizationsIdStatsParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -13128,17 +13207,17 @@ export const getGetApiV1OrganizationsIdStatsUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/organizations/${id}/stats?${stringifiedParams}`
-    : `/api/v1/organizations/${id}/stats`;
+    ? `/organizations/${id}/stats?${stringifiedParams}`
+    : `/organizations/${id}/stats`;
 };
 
-export const getApiV1OrganizationsIdStats = async (
+export const getOrganizationsIdStats = async (
   id: number,
-  params?: GetApiV1OrganizationsIdStatsParams,
+  params?: GetOrganizationsIdStatsParams,
   options?: RequestInit,
-): Promise<getApiV1OrganizationsIdStatsResponse> => {
-  return customFetchClient<getApiV1OrganizationsIdStatsResponse>(
-    getGetApiV1OrganizationsIdStatsUrl(id, params),
+): Promise<getOrganizationsIdStatsResponse> => {
+  return customFetchClient<getOrganizationsIdStatsResponse>(
+    getGetOrganizationsIdStatsUrl(id, params),
     {
       ...options,
       method: 'GET',
@@ -13146,26 +13225,23 @@ export const getApiV1OrganizationsIdStats = async (
   );
 };
 
-export const getGetApiV1OrganizationsIdStatsQueryKey = (
+export const getGetOrganizationsIdStatsQueryKey = (
   id?: number,
-  params?: GetApiV1OrganizationsIdStatsParams,
+  params?: GetOrganizationsIdStatsParams,
 ) => {
-  return [
-    `/api/v1/organizations/${id}/stats`,
-    ...(params ? [params] : []),
-  ] as const;
+  return [`/organizations/${id}/stats`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1OrganizationsIdStatsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
-  TError = GetApiV1OrganizationsIdStats404 | GetApiV1OrganizationsIdStats500,
+export const getGetOrganizationsIdStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOrganizationsIdStats>>,
+  TError = GetOrganizationsIdStats404 | GetOrganizationsIdStats500,
 >(
   id: number,
-  params?: GetApiV1OrganizationsIdStatsParams,
+  params?: GetOrganizationsIdStatsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+        Awaited<ReturnType<typeof getOrganizationsIdStats>>,
         TError,
         TData
       >
@@ -13176,13 +13252,12 @@ export const getGetApiV1OrganizationsIdStatsQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ??
-    getGetApiV1OrganizationsIdStatsQueryKey(id, params);
+    queryOptions?.queryKey ?? getGetOrganizationsIdStatsQueryKey(id, params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>
+    Awaited<ReturnType<typeof getOrganizationsIdStats>>
   > = ({ signal }) =>
-    getApiV1OrganizationsIdStats(id, params, { signal, ...requestOptions });
+    getOrganizationsIdStats(id, params, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -13190,38 +13265,38 @@ export const getGetApiV1OrganizationsIdStatsQueryOptions = <
     enabled: !!id,
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+    Awaited<ReturnType<typeof getOrganizationsIdStats>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1OrganizationsIdStatsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>
+export type GetOrganizationsIdStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOrganizationsIdStats>>
 >;
-export type GetApiV1OrganizationsIdStatsQueryError =
-  | GetApiV1OrganizationsIdStats404
-  | GetApiV1OrganizationsIdStats500;
+export type GetOrganizationsIdStatsQueryError =
+  | GetOrganizationsIdStats404
+  | GetOrganizationsIdStats500;
 
-export function useGetApiV1OrganizationsIdStats<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
-  TError = GetApiV1OrganizationsIdStats404 | GetApiV1OrganizationsIdStats500,
+export function useGetOrganizationsIdStats<
+  TData = Awaited<ReturnType<typeof getOrganizationsIdStats>>,
+  TError = GetOrganizationsIdStats404 | GetOrganizationsIdStats500,
 >(
   id: number,
-  params: undefined | GetApiV1OrganizationsIdStatsParams,
+  params: undefined | GetOrganizationsIdStatsParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+        Awaited<ReturnType<typeof getOrganizationsIdStats>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+          Awaited<ReturnType<typeof getOrganizationsIdStats>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>
+          Awaited<ReturnType<typeof getOrganizationsIdStats>>
         >,
         'initialData'
       >;
@@ -13231,25 +13306,25 @@ export function useGetApiV1OrganizationsIdStats<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1OrganizationsIdStats<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
-  TError = GetApiV1OrganizationsIdStats404 | GetApiV1OrganizationsIdStats500,
+export function useGetOrganizationsIdStats<
+  TData = Awaited<ReturnType<typeof getOrganizationsIdStats>>,
+  TError = GetOrganizationsIdStats404 | GetOrganizationsIdStats500,
 >(
   id: number,
-  params?: GetApiV1OrganizationsIdStatsParams,
+  params?: GetOrganizationsIdStatsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+        Awaited<ReturnType<typeof getOrganizationsIdStats>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+          Awaited<ReturnType<typeof getOrganizationsIdStats>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>
+          Awaited<ReturnType<typeof getOrganizationsIdStats>>
         >,
         'initialData'
       >;
@@ -13259,16 +13334,16 @@ export function useGetApiV1OrganizationsIdStats<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1OrganizationsIdStats<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
-  TError = GetApiV1OrganizationsIdStats404 | GetApiV1OrganizationsIdStats500,
+export function useGetOrganizationsIdStats<
+  TData = Awaited<ReturnType<typeof getOrganizationsIdStats>>,
+  TError = GetOrganizationsIdStats404 | GetOrganizationsIdStats500,
 >(
   id: number,
-  params?: GetApiV1OrganizationsIdStatsParams,
+  params?: GetOrganizationsIdStatsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+        Awaited<ReturnType<typeof getOrganizationsIdStats>>,
         TError,
         TData
       >
@@ -13283,16 +13358,16 @@ export function useGetApiV1OrganizationsIdStats<
  * @summary Get organization statistics
  */
 
-export function useGetApiV1OrganizationsIdStats<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
-  TError = GetApiV1OrganizationsIdStats404 | GetApiV1OrganizationsIdStats500,
+export function useGetOrganizationsIdStats<
+  TData = Awaited<ReturnType<typeof getOrganizationsIdStats>>,
+  TError = GetOrganizationsIdStats404 | GetOrganizationsIdStats500,
 >(
   id: number,
-  params?: GetApiV1OrganizationsIdStatsParams,
+  params?: GetOrganizationsIdStatsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsIdStats>>,
+        Awaited<ReturnType<typeof getOrganizationsIdStats>>,
         TError,
         TData
       >
@@ -13303,7 +13378,7 @@ export function useGetApiV1OrganizationsIdStats<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1OrganizationsIdStatsQueryOptions(
+  const queryOptions = getGetOrganizationsIdStatsQueryOptions(
     id,
     params,
     options,
@@ -13323,46 +13398,45 @@ export function useGetApiV1OrganizationsIdStats<
  * Get the organization details for the authenticated user
  * @summary Get current organization
  */
-export type getApiV1OrganizationsMeResponse200 = {
+export type getOrganizationsMeResponse200 = {
   data: InternalApiV1OrganizationsOrganizationWithStatsResponse;
   status: 200;
 };
 
-export type getApiV1OrganizationsMeResponse401 = {
-  data: GetApiV1OrganizationsMe401;
+export type getOrganizationsMeResponse401 = {
+  data: GetOrganizationsMe401;
   status: 401;
 };
 
-export type getApiV1OrganizationsMeResponse404 = {
-  data: GetApiV1OrganizationsMe404;
+export type getOrganizationsMeResponse404 = {
+  data: GetOrganizationsMe404;
   status: 404;
 };
 
-export type getApiV1OrganizationsMeResponse500 = {
-  data: GetApiV1OrganizationsMe500;
+export type getOrganizationsMeResponse500 = {
+  data: GetOrganizationsMe500;
   status: 500;
 };
 
-export type getApiV1OrganizationsMeResponseComposite =
-  | getApiV1OrganizationsMeResponse200
-  | getApiV1OrganizationsMeResponse401
-  | getApiV1OrganizationsMeResponse404
-  | getApiV1OrganizationsMeResponse500;
+export type getOrganizationsMeResponseComposite =
+  | getOrganizationsMeResponse200
+  | getOrganizationsMeResponse401
+  | getOrganizationsMeResponse404
+  | getOrganizationsMeResponse500;
 
-export type getApiV1OrganizationsMeResponse =
-  getApiV1OrganizationsMeResponseComposite & {
-    headers: Headers;
-  };
-
-export const getGetApiV1OrganizationsMeUrl = () => {
-  return `/api/v1/organizations/me`;
+export type getOrganizationsMeResponse = getOrganizationsMeResponseComposite & {
+  headers: Headers;
 };
 
-export const getApiV1OrganizationsMe = async (
+export const getGetOrganizationsMeUrl = () => {
+  return `/organizations/me`;
+};
+
+export const getOrganizationsMe = async (
   options?: RequestInit,
-): Promise<getApiV1OrganizationsMeResponse> => {
-  return customFetchClient<getApiV1OrganizationsMeResponse>(
-    getGetApiV1OrganizationsMeUrl(),
+): Promise<getOrganizationsMeResponse> => {
+  return customFetchClient<getOrganizationsMeResponse>(
+    getGetOrganizationsMeUrl(),
     {
       ...options,
       method: 'GET',
@@ -13370,20 +13444,20 @@ export const getApiV1OrganizationsMe = async (
   );
 };
 
-export const getGetApiV1OrganizationsMeQueryKey = () => {
-  return [`/api/v1/organizations/me`] as const;
+export const getGetOrganizationsMeQueryKey = () => {
+  return [`/organizations/me`] as const;
 };
 
-export const getGetApiV1OrganizationsMeQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+export const getGetOrganizationsMeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOrganizationsMe>>,
   TError =
-    | GetApiV1OrganizationsMe401
-    | GetApiV1OrganizationsMe404
-    | GetApiV1OrganizationsMe500,
+    | GetOrganizationsMe401
+    | GetOrganizationsMe404
+    | GetOrganizationsMe500,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
-      Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+      Awaited<ReturnType<typeof getOrganizationsMe>>,
       TError,
       TData
     >
@@ -13392,48 +13466,47 @@ export const getGetApiV1OrganizationsMeQueryOptions = <
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1OrganizationsMeQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetOrganizationsMeQueryKey();
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1OrganizationsMe>>
-  > = ({ signal }) => getApiV1OrganizationsMe({ signal, ...requestOptions });
+    Awaited<ReturnType<typeof getOrganizationsMe>>
+  > = ({ signal }) => getOrganizationsMe({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+    Awaited<ReturnType<typeof getOrganizationsMe>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1OrganizationsMeQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1OrganizationsMe>>
+export type GetOrganizationsMeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOrganizationsMe>>
 >;
-export type GetApiV1OrganizationsMeQueryError =
-  | GetApiV1OrganizationsMe401
-  | GetApiV1OrganizationsMe404
-  | GetApiV1OrganizationsMe500;
+export type GetOrganizationsMeQueryError =
+  | GetOrganizationsMe401
+  | GetOrganizationsMe404
+  | GetOrganizationsMe500;
 
-export function useGetApiV1OrganizationsMe<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+export function useGetOrganizationsMe<
+  TData = Awaited<ReturnType<typeof getOrganizationsMe>>,
   TError =
-    | GetApiV1OrganizationsMe401
-    | GetApiV1OrganizationsMe404
-    | GetApiV1OrganizationsMe500,
+    | GetOrganizationsMe401
+    | GetOrganizationsMe404
+    | GetOrganizationsMe500,
 >(
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+        Awaited<ReturnType<typeof getOrganizationsMe>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+          Awaited<ReturnType<typeof getOrganizationsMe>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1OrganizationsMe>>
+          Awaited<ReturnType<typeof getOrganizationsMe>>
         >,
         'initialData'
       >;
@@ -13443,26 +13516,26 @@ export function useGetApiV1OrganizationsMe<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1OrganizationsMe<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+export function useGetOrganizationsMe<
+  TData = Awaited<ReturnType<typeof getOrganizationsMe>>,
   TError =
-    | GetApiV1OrganizationsMe401
-    | GetApiV1OrganizationsMe404
-    | GetApiV1OrganizationsMe500,
+    | GetOrganizationsMe401
+    | GetOrganizationsMe404
+    | GetOrganizationsMe500,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+        Awaited<ReturnType<typeof getOrganizationsMe>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+          Awaited<ReturnType<typeof getOrganizationsMe>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1OrganizationsMe>>
+          Awaited<ReturnType<typeof getOrganizationsMe>>
         >,
         'initialData'
       >;
@@ -13472,17 +13545,17 @@ export function useGetApiV1OrganizationsMe<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1OrganizationsMe<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+export function useGetOrganizationsMe<
+  TData = Awaited<ReturnType<typeof getOrganizationsMe>>,
   TError =
-    | GetApiV1OrganizationsMe401
-    | GetApiV1OrganizationsMe404
-    | GetApiV1OrganizationsMe500,
+    | GetOrganizationsMe401
+    | GetOrganizationsMe404
+    | GetOrganizationsMe500,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+        Awaited<ReturnType<typeof getOrganizationsMe>>,
         TError,
         TData
       >
@@ -13497,17 +13570,17 @@ export function useGetApiV1OrganizationsMe<
  * @summary Get current organization
  */
 
-export function useGetApiV1OrganizationsMe<
-  TData = Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+export function useGetOrganizationsMe<
+  TData = Awaited<ReturnType<typeof getOrganizationsMe>>,
   TError =
-    | GetApiV1OrganizationsMe401
-    | GetApiV1OrganizationsMe404
-    | GetApiV1OrganizationsMe500,
+    | GetOrganizationsMe401
+    | GetOrganizationsMe404
+    | GetOrganizationsMe500,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1OrganizationsMe>>,
+        Awaited<ReturnType<typeof getOrganizationsMe>>,
         TError,
         TData
       >
@@ -13518,7 +13591,7 @@ export function useGetApiV1OrganizationsMe<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1OrganizationsMeQueryOptions(options);
+  const queryOptions = getGetOrganizationsMeQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -13534,59 +13607,58 @@ export function useGetApiV1OrganizationsMe<
  * Update organization details (admin only)
  * @summary Update current organization
  */
-export type putApiV1OrganizationsMeResponse200 = {
+export type putOrganizationsMeResponse200 = {
   data: InternalApiV1OrganizationsOrganizationResponse;
   status: 200;
 };
 
-export type putApiV1OrganizationsMeResponse400 = {
-  data: PutApiV1OrganizationsMe400;
+export type putOrganizationsMeResponse400 = {
+  data: PutOrganizationsMe400;
   status: 400;
 };
 
-export type putApiV1OrganizationsMeResponse401 = {
-  data: PutApiV1OrganizationsMe401;
+export type putOrganizationsMeResponse401 = {
+  data: PutOrganizationsMe401;
   status: 401;
 };
 
-export type putApiV1OrganizationsMeResponse403 = {
-  data: PutApiV1OrganizationsMe403;
+export type putOrganizationsMeResponse403 = {
+  data: PutOrganizationsMe403;
   status: 403;
 };
 
-export type putApiV1OrganizationsMeResponse404 = {
-  data: PutApiV1OrganizationsMe404;
+export type putOrganizationsMeResponse404 = {
+  data: PutOrganizationsMe404;
   status: 404;
 };
 
-export type putApiV1OrganizationsMeResponse500 = {
-  data: PutApiV1OrganizationsMe500;
+export type putOrganizationsMeResponse500 = {
+  data: PutOrganizationsMe500;
   status: 500;
 };
 
-export type putApiV1OrganizationsMeResponseComposite =
-  | putApiV1OrganizationsMeResponse200
-  | putApiV1OrganizationsMeResponse400
-  | putApiV1OrganizationsMeResponse401
-  | putApiV1OrganizationsMeResponse403
-  | putApiV1OrganizationsMeResponse404
-  | putApiV1OrganizationsMeResponse500;
+export type putOrganizationsMeResponseComposite =
+  | putOrganizationsMeResponse200
+  | putOrganizationsMeResponse400
+  | putOrganizationsMeResponse401
+  | putOrganizationsMeResponse403
+  | putOrganizationsMeResponse404
+  | putOrganizationsMeResponse500;
 
-export type putApiV1OrganizationsMeResponse =
-  putApiV1OrganizationsMeResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPutApiV1OrganizationsMeUrl = () => {
-  return `/api/v1/organizations/me`;
+export type putOrganizationsMeResponse = putOrganizationsMeResponseComposite & {
+  headers: Headers;
 };
 
-export const putApiV1OrganizationsMe = async (
+export const getPutOrganizationsMeUrl = () => {
+  return `/organizations/me`;
+};
+
+export const putOrganizationsMe = async (
   internalApiV1OrganizationsUpdateOrganizationRequestBody: InternalApiV1OrganizationsUpdateOrganizationRequestBody,
   options?: RequestInit,
-): Promise<putApiV1OrganizationsMeResponse> => {
-  return customFetchClient<putApiV1OrganizationsMeResponse>(
-    getPutApiV1OrganizationsMeUrl(),
+): Promise<putOrganizationsMeResponse> => {
+  return customFetchClient<putOrganizationsMeResponse>(
+    getPutOrganizationsMeUrl(),
     {
       ...options,
       method: 'PUT',
@@ -13598,29 +13670,29 @@ export const putApiV1OrganizationsMe = async (
   );
 };
 
-export const getPutApiV1OrganizationsMeMutationOptions = <
+export const getPutOrganizationsMeMutationOptions = <
   TError =
-    | PutApiV1OrganizationsMe400
-    | PutApiV1OrganizationsMe401
-    | PutApiV1OrganizationsMe403
-    | PutApiV1OrganizationsMe404
-    | PutApiV1OrganizationsMe500,
+    | PutOrganizationsMe400
+    | PutOrganizationsMe401
+    | PutOrganizationsMe403
+    | PutOrganizationsMe404
+    | PutOrganizationsMe500,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof putApiV1OrganizationsMe>>,
+    Awaited<ReturnType<typeof putOrganizationsMe>>,
     TError,
     { data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof putApiV1OrganizationsMe>>,
+  Awaited<ReturnType<typeof putOrganizationsMe>>,
   TError,
   { data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
   TContext
 > => {
-  const mutationKey = ['putApiV1OrganizationsMe'];
+  const mutationKey = ['putOrganizationsMe'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -13630,44 +13702,44 @@ export const getPutApiV1OrganizationsMeMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof putApiV1OrganizationsMe>>,
+    Awaited<ReturnType<typeof putOrganizationsMe>>,
     { data: InternalApiV1OrganizationsUpdateOrganizationRequestBody }
   > = (props) => {
     const { data } = props ?? {};
 
-    return putApiV1OrganizationsMe(data, requestOptions);
+    return putOrganizationsMe(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PutApiV1OrganizationsMeMutationResult = NonNullable<
-  Awaited<ReturnType<typeof putApiV1OrganizationsMe>>
+export type PutOrganizationsMeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putOrganizationsMe>>
 >;
-export type PutApiV1OrganizationsMeMutationBody =
+export type PutOrganizationsMeMutationBody =
   InternalApiV1OrganizationsUpdateOrganizationRequestBody;
-export type PutApiV1OrganizationsMeMutationError =
-  | PutApiV1OrganizationsMe400
-  | PutApiV1OrganizationsMe401
-  | PutApiV1OrganizationsMe403
-  | PutApiV1OrganizationsMe404
-  | PutApiV1OrganizationsMe500;
+export type PutOrganizationsMeMutationError =
+  | PutOrganizationsMe400
+  | PutOrganizationsMe401
+  | PutOrganizationsMe403
+  | PutOrganizationsMe404
+  | PutOrganizationsMe500;
 
 /**
  * @summary Update current organization
  */
-export const usePutApiV1OrganizationsMe = <
+export const usePutOrganizationsMe = <
   TError =
-    | PutApiV1OrganizationsMe400
-    | PutApiV1OrganizationsMe401
-    | PutApiV1OrganizationsMe403
-    | PutApiV1OrganizationsMe404
-    | PutApiV1OrganizationsMe500,
+    | PutOrganizationsMe400
+    | PutOrganizationsMe401
+    | PutOrganizationsMe403
+    | PutOrganizationsMe404
+    | PutOrganizationsMe500,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof putApiV1OrganizationsMe>>,
+      Awaited<ReturnType<typeof putOrganizationsMe>>,
       TError,
       { data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
       TContext
@@ -13676,12 +13748,12 @@ export const usePutApiV1OrganizationsMe = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof putApiV1OrganizationsMe>>,
+  Awaited<ReturnType<typeof putOrganizationsMe>>,
   TError,
   { data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
   TContext
 > => {
-  const mutationOptions = getPutApiV1OrganizationsMeMutationOptions(options);
+  const mutationOptions = getPutOrganizationsMeMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -13690,25 +13762,25 @@ export const usePutApiV1OrganizationsMe = <
  * Lists all tracking rules with optional filtering by enabled status or action
  * @summary List tracking rules
  */
-export type getApiV1RulesResponse200 = {
+export type getRulesResponse200 = {
   data: InternalApiV1RulesListRulesResponse;
   status: 200;
 };
 
-export type getApiV1RulesResponse500 = {
+export type getRulesResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type getApiV1RulesResponseComposite =
-  | getApiV1RulesResponse200
-  | getApiV1RulesResponse500;
+export type getRulesResponseComposite =
+  | getRulesResponse200
+  | getRulesResponse500;
 
-export type getApiV1RulesResponse = getApiV1RulesResponseComposite & {
+export type getRulesResponse = getRulesResponseComposite & {
   headers: Headers;
 };
 
-export const getGetApiV1RulesUrl = (params?: GetApiV1RulesParams) => {
+export const getGetRulesUrl = (params?: GetRulesParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -13720,70 +13792,70 @@ export const getGetApiV1RulesUrl = (params?: GetApiV1RulesParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/rules?${stringifiedParams}`
-    : `/api/v1/rules`;
+    ? `/rules?${stringifiedParams}`
+    : `/rules`;
 };
 
-export const getApiV1Rules = async (
-  params?: GetApiV1RulesParams,
+export const getRules = async (
+  params?: GetRulesParams,
   options?: RequestInit,
-): Promise<getApiV1RulesResponse> => {
-  return customFetchClient<getApiV1RulesResponse>(getGetApiV1RulesUrl(params), {
+): Promise<getRulesResponse> => {
+  return customFetchClient<getRulesResponse>(getGetRulesUrl(params), {
     ...options,
     method: 'GET',
   });
 };
 
-export const getGetApiV1RulesQueryKey = (params?: GetApiV1RulesParams) => {
-  return [`/api/v1/rules`, ...(params ? [params] : [])] as const;
+export const getGetRulesQueryKey = (params?: GetRulesParams) => {
+  return [`/rules`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1RulesQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1Rules>>,
+export const getGetRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRules>>,
   TError = GinH,
 >(
-  params?: GetApiV1RulesParams,
+  params?: GetRulesParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getApiV1Rules>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof getRules>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetApiV1RulesQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getGetRulesQueryKey(params);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1Rules>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRules>>> = ({
     signal,
-  }) => getApiV1Rules(params, { signal, ...requestOptions });
+  }) => getRules(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1Rules>>,
+    Awaited<ReturnType<typeof getRules>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1RulesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1Rules>>
+export type GetRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRules>>
 >;
-export type GetApiV1RulesQueryError = GinH;
+export type GetRulesQueryError = GinH;
 
-export function useGetApiV1Rules<
-  TData = Awaited<ReturnType<typeof getApiV1Rules>>,
+export function useGetRules<
+  TData = Awaited<ReturnType<typeof getRules>>,
   TError = GinH,
 >(
-  params: undefined | GetApiV1RulesParams,
+  params: undefined | GetRulesParams,
   options: {
     query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getApiV1Rules>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof getRules>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1Rules>>,
+          Awaited<ReturnType<typeof getRules>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1Rules>>
+          Awaited<ReturnType<typeof getRules>>
         >,
         'initialData'
       >;
@@ -13793,20 +13865,20 @@ export function useGetApiV1Rules<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1Rules<
-  TData = Awaited<ReturnType<typeof getApiV1Rules>>,
+export function useGetRules<
+  TData = Awaited<ReturnType<typeof getRules>>,
   TError = GinH,
 >(
-  params?: GetApiV1RulesParams,
+  params?: GetRulesParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getApiV1Rules>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof getRules>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1Rules>>,
+          Awaited<ReturnType<typeof getRules>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1Rules>>
+          Awaited<ReturnType<typeof getRules>>
         >,
         'initialData'
       >;
@@ -13816,14 +13888,14 @@ export function useGetApiV1Rules<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1Rules<
-  TData = Awaited<ReturnType<typeof getApiV1Rules>>,
+export function useGetRules<
+  TData = Awaited<ReturnType<typeof getRules>>,
   TError = GinH,
 >(
-  params?: GetApiV1RulesParams,
+  params?: GetRulesParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getApiV1Rules>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof getRules>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -13835,14 +13907,14 @@ export function useGetApiV1Rules<
  * @summary List tracking rules
  */
 
-export function useGetApiV1Rules<
-  TData = Awaited<ReturnType<typeof getApiV1Rules>>,
+export function useGetRules<
+  TData = Awaited<ReturnType<typeof getRules>>,
   TError = GinH,
 >(
-  params?: GetApiV1RulesParams,
+  params?: GetRulesParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getApiV1Rules>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof getRules>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -13850,7 +13922,7 @@ export function useGetApiV1Rules<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1RulesQueryOptions(params, options);
+  const queryOptions = getGetRulesQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -13866,39 +13938,39 @@ export function useGetApiV1Rules<
  * Creates a new tracking rule for mount filtering
  * @summary Create a new tracking rule
  */
-export type postApiV1RulesResponse201 = {
+export type postRulesResponse201 = {
   data: InternalApiV1RulesRuleResponse;
   status: 201;
 };
 
-export type postApiV1RulesResponse400 = {
+export type postRulesResponse400 = {
   data: GinH;
   status: 400;
 };
 
-export type postApiV1RulesResponse500 = {
+export type postRulesResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type postApiV1RulesResponseComposite =
-  | postApiV1RulesResponse201
-  | postApiV1RulesResponse400
-  | postApiV1RulesResponse500;
+export type postRulesResponseComposite =
+  | postRulesResponse201
+  | postRulesResponse400
+  | postRulesResponse500;
 
-export type postApiV1RulesResponse = postApiV1RulesResponseComposite & {
+export type postRulesResponse = postRulesResponseComposite & {
   headers: Headers;
 };
 
-export const getPostApiV1RulesUrl = () => {
-  return `/api/v1/rules`;
+export const getPostRulesUrl = () => {
+  return `/rules`;
 };
 
-export const postApiV1Rules = async (
+export const postRules = async (
   internalApiV1RulesCreateRuleRequest: InternalApiV1RulesCreateRuleRequest,
   options?: RequestInit,
-): Promise<postApiV1RulesResponse> => {
-  return customFetchClient<postApiV1RulesResponse>(getPostApiV1RulesUrl(), {
+): Promise<postRulesResponse> => {
+  return customFetchClient<postRulesResponse>(getPostRulesUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -13906,24 +13978,24 @@ export const postApiV1Rules = async (
   });
 };
 
-export const getPostApiV1RulesMutationOptions = <
+export const getPostRulesMutationOptions = <
   TError = GinH | GinH,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1Rules>>,
+    Awaited<ReturnType<typeof postRules>>,
     TError,
     { data: InternalApiV1RulesCreateRuleRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1Rules>>,
+  Awaited<ReturnType<typeof postRules>>,
   TError,
   { data: InternalApiV1RulesCreateRuleRequest },
   TContext
 > => {
-  const mutationKey = ['postApiV1Rules'];
+  const mutationKey = ['postRules'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -13933,30 +14005,30 @@ export const getPostApiV1RulesMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1Rules>>,
+    Awaited<ReturnType<typeof postRules>>,
     { data: InternalApiV1RulesCreateRuleRequest }
   > = (props) => {
     const { data } = props ?? {};
 
-    return postApiV1Rules(data, requestOptions);
+    return postRules(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1RulesMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1Rules>>
+export type PostRulesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postRules>>
 >;
-export type PostApiV1RulesMutationBody = InternalApiV1RulesCreateRuleRequest;
-export type PostApiV1RulesMutationError = GinH | GinH;
+export type PostRulesMutationBody = InternalApiV1RulesCreateRuleRequest;
+export type PostRulesMutationError = GinH | GinH;
 
 /**
  * @summary Create a new tracking rule
  */
-export const usePostApiV1Rules = <TError = GinH | GinH, TContext = unknown>(
+export const usePostRules = <TError = GinH | GinH, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1Rules>>,
+      Awaited<ReturnType<typeof postRules>>,
       TError,
       { data: InternalApiV1RulesCreateRuleRequest },
       TContext
@@ -13965,12 +14037,12 @@ export const usePostApiV1Rules = <TError = GinH | GinH, TContext = unknown>(
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1Rules>>,
+  Awaited<ReturnType<typeof postRules>>,
   TError,
   { data: InternalApiV1RulesCreateRuleRequest },
   TContext
 > => {
-  const mutationOptions = getPostApiV1RulesMutationOptions(options);
+  const mutationOptions = getPostRulesMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -13979,65 +14051,62 @@ export const usePostApiV1Rules = <TError = GinH | GinH, TContext = unknown>(
  * Deletes a tracking rule by ID
  * @summary Delete a tracking rule
  */
-export type deleteApiV1RulesIdResponse204 = {
+export type deleteRulesIdResponse204 = {
   data: null;
   status: 204;
 };
 
-export type deleteApiV1RulesIdResponse400 = {
+export type deleteRulesIdResponse400 = {
   data: GinH;
   status: 400;
 };
 
-export type deleteApiV1RulesIdResponse500 = {
+export type deleteRulesIdResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type deleteApiV1RulesIdResponseComposite =
-  | deleteApiV1RulesIdResponse204
-  | deleteApiV1RulesIdResponse400
-  | deleteApiV1RulesIdResponse500;
+export type deleteRulesIdResponseComposite =
+  | deleteRulesIdResponse204
+  | deleteRulesIdResponse400
+  | deleteRulesIdResponse500;
 
-export type deleteApiV1RulesIdResponse = deleteApiV1RulesIdResponseComposite & {
+export type deleteRulesIdResponse = deleteRulesIdResponseComposite & {
   headers: Headers;
 };
 
-export const getDeleteApiV1RulesIdUrl = (id: number) => {
-  return `/api/v1/rules/${id}`;
+export const getDeleteRulesIdUrl = (id: number) => {
+  return `/rules/${id}`;
 };
 
-export const deleteApiV1RulesId = async (
+export const deleteRulesId = async (
   id: number,
   options?: RequestInit,
-): Promise<deleteApiV1RulesIdResponse> => {
-  return customFetchClient<deleteApiV1RulesIdResponse>(
-    getDeleteApiV1RulesIdUrl(id),
-    {
-      ...options,
-      method: 'DELETE',
-    },
-  );
+): Promise<deleteRulesIdResponse> => {
+  return customFetchClient<deleteRulesIdResponse>(getDeleteRulesIdUrl(id), {
+    ...options,
+    method: 'DELETE',
+  });
 };
 
-export const getDeleteApiV1RulesIdMutationOptions = <
+export const getDeleteRulesIdMutationOptions = <
   TError = GinH | GinH,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteApiV1RulesId>>,
+    Awaited<ReturnType<typeof deleteRulesId>>,
     TError,
     { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof deleteApiV1RulesId>>,
+  Awaited<ReturnType<typeof deleteRulesId>>,
   TError,
   { id: number },
   TContext
 > => {
-  const mutationKey = ['deleteApiV1RulesId'];
+  const mutationKey = ['deleteRulesId'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -14047,30 +14116,30 @@ export const getDeleteApiV1RulesIdMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof deleteApiV1RulesId>>,
+    Awaited<ReturnType<typeof deleteRulesId>>,
     { id: number }
   > = (props) => {
     const { id } = props ?? {};
 
-    return deleteApiV1RulesId(id, requestOptions);
+    return deleteRulesId(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type DeleteApiV1RulesIdMutationResult = NonNullable<
-  Awaited<ReturnType<typeof deleteApiV1RulesId>>
+export type DeleteRulesIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteRulesId>>
 >;
 
-export type DeleteApiV1RulesIdMutationError = GinH | GinH;
+export type DeleteRulesIdMutationError = GinH | GinH;
 
 /**
  * @summary Delete a tracking rule
  */
-export const useDeleteApiV1RulesId = <TError = GinH | GinH, TContext = unknown>(
+export const useDeleteRulesId = <TError = GinH | GinH, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof deleteApiV1RulesId>>,
+      Awaited<ReturnType<typeof deleteRulesId>>,
       TError,
       { id: number },
       TContext
@@ -14079,12 +14148,12 @@ export const useDeleteApiV1RulesId = <TError = GinH | GinH, TContext = unknown>(
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof deleteApiV1RulesId>>,
+  Awaited<ReturnType<typeof deleteRulesId>>,
   TError,
   { id: number },
   TContext
 > => {
-  const mutationOptions = getDeleteApiV1RulesIdMutationOptions(options);
+  const mutationOptions = getDeleteRulesIdMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -14093,71 +14162,67 @@ export const useDeleteApiV1RulesId = <TError = GinH | GinH, TContext = unknown>(
  * Retrieves a single tracking rule by its ID
  * @summary Get a tracking rule by ID
  */
-export type getApiV1RulesIdResponse200 = {
+export type getRulesIdResponse200 = {
   data: InternalApiV1RulesRuleResponse;
   status: 200;
 };
 
-export type getApiV1RulesIdResponse400 = {
+export type getRulesIdResponse400 = {
   data: GinH;
   status: 400;
 };
 
-export type getApiV1RulesIdResponse404 = {
+export type getRulesIdResponse404 = {
   data: GinH;
   status: 404;
 };
 
-export type getApiV1RulesIdResponseComposite =
-  | getApiV1RulesIdResponse200
-  | getApiV1RulesIdResponse400
-  | getApiV1RulesIdResponse404;
+export type getRulesIdResponseComposite =
+  | getRulesIdResponse200
+  | getRulesIdResponse400
+  | getRulesIdResponse404;
 
-export type getApiV1RulesIdResponse = getApiV1RulesIdResponseComposite & {
+export type getRulesIdResponse = getRulesIdResponseComposite & {
   headers: Headers;
 };
 
-export const getGetApiV1RulesIdUrl = (id: number) => {
-  return `/api/v1/rules/${id}`;
+export const getGetRulesIdUrl = (id: number) => {
+  return `/rules/${id}`;
 };
 
-export const getApiV1RulesId = async (
+export const getRulesId = async (
   id: number,
   options?: RequestInit,
-): Promise<getApiV1RulesIdResponse> => {
-  return customFetchClient<getApiV1RulesIdResponse>(getGetApiV1RulesIdUrl(id), {
+): Promise<getRulesIdResponse> => {
+  return customFetchClient<getRulesIdResponse>(getGetRulesIdUrl(id), {
     ...options,
     method: 'GET',
   });
 };
 
-export const getGetApiV1RulesIdQueryKey = (id?: number) => {
-  return [`/api/v1/rules/${id}`] as const;
+export const getGetRulesIdQueryKey = (id?: number) => {
+  return [`/rules/${id}`] as const;
 };
 
-export const getGetApiV1RulesIdQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1RulesId>>,
+export const getGetRulesIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRulesId>>,
   TError = GinH | GinH,
 >(
   id: number,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1RulesId>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getRulesId>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetApiV1RulesIdQueryKey(id);
+  const queryKey = queryOptions?.queryKey ?? getGetRulesIdQueryKey(id);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1RulesId>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRulesId>>> = ({
     signal,
-  }) => getApiV1RulesId(id, { signal, ...requestOptions });
+  }) => getRulesId(id, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -14165,35 +14230,31 @@ export const getGetApiV1RulesIdQueryOptions = <
     enabled: !!id,
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1RulesId>>,
+    Awaited<ReturnType<typeof getRulesId>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1RulesIdQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1RulesId>>
+export type GetRulesIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRulesId>>
 >;
-export type GetApiV1RulesIdQueryError = GinH | GinH;
+export type GetRulesIdQueryError = GinH | GinH;
 
-export function useGetApiV1RulesId<
-  TData = Awaited<ReturnType<typeof getApiV1RulesId>>,
+export function useGetRulesId<
+  TData = Awaited<ReturnType<typeof getRulesId>>,
   TError = GinH | GinH,
 >(
   id: number,
   options: {
     query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1RulesId>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getRulesId>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1RulesId>>,
+          Awaited<ReturnType<typeof getRulesId>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1RulesId>>
+          Awaited<ReturnType<typeof getRulesId>>
         >,
         'initialData'
       >;
@@ -14203,24 +14264,20 @@ export function useGetApiV1RulesId<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1RulesId<
-  TData = Awaited<ReturnType<typeof getApiV1RulesId>>,
+export function useGetRulesId<
+  TData = Awaited<ReturnType<typeof getRulesId>>,
   TError = GinH | GinH,
 >(
   id: number,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1RulesId>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getRulesId>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1RulesId>>,
+          Awaited<ReturnType<typeof getRulesId>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1RulesId>>
+          Awaited<ReturnType<typeof getRulesId>>
         >,
         'initialData'
       >;
@@ -14230,18 +14287,14 @@ export function useGetApiV1RulesId<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1RulesId<
-  TData = Awaited<ReturnType<typeof getApiV1RulesId>>,
+export function useGetRulesId<
+  TData = Awaited<ReturnType<typeof getRulesId>>,
   TError = GinH | GinH,
 >(
   id: number,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1RulesId>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getRulesId>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -14253,18 +14306,14 @@ export function useGetApiV1RulesId<
  * @summary Get a tracking rule by ID
  */
 
-export function useGetApiV1RulesId<
-  TData = Awaited<ReturnType<typeof getApiV1RulesId>>,
+export function useGetRulesId<
+  TData = Awaited<ReturnType<typeof getRulesId>>,
   TError = GinH | GinH,
 >(
   id: number,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1RulesId>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getRulesId>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -14272,7 +14321,7 @@ export function useGetApiV1RulesId<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1RulesIdQueryOptions(id, options);
+  const queryOptions = getGetRulesIdQueryOptions(id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -14288,46 +14337,46 @@ export function useGetApiV1RulesId<
  * Updates an existing tracking rule
  * @summary Update a tracking rule
  */
-export type putApiV1RulesIdResponse200 = {
+export type putRulesIdResponse200 = {
   data: InternalApiV1RulesRuleResponse;
   status: 200;
 };
 
-export type putApiV1RulesIdResponse400 = {
+export type putRulesIdResponse400 = {
   data: GinH;
   status: 400;
 };
 
-export type putApiV1RulesIdResponse404 = {
+export type putRulesIdResponse404 = {
   data: GinH;
   status: 404;
 };
 
-export type putApiV1RulesIdResponse500 = {
+export type putRulesIdResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type putApiV1RulesIdResponseComposite =
-  | putApiV1RulesIdResponse200
-  | putApiV1RulesIdResponse400
-  | putApiV1RulesIdResponse404
-  | putApiV1RulesIdResponse500;
+export type putRulesIdResponseComposite =
+  | putRulesIdResponse200
+  | putRulesIdResponse400
+  | putRulesIdResponse404
+  | putRulesIdResponse500;
 
-export type putApiV1RulesIdResponse = putApiV1RulesIdResponseComposite & {
+export type putRulesIdResponse = putRulesIdResponseComposite & {
   headers: Headers;
 };
 
-export const getPutApiV1RulesIdUrl = (id: number) => {
-  return `/api/v1/rules/${id}`;
+export const getPutRulesIdUrl = (id: number) => {
+  return `/rules/${id}`;
 };
 
-export const putApiV1RulesId = async (
+export const putRulesId = async (
   id: number,
   internalApiV1RulesUpdateRuleRequest: InternalApiV1RulesUpdateRuleRequest,
   options?: RequestInit,
-): Promise<putApiV1RulesIdResponse> => {
-  return customFetchClient<putApiV1RulesIdResponse>(getPutApiV1RulesIdUrl(id), {
+): Promise<putRulesIdResponse> => {
+  return customFetchClient<putRulesIdResponse>(getPutRulesIdUrl(id), {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -14335,24 +14384,24 @@ export const putApiV1RulesId = async (
   });
 };
 
-export const getPutApiV1RulesIdMutationOptions = <
+export const getPutRulesIdMutationOptions = <
   TError = GinH | GinH | GinH,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof putApiV1RulesId>>,
+    Awaited<ReturnType<typeof putRulesId>>,
     TError,
     { id: number; data: InternalApiV1RulesUpdateRuleRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof putApiV1RulesId>>,
+  Awaited<ReturnType<typeof putRulesId>>,
   TError,
   { id: number; data: InternalApiV1RulesUpdateRuleRequest },
   TContext
 > => {
-  const mutationKey = ['putApiV1RulesId'];
+  const mutationKey = ['putRulesId'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -14362,33 +14411,30 @@ export const getPutApiV1RulesIdMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof putApiV1RulesId>>,
+    Awaited<ReturnType<typeof putRulesId>>,
     { id: number; data: InternalApiV1RulesUpdateRuleRequest }
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return putApiV1RulesId(id, data, requestOptions);
+    return putRulesId(id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PutApiV1RulesIdMutationResult = NonNullable<
-  Awaited<ReturnType<typeof putApiV1RulesId>>
+export type PutRulesIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putRulesId>>
 >;
-export type PutApiV1RulesIdMutationBody = InternalApiV1RulesUpdateRuleRequest;
-export type PutApiV1RulesIdMutationError = GinH | GinH | GinH;
+export type PutRulesIdMutationBody = InternalApiV1RulesUpdateRuleRequest;
+export type PutRulesIdMutationError = GinH | GinH | GinH;
 
 /**
  * @summary Update a tracking rule
  */
-export const usePutApiV1RulesId = <
-  TError = GinH | GinH | GinH,
-  TContext = unknown,
->(
+export const usePutRulesId = <TError = GinH | GinH | GinH, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof putApiV1RulesId>>,
+      Awaited<ReturnType<typeof putRulesId>>,
       TError,
       { id: number; data: InternalApiV1RulesUpdateRuleRequest },
       TContext
@@ -14397,12 +14443,12 @@ export const usePutApiV1RulesId = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof putApiV1RulesId>>,
+  Awaited<ReturnType<typeof putRulesId>>,
   TError,
   { id: number; data: InternalApiV1RulesUpdateRuleRequest },
   TContext
 > => {
-  const mutationOptions = getPutApiV1RulesIdMutationOptions(options);
+  const mutationOptions = getPutRulesIdMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -14411,47 +14457,46 @@ export const usePutApiV1RulesId = <
  * Disables a tracking rule by setting is_enabled to false
  * @summary Disable a tracking rule
  */
-export type putApiV1RulesIdDisableResponse200 = {
+export type putRulesIdDisableResponse200 = {
   data: InternalApiV1RulesRuleResponse;
   status: 200;
 };
 
-export type putApiV1RulesIdDisableResponse400 = {
+export type putRulesIdDisableResponse400 = {
   data: GinH;
   status: 400;
 };
 
-export type putApiV1RulesIdDisableResponse404 = {
+export type putRulesIdDisableResponse404 = {
   data: GinH;
   status: 404;
 };
 
-export type putApiV1RulesIdDisableResponse500 = {
+export type putRulesIdDisableResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type putApiV1RulesIdDisableResponseComposite =
-  | putApiV1RulesIdDisableResponse200
-  | putApiV1RulesIdDisableResponse400
-  | putApiV1RulesIdDisableResponse404
-  | putApiV1RulesIdDisableResponse500;
+export type putRulesIdDisableResponseComposite =
+  | putRulesIdDisableResponse200
+  | putRulesIdDisableResponse400
+  | putRulesIdDisableResponse404
+  | putRulesIdDisableResponse500;
 
-export type putApiV1RulesIdDisableResponse =
-  putApiV1RulesIdDisableResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPutApiV1RulesIdDisableUrl = (id: number) => {
-  return `/api/v1/rules/${id}/disable`;
+export type putRulesIdDisableResponse = putRulesIdDisableResponseComposite & {
+  headers: Headers;
 };
 
-export const putApiV1RulesIdDisable = async (
+export const getPutRulesIdDisableUrl = (id: number) => {
+  return `/rules/${id}/disable`;
+};
+
+export const putRulesIdDisable = async (
   id: number,
   options?: RequestInit,
-): Promise<putApiV1RulesIdDisableResponse> => {
-  return customFetchClient<putApiV1RulesIdDisableResponse>(
-    getPutApiV1RulesIdDisableUrl(id),
+): Promise<putRulesIdDisableResponse> => {
+  return customFetchClient<putRulesIdDisableResponse>(
+    getPutRulesIdDisableUrl(id),
     {
       ...options,
       method: 'PUT',
@@ -14459,24 +14504,24 @@ export const putApiV1RulesIdDisable = async (
   );
 };
 
-export const getPutApiV1RulesIdDisableMutationOptions = <
+export const getPutRulesIdDisableMutationOptions = <
   TError = GinH | GinH | GinH,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof putApiV1RulesIdDisable>>,
+    Awaited<ReturnType<typeof putRulesIdDisable>>,
     TError,
     { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof putApiV1RulesIdDisable>>,
+  Awaited<ReturnType<typeof putRulesIdDisable>>,
   TError,
   { id: number },
   TContext
 > => {
-  const mutationKey = ['putApiV1RulesIdDisable'];
+  const mutationKey = ['putRulesIdDisable'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -14486,33 +14531,33 @@ export const getPutApiV1RulesIdDisableMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof putApiV1RulesIdDisable>>,
+    Awaited<ReturnType<typeof putRulesIdDisable>>,
     { id: number }
   > = (props) => {
     const { id } = props ?? {};
 
-    return putApiV1RulesIdDisable(id, requestOptions);
+    return putRulesIdDisable(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PutApiV1RulesIdDisableMutationResult = NonNullable<
-  Awaited<ReturnType<typeof putApiV1RulesIdDisable>>
+export type PutRulesIdDisableMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putRulesIdDisable>>
 >;
 
-export type PutApiV1RulesIdDisableMutationError = GinH | GinH | GinH;
+export type PutRulesIdDisableMutationError = GinH | GinH | GinH;
 
 /**
  * @summary Disable a tracking rule
  */
-export const usePutApiV1RulesIdDisable = <
+export const usePutRulesIdDisable = <
   TError = GinH | GinH | GinH,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof putApiV1RulesIdDisable>>,
+      Awaited<ReturnType<typeof putRulesIdDisable>>,
       TError,
       { id: number },
       TContext
@@ -14521,12 +14566,12 @@ export const usePutApiV1RulesIdDisable = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof putApiV1RulesIdDisable>>,
+  Awaited<ReturnType<typeof putRulesIdDisable>>,
   TError,
   { id: number },
   TContext
 > => {
-  const mutationOptions = getPutApiV1RulesIdDisableMutationOptions(options);
+  const mutationOptions = getPutRulesIdDisableMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -14535,47 +14580,46 @@ export const usePutApiV1RulesIdDisable = <
  * Enables a tracking rule by setting is_enabled to true
  * @summary Enable a tracking rule
  */
-export type putApiV1RulesIdEnableResponse200 = {
+export type putRulesIdEnableResponse200 = {
   data: InternalApiV1RulesRuleResponse;
   status: 200;
 };
 
-export type putApiV1RulesIdEnableResponse400 = {
+export type putRulesIdEnableResponse400 = {
   data: GinH;
   status: 400;
 };
 
-export type putApiV1RulesIdEnableResponse404 = {
+export type putRulesIdEnableResponse404 = {
   data: GinH;
   status: 404;
 };
 
-export type putApiV1RulesIdEnableResponse500 = {
+export type putRulesIdEnableResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type putApiV1RulesIdEnableResponseComposite =
-  | putApiV1RulesIdEnableResponse200
-  | putApiV1RulesIdEnableResponse400
-  | putApiV1RulesIdEnableResponse404
-  | putApiV1RulesIdEnableResponse500;
+export type putRulesIdEnableResponseComposite =
+  | putRulesIdEnableResponse200
+  | putRulesIdEnableResponse400
+  | putRulesIdEnableResponse404
+  | putRulesIdEnableResponse500;
 
-export type putApiV1RulesIdEnableResponse =
-  putApiV1RulesIdEnableResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPutApiV1RulesIdEnableUrl = (id: number) => {
-  return `/api/v1/rules/${id}/enable`;
+export type putRulesIdEnableResponse = putRulesIdEnableResponseComposite & {
+  headers: Headers;
 };
 
-export const putApiV1RulesIdEnable = async (
+export const getPutRulesIdEnableUrl = (id: number) => {
+  return `/rules/${id}/enable`;
+};
+
+export const putRulesIdEnable = async (
   id: number,
   options?: RequestInit,
-): Promise<putApiV1RulesIdEnableResponse> => {
-  return customFetchClient<putApiV1RulesIdEnableResponse>(
-    getPutApiV1RulesIdEnableUrl(id),
+): Promise<putRulesIdEnableResponse> => {
+  return customFetchClient<putRulesIdEnableResponse>(
+    getPutRulesIdEnableUrl(id),
     {
       ...options,
       method: 'PUT',
@@ -14583,24 +14627,24 @@ export const putApiV1RulesIdEnable = async (
   );
 };
 
-export const getPutApiV1RulesIdEnableMutationOptions = <
+export const getPutRulesIdEnableMutationOptions = <
   TError = GinH | GinH | GinH,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof putApiV1RulesIdEnable>>,
+    Awaited<ReturnType<typeof putRulesIdEnable>>,
     TError,
     { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof putApiV1RulesIdEnable>>,
+  Awaited<ReturnType<typeof putRulesIdEnable>>,
   TError,
   { id: number },
   TContext
 > => {
-  const mutationKey = ['putApiV1RulesIdEnable'];
+  const mutationKey = ['putRulesIdEnable'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -14610,33 +14654,33 @@ export const getPutApiV1RulesIdEnableMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof putApiV1RulesIdEnable>>,
+    Awaited<ReturnType<typeof putRulesIdEnable>>,
     { id: number }
   > = (props) => {
     const { id } = props ?? {};
 
-    return putApiV1RulesIdEnable(id, requestOptions);
+    return putRulesIdEnable(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PutApiV1RulesIdEnableMutationResult = NonNullable<
-  Awaited<ReturnType<typeof putApiV1RulesIdEnable>>
+export type PutRulesIdEnableMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putRulesIdEnable>>
 >;
 
-export type PutApiV1RulesIdEnableMutationError = GinH | GinH | GinH;
+export type PutRulesIdEnableMutationError = GinH | GinH | GinH;
 
 /**
  * @summary Enable a tracking rule
  */
-export const usePutApiV1RulesIdEnable = <
+export const usePutRulesIdEnable = <
   TError = GinH | GinH | GinH,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof putApiV1RulesIdEnable>>,
+      Awaited<ReturnType<typeof putRulesIdEnable>>,
       TError,
       { id: number },
       TContext
@@ -14645,12 +14689,12 @@ export const usePutApiV1RulesIdEnable = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof putApiV1RulesIdEnable>>,
+  Awaited<ReturnType<typeof putRulesIdEnable>>,
   TError,
   { id: number },
   TContext
 > => {
-  const mutationOptions = getPutApiV1RulesIdEnableMutationOptions(options);
+  const mutationOptions = getPutRulesIdEnableMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -14659,22 +14703,18 @@ export const usePutApiV1RulesIdEnable = <
  * Lists available rule templates for quick rule creation
  * @summary Get rule templates
  */
-export type getApiV1RulesTemplatesResponse200 = {
+export type getRulesTemplatesResponse200 = {
   data: InternalApiV1RulesListRuleTemplatesResponse;
   status: 200;
 };
 
-export type getApiV1RulesTemplatesResponseComposite =
-  getApiV1RulesTemplatesResponse200;
+export type getRulesTemplatesResponseComposite = getRulesTemplatesResponse200;
 
-export type getApiV1RulesTemplatesResponse =
-  getApiV1RulesTemplatesResponseComposite & {
-    headers: Headers;
-  };
+export type getRulesTemplatesResponse = getRulesTemplatesResponseComposite & {
+  headers: Headers;
+};
 
-export const getGetApiV1RulesTemplatesUrl = (
-  params?: GetApiV1RulesTemplatesParams,
-) => {
+export const getGetRulesTemplatesUrl = (params?: GetRulesTemplatesParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -14686,16 +14726,16 @@ export const getGetApiV1RulesTemplatesUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/rules/templates?${stringifiedParams}`
-    : `/api/v1/rules/templates`;
+    ? `/rules/templates?${stringifiedParams}`
+    : `/rules/templates`;
 };
 
-export const getApiV1RulesTemplates = async (
-  params?: GetApiV1RulesTemplatesParams,
+export const getRulesTemplates = async (
+  params?: GetRulesTemplatesParams,
   options?: RequestInit,
-): Promise<getApiV1RulesTemplatesResponse> => {
-  return customFetchClient<getApiV1RulesTemplatesResponse>(
-    getGetApiV1RulesTemplatesUrl(params),
+): Promise<getRulesTemplatesResponse> => {
+  return customFetchClient<getRulesTemplatesResponse>(
+    getGetRulesTemplatesUrl(params),
     {
       ...options,
       method: 'GET',
@@ -14703,21 +14743,21 @@ export const getApiV1RulesTemplates = async (
   );
 };
 
-export const getGetApiV1RulesTemplatesQueryKey = (
-  params?: GetApiV1RulesTemplatesParams,
+export const getGetRulesTemplatesQueryKey = (
+  params?: GetRulesTemplatesParams,
 ) => {
-  return [`/api/v1/rules/templates`, ...(params ? [params] : [])] as const;
+  return [`/rules/templates`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1RulesTemplatesQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+export const getGetRulesTemplatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRulesTemplates>>,
   TError = unknown,
 >(
-  params?: GetApiV1RulesTemplatesParams,
+  params?: GetRulesTemplatesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+        Awaited<ReturnType<typeof getRulesTemplates>>,
         TError,
         TData
       >
@@ -14728,43 +14768,42 @@ export const getGetApiV1RulesTemplatesQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1RulesTemplatesQueryKey(params);
+    queryOptions?.queryKey ?? getGetRulesTemplatesQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1RulesTemplates>>
-  > = ({ signal }) =>
-    getApiV1RulesTemplates(params, { signal, ...requestOptions });
+    Awaited<ReturnType<typeof getRulesTemplates>>
+  > = ({ signal }) => getRulesTemplates(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+    Awaited<ReturnType<typeof getRulesTemplates>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1RulesTemplatesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1RulesTemplates>>
+export type GetRulesTemplatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRulesTemplates>>
 >;
-export type GetApiV1RulesTemplatesQueryError = unknown;
+export type GetRulesTemplatesQueryError = unknown;
 
-export function useGetApiV1RulesTemplates<
-  TData = Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+export function useGetRulesTemplates<
+  TData = Awaited<ReturnType<typeof getRulesTemplates>>,
   TError = unknown,
 >(
-  params: undefined | GetApiV1RulesTemplatesParams,
+  params: undefined | GetRulesTemplatesParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+        Awaited<ReturnType<typeof getRulesTemplates>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+          Awaited<ReturnType<typeof getRulesTemplates>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1RulesTemplates>>
+          Awaited<ReturnType<typeof getRulesTemplates>>
         >,
         'initialData'
       >;
@@ -14774,24 +14813,24 @@ export function useGetApiV1RulesTemplates<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1RulesTemplates<
-  TData = Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+export function useGetRulesTemplates<
+  TData = Awaited<ReturnType<typeof getRulesTemplates>>,
   TError = unknown,
 >(
-  params?: GetApiV1RulesTemplatesParams,
+  params?: GetRulesTemplatesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+        Awaited<ReturnType<typeof getRulesTemplates>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+          Awaited<ReturnType<typeof getRulesTemplates>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1RulesTemplates>>
+          Awaited<ReturnType<typeof getRulesTemplates>>
         >,
         'initialData'
       >;
@@ -14801,15 +14840,15 @@ export function useGetApiV1RulesTemplates<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1RulesTemplates<
-  TData = Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+export function useGetRulesTemplates<
+  TData = Awaited<ReturnType<typeof getRulesTemplates>>,
   TError = unknown,
 >(
-  params?: GetApiV1RulesTemplatesParams,
+  params?: GetRulesTemplatesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+        Awaited<ReturnType<typeof getRulesTemplates>>,
         TError,
         TData
       >
@@ -14824,15 +14863,15 @@ export function useGetApiV1RulesTemplates<
  * @summary Get rule templates
  */
 
-export function useGetApiV1RulesTemplates<
-  TData = Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+export function useGetRulesTemplates<
+  TData = Awaited<ReturnType<typeof getRulesTemplates>>,
   TError = unknown,
 >(
-  params?: GetApiV1RulesTemplatesParams,
+  params?: GetRulesTemplatesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1RulesTemplates>>,
+        Awaited<ReturnType<typeof getRulesTemplates>>,
         TError,
         TData
       >
@@ -14843,7 +14882,7 @@ export function useGetApiV1RulesTemplates<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1RulesTemplatesQueryOptions(params, options);
+  const queryOptions = getGetRulesTemplatesQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -14859,89 +14898,80 @@ export function useGetApiV1RulesTemplates<
  * Get status information for all scheduled jobs
  * @summary Get all scheduled jobs
  */
-export type getApiV1SchedulerJobsResponse200 = {
-  data: GetApiV1SchedulerJobs200;
+export type getSchedulerJobsResponse200 = {
+  data: GetSchedulerJobs200;
   status: 200;
 };
 
-export type getApiV1SchedulerJobsResponseComposite =
-  getApiV1SchedulerJobsResponse200;
+export type getSchedulerJobsResponseComposite = getSchedulerJobsResponse200;
 
-export type getApiV1SchedulerJobsResponse =
-  getApiV1SchedulerJobsResponseComposite & {
-    headers: Headers;
-  };
-
-export const getGetApiV1SchedulerJobsUrl = () => {
-  return `/api/v1/scheduler/jobs`;
+export type getSchedulerJobsResponse = getSchedulerJobsResponseComposite & {
+  headers: Headers;
 };
 
-export const getApiV1SchedulerJobs = async (
+export const getGetSchedulerJobsUrl = () => {
+  return `/scheduler/jobs`;
+};
+
+export const getSchedulerJobs = async (
   options?: RequestInit,
-): Promise<getApiV1SchedulerJobsResponse> => {
-  return customFetchClient<getApiV1SchedulerJobsResponse>(
-    getGetApiV1SchedulerJobsUrl(),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
+): Promise<getSchedulerJobsResponse> => {
+  return customFetchClient<getSchedulerJobsResponse>(getGetSchedulerJobsUrl(), {
+    ...options,
+    method: 'GET',
+  });
 };
 
-export const getGetApiV1SchedulerJobsQueryKey = () => {
-  return [`/api/v1/scheduler/jobs`] as const;
+export const getGetSchedulerJobsQueryKey = () => {
+  return [`/scheduler/jobs`] as const;
 };
 
-export const getGetApiV1SchedulerJobsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+export const getGetSchedulerJobsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSchedulerJobs>>,
   TError = unknown,
 >(options?: {
   query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
-      TError,
-      TData
-    >
+    UseQueryOptions<Awaited<ReturnType<typeof getSchedulerJobs>>, TError, TData>
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetApiV1SchedulerJobsQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetSchedulerJobsQueryKey();
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1SchedulerJobs>>
-  > = ({ signal }) => getApiV1SchedulerJobs({ signal, ...requestOptions });
+    Awaited<ReturnType<typeof getSchedulerJobs>>
+  > = ({ signal }) => getSchedulerJobs({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+    Awaited<ReturnType<typeof getSchedulerJobs>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1SchedulerJobsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1SchedulerJobs>>
+export type GetSchedulerJobsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSchedulerJobs>>
 >;
-export type GetApiV1SchedulerJobsQueryError = unknown;
+export type GetSchedulerJobsQueryError = unknown;
 
-export function useGetApiV1SchedulerJobs<
-  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+export function useGetSchedulerJobs<
+  TData = Awaited<ReturnType<typeof getSchedulerJobs>>,
   TError = unknown,
 >(
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+        Awaited<ReturnType<typeof getSchedulerJobs>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+          Awaited<ReturnType<typeof getSchedulerJobs>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SchedulerJobs>>
+          Awaited<ReturnType<typeof getSchedulerJobs>>
         >,
         'initialData'
       >;
@@ -14951,23 +14981,23 @@ export function useGetApiV1SchedulerJobs<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SchedulerJobs<
-  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+export function useGetSchedulerJobs<
+  TData = Awaited<ReturnType<typeof getSchedulerJobs>>,
   TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+        Awaited<ReturnType<typeof getSchedulerJobs>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+          Awaited<ReturnType<typeof getSchedulerJobs>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SchedulerJobs>>
+          Awaited<ReturnType<typeof getSchedulerJobs>>
         >,
         'initialData'
       >;
@@ -14977,14 +15007,14 @@ export function useGetApiV1SchedulerJobs<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SchedulerJobs<
-  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+export function useGetSchedulerJobs<
+  TData = Awaited<ReturnType<typeof getSchedulerJobs>>,
   TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+        Awaited<ReturnType<typeof getSchedulerJobs>>,
         TError,
         TData
       >
@@ -14999,14 +15029,14 @@ export function useGetApiV1SchedulerJobs<
  * @summary Get all scheduled jobs
  */
 
-export function useGetApiV1SchedulerJobs<
-  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+export function useGetSchedulerJobs<
+  TData = Awaited<ReturnType<typeof getSchedulerJobs>>,
   TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SchedulerJobs>>,
+        Awaited<ReturnType<typeof getSchedulerJobs>>,
         TError,
         TData
       >
@@ -15017,7 +15047,7 @@ export function useGetApiV1SchedulerJobs<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1SchedulerJobsQueryOptions(options);
+  const queryOptions = getGetSchedulerJobsQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -15033,35 +15063,35 @@ export function useGetApiV1SchedulerJobs<
  * Get status information for a specific scheduled job
  * @summary Get job status
  */
-export type getApiV1SchedulerJobsNameResponse200 = {
+export type getSchedulerJobsNameResponse200 = {
   data: GithubComMantonxVolumevizInternalServicesSchedulerJobStatus;
   status: 200;
 };
 
-export type getApiV1SchedulerJobsNameResponse404 = {
-  data: GetApiV1SchedulerJobsName404;
+export type getSchedulerJobsNameResponse404 = {
+  data: GetSchedulerJobsName404;
   status: 404;
 };
 
-export type getApiV1SchedulerJobsNameResponseComposite =
-  | getApiV1SchedulerJobsNameResponse200
-  | getApiV1SchedulerJobsNameResponse404;
+export type getSchedulerJobsNameResponseComposite =
+  | getSchedulerJobsNameResponse200
+  | getSchedulerJobsNameResponse404;
 
-export type getApiV1SchedulerJobsNameResponse =
-  getApiV1SchedulerJobsNameResponseComposite & {
+export type getSchedulerJobsNameResponse =
+  getSchedulerJobsNameResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1SchedulerJobsNameUrl = (name: string) => {
-  return `/api/v1/scheduler/jobs/${name}`;
+export const getGetSchedulerJobsNameUrl = (name: string) => {
+  return `/scheduler/jobs/${name}`;
 };
 
-export const getApiV1SchedulerJobsName = async (
+export const getSchedulerJobsName = async (
   name: string,
   options?: RequestInit,
-): Promise<getApiV1SchedulerJobsNameResponse> => {
-  return customFetchClient<getApiV1SchedulerJobsNameResponse>(
-    getGetApiV1SchedulerJobsNameUrl(name),
+): Promise<getSchedulerJobsNameResponse> => {
+  return customFetchClient<getSchedulerJobsNameResponse>(
+    getGetSchedulerJobsNameUrl(name),
     {
       ...options,
       method: 'GET',
@@ -15069,19 +15099,19 @@ export const getApiV1SchedulerJobsName = async (
   );
 };
 
-export const getGetApiV1SchedulerJobsNameQueryKey = (name?: string) => {
-  return [`/api/v1/scheduler/jobs/${name}`] as const;
+export const getGetSchedulerJobsNameQueryKey = (name?: string) => {
+  return [`/scheduler/jobs/${name}`] as const;
 };
 
-export const getGetApiV1SchedulerJobsNameQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
-  TError = GetApiV1SchedulerJobsName404,
+export const getGetSchedulerJobsNameQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSchedulerJobsName>>,
+  TError = GetSchedulerJobsName404,
 >(
   name: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+        Awaited<ReturnType<typeof getSchedulerJobsName>>,
         TError,
         TData
       >
@@ -15092,12 +15122,11 @@ export const getGetApiV1SchedulerJobsNameQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1SchedulerJobsNameQueryKey(name);
+    queryOptions?.queryKey ?? getGetSchedulerJobsNameQueryKey(name);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>
-  > = ({ signal }) =>
-    getApiV1SchedulerJobsName(name, { signal, ...requestOptions });
+    Awaited<ReturnType<typeof getSchedulerJobsName>>
+  > = ({ signal }) => getSchedulerJobsName(name, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -15105,35 +15134,35 @@ export const getGetApiV1SchedulerJobsNameQueryOptions = <
     enabled: !!name,
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+    Awaited<ReturnType<typeof getSchedulerJobsName>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1SchedulerJobsNameQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>
+export type GetSchedulerJobsNameQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSchedulerJobsName>>
 >;
-export type GetApiV1SchedulerJobsNameQueryError = GetApiV1SchedulerJobsName404;
+export type GetSchedulerJobsNameQueryError = GetSchedulerJobsName404;
 
-export function useGetApiV1SchedulerJobsName<
-  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
-  TError = GetApiV1SchedulerJobsName404,
+export function useGetSchedulerJobsName<
+  TData = Awaited<ReturnType<typeof getSchedulerJobsName>>,
+  TError = GetSchedulerJobsName404,
 >(
   name: string,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+        Awaited<ReturnType<typeof getSchedulerJobsName>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+          Awaited<ReturnType<typeof getSchedulerJobsName>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>
+          Awaited<ReturnType<typeof getSchedulerJobsName>>
         >,
         'initialData'
       >;
@@ -15143,24 +15172,24 @@ export function useGetApiV1SchedulerJobsName<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SchedulerJobsName<
-  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
-  TError = GetApiV1SchedulerJobsName404,
+export function useGetSchedulerJobsName<
+  TData = Awaited<ReturnType<typeof getSchedulerJobsName>>,
+  TError = GetSchedulerJobsName404,
 >(
   name: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+        Awaited<ReturnType<typeof getSchedulerJobsName>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+          Awaited<ReturnType<typeof getSchedulerJobsName>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>
+          Awaited<ReturnType<typeof getSchedulerJobsName>>
         >,
         'initialData'
       >;
@@ -15170,15 +15199,15 @@ export function useGetApiV1SchedulerJobsName<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SchedulerJobsName<
-  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
-  TError = GetApiV1SchedulerJobsName404,
+export function useGetSchedulerJobsName<
+  TData = Awaited<ReturnType<typeof getSchedulerJobsName>>,
+  TError = GetSchedulerJobsName404,
 >(
   name: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+        Awaited<ReturnType<typeof getSchedulerJobsName>>,
         TError,
         TData
       >
@@ -15193,15 +15222,15 @@ export function useGetApiV1SchedulerJobsName<
  * @summary Get job status
  */
 
-export function useGetApiV1SchedulerJobsName<
-  TData = Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
-  TError = GetApiV1SchedulerJobsName404,
+export function useGetSchedulerJobsName<
+  TData = Awaited<ReturnType<typeof getSchedulerJobsName>>,
+  TError = GetSchedulerJobsName404,
 >(
   name: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SchedulerJobsName>>,
+        Awaited<ReturnType<typeof getSchedulerJobsName>>,
         TError,
         TData
       >
@@ -15212,7 +15241,7 @@ export function useGetApiV1SchedulerJobsName<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1SchedulerJobsNameQueryOptions(name, options);
+  const queryOptions = getGetSchedulerJobsNameQueryOptions(name, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -15228,35 +15257,35 @@ export function useGetApiV1SchedulerJobsName<
  * Disable a scheduled job (it will not run automatically)
  * @summary Disable a job
  */
-export type postApiV1SchedulerJobsNameDisableResponse200 = {
-  data: PostApiV1SchedulerJobsNameDisable200;
+export type postSchedulerJobsNameDisableResponse200 = {
+  data: PostSchedulerJobsNameDisable200;
   status: 200;
 };
 
-export type postApiV1SchedulerJobsNameDisableResponse404 = {
-  data: PostApiV1SchedulerJobsNameDisable404;
+export type postSchedulerJobsNameDisableResponse404 = {
+  data: PostSchedulerJobsNameDisable404;
   status: 404;
 };
 
-export type postApiV1SchedulerJobsNameDisableResponseComposite =
-  | postApiV1SchedulerJobsNameDisableResponse200
-  | postApiV1SchedulerJobsNameDisableResponse404;
+export type postSchedulerJobsNameDisableResponseComposite =
+  | postSchedulerJobsNameDisableResponse200
+  | postSchedulerJobsNameDisableResponse404;
 
-export type postApiV1SchedulerJobsNameDisableResponse =
-  postApiV1SchedulerJobsNameDisableResponseComposite & {
+export type postSchedulerJobsNameDisableResponse =
+  postSchedulerJobsNameDisableResponseComposite & {
     headers: Headers;
   };
 
-export const getPostApiV1SchedulerJobsNameDisableUrl = (name: string) => {
-  return `/api/v1/scheduler/jobs/${name}/disable`;
+export const getPostSchedulerJobsNameDisableUrl = (name: string) => {
+  return `/scheduler/jobs/${name}/disable`;
 };
 
-export const postApiV1SchedulerJobsNameDisable = async (
+export const postSchedulerJobsNameDisable = async (
   name: string,
   options?: RequestInit,
-): Promise<postApiV1SchedulerJobsNameDisableResponse> => {
-  return customFetchClient<postApiV1SchedulerJobsNameDisableResponse>(
-    getPostApiV1SchedulerJobsNameDisableUrl(name),
+): Promise<postSchedulerJobsNameDisableResponse> => {
+  return customFetchClient<postSchedulerJobsNameDisableResponse>(
+    getPostSchedulerJobsNameDisableUrl(name),
     {
       ...options,
       method: 'POST',
@@ -15264,24 +15293,24 @@ export const postApiV1SchedulerJobsNameDisable = async (
   );
 };
 
-export const getPostApiV1SchedulerJobsNameDisableMutationOptions = <
-  TError = PostApiV1SchedulerJobsNameDisable404,
+export const getPostSchedulerJobsNameDisableMutationOptions = <
+  TError = PostSchedulerJobsNameDisable404,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>,
+    Awaited<ReturnType<typeof postSchedulerJobsNameDisable>>,
     TError,
     { name: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>,
+  Awaited<ReturnType<typeof postSchedulerJobsNameDisable>>,
   TError,
   { name: string },
   TContext
 > => {
-  const mutationKey = ['postApiV1SchedulerJobsNameDisable'];
+  const mutationKey = ['postSchedulerJobsNameDisable'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -15291,34 +15320,34 @@ export const getPostApiV1SchedulerJobsNameDisableMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>,
+    Awaited<ReturnType<typeof postSchedulerJobsNameDisable>>,
     { name: string }
   > = (props) => {
     const { name } = props ?? {};
 
-    return postApiV1SchedulerJobsNameDisable(name, requestOptions);
+    return postSchedulerJobsNameDisable(name, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1SchedulerJobsNameDisableMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>
+export type PostSchedulerJobsNameDisableMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postSchedulerJobsNameDisable>>
 >;
 
-export type PostApiV1SchedulerJobsNameDisableMutationError =
-  PostApiV1SchedulerJobsNameDisable404;
+export type PostSchedulerJobsNameDisableMutationError =
+  PostSchedulerJobsNameDisable404;
 
 /**
  * @summary Disable a job
  */
-export const usePostApiV1SchedulerJobsNameDisable = <
-  TError = PostApiV1SchedulerJobsNameDisable404,
+export const usePostSchedulerJobsNameDisable = <
+  TError = PostSchedulerJobsNameDisable404,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>,
+      Awaited<ReturnType<typeof postSchedulerJobsNameDisable>>,
       TError,
       { name: string },
       TContext
@@ -15327,13 +15356,13 @@ export const usePostApiV1SchedulerJobsNameDisable = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameDisable>>,
+  Awaited<ReturnType<typeof postSchedulerJobsNameDisable>>,
   TError,
   { name: string },
   TContext
 > => {
   const mutationOptions =
-    getPostApiV1SchedulerJobsNameDisableMutationOptions(options);
+    getPostSchedulerJobsNameDisableMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -15342,35 +15371,35 @@ export const usePostApiV1SchedulerJobsNameDisable = <
  * Enable a previously disabled scheduled job
  * @summary Enable a job
  */
-export type postApiV1SchedulerJobsNameEnableResponse200 = {
-  data: PostApiV1SchedulerJobsNameEnable200;
+export type postSchedulerJobsNameEnableResponse200 = {
+  data: PostSchedulerJobsNameEnable200;
   status: 200;
 };
 
-export type postApiV1SchedulerJobsNameEnableResponse404 = {
-  data: PostApiV1SchedulerJobsNameEnable404;
+export type postSchedulerJobsNameEnableResponse404 = {
+  data: PostSchedulerJobsNameEnable404;
   status: 404;
 };
 
-export type postApiV1SchedulerJobsNameEnableResponseComposite =
-  | postApiV1SchedulerJobsNameEnableResponse200
-  | postApiV1SchedulerJobsNameEnableResponse404;
+export type postSchedulerJobsNameEnableResponseComposite =
+  | postSchedulerJobsNameEnableResponse200
+  | postSchedulerJobsNameEnableResponse404;
 
-export type postApiV1SchedulerJobsNameEnableResponse =
-  postApiV1SchedulerJobsNameEnableResponseComposite & {
+export type postSchedulerJobsNameEnableResponse =
+  postSchedulerJobsNameEnableResponseComposite & {
     headers: Headers;
   };
 
-export const getPostApiV1SchedulerJobsNameEnableUrl = (name: string) => {
-  return `/api/v1/scheduler/jobs/${name}/enable`;
+export const getPostSchedulerJobsNameEnableUrl = (name: string) => {
+  return `/scheduler/jobs/${name}/enable`;
 };
 
-export const postApiV1SchedulerJobsNameEnable = async (
+export const postSchedulerJobsNameEnable = async (
   name: string,
   options?: RequestInit,
-): Promise<postApiV1SchedulerJobsNameEnableResponse> => {
-  return customFetchClient<postApiV1SchedulerJobsNameEnableResponse>(
-    getPostApiV1SchedulerJobsNameEnableUrl(name),
+): Promise<postSchedulerJobsNameEnableResponse> => {
+  return customFetchClient<postSchedulerJobsNameEnableResponse>(
+    getPostSchedulerJobsNameEnableUrl(name),
     {
       ...options,
       method: 'POST',
@@ -15378,24 +15407,24 @@ export const postApiV1SchedulerJobsNameEnable = async (
   );
 };
 
-export const getPostApiV1SchedulerJobsNameEnableMutationOptions = <
-  TError = PostApiV1SchedulerJobsNameEnable404,
+export const getPostSchedulerJobsNameEnableMutationOptions = <
+  TError = PostSchedulerJobsNameEnable404,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>,
+    Awaited<ReturnType<typeof postSchedulerJobsNameEnable>>,
     TError,
     { name: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>,
+  Awaited<ReturnType<typeof postSchedulerJobsNameEnable>>,
   TError,
   { name: string },
   TContext
 > => {
-  const mutationKey = ['postApiV1SchedulerJobsNameEnable'];
+  const mutationKey = ['postSchedulerJobsNameEnable'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -15405,34 +15434,34 @@ export const getPostApiV1SchedulerJobsNameEnableMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>,
+    Awaited<ReturnType<typeof postSchedulerJobsNameEnable>>,
     { name: string }
   > = (props) => {
     const { name } = props ?? {};
 
-    return postApiV1SchedulerJobsNameEnable(name, requestOptions);
+    return postSchedulerJobsNameEnable(name, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1SchedulerJobsNameEnableMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>
+export type PostSchedulerJobsNameEnableMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postSchedulerJobsNameEnable>>
 >;
 
-export type PostApiV1SchedulerJobsNameEnableMutationError =
-  PostApiV1SchedulerJobsNameEnable404;
+export type PostSchedulerJobsNameEnableMutationError =
+  PostSchedulerJobsNameEnable404;
 
 /**
  * @summary Enable a job
  */
-export const usePostApiV1SchedulerJobsNameEnable = <
-  TError = PostApiV1SchedulerJobsNameEnable404,
+export const usePostSchedulerJobsNameEnable = <
+  TError = PostSchedulerJobsNameEnable404,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>,
+      Awaited<ReturnType<typeof postSchedulerJobsNameEnable>>,
       TError,
       { name: string },
       TContext
@@ -15441,13 +15470,13 @@ export const usePostApiV1SchedulerJobsNameEnable = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameEnable>>,
+  Awaited<ReturnType<typeof postSchedulerJobsNameEnable>>,
   TError,
   { name: string },
   TContext
 > => {
   const mutationOptions =
-    getPostApiV1SchedulerJobsNameEnableMutationOptions(options);
+    getPostSchedulerJobsNameEnableMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -15456,41 +15485,41 @@ export const usePostApiV1SchedulerJobsNameEnable = <
  * Trigger a scheduled job to run immediately
  * @summary Manually run a job
  */
-export type postApiV1SchedulerJobsNameRunResponse200 = {
-  data: PostApiV1SchedulerJobsNameRun200;
+export type postSchedulerJobsNameRunResponse200 = {
+  data: PostSchedulerJobsNameRun200;
   status: 200;
 };
 
-export type postApiV1SchedulerJobsNameRunResponse404 = {
-  data: PostApiV1SchedulerJobsNameRun404;
+export type postSchedulerJobsNameRunResponse404 = {
+  data: PostSchedulerJobsNameRun404;
   status: 404;
 };
 
-export type postApiV1SchedulerJobsNameRunResponse500 = {
-  data: PostApiV1SchedulerJobsNameRun500;
+export type postSchedulerJobsNameRunResponse500 = {
+  data: PostSchedulerJobsNameRun500;
   status: 500;
 };
 
-export type postApiV1SchedulerJobsNameRunResponseComposite =
-  | postApiV1SchedulerJobsNameRunResponse200
-  | postApiV1SchedulerJobsNameRunResponse404
-  | postApiV1SchedulerJobsNameRunResponse500;
+export type postSchedulerJobsNameRunResponseComposite =
+  | postSchedulerJobsNameRunResponse200
+  | postSchedulerJobsNameRunResponse404
+  | postSchedulerJobsNameRunResponse500;
 
-export type postApiV1SchedulerJobsNameRunResponse =
-  postApiV1SchedulerJobsNameRunResponseComposite & {
+export type postSchedulerJobsNameRunResponse =
+  postSchedulerJobsNameRunResponseComposite & {
     headers: Headers;
   };
 
-export const getPostApiV1SchedulerJobsNameRunUrl = (name: string) => {
-  return `/api/v1/scheduler/jobs/${name}/run`;
+export const getPostSchedulerJobsNameRunUrl = (name: string) => {
+  return `/scheduler/jobs/${name}/run`;
 };
 
-export const postApiV1SchedulerJobsNameRun = async (
+export const postSchedulerJobsNameRun = async (
   name: string,
   options?: RequestInit,
-): Promise<postApiV1SchedulerJobsNameRunResponse> => {
-  return customFetchClient<postApiV1SchedulerJobsNameRunResponse>(
-    getPostApiV1SchedulerJobsNameRunUrl(name),
+): Promise<postSchedulerJobsNameRunResponse> => {
+  return customFetchClient<postSchedulerJobsNameRunResponse>(
+    getPostSchedulerJobsNameRunUrl(name),
     {
       ...options,
       method: 'POST',
@@ -15498,24 +15527,24 @@ export const postApiV1SchedulerJobsNameRun = async (
   );
 };
 
-export const getPostApiV1SchedulerJobsNameRunMutationOptions = <
-  TError = PostApiV1SchedulerJobsNameRun404 | PostApiV1SchedulerJobsNameRun500,
+export const getPostSchedulerJobsNameRunMutationOptions = <
+  TError = PostSchedulerJobsNameRun404 | PostSchedulerJobsNameRun500,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>,
+    Awaited<ReturnType<typeof postSchedulerJobsNameRun>>,
     TError,
     { name: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>,
+  Awaited<ReturnType<typeof postSchedulerJobsNameRun>>,
   TError,
   { name: string },
   TContext
 > => {
-  const mutationKey = ['postApiV1SchedulerJobsNameRun'];
+  const mutationKey = ['postSchedulerJobsNameRun'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -15525,35 +15554,35 @@ export const getPostApiV1SchedulerJobsNameRunMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>,
+    Awaited<ReturnType<typeof postSchedulerJobsNameRun>>,
     { name: string }
   > = (props) => {
     const { name } = props ?? {};
 
-    return postApiV1SchedulerJobsNameRun(name, requestOptions);
+    return postSchedulerJobsNameRun(name, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1SchedulerJobsNameRunMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>
+export type PostSchedulerJobsNameRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postSchedulerJobsNameRun>>
 >;
 
-export type PostApiV1SchedulerJobsNameRunMutationError =
-  | PostApiV1SchedulerJobsNameRun404
-  | PostApiV1SchedulerJobsNameRun500;
+export type PostSchedulerJobsNameRunMutationError =
+  | PostSchedulerJobsNameRun404
+  | PostSchedulerJobsNameRun500;
 
 /**
  * @summary Manually run a job
  */
-export const usePostApiV1SchedulerJobsNameRun = <
-  TError = PostApiV1SchedulerJobsNameRun404 | PostApiV1SchedulerJobsNameRun500,
+export const usePostSchedulerJobsNameRun = <
+  TError = PostSchedulerJobsNameRun404 | PostSchedulerJobsNameRun500,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>,
+      Awaited<ReturnType<typeof postSchedulerJobsNameRun>>,
       TError,
       { name: string },
       TContext
@@ -15562,13 +15591,12 @@ export const usePostApiV1SchedulerJobsNameRun = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1SchedulerJobsNameRun>>,
+  Awaited<ReturnType<typeof postSchedulerJobsNameRun>>,
   TError,
   { name: string },
   TContext
 > => {
-  const mutationOptions =
-    getPostApiV1SchedulerJobsNameRunMutationOptions(options);
+  const mutationOptions = getPostSchedulerJobsNameRunMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -15577,22 +15605,18 @@ export const usePostApiV1SchedulerJobsNameRun = <
  * Search files across volumes with text search and metadata filters
  * @summary Search files with advanced filters
  */
-export type getApiV1SearchFilesResponse200 = {
+export type getSearchFilesResponse200 = {
   data: InternalApiV1SearchSearchFilesResponse;
   status: 200;
 };
 
-export type getApiV1SearchFilesResponseComposite =
-  getApiV1SearchFilesResponse200;
+export type getSearchFilesResponseComposite = getSearchFilesResponse200;
 
-export type getApiV1SearchFilesResponse =
-  getApiV1SearchFilesResponseComposite & {
-    headers: Headers;
-  };
+export type getSearchFilesResponse = getSearchFilesResponseComposite & {
+  headers: Headers;
+};
 
-export const getGetApiV1SearchFilesUrl = (
-  params?: GetApiV1SearchFilesParams,
-) => {
+export const getGetSearchFilesUrl = (params?: GetSearchFilesParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -15613,16 +15637,16 @@ export const getGetApiV1SearchFilesUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/search/files?${stringifiedParams}`
-    : `/api/v1/search/files`;
+    ? `/search/files?${stringifiedParams}`
+    : `/search/files`;
 };
 
-export const getApiV1SearchFiles = async (
-  params?: GetApiV1SearchFilesParams,
+export const getSearchFiles = async (
+  params?: GetSearchFilesParams,
   options?: RequestInit,
-): Promise<getApiV1SearchFilesResponse> => {
-  return customFetchClient<getApiV1SearchFilesResponse>(
-    getGetApiV1SearchFilesUrl(params),
+): Promise<getSearchFilesResponse> => {
+  return customFetchClient<getSearchFilesResponse>(
+    getGetSearchFilesUrl(params),
     {
       ...options,
       method: 'GET',
@@ -15630,68 +15654,56 @@ export const getApiV1SearchFiles = async (
   );
 };
 
-export const getGetApiV1SearchFilesQueryKey = (
-  params?: GetApiV1SearchFilesParams,
-) => {
-  return [`/api/v1/search/files`, ...(params ? [params] : [])] as const;
+export const getGetSearchFilesQueryKey = (params?: GetSearchFilesParams) => {
+  return [`/search/files`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1SearchFilesQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1SearchFiles>>,
+export const getGetSearchFilesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSearchFiles>>,
   TError = unknown,
 >(
-  params?: GetApiV1SearchFilesParams,
+  params?: GetSearchFilesParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchFiles>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getSearchFiles>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1SearchFilesQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getGetSearchFilesQueryKey(params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1SearchFiles>>
-  > = ({ signal }) =>
-    getApiV1SearchFiles(params, { signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSearchFiles>>> = ({
+    signal,
+  }) => getSearchFiles(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1SearchFiles>>,
+    Awaited<ReturnType<typeof getSearchFiles>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1SearchFilesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1SearchFiles>>
+export type GetSearchFilesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSearchFiles>>
 >;
-export type GetApiV1SearchFilesQueryError = unknown;
+export type GetSearchFilesQueryError = unknown;
 
-export function useGetApiV1SearchFiles<
-  TData = Awaited<ReturnType<typeof getApiV1SearchFiles>>,
+export function useGetSearchFiles<
+  TData = Awaited<ReturnType<typeof getSearchFiles>>,
   TError = unknown,
 >(
-  params: undefined | GetApiV1SearchFilesParams,
+  params: undefined | GetSearchFilesParams,
   options: {
     query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchFiles>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getSearchFiles>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SearchFiles>>,
+          Awaited<ReturnType<typeof getSearchFiles>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SearchFiles>>
+          Awaited<ReturnType<typeof getSearchFiles>>
         >,
         'initialData'
       >;
@@ -15701,24 +15713,20 @@ export function useGetApiV1SearchFiles<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SearchFiles<
-  TData = Awaited<ReturnType<typeof getApiV1SearchFiles>>,
+export function useGetSearchFiles<
+  TData = Awaited<ReturnType<typeof getSearchFiles>>,
   TError = unknown,
 >(
-  params?: GetApiV1SearchFilesParams,
+  params?: GetSearchFilesParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchFiles>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getSearchFiles>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SearchFiles>>,
+          Awaited<ReturnType<typeof getSearchFiles>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SearchFiles>>
+          Awaited<ReturnType<typeof getSearchFiles>>
         >,
         'initialData'
       >;
@@ -15728,18 +15736,14 @@ export function useGetApiV1SearchFiles<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SearchFiles<
-  TData = Awaited<ReturnType<typeof getApiV1SearchFiles>>,
+export function useGetSearchFiles<
+  TData = Awaited<ReturnType<typeof getSearchFiles>>,
   TError = unknown,
 >(
-  params?: GetApiV1SearchFilesParams,
+  params?: GetSearchFilesParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchFiles>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getSearchFiles>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -15751,18 +15755,14 @@ export function useGetApiV1SearchFiles<
  * @summary Search files with advanced filters
  */
 
-export function useGetApiV1SearchFiles<
-  TData = Awaited<ReturnType<typeof getApiV1SearchFiles>>,
+export function useGetSearchFiles<
+  TData = Awaited<ReturnType<typeof getSearchFiles>>,
   TError = unknown,
 >(
-  params?: GetApiV1SearchFilesParams,
+  params?: GetSearchFilesParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchFiles>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getSearchFiles>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -15770,7 +15770,7 @@ export function useGetApiV1SearchFiles<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1SearchFilesQueryOptions(params, options);
+  const queryOptions = getGetSearchFilesQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -15786,22 +15786,18 @@ export function useGetApiV1SearchFiles<
  * Get a list of all saved searches
  * @summary List saved searches
  */
-export type getApiV1SearchSavedResponse200 = {
+export type getSearchSavedResponse200 = {
   data: InternalApiV1SearchListSavedSearchesResponse;
   status: 200;
 };
 
-export type getApiV1SearchSavedResponseComposite =
-  getApiV1SearchSavedResponse200;
+export type getSearchSavedResponseComposite = getSearchSavedResponse200;
 
-export type getApiV1SearchSavedResponse =
-  getApiV1SearchSavedResponseComposite & {
-    headers: Headers;
-  };
+export type getSearchSavedResponse = getSearchSavedResponseComposite & {
+  headers: Headers;
+};
 
-export const getGetApiV1SearchSavedUrl = (
-  params?: GetApiV1SearchSavedParams,
-) => {
+export const getGetSearchSavedUrl = (params?: GetSearchSavedParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -15822,16 +15818,16 @@ export const getGetApiV1SearchSavedUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/search/saved?${stringifiedParams}`
-    : `/api/v1/search/saved`;
+    ? `/search/saved?${stringifiedParams}`
+    : `/search/saved`;
 };
 
-export const getApiV1SearchSaved = async (
-  params?: GetApiV1SearchSavedParams,
+export const getSearchSaved = async (
+  params?: GetSearchSavedParams,
   options?: RequestInit,
-): Promise<getApiV1SearchSavedResponse> => {
-  return customFetchClient<getApiV1SearchSavedResponse>(
-    getGetApiV1SearchSavedUrl(params),
+): Promise<getSearchSavedResponse> => {
+  return customFetchClient<getSearchSavedResponse>(
+    getGetSearchSavedUrl(params),
     {
       ...options,
       method: 'GET',
@@ -15839,68 +15835,56 @@ export const getApiV1SearchSaved = async (
   );
 };
 
-export const getGetApiV1SearchSavedQueryKey = (
-  params?: GetApiV1SearchSavedParams,
-) => {
-  return [`/api/v1/search/saved`, ...(params ? [params] : [])] as const;
+export const getGetSearchSavedQueryKey = (params?: GetSearchSavedParams) => {
+  return [`/search/saved`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1SearchSavedQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1SearchSaved>>,
+export const getGetSearchSavedQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSearchSaved>>,
   TError = unknown,
 >(
-  params?: GetApiV1SearchSavedParams,
+  params?: GetSearchSavedParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSaved>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getSearchSaved>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1SearchSavedQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getGetSearchSavedQueryKey(params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1SearchSaved>>
-  > = ({ signal }) =>
-    getApiV1SearchSaved(params, { signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSearchSaved>>> = ({
+    signal,
+  }) => getSearchSaved(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1SearchSaved>>,
+    Awaited<ReturnType<typeof getSearchSaved>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1SearchSavedQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1SearchSaved>>
+export type GetSearchSavedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSearchSaved>>
 >;
-export type GetApiV1SearchSavedQueryError = unknown;
+export type GetSearchSavedQueryError = unknown;
 
-export function useGetApiV1SearchSaved<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSaved>>,
+export function useGetSearchSaved<
+  TData = Awaited<ReturnType<typeof getSearchSaved>>,
   TError = unknown,
 >(
-  params: undefined | GetApiV1SearchSavedParams,
+  params: undefined | GetSearchSavedParams,
   options: {
     query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSaved>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getSearchSaved>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SearchSaved>>,
+          Awaited<ReturnType<typeof getSearchSaved>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SearchSaved>>
+          Awaited<ReturnType<typeof getSearchSaved>>
         >,
         'initialData'
       >;
@@ -15910,24 +15894,20 @@ export function useGetApiV1SearchSaved<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SearchSaved<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSaved>>,
+export function useGetSearchSaved<
+  TData = Awaited<ReturnType<typeof getSearchSaved>>,
   TError = unknown,
 >(
-  params?: GetApiV1SearchSavedParams,
+  params?: GetSearchSavedParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSaved>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getSearchSaved>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SearchSaved>>,
+          Awaited<ReturnType<typeof getSearchSaved>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SearchSaved>>
+          Awaited<ReturnType<typeof getSearchSaved>>
         >,
         'initialData'
       >;
@@ -15937,18 +15917,14 @@ export function useGetApiV1SearchSaved<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SearchSaved<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSaved>>,
+export function useGetSearchSaved<
+  TData = Awaited<ReturnType<typeof getSearchSaved>>,
   TError = unknown,
 >(
-  params?: GetApiV1SearchSavedParams,
+  params?: GetSearchSavedParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSaved>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getSearchSaved>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -15960,18 +15936,14 @@ export function useGetApiV1SearchSaved<
  * @summary List saved searches
  */
 
-export function useGetApiV1SearchSaved<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSaved>>,
+export function useGetSearchSaved<
+  TData = Awaited<ReturnType<typeof getSearchSaved>>,
   TError = unknown,
 >(
-  params?: GetApiV1SearchSavedParams,
+  params?: GetSearchSavedParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSaved>>,
-        TError,
-        TData
-      >
+      UseQueryOptions<Awaited<ReturnType<typeof getSearchSaved>>, TError, TData>
     >;
     request?: SecondParameter<typeof customFetchClient>;
   },
@@ -15979,7 +15951,7 @@ export function useGetApiV1SearchSaved<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1SearchSavedQueryOptions(params, options);
+  const queryOptions = getGetSearchSavedQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -15995,56 +15967,51 @@ export function useGetApiV1SearchSaved<
  * Save a search query for later use
  * @summary Create a saved search
  */
-export type postApiV1SearchSavedResponse201 = {
+export type postSearchSavedResponse201 = {
   data: InternalApiV1SearchSavedSearch;
   status: 201;
 };
 
-export type postApiV1SearchSavedResponseComposite =
-  postApiV1SearchSavedResponse201;
+export type postSearchSavedResponseComposite = postSearchSavedResponse201;
 
-export type postApiV1SearchSavedResponse =
-  postApiV1SearchSavedResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPostApiV1SearchSavedUrl = () => {
-  return `/api/v1/search/saved`;
+export type postSearchSavedResponse = postSearchSavedResponseComposite & {
+  headers: Headers;
 };
 
-export const postApiV1SearchSaved = async (
+export const getPostSearchSavedUrl = () => {
+  return `/search/saved`;
+};
+
+export const postSearchSaved = async (
   internalApiV1SearchCreateSavedSearchRequest: InternalApiV1SearchCreateSavedSearchRequest,
   options?: RequestInit,
-): Promise<postApiV1SearchSavedResponse> => {
-  return customFetchClient<postApiV1SearchSavedResponse>(
-    getPostApiV1SearchSavedUrl(),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(internalApiV1SearchCreateSavedSearchRequest),
-    },
-  );
+): Promise<postSearchSavedResponse> => {
+  return customFetchClient<postSearchSavedResponse>(getPostSearchSavedUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(internalApiV1SearchCreateSavedSearchRequest),
+  });
 };
 
-export const getPostApiV1SearchSavedMutationOptions = <
+export const getPostSearchSavedMutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1SearchSaved>>,
+    Awaited<ReturnType<typeof postSearchSaved>>,
     TError,
     { data: InternalApiV1SearchCreateSavedSearchRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1SearchSaved>>,
+  Awaited<ReturnType<typeof postSearchSaved>>,
   TError,
   { data: InternalApiV1SearchCreateSavedSearchRequest },
   TContext
 > => {
-  const mutationKey = ['postApiV1SearchSaved'];
+  const mutationKey = ['postSearchSaved'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -16054,31 +16021,31 @@ export const getPostApiV1SearchSavedMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1SearchSaved>>,
+    Awaited<ReturnType<typeof postSearchSaved>>,
     { data: InternalApiV1SearchCreateSavedSearchRequest }
   > = (props) => {
     const { data } = props ?? {};
 
-    return postApiV1SearchSaved(data, requestOptions);
+    return postSearchSaved(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1SearchSavedMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1SearchSaved>>
+export type PostSearchSavedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postSearchSaved>>
 >;
-export type PostApiV1SearchSavedMutationBody =
+export type PostSearchSavedMutationBody =
   InternalApiV1SearchCreateSavedSearchRequest;
-export type PostApiV1SearchSavedMutationError = unknown;
+export type PostSearchSavedMutationError = unknown;
 
 /**
  * @summary Create a saved search
  */
-export const usePostApiV1SearchSaved = <TError = unknown, TContext = unknown>(
+export const usePostSearchSaved = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1SearchSaved>>,
+      Awaited<ReturnType<typeof postSearchSaved>>,
       TError,
       { data: InternalApiV1SearchCreateSavedSearchRequest },
       TContext
@@ -16087,12 +16054,12 @@ export const usePostApiV1SearchSaved = <TError = unknown, TContext = unknown>(
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1SearchSaved>>,
+  Awaited<ReturnType<typeof postSearchSaved>>,
   TError,
   { data: InternalApiV1SearchCreateSavedSearchRequest },
   TContext
 > => {
-  const mutationOptions = getPostApiV1SearchSavedMutationOptions(options);
+  const mutationOptions = getPostSearchSavedMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -16101,29 +16068,29 @@ export const usePostApiV1SearchSaved = <TError = unknown, TContext = unknown>(
  * Delete a saved search by ID
  * @summary Delete a saved search
  */
-export type deleteApiV1SearchSavedIdResponse204 = {
+export type deleteSearchSavedIdResponse204 = {
   data: null;
   status: 204;
 };
 
-export type deleteApiV1SearchSavedIdResponseComposite =
-  deleteApiV1SearchSavedIdResponse204;
+export type deleteSearchSavedIdResponseComposite =
+  deleteSearchSavedIdResponse204;
 
-export type deleteApiV1SearchSavedIdResponse =
-  deleteApiV1SearchSavedIdResponseComposite & {
+export type deleteSearchSavedIdResponse =
+  deleteSearchSavedIdResponseComposite & {
     headers: Headers;
   };
 
-export const getDeleteApiV1SearchSavedIdUrl = (id: number) => {
-  return `/api/v1/search/saved/${id}`;
+export const getDeleteSearchSavedIdUrl = (id: number) => {
+  return `/search/saved/${id}`;
 };
 
-export const deleteApiV1SearchSavedId = async (
+export const deleteSearchSavedId = async (
   id: number,
   options?: RequestInit,
-): Promise<deleteApiV1SearchSavedIdResponse> => {
-  return customFetchClient<deleteApiV1SearchSavedIdResponse>(
-    getDeleteApiV1SearchSavedIdUrl(id),
+): Promise<deleteSearchSavedIdResponse> => {
+  return customFetchClient<deleteSearchSavedIdResponse>(
+    getDeleteSearchSavedIdUrl(id),
     {
       ...options,
       method: 'DELETE',
@@ -16131,24 +16098,24 @@ export const deleteApiV1SearchSavedId = async (
   );
 };
 
-export const getDeleteApiV1SearchSavedIdMutationOptions = <
+export const getDeleteSearchSavedIdMutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteApiV1SearchSavedId>>,
+    Awaited<ReturnType<typeof deleteSearchSavedId>>,
     TError,
     { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof deleteApiV1SearchSavedId>>,
+  Awaited<ReturnType<typeof deleteSearchSavedId>>,
   TError,
   { id: number },
   TContext
 > => {
-  const mutationKey = ['deleteApiV1SearchSavedId'];
+  const mutationKey = ['deleteSearchSavedId'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -16158,33 +16125,30 @@ export const getDeleteApiV1SearchSavedIdMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof deleteApiV1SearchSavedId>>,
+    Awaited<ReturnType<typeof deleteSearchSavedId>>,
     { id: number }
   > = (props) => {
     const { id } = props ?? {};
 
-    return deleteApiV1SearchSavedId(id, requestOptions);
+    return deleteSearchSavedId(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type DeleteApiV1SearchSavedIdMutationResult = NonNullable<
-  Awaited<ReturnType<typeof deleteApiV1SearchSavedId>>
+export type DeleteSearchSavedIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteSearchSavedId>>
 >;
 
-export type DeleteApiV1SearchSavedIdMutationError = unknown;
+export type DeleteSearchSavedIdMutationError = unknown;
 
 /**
  * @summary Delete a saved search
  */
-export const useDeleteApiV1SearchSavedId = <
-  TError = unknown,
-  TContext = unknown,
->(
+export const useDeleteSearchSavedId = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof deleteApiV1SearchSavedId>>,
+      Awaited<ReturnType<typeof deleteSearchSavedId>>,
       TError,
       { id: number },
       TContext
@@ -16193,12 +16157,12 @@ export const useDeleteApiV1SearchSavedId = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof deleteApiV1SearchSavedId>>,
+  Awaited<ReturnType<typeof deleteSearchSavedId>>,
   TError,
   { id: number },
   TContext
 > => {
-  const mutationOptions = getDeleteApiV1SearchSavedIdMutationOptions(options);
+  const mutationOptions = getDeleteSearchSavedIdMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -16207,29 +16171,27 @@ export const useDeleteApiV1SearchSavedId = <
  * Get details of a specific saved search
  * @summary Get a saved search
  */
-export type getApiV1SearchSavedIdResponse200 = {
+export type getSearchSavedIdResponse200 = {
   data: InternalApiV1SearchSavedSearch;
   status: 200;
 };
 
-export type getApiV1SearchSavedIdResponseComposite =
-  getApiV1SearchSavedIdResponse200;
+export type getSearchSavedIdResponseComposite = getSearchSavedIdResponse200;
 
-export type getApiV1SearchSavedIdResponse =
-  getApiV1SearchSavedIdResponseComposite & {
-    headers: Headers;
-  };
-
-export const getGetApiV1SearchSavedIdUrl = (id: number) => {
-  return `/api/v1/search/saved/${id}`;
+export type getSearchSavedIdResponse = getSearchSavedIdResponseComposite & {
+  headers: Headers;
 };
 
-export const getApiV1SearchSavedId = async (
+export const getGetSearchSavedIdUrl = (id: number) => {
+  return `/search/saved/${id}`;
+};
+
+export const getSearchSavedId = async (
   id: number,
   options?: RequestInit,
-): Promise<getApiV1SearchSavedIdResponse> => {
-  return customFetchClient<getApiV1SearchSavedIdResponse>(
-    getGetApiV1SearchSavedIdUrl(id),
+): Promise<getSearchSavedIdResponse> => {
+  return customFetchClient<getSearchSavedIdResponse>(
+    getGetSearchSavedIdUrl(id),
     {
       ...options,
       method: 'GET',
@@ -16237,19 +16199,19 @@ export const getApiV1SearchSavedId = async (
   );
 };
 
-export const getGetApiV1SearchSavedIdQueryKey = (id?: number) => {
-  return [`/api/v1/search/saved/${id}`] as const;
+export const getGetSearchSavedIdQueryKey = (id?: number) => {
+  return [`/search/saved/${id}`] as const;
 };
 
-export const getGetApiV1SearchSavedIdQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+export const getGetSearchSavedIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSearchSavedId>>,
   TError = unknown,
 >(
   id: number,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+        Awaited<ReturnType<typeof getSearchSavedId>>,
         TError,
         TData
       >
@@ -16259,12 +16221,11 @@ export const getGetApiV1SearchSavedIdQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1SearchSavedIdQueryKey(id);
+  const queryKey = queryOptions?.queryKey ?? getGetSearchSavedIdQueryKey(id);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1SearchSavedId>>
-  > = ({ signal }) => getApiV1SearchSavedId(id, { signal, ...requestOptions });
+    Awaited<ReturnType<typeof getSearchSavedId>>
+  > = ({ signal }) => getSearchSavedId(id, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -16272,35 +16233,35 @@ export const getGetApiV1SearchSavedIdQueryOptions = <
     enabled: !!id,
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+    Awaited<ReturnType<typeof getSearchSavedId>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1SearchSavedIdQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1SearchSavedId>>
+export type GetSearchSavedIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSearchSavedId>>
 >;
-export type GetApiV1SearchSavedIdQueryError = unknown;
+export type GetSearchSavedIdQueryError = unknown;
 
-export function useGetApiV1SearchSavedId<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+export function useGetSearchSavedId<
+  TData = Awaited<ReturnType<typeof getSearchSavedId>>,
   TError = unknown,
 >(
   id: number,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+        Awaited<ReturnType<typeof getSearchSavedId>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+          Awaited<ReturnType<typeof getSearchSavedId>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SearchSavedId>>
+          Awaited<ReturnType<typeof getSearchSavedId>>
         >,
         'initialData'
       >;
@@ -16310,24 +16271,24 @@ export function useGetApiV1SearchSavedId<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SearchSavedId<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+export function useGetSearchSavedId<
+  TData = Awaited<ReturnType<typeof getSearchSavedId>>,
   TError = unknown,
 >(
   id: number,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+        Awaited<ReturnType<typeof getSearchSavedId>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+          Awaited<ReturnType<typeof getSearchSavedId>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SearchSavedId>>
+          Awaited<ReturnType<typeof getSearchSavedId>>
         >,
         'initialData'
       >;
@@ -16337,15 +16298,15 @@ export function useGetApiV1SearchSavedId<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SearchSavedId<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+export function useGetSearchSavedId<
+  TData = Awaited<ReturnType<typeof getSearchSavedId>>,
   TError = unknown,
 >(
   id: number,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+        Awaited<ReturnType<typeof getSearchSavedId>>,
         TError,
         TData
       >
@@ -16360,15 +16321,15 @@ export function useGetApiV1SearchSavedId<
  * @summary Get a saved search
  */
 
-export function useGetApiV1SearchSavedId<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+export function useGetSearchSavedId<
+  TData = Awaited<ReturnType<typeof getSearchSavedId>>,
   TError = unknown,
 >(
   id: number,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSavedId>>,
+        Awaited<ReturnType<typeof getSearchSavedId>>,
         TError,
         TData
       >
@@ -16379,7 +16340,7 @@ export function useGetApiV1SearchSavedId<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1SearchSavedIdQueryOptions(id, options);
+  const queryOptions = getGetSearchSavedIdQueryOptions(id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -16395,30 +16356,28 @@ export function useGetApiV1SearchSavedId<
  * Update an existing saved search
  * @summary Update a saved search
  */
-export type putApiV1SearchSavedIdResponse200 = {
+export type putSearchSavedIdResponse200 = {
   data: InternalApiV1SearchSavedSearch;
   status: 200;
 };
 
-export type putApiV1SearchSavedIdResponseComposite =
-  putApiV1SearchSavedIdResponse200;
+export type putSearchSavedIdResponseComposite = putSearchSavedIdResponse200;
 
-export type putApiV1SearchSavedIdResponse =
-  putApiV1SearchSavedIdResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPutApiV1SearchSavedIdUrl = (id: number) => {
-  return `/api/v1/search/saved/${id}`;
+export type putSearchSavedIdResponse = putSearchSavedIdResponseComposite & {
+  headers: Headers;
 };
 
-export const putApiV1SearchSavedId = async (
+export const getPutSearchSavedIdUrl = (id: number) => {
+  return `/search/saved/${id}`;
+};
+
+export const putSearchSavedId = async (
   id: number,
   internalApiV1SearchUpdateSavedSearchRequest: InternalApiV1SearchUpdateSavedSearchRequest,
   options?: RequestInit,
-): Promise<putApiV1SearchSavedIdResponse> => {
-  return customFetchClient<putApiV1SearchSavedIdResponse>(
-    getPutApiV1SearchSavedIdUrl(id),
+): Promise<putSearchSavedIdResponse> => {
+  return customFetchClient<putSearchSavedIdResponse>(
+    getPutSearchSavedIdUrl(id),
     {
       ...options,
       method: 'PUT',
@@ -16428,24 +16387,24 @@ export const putApiV1SearchSavedId = async (
   );
 };
 
-export const getPutApiV1SearchSavedIdMutationOptions = <
+export const getPutSearchSavedIdMutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof putApiV1SearchSavedId>>,
+    Awaited<ReturnType<typeof putSearchSavedId>>,
     TError,
     { id: number; data: InternalApiV1SearchUpdateSavedSearchRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof putApiV1SearchSavedId>>,
+  Awaited<ReturnType<typeof putSearchSavedId>>,
   TError,
   { id: number; data: InternalApiV1SearchUpdateSavedSearchRequest },
   TContext
 > => {
-  const mutationKey = ['putApiV1SearchSavedId'];
+  const mutationKey = ['putSearchSavedId'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -16455,31 +16414,31 @@ export const getPutApiV1SearchSavedIdMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof putApiV1SearchSavedId>>,
+    Awaited<ReturnType<typeof putSearchSavedId>>,
     { id: number; data: InternalApiV1SearchUpdateSavedSearchRequest }
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return putApiV1SearchSavedId(id, data, requestOptions);
+    return putSearchSavedId(id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PutApiV1SearchSavedIdMutationResult = NonNullable<
-  Awaited<ReturnType<typeof putApiV1SearchSavedId>>
+export type PutSearchSavedIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putSearchSavedId>>
 >;
-export type PutApiV1SearchSavedIdMutationBody =
+export type PutSearchSavedIdMutationBody =
   InternalApiV1SearchUpdateSavedSearchRequest;
-export type PutApiV1SearchSavedIdMutationError = unknown;
+export type PutSearchSavedIdMutationError = unknown;
 
 /**
  * @summary Update a saved search
  */
-export const usePutApiV1SearchSavedId = <TError = unknown, TContext = unknown>(
+export const usePutSearchSavedId = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof putApiV1SearchSavedId>>,
+      Awaited<ReturnType<typeof putSearchSavedId>>,
       TError,
       { id: number; data: InternalApiV1SearchUpdateSavedSearchRequest },
       TContext
@@ -16488,12 +16447,12 @@ export const usePutApiV1SearchSavedId = <TError = unknown, TContext = unknown>(
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof putApiV1SearchSavedId>>,
+  Awaited<ReturnType<typeof putSearchSavedId>>,
   TError,
   { id: number; data: InternalApiV1SearchUpdateSavedSearchRequest },
   TContext
 > => {
-  const mutationOptions = getPutApiV1SearchSavedIdMutationOptions(options);
+  const mutationOptions = getPutSearchSavedIdMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -16502,29 +16461,29 @@ export const usePutApiV1SearchSavedId = <TError = unknown, TContext = unknown>(
  * Execute a saved search and return results
  * @summary Run a saved search
  */
-export type postApiV1SearchSavedIdRunResponse200 = {
+export type postSearchSavedIdRunResponse200 = {
   data: InternalApiV1SearchSearchFilesResponse;
   status: 200;
 };
 
-export type postApiV1SearchSavedIdRunResponseComposite =
-  postApiV1SearchSavedIdRunResponse200;
+export type postSearchSavedIdRunResponseComposite =
+  postSearchSavedIdRunResponse200;
 
-export type postApiV1SearchSavedIdRunResponse =
-  postApiV1SearchSavedIdRunResponseComposite & {
+export type postSearchSavedIdRunResponse =
+  postSearchSavedIdRunResponseComposite & {
     headers: Headers;
   };
 
-export const getPostApiV1SearchSavedIdRunUrl = (id: number) => {
-  return `/api/v1/search/saved/${id}/run`;
+export const getPostSearchSavedIdRunUrl = (id: number) => {
+  return `/search/saved/${id}/run`;
 };
 
-export const postApiV1SearchSavedIdRun = async (
+export const postSearchSavedIdRun = async (
   id: number,
   options?: RequestInit,
-): Promise<postApiV1SearchSavedIdRunResponse> => {
-  return customFetchClient<postApiV1SearchSavedIdRunResponse>(
-    getPostApiV1SearchSavedIdRunUrl(id),
+): Promise<postSearchSavedIdRunResponse> => {
+  return customFetchClient<postSearchSavedIdRunResponse>(
+    getPostSearchSavedIdRunUrl(id),
     {
       ...options,
       method: 'POST',
@@ -16532,24 +16491,24 @@ export const postApiV1SearchSavedIdRun = async (
   );
 };
 
-export const getPostApiV1SearchSavedIdRunMutationOptions = <
+export const getPostSearchSavedIdRunMutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1SearchSavedIdRun>>,
+    Awaited<ReturnType<typeof postSearchSavedIdRun>>,
     TError,
     { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1SearchSavedIdRun>>,
+  Awaited<ReturnType<typeof postSearchSavedIdRun>>,
   TError,
   { id: number },
   TContext
 > => {
-  const mutationKey = ['postApiV1SearchSavedIdRun'];
+  const mutationKey = ['postSearchSavedIdRun'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -16559,33 +16518,30 @@ export const getPostApiV1SearchSavedIdRunMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1SearchSavedIdRun>>,
+    Awaited<ReturnType<typeof postSearchSavedIdRun>>,
     { id: number }
   > = (props) => {
     const { id } = props ?? {};
 
-    return postApiV1SearchSavedIdRun(id, requestOptions);
+    return postSearchSavedIdRun(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1SearchSavedIdRunMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1SearchSavedIdRun>>
+export type PostSearchSavedIdRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postSearchSavedIdRun>>
 >;
 
-export type PostApiV1SearchSavedIdRunMutationError = unknown;
+export type PostSearchSavedIdRunMutationError = unknown;
 
 /**
  * @summary Run a saved search
  */
-export const usePostApiV1SearchSavedIdRun = <
-  TError = unknown,
-  TContext = unknown,
->(
+export const usePostSearchSavedIdRun = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1SearchSavedIdRun>>,
+      Awaited<ReturnType<typeof postSearchSavedIdRun>>,
       TError,
       { id: number },
       TContext
@@ -16594,12 +16550,12 @@ export const usePostApiV1SearchSavedIdRun = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1SearchSavedIdRun>>,
+  Awaited<ReturnType<typeof postSearchSavedIdRun>>,
   TError,
   { id: number },
   TContext
 > => {
-  const mutationOptions = getPostApiV1SearchSavedIdRunMutationOptions(options);
+  const mutationOptions = getPostSearchSavedIdRunMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -16608,21 +16564,21 @@ export const usePostApiV1SearchSavedIdRun = <
  * Get intelligent search suggestions based on partial query
  * @summary Get search suggestions
  */
-export type getApiV1SearchSuggestionsResponse200 = {
+export type getSearchSuggestionsResponse200 = {
   data: InternalApiV1SearchSearchSuggestionsResponse;
   status: 200;
 };
 
-export type getApiV1SearchSuggestionsResponseComposite =
-  getApiV1SearchSuggestionsResponse200;
+export type getSearchSuggestionsResponseComposite =
+  getSearchSuggestionsResponse200;
 
-export type getApiV1SearchSuggestionsResponse =
-  getApiV1SearchSuggestionsResponseComposite & {
+export type getSearchSuggestionsResponse =
+  getSearchSuggestionsResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1SearchSuggestionsUrl = (
-  params: GetApiV1SearchSuggestionsParams,
+export const getGetSearchSuggestionsUrl = (
+  params: GetSearchSuggestionsParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -16635,16 +16591,16 @@ export const getGetApiV1SearchSuggestionsUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/v1/search/suggestions?${stringifiedParams}`
-    : `/api/v1/search/suggestions`;
+    ? `/search/suggestions?${stringifiedParams}`
+    : `/search/suggestions`;
 };
 
-export const getApiV1SearchSuggestions = async (
-  params: GetApiV1SearchSuggestionsParams,
+export const getSearchSuggestions = async (
+  params: GetSearchSuggestionsParams,
   options?: RequestInit,
-): Promise<getApiV1SearchSuggestionsResponse> => {
-  return customFetchClient<getApiV1SearchSuggestionsResponse>(
-    getGetApiV1SearchSuggestionsUrl(params),
+): Promise<getSearchSuggestionsResponse> => {
+  return customFetchClient<getSearchSuggestionsResponse>(
+    getGetSearchSuggestionsUrl(params),
     {
       ...options,
       method: 'GET',
@@ -16652,21 +16608,21 @@ export const getApiV1SearchSuggestions = async (
   );
 };
 
-export const getGetApiV1SearchSuggestionsQueryKey = (
-  params?: GetApiV1SearchSuggestionsParams,
+export const getGetSearchSuggestionsQueryKey = (
+  params?: GetSearchSuggestionsParams,
 ) => {
-  return [`/api/v1/search/suggestions`, ...(params ? [params] : [])] as const;
+  return [`/search/suggestions`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetApiV1SearchSuggestionsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+export const getGetSearchSuggestionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSearchSuggestions>>,
   TError = unknown,
 >(
-  params: GetApiV1SearchSuggestionsParams,
+  params: GetSearchSuggestionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+        Awaited<ReturnType<typeof getSearchSuggestions>>,
         TError,
         TData
       >
@@ -16677,43 +16633,43 @@ export const getGetApiV1SearchSuggestionsQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1SearchSuggestionsQueryKey(params);
+    queryOptions?.queryKey ?? getGetSearchSuggestionsQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1SearchSuggestions>>
+    Awaited<ReturnType<typeof getSearchSuggestions>>
   > = ({ signal }) =>
-    getApiV1SearchSuggestions(params, { signal, ...requestOptions });
+    getSearchSuggestions(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+    Awaited<ReturnType<typeof getSearchSuggestions>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1SearchSuggestionsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1SearchSuggestions>>
+export type GetSearchSuggestionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSearchSuggestions>>
 >;
-export type GetApiV1SearchSuggestionsQueryError = unknown;
+export type GetSearchSuggestionsQueryError = unknown;
 
-export function useGetApiV1SearchSuggestions<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+export function useGetSearchSuggestions<
+  TData = Awaited<ReturnType<typeof getSearchSuggestions>>,
   TError = unknown,
 >(
-  params: GetApiV1SearchSuggestionsParams,
+  params: GetSearchSuggestionsParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+        Awaited<ReturnType<typeof getSearchSuggestions>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+          Awaited<ReturnType<typeof getSearchSuggestions>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SearchSuggestions>>
+          Awaited<ReturnType<typeof getSearchSuggestions>>
         >,
         'initialData'
       >;
@@ -16723,24 +16679,24 @@ export function useGetApiV1SearchSuggestions<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SearchSuggestions<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+export function useGetSearchSuggestions<
+  TData = Awaited<ReturnType<typeof getSearchSuggestions>>,
   TError = unknown,
 >(
-  params: GetApiV1SearchSuggestionsParams,
+  params: GetSearchSuggestionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+        Awaited<ReturnType<typeof getSearchSuggestions>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+          Awaited<ReturnType<typeof getSearchSuggestions>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1SearchSuggestions>>
+          Awaited<ReturnType<typeof getSearchSuggestions>>
         >,
         'initialData'
       >;
@@ -16750,15 +16706,15 @@ export function useGetApiV1SearchSuggestions<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1SearchSuggestions<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+export function useGetSearchSuggestions<
+  TData = Awaited<ReturnType<typeof getSearchSuggestions>>,
   TError = unknown,
 >(
-  params: GetApiV1SearchSuggestionsParams,
+  params: GetSearchSuggestionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+        Awaited<ReturnType<typeof getSearchSuggestions>>,
         TError,
         TData
       >
@@ -16773,15 +16729,15 @@ export function useGetApiV1SearchSuggestions<
  * @summary Get search suggestions
  */
 
-export function useGetApiV1SearchSuggestions<
-  TData = Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+export function useGetSearchSuggestions<
+  TData = Awaited<ReturnType<typeof getSearchSuggestions>>,
   TError = unknown,
 >(
-  params: GetApiV1SearchSuggestionsParams,
+  params: GetSearchSuggestionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1SearchSuggestions>>,
+        Awaited<ReturnType<typeof getSearchSuggestions>>,
         TError,
         TData
       >
@@ -16792,10 +16748,7 @@ export function useGetApiV1SearchSuggestions<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1SearchSuggestionsQueryOptions(
-    params,
-    options,
-  );
+  const queryOptions = getGetSearchSuggestionsQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -16811,35 +16764,34 @@ export function useGetApiV1SearchSuggestions<
  * Applies tracking rules to update mount tracking status in the catalog
  * @summary Apply tracking rules
  */
-export type postApiV1TrackingApplyResponse200 = {
+export type postTrackingApplyResponse200 = {
   data: InternalApiV1RulesApplyTrackingRulesResponse;
   status: 200;
 };
 
-export type postApiV1TrackingApplyResponse500 = {
+export type postTrackingApplyResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type postApiV1TrackingApplyResponseComposite =
-  | postApiV1TrackingApplyResponse200
-  | postApiV1TrackingApplyResponse500;
+export type postTrackingApplyResponseComposite =
+  | postTrackingApplyResponse200
+  | postTrackingApplyResponse500;
 
-export type postApiV1TrackingApplyResponse =
-  postApiV1TrackingApplyResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPostApiV1TrackingApplyUrl = () => {
-  return `/api/v1/tracking/apply`;
+export type postTrackingApplyResponse = postTrackingApplyResponseComposite & {
+  headers: Headers;
 };
 
-export const postApiV1TrackingApply = async (
+export const getPostTrackingApplyUrl = () => {
+  return `/tracking/apply`;
+};
+
+export const postTrackingApply = async (
   internalApiV1RulesApplyTrackingRulesRequest: InternalApiV1RulesApplyTrackingRulesRequest,
   options?: RequestInit,
-): Promise<postApiV1TrackingApplyResponse> => {
-  return customFetchClient<postApiV1TrackingApplyResponse>(
-    getPostApiV1TrackingApplyUrl(),
+): Promise<postTrackingApplyResponse> => {
+  return customFetchClient<postTrackingApplyResponse>(
+    getPostTrackingApplyUrl(),
     {
       ...options,
       method: 'POST',
@@ -16849,24 +16801,24 @@ export const postApiV1TrackingApply = async (
   );
 };
 
-export const getPostApiV1TrackingApplyMutationOptions = <
+export const getPostTrackingApplyMutationOptions = <
   TError = GinH,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1TrackingApply>>,
+    Awaited<ReturnType<typeof postTrackingApply>>,
     TError,
     { data: InternalApiV1RulesApplyTrackingRulesRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1TrackingApply>>,
+  Awaited<ReturnType<typeof postTrackingApply>>,
   TError,
   { data: InternalApiV1RulesApplyTrackingRulesRequest },
   TContext
 > => {
-  const mutationKey = ['postApiV1TrackingApply'];
+  const mutationKey = ['postTrackingApply'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -16876,31 +16828,31 @@ export const getPostApiV1TrackingApplyMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1TrackingApply>>,
+    Awaited<ReturnType<typeof postTrackingApply>>,
     { data: InternalApiV1RulesApplyTrackingRulesRequest }
   > = (props) => {
     const { data } = props ?? {};
 
-    return postApiV1TrackingApply(data, requestOptions);
+    return postTrackingApply(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1TrackingApplyMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1TrackingApply>>
+export type PostTrackingApplyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postTrackingApply>>
 >;
-export type PostApiV1TrackingApplyMutationBody =
+export type PostTrackingApplyMutationBody =
   InternalApiV1RulesApplyTrackingRulesRequest;
-export type PostApiV1TrackingApplyMutationError = GinH;
+export type PostTrackingApplyMutationError = GinH;
 
 /**
  * @summary Apply tracking rules
  */
-export const usePostApiV1TrackingApply = <TError = GinH, TContext = unknown>(
+export const usePostTrackingApply = <TError = GinH, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1TrackingApply>>,
+      Awaited<ReturnType<typeof postTrackingApply>>,
       TError,
       { data: InternalApiV1RulesApplyTrackingRulesRequest },
       TContext
@@ -16909,12 +16861,12 @@ export const usePostApiV1TrackingApply = <TError = GinH, TContext = unknown>(
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1TrackingApply>>,
+  Awaited<ReturnType<typeof postTrackingApply>>,
   TError,
   { data: InternalApiV1RulesApplyTrackingRulesRequest },
   TContext
 > => {
-  const mutationOptions = getPostApiV1TrackingApplyMutationOptions(options);
+  const mutationOptions = getPostTrackingApplyMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -16923,34 +16875,34 @@ export const usePostApiV1TrackingApply = <TError = GinH, TContext = unknown>(
  * Lists all per-mount tracking overrides
  * @summary List mount tracking overrides
  */
-export type getApiV1TrackingOverridesResponse200 = {
+export type getTrackingOverridesResponse200 = {
   data: InternalApiV1RulesListMountOverridesResponse;
   status: 200;
 };
 
-export type getApiV1TrackingOverridesResponse500 = {
+export type getTrackingOverridesResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type getApiV1TrackingOverridesResponseComposite =
-  | getApiV1TrackingOverridesResponse200
-  | getApiV1TrackingOverridesResponse500;
+export type getTrackingOverridesResponseComposite =
+  | getTrackingOverridesResponse200
+  | getTrackingOverridesResponse500;
 
-export type getApiV1TrackingOverridesResponse =
-  getApiV1TrackingOverridesResponseComposite & {
+export type getTrackingOverridesResponse =
+  getTrackingOverridesResponseComposite & {
     headers: Headers;
   };
 
-export const getGetApiV1TrackingOverridesUrl = () => {
-  return `/api/v1/tracking/overrides`;
+export const getGetTrackingOverridesUrl = () => {
+  return `/tracking/overrides`;
 };
 
-export const getApiV1TrackingOverrides = async (
+export const getTrackingOverrides = async (
   options?: RequestInit,
-): Promise<getApiV1TrackingOverridesResponse> => {
-  return customFetchClient<getApiV1TrackingOverridesResponse>(
-    getGetApiV1TrackingOverridesUrl(),
+): Promise<getTrackingOverridesResponse> => {
+  return customFetchClient<getTrackingOverridesResponse>(
+    getGetTrackingOverridesUrl(),
     {
       ...options,
       method: 'GET',
@@ -16958,17 +16910,17 @@ export const getApiV1TrackingOverrides = async (
   );
 };
 
-export const getGetApiV1TrackingOverridesQueryKey = () => {
-  return [`/api/v1/tracking/overrides`] as const;
+export const getGetTrackingOverridesQueryKey = () => {
+  return [`/tracking/overrides`] as const;
 };
 
-export const getGetApiV1TrackingOverridesQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+export const getGetTrackingOverridesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTrackingOverrides>>,
   TError = GinH,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
-      Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+      Awaited<ReturnType<typeof getTrackingOverrides>>,
       TError,
       TData
     >
@@ -16977,42 +16929,41 @@ export const getGetApiV1TrackingOverridesQueryOptions = <
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetApiV1TrackingOverridesQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetTrackingOverridesQueryKey();
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1TrackingOverrides>>
-  > = ({ signal }) => getApiV1TrackingOverrides({ signal, ...requestOptions });
+    Awaited<ReturnType<typeof getTrackingOverrides>>
+  > = ({ signal }) => getTrackingOverrides({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+    Awaited<ReturnType<typeof getTrackingOverrides>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1TrackingOverridesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1TrackingOverrides>>
+export type GetTrackingOverridesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTrackingOverrides>>
 >;
-export type GetApiV1TrackingOverridesQueryError = GinH;
+export type GetTrackingOverridesQueryError = GinH;
 
-export function useGetApiV1TrackingOverrides<
-  TData = Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+export function useGetTrackingOverrides<
+  TData = Awaited<ReturnType<typeof getTrackingOverrides>>,
   TError = GinH,
 >(
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+        Awaited<ReturnType<typeof getTrackingOverrides>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+          Awaited<ReturnType<typeof getTrackingOverrides>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1TrackingOverrides>>
+          Awaited<ReturnType<typeof getTrackingOverrides>>
         >,
         'initialData'
       >;
@@ -17022,23 +16973,23 @@ export function useGetApiV1TrackingOverrides<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1TrackingOverrides<
-  TData = Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+export function useGetTrackingOverrides<
+  TData = Awaited<ReturnType<typeof getTrackingOverrides>>,
   TError = GinH,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+        Awaited<ReturnType<typeof getTrackingOverrides>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+          Awaited<ReturnType<typeof getTrackingOverrides>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1TrackingOverrides>>
+          Awaited<ReturnType<typeof getTrackingOverrides>>
         >,
         'initialData'
       >;
@@ -17048,14 +16999,14 @@ export function useGetApiV1TrackingOverrides<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1TrackingOverrides<
-  TData = Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+export function useGetTrackingOverrides<
+  TData = Awaited<ReturnType<typeof getTrackingOverrides>>,
   TError = GinH,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+        Awaited<ReturnType<typeof getTrackingOverrides>>,
         TError,
         TData
       >
@@ -17070,14 +17021,14 @@ export function useGetApiV1TrackingOverrides<
  * @summary List mount tracking overrides
  */
 
-export function useGetApiV1TrackingOverrides<
-  TData = Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+export function useGetTrackingOverrides<
+  TData = Awaited<ReturnType<typeof getTrackingOverrides>>,
   TError = GinH,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1TrackingOverrides>>,
+        Awaited<ReturnType<typeof getTrackingOverrides>>,
         TError,
         TData
       >
@@ -17088,7 +17039,7 @@ export function useGetApiV1TrackingOverrides<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1TrackingOverridesQueryOptions(options);
+  const queryOptions = getGetTrackingOverridesQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -17104,47 +17055,47 @@ export function useGetApiV1TrackingOverrides<
  * Creates a per-mount tracking override that supersedes rule-based decisions
  * @summary Create mount tracking override
  */
-export type postApiV1TrackingOverridesResponse201 = {
+export type postTrackingOverridesResponse201 = {
   data: InternalApiV1RulesMountOverrideResponse;
   status: 201;
 };
 
-export type postApiV1TrackingOverridesResponse400 = {
+export type postTrackingOverridesResponse400 = {
   data: GinH;
   status: 400;
 };
 
-export type postApiV1TrackingOverridesResponse404 = {
+export type postTrackingOverridesResponse404 = {
   data: GinH;
   status: 404;
 };
 
-export type postApiV1TrackingOverridesResponse500 = {
+export type postTrackingOverridesResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type postApiV1TrackingOverridesResponseComposite =
-  | postApiV1TrackingOverridesResponse201
-  | postApiV1TrackingOverridesResponse400
-  | postApiV1TrackingOverridesResponse404
-  | postApiV1TrackingOverridesResponse500;
+export type postTrackingOverridesResponseComposite =
+  | postTrackingOverridesResponse201
+  | postTrackingOverridesResponse400
+  | postTrackingOverridesResponse404
+  | postTrackingOverridesResponse500;
 
-export type postApiV1TrackingOverridesResponse =
-  postApiV1TrackingOverridesResponseComposite & {
+export type postTrackingOverridesResponse =
+  postTrackingOverridesResponseComposite & {
     headers: Headers;
   };
 
-export const getPostApiV1TrackingOverridesUrl = () => {
-  return `/api/v1/tracking/overrides`;
+export const getPostTrackingOverridesUrl = () => {
+  return `/tracking/overrides`;
 };
 
-export const postApiV1TrackingOverrides = async (
+export const postTrackingOverrides = async (
   internalApiV1RulesCreateMountOverrideRequest: InternalApiV1RulesCreateMountOverrideRequest,
   options?: RequestInit,
-): Promise<postApiV1TrackingOverridesResponse> => {
-  return customFetchClient<postApiV1TrackingOverridesResponse>(
-    getPostApiV1TrackingOverridesUrl(),
+): Promise<postTrackingOverridesResponse> => {
+  return customFetchClient<postTrackingOverridesResponse>(
+    getPostTrackingOverridesUrl(),
     {
       ...options,
       method: 'POST',
@@ -17154,24 +17105,24 @@ export const postApiV1TrackingOverrides = async (
   );
 };
 
-export const getPostApiV1TrackingOverridesMutationOptions = <
+export const getPostTrackingOverridesMutationOptions = <
   TError = GinH | GinH | GinH,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1TrackingOverrides>>,
+    Awaited<ReturnType<typeof postTrackingOverrides>>,
     TError,
     { data: InternalApiV1RulesCreateMountOverrideRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1TrackingOverrides>>,
+  Awaited<ReturnType<typeof postTrackingOverrides>>,
   TError,
   { data: InternalApiV1RulesCreateMountOverrideRequest },
   TContext
 > => {
-  const mutationKey = ['postApiV1TrackingOverrides'];
+  const mutationKey = ['postTrackingOverrides'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -17181,34 +17132,34 @@ export const getPostApiV1TrackingOverridesMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1TrackingOverrides>>,
+    Awaited<ReturnType<typeof postTrackingOverrides>>,
     { data: InternalApiV1RulesCreateMountOverrideRequest }
   > = (props) => {
     const { data } = props ?? {};
 
-    return postApiV1TrackingOverrides(data, requestOptions);
+    return postTrackingOverrides(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1TrackingOverridesMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1TrackingOverrides>>
+export type PostTrackingOverridesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postTrackingOverrides>>
 >;
-export type PostApiV1TrackingOverridesMutationBody =
+export type PostTrackingOverridesMutationBody =
   InternalApiV1RulesCreateMountOverrideRequest;
-export type PostApiV1TrackingOverridesMutationError = GinH | GinH | GinH;
+export type PostTrackingOverridesMutationError = GinH | GinH | GinH;
 
 /**
  * @summary Create mount tracking override
  */
-export const usePostApiV1TrackingOverrides = <
+export const usePostTrackingOverrides = <
   TError = GinH | GinH | GinH,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1TrackingOverrides>>,
+      Awaited<ReturnType<typeof postTrackingOverrides>>,
       TError,
       { data: InternalApiV1RulesCreateMountOverrideRequest },
       TContext
@@ -17217,12 +17168,12 @@ export const usePostApiV1TrackingOverrides = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1TrackingOverrides>>,
+  Awaited<ReturnType<typeof postTrackingOverrides>>,
   TError,
   { data: InternalApiV1RulesCreateMountOverrideRequest },
   TContext
 > => {
-  const mutationOptions = getPostApiV1TrackingOverridesMutationOptions(options);
+  const mutationOptions = getPostTrackingOverridesMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -17231,41 +17182,41 @@ export const usePostApiV1TrackingOverrides = <
  * Deletes a per-mount tracking override by mount ID
  * @summary Delete mount tracking override
  */
-export type deleteApiV1TrackingOverridesMountIdResponse204 = {
+export type deleteTrackingOverridesMountIdResponse204 = {
   data: null;
   status: 204;
 };
 
-export type deleteApiV1TrackingOverridesMountIdResponse400 = {
+export type deleteTrackingOverridesMountIdResponse400 = {
   data: GinH;
   status: 400;
 };
 
-export type deleteApiV1TrackingOverridesMountIdResponse500 = {
+export type deleteTrackingOverridesMountIdResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type deleteApiV1TrackingOverridesMountIdResponseComposite =
-  | deleteApiV1TrackingOverridesMountIdResponse204
-  | deleteApiV1TrackingOverridesMountIdResponse400
-  | deleteApiV1TrackingOverridesMountIdResponse500;
+export type deleteTrackingOverridesMountIdResponseComposite =
+  | deleteTrackingOverridesMountIdResponse204
+  | deleteTrackingOverridesMountIdResponse400
+  | deleteTrackingOverridesMountIdResponse500;
 
-export type deleteApiV1TrackingOverridesMountIdResponse =
-  deleteApiV1TrackingOverridesMountIdResponseComposite & {
+export type deleteTrackingOverridesMountIdResponse =
+  deleteTrackingOverridesMountIdResponseComposite & {
     headers: Headers;
   };
 
-export const getDeleteApiV1TrackingOverridesMountIdUrl = (mountId: string) => {
-  return `/api/v1/tracking/overrides/${mountId}`;
+export const getDeleteTrackingOverridesMountIdUrl = (mountId: string) => {
+  return `/tracking/overrides/${mountId}`;
 };
 
-export const deleteApiV1TrackingOverridesMountId = async (
+export const deleteTrackingOverridesMountId = async (
   mountId: string,
   options?: RequestInit,
-): Promise<deleteApiV1TrackingOverridesMountIdResponse> => {
-  return customFetchClient<deleteApiV1TrackingOverridesMountIdResponse>(
-    getDeleteApiV1TrackingOverridesMountIdUrl(mountId),
+): Promise<deleteTrackingOverridesMountIdResponse> => {
+  return customFetchClient<deleteTrackingOverridesMountIdResponse>(
+    getDeleteTrackingOverridesMountIdUrl(mountId),
     {
       ...options,
       method: 'DELETE',
@@ -17273,24 +17224,24 @@ export const deleteApiV1TrackingOverridesMountId = async (
   );
 };
 
-export const getDeleteApiV1TrackingOverridesMountIdMutationOptions = <
+export const getDeleteTrackingOverridesMountIdMutationOptions = <
   TError = GinH | GinH,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteApiV1TrackingOverridesMountId>>,
+    Awaited<ReturnType<typeof deleteTrackingOverridesMountId>>,
     TError,
     { mountId: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof deleteApiV1TrackingOverridesMountId>>,
+  Awaited<ReturnType<typeof deleteTrackingOverridesMountId>>,
   TError,
   { mountId: string },
   TContext
 > => {
-  const mutationKey = ['deleteApiV1TrackingOverridesMountId'];
+  const mutationKey = ['deleteTrackingOverridesMountId'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -17300,33 +17251,33 @@ export const getDeleteApiV1TrackingOverridesMountIdMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof deleteApiV1TrackingOverridesMountId>>,
+    Awaited<ReturnType<typeof deleteTrackingOverridesMountId>>,
     { mountId: string }
   > = (props) => {
     const { mountId } = props ?? {};
 
-    return deleteApiV1TrackingOverridesMountId(mountId, requestOptions);
+    return deleteTrackingOverridesMountId(mountId, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type DeleteApiV1TrackingOverridesMountIdMutationResult = NonNullable<
-  Awaited<ReturnType<typeof deleteApiV1TrackingOverridesMountId>>
+export type DeleteTrackingOverridesMountIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteTrackingOverridesMountId>>
 >;
 
-export type DeleteApiV1TrackingOverridesMountIdMutationError = GinH | GinH;
+export type DeleteTrackingOverridesMountIdMutationError = GinH | GinH;
 
 /**
  * @summary Delete mount tracking override
  */
-export const useDeleteApiV1TrackingOverridesMountId = <
+export const useDeleteTrackingOverridesMountId = <
   TError = GinH | GinH,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof deleteApiV1TrackingOverridesMountId>>,
+      Awaited<ReturnType<typeof deleteTrackingOverridesMountId>>,
       TError,
       { mountId: string },
       TContext
@@ -17335,13 +17286,13 @@ export const useDeleteApiV1TrackingOverridesMountId = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof deleteApiV1TrackingOverridesMountId>>,
+  Awaited<ReturnType<typeof deleteTrackingOverridesMountId>>,
   TError,
   { mountId: string },
   TContext
 > => {
   const mutationOptions =
-    getDeleteApiV1TrackingOverridesMountIdMutationOptions(options);
+    getDeleteTrackingOverridesMountIdMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -17350,35 +17301,35 @@ export const useDeleteApiV1TrackingOverridesMountId = <
  * Previews how tracking rules would be applied to the current mount catalog
  * @summary Preview tracking rules evaluation
  */
-export type postApiV1TrackingPreviewResponse200 = {
+export type postTrackingPreviewResponse200 = {
   data: GithubComMantonxVolumevizInternalServicesRulesPreviewResponse;
   status: 200;
 };
 
-export type postApiV1TrackingPreviewResponse500 = {
+export type postTrackingPreviewResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type postApiV1TrackingPreviewResponseComposite =
-  | postApiV1TrackingPreviewResponse200
-  | postApiV1TrackingPreviewResponse500;
+export type postTrackingPreviewResponseComposite =
+  | postTrackingPreviewResponse200
+  | postTrackingPreviewResponse500;
 
-export type postApiV1TrackingPreviewResponse =
-  postApiV1TrackingPreviewResponseComposite & {
+export type postTrackingPreviewResponse =
+  postTrackingPreviewResponseComposite & {
     headers: Headers;
   };
 
-export const getPostApiV1TrackingPreviewUrl = () => {
-  return `/api/v1/tracking/preview`;
+export const getPostTrackingPreviewUrl = () => {
+  return `/tracking/preview`;
 };
 
-export const postApiV1TrackingPreview = async (
+export const postTrackingPreview = async (
   githubComMantonxVolumevizInternalServicesRulesPreviewRequest: GithubComMantonxVolumevizInternalServicesRulesPreviewRequest,
   options?: RequestInit,
-): Promise<postApiV1TrackingPreviewResponse> => {
-  return customFetchClient<postApiV1TrackingPreviewResponse>(
-    getPostApiV1TrackingPreviewUrl(),
+): Promise<postTrackingPreviewResponse> => {
+  return customFetchClient<postTrackingPreviewResponse>(
+    getPostTrackingPreviewUrl(),
     {
       ...options,
       method: 'POST',
@@ -17390,24 +17341,24 @@ export const postApiV1TrackingPreview = async (
   );
 };
 
-export const getPostApiV1TrackingPreviewMutationOptions = <
+export const getPostTrackingPreviewMutationOptions = <
   TError = GinH,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postApiV1TrackingPreview>>,
+    Awaited<ReturnType<typeof postTrackingPreview>>,
     TError,
     { data: GithubComMantonxVolumevizInternalServicesRulesPreviewRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postApiV1TrackingPreview>>,
+  Awaited<ReturnType<typeof postTrackingPreview>>,
   TError,
   { data: GithubComMantonxVolumevizInternalServicesRulesPreviewRequest },
   TContext
 > => {
-  const mutationKey = ['postApiV1TrackingPreview'];
+  const mutationKey = ['postTrackingPreview'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -17417,31 +17368,31 @@ export const getPostApiV1TrackingPreviewMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postApiV1TrackingPreview>>,
+    Awaited<ReturnType<typeof postTrackingPreview>>,
     { data: GithubComMantonxVolumevizInternalServicesRulesPreviewRequest }
   > = (props) => {
     const { data } = props ?? {};
 
-    return postApiV1TrackingPreview(data, requestOptions);
+    return postTrackingPreview(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostApiV1TrackingPreviewMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postApiV1TrackingPreview>>
+export type PostTrackingPreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postTrackingPreview>>
 >;
-export type PostApiV1TrackingPreviewMutationBody =
+export type PostTrackingPreviewMutationBody =
   GithubComMantonxVolumevizInternalServicesRulesPreviewRequest;
-export type PostApiV1TrackingPreviewMutationError = GinH;
+export type PostTrackingPreviewMutationError = GinH;
 
 /**
  * @summary Preview tracking rules evaluation
  */
-export const usePostApiV1TrackingPreview = <TError = GinH, TContext = unknown>(
+export const usePostTrackingPreview = <TError = GinH, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postApiV1TrackingPreview>>,
+      Awaited<ReturnType<typeof postTrackingPreview>>,
       TError,
       { data: GithubComMantonxVolumevizInternalServicesRulesPreviewRequest },
       TContext
@@ -17450,12 +17401,12 @@ export const usePostApiV1TrackingPreview = <TError = GinH, TContext = unknown>(
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postApiV1TrackingPreview>>,
+  Awaited<ReturnType<typeof postTrackingPreview>>,
   TError,
   { data: GithubComMantonxVolumevizInternalServicesRulesPreviewRequest },
   TContext
 > => {
-  const mutationOptions = getPostApiV1TrackingPreviewMutationOptions(options);
+  const mutationOptions = getPostTrackingPreviewMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -17464,95 +17415,87 @@ export const usePostApiV1TrackingPreview = <TError = GinH, TContext = unknown>(
  * Returns the complete tracking rules configuration with priority ordering
  * @summary Get tracking rules configuration
  */
-export type getApiV1TrackingRulesResponse200 = {
+export type getTrackingRulesResponse200 = {
   data: InternalApiV1RulesTrackingRulesConfigResponse;
   status: 200;
 };
 
-export type getApiV1TrackingRulesResponse500 = {
+export type getTrackingRulesResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type getApiV1TrackingRulesResponseComposite =
-  | getApiV1TrackingRulesResponse200
-  | getApiV1TrackingRulesResponse500;
+export type getTrackingRulesResponseComposite =
+  | getTrackingRulesResponse200
+  | getTrackingRulesResponse500;
 
-export type getApiV1TrackingRulesResponse =
-  getApiV1TrackingRulesResponseComposite & {
-    headers: Headers;
-  };
-
-export const getGetApiV1TrackingRulesUrl = () => {
-  return `/api/v1/tracking/rules`;
+export type getTrackingRulesResponse = getTrackingRulesResponseComposite & {
+  headers: Headers;
 };
 
-export const getApiV1TrackingRules = async (
+export const getGetTrackingRulesUrl = () => {
+  return `/tracking/rules`;
+};
+
+export const getTrackingRules = async (
   options?: RequestInit,
-): Promise<getApiV1TrackingRulesResponse> => {
-  return customFetchClient<getApiV1TrackingRulesResponse>(
-    getGetApiV1TrackingRulesUrl(),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
+): Promise<getTrackingRulesResponse> => {
+  return customFetchClient<getTrackingRulesResponse>(getGetTrackingRulesUrl(), {
+    ...options,
+    method: 'GET',
+  });
 };
 
-export const getGetApiV1TrackingRulesQueryKey = () => {
-  return [`/api/v1/tracking/rules`] as const;
+export const getGetTrackingRulesQueryKey = () => {
+  return [`/tracking/rules`] as const;
 };
 
-export const getGetApiV1TrackingRulesQueryOptions = <
-  TData = Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+export const getGetTrackingRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTrackingRules>>,
   TError = GinH,
 >(options?: {
   query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getApiV1TrackingRules>>,
-      TError,
-      TData
-    >
+    UseQueryOptions<Awaited<ReturnType<typeof getTrackingRules>>, TError, TData>
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetApiV1TrackingRulesQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetTrackingRulesQueryKey();
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getApiV1TrackingRules>>
-  > = ({ signal }) => getApiV1TrackingRules({ signal, ...requestOptions });
+    Awaited<ReturnType<typeof getTrackingRules>>
+  > = ({ signal }) => getTrackingRules({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+    Awaited<ReturnType<typeof getTrackingRules>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetApiV1TrackingRulesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getApiV1TrackingRules>>
+export type GetTrackingRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTrackingRules>>
 >;
-export type GetApiV1TrackingRulesQueryError = GinH;
+export type GetTrackingRulesQueryError = GinH;
 
-export function useGetApiV1TrackingRules<
-  TData = Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+export function useGetTrackingRules<
+  TData = Awaited<ReturnType<typeof getTrackingRules>>,
   TError = GinH,
 >(
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+        Awaited<ReturnType<typeof getTrackingRules>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+          Awaited<ReturnType<typeof getTrackingRules>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1TrackingRules>>
+          Awaited<ReturnType<typeof getTrackingRules>>
         >,
         'initialData'
       >;
@@ -17562,23 +17505,23 @@ export function useGetApiV1TrackingRules<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1TrackingRules<
-  TData = Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+export function useGetTrackingRules<
+  TData = Awaited<ReturnType<typeof getTrackingRules>>,
   TError = GinH,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+        Awaited<ReturnType<typeof getTrackingRules>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+          Awaited<ReturnType<typeof getTrackingRules>>,
           TError,
-          Awaited<ReturnType<typeof getApiV1TrackingRules>>
+          Awaited<ReturnType<typeof getTrackingRules>>
         >,
         'initialData'
       >;
@@ -17588,14 +17531,14 @@ export function useGetApiV1TrackingRules<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetApiV1TrackingRules<
-  TData = Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+export function useGetTrackingRules<
+  TData = Awaited<ReturnType<typeof getTrackingRules>>,
   TError = GinH,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+        Awaited<ReturnType<typeof getTrackingRules>>,
         TError,
         TData
       >
@@ -17610,14 +17553,14 @@ export function useGetApiV1TrackingRules<
  * @summary Get tracking rules configuration
  */
 
-export function useGetApiV1TrackingRules<
-  TData = Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+export function useGetTrackingRules<
+  TData = Awaited<ReturnType<typeof getTrackingRules>>,
   TError = GinH,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getApiV1TrackingRules>>,
+        Awaited<ReturnType<typeof getTrackingRules>>,
         TError,
         TData
       >
@@ -17628,7 +17571,7 @@ export function useGetApiV1TrackingRules<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetApiV1TrackingRulesQueryOptions(options);
+  const queryOptions = getGetTrackingRulesQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -17644,68 +17587,64 @@ export function useGetApiV1TrackingRules<
  * Updates tracking rules configuration including priority reordering and enable/disable
  * @summary Update tracking rules configuration
  */
-export type putApiV1TrackingRulesResponse200 = {
+export type putTrackingRulesResponse200 = {
   data: InternalApiV1RulesTrackingRulesConfigResponse;
   status: 200;
 };
 
-export type putApiV1TrackingRulesResponse400 = {
+export type putTrackingRulesResponse400 = {
   data: GinH;
   status: 400;
 };
 
-export type putApiV1TrackingRulesResponse500 = {
+export type putTrackingRulesResponse500 = {
   data: GinH;
   status: 500;
 };
 
-export type putApiV1TrackingRulesResponseComposite =
-  | putApiV1TrackingRulesResponse200
-  | putApiV1TrackingRulesResponse400
-  | putApiV1TrackingRulesResponse500;
+export type putTrackingRulesResponseComposite =
+  | putTrackingRulesResponse200
+  | putTrackingRulesResponse400
+  | putTrackingRulesResponse500;
 
-export type putApiV1TrackingRulesResponse =
-  putApiV1TrackingRulesResponseComposite & {
-    headers: Headers;
-  };
-
-export const getPutApiV1TrackingRulesUrl = () => {
-  return `/api/v1/tracking/rules`;
+export type putTrackingRulesResponse = putTrackingRulesResponseComposite & {
+  headers: Headers;
 };
 
-export const putApiV1TrackingRules = async (
+export const getPutTrackingRulesUrl = () => {
+  return `/tracking/rules`;
+};
+
+export const putTrackingRules = async (
   internalApiV1RulesUpdateTrackingRulesConfigRequest: InternalApiV1RulesUpdateTrackingRulesConfigRequest,
   options?: RequestInit,
-): Promise<putApiV1TrackingRulesResponse> => {
-  return customFetchClient<putApiV1TrackingRulesResponse>(
-    getPutApiV1TrackingRulesUrl(),
-    {
-      ...options,
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(internalApiV1RulesUpdateTrackingRulesConfigRequest),
-    },
-  );
+): Promise<putTrackingRulesResponse> => {
+  return customFetchClient<putTrackingRulesResponse>(getPutTrackingRulesUrl(), {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(internalApiV1RulesUpdateTrackingRulesConfigRequest),
+  });
 };
 
-export const getPutApiV1TrackingRulesMutationOptions = <
+export const getPutTrackingRulesMutationOptions = <
   TError = GinH | GinH,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof putApiV1TrackingRules>>,
+    Awaited<ReturnType<typeof putTrackingRules>>,
     TError,
     { data: InternalApiV1RulesUpdateTrackingRulesConfigRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetchClient>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof putApiV1TrackingRules>>,
+  Awaited<ReturnType<typeof putTrackingRules>>,
   TError,
   { data: InternalApiV1RulesUpdateTrackingRulesConfigRequest },
   TContext
 > => {
-  const mutationKey = ['putApiV1TrackingRules'];
+  const mutationKey = ['putTrackingRules'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -17715,34 +17654,31 @@ export const getPutApiV1TrackingRulesMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof putApiV1TrackingRules>>,
+    Awaited<ReturnType<typeof putTrackingRules>>,
     { data: InternalApiV1RulesUpdateTrackingRulesConfigRequest }
   > = (props) => {
     const { data } = props ?? {};
 
-    return putApiV1TrackingRules(data, requestOptions);
+    return putTrackingRules(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PutApiV1TrackingRulesMutationResult = NonNullable<
-  Awaited<ReturnType<typeof putApiV1TrackingRules>>
+export type PutTrackingRulesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putTrackingRules>>
 >;
-export type PutApiV1TrackingRulesMutationBody =
+export type PutTrackingRulesMutationBody =
   InternalApiV1RulesUpdateTrackingRulesConfigRequest;
-export type PutApiV1TrackingRulesMutationError = GinH | GinH;
+export type PutTrackingRulesMutationError = GinH | GinH;
 
 /**
  * @summary Update tracking rules configuration
  */
-export const usePutApiV1TrackingRules = <
-  TError = GinH | GinH,
-  TContext = unknown,
->(
+export const usePutTrackingRules = <TError = GinH | GinH, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof putApiV1TrackingRules>>,
+      Awaited<ReturnType<typeof putTrackingRules>>,
       TError,
       { data: InternalApiV1RulesUpdateTrackingRulesConfigRequest },
       TContext
@@ -17751,12 +17687,12 @@ export const usePutApiV1TrackingRules = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof putApiV1TrackingRules>>,
+  Awaited<ReturnType<typeof putTrackingRules>>,
   TError,
   { data: InternalApiV1RulesUpdateTrackingRulesConfigRequest },
   TContext
 > => {
-  const mutationOptions = getPutApiV1TrackingRulesMutationOptions(options);
+  const mutationOptions = getPutTrackingRulesMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -20166,331 +20102,6 @@ export const usePostOrganizations = <
   TContext
 > => {
   const mutationOptions = getPostOrganizationsMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Delete an organization by ID (admin only)
- * @summary Delete organization
- */
-export type deleteOrganizationsIdResponse204 = {
-  data: null;
-  status: 204;
-};
-
-export type deleteOrganizationsIdResponse400 = {
-  data: DeleteOrganizationsId400;
-  status: 400;
-};
-
-export type deleteOrganizationsIdResponse401 = {
-  data: DeleteOrganizationsId401;
-  status: 401;
-};
-
-export type deleteOrganizationsIdResponse403 = {
-  data: DeleteOrganizationsId403;
-  status: 403;
-};
-
-export type deleteOrganizationsIdResponse404 = {
-  data: DeleteOrganizationsId404;
-  status: 404;
-};
-
-export type deleteOrganizationsIdResponse409 = {
-  data: DeleteOrganizationsId409;
-  status: 409;
-};
-
-export type deleteOrganizationsIdResponse500 = {
-  data: DeleteOrganizationsId500;
-  status: 500;
-};
-
-export type deleteOrganizationsIdResponseComposite =
-  | deleteOrganizationsIdResponse204
-  | deleteOrganizationsIdResponse400
-  | deleteOrganizationsIdResponse401
-  | deleteOrganizationsIdResponse403
-  | deleteOrganizationsIdResponse404
-  | deleteOrganizationsIdResponse409
-  | deleteOrganizationsIdResponse500;
-
-export type deleteOrganizationsIdResponse =
-  deleteOrganizationsIdResponseComposite & {
-    headers: Headers;
-  };
-
-export const getDeleteOrganizationsIdUrl = (id: number) => {
-  return `/organizations/${id}`;
-};
-
-export const deleteOrganizationsId = async (
-  id: number,
-  options?: RequestInit,
-): Promise<deleteOrganizationsIdResponse> => {
-  return customFetchClient<deleteOrganizationsIdResponse>(
-    getDeleteOrganizationsIdUrl(id),
-    {
-      ...options,
-      method: 'DELETE',
-    },
-  );
-};
-
-export const getDeleteOrganizationsIdMutationOptions = <
-  TError =
-    | DeleteOrganizationsId400
-    | DeleteOrganizationsId401
-    | DeleteOrganizationsId403
-    | DeleteOrganizationsId404
-    | DeleteOrganizationsId409
-    | DeleteOrganizationsId500,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteOrganizationsId>>,
-    TError,
-    { id: number },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof deleteOrganizationsId>>,
-  TError,
-  { id: number },
-  TContext
-> => {
-  const mutationKey = ['deleteOrganizationsId'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof deleteOrganizationsId>>,
-    { id: number }
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return deleteOrganizationsId(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DeleteOrganizationsIdMutationResult = NonNullable<
-  Awaited<ReturnType<typeof deleteOrganizationsId>>
->;
-
-export type DeleteOrganizationsIdMutationError =
-  | DeleteOrganizationsId400
-  | DeleteOrganizationsId401
-  | DeleteOrganizationsId403
-  | DeleteOrganizationsId404
-  | DeleteOrganizationsId409
-  | DeleteOrganizationsId500;
-
-/**
- * @summary Delete organization
- */
-export const useDeleteOrganizationsId = <
-  TError =
-    | DeleteOrganizationsId400
-    | DeleteOrganizationsId401
-    | DeleteOrganizationsId403
-    | DeleteOrganizationsId404
-    | DeleteOrganizationsId409
-    | DeleteOrganizationsId500,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof deleteOrganizationsId>>,
-      TError,
-      { id: number },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof deleteOrganizationsId>>,
-  TError,
-  { id: number },
-  TContext
-> => {
-  const mutationOptions = getDeleteOrganizationsIdMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Update organization details by ID (admin only)
- * @summary Update organization
- */
-export type putOrganizationsIdResponse200 = {
-  data: InternalApiV1OrganizationsOrganizationResponse;
-  status: 200;
-};
-
-export type putOrganizationsIdResponse400 = {
-  data: PutOrganizationsId400;
-  status: 400;
-};
-
-export type putOrganizationsIdResponse401 = {
-  data: PutOrganizationsId401;
-  status: 401;
-};
-
-export type putOrganizationsIdResponse403 = {
-  data: PutOrganizationsId403;
-  status: 403;
-};
-
-export type putOrganizationsIdResponse404 = {
-  data: PutOrganizationsId404;
-  status: 404;
-};
-
-export type putOrganizationsIdResponse500 = {
-  data: PutOrganizationsId500;
-  status: 500;
-};
-
-export type putOrganizationsIdResponseComposite =
-  | putOrganizationsIdResponse200
-  | putOrganizationsIdResponse400
-  | putOrganizationsIdResponse401
-  | putOrganizationsIdResponse403
-  | putOrganizationsIdResponse404
-  | putOrganizationsIdResponse500;
-
-export type putOrganizationsIdResponse = putOrganizationsIdResponseComposite & {
-  headers: Headers;
-};
-
-export const getPutOrganizationsIdUrl = (id: number) => {
-  return `/organizations/${id}`;
-};
-
-export const putOrganizationsId = async (
-  id: number,
-  internalApiV1OrganizationsUpdateOrganizationRequestBody: InternalApiV1OrganizationsUpdateOrganizationRequestBody,
-  options?: RequestInit,
-): Promise<putOrganizationsIdResponse> => {
-  return customFetchClient<putOrganizationsIdResponse>(
-    getPutOrganizationsIdUrl(id),
-    {
-      ...options,
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(
-        internalApiV1OrganizationsUpdateOrganizationRequestBody,
-      ),
-    },
-  );
-};
-
-export const getPutOrganizationsIdMutationOptions = <
-  TError =
-    | PutOrganizationsId400
-    | PutOrganizationsId401
-    | PutOrganizationsId403
-    | PutOrganizationsId404
-    | PutOrganizationsId500,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof putOrganizationsId>>,
-    TError,
-    {
-      id: number;
-      data: InternalApiV1OrganizationsUpdateOrganizationRequestBody;
-    },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetchClient>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof putOrganizationsId>>,
-  TError,
-  { id: number; data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
-  TContext
-> => {
-  const mutationKey = ['putOrganizationsId'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof putOrganizationsId>>,
-    {
-      id: number;
-      data: InternalApiV1OrganizationsUpdateOrganizationRequestBody;
-    }
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return putOrganizationsId(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PutOrganizationsIdMutationResult = NonNullable<
-  Awaited<ReturnType<typeof putOrganizationsId>>
->;
-export type PutOrganizationsIdMutationBody =
-  InternalApiV1OrganizationsUpdateOrganizationRequestBody;
-export type PutOrganizationsIdMutationError =
-  | PutOrganizationsId400
-  | PutOrganizationsId401
-  | PutOrganizationsId403
-  | PutOrganizationsId404
-  | PutOrganizationsId500;
-
-/**
- * @summary Update organization
- */
-export const usePutOrganizationsId = <
-  TError =
-    | PutOrganizationsId400
-    | PutOrganizationsId401
-    | PutOrganizationsId403
-    | PutOrganizationsId404
-    | PutOrganizationsId500,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof putOrganizationsId>>,
-      TError,
-      {
-        id: number;
-        data: InternalApiV1OrganizationsUpdateOrganizationRequestBody;
-      },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetchClient>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof putOrganizationsId>>,
-  TError,
-  { id: number; data: InternalApiV1OrganizationsUpdateOrganizationRequestBody },
-  TContext
-> => {
-  const mutationOptions = getPutOrganizationsIdMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

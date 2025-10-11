@@ -12,8 +12,8 @@ import {
 import React, { useMemo, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
-  useGetApiV1ExplorerBrowse,
-  GetApiV1ExplorerBrowseParams,
+  useGetExplorerBrowse,
+  GetExplorerBrowseParams,
 } from '@/api/orval-generated/api';
 import { selectedVolumeAtom } from '@/atoms/volumes';
 import { useFileOperations } from '@/hooks/api/useFileOperations';
@@ -58,7 +58,7 @@ export function FileBrowser({
     isLoading,
     error,
     refetch,
-  } = useGetApiV1ExplorerBrowse(
+  } = useGetExplorerBrowse(
     {
       volume_id: currentVolumeId || '',
       path: currentPath,

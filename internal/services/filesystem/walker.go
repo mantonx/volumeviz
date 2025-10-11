@@ -195,6 +195,14 @@ func (w *Walker) processFolder(ctx context.Context, path string, info os.FileInf
 		parentPath := filepath.Dir(path)
 		if parent, exists := w.folderCache[parentPath]; exists {
 			parentID = &parent.ID
+		} else {
+			// Parent not in cache - look it up in database to prevent orphaned folders
+			parent, err := w.indexer.store.Folders().GetFolderByPath(ctx, w.volumeID, parentPath)
+			if err == nil {
+				parentID = &parent.ID
+				// Add to cache for future lookups
+				w.folderCache[parentPath] = parent
+			}
 		}
 	}
 

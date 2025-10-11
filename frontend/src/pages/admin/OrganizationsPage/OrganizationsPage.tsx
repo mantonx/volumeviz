@@ -19,9 +19,9 @@ import {
   putOrganizationsId,
   deleteOrganizationsId,
   InternalApiV1OrganizationsCreateOrganizationRequest,
-  InternalApiV1OrganizationsUpdateOrganizationRequest,
+  InternalOrganizationsUpdateOrganizationRequest,
   InternalApiV1OrganizationsCreateOrganizationRequestPlanType,
-  InternalApiV1OrganizationsUpdateOrganizationRequestPlanType,
+  InternalOrganizationsUpdateOrganizationRequestPlanType,
 } from '@/api/client';
 
 interface Organization {
@@ -62,7 +62,7 @@ export const OrganizationsPage: React.FC = () => {
     plan_type: 'basic' as InternalApiV1OrganizationsCreateOrganizationRequestPlanType,
   });
 
-  const [editForm, setEditForm] = useState<InternalApiV1OrganizationsUpdateOrganizationRequest>({
+  const [editForm, setEditForm] = useState<InternalOrganizationsUpdateOrganizationRequest>({
     display_name: '',
   });
 
@@ -173,7 +173,7 @@ export const OrganizationsPage: React.FC = () => {
       max_users: org.max_users,
       max_volumes: org.max_volumes,
       max_storage_gb: org.max_storage_gb,
-      plan_type: org.plan_type as InternalApiV1OrganizationsUpdateOrganizationRequestPlanType,
+      plan_type: org.plan_type as InternalOrganizationsUpdateOrganizationRequestPlanType,
     });
     setShowEditModal(true);
   };
@@ -516,7 +516,7 @@ export const OrganizationsPage: React.FC = () => {
                     </label>
                     <select
                       value={editForm.plan_type}
-                      onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value as InternalApiV1OrganizationsUpdateOrganizationRequestPlanType })}
+                      onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value as InternalOrganizationsUpdateOrganizationRequestPlanType })}
                       className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 bg-surface-secondary text-primary"
                     >
                       <option value="free">Free</option>

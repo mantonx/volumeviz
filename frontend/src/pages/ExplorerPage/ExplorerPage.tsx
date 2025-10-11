@@ -12,7 +12,7 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   useGetVolumes,
-  useGetApiV1ExplorerFiles,
+  useGetExplorerFiles,
 } from '@/api/orval-generated/api';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -40,10 +40,16 @@ import { exportFilesToCSV, exportFilesToJSON, getDefaultFileExportOptions } from
 import type { ExplorerPageProps } from './ExplorerPage.types';
 import type { FileItem } from '@/components/domain/explorer/VirtualizedFileTable/VirtualizedFileTable.types';
 
-export function ExplorerPage({ className = '' }: ExplorerPageProps) {
-  const { volumeId } = useParams<{ volumeId: string }>();
+export function ExplorerPage({
+  className = '',
+  selectedVolumeFilter = 'all'
+}: ExplorerPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Use selectedVolumeFilter prop instead of URL params
+  const volumeId = selectedVolumeFilter !== 'all' ? selectedVolumeFilter : null;
+  const isGlobalView = selectedVolumeFilter === 'all';
 
   // API hooks
   const { data: volumesResponse, isLoading: loading, refetch: fetchVolumes } = useGetVolumes();
@@ -67,7 +73,7 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
     data: filesData,
     isLoading: filesLoading,
     refetch: refetchFiles,
-  } = useGetApiV1ExplorerFiles(
+  } = useGetExplorerFiles(
     {
       volume_id: volumeId || '',
       path: currentPath,
@@ -80,7 +86,8 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
     },
   );
 
-  const files = (filesData?.data?.files as FileItem[]) || [];
+  // Extract files from response (response is flat, not nested under .data)
+  const files = (filesData?.files as FileItem[]) || [];
 
   // Load volumes when component mounts
   useEffect(() => {
@@ -231,18 +238,31 @@ export function ExplorerPage({ className = '' }: ExplorerPageProps) {
     [volumeId, currentPath, filteredFiles],
   );
 
-  if (!volumeId) {
+  // Show message when no volume is selected (when selectedVolumeFilter is 'all')
+  if (!volumeId || isGlobalView) {
+    return (
+      <div className="container mx-auto py-12">
+        <Card className="p-8 text-center max-w-2xl mx-auto">
+          <FolderIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            Select a Volume to Browse
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Browse mode shows the directory structure of a single volume.
+            Choose a volume from the dropdown above to explore its files and folders.
+          </p>
+          <p className="text-sm text-gray-500">
+            Tip: Use the Search tab to search across all volumes without selecting one.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  // Old volume selection grid (kept for backwards compatibility when accessed directly)
+  if (false && loading) {
     return (
       <div className="container mx-auto py-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-            Volume Explorer
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Choose a volume to explore its files and directories
-          </p>
-        </div>
-
         {loading ? (
           <Card className="p-8 text-center">
             <div className="flex items-center justify-center">

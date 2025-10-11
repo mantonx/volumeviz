@@ -7,6 +7,12 @@
  */
 export interface ExplorerPageProps {
   className?: string;
+  /**
+   * Volume filter from FilesPage
+   * - 'all' = show files from all volumes (global view)
+   * - specific volume name = show files from that volume only
+   */
+  selectedVolumeFilter?: string;
 }
 
 /**

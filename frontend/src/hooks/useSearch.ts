@@ -22,9 +22,9 @@ import {
   resetSearchStateAtom,
 } from '@/atoms/search';
 import {
-  getApiV1SearchFiles,
-  getApiV1SearchSaved,
-  type GetApiV1SearchFilesParams,
+  getSearchFiles,
+  getSearchSaved,
+  type GetSearchFilesParams,
 } from '@/api/orval-generated/api';
 
 // Main search hook
@@ -57,7 +57,7 @@ export const useSearch = () => {
 
       try {
         // Build search request with proper parameter mapping
-        const searchParams: GetApiV1SearchFilesParams = {
+        const searchParams: GetSearchFilesParams = {
           q: queryToUse,
           mediaKind: filters.fileType,
           minSize: filters.sizeRange?.min,
@@ -70,7 +70,7 @@ export const useSearch = () => {
         };
 
         // Make actual API call
-        const response = await getApiV1SearchFiles(searchParams);
+        const response = await getSearchFiles(searchParams);
 
         // Extract data from response
         const responseData = response as any;
@@ -191,7 +191,7 @@ export const useSavedSearches = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await getApiV1SearchSaved();
+      const response = await getSearchSaved();
       const data = response as any;
       setSavedSearches(data?.searches || []);
     } catch (err) {

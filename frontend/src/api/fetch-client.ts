@@ -28,8 +28,16 @@ export const customFetchClient = async <T = any>(
   // Build URL with query params
   // The url parameter may already include query params from Orval, so we need to parse it
   const [pathname, existingQuery] = url.split('?');
-  const baseUrl = API_BASE_URL ? `${API_BASE_URL}/api/v1` : '/api/v1';
-  const fullUrl = new URL(`${baseUrl}${pathname}`, window.location.origin);
+
+  // Add /api/v1 prefix if the path doesn't already have it
+  // Some OpenAPI paths include /api/v1, some don't - we need to handle both
+  let fullPath = pathname;
+  if (!pathname.startsWith('/api/v1')) {
+    fullPath = `/api/v1${pathname}`;
+  }
+
+  const baseUrl = API_BASE_URL || '';
+  const fullUrl = new URL(`${baseUrl}${fullPath}`, window.location.origin);
 
   // Add existing query params from the url
   if (existingQuery) {

@@ -7,6 +7,12 @@
  */
 export interface SearchPageProps {
   className?: string;
+  /**
+   * Volume filter from FilesPage
+   * - 'all' = search across all volumes (global search)
+   * - specific volume name = search only in that volume
+   */
+  selectedVolumeFilter?: string;
 }
 
 /**

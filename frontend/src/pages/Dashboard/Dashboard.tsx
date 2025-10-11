@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/Button';
 import { FeatureTour, useShouldShowTour } from '@/components/ui/FeatureTour';
 import { APP_TOUR_STEPS, APP_TOUR_ID } from '@/config/appTour';
 import { useGetVolumes, useGetAlerts } from '@/api/orval-generated/api';
-import { useGetApiV1OrganizationsMe } from '@/api/orval-generated/api';
+import { useGetOrganizationsMe } from '@/api/orval-generated/api';
 import { formatBytes, formatDate } from '@/utils/formatters';
 import { SyncStatusBadge } from '@/components/shared/SyncStatusIndicator';
 
@@ -68,7 +68,7 @@ export function Dashboard() {
     },
   );
 
-  const { data: orgData } = useGetApiV1OrganizationsMe({
+  const { data: orgData } = useGetOrganizationsMe({
     query: {
       staleTime: 1000 * 60 * 10, // Org data rarely changes
     },

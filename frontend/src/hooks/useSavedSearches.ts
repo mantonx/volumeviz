@@ -12,9 +12,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import {
-  getApiV1SearchSaved,
+  getSearchSaved,
   postApiV1SearchSaved,
-  getApiV1SearchSavedId,
+  getSearchSavedId,
   putApiV1SearchSavedId,
   deleteApiV1SearchSavedId,
   postApiV1SearchSavedIdRun,
@@ -49,7 +49,7 @@ export const useSavedSearches = (): UseSavedSearchesReturn => {
     setError(null);
 
     try {
-      const response = await getApiV1SearchSaved({
+      const response = await getSearchSaved({
         page: 1,
         perPage: 100, // Get all saved searches
       });

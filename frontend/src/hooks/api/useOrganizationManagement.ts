@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSetAtom } from 'jotai';
 import {
-  useGetApiV1OrganizationsMe,
-  usePutApiV1OrganizationsMe,
-  InternalApiV1OrganizationsUpdateOrganizationRequest,
+  useGetOrganizationsMe,
+  usePutOrganizationsMe,
+  InternalOrganizationsUpdateOrganizationRequest,
 } from '@/api/orval-generated/api';
 import { organizationIdAtom } from '@/atoms/organization';
 
@@ -19,7 +19,7 @@ export interface UseOrganizationManagementReturn {
   // Organization mutations
   updateOrganization: {
     mutateAsync: (
-      data: InternalApiV1OrganizationsUpdateOrganizationRequest,
+      data: InternalOrganizationsUpdateOrganizationRequest,
     ) => Promise<any>;
     isLoading: boolean;
   };
@@ -36,7 +36,7 @@ export function useOrganizationManagement(
     isLoading,
     error,
     refetch,
-  } = useGetApiV1OrganizationsMe({
+  } = useGetOrganizationsMe({
     query: {
       enabled: true,
       refetchInterval: 60000, // Refresh every minute
@@ -44,12 +44,12 @@ export function useOrganizationManagement(
   });
 
   // Update organization mutation
-  const updateOrgMutation = usePutApiV1OrganizationsMe({
+  const updateOrgMutation = usePutOrganizationsMe({
     mutation: {
       onSuccess: (data) => {
         // Invalidate organization queries
         queryClient.invalidateQueries({
-          queryKey: ['getApiV1OrganizationsMe'],
+          queryKey: ['getOrganizationsMe'],
         });
         queryClient.invalidateQueries({ queryKey: ['orgs'] });
       },
@@ -68,7 +68,7 @@ export function useOrganizationManagement(
     // Mutations
     updateOrganization: {
       mutateAsync: async (
-        data: InternalApiV1OrganizationsUpdateOrganizationRequest,
+        data: InternalOrganizationsUpdateOrganizationRequest,
       ) => {
         return updateOrgMutation.mutateAsync({ data });
       },

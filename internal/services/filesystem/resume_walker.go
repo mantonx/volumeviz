@@ -243,6 +243,14 @@ func (rw *ResumeWalker) processFolder(ctx context.Context, path string, info os.
 		parentPath := filepath.Dir(path)
 		if parent, exists := rw.folderCache[parentPath]; exists {
 			parentID = &parent.ID
+		} else {
+			// Parent not in cache - look it up in database to prevent orphaned folders
+			parent, err := rw.indexer.store.Folders().GetFolderByPath(ctx, rw.volumeID, parentPath)
+			if err == nil {
+				parentID = &parent.ID
+				// Add to cache for future lookups
+				rw.folderCache[parentPath] = parent
+			}
 		}
 	}
 

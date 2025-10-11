@@ -317,11 +317,12 @@ func (h *Handler) GetFilesByFolder(c *gin.Context) {
 		return
 	}
 
-	// Get files from store with proper pagination
+	// Get files and folders from store
 	fileRepo := h.store.Files()
 	folderRepo := h.store.Folders()
 
 	var files []*models.File
+	var folders []*models.Folder
 	var totalCount int
 	var err error
 
@@ -333,14 +334,15 @@ func (h *Handler) GetFilesByFolder(c *gin.Context) {
 			return
 		}
 
-		// Get accurate count for pagination (this would ideally be a separate count query)
-		// For now, estimate based on returned results
-		if len(files) < req.Limit {
-			totalCount = len(files) + offset
-		} else {
-			// Estimate there are more pages
-			totalCount = offset + req.Limit + 1
+		// Also get root folders
+		folders, err = folderRepo.GetRootFolders(c.Request.Context(), req.VolumeID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve folders", "details": err.Error()})
+			return
 		}
+
+		// Total count includes both files and folders
+		totalCount = len(files) + len(folders)
 	} else {
 		// Get folder by path first
 		folder, err := folderRepo.GetFolderByPath(c.Request.Context(), req.VolumeID, req.Path)
@@ -356,12 +358,15 @@ func (h *Handler) GetFilesByFolder(c *gin.Context) {
 			return
 		}
 
-		// Estimate count for pagination
-		if len(files) < req.Limit {
-			totalCount = len(files) + offset
-		} else {
-			totalCount = offset + req.Limit + 1
+		// Also get subfolders of this folder
+		folders, err = folderRepo.ListFoldersByParent(c.Request.Context(), req.VolumeID, &folder.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve subfolders", "details": err.Error()})
+			return
 		}
+
+		// Total count includes both files and folders
+		totalCount = len(files) + len(folders)
 	}
 
 	// Apply filtering before conversion (if filters are specified)
@@ -389,8 +394,14 @@ func (h *Handler) GetFilesByFolder(c *gin.Context) {
 		totalCount = len(files) // Recalculate total after filtering
 	}
 
-	// Convert to FileInfo structs
-	fileInfos := h.convertFilesToFileInfos(files)
+	// Convert to FileInfo structs (both files and folders)
+	fileInfos := make([]FileInfo, 0, len(files)+len(folders))
+
+	// Add folders first (so they appear before files)
+	fileInfos = append(fileInfos, h.convertFoldersToFileInfos(folders)...)
+
+	// Add files
+	fileInfos = append(fileInfos, h.convertFilesToFileInfos(files)...)
 
 	// Apply sorting
 	if req.SortBy != "" && req.SortOrder != "" {
@@ -956,8 +967,14 @@ func (h *Handler) GetFolderBrowsing(c *gin.Context) {
 		var childFolders []*models.Folder
 
 		if currentFolder == nil {
-			// Get root folders
-			childFolders, err = folderRepo.GetRootFolders(ctx, req.VolumeID)
+			// For root path ("/"), we want to show children of the volume's _data folder
+			// not the _data folder itself
+			rootFolders, err := folderRepo.GetRootFolders(ctx, req.VolumeID)
+			if err == nil && len(rootFolders) > 0 {
+				// Get children of the first root folder (_data)
+				dataFolder := rootFolders[0]
+				childFolders, err = folderRepo.ListFoldersByParent(ctx, req.VolumeID, &dataFolder.ID)
+			}
 		} else {
 			// Get child folders
 			childFolders, err = folderRepo.ListFoldersByParent(ctx, req.VolumeID, &currentFolder.ID)
@@ -1208,6 +1225,29 @@ func (h *Handler) getFilteredFiles(ctx context.Context, fileRepo interface{}, vo
 	}
 
 	return filtered, nil
+}
+
+// convertFoldersToFileInfos converts model folders to FileInfo structs
+func (h *Handler) convertFoldersToFileInfos(folders []*models.Folder) []FileInfo {
+	fileInfos := make([]FileInfo, len(folders))
+	for i, folder := range folders {
+		fileInfo := FileInfo{
+			Name:        filepath.Base(folder.Path),
+			Path:        folder.Path,
+			Size:        folder.SizeBytesRecursive, // Use recursive size for folders
+			IsDirectory: true,                      // All folders are directories
+		}
+
+		// Handle modification time
+		if folder.Mtime != nil {
+			fileInfo.ModifiedTime = folder.Mtime.Format("2006-01-02T15:04:05Z")
+		} else {
+			fileInfo.ModifiedTime = folder.CreatedAt.Format("2006-01-02T15:04:05Z")
+		}
+
+		fileInfos[i] = fileInfo
+	}
+	return fileInfos
 }
 
 // convertFilesToFileInfos converts model files to FileInfo structs

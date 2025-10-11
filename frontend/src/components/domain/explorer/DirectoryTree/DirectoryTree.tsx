@@ -206,8 +206,8 @@ export function DirectoryTree({
   } = useQuery({
     queryKey: ['folder-browse-root', volumeId],
     queryFn: async () => {
-      const response = await getApiFetch()<FolderBrowsingResponse>(
-        `/api/v1/explorer/browse?volume_id=${volumeId}&path=/&include_children=true&limit=100`,
+      const response = await customFetchClient<FolderBrowsingResponse>(
+        `/explorer/browse?volume_id=${volumeId}&path=/&include_children=true&limit=100`,
       );
       return response;
     },

@@ -34,7 +34,10 @@ import {
 import type { SearchPageProps, SearchState } from './SearchPage.types';
 import type { FilterState } from './AdvancedFilters.types';
 
-export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
+export const SearchPage: React.FC<SearchPageProps> = ({
+  className = '',
+  selectedVolumeFilter = 'all',
+}) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -53,6 +56,22 @@ export const SearchPage: React.FC<SearchPageProps> = ({ className = '' }) => {
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>({});
+
+  // Apply volume filter automatically
+  useEffect(() => {
+    if (selectedVolumeFilter && selectedVolumeFilter !== 'all') {
+      setAdvancedFilters(prev => ({
+        ...prev,
+        volumes: [selectedVolumeFilter],
+      }));
+    } else {
+      // Clear volume filter when 'all' is selected
+      setAdvancedFilters(prev => {
+        const { volumes, ...rest } = prev;
+        return rest;
+      });
+    }
+  }, [selectedVolumeFilter]);
 
   // Initialize filters from URL on mount
   useEffect(() => {

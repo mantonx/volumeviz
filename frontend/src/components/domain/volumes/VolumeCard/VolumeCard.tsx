@@ -8,11 +8,13 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  FolderOpen,
   HardDrive,
   Play,
   RefreshCw,
 } from 'lucide-react';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { VolumeCardProps } from './VolumeCard.types';
 
 export const VolumeCard: React.FC<VolumeCardProps> = ({
@@ -22,6 +24,7 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
   showActions = true,
   className,
 }) => {
+  const navigate = useNavigate();
   const setSelectedVolume = useSetAtom(selectedVolumeAtom);
   const { scanVolume, refreshVolumeSize } = useVolumeOperations();
 
@@ -38,6 +41,11 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
   const handleRefresh = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await refreshVolumeSize.mutateAsync(volume.id);
+  };
+
+  const handleExplore = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/files?volume=${encodeURIComponent(volume.name)}`);
   };
 
   // Status indicators
@@ -210,6 +218,15 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
           </p>
         </div>
       )}
+
+      {/* Explore Files Button */}
+      <button
+        onClick={handleExplore}
+        className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+      >
+        <FolderOpen className="w-4 h-4" />
+        Explore Files
+      </button>
     </div>
   );
 };
