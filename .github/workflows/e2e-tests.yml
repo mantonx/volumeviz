@@ -32,16 +32,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.21'
           cache: true
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
@@ -95,7 +95,7 @@ jobs:
           timeout 60s bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
 
       - name: Run Cypress E2E Tests
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           working-directory: frontend
           start: echo "Servers already started"
@@ -111,7 +111,7 @@ jobs:
           CYPRESS_ENABLE_WEBSOCKET: true
 
       - name: Upload Cypress Screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: cypress-screenshots
@@ -119,7 +119,7 @@ jobs:
           retention-days: 7
 
       - name: Upload Cypress Videos
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: cypress-videos
@@ -127,7 +127,7 @@ jobs:
           retention-days: 7
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: cypress-results
@@ -169,16 +169,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.21'
           cache: true
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
@@ -227,7 +227,7 @@ jobs:
           timeout 60s bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
 
       - name: Run Cypress E2E Tests (Firefox)
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           working-directory: frontend
           start: echo "Servers already started"
@@ -243,7 +243,7 @@ jobs:
           CYPRESS_ENABLE_WEBSOCKET: true
 
       - name: Upload Firefox Screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: cypress-screenshots-firefox
@@ -251,7 +251,7 @@ jobs:
           retention-days: 7
 
       - name: Upload Firefox Videos
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: cypress-videos-firefox
@@ -275,10 +275,10 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
@@ -289,7 +289,7 @@ jobs:
         run: npm ci
 
       - name: Run Cypress Component Tests
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           working-directory: frontend
           component: true
@@ -297,7 +297,7 @@ jobs:
           record: false
 
       - name: Upload Component Test Screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: cypress-component-screenshots
@@ -305,7 +305,7 @@ jobs:
           retention-days: 7
 
       - name: Upload Component Test Videos
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: cypress-component-videos
