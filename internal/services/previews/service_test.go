@@ -161,23 +161,29 @@ func TestService_CanGeneratePreview(t *testing.T) {
 	service, err := NewService(config)
 	require.NoError(t, err)
 
+	// The processor constructors fall back to searching $PATH for ffmpeg/vips
+	// when no explicit path is configured (see NewVideoProcessor/NewAudioProcessor/
+	// NewImageProcessor), so whether video/audio/image preview support is available
+	// depends on what's actually installed on the machine running this test —
+	// it is not guaranteed to be false. Assert consistently with what the
+	// service itself detected, rather than assuming a specific environment.
 	tests := []struct {
-		name     string
-		mimeType string
-		want     bool
+		name         string
+		mimeType     string
+		wantSameAsProcessor func() bool
 	}{
-		{"image/jpeg", "image/jpeg", false}, // False because no processors available
-		{"image/png", "image/png", false},
-		{"video/mp4", "video/mp4", false},
-		{"audio/mp3", "audio/mp3", false},
-		{"text/plain", "text/plain", false},
-		{"application/pdf", "application/pdf", false},
+		{"image/jpeg", "image/jpeg", func() bool { return service.imageProcessor != nil }},
+		{"image/png", "image/png", func() bool { return service.imageProcessor != nil }},
+		{"video/mp4", "video/mp4", func() bool { return service.videoProcessor != nil }},
+		{"audio/mp3", "audio/mp3", func() bool { return service.audioProcessor != nil }},
+		{"text/plain", "text/plain", func() bool { return false }},
+		{"application/pdf", "application/pdf", func() bool { return false }},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := service.CanGeneratePreview(tt.mimeType)
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.wantSameAsProcessor(), got)
 		})
 	}
 }
@@ -191,8 +197,23 @@ func TestService_GetSupportedTypes(t *testing.T) {
 
 	supported := service.GetSupportedTypes()
 
-	// Since no processors are available in test env, should be empty
-	assert.Empty(t, supported)
+	// Whether any type is supported depends on which of ffmpeg/vips are
+	// actually installed on the machine running this test (the processor
+	// constructors search $PATH as a fallback) — assert consistently with
+	// what the service itself detected rather than assuming an empty result.
+	if service.imageProcessor == nil && service.videoProcessor == nil && service.audioProcessor == nil {
+		assert.Empty(t, supported)
+		return
+	}
+	if service.imageProcessor != nil {
+		assert.Contains(t, supported, "image")
+	}
+	if service.videoProcessor != nil {
+		assert.Contains(t, supported, "video")
+	}
+	if service.audioProcessor != nil {
+		assert.Contains(t, supported, "audio")
+	}
 }
 
 func TestService_GetStats(t *testing.T) {

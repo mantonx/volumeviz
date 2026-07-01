@@ -179,12 +179,12 @@ func TestGetVolumeStats(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDocker := &mocks.DockerService{}
-			handler := NewHandler(mockDocker, nil, nil, nil)
+			handler := NewHandler(mockDocker, nil, nil)
 			tt.setupMock(mockDocker)
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
-			c.Params = gin.Params{{Key: "id", Value: tt.volumeID}}
+			c.Params = gin.Params{{Key: "name", Value: tt.volumeID}}
 			req := httptest.NewRequest("GET", "/", nil)
 			c.Request = req
 
@@ -258,7 +258,7 @@ func TestIsNotFoundError(t *testing.T) {
 
 // Test isSystemVolume function
 func TestIsSystemVolume(t *testing.T) {
-	handler := NewHandler(nil, nil, nil, nil)
+	handler := NewHandler(nil, nil, nil)
 
 	// Debug the regex pattern
 	t.Logf("Regex pattern: %s", handler.systemVolumeRegex.String())
@@ -542,7 +542,7 @@ func TestNewHandler_Construction(t *testing.T) {
 			name: "all dependencies provided",
 			setupFn: func() *Handler {
 				mockDocker := &mocks.DockerService{}
-				return NewHandler(mockDocker, nil, nil, nil)
+				return NewHandler(mockDocker, nil, nil)
 			},
 			checkFn: func(t *testing.T, h *Handler) {
 				assert.NotNil(t, h.dockerService)
@@ -552,11 +552,10 @@ func TestNewHandler_Construction(t *testing.T) {
 		{
 			name: "nil dependencies",
 			setupFn: func() *Handler {
-				return NewHandler(nil, nil, nil, nil)
+				return NewHandler(nil, nil, nil)
 			},
 			checkFn: func(t *testing.T, h *Handler) {
 				assert.Nil(t, h.dockerService)
-				assert.Nil(t, h.hub)
 				assert.Nil(t, h.store)
 				assert.Nil(t, h.realtimePublisher)
 				assert.NotNil(t, h.systemVolumeRegex) // Should still have regex

@@ -1,3 +1,14 @@
+//go:build ignore
+
+// This file is excluded from compilation: it tests a `realtime.EventEnvelope`
+// JSON schema (Type/Timestamp string/Data/VolumeID, with top-level "ts" and
+// "volume_id" keys) that does not exist anywhere in the codebase and never
+// has (checked full git history) — the actual WebSocket message type is
+// realtime.RealtimeMessage, which has a different shape (time.Time timestamp,
+// no VolumeID field, no "ts" JSON key). This looks like a schema that was
+// designed but never implemented, not a rename/refactor. Needs a decision on
+// what the real wire schema should be before these tests can be rewritten;
+// that's a design question, not a mechanical mock/type fix.
 package realtime_test
 
 import (

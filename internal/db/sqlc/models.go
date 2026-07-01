@@ -1041,4 +1041,10 @@ type Volumes struct {
 	Labels []byte `json:"labels"`
 	// Driver-specific options (e.g., device path for bind mounts)
 	Options []byte `json:"options"`
+	// Indicates whether this volume is actively tracked in VolumeViz. When FALSE, associated data should be removed from the database.
+	IsTracked bool `json:"is_tracked"`
+	// Timestamp when the volume was last set to tracked status
+	TrackedAt pgtype.Timestamptz `json:"tracked_at"`
+	// Timestamp when the volume was last set to untracked status
+	UntrackedAt pgtype.Timestamptz `json:"untracked_at"`
 }

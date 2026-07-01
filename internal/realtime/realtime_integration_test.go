@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/mantonx/volumeviz/internal/realtime"
 )
 
 // TODO: These integration tests were written for the legacy websocket system

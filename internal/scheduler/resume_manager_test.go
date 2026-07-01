@@ -8,7 +8,6 @@ import (
 
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
-	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/repo"
 	"github.com/mantonx/volumeviz/internal/store"
 	"github.com/stretchr/testify/assert"
@@ -48,6 +47,16 @@ func (m *MockResumeStore) Alerts() repo.AlertsRepo { return nil }
 func (m *MockResumeStore) Search() *repo.SearchRepo { return nil }
 func (m *MockResumeStore) Health(ctx context.Context) error { return nil }
 func (m *MockResumeStore) Queries() interface{} { return nil }
+func (m *MockResumeStore) Checkpoints() repo.CheckpointRepo { return nil }
+func (m *MockResumeStore) Snapshots() repo.SnapshotRepo     { return nil }
+func (m *MockResumeStore) Users() repo.UsersRepository      { return nil }
+func (m *MockResumeStore) Organizations() repo.OrganizationsRepo { return nil }
+func (m *MockResumeStore) GetUserByID(ctx context.Context, id int64) (store.User, error) {
+	return store.User{}, nil
+}
+func (m *MockResumeStore) GetOrganizationByID(ctx context.Context, id int64) (store.Organization, error) {
+	return store.Organization{}, nil
+}
 
 // MockScansRepo mocks the scans repository for resume manager testing
 type MockScansRepo struct {
@@ -55,12 +64,55 @@ type MockScansRepo struct {
 	scanJobs []*models.ScanJob
 }
 
-func (m *MockScansRepo) ListScanJobs(ctx context.Context, limit, offset int) ([]*models.ScanJob, error) {
+func (m *MockScansRepo) ListScanJobs(ctx context.Context, limit, offset int32) ([]*models.ScanJob, error) {
 	args := m.Called(ctx, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]*models.ScanJob), args.Error(1)
+}
+
+func (m *MockScansRepo) CreateScanJob(ctx context.Context, params models.CreateScanJobParams) (*models.ScanJob, error) {
+	return nil, nil
+}
+func (m *MockScansRepo) GetScanJobByID(ctx context.Context, id int64) (*models.ScanJob, error) {
+	return nil, nil
+}
+func (m *MockScansRepo) GetScanJobByScanID(ctx context.Context, scanID string) (*models.ScanJob, error) {
+	return nil, nil
+}
+func (m *MockScansRepo) UpdateScanJobStatus(ctx context.Context, id int64, status string) error {
+	return nil
+}
+func (m *MockScansRepo) UpdateScanJobProgress(ctx context.Context, scanID string, progress int32) error {
+	return nil
+}
+func (m *MockScansRepo) CompletesScanJob(ctx context.Context, scanID string) error { return nil }
+func (m *MockScansRepo) FailScanJob(ctx context.Context, scanID string, errorMessage string) error {
+	return nil
+}
+func (m *MockScansRepo) ClaimNextScanJob(ctx context.Context, startedAt time.Time) (*models.ScanJob, error) {
+	return nil, nil
+}
+func (m *MockScansRepo) UpdateScanJobHeartbeat(ctx context.Context, scanID string, progress int32) error {
+	return nil
+}
+func (m *MockScansRepo) MarkStaleScanJobsAsFailed(ctx context.Context, timeoutSeconds int) ([]string, error) {
+	return nil, nil
+}
+func (m *MockScansRepo) MarkInFlightJobsAsFailed(ctx context.Context, reason string) ([]string, error) {
+	return nil, nil
+}
+func (m *MockScansRepo) MarkInFlightJobsAsPaused(ctx context.Context, reason string) ([]string, error) {
+	return nil, nil
+}
+func (m *MockScansRepo) GetQueueDepth(ctx context.Context) (int64, error)      { return 0, nil }
+func (m *MockScansRepo) GetActiveScanCount(ctx context.Context) (int64, error) { return 0, nil }
+func (m *MockScansRepo) GetScanJobsByVolume(ctx context.Context, volumeID string, limit int32) ([]*models.ScanJob, error) {
+	return nil, nil
+}
+func (m *MockScansRepo) HasActiveScanForVolume(ctx context.Context, volumeID string) (bool, error) {
+	return false, nil
 }
 
 // MockResumeScanProgressRepo mocks scan progress repo for resume manager testing
@@ -91,6 +143,89 @@ func (m *MockResumeScanProgressRepo) UpdateScanPhaseProgress(ctx context.Context
 
 func (m *MockResumeScanProgressRepo) CompleteScanPhase(ctx context.Context, scanID, phaseName string) error {
 	return nil
+}
+
+func (m *MockResumeScanProgressRepo) GetScanPhase(ctx context.Context, scanID, phaseName string) (*models.ScanPhase, error) {
+	if len(m.ExpectedCalls) == 0 {
+		return nil, fmt.Errorf("scan phase not found")
+	}
+	args := m.Called(ctx, scanID, phaseName)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.ScanPhase), args.Error(1)
+}
+
+func (m *MockResumeScanProgressRepo) FailScanPhase(ctx context.Context, scanID, phaseName, errorMessage string) error {
+	return nil
+}
+
+func (m *MockResumeScanProgressRepo) CreateProgressItem(ctx context.Context, params models.CreateProgressItemParams) (*models.ScanProgressItem, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) UpdateProgressItem(ctx context.Context, params models.UpdateProgressItemParams) error {
+	return nil
+}
+
+func (m *MockResumeScanProgressRepo) GetProgressItems(ctx context.Context, scanID, phaseName string, limit, offset int32) ([]*models.ScanProgressItem, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetFailedProgressItems(ctx context.Context, scanID, phaseName string, limit int32) ([]*models.ScanProgressItem, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) RecordScanError(ctx context.Context, params models.RecordScanErrorParams) (int64, error) {
+	return 0, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetScanErrors(ctx context.Context, scanID, phaseName string, limit, offset int32) ([]*models.ScanProgressError, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetRecentErrors(ctx context.Context, hours int, limit int32) ([]*models.ScanProgressError, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) RecordPerformanceMetrics(ctx context.Context, params models.RecordPerformanceMetricsParams) error {
+	return nil
+}
+
+func (m *MockResumeScanProgressRepo) GetLatestPerformanceMetrics(ctx context.Context, scanID, phaseName string) (*models.ScanPerformanceMetrics, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetActiveScansSummary(ctx context.Context) ([]*models.ActiveScanSummary, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetScanProgressSummary(ctx context.Context, scanID string) (*models.ScanProgressSummary, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetRecentErrorsSummary(ctx context.Context, hours int, limit int32) ([]*models.RecentErrorSummary, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetScanProgressItems(ctx context.Context, scanID string) ([]models.ScanProgressItem, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetScanErrorsFiltered(ctx context.Context, params models.ScanErrorFilterParams) ([]*models.ScanProgressError, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetScanErrorsCount(ctx context.Context, scanID, phaseFilter, errorTypeFilter string) (int64, error) {
+	return 0, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetActiveScans(ctx context.Context, limit, offset int) ([]models.ActiveScanSummary, error) {
+	return nil, nil
+}
+
+func (m *MockResumeScanProgressRepo) GetActiveScansCount(ctx context.Context) (int64, error) {
+	return 0, nil
 }
 
 // MockVolumeScanner mocks the volume scanner for testing
@@ -306,14 +441,18 @@ func TestResumeManager_FindPausedScans(t *testing.T) {
 			mockStore.On("ScanProgress").Return(mockScanProgressRepo)
 
 			if tt.expectError {
-				mockScansRepo.On("ListScanJobs", mock.Anything, 100, 0).
+				mockScansRepo.On("ListScanJobs", mock.Anything, int32(100), int32(0)).
 					Return(nil, fmt.Errorf("database connection error"))
 			} else {
-				mockScansRepo.On("ListScanJobs", mock.Anything, 100, 0).
+				mockScansRepo.On("ListScanJobs", mock.Anything, int32(100), int32(0)).
 					Return(tt.scanJobs, nil)
 
-				// Mock GetScanPhases calls for each scan job
+				// Mock GetScanPhases calls for each scan job that findPausedScans will
+				// actually check (only "paused"/"failed" jobs — matches resume_manager.go).
 				for _, job := range tt.scanJobs {
+					if job.Status != "paused" && job.Status != "failed" {
+						continue
+					}
 					if phases, exists := tt.scanPhases[job.ScanID]; exists {
 						mockScanProgressRepo.On("GetScanPhases", mock.Anything, job.ScanID).
 							Return(phases, nil)
@@ -538,15 +677,16 @@ func TestResumeManager_FindResumablePhase(t *testing.T) {
 
 func TestResumeManager_ResumePausedScans(t *testing.T) {
 	tests := []struct {
-		name                string
-		scanJobs            []*models.ScanJob
-		scanPhases          map[string][]models.ScanPhase
-		scannerBehavior     func(*MockVolumeScanner)
-		expectedAttempts    int
-		expectedSuccessful  int
-		expectedFailed      int
-		expectError         bool
-		description         string
+		name                 string
+		scanJobs             []*models.ScanJob
+		scanPhases           map[string][]models.ScanPhase
+		scannerBehavior      func(*MockVolumeScanner)
+		progressRepoBehavior func(*MockResumeScanProgressRepo)
+		expectedAttempts     int
+		expectedSuccessful   int
+		expectedFailed       int
+		expectError          bool
+		description          string
 	}{
 		{
 			name: "successful_volume_scan_resume",
@@ -604,7 +744,11 @@ func TestResumeManager_ResumePausedScans(t *testing.T) {
 			},
 			scannerBehavior: func(scanner *MockVolumeScanner) {
 				scanner.On("ScanVolumeAsync", mock.Anything, "volume-3").Return("new-scan-3", nil)
-				// filesystem_indexing resumption will be attempted but will fail in our mock
+			},
+			progressRepoBehavior: func(repo *MockResumeScanProgressRepo) {
+				// filesystem_indexing resumption is attempted but fails: no scan phase found
+				repo.On("GetScanPhase", mock.Anything, "scan-4", "filesystem_indexing").
+					Return(nil, fmt.Errorf("scan phase not found"))
 			},
 			expectedAttempts:   2,
 			expectedSuccessful: 1,
@@ -625,7 +769,10 @@ func TestResumeManager_ResumePausedScans(t *testing.T) {
 			mockStore.On("Scans").Return(mockScansRepo)
 			mockStore.On("ScanProgress").Return(mockScanProgressRepo)
 
-			mockScansRepo.On("ListScanJobs", mock.Anything, 100, 0).Return(tt.scanJobs, nil)
+			mockScansRepo.On("ListScanJobs", mock.Anything, int32(100), int32(0)).Return(tt.scanJobs, nil)
+			// hasActiveScan() does a separate, smaller lookup (limit=10) to check for
+			// in-flight scans on the same volume before resuming.
+			mockScansRepo.On("ListScanJobs", mock.Anything, int32(10), int32(0)).Return([]*models.ScanJob{}, nil).Maybe()
 
 			// Setup scan phases mocks
 			for _, job := range tt.scanJobs {
@@ -638,6 +785,11 @@ func TestResumeManager_ResumePausedScans(t *testing.T) {
 			// Apply scanner behavior
 			if tt.scannerBehavior != nil {
 				tt.scannerBehavior(mockScanner)
+			}
+
+			// Apply progress repo behavior
+			if tt.progressRepoBehavior != nil {
+				tt.progressRepoBehavior(mockScanProgressRepo)
 			}
 
 			// Create resume manager
@@ -731,7 +883,7 @@ func BenchmarkResumeManager_FindPausedScans(b *testing.B) {
 
 	mockStore.On("Scans").Return(mockScansRepo)
 	mockStore.On("ScanProgress").Return(mockScanProgressRepo)
-	mockScansRepo.On("ListScanJobs", mock.Anything, 100, 0).Return(scanJobs[:100], nil) // Simulate pagination
+	mockScansRepo.On("ListScanJobs", mock.Anything, int32(100), int32(0)).Return(scanJobs[:100], nil) // Simulate pagination
 
 	// Mock all GetScanPhases calls
 	for _, job := range scanJobs[:100] {

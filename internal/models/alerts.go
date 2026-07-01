@@ -237,6 +237,77 @@ type AlertContext struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
+// ==============================================================================
+// LIST/ACTION RESPONSE WRAPPERS
+// ==============================================================================
+
+// OffsetPagination represents limit/offset-based pagination metadata
+type OffsetPagination struct {
+	Limit  int   `json:"limit" example:"50"`
+	Offset int   `json:"offset" example:"0"`
+	Total  int64 `json:"total" example:"123"`
+}
+
+// AlertRulesListResponse is returned by GET /alerts/rules
+type AlertRulesListResponse struct {
+	Rules      []*AlertRule     `json:"rules"`
+	Pagination OffsetPagination `json:"pagination"`
+}
+
+// AlertDestinationsListResponse is returned by GET /alerts/destinations
+type AlertDestinationsListResponse struct {
+	Destinations []*AlertDestination `json:"destinations"`
+	Pagination   OffsetPagination    `json:"pagination"`
+}
+
+// AlertsListResponse is returned by GET /alerts
+type AlertsListResponse struct {
+	Alerts     []*Alert         `json:"alerts"`
+	Pagination OffsetPagination `json:"pagination"`
+}
+
+// AlertRoutesListResponse is returned by GET /alerts/routes
+type AlertRoutesListResponse struct {
+	Routes     []*AlertRoute    `json:"routes"`
+	Pagination OffsetPagination `json:"pagination"`
+}
+
+// AlertDeliveriesListResponse is returned by GET /alerts/deliveries
+type AlertDeliveriesListResponse struct {
+	Deliveries []*AlertDelivery `json:"deliveries"`
+	Pagination OffsetPagination `json:"pagination"`
+}
+
+// MessageResponse is a generic success acknowledgement
+type MessageResponse struct {
+	Message string `json:"message"`
+}
+
+// TestAlertRuleResponse is returned by POST /alerts/rules/{id}/test
+type TestAlertRuleResponse struct {
+	Rule     *AlertRule  `json:"rule"`
+	Results  interface{} `json:"results"`
+	TestedAt time.Time   `json:"tested_at"`
+}
+
+// TestDestinationMessageResponse is returned by POST /alerts/destinations/{id}/test
+type TestDestinationMessageResponse struct {
+	Message  string    `json:"message"`
+	TestedAt time.Time `json:"tested_at"`
+}
+
+// EngineStatusResponse is returned by GET /alerts/engine/status
+type EngineStatusResponse struct {
+	Engine      interface{} `json:"engine"`
+	RetrievedAt time.Time   `json:"retrieved_at"`
+}
+
+// TriggerEvaluationResponse is returned by POST /alerts/engine/evaluate
+type TriggerEvaluationResponse struct {
+	Message     string    `json:"message"`
+	TriggeredAt time.Time `json:"triggered_at"`
+}
+
 // Helper methods for JSON marshaling/unmarshaling
 func (ar *AlertRule) MarshalLabels() ([]byte, error) {
 	return json.Marshal(ar.Labels)

@@ -119,7 +119,7 @@ func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, sca
 	}())
 
 	if updateErr != nil && s.logger != nil {
-		s.logger.Printf("Failed to update stats job %d: %v", jobID, updateErr)
+		s.logger.Printf("Failed to update stats job %s: %v", jobID, updateErr)
 	}
 
 	return err
@@ -206,7 +206,7 @@ func (s *StatsService) ComputeHistoricalStats(ctx context.Context, volumeID stri
 	}())
 
 	if updateErr != nil && s.logger != nil {
-		s.logger.Printf("Failed to update historical stats job %d: %v", jobID, updateErr)
+		s.logger.Printf("Failed to update historical stats job %s: %v", jobID, updateErr)
 	}
 
 	if s.logger != nil {

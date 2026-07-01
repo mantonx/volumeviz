@@ -137,20 +137,23 @@ func TestStreamingEnrichmentMemoryEfficiency(t *testing.T) {
 func TestStreamingConfigDefaults(t *testing.T) {
 	config := DefaultStreamingConfig()
 
-	if config.BatchSize != 1000 {
-		t.Errorf("Expected BatchSize 1000, got %d", config.BatchSize)
+	// Defaults were deliberately retuned (see DefaultStreamingConfig comments):
+	// smaller batches for better memory usage, single concurrent batch to
+	// avoid memory pressure, more frequent progress updates.
+	if config.BatchSize != 500 {
+		t.Errorf("Expected BatchSize 500, got %d", config.BatchSize)
 	}
 
-	if config.MaxConcurrentBatch != 2 {
-		t.Errorf("Expected MaxConcurrentBatch 2, got %d", config.MaxConcurrentBatch)
+	if config.MaxConcurrentBatch != 1 {
+		t.Errorf("Expected MaxConcurrentBatch 1, got %d", config.MaxConcurrentBatch)
 	}
 
 	if config.BatchTimeout != 30*time.Minute {
 		t.Errorf("Expected BatchTimeout 30m, got %v", config.BatchTimeout)
 	}
 
-	if config.ProgressUpdateEvery != 100 {
-		t.Errorf("Expected ProgressUpdateEvery 100, got %d", config.ProgressUpdateEvery)
+	if config.ProgressUpdateEvery != 50 {
+		t.Errorf("Expected ProgressUpdateEvery 50, got %d", config.ProgressUpdateEvery)
 	}
 }
 

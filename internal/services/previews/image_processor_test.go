@@ -153,8 +153,17 @@ func TestImageProcessor_GenerateThumbnail_VipsNotAvailable(t *testing.T) {
 }
 
 func TestImageProcessor_GenerateThumbnail_Timeout(t *testing.T) {
+	// GenerateThumbnail always passes vipsthumbnail-style flags ("-s <width>",
+	// "-o <path>[...]"), which the real `sleep` binary rejects as invalid
+	// options and exits immediately — never reaching the context deadline.
+	// Use a tiny wrapper script that ignores all arguments and just sleeps,
+	// so the command genuinely outlives the context timeout below.
+	slowScript := filepath.Join(t.TempDir(), "slow-vips.sh")
+	err := os.WriteFile(slowScript, []byte("#!/bin/sh\nsleep 10\n"), 0755)
+	require.NoError(t, err)
+
 	processor := &ImageProcessor{
-		vipsPath:  "sleep", // Use sleep command to simulate timeout
+		vipsPath:  slowScript,
 		smartCrop: false,
 	}
 
@@ -165,7 +174,7 @@ func TestImageProcessor_GenerateThumbnail_Timeout(t *testing.T) {
 	// Create a small test file
 	tempFile := filepath.Join(t.TempDir(), "test.jpg")
 	testData := []byte("fake image data")
-	err := os.WriteFile(tempFile, testData, 0644)
+	err = os.WriteFile(tempFile, testData, 0644)
 	require.NoError(t, err)
 
 	_, err = processor.GenerateThumbnail(ctx, tempFile, PreviewSizeMedium)

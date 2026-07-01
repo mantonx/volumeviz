@@ -102,16 +102,22 @@ func TestCalculatePhaseProgress(t *testing.T) {
 
 	phases := map[string]*interfaces.PhaseInfo{
 		"volume_scan": {
-			Status:   "completed",
-			Progress: 1.0,
+			Status:         "completed",
+			Progress:       1.0,
+			ItemsTotal:     100,
+			ItemsProcessed: 100,
 		},
 		"filesystem_indexing": {
-			Status:   "running",
-			Progress: 0.6,
+			Status:         "running",
+			Progress:       0.6,
+			ItemsTotal:     1000,
+			ItemsProcessed: 600,
 		},
 		"media_enrichment": {
-			Status:   "pending",
-			Progress: 0.0,
+			Status:         "pending",
+			Progress:       0.0,
+			ItemsTotal:     500,
+			ItemsProcessed: 0,
 		},
 	}
 
@@ -126,23 +132,29 @@ func TestCalculateOverallProgress(t *testing.T) {
 
 	phases := map[string]*interfaces.PhaseInfo{
 		"volume_scan": {
-			Status:   "completed",
-			Progress: 1.0,
+			Status:         "completed",
+			Progress:       1.0,
+			ItemsTotal:     100,
+			ItemsProcessed: 100,
 		},
 		"filesystem_indexing": {
-			Status:   "running",
-			Progress: 0.6,
+			Status:         "running",
+			Progress:       0.6,
+			ItemsTotal:     1000,
+			ItemsProcessed: 600,
 		},
 		"media_enrichment": {
-			Status:   "pending",
-			Progress: 0.0,
+			Status:         "pending",
+			Progress:       0.0,
+			ItemsTotal:     500,
+			ItemsProcessed: 0,
 		},
 	}
 
 	overall := scanner.calculateOverallProgress(phases)
 
-	// The actual calculation may use different weightings for phases
-	// Let's just verify it's a reasonable progress value
+	// calculateOverallProgress weights items by phase complexity (volume_scan
+	// and filesystem_indexing at 1x, media_enrichment at 2x), not raw Progress.
 	assert.GreaterOrEqual(t, overall, 0.0)
 	assert.LessOrEqual(t, overall, 1.0)
 	assert.Greater(t, overall, 0.3) // Should be meaningful progress since volume_scan is complete

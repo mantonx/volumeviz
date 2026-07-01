@@ -74,6 +74,10 @@ type Querier interface {
 	CountScanJobsByStatus(ctx context.Context, status string) (int64, error)
 	CountSearchFiles(ctx context.Context, arg CountSearchFilesParams) (int64, error)
 	CountSnapshotsForVolume(ctx context.Context, volumeID string) (int64, error)
+	// Count tracked volumes
+	CountTrackedVolumes(ctx context.Context, organizationID pgtype.Int8) (int64, error)
+	// Count untracked volumes
+	CountUntrackedVolumes(ctx context.Context, organizationID pgtype.Int8) (int64, error)
 	CountUsersByOrg(ctx context.Context, organizationID int64) (int64, error)
 	CountVolumes(ctx context.Context, organizationID pgtype.Int8) (int64, error)
 	// =============================================================================
@@ -411,6 +415,8 @@ type Querier interface {
 	// =============================================================================
 	GetVolumeStatsSummary(ctx context.Context, volumeID string) (GetVolumeStatsSummaryRow, error)
 	GetVolumeSystemLevel(ctx context.Context, volumeID string) (Volumes, error)
+	// Get tracking status for a specific volume
+	GetVolumeTrackingStatus(ctx context.Context, arg GetVolumeTrackingStatusParams) (GetVolumeTrackingStatusRow, error)
 	InsertVolumeSize(ctx context.Context, arg InsertVolumeSizeParams) error
 	InvalidatePreviousVolumeSizes(ctx context.Context, volumeID string) error
 	ListActiveAlerts(ctx context.Context, arg ListActiveAlertsParams) ([]Alerts, error)
@@ -479,8 +485,12 @@ type Querier interface {
 	ListSystemRoles(ctx context.Context) ([]Roles, error)
 	ListTemplatesByCategory(ctx context.Context, category string) ([]TrackingRuleTemplates, error)
 	ListTrackedMounts(ctx context.Context) ([]DockerMountCatalog, error)
+	// List only tracked volumes
+	ListTrackedVolumes(ctx context.Context, arg ListTrackedVolumesParams) ([]Volumes, error)
 	ListTrackingRuleTemplates(ctx context.Context, arg ListTrackingRuleTemplatesParams) ([]TrackingRuleTemplates, error)
 	ListTrackingRules(ctx context.Context, arg ListTrackingRulesParams) ([]TrackingRules, error)
+	// List only untracked volumes
+	ListUntrackedVolumes(ctx context.Context, arg ListUntrackedVolumesParams) ([]Volumes, error)
 	ListUsersByOrg(ctx context.Context, arg ListUsersByOrgParams) ([]Users, error)
 	ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Volumes, error)
 	ListVolumesWithCounts(ctx context.Context, arg ListVolumesWithCountsParams) ([]ListVolumesWithCountsRow, error)
@@ -503,6 +513,13 @@ type Querier interface {
 	SearchFoldersByName(ctx context.Context, arg SearchFoldersByNameParams) ([]Folders, error)
 	SearchFoldersSimple(ctx context.Context, arg SearchFoldersSimpleParams) ([]Folders, error)
 	SetUserActive(ctx context.Context, arg SetUserActiveParams) error
+	// =============================================================================
+	// Volume Tracking Queries
+	// =============================================================================
+	// Set a volume to tracked status
+	SetVolumeTracked(ctx context.Context, arg SetVolumeTrackedParams) (Volumes, error)
+	// Set a volume to untracked status
+	SetVolumeUntracked(ctx context.Context, arg SetVolumeUntrackedParams) (Volumes, error)
 	SoftDeleteVolume(ctx context.Context, arg SoftDeleteVolumeParams) error
 	UpdateAlertDestination(ctx context.Context, arg UpdateAlertDestinationParams) error
 	UpdateAlertDestinationLastUsed(ctx context.Context, id int64) error

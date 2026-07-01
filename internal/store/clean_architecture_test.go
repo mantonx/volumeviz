@@ -6,6 +6,7 @@ import (
 
 	"github.com/mantonx/volumeviz/internal/db"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
+	"github.com/mantonx/volumeviz/internal/repo"
 )
 
 // TestCleanArchitectureCompliance tests that our new three-layer architecture works correctly
@@ -94,10 +95,11 @@ func TestTransactionBoundaries(t *testing.T) {
 		// We don't actually call them since we don't have a real database connection
 		var _ func(context.Context, func(TxStore) error) error = store.WithTx
 
-		// Verify that TxStore interface has required methods (compile-time check)
+		// Verify that TxStore interface has required methods (compile-time check only —
+		// do not call them: txStore wraps a nil *pgTxStore, so calling any method on it
+		// panics on a nil pointer dereference, even though the interface value itself
+		// is non-nil (typed nil))
 		var txStore TxStore = (*pgTxStore)(nil)
-		if txStore != nil {
-			_ = txStore.Volumes() // Compile-time check that method exists
-		}
+		var _ func() repo.VolumesRepo = txStore.Volumes
 	})
 }

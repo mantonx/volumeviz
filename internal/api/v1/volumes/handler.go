@@ -468,6 +468,19 @@ func (h *Handler) convertToAPIVolume(vol coremodels.Volume) models.VolumeV1 {
 	if err != nil {
 		containers = []coremodels.VolumeContainer{}
 	}
+
+	// Enrich with database tracking data if available
+	if h.store != nil {
+		// Use default org ID (1) when not in authenticated context
+		dbVol, err := h.store.Volumes().GetVolumeByVolumeID(context.Background(), 1, vol.VolumeID)
+		if err == nil && dbVol != nil {
+			// Populate tracking fields from database
+			vol.IsTracked = dbVol.IsTracked
+			vol.TrackedAt = dbVol.TrackedAt
+			vol.UntrackedAt = dbVol.UntrackedAt
+		}
+	}
+
 	return h.convertToAPIVolumeWithContainers(vol, containers)
 }
 
@@ -512,6 +525,9 @@ func (h *Handler) convertToAPIVolumeWithContainers(vol coremodels.Volume, contai
 		IsSystem:         h.isSystemVolume(vol),
 		IsOrphaned:       isOrphaned,
 		Status:           computeVolumeStatus(nil, isOrphaned, attachmentsCount), // Will be updated later with scan status
+		IsTracked:        vol.IsTracked,
+		TrackedAt:        vol.TrackedAt,
+		UntrackedAt:      vol.UntrackedAt,
 	}
 }
 
@@ -876,6 +892,9 @@ func (h *Handler) GetVolume(c *gin.Context) {
 	var scanStatus *string
 	var scanProgress *int
 	var lastScanID *string
+	var isTracked *bool
+	var trackedAt *time.Time
+	var untrackedAt *time.Time
 
 	// Enhance with database information if store is available
 	if h.store != nil {
@@ -892,11 +911,19 @@ func (h *Handler) GetVolume(c *gin.Context) {
 			}
 		}
 
-		// Get last scan timestamp from database
-		if orgID, hasOrg := middleware.GetOrganizationID(ctx); hasOrg {
-			if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, volumeName); err == nil && dbVol.LastScanned != nil {
+		// Get last scan timestamp and tracking status from database
+		orgID, hasOrg := middleware.GetOrganizationID(ctx)
+		if !hasOrg {
+			orgID = 1 // Default when auth is disabled
+		}
+		if dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, volumeName); err == nil {
+			if dbVol.LastScanned != nil {
 				lastScanAt = dbVol.LastScanned
 			}
+			// Get tracking status
+			isTracked = dbVol.IsTracked
+			trackedAt = dbVol.TrackedAt
+			untrackedAt = dbVol.UntrackedAt
 		}
 
 		// Get latest scan status and progress
@@ -969,6 +996,9 @@ func (h *Handler) GetVolume(c *gin.Context) {
 		ScanStatus:         scanStatus,
 		ScanProgress:       scanProgress,
 		LastScanID:         lastScanID,
+		IsTracked:          isTracked,
+		TrackedAt:          trackedAt,
+		UntrackedAt:        untrackedAt,
 		Meta: map[string]interface{}{
 			"driver_opts": volume.Options,
 		},
@@ -1124,7 +1154,7 @@ func (h *Handler) GetVolumeStats(c *gin.Context) {
 	}
 
 	stats := gin.H{
-		"volume_id":       volume.ID,
+		"volume_id":       volume.VolumeID,
 		"volume_name":     volume.Name,
 		"driver":          volume.Driver,
 		"mountpoint":      volume.Mountpoint,
@@ -1614,85 +1644,6 @@ func escapeCSV(field string) string {
 	return field
 }
 
-// BulkDeleteVolumes deletes multiple volumes
-// @Summary Bulk delete volumes
-// @Description Delete multiple Docker volumes by their IDs
-// @Tags volumes
-// @Accept json
-// @Produce json
-// @Param body body models.BulkDeleteVolumesRequest true "Volume IDs to delete"
-// @Success 200 {object} models.BulkDeleteVolumesResponse "Delete results"
-// @Failure 400 {object} models.ErrorResponse "Bad request"
-// @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /volumes/bulk-delete [post]
-func (h *Handler) BulkDeleteVolumes(c *gin.Context) {
-	ctx := c.Request.Context()
-
-	// Get organization from context
-	orgID, _ := middleware.GetOrganizationID(c)
-
-	// Parse request body
-	var req models.BulkDeleteVolumesRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		apiutils.RespondWithBadRequest(c, "Invalid request body", nil)
-		return
-	}
-
-	// Validate request
-	if len(req.VolumeIDs) == 0 {
-		apiutils.RespondWithBadRequest(c, "No volume IDs provided", nil)
-		return
-	}
-
-	// Limit batch size
-	if len(req.VolumeIDs) > 100 {
-		apiutils.RespondWithBadRequest(c, "Maximum 100 volumes can be deleted at once", nil)
-		return
-	}
-
-	// Track results
-	results := make([]models.BulkDeleteResult, 0, len(req.VolumeIDs))
-	successCount := 0
-	failureCount := 0
-
-	// Mark each volume as inactive in database
-	// Note: This marks volumes as inactive rather than actually deleting Docker volumes
-	// Actual Docker volume deletion is dangerous and should be done through Docker CLI
-	for _, volumeID := range req.VolumeIDs {
-		result := models.BulkDeleteResult{
-			VolumeID: volumeID,
-		}
-
-		// Soft delete volume (marks as inactive)
-		err := h.store.Volumes().SoftDeleteVolume(ctx, orgID, volumeID)
-		if err != nil {
-			result.Success = false
-			result.Error = err.Error()
-			failureCount++
-		} else {
-			result.Success = true
-			successCount++
-
-			// Invalidate cache for deleted volume (Phase 3)
-			if h.cache != nil {
-				h.cache.Invalidate(volumeID)
-			}
-		}
-
-		results = append(results, result)
-	}
-
-	// Prepare response
-	response := models.BulkDeleteVolumesResponse{
-		TotalRequested: len(req.VolumeIDs),
-		SuccessCount:   successCount,
-		FailureCount:   failureCount,
-		Results:        results,
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
 // formatBytes formats bytes into human-readable format
 func formatBytes(bytes int64) string {
 	const unit = 1024
@@ -1705,4 +1656,258 @@ func formatBytes(bytes int64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %ciB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
+// =============================================================================
+// Volume Tracking Endpoints
+// =============================================================================
+
+// TrackVolume tracks a single volume
+// @Summary Track a volume
+// @Description Set a volume to tracked status. When tracked, the volume will be scanned and its data indexed.
+// @Tags volumes
+// @ID postVolumesVolumeIdTrack
+// @Accept json
+// @Produce json
+// @Param name path string true "Volume name"
+// @Success 200 {object} models.VolumeV1 "Volume successfully tracked"
+// @Failure 400 {object} models.ErrorResponse "Invalid request"
+// @Failure 404 {object} models.ErrorResponse "Volume not found"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /api/v1/volumes/{name}/track [post]
+func (h *Handler) TrackVolume(c *gin.Context) {
+	volumeID := c.Param("name")
+	if volumeID == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Missing volume ID",
+			Message: "Volume ID is required",
+		})
+		return
+	}
+
+	// Get organization ID from context, or use default when auth is disabled
+	orgID, hasOrg := middleware.GetOrganizationID(c.Request.Context())
+	if !hasOrg {
+		// When authentication is disabled, use default organization ID
+		orgID = 1
+	}
+
+	// Track the volume
+	volume, err := h.store.Volumes().SetVolumeTracked(c.Request.Context(), orgID, volumeID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to track volume",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	// Invalidate cache if enabled
+	if h.cache != nil {
+		h.cache.Invalidate(volumeID)
+	}
+
+	// Convert to API model (volume is already in domain model format)
+	apiVolume := h.convertToAPIVolume(*volume)
+
+	c.JSON(http.StatusOK, apiVolume)
+}
+
+// UntrackVolume untracks a single volume
+// @Summary Untrack a volume
+// @Description Set a volume to untracked status and remove its data from the database. The Docker volume itself remains intact.
+// @Tags volumes
+// @ID postVolumesVolumeIdUntrack
+// @Accept json
+// @Produce json
+// @Param name path string true "Volume name"
+// @Success 200 {object} models.VolumeV1 "Volume successfully untracked"
+// @Failure 400 {object} models.ErrorResponse "Invalid request"
+// @Failure 404 {object} models.ErrorResponse "Volume not found"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /api/v1/volumes/{name}/untrack [post]
+func (h *Handler) UntrackVolume(c *gin.Context) {
+	volumeID := c.Param("name")
+	if volumeID == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Missing volume ID",
+			Message: "Volume ID is required",
+		})
+		return
+	}
+
+	// Get organization ID from context, or use default when auth is disabled
+	orgID, hasOrg := middleware.GetOrganizationID(c.Request.Context())
+	if !hasOrg {
+		// When authentication is disabled, use default organization ID
+		orgID = 1
+	}
+
+	// Untrack the volume
+	volume, err := h.store.Volumes().SetVolumeUntracked(c.Request.Context(), orgID, volumeID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to untrack volume",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	// Invalidate cache if enabled
+	if h.cache != nil {
+		h.cache.Invalidate(volumeID)
+	}
+
+	// Convert to API model (volume is already in domain model format)
+	apiVolume := h.convertToAPIVolume(*volume)
+
+	c.JSON(http.StatusOK, apiVolume)
+}
+
+// BulkTrackVolumesRequest represents a bulk track request
+type BulkTrackVolumesRequest struct {
+	VolumeIDs []string `json:"volume_ids" binding:"required"`
+}
+
+// BulkTrackVolumesResponse represents a bulk track response
+type BulkTrackVolumesResponse struct {
+	Succeeded []string `json:"succeeded"`
+	Failed    []struct {
+		VolumeID string `json:"volume_id"`
+		Error    string `json:"error"`
+	} `json:"failed,omitempty"`
+}
+
+// BulkTrackVolumes tracks multiple volumes at once
+// @Summary Bulk track volumes
+// @Description Track multiple volumes in a single request
+// @Tags volumes
+// @ID postVolumesBulkTrack
+// @Accept json
+// @Produce json
+// @Param request body BulkTrackVolumesRequest true "Volume IDs to track"
+// @Success 200 {object} BulkTrackVolumesResponse "Bulk track results"
+// @Failure 400 {object} models.ErrorResponse "Invalid request"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /api/v1/volumes/bulk-track [post]
+func (h *Handler) BulkTrackVolumes(c *gin.Context) {
+	var req BulkTrackVolumesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Invalid request body",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if len(req.VolumeIDs) == 0 {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Empty volume list",
+			Message: "At least one volume ID is required",
+		})
+		return
+	}
+
+	// Get organization ID from context, or use default when auth is disabled
+	orgID, hasOrg := middleware.GetOrganizationID(c.Request.Context())
+	if !hasOrg {
+		// When authentication is disabled, use default organization ID
+		orgID = 1
+	}
+
+	var response BulkTrackVolumesResponse
+	response.Succeeded = make([]string, 0)
+	response.Failed = make([]struct {
+		VolumeID string `json:"volume_id"`
+		Error    string `json:"error"`
+	}, 0)
+
+	// Track each volume
+	for _, volumeID := range req.VolumeIDs {
+		_, err := h.store.Volumes().SetVolumeTracked(c.Request.Context(), orgID, volumeID)
+		if err != nil {
+			response.Failed = append(response.Failed, struct {
+				VolumeID string `json:"volume_id"`
+				Error    string `json:"error"`
+			}{
+				VolumeID: volumeID,
+				Error:    err.Error(),
+			})
+		} else {
+			response.Succeeded = append(response.Succeeded, volumeID)
+			// Invalidate cache if enabled
+			if h.cache != nil {
+				h.cache.Invalidate(volumeID)
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// BulkUntrackVolumes untracks multiple volumes at once
+// @Summary Bulk untrack volumes
+// @Description Untrack multiple volumes in a single request
+// @Tags volumes
+// @ID postVolumesBulkUntrack
+// @Accept json
+// @Produce json
+// @Param request body BulkTrackVolumesRequest true "Volume IDs to untrack"
+// @Success 200 {object} BulkTrackVolumesResponse "Bulk untrack results"
+// @Failure 400 {object} models.ErrorResponse "Invalid request"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /api/v1/volumes/bulk-untrack [post]
+func (h *Handler) BulkUntrackVolumes(c *gin.Context) {
+	var req BulkTrackVolumesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Invalid request body",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if len(req.VolumeIDs) == 0 {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Empty volume list",
+			Message: "At least one volume ID is required",
+		})
+		return
+	}
+
+	// Get organization ID from context, or use default when auth is disabled
+	orgID, hasOrg := middleware.GetOrganizationID(c.Request.Context())
+	if !hasOrg {
+		// When authentication is disabled, use default organization ID
+		orgID = 1
+	}
+
+	var response BulkTrackVolumesResponse
+	response.Succeeded = make([]string, 0)
+	response.Failed = make([]struct {
+		VolumeID string `json:"volume_id"`
+		Error    string `json:"error"`
+	}, 0)
+
+	// Untrack each volume
+	for _, volumeID := range req.VolumeIDs {
+		_, err := h.store.Volumes().SetVolumeUntracked(c.Request.Context(), orgID, volumeID)
+		if err != nil {
+			response.Failed = append(response.Failed, struct {
+				VolumeID string `json:"volume_id"`
+				Error    string `json:"error"`
+			}{
+				VolumeID: volumeID,
+				Error:    err.Error(),
+			})
+		} else {
+			response.Succeeded = append(response.Succeeded, volumeID)
+			// Invalidate cache if enabled
+			if h.cache != nil {
+				h.cache.Invalidate(volumeID)
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
 }

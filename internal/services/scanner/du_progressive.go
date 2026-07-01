@@ -203,6 +203,11 @@ func (p *ProgressiveDu) processBatch(ctx context.Context, batch *DirectoryBatch)
 	remainingDirs := batch.Directories[1:]
 	result, err := runner.Run(ctx, firstDir, remainingDirs...)
 	if err != nil {
+		// result may be nil here (e.g. command timeout or exec failure), not
+		// just a result with a non-zero exit code.
+		if result == nil {
+			return 0, fmt.Errorf("du command failed: %w", err)
+		}
 		stderrStr := string(result.Stderr)
 		// Handle permission errors gracefully - log but don't fail the whole batch
 		if strings.Contains(stderrStr, "Permission denied") {

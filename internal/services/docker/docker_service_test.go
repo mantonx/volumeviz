@@ -556,7 +556,9 @@ func TestDockerService_convertToVolumeModel(t *testing.T) {
 				CreatedAt:  "2021-01-01T12:00:00Z",
 			},
 			expected: models.Volume{
-				ID:         2,
+				// ID is always hardcoded to 1 by convertToVolumeModel — Docker's
+				// API has no concept of it; the real DB-assigned ID is set later.
+				ID:         1,
 				VolumeID:   "simple-volume",
 				Name:       "simple-volume",
 				Driver:     "local",

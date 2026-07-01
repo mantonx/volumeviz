@@ -1,0 +1,44 @@
+# Example: mounting external media volumes (e.g. CIFS/NFS network shares)
+#
+# This is a reference for wiring real media storage into a test/dev
+# container so VolumeViz has something realistic to discover and scan.
+# It is not loaded by default in docker-compose.yml or docker-compose.dev.yml.
+#
+# Usage (docker-compose.yml):
+#   1. Adjust the `device` paths below to point at your own shares.
+#   2. Merge these volume definitions in (or pass this file as an
+#      additional `-f` to `docker compose`), and add the corresponding
+#      mounts to the `test-container` service:
+#
+#        test-container:
+#          volumes:
+#            - tv_shows:/media/tv:ro
+#            - movies:/media/movies:ro
+#
+#   docker compose -f docker-compose.yml -f docs/examples/media-volumes.yml up
+#
+# Usage (docker-compose.dev.yml):
+#   Same idea, but add mounts to backend-postgres / backend-sqlite /
+#   test-media-container as needed, plus a mapping env var on the backend
+#   so VolumeViz knows how to label the scanned path, e.g.:
+#
+#        backend-postgres:
+#          environment:
+#            VV_VOLUME_MAPPING_VOLUMEVIZ_MOVIES_DEV: "/cifs/movies"
+#          volumes:
+#            - movies:/cifs/movies:ro
+
+volumes:
+  tv_shows:
+    driver: local
+    driver_opts:
+      type: none
+      device: /path/to/your/tv-shows
+      o: bind,ro
+
+  movies:
+    driver: local
+    driver_opts:
+      type: none
+      device: /path/to/your/movies
+      o: bind,ro

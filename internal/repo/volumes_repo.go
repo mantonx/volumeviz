@@ -42,6 +42,15 @@ type VolumesRepo interface {
 	// System-level operations (for services that operate across organizations)
 	GetVolumeByVolumeIDSystemLevel(ctx context.Context, volumeID string) (*models.Volume, error)
 	ListAllVolumes(ctx context.Context, limit, offset int32) ([]*models.Volume, error)
+
+	// Volume tracking operations
+	SetVolumeTracked(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error)
+	SetVolumeUntracked(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error)
+	GetVolumeTrackingStatus(ctx context.Context, organizationID int64, volumeID string) (*models.VolumeTrackingStatus, error)
+	ListTrackedVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error)
+	ListUntrackedVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error)
+	CountTrackedVolumes(ctx context.Context, organizationID int64) (int64, error)
+	CountUntrackedVolumes(ctx context.Context, organizationID int64) (int64, error)
 }
 
 // volumesRepo implements VolumesRepo using PostgreSQL sqlc generated queries
@@ -563,6 +572,16 @@ func (r *volumesRepo) convertRowToVolume(row interface{}) (*models.Volume, error
 			}
 		}
 
+		// Handle tracking fields
+		isTracked := v.IsTracked
+		volume.IsTracked = &isTracked
+		if v.TrackedAt.Valid {
+			volume.TrackedAt = &v.TrackedAt.Time
+		}
+		if v.UntrackedAt.Valid {
+			volume.UntrackedAt = &v.UntrackedAt.Time
+		}
+
 		// Note: Labels, Options, Driver, Scope, Status not in current schema
 
 	default:
@@ -885,4 +904,150 @@ func sqlNullStringToString(ns sql.NullString) string {
 
 func sqlNullIntToBool(ni sql.NullInt64) bool {
 	return ni.Valid && ni.Int64 != 0
+}
+
+// =============================================================================
+// VOLUME TRACKING OPERATIONS (PostgreSQL)
+// =============================================================================
+
+func (r *volumesRepo) SetVolumeTracked(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
+	result, err := r.queries.SetVolumeTracked(ctx, sqlc.SetVolumeTrackedParams{
+		VolumeID:       volumeID,
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to set volume tracked: %w", err)
+	}
+
+	return r.convertRowToVolume(result)
+}
+
+func (r *volumesRepo) SetVolumeUntracked(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
+	result, err := r.queries.SetVolumeUntracked(ctx, sqlc.SetVolumeUntrackedParams{
+		VolumeID:       volumeID,
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to set volume untracked: %w", err)
+	}
+
+	return r.convertRowToVolume(result)
+}
+
+func (r *volumesRepo) GetVolumeTrackingStatus(ctx context.Context, organizationID int64, volumeID string) (*models.VolumeTrackingStatus, error) {
+	result, err := r.queries.GetVolumeTrackingStatus(ctx, sqlc.GetVolumeTrackingStatusParams{
+		VolumeID:       volumeID,
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get volume tracking status: %w", err)
+	}
+
+	status := &models.VolumeTrackingStatus{
+		VolumeID:  result.VolumeID,
+		IsTracked: result.IsTracked,
+	}
+
+	if result.TrackedAt.Valid {
+		status.TrackedAt = &result.TrackedAt.Time
+	}
+	if result.UntrackedAt.Valid {
+		status.UntrackedAt = &result.UntrackedAt.Time
+	}
+
+	return status, nil
+}
+
+func (r *volumesRepo) ListTrackedVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error) {
+	results, err := r.queries.ListTrackedVolumes(ctx, sqlc.ListTrackedVolumesParams{
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+		Limit:          limit,
+		Offset:         offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list tracked volumes: %w", err)
+	}
+
+	volumes := make([]*models.Volume, len(results))
+	for i, v := range results {
+		vol, err := r.convertRowToVolume(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert volume %d: %w", i, err)
+		}
+		volumes[i] = vol
+	}
+
+	return volumes, nil
+}
+
+func (r *volumesRepo) ListUntrackedVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error) {
+	results, err := r.queries.ListUntrackedVolumes(ctx, sqlc.ListUntrackedVolumesParams{
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+		Limit:          limit,
+		Offset:         offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list untracked volumes: %w", err)
+	}
+
+	volumes := make([]*models.Volume, len(results))
+	for i, v := range results {
+		vol, err := r.convertRowToVolume(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert volume %d: %w", i, err)
+		}
+		volumes[i] = vol
+	}
+
+	return volumes, nil
+}
+
+func (r *volumesRepo) CountTrackedVolumes(ctx context.Context, organizationID int64) (int64, error) {
+	count, err := r.queries.CountTrackedVolumes(ctx, pgtype.Int8{Int64: organizationID, Valid: true})
+	if err != nil {
+		return 0, fmt.Errorf("failed to count tracked volumes: %w", err)
+	}
+
+	return count, nil
+}
+
+func (r *volumesRepo) CountUntrackedVolumes(ctx context.Context, organizationID int64) (int64, error) {
+	count, err := r.queries.CountUntrackedVolumes(ctx, pgtype.Int8{Int64: organizationID, Valid: true})
+	if err != nil {
+		return 0, fmt.Errorf("failed to count untracked volumes: %w", err)
+	}
+
+	return count, nil
+}
+
+// =============================================================================
+// VOLUME TRACKING OPERATIONS (SQLite) - Stub implementations
+// =============================================================================
+
+func (r *volumesRepoSQLite) SetVolumeTracked(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
+	return nil, fmt.Errorf("tracking not yet implemented for SQLite")
+}
+
+func (r *volumesRepoSQLite) SetVolumeUntracked(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
+	return nil, fmt.Errorf("tracking not yet implemented for SQLite")
+}
+
+func (r *volumesRepoSQLite) GetVolumeTrackingStatus(ctx context.Context, organizationID int64, volumeID string) (*models.VolumeTrackingStatus, error) {
+	return nil, fmt.Errorf("tracking not yet implemented for SQLite")
+}
+
+func (r *volumesRepoSQLite) ListTrackedVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error) {
+	return nil, fmt.Errorf("tracking not yet implemented for SQLite")
+}
+
+func (r *volumesRepoSQLite) ListUntrackedVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error) {
+	return nil, fmt.Errorf("tracking not yet implemented for SQLite")
+}
+
+func (r *volumesRepoSQLite) CountTrackedVolumes(ctx context.Context, organizationID int64) (int64, error) {
+	return 0, fmt.Errorf("tracking not yet implemented for SQLite")
+}
+
+func (r *volumesRepoSQLite) CountUntrackedVolumes(ctx context.Context, organizationID int64) (int64, error) {
+	return 0, fmt.Errorf("tracking not yet implemented for SQLite")
 }

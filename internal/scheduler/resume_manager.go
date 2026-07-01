@@ -196,6 +196,12 @@ func (rm *ResumeManager) findResumablePhase(phases []models.ScanPhase) *models.S
 
 // isPhaseIncomplete checks if a phase marked as "completed" is actually incomplete
 func (rm *ResumeManager) isPhaseIncomplete(phase *models.ScanPhase) bool {
+	// Negative ItemsProcessed indicates corrupted/invalid progress data — there's
+	// nothing sensible to resume from, so don't treat it as an incomplete phase.
+	if phase.ItemsProcessed < 0 {
+		return false
+	}
+
 	// If items_total is set and items_processed is significantly less, it's incomplete
 	if phase.ItemsTotal > 0 && phase.ItemsProcessed < phase.ItemsTotal {
 		// Consider it incomplete if less than 95% processed

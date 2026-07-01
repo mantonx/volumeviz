@@ -94,6 +94,7 @@ type UpdateOrganizationRequest struct {
 // @Summary Get current organization
 // @Description Get the organization details for the authenticated user
 // @Tags organizations
+// @ID getOrganizationsMe
 // @Accept json
 // @Produce json
 // @Success 200 {object} OrganizationWithStatsResponse "Organization details with stats"
@@ -154,6 +155,7 @@ func (h *Handler) GetMyOrganization(c *gin.Context) {
 // @Summary Update current organization
 // @Description Update organization details (admin only)
 // @Tags organizations
+// @ID putOrganizationsMe
 // @Accept json
 // @Produce json
 // @Param request body UpdateOrganizationRequest true "Organization update details"

@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/mantonx/volumeviz/internal/store"
+	"github.com/mantonx/volumeviz/internal/models"
 )
 
 // MockDockerClient for testing
@@ -66,12 +66,17 @@ func (m *MockDockerClient) Events(ctx context.Context, options events.ListOption
 	return args.Get(0).(<-chan events.Message), args.Get(1).(<-chan error)
 }
 
+func (m *MockDockerClient) DiskUsage(ctx context.Context, options types.DiskUsageOptions) (types.DiskUsage, error) {
+	args := m.Called(ctx, options)
+	return args.Get(0).(types.DiskUsage), args.Error(1)
+}
+
 // MockRepository for testing
 type MockRepository struct {
 	mock.Mock
 }
 
-func (m *MockRepository) UpsertVolume(ctx context.Context, volume *store.Volume) error {
+func (m *MockRepository) UpsertVolume(ctx context.Context, volume *models.Volume) error {
 	args := m.Called(ctx, volume)
 	return args.Error(0)
 }
@@ -81,15 +86,15 @@ func (m *MockRepository) DeleteVolume(ctx context.Context, volumeName string) er
 	return args.Error(0)
 }
 
-func (m *MockRepository) GetVolumeByName(ctx context.Context, name string) (*store.Volume, error) {
+func (m *MockRepository) GetVolumeByName(ctx context.Context, name string) (*models.Volume, error) {
 	args := m.Called(ctx, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*store.Volume), args.Error(1)
+	return args.Get(0).(*models.Volume), args.Error(1)
 }
 
-func (m *MockRepository) UpsertContainer(ctx context.Context, container *store.Container) error {
+func (m *MockRepository) UpsertContainer(ctx context.Context, container *models.Container) error {
 	args := m.Called(ctx, container)
 	return args.Error(0)
 }
@@ -99,15 +104,15 @@ func (m *MockRepository) DeleteContainer(ctx context.Context, containerID string
 	return args.Error(0)
 }
 
-func (m *MockRepository) GetContainerByID(ctx context.Context, id string) (*store.Container, error) {
+func (m *MockRepository) GetContainerByID(ctx context.Context, id string) (*models.Container, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*store.Container), args.Error(1)
+	return args.Get(0).(*models.Container), args.Error(1)
 }
 
-func (m *MockRepository) UpsertVolumeMount(ctx context.Context, mount *store.VolumeMount) error {
+func (m *MockRepository) UpsertVolumeMount(ctx context.Context, mount *models.VolumeMount) error {
 	args := m.Called(ctx, mount)
 	return args.Error(0)
 }
@@ -117,20 +122,20 @@ func (m *MockRepository) DeleteVolumeMount(ctx context.Context, volumeID, contai
 	return args.Error(0)
 }
 
-func (m *MockRepository) GetVolumeMountsByContainer(ctx context.Context, containerID string) ([]*store.VolumeMount, error) {
+func (m *MockRepository) GetVolumeMountsByContainer(ctx context.Context, containerID string) ([]*models.VolumeMount, error) {
 	args := m.Called(ctx, containerID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*store.VolumeMount), args.Error(1)
+	return args.Get(0).([]*models.VolumeMount), args.Error(1)
 }
 
-func (m *MockRepository) GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*store.VolumeMount, error) {
+func (m *MockRepository) GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*models.VolumeMount, error) {
 	args := m.Called(ctx, volumeID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*store.VolumeMount), args.Error(1)
+	return args.Get(0).([]*models.VolumeMount), args.Error(1)
 }
 
 func (m *MockRepository) DeactivateVolumeMounts(ctx context.Context, containerID string) error {
@@ -138,28 +143,28 @@ func (m *MockRepository) DeactivateVolumeMounts(ctx context.Context, containerID
 	return args.Error(0)
 }
 
-func (m *MockRepository) ListAllVolumes(ctx context.Context) ([]*store.Volume, error) {
+func (m *MockRepository) ListAllVolumes(ctx context.Context) ([]*models.Volume, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*store.Volume), args.Error(1)
+	return args.Get(0).([]*models.Volume), args.Error(1)
 }
 
-func (m *MockRepository) ListAllContainers(ctx context.Context) ([]*store.Container, error) {
+func (m *MockRepository) ListAllContainers(ctx context.Context) ([]*models.Container, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*store.Container), args.Error(1)
+	return args.Get(0).([]*models.Container), args.Error(1)
 }
 
-func (m *MockRepository) ListAllVolumeMounts(ctx context.Context) ([]*store.VolumeMount, error) {
+func (m *MockRepository) ListAllVolumeMounts(ctx context.Context) ([]*models.VolumeMount, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*store.VolumeMount), args.Error(1)
+	return args.Get(0).([]*models.VolumeMount), args.Error(1)
 }
 
 func TestNewEventHandlerService(t *testing.T) {
@@ -239,7 +244,7 @@ func TestEventHandlerService_HandleVolumeCreate(t *testing.T) {
 	}
 
 	dockerClient.On("InspectVolume", ctx, "test-volume").Return(vol, nil)
-	repository.On("UpsertVolume", ctx, mock.AnythingOfType("*store.Volume")).Return(nil)
+	repository.On("UpsertVolume", ctx, mock.AnythingOfType("*models.Volume")).Return(nil)
 
 	err := service.HandleVolumeCreate(ctx, event)
 
@@ -366,10 +371,10 @@ func TestEventHandlerService_UpdateVolumeMounts(t *testing.T) {
 	}
 
 	repository.On("DeactivateVolumeMounts", ctx, "container-123").Return(nil)
-	repository.On("UpsertVolumeMount", ctx, mock.MatchedBy(func(mount *store.VolumeMount) bool {
+	repository.On("UpsertVolumeMount", ctx, mock.MatchedBy(func(mount *models.VolumeMount) bool {
 		return mount.VolumeID == "test-volume-1" && mount.AccessMode == "rw"
 	})).Return(nil)
-	repository.On("UpsertVolumeMount", ctx, mock.MatchedBy(func(mount *store.VolumeMount) bool {
+	repository.On("UpsertVolumeMount", ctx, mock.MatchedBy(func(mount *models.VolumeMount) bool {
 		return mount.VolumeID == "test-volume-2" && mount.AccessMode == "ro"
 	})).Return(nil)
 

@@ -33,6 +33,10 @@ type VolumeV1 struct {
 	// Background filesystem indexing status
 	FilesystemStatus   *string                 `json:"filesystem_status,omitempty" example:"indexing"` // Background indexing status: indexing, completed, not_started
 	FilesystemProgress *map[string]interface{} `json:"filesystem_progress,omitempty"`                  // Background indexing progress details
+	// Volume tracking status
+	IsTracked   *bool      `json:"is_tracked,omitempty" example:"true"`                             // Whether the volume is being tracked
+	TrackedAt   *time.Time `json:"tracked_at,omitempty" example:"2023-01-01T10:00:00Z"`            // When tracking was enabled
+	UntrackedAt *time.Time `json:"untracked_at,omitempty" example:"2023-01-01T12:00:00Z"`          // When tracking was disabled
 } // @name VolumeV1
 
 // VolumeDetailV1 represents detailed volume information
@@ -55,6 +59,10 @@ type VolumeDetailV1 struct {
 	ScanStatus   *string `json:"scan_status,omitempty" example:"completed"`       // Latest scan status: pending, running, completed, failed
 	ScanProgress *int    `json:"scan_progress,omitempty" example:"100"`           // Latest scan progress (0-100)
 	LastScanID   *string `json:"last_scan_id,omitempty" example:"scan_abc123def"` // Latest scan ID for tracking
+	// Volume tracking status
+	IsTracked   *bool      `json:"is_tracked,omitempty" example:"true"`                    // Whether the volume is being tracked
+	TrackedAt   *time.Time `json:"tracked_at,omitempty" example:"2023-01-01T10:00:00Z"`   // When tracking was enabled
+	UntrackedAt *time.Time `json:"untracked_at,omitempty" example:"2023-01-01T12:00:00Z"` // When tracking was disabled
 } // @name VolumeDetailV1
 
 // AttachmentV1 represents a container attachment to a volume
@@ -100,24 +108,3 @@ type ErrorDetailsV1 struct {
 	Details   map[string]interface{} `json:"details,omitempty"`
 	RequestID string                 `json:"request_id" example:"req-123-abc-456"`
 } // @name ErrorDetailsV1
-
-// BulkDeleteVolumesRequest represents a bulk delete request
-type BulkDeleteVolumesRequest struct {
-	VolumeIDs []string `json:"volume_ids" binding:"required" example:"vol1,vol2,vol3"`
-	Force     bool     `json:"force" example:"false"` // Force deletion even if volume is in use
-} // @name BulkDeleteVolumesRequest
-
-// BulkDeleteResult represents the result of deleting a single volume
-type BulkDeleteResult struct {
-	VolumeID string `json:"volume_id" example:"vol1"`
-	Success  bool   `json:"success" example:"true"`
-	Error    string `json:"error,omitempty" example:"volume is in use"`
-} // @name BulkDeleteResult
-
-// BulkDeleteVolumesResponse represents the response from bulk delete operation
-type BulkDeleteVolumesResponse struct {
-	TotalRequested int                `json:"total_requested" example:"5"`
-	SuccessCount   int                `json:"success_count" example:"3"`
-	FailureCount   int                `json:"failure_count" example:"2"`
-	Results        []BulkDeleteResult `json:"results"`
-} // @name BulkDeleteVolumesResponse

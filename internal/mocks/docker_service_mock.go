@@ -64,4 +64,12 @@ func (m *DockerService) GetVolumeContainers(ctx context.Context, volumeID string
 	return args.Get(0).([]models.VolumeContainer), args.Error(1)
 }
 
+func (m *DockerService) GetVolumeContainersBatch(ctx context.Context, volumeNames []string) (map[string][]models.VolumeContainer, error) {
+	args := m.Called(ctx, volumeNames)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string][]models.VolumeContainer), args.Error(1)
+}
+
 // Other methods can be added as needed based on the interface

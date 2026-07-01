@@ -265,11 +265,9 @@ func (f *FFprobeEnricher) parseVideoStream(stream FFprobeStream, metadata *Media
 		metadata.TransferCharacteristic = &stream.ColorTransfer
 	}
 
-	// HDR Detection
-	hdrFormat := f.detectHDRFormat(stream)
-	if hdrFormat != HDRFormatNone {
-		metadata.HDRFormat = hdrFormat
-	}
+	// HDR Detection — always set, including HDRFormatNone, so the field
+	// distinguishes "confirmed not HDR" from "not yet determined".
+	metadata.HDRFormat = f.detectHDRFormat(stream)
 }
 
 // parseAudioStream extracts audio-specific metadata

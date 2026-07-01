@@ -123,6 +123,7 @@ func isNetworkError(err error) bool {
 
 	errMsg := strings.ToLower(err.Error())
 	return strings.Contains(errMsg, "connection refused") ||
+		strings.Contains(errMsg, "connection reset") ||
 		strings.Contains(errMsg, "network") ||
 		strings.Contains(errMsg, "timeout") ||
 		strings.Contains(errMsg, "unreachable")
@@ -138,6 +139,7 @@ func isDockerDaemonError(err error) bool {
 	return strings.Contains(errMsg, "daemon not running") ||
 		strings.Contains(errMsg, "docker daemon") ||
 		strings.Contains(errMsg, "cannot connect to docker") ||
+		strings.Contains(errMsg, "error response from daemon") ||
 		strings.Contains(errMsg, "connection refused")
 }
 
@@ -162,5 +164,5 @@ func isDockerNetworkError(err error) bool {
 	return (strings.Contains(errMsg, "network") ||
 		strings.Contains(errMsg, "timeout") ||
 		strings.Contains(errMsg, "unreachable")) &&
-		strings.Contains(errMsg, "docker")
+		(strings.Contains(errMsg, "docker") || strings.Contains(errMsg, "daemon"))
 }

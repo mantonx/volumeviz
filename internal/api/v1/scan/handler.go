@@ -1303,16 +1303,11 @@ func (h *Handler) GetMediaEnrichmentStatus(c *gin.Context) {
 		return
 	}
 
-	// Try to get progress if the manager supports it
-	type progressGetter interface {
-		GetProgress(volumeID string) interface{}
-	}
-
-	if progressManager, ok := h.enrichmentManager.(progressGetter); ok {
-		if progress := progressManager.GetProgress(volumeID); progress != nil {
-			c.JSON(http.StatusOK, progress)
-			return
-		}
+	// GetProgress is part of the EnrichmentManager interface itself, so it's
+	// always available once h.enrichmentManager is non-nil (checked above).
+	if progress := h.enrichmentManager.GetProgress(volumeID); progress != nil {
+		c.JSON(http.StatusOK, progress)
+		return
 	}
 
 	// Default response when no progress available

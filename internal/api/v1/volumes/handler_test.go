@@ -359,6 +359,7 @@ type mockDockerService struct {
 	listVolumes         func(ctx context.Context) ([]models.Volume, error)
 	getVolume           func(ctx context.Context, volumeID string) (*models.Volume, error)
 	getVolumeContainers func(ctx context.Context, volumeName string) ([]models.VolumeContainer, error)
+	getVolumeContainersBatch func(ctx context.Context, volumeNames []string) (map[string][]models.VolumeContainer, error)
 	isDockerAvailable   func(ctx context.Context) bool
 	getVolumesByDriver  func(ctx context.Context, driver string) ([]models.Volume, error)
 	getVolumesByLabel   func(ctx context.Context, labelKey, labelValue string) ([]models.Volume, error)
@@ -397,6 +398,13 @@ func (m *mockDockerService) GetVolumeContainers(ctx context.Context, volumeName 
 		return m.getVolumeContainers(ctx, volumeName)
 	}
 	return []models.VolumeContainer{}, nil
+}
+
+func (m *mockDockerService) GetVolumeContainersBatch(ctx context.Context, volumeNames []string) (map[string][]models.VolumeContainer, error) {
+	if m.getVolumeContainersBatch != nil {
+		return m.getVolumeContainersBatch(ctx, volumeNames)
+	}
+	return map[string][]models.VolumeContainer{}, nil
 }
 
 func (m *mockDockerService) IsDockerAvailable(ctx context.Context) bool {

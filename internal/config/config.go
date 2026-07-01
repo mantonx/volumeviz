@@ -454,8 +454,17 @@ func getScanEnabledDefault() bool {
 		}
 	}
 
-	// Default: always enabled - volumes should be automatically scanned
-	return true
+	// In dev/test environments, default to enabled for convenience.
+	if ginMode := os.Getenv("GIN_MODE"); ginMode == "debug" || ginMode == "test" {
+		return true
+	}
+	if os.Getenv("NODE_ENV") == "development" {
+		return true
+	}
+
+	// Otherwise (release mode or no environment markers set — e.g. a fresh
+	// production deploy) default to disabled, requiring explicit opt-in.
+	return false
 }
 
 // ToStoreConfig converts the config.DatabaseConfig to store config.Config

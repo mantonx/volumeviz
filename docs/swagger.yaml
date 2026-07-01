@@ -115,51 +115,6 @@ definitions:
         example: tv-shows-readonly
         type: string
     type: object
-  BulkDeleteResult:
-    properties:
-      error:
-        example: volume is in use
-        type: string
-      success:
-        example: true
-        type: boolean
-      volume_id:
-        example: vol1
-        type: string
-    type: object
-  BulkDeleteVolumesRequest:
-    properties:
-      force:
-        description: Force deletion even if volume is in use
-        example: false
-        type: boolean
-      volume_ids:
-        example:
-        - vol1
-        - vol2
-        - vol3
-        items:
-          type: string
-        type: array
-    required:
-    - volume_ids
-    type: object
-  BulkDeleteVolumesResponse:
-    properties:
-      failure_count:
-        example: 2
-        type: integer
-      results:
-        items:
-          $ref: '#/definitions/BulkDeleteResult'
-        type: array
-      success_count:
-        example: 3
-        type: integer
-      total_requested:
-        example: 5
-        type: integer
-    type: object
   BulkScanRequest:
     properties:
       async:
@@ -941,6 +896,10 @@ definitions:
       is_system:
         example: false
         type: boolean
+      is_tracked:
+        description: Volume tracking status
+        example: true
+        type: boolean
       labels:
         additionalProperties:
           type: string
@@ -960,6 +919,13 @@ definitions:
       name:
         example: tv-shows-readonly
         type: string
+      options:
+        additionalProperties:
+          type: string
+        example:
+          device: /mnt/media
+          type: none
+        type: object
       scan_progress:
         description: Latest scan progress (0-100)
         example: 100
@@ -977,6 +943,22 @@ definitions:
       status:
         description: Volume status (computed from scan status and active state)
         example: active
+        type: string
+      tracked_at:
+        description: When tracking was enabled
+        example: "2023-01-01T10:00:00Z"
+        type: string
+      untracked_at:
+        description: When tracking was disabled
+        example: "2023-01-01T12:00:00Z"
+        type: string
+      volume_type:
+        description: 'Type: local, bind mount, or network'
+        enum:
+        - local
+        - bind
+        - network
+        example: network
         type: string
     type: object
   duplicates.DetectionParameters:
@@ -1122,6 +1104,59 @@ definitions:
       value:
         type: number
     type: object
+  github_com_mantonx_volumeviz_internal_models.AlertDeliveriesListResponse:
+    properties:
+      deliveries:
+        items:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDelivery'
+        type: array
+      pagination:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.OffsetPagination'
+    type: object
+  github_com_mantonx_volumeviz_internal_models.AlertDelivery:
+    properties:
+      alert:
+        allOf:
+        - $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.Alert'
+        description: Relationships
+      alert_id:
+        type: integer
+      attempt_count:
+        type: integer
+      created_at:
+        type: string
+      delivered_at:
+        type: string
+      destination:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination'
+      destination_id:
+        type: integer
+      error_message:
+        type: string
+      id:
+        type: integer
+      last_attempt_at:
+        type: string
+      max_attempts:
+        type: integer
+      next_attempt_at:
+        type: string
+      request_payload:
+        type: string
+      response_payload:
+        type: string
+      response_status:
+        type: integer
+      route:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRoute'
+      route_id:
+        type: integer
+      status:
+        description: '"pending", "delivered", "failed", "retrying"'
+        type: string
+      updated_at:
+        type: string
+    type: object
   github_com_mantonx_volumeviz_internal_models.AlertDestination:
     properties:
       config:
@@ -1140,6 +1175,15 @@ definitions:
         type: string
       updated_at:
         type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.AlertDestinationsListResponse:
+    properties:
+      destinations:
+        items:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestination'
+        type: array
+      pagination:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.OffsetPagination'
     type: object
   github_com_mantonx_volumeviz_internal_models.AlertRoute:
     properties:
@@ -1167,6 +1211,15 @@ definitions:
         type: integer
       updated_at:
         type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.AlertRoutesListResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.OffsetPagination'
+      routes:
+        items:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRoute'
+        type: array
     type: object
   github_com_mantonx_volumeviz_internal_models.AlertRule:
     properties:
@@ -1203,6 +1256,24 @@ definitions:
         type: number
       updated_at:
         type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.AlertRulesListResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.OffsetPagination'
+      rules:
+        items:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule'
+        type: array
+    type: object
+  github_com_mantonx_volumeviz_internal_models.AlertsListResponse:
+    properties:
+      alerts:
+        items:
+          $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.Alert'
+        type: array
+      pagination:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.OffsetPagination'
     type: object
   github_com_mantonx_volumeviz_internal_models.CreateAlertDestinationParams:
     properties:
@@ -1292,6 +1363,12 @@ definitions:
     - query
     - threshold
     type: object
+  github_com_mantonx_volumeviz_internal_models.EngineStatusResponse:
+    properties:
+      engine: {}
+      retrieved_at:
+        type: string
+    type: object
   github_com_mantonx_volumeviz_internal_models.ErrorResponse:
     properties:
       code:
@@ -1309,6 +1386,23 @@ definitions:
         type: boolean
       full_scan:
         type: boolean
+    type: object
+  github_com_mantonx_volumeviz_internal_models.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.OffsetPagination:
+    properties:
+      limit:
+        example: 50
+        type: integer
+      offset:
+        example: 0
+        type: integer
+      total:
+        example: 123
+        type: integer
     type: object
   github_com_mantonx_volumeviz_internal_models.OperationStatus:
     enum:
@@ -1336,6 +1430,28 @@ definitions:
     - OperationTypeMove
     - OperationTypeCopy
     - OperationTypeRename
+  github_com_mantonx_volumeviz_internal_models.TestAlertRuleResponse:
+    properties:
+      results: {}
+      rule:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRule'
+      tested_at:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.TestDestinationMessageResponse:
+    properties:
+      message:
+        type: string
+      tested_at:
+        type: string
+    type: object
+  github_com_mantonx_volumeviz_internal_models.TriggerEvaluationResponse:
+    properties:
+      message:
+        type: string
+      triggered_at:
+        type: string
+    type: object
   github_com_mantonx_volumeviz_internal_models.UpdateAlertDestinationParams:
     properties:
       config:
@@ -3076,6 +3192,31 @@ definitions:
       username:
         type: string
     type: object
+  internal_api_v1_volumes.BulkTrackVolumesRequest:
+    properties:
+      volume_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - volume_ids
+    type: object
+  internal_api_v1_volumes.BulkTrackVolumesResponse:
+    properties:
+      failed:
+        items:
+          properties:
+            error:
+              type: string
+            volume_id:
+              type: string
+          type: object
+        type: array
+      succeeded:
+        items:
+          type: string
+        type: array
+    type: object
   time.Duration:
     enum:
     - -9223372036854775808
@@ -3212,7 +3353,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertsListResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -3281,7 +3422,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDeliveriesListResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -3313,7 +3454,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertDestinationsListResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -3427,7 +3568,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -3466,7 +3607,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.TestDestinationMessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -3493,7 +3634,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.TriggerEvaluationResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -3512,7 +3653,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.EngineStatusResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -3544,7 +3685,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRoutesListResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -3658,7 +3799,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -3698,7 +3839,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.AlertRulesListResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -3812,7 +3953,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -3845,7 +3986,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.TestAlertRuleResponse'
         "404":
           description: Not Found
           schema:
@@ -4030,6 +4171,11 @@ paths:
         example: /home/user/documents
         in: query
         name: path
+        type: string
+      - description: Search folders by name (case-insensitive)
+        example: matrix
+        in: query
+        name: search
         type: string
       - description: Include parent folder info
         example: true
@@ -5336,6 +5482,7 @@ paths:
       consumes:
       - application/json
       description: Get the organization details for the authenticated user
+      operationId: getOrganizationsMe
       produces:
       - application/json
       responses:
@@ -5365,6 +5512,7 @@ paths:
       consumes:
       - application/json
       description: Update organization details (admin only)
+      operationId: putOrganizationsMe
       parameters:
       - description: Organization update details
         in: body
@@ -6207,6 +6355,138 @@ paths:
       summary: Update tracking rules configuration
       tags:
       - tracking-rules-config
+  /api/v1/volumes/{name}/track:
+    post:
+      consumes:
+      - application/json
+      description: Set a volume to tracked status. When tracked, the volume will be
+        scanned and its data indexed.
+      operationId: postVolumesVolumeIdTrack
+      parameters:
+      - description: Volume name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume successfully tracked
+          schema:
+            $ref: '#/definitions/VolumeV1'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Volume not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Track a volume
+      tags:
+      - volumes
+  /api/v1/volumes/{name}/untrack:
+    post:
+      consumes:
+      - application/json
+      description: Set a volume to untracked status and remove its data from the database.
+        The Docker volume itself remains intact.
+      operationId: postVolumesVolumeIdUntrack
+      parameters:
+      - description: Volume name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume successfully untracked
+          schema:
+            $ref: '#/definitions/VolumeV1'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Volume not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Untrack a volume
+      tags:
+      - volumes
+  /api/v1/volumes/bulk-track:
+    post:
+      consumes:
+      - application/json
+      description: Track multiple volumes in a single request
+      operationId: postVolumesBulkTrack
+      parameters:
+      - description: Volume IDs to track
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bulk track results
+          schema:
+            $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Bulk track volumes
+      tags:
+      - volumes
+  /api/v1/volumes/bulk-untrack:
+    post:
+      consumes:
+      - application/json
+      description: Untrack multiple volumes in a single request
+      operationId: postVolumesBulkUntrack
+      parameters:
+      - description: Volume IDs to untrack
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bulk untrack results
+          schema:
+            $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Bulk untrack volumes
+      tags:
+      - volumes
   /auth/login:
     post:
       consumes:
@@ -8217,36 +8497,6 @@ paths:
       summary: Get filesystem indexing status
       tags:
       - filesystem
-  /volumes/bulk-delete:
-    post:
-      consumes:
-      - application/json
-      description: Delete multiple Docker volumes by their IDs
-      parameters:
-      - description: Volume IDs to delete
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/BulkDeleteVolumesRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Delete results
-          schema:
-            $ref: '#/definitions/BulkDeleteVolumesResponse'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Bulk delete volumes
-      tags:
-      - volumes
   /volumes/bulk-scan:
     post:
       consumes:
@@ -8280,6 +8530,38 @@ paths:
       summary: Bulk scan volumes
       tags:
       - scan
+  /volumes/cache/invalidate:
+    post:
+      consumes:
+      - application/json
+      description: Clears all entries from the volume cache
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cache invalidated
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Invalidate volume cache
+      tags:
+      - volumes
+  /volumes/cache/stats:
+    get:
+      consumes:
+      - application/json
+      description: Returns statistics about the volume cache (hit rate, size, etc.)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cache statistics
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get volume cache statistics
+      tags:
+      - volumes
   /volumes/export/csv:
     get:
       consumes:

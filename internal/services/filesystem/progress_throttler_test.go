@@ -38,6 +38,16 @@ func (m *MockStore) Folders() *repo.FoldersRepo { return nil }
 func (m *MockStore) FileMetadata() *repo.FileMetadataRepo { return nil }
 func (m *MockStore) Alerts() repo.AlertsRepo { return nil }
 func (m *MockStore) Search() *repo.SearchRepo { return nil }
+func (m *MockStore) Checkpoints() repo.CheckpointRepo { return nil }
+func (m *MockStore) Snapshots() repo.SnapshotRepo { return nil }
+func (m *MockStore) Users() repo.UsersRepository { return nil }
+func (m *MockStore) Organizations() repo.OrganizationsRepo { return nil }
+func (m *MockStore) GetUserByID(ctx context.Context, id int64) (store.User, error) {
+	return store.User{}, nil
+}
+func (m *MockStore) GetOrganizationByID(ctx context.Context, id int64) (store.Organization, error) {
+	return store.Organization{}, nil
+}
 func (m *MockStore) Health(ctx context.Context) error { return nil }
 func (m *MockStore) Queries() interface{} { return nil }
 
@@ -74,6 +84,86 @@ func (m *MockScanProgressRepo) GetScanPhasesByID(ctx context.Context, scanID str
 
 func (m *MockScanProgressRepo) CompleteScanPhase(ctx context.Context, scanID, phaseName string) error {
 	return nil
+}
+
+func (m *MockScanProgressRepo) GetScanPhase(ctx context.Context, scanID, phaseName string) (*models.ScanPhase, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) FailScanPhase(ctx context.Context, scanID, phaseName, errorMessage string) error {
+	return nil
+}
+
+func (m *MockScanProgressRepo) CreateProgressItem(ctx context.Context, params models.CreateProgressItemParams) (*models.ScanProgressItem, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) UpdateProgressItem(ctx context.Context, params models.UpdateProgressItemParams) error {
+	return nil
+}
+
+func (m *MockScanProgressRepo) GetProgressItems(ctx context.Context, scanID, phaseName string, limit, offset int32) ([]*models.ScanProgressItem, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) GetFailedProgressItems(ctx context.Context, scanID, phaseName string, limit int32) ([]*models.ScanProgressItem, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) RecordScanError(ctx context.Context, params models.RecordScanErrorParams) (int64, error) {
+	return 0, nil
+}
+
+func (m *MockScanProgressRepo) GetScanErrors(ctx context.Context, scanID, phaseName string, limit, offset int32) ([]*models.ScanProgressError, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) GetRecentErrors(ctx context.Context, hours int, limit int32) ([]*models.ScanProgressError, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) RecordPerformanceMetrics(ctx context.Context, params models.RecordPerformanceMetricsParams) error {
+	return nil
+}
+
+func (m *MockScanProgressRepo) GetLatestPerformanceMetrics(ctx context.Context, scanID, phaseName string) (*models.ScanPerformanceMetrics, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) GetActiveScansSummary(ctx context.Context) ([]*models.ActiveScanSummary, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) GetScanProgressSummary(ctx context.Context, scanID string) (*models.ScanProgressSummary, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) GetRecentErrorsSummary(ctx context.Context, hours int, limit int32) ([]*models.RecentErrorSummary, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) GetScanPhases(ctx context.Context, scanID string) ([]models.ScanPhase, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) GetScanProgressItems(ctx context.Context, scanID string) ([]models.ScanProgressItem, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) GetScanErrorsFiltered(ctx context.Context, params models.ScanErrorFilterParams) ([]*models.ScanProgressError, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) GetScanErrorsCount(ctx context.Context, scanID, phaseFilter, errorTypeFilter string) (int64, error) {
+	return 0, nil
+}
+
+func (m *MockScanProgressRepo) GetActiveScans(ctx context.Context, limit, offset int) ([]models.ActiveScanSummary, error) {
+	return nil, nil
+}
+
+func (m *MockScanProgressRepo) GetActiveScansCount(ctx context.Context) (int64, error) {
+	return 0, nil
 }
 
 func TestProgressThrottler_QueueUpdate(t *testing.T) {

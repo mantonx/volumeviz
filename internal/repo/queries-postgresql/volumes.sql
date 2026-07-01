@@ -201,3 +201,58 @@ WHERE v.organization_id = $1
 GROUP BY v.volume_id
 ORDER BY v.volume_id
 LIMIT $2 OFFSET $3;
+
+-- =============================================================================
+-- Volume Tracking Queries
+-- =============================================================================
+
+-- name: SetVolumeTracked :one
+-- Set a volume to tracked status
+UPDATE volumes
+SET
+    is_tracked = TRUE,
+    tracked_at = NOW(),
+    untracked_at = NULL,
+    updated_at = NOW()
+WHERE volume_id = $1 AND organization_id = $2
+RETURNING *;
+
+-- name: SetVolumeUntracked :one
+-- Set a volume to untracked status
+UPDATE volumes
+SET
+    is_tracked = FALSE,
+    untracked_at = NOW(),
+    updated_at = NOW()
+WHERE volume_id = $1 AND organization_id = $2
+RETURNING *;
+
+-- name: ListTrackedVolumes :many
+-- List only tracked volumes
+SELECT * FROM volumes
+WHERE is_tracked = TRUE AND organization_id = $1
+ORDER BY volume_id
+LIMIT $2 OFFSET $3;
+
+-- name: ListUntrackedVolumes :many
+-- List only untracked volumes
+SELECT * FROM volumes
+WHERE is_tracked = FALSE AND organization_id = $1
+ORDER BY volume_id
+LIMIT $2 OFFSET $3;
+
+-- name: CountTrackedVolumes :one
+-- Count tracked volumes
+SELECT COUNT(*) FROM volumes
+WHERE is_tracked = TRUE AND organization_id = $1;
+
+-- name: CountUntrackedVolumes :one
+-- Count untracked volumes
+SELECT COUNT(*) FROM volumes
+WHERE is_tracked = FALSE AND organization_id = $1;
+
+-- name: GetVolumeTrackingStatus :one
+-- Get tracking status for a specific volume
+SELECT volume_id, is_tracked, tracked_at, untracked_at
+FROM volumes
+WHERE volume_id = $1 AND organization_id = $2;

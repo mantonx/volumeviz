@@ -53,8 +53,7 @@ func TestListVolumes_V1API(t *testing.T) {
 					},
 				}
 				m.On("ListVolumes", mock.Anything).Return(volumes, nil)
-				m.On("GetVolumeContainers", mock.Anything, "vol1").Return([]coremodels.VolumeContainer{}, nil)
-				m.On("GetVolumeContainers", mock.Anything, "vol2").Return([]coremodels.VolumeContainer{}, nil)
+				m.On("GetVolumeContainersBatch", mock.Anything, mock.Anything).Return(map[string][]coremodels.VolumeContainer{}, nil)
 			},
 			expectedStatus: 200,
 			checkResponse: func(t *testing.T, body []byte) {
@@ -89,7 +88,7 @@ func TestListVolumes_V1API(t *testing.T) {
 					},
 				}
 				m.On("ListVolumes", mock.Anything).Return(volumes, nil)
-				m.On("GetVolumeContainers", mock.Anything, mock.Anything).Return([]coremodels.VolumeContainer{}, nil)
+				m.On("GetVolumeContainersBatch", mock.Anything, mock.Anything).Return(map[string][]coremodels.VolumeContainer{}, nil)
 			},
 			expectedStatus: 200,
 			checkResponse: func(t *testing.T, body []byte) {
@@ -115,7 +114,7 @@ func TestListVolumes_V1API(t *testing.T) {
 					},
 				}
 				m.On("ListVolumes", mock.Anything).Return(volumes, nil)
-				m.On("GetVolumeContainers", mock.Anything, "vol1").Return([]coremodels.VolumeContainer{}, nil)
+				m.On("GetVolumeContainersBatch", mock.Anything, mock.Anything).Return(map[string][]coremodels.VolumeContainer{}, nil)
 			},
 			expectedStatus: 200,
 			checkResponse: func(t *testing.T, body []byte) {
@@ -142,7 +141,7 @@ func TestListVolumes_V1API(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDocker := &mocks.DockerService{}
-			handler := NewHandler(mockDocker, nil, nil, nil)
+			handler := NewHandler(mockDocker, nil, nil)
 			tt.setupMock(mockDocker)
 
 			w := httptest.NewRecorder()
@@ -228,7 +227,7 @@ func TestGetVolume_V1API(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDocker := &mocks.DockerService{}
-			handler := NewHandler(mockDocker, nil, nil, nil)
+			handler := NewHandler(mockDocker, nil, nil)
 			tt.setupMock(mockDocker)
 
 			w := httptest.NewRecorder()
@@ -319,7 +318,7 @@ func TestGetVolumeAttachments_V1API(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDocker := &mocks.DockerService{}
-			handler := NewHandler(mockDocker, nil, nil, nil)
+			handler := NewHandler(mockDocker, nil, nil)
 			tt.setupMock(mockDocker)
 
 			w := httptest.NewRecorder()
@@ -431,7 +430,7 @@ func TestGetOrphanedVolumes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDocker := &mocks.DockerService{}
-			handler := NewHandler(mockDocker, nil, nil, nil)
+			handler := NewHandler(mockDocker, nil, nil)
 			tt.setupMock(mockDocker)
 
 			w := httptest.NewRecorder()

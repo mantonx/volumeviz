@@ -47,13 +47,18 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 		volumes.GET("/export/csv", r.handler.ExportVolumesCSV)
 		volumes.GET("/export/json", r.handler.ExportVolumesJSON)
 
-		// Bulk operations
-		volumes.POST("/bulk-delete", r.handler.BulkDeleteVolumes)
+		// Bulk tracking operations
+		volumes.POST("/bulk-track", r.handler.BulkTrackVolumes)
+		volumes.POST("/bulk-untrack", r.handler.BulkUntrackVolumes)
 
 		// Volume operations (using name instead of id)
 		volumes.GET("/:name", r.handler.GetVolume)
 		volumes.GET("/:name/attachments", r.handler.GetVolumeAttachments)
 		volumes.GET("/:name/stats", r.handler.GetVolumeStats)
+
+		// Volume tracking operations
+		volumes.POST("/:name/track", r.handler.TrackVolume)
+		volumes.POST("/:name/untrack", r.handler.UntrackVolume)
 	}
 
 	// Reports endpoints

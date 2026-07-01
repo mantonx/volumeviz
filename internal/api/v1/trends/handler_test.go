@@ -142,19 +142,69 @@ func (m *MockStore) Stats() *repo.StatsRepo {
 	return args.Get(0).(*repo.StatsRepo)
 }
 
-func (m *MockStore) Files() repo.FilesRepo {
+func (m *MockStore) Files() *repo.FilesRepo {
 	args := m.Called()
-	return args.Get(0).(repo.FilesRepo)
+	return args.Get(0).(*repo.FilesRepo)
 }
 
-func (m *MockStore) Folders() repo.FoldersRepo {
+func (m *MockStore) Folders() *repo.FoldersRepo {
 	args := m.Called()
-	return args.Get(0).(repo.FoldersRepo)
+	return args.Get(0).(*repo.FoldersRepo)
 }
 
-func (m *MockStore) FileMetadata() repo.FileMetadataRepo {
+func (m *MockStore) FileMetadata() *repo.FileMetadataRepo {
 	args := m.Called()
-	return args.Get(0).(repo.FileMetadataRepo)
+	return args.Get(0).(*repo.FileMetadataRepo)
+}
+
+func (m *MockStore) ScanProgress() repo.ScanProgressRepo {
+	args := m.Called()
+	return args.Get(0).(repo.ScanProgressRepo)
+}
+
+func (m *MockStore) Checkpoints() repo.CheckpointRepo {
+	args := m.Called()
+	return args.Get(0).(repo.CheckpointRepo)
+}
+
+func (m *MockStore) Snapshots() repo.SnapshotRepo {
+	args := m.Called()
+	return args.Get(0).(repo.SnapshotRepo)
+}
+
+func (m *MockStore) Alerts() repo.AlertsRepo {
+	args := m.Called()
+	return args.Get(0).(repo.AlertsRepo)
+}
+
+func (m *MockStore) Search() *repo.SearchRepo {
+	args := m.Called()
+	return args.Get(0).(*repo.SearchRepo)
+}
+
+func (m *MockStore) Users() repo.UsersRepository {
+	args := m.Called()
+	return args.Get(0).(repo.UsersRepository)
+}
+
+func (m *MockStore) Organizations() repo.OrganizationsRepo {
+	args := m.Called()
+	return args.Get(0).(repo.OrganizationsRepo)
+}
+
+func (m *MockStore) Queries() interface{} {
+	args := m.Called()
+	return args.Get(0)
+}
+
+func (m *MockStore) GetUserByID(ctx context.Context, id int64) (store.User, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(store.User), args.Error(1)
+}
+
+func (m *MockStore) GetOrganizationByID(ctx context.Context, id int64) (store.Organization, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(store.Organization), args.Error(1)
 }
 
 // Transaction methods

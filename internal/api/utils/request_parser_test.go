@@ -161,7 +161,9 @@ func TestParseVolumeFilters(t *testing.T) {
 				assert.Empty(t, filters.Query)
 				assert.Empty(t, filters.Driver)
 				assert.Nil(t, filters.Orphaned)
-				assert.False(t, filters.System)
+				// System defaults to true when unset — see ParseVolumeFilters' comment:
+				// showing all volumes (named + anonymous) unless explicitly filtered out.
+				assert.True(t, filters.System)
 			},
 		},
 		{

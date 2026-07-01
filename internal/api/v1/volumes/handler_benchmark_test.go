@@ -52,6 +52,11 @@ func (m *MockDockerServiceBench) GetVolumeContainers(ctx context.Context, volume
 	return args.Get(0).([]models.VolumeContainer), args.Error(1)
 }
 
+func (m *MockDockerServiceBench) GetVolumeContainersBatch(ctx context.Context, volumeNames []string) (map[string][]models.VolumeContainer, error) {
+	args := m.Called(ctx, volumeNames)
+	return args.Get(0).(map[string][]models.VolumeContainer), args.Error(1)
+}
+
 func (m *MockDockerServiceBench) GetVolumesByDriver(ctx context.Context, driver string) ([]models.Volume, error) {
 	args := m.Called(ctx, driver)
 	return args.Get(0).([]models.Volume), args.Error(1)
@@ -117,6 +122,7 @@ func BenchmarkListVolumes_Large(b *testing.B) {
 	volumes := generateMockVolumes(1000)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
 	mockService.On("GetVolumeContainers", mock.Anything, mock.Anything).Return([]models.VolumeContainer{}, nil)
+	mockService.On("GetVolumeContainersBatch", mock.Anything, mock.Anything).Return(map[string][]models.VolumeContainer{}, nil)
 
 	router := gin.New()
 	router.GET("/volumes", handler.ListVolumes)
@@ -225,6 +231,7 @@ func TestSLOCompliance(t *testing.T) {
 	volumes := generateMockVolumes(1000)
 	mockService.On("ListVolumes", mock.Anything).Return(volumes, nil)
 	mockService.On("GetVolumeContainers", mock.Anything, mock.Anything).Return([]models.VolumeContainer{}, nil)
+	mockService.On("GetVolumeContainersBatch", mock.Anything, mock.Anything).Return(map[string][]models.VolumeContainer{}, nil)
 
 	router := gin.New()
 	router.GET("/volumes", handler.ListVolumes)

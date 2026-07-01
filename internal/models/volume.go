@@ -114,6 +114,9 @@ type Volume struct {
 	LastScanned    *time.Time        `json:"last_scanned,omitempty"`
 	IsActive       bool              `json:"is_active"`
 	OrganizationID *int64            `json:"organization_id,omitempty"`
+	IsTracked      *bool             `json:"is_tracked,omitempty"`
+	TrackedAt      *time.Time        `json:"tracked_at,omitempty"`
+	UntrackedAt    *time.Time        `json:"untracked_at,omitempty"`
 	CreatedAt      time.Time         `json:"created_at"`
 	UpdatedAt      time.Time         `json:"updated_at"`
 }
@@ -500,4 +503,12 @@ type VolumeContainer struct {
 	IsActive    bool      `json:"is_active"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// VolumeTrackingStatus represents the tracking state of a volume
+type VolumeTrackingStatus struct {
+	VolumeID    string     `json:"volume_id"`
+	IsTracked   bool       `json:"is_tracked"`
+	TrackedAt   *time.Time `json:"tracked_at,omitempty"`
+	UntrackedAt *time.Time `json:"untracked_at,omitempty"`
 }

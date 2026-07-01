@@ -28,6 +28,11 @@ func (h *Handler) getVolumesFromDatabase(ctx context.Context, pagination *apiuti
 		orgID = 1
 	}
 
+	if h.store == nil {
+		// Fallback to Docker API if database not available
+		return h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
+	}
+
 	queries, ok := h.store.Queries().(*sqlc.Queries)
 	if !ok {
 		// Fallback to Docker API if database not available
@@ -226,6 +231,18 @@ func (h *Handler) convertDBVolumeToAPI(dbVol sqlc.Volumes) models.VolumeV1 {
 	// Calculate status
 	status := computeVolumeStatus(nil, isOrphaned, containerCount)
 
+	// Extract tracking fields
+	var isTracked *bool
+	var trackedAt *time.Time
+	var untrackedAt *time.Time
+	isTracked = &dbVol.IsTracked
+	if dbVol.TrackedAt.Valid {
+		trackedAt = &dbVol.TrackedAt.Time
+	}
+	if dbVol.UntrackedAt.Valid {
+		untrackedAt = &dbVol.UntrackedAt.Time
+	}
+
 	return models.VolumeV1{
 		Name:             dbVol.VolumeID,
 		Driver:           driver,
@@ -242,6 +259,9 @@ func (h *Handler) convertDBVolumeToAPI(dbVol sqlc.Volumes) models.VolumeV1 {
 		IsSystem:         isSystem,
 		IsOrphaned:       isOrphaned,
 		Status:           status,
+		IsTracked:        isTracked,
+		TrackedAt:        trackedAt,
+		UntrackedAt:      untrackedAt,
 	}
 }
 
@@ -449,6 +469,18 @@ func (h *Handler) getVolumeFromDatabase(ctx context.Context, volumeName string) 
 		lastScanAt = &dbVol.LastScanAt.Time
 	}
 
+	// Convert tracking fields to pointers
+	var isTracked *bool
+	var trackedAt *time.Time
+	var untrackedAt *time.Time
+	isTracked = &dbVol.IsTracked
+	if dbVol.TrackedAt.Valid {
+		trackedAt = &dbVol.TrackedAt.Time
+	}
+	if dbVol.UntrackedAt.Valid {
+		untrackedAt = &dbVol.UntrackedAt.Time
+	}
+
 	return &models.VolumeDetailV1{
 		Name:               dbVol.VolumeID,
 		Driver:             dbVol.Driver.String,
@@ -466,6 +498,9 @@ func (h *Handler) getVolumeFromDatabase(ctx context.Context, volumeName string) 
 		ScanStatus:         scanStatus,
 		ScanProgress:       scanProgress,
 		LastScanID:         lastScanID,
+		IsTracked:          isTracked,
+		TrackedAt:          trackedAt,
+		UntrackedAt:        untrackedAt,
 		Meta: map[string]interface{}{
 			"driver_opts": options,
 		},

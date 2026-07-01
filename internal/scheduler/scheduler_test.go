@@ -106,42 +106,6 @@ func (m *MockStore) Retention() repo.RetentionRepo {
 	return args.Get(0).(repo.RetentionRepo)
 }
 
-// Analytics and snapshots methods
-func (m *MockStore) CreateUsageSnapshot(ctx context.Context, params store.CreateUsageSnapshotParams) (*store.UsageSnapshot, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(*store.UsageSnapshot), args.Error(1)
-}
-
-func (m *MockStore) GetLatestSnapshot(ctx context.Context, volumeID, snapshotType string) (*store.UsageSnapshot, error) {
-	args := m.Called(ctx, volumeID, snapshotType)
-	return args.Get(0).(*store.UsageSnapshot), args.Error(1)
-}
-
-func (m *MockStore) Get7DayTrend(ctx context.Context, volumeID string) (*store.TrendData, error) {
-	args := m.Called(ctx, volumeID)
-	return args.Get(0).(*store.TrendData), args.Error(1)
-}
-
-func (m *MockStore) Get30DayTrend(ctx context.Context, volumeID string) (*store.TrendData, error) {
-	args := m.Called(ctx, volumeID)
-	return args.Get(0).(*store.TrendData), args.Error(1)
-}
-
-func (m *MockStore) GetVolumeStepSeries(ctx context.Context, params store.GetVolumeStepSeriesParams) ([]*store.StepSeriesPoint, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).([]*store.StepSeriesPoint), args.Error(1)
-}
-
-func (m *MockStore) GetTrendSlope(ctx context.Context, params store.GetTrendSlopeParams) (*store.TrendSlope, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(*store.TrendSlope), args.Error(1)
-}
-
-func (m *MockStore) GetGrowthDeltas(ctx context.Context, params store.GetGrowthDeltasParams) (*store.GrowthDeltas, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(*store.GrowthDeltas), args.Error(1)
-}
-
 func (m *MockStore) Alerts() repo.AlertsRepo {
 	args := m.Called()
 	if args.Get(0) == nil {
@@ -206,6 +170,17 @@ func (m *MockStore) Stats() *repo.StatsRepo {
 		return nil
 	}
 	return args.Get(0).(*repo.StatsRepo)
+}
+
+func (m *MockStore) Checkpoints() repo.CheckpointRepo { return nil }
+func (m *MockStore) Snapshots() repo.SnapshotRepo     { return nil }
+func (m *MockStore) Users() repo.UsersRepository      { return nil }
+func (m *MockStore) Organizations() repo.OrganizationsRepo { return nil }
+func (m *MockStore) GetUserByID(ctx context.Context, id int64) (store.User, error) {
+	return store.User{}, nil
+}
+func (m *MockStore) GetOrganizationByID(ctx context.Context, id int64) (store.Organization, error) {
+	return store.Organization{}, nil
 }
 
 func (m *MockVolumeProvider) ListVolumes(ctx context.Context) ([]*models.Volume, error) {

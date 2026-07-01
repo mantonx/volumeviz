@@ -212,12 +212,17 @@ func (s *DockerService) GetVolumeContainers(ctx context.Context, volumeName stri
 		for _, mount := range containerInfo.Mounts {
 			// For volumes, the mount name matches the volume name
 			if mount.Type == "volume" && mount.Name == volumeName {
+				var image string
+				if containerInfo.Config != nil {
+					image = containerInfo.Config.Image
+				}
+
 				volumeContainer := models.VolumeContainer{
 					ID:          1, // Auto-increment ID
 					ContainerID: container.ID,
 					VolumeID:    volumeName,
 					Name:        containerInfo.Name,
-					Image:       containerInfo.Config.Image,
+					Image:       image,
 					State:       container.State,
 					Status:      container.Status,
 					MountPath:   mount.Destination,

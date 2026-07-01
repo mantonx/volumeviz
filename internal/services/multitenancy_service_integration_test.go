@@ -7,8 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mantonx/volumeviz/internal/db"
+	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/services/lifecycle"
 	"github.com/mantonx/volumeviz/internal/services/stats"
@@ -62,34 +64,32 @@ func testStatsServiceOrganizationContext(testStore store.Store) func(*testing.T)
 		ctx := context.Background()
 
 		// Create test organizations
-		org1, err := testStore.Organizations().CreateOrganization(ctx, models.CreateOrganizationParams{
+		org1, err := testStore.Organizations().CreateOrganization(ctx, sqlc.CreateOrganizationParams{
 			Name: "Stats Test Org 1",
-			Plan: "basic",
+			PlanType: pgtype.Text{String: "basic", Valid: true},
 		})
 		require.NoError(t, err)
 
-		org2, err := testStore.Organizations().CreateOrganization(ctx, models.CreateOrganizationParams{
+		org2, err := testStore.Organizations().CreateOrganization(ctx, sqlc.CreateOrganizationParams{
 			Name: "Stats Test Org 2", 
-			Plan: "premium",
+			PlanType: pgtype.Text{String: "premium", Valid: true},
 		})
 		require.NoError(t, err)
 
 		// Create volumes for each organization
-		vol1, err := testStore.Volumes().CreateVolume(ctx, models.CreateVolumeParams{
-			ID:             "stats-vol-org1",
-			Name:           "Org1 Stats Volume",
-			MountPath:      "/data/org1/stats",
-			Driver:         "local",
-			OrganizationID: org1.ID,
+		_, err = testStore.Volumes().CreateVolume(ctx, org1.ID, models.CreateVolumeParams{
+			VolumeID:   "stats-vol-org1",
+			Name:       "Org1 Stats Volume",
+			Mountpoint: "/data/org1/stats",
+			Driver:     "local",
 		})
 		require.NoError(t, err)
 
-		vol2, err := testStore.Volumes().CreateVolume(ctx, models.CreateVolumeParams{
-			ID:             "stats-vol-org2",
-			Name:           "Org2 Stats Volume",
-			MountPath:      "/data/org2/stats", 
-			Driver:         "local",
-			OrganizationID: org2.ID,
+		_, err = testStore.Volumes().CreateVolume(ctx, org2.ID, models.CreateVolumeParams{
+			VolumeID:   "stats-vol-org2",
+			Name:       "Org2 Stats Volume",
+			Mountpoint: "/data/org2/stats",
+			Driver:     "local",
 		})
 		require.NoError(t, err)
 
@@ -113,13 +113,13 @@ func testStatsServiceOrganizationContext(testStore store.Store) func(*testing.T)
 		assert.Error(t, err, "Should fail for non-existent organization")
 
 		// Test organization-scoped volume access
-		topFiles, err := statsService.GetTopOrganizationFiles(ctx, org1.ID, 10)
+		topFiles, err := statsService.GetOrganizationTopFiles(ctx, org1.ID, 10)
 		require.NoError(t, err)
 		
 		// Files should only be from org1 volumes
 		for _, file := range topFiles {
 			// Verify the volume belongs to org1
-			vol, err := testStore.Volumes().GetVolumeForOrganization(ctx, file.VolumeID, org1.ID)
+			vol, err := testStore.Volumes().GetVolumeByVolumeID(ctx, org1.ID, file.VolumeID)
 			assert.NoError(t, err, "File should only come from org1 volumes")
 			assert.Equal(t, org1.ID, vol.OrganizationID)
 		}
@@ -130,8 +130,8 @@ func testStatsServiceOrganizationContext(testStore store.Store) func(*testing.T)
 		require.NotNil(t, growthTrends)
 
 		// Cleanup
-		_ = testStore.Organizations().DeleteOrganization(ctx, org1.ID)
-		_ = testStore.Organizations().DeleteOrganization(ctx, org2.ID)
+		_ = testStore.Organizations().DeactivateOrganization(ctx, org1.ID)
+		_ = testStore.Organizations().DeactivateOrganization(ctx, org2.ID)
 	}
 }
 
@@ -141,9 +141,9 @@ func testRetentionServiceOrganizationPolicies(testStore store.Store) func(*testi
 		ctx := context.Background()
 
 		// Create test organization
-		org, err := testStore.Organizations().CreateOrganization(ctx, models.CreateOrganizationParams{
+		org, err := testStore.Organizations().CreateOrganization(ctx, sqlc.CreateOrganizationParams{
 			Name: "Retention Test Org",
-			Plan: "enterprise",
+			PlanType: pgtype.Text{String: "enterprise", Valid: true},
 		})
 		require.NoError(t, err)
 
@@ -201,7 +201,7 @@ func testRetentionServiceOrganizationPolicies(testStore store.Store) func(*testi
 		assert.Error(t, err, "Should fail for non-existent organization")
 
 		// Cleanup
-		_ = testStore.Organizations().DeleteOrganization(ctx, org.ID)
+		_ = testStore.Organizations().DeactivateOrganization(ctx, org.ID)
 	}
 }
 
@@ -211,25 +211,24 @@ func testServiceCrossOrganizationPrevention(testStore store.Store) func(*testing
 		ctx := context.Background()
 
 		// Create two test organizations
-		org1, err := testStore.Organizations().CreateOrganization(ctx, models.CreateOrganizationParams{
+		org1, err := testStore.Organizations().CreateOrganization(ctx, sqlc.CreateOrganizationParams{
 			Name: "Cross Access Test Org 1",
-			Plan: "basic",
+			PlanType: pgtype.Text{String: "basic", Valid: true},
 		})
 		require.NoError(t, err)
 
-		org2, err := testStore.Organizations().CreateOrganization(ctx, models.CreateOrganizationParams{
+		org2, err := testStore.Organizations().CreateOrganization(ctx, sqlc.CreateOrganizationParams{
 			Name: "Cross Access Test Org 2",
-			Plan: "basic",
+			PlanType: pgtype.Text{String: "basic", Valid: true},
 		})
 		require.NoError(t, err)
 
 		// Create volume in org1
-		_, err = testStore.Volumes().CreateVolume(ctx, models.CreateVolumeParams{
-			ID:             "cross-test-volume",
-			Name:           "Cross Test Volume",
-			MountPath:      "/data/cross-test",
-			Driver:         "local",
-			OrganizationID: org1.ID,
+		_, err = testStore.Volumes().CreateVolume(ctx, org1.ID, models.CreateVolumeParams{
+			VolumeID:   "cross-test-volume",
+			Name:       "Cross Test Volume",
+			Mountpoint: "/data/cross-test",
+			Driver:     "local",
 		})
 		require.NoError(t, err)
 
@@ -266,7 +265,7 @@ func testServiceCrossOrganizationPrevention(testStore store.Store) func(*testing
 		assert.Error(t, err, "Invalid organization should fail")
 
 		// Cleanup
-		_ = testStore.Organizations().DeleteOrganization(ctx, org1.ID)
-		_ = testStore.Organizations().DeleteOrganization(ctx, org2.ID)
+		_ = testStore.Organizations().DeactivateOrganization(ctx, org1.ID)
+		_ = testStore.Organizations().DeactivateOrganization(ctx, org2.ID)
 	}
 }

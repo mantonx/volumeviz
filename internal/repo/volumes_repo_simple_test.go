@@ -20,11 +20,12 @@ func TestVolumesRepoInterface(t *testing.T) {
 
 		// Test method signatures exist
 		_ = func() {
-			_, _ = repo.CreateVolume(ctx, models.CreateVolumeParams{})
-			_, _ = repo.GetVolumeByID(ctx, 1)
-			_, _ = repo.GetVolumeByVolumeID(ctx, "test")
-			_, _ = repo.ListVolumes(ctx, 10, 0)
-			_, _ = repo.CountVolumes(ctx)
+			var orgID int64 = 1
+			_, _ = repo.CreateVolume(ctx, orgID, models.CreateVolumeParams{})
+			_, _ = repo.GetVolumeByID(ctx, orgID, "1")
+			_, _ = repo.GetVolumeByVolumeID(ctx, orgID, "test")
+			_, _ = repo.ListVolumes(ctx, orgID, 10, 0)
+			_, _ = repo.CountVolumes(ctx, orgID)
 		}
 	}
 }

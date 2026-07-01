@@ -91,6 +91,8 @@ func getEndpointTier(c *gin.Context) EndpointTier {
 	switch {
 	case path == "/api/v1/volumes/bulk-scan" && method == "POST": // Bulk operations
 		return TierHeavy
+	case path == "/api/v1/trends/volumes/snapshots" && method == "POST": // Snapshot creation
+		return TierHeavy
 	case method == "POST" && (
 	// Volume scanning operations
 	c.Param("name") != "" && (path == "/api/v1/volumes/"+c.Param("name")+"/scan" ||

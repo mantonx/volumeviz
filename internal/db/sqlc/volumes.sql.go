@@ -23,6 +23,32 @@ func (q *Queries) CountActiveVolumes(ctx context.Context, organizationID pgtype.
 	return count, err
 }
 
+const countTrackedVolumes = `-- name: CountTrackedVolumes :one
+SELECT COUNT(*) FROM volumes
+WHERE is_tracked = TRUE AND organization_id = $1
+`
+
+// Count tracked volumes
+func (q *Queries) CountTrackedVolumes(ctx context.Context, organizationID pgtype.Int8) (int64, error) {
+	row := q.db.QueryRow(ctx, countTrackedVolumes, organizationID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUntrackedVolumes = `-- name: CountUntrackedVolumes :one
+SELECT COUNT(*) FROM volumes
+WHERE is_tracked = FALSE AND organization_id = $1
+`
+
+// Count untracked volumes
+func (q *Queries) CountUntrackedVolumes(ctx context.Context, organizationID pgtype.Int8) (int64, error) {
+	row := q.db.QueryRow(ctx, countUntrackedVolumes, organizationID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countVolumes = `-- name: CountVolumes :one
 SELECT COUNT(*) FROM volumes WHERE organization_id = $1
 `
@@ -102,7 +128,7 @@ INSERT INTO volumes (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9,
     $10, $11, $12, $13, $14
-) RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options
+) RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at
 `
 
 type CreateVolumeParams struct {
@@ -162,6 +188,9 @@ func (q *Queries) CreateVolume(ctx context.Context, arg CreateVolumeParams) (Vol
 		&i.Scope,
 		&i.Labels,
 		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
 	)
 	return i, err
 }
@@ -260,7 +289,7 @@ func (q *Queries) GetContainerByContainerID(ctx context.Context, containerID str
 }
 
 const getVolume = `-- name: GetVolume :one
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes WHERE volume_id = $1 AND organization_id = $2
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at FROM volumes WHERE volume_id = $1 AND organization_id = $2
 `
 
 type GetVolumeParams struct {
@@ -292,12 +321,15 @@ func (q *Queries) GetVolume(ctx context.Context, arg GetVolumeParams) (Volumes, 
 		&i.Scope,
 		&i.Labels,
 		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
 	)
 	return i, err
 }
 
 const getVolumeByID = `-- name: GetVolumeByID :one
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes WHERE volume_id = $1 AND organization_id = $2
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at FROM volumes WHERE volume_id = $1 AND organization_id = $2
 `
 
 type GetVolumeByIDParams struct {
@@ -329,12 +361,15 @@ func (q *Queries) GetVolumeByID(ctx context.Context, arg GetVolumeByIDParams) (V
 		&i.Scope,
 		&i.Labels,
 		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
 	)
 	return i, err
 }
 
 const getVolumeByOrg = `-- name: GetVolumeByOrg :one
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes WHERE volume_id = $1 AND organization_id = $2
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at FROM volumes WHERE volume_id = $1 AND organization_id = $2
 `
 
 type GetVolumeByOrgParams struct {
@@ -366,12 +401,15 @@ func (q *Queries) GetVolumeByOrg(ctx context.Context, arg GetVolumeByOrgParams) 
 		&i.Scope,
 		&i.Labels,
 		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
 	)
 	return i, err
 }
 
 const getVolumeByVolumeID = `-- name: GetVolumeByVolumeID :one
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes WHERE volume_id = $1 AND organization_id = $2
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at FROM volumes WHERE volume_id = $1 AND organization_id = $2
 `
 
 type GetVolumeByVolumeIDParams struct {
@@ -403,6 +441,9 @@ func (q *Queries) GetVolumeByVolumeID(ctx context.Context, arg GetVolumeByVolume
 		&i.Scope,
 		&i.Labels,
 		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
 	)
 	return i, err
 }
@@ -494,7 +535,7 @@ func (q *Queries) GetVolumeStats(ctx context.Context, arg GetVolumeStatsParams) 
 }
 
 const getVolumeSystemLevel = `-- name: GetVolumeSystemLevel :one
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes WHERE volume_id = $1
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at FROM volumes WHERE volume_id = $1
 `
 
 func (q *Queries) GetVolumeSystemLevel(ctx context.Context, volumeID string) (Volumes, error) {
@@ -521,12 +562,46 @@ func (q *Queries) GetVolumeSystemLevel(ctx context.Context, volumeID string) (Vo
 		&i.Scope,
 		&i.Labels,
 		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
+	)
+	return i, err
+}
+
+const getVolumeTrackingStatus = `-- name: GetVolumeTrackingStatus :one
+SELECT volume_id, is_tracked, tracked_at, untracked_at
+FROM volumes
+WHERE volume_id = $1 AND organization_id = $2
+`
+
+type GetVolumeTrackingStatusParams struct {
+	VolumeID       string      `json:"volume_id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+}
+
+type GetVolumeTrackingStatusRow struct {
+	VolumeID    string             `json:"volume_id"`
+	IsTracked   bool               `json:"is_tracked"`
+	TrackedAt   pgtype.Timestamptz `json:"tracked_at"`
+	UntrackedAt pgtype.Timestamptz `json:"untracked_at"`
+}
+
+// Get tracking status for a specific volume
+func (q *Queries) GetVolumeTrackingStatus(ctx context.Context, arg GetVolumeTrackingStatusParams) (GetVolumeTrackingStatusRow, error) {
+	row := q.db.QueryRow(ctx, getVolumeTrackingStatus, arg.VolumeID, arg.OrganizationID)
+	var i GetVolumeTrackingStatusRow
+	err := row.Scan(
+		&i.VolumeID,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
 	)
 	return i, err
 }
 
 const listActiveVolumes = `-- name: ListActiveVolumes :many
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes 
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at FROM volumes 
 WHERE is_active = true AND organization_id = $1
 ORDER BY volume_id
 `
@@ -561,6 +636,9 @@ func (q *Queries) ListActiveVolumes(ctx context.Context, organizationID pgtype.I
 			&i.Scope,
 			&i.Labels,
 			&i.Options,
+			&i.IsTracked,
+			&i.TrackedAt,
+			&i.UntrackedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -573,7 +651,7 @@ func (q *Queries) ListActiveVolumes(ctx context.Context, organizationID pgtype.I
 }
 
 const listAllVolumes = `-- name: ListAllVolumes :many
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes 
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at FROM volumes 
 ORDER BY volume_id
 LIMIT $1 OFFSET $2
 `
@@ -613,6 +691,125 @@ func (q *Queries) ListAllVolumes(ctx context.Context, arg ListAllVolumesParams) 
 			&i.Scope,
 			&i.Labels,
 			&i.Options,
+			&i.IsTracked,
+			&i.TrackedAt,
+			&i.UntrackedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTrackedVolumes = `-- name: ListTrackedVolumes :many
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at FROM volumes
+WHERE is_tracked = TRUE AND organization_id = $1
+ORDER BY volume_id
+LIMIT $2 OFFSET $3
+`
+
+type ListTrackedVolumesParams struct {
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	Limit          int32       `json:"limit"`
+	Offset         int32       `json:"offset"`
+}
+
+// List only tracked volumes
+func (q *Queries) ListTrackedVolumes(ctx context.Context, arg ListTrackedVolumesParams) ([]Volumes, error) {
+	rows, err := q.db.Query(ctx, listTrackedVolumes, arg.OrganizationID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Volumes{}
+	for rows.Next() {
+		var i Volumes
+		if err := rows.Scan(
+			&i.VolumeID,
+			&i.DisplayName,
+			&i.MountPoint,
+			&i.ContainerNames,
+			&i.IsActive,
+			&i.TotalSizeBytes,
+			&i.UsedSizeBytes,
+			&i.FreeSizeBytes,
+			&i.FilesystemType,
+			&i.ContainerCount,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.LastModifiedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OrganizationID,
+			&i.Driver,
+			&i.Scope,
+			&i.Labels,
+			&i.Options,
+			&i.IsTracked,
+			&i.TrackedAt,
+			&i.UntrackedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUntrackedVolumes = `-- name: ListUntrackedVolumes :many
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at FROM volumes
+WHERE is_tracked = FALSE AND organization_id = $1
+ORDER BY volume_id
+LIMIT $2 OFFSET $3
+`
+
+type ListUntrackedVolumesParams struct {
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+	Limit          int32       `json:"limit"`
+	Offset         int32       `json:"offset"`
+}
+
+// List only untracked volumes
+func (q *Queries) ListUntrackedVolumes(ctx context.Context, arg ListUntrackedVolumesParams) ([]Volumes, error) {
+	rows, err := q.db.Query(ctx, listUntrackedVolumes, arg.OrganizationID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Volumes{}
+	for rows.Next() {
+		var i Volumes
+		if err := rows.Scan(
+			&i.VolumeID,
+			&i.DisplayName,
+			&i.MountPoint,
+			&i.ContainerNames,
+			&i.IsActive,
+			&i.TotalSizeBytes,
+			&i.UsedSizeBytes,
+			&i.FreeSizeBytes,
+			&i.FilesystemType,
+			&i.ContainerCount,
+			&i.FirstSeenAt,
+			&i.LastScanAt,
+			&i.LastModifiedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OrganizationID,
+			&i.Driver,
+			&i.Scope,
+			&i.Labels,
+			&i.Options,
+			&i.IsTracked,
+			&i.TrackedAt,
+			&i.UntrackedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -625,7 +822,7 @@ func (q *Queries) ListAllVolumes(ctx context.Context, arg ListAllVolumesParams) 
 }
 
 const listVolumes = `-- name: ListVolumes :many
-SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options FROM volumes 
+SELECT volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at FROM volumes 
 WHERE organization_id = $1
 ORDER BY volume_id
 LIMIT $2 OFFSET $3
@@ -667,6 +864,9 @@ func (q *Queries) ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Vol
 			&i.Scope,
 			&i.Labels,
 			&i.Options,
+			&i.IsTracked,
+			&i.TrackedAt,
+			&i.UntrackedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -680,7 +880,7 @@ func (q *Queries) ListVolumes(ctx context.Context, arg ListVolumesParams) ([]Vol
 
 const listVolumesWithCounts = `-- name: ListVolumesWithCounts :many
 SELECT
-    v.volume_id, v.display_name, v.mount_point, v.container_names, v.is_active, v.total_size_bytes, v.used_size_bytes, v.free_size_bytes, v.filesystem_type, v.container_count, v.first_seen_at, v.last_scan_at, v.last_modified_at, v.created_at, v.updated_at, v.organization_id, v.driver, v.scope, v.labels, v.options,
+    v.volume_id, v.display_name, v.mount_point, v.container_names, v.is_active, v.total_size_bytes, v.used_size_bytes, v.free_size_bytes, v.filesystem_type, v.container_count, v.first_seen_at, v.last_scan_at, v.last_modified_at, v.created_at, v.updated_at, v.organization_id, v.driver, v.scope, v.labels, v.options, v.is_tracked, v.tracked_at, v.untracked_at,
     COALESCE(COUNT(DISTINCT f.id), 0)::bigint as file_count,
     COALESCE(COUNT(DISTINCT fo.id), 0)::bigint as folder_count
 FROM volumes v
@@ -719,6 +919,9 @@ type ListVolumesWithCountsRow struct {
 	Scope          pgtype.Text        `json:"scope"`
 	Labels         []byte             `json:"labels"`
 	Options        []byte             `json:"options"`
+	IsTracked      bool               `json:"is_tracked"`
+	TrackedAt      pgtype.Timestamptz `json:"tracked_at"`
+	UntrackedAt    pgtype.Timestamptz `json:"untracked_at"`
 	FileCount      int64              `json:"file_count"`
 	FolderCount    int64              `json:"folder_count"`
 }
@@ -753,6 +956,9 @@ func (q *Queries) ListVolumesWithCounts(ctx context.Context, arg ListVolumesWith
 			&i.Scope,
 			&i.Labels,
 			&i.Options,
+			&i.IsTracked,
+			&i.TrackedAt,
+			&i.UntrackedAt,
 			&i.FileCount,
 			&i.FolderCount,
 		); err != nil {
@@ -764,6 +970,105 @@ func (q *Queries) ListVolumesWithCounts(ctx context.Context, arg ListVolumesWith
 		return nil, err
 	}
 	return items, nil
+}
+
+const setVolumeTracked = `-- name: SetVolumeTracked :one
+
+UPDATE volumes
+SET
+    is_tracked = TRUE,
+    tracked_at = NOW(),
+    untracked_at = NULL,
+    updated_at = NOW()
+WHERE volume_id = $1 AND organization_id = $2
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at
+`
+
+type SetVolumeTrackedParams struct {
+	VolumeID       string      `json:"volume_id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+}
+
+// =============================================================================
+// Volume Tracking Queries
+// =============================================================================
+// Set a volume to tracked status
+func (q *Queries) SetVolumeTracked(ctx context.Context, arg SetVolumeTrackedParams) (Volumes, error) {
+	row := q.db.QueryRow(ctx, setVolumeTracked, arg.VolumeID, arg.OrganizationID)
+	var i Volumes
+	err := row.Scan(
+		&i.VolumeID,
+		&i.DisplayName,
+		&i.MountPoint,
+		&i.ContainerNames,
+		&i.IsActive,
+		&i.TotalSizeBytes,
+		&i.UsedSizeBytes,
+		&i.FreeSizeBytes,
+		&i.FilesystemType,
+		&i.ContainerCount,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.LastModifiedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
+	)
+	return i, err
+}
+
+const setVolumeUntracked = `-- name: SetVolumeUntracked :one
+UPDATE volumes
+SET
+    is_tracked = FALSE,
+    untracked_at = NOW(),
+    updated_at = NOW()
+WHERE volume_id = $1 AND organization_id = $2
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at
+`
+
+type SetVolumeUntrackedParams struct {
+	VolumeID       string      `json:"volume_id"`
+	OrganizationID pgtype.Int8 `json:"organization_id"`
+}
+
+// Set a volume to untracked status
+func (q *Queries) SetVolumeUntracked(ctx context.Context, arg SetVolumeUntrackedParams) (Volumes, error) {
+	row := q.db.QueryRow(ctx, setVolumeUntracked, arg.VolumeID, arg.OrganizationID)
+	var i Volumes
+	err := row.Scan(
+		&i.VolumeID,
+		&i.DisplayName,
+		&i.MountPoint,
+		&i.ContainerNames,
+		&i.IsActive,
+		&i.TotalSizeBytes,
+		&i.UsedSizeBytes,
+		&i.FreeSizeBytes,
+		&i.FilesystemType,
+		&i.ContainerCount,
+		&i.FirstSeenAt,
+		&i.LastScanAt,
+		&i.LastModifiedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.OrganizationID,
+		&i.Driver,
+		&i.Scope,
+		&i.Labels,
+		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
+	)
+	return i, err
 }
 
 const softDeleteVolume = `-- name: SoftDeleteVolume :exec
@@ -873,7 +1178,7 @@ SET
     last_modified_at = $12,
     updated_at = NOW()
 WHERE volume_id = $1 AND organization_id = $13
-RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at
 `
 
 type UpdateVolumeParams struct {
@@ -930,6 +1235,9 @@ func (q *Queries) UpdateVolume(ctx context.Context, arg UpdateVolumeParams) (Vol
 		&i.Scope,
 		&i.Labels,
 		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
 	)
 	return i, err
 }
@@ -943,7 +1251,7 @@ SET
     last_scan_at = NOW(),
     updated_at = NOW()
 WHERE volume_id = $1 AND organization_id = $5
-RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at
 `
 
 type UpdateVolumeStatsParams struct {
@@ -984,6 +1292,9 @@ func (q *Queries) UpdateVolumeStats(ctx context.Context, arg UpdateVolumeStatsPa
 		&i.Scope,
 		&i.Labels,
 		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
 	)
 	return i, err
 }
@@ -1076,7 +1387,7 @@ INSERT INTO volumes (
     labels = EXCLUDED.labels,
     options = EXCLUDED.options,
     updated_at = NOW()
-RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options
+RETURNING volume_id, display_name, mount_point, container_names, is_active, total_size_bytes, used_size_bytes, free_size_bytes, filesystem_type, container_count, first_seen_at, last_scan_at, last_modified_at, created_at, updated_at, organization_id, driver, scope, labels, options, is_tracked, tracked_at, untracked_at
 `
 
 type UpsertVolumeParams struct {
@@ -1143,6 +1454,9 @@ func (q *Queries) UpsertVolume(ctx context.Context, arg UpsertVolumeParams) (Vol
 		&i.Scope,
 		&i.Labels,
 		&i.Options,
+		&i.IsTracked,
+		&i.TrackedAt,
+		&i.UntrackedAt,
 	)
 	return i, err
 }

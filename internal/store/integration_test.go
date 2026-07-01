@@ -58,6 +58,7 @@ func TestStoreIntegration(t *testing.T) {
 
 func testVolumeOperations(t *testing.T, store Store) {
 	ctx := context.Background()
+	var orgID int64 = 1
 
 	// Create a volume
 	createParams := models.CreateVolumeParams{
@@ -72,7 +73,7 @@ func testVolumeOperations(t *testing.T, store Store) {
 		IsActive:   true,
 	}
 
-	volume, err := store.Volumes().CreateVolume(ctx, createParams)
+	volume, err := store.Volumes().CreateVolume(ctx, orgID, createParams)
 	require.NoError(t, err)
 	require.NotNil(t, volume)
 	assert.Equal(t, createParams.VolumeID, volume.VolumeID)
@@ -80,8 +81,8 @@ func testVolumeOperations(t *testing.T, store Store) {
 	assert.Equal(t, createParams.IsActive, volume.IsActive)
 	assert.NotZero(t, volume.ID)
 
-	// Retrieve by ID
-	retrieved, err := store.Volumes().GetVolumeByID(ctx, volume.ID)
+	// Retrieve by VolumeID (numeric-ID-only lookup no longer exists on the interface)
+	retrieved, err := store.Volumes().GetVolumeByID(ctx, orgID, volume.VolumeID)
 	require.NoError(t, err)
 	assert.Equal(t, volume.ID, retrieved.ID)
 	assert.Equal(t, volume.VolumeID, retrieved.VolumeID)
@@ -89,12 +90,12 @@ func testVolumeOperations(t *testing.T, store Store) {
 	assert.Equal(t, volume.Options["type"], retrieved.Options["type"])
 
 	// Retrieve by VolumeID
-	byVolumeID, err := store.Volumes().GetVolumeByVolumeID(ctx, volume.VolumeID)
+	byVolumeID, err := store.Volumes().GetVolumeByVolumeID(ctx, orgID, volume.VolumeID)
 	require.NoError(t, err)
 	assert.Equal(t, volume.ID, byVolumeID.ID)
 
 	// List volumes
-	volumes, err := store.Volumes().ListVolumes(ctx, 10, 0)
+	volumes, err := store.Volumes().ListVolumes(ctx, orgID, 10, 0)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, len(volumes), 1)
 
@@ -109,13 +110,14 @@ func testVolumeOperations(t *testing.T, store Store) {
 	assert.True(t, found, "Created volume should be in list")
 
 	// Count volumes
-	count, err := store.Volumes().CountVolumes(ctx)
+	count, err := store.Volumes().CountVolumes(ctx, orgID)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, count, int64(1))
 }
 
 func testTransactionBoundaries(t *testing.T, store Store) {
 	ctx := context.Background()
+	var orgID int64 = 1
 
 	// Test successful transaction
 	var volumeID string
@@ -133,7 +135,7 @@ func testTransactionBoundaries(t *testing.T, store Store) {
 			IsActive:   true,
 		}
 
-		volume, err := txStore.Volumes().CreateVolume(ctx, createParams)
+		volume, err := txStore.Volumes().CreateVolume(ctx, orgID, createParams)
 		if err != nil {
 			return err
 		}
@@ -146,7 +148,7 @@ func testTransactionBoundaries(t *testing.T, store Store) {
 	require.NoError(t, err)
 
 	// Verify the volume was created
-	volume, err := store.Volumes().GetVolumeByVolumeID(ctx, volumeID)
+	volume, err := store.Volumes().GetVolumeByVolumeID(ctx, orgID, volumeID)
 	require.NoError(t, err)
 	assert.Equal(t, volumeID, volume.VolumeID)
 
@@ -165,7 +167,7 @@ func testTransactionBoundaries(t *testing.T, store Store) {
 			IsActive:   true,
 		}
 
-		_, err := txStore.Volumes().CreateVolume(ctx, createParams)
+		_, err := txStore.Volumes().CreateVolume(ctx, orgID, createParams)
 		if err != nil {
 			return err
 		}
@@ -176,6 +178,6 @@ func testTransactionBoundaries(t *testing.T, store Store) {
 	require.Error(t, err)
 
 	// Verify the volume was NOT created due to rollback
-	_, err = store.Volumes().GetVolumeByVolumeID(ctx, "rollback-test-vol-999")
+	_, err = store.Volumes().GetVolumeByVolumeID(ctx, orgID, "rollback-test-vol-999")
 	assert.Error(t, err, "Volume should not exist after transaction rollback")
 }

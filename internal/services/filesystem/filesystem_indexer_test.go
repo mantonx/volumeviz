@@ -29,6 +29,16 @@ func (m *MockStoreForIndexer) FileMetadata() *repo.FileMetadataRepo { return nil
 func (m *MockStoreForIndexer) Alerts() repo.AlertsRepo { return nil }
 func (m *MockStoreForIndexer) Search() *repo.SearchRepo { return nil }
 func (m *MockStoreForIndexer) ScanProgress() repo.ScanProgressRepo { return nil }
+func (m *MockStoreForIndexer) Checkpoints() repo.CheckpointRepo { return nil }
+func (m *MockStoreForIndexer) Snapshots() repo.SnapshotRepo { return nil }
+func (m *MockStoreForIndexer) Users() repo.UsersRepository { return nil }
+func (m *MockStoreForIndexer) Organizations() repo.OrganizationsRepo { return nil }
+func (m *MockStoreForIndexer) GetUserByID(ctx context.Context, id int64) (store.User, error) {
+	return store.User{}, nil
+}
+func (m *MockStoreForIndexer) GetOrganizationByID(ctx context.Context, id int64) (store.Organization, error) {
+	return store.Organization{}, nil
+}
 func (m *MockStoreForIndexer) Health(ctx context.Context) error { return nil }
 func (m *MockStoreForIndexer) Queries() interface{} { return nil }
 

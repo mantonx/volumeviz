@@ -202,12 +202,8 @@ func (p *ProgressiveDiskus) processBatch(ctx context.Context, batch *DirectoryBa
 	for _, dir := range batch.Directories {
 		result, err := runner.Run(ctx, dir)
 		if err != nil {
-			stderrStr := string(result.Stderr)
-			// Handle permission errors gracefully
-			if strings.Contains(stderrStr, "Permission denied") {
-				continue // Skip this directory
-			}
-			// For other errors, continue with the next directory
+			// result may be nil here (e.g. command timeout or exec failure),
+			// not just a result with a non-zero exit code — skip and continue.
 			continue
 		}
 
