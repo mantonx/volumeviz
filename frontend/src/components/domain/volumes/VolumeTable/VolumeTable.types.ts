@@ -9,9 +9,15 @@ export interface VolumeTableProps {
     container_count: number;
     status: 'active' | 'inactive' | 'scanning' | 'error';
     last_scanned_at?: string;
+    last_scan_at?: string;
+    scan_status?: string;
+    attachments_count?: number;
     error_message?: string;
     created_at: string;
     updated_at: string;
+    is_tracked?: boolean;
+    tracked_at?: string;
+    untracked_at?: string;
   }>;
   isLoading?: boolean;
   selectedVolumeIds?: string[];
@@ -19,4 +25,5 @@ export interface VolumeTableProps {
   onVolumeSelect?: (volume: any) => void;
   showBulkActions?: boolean;
   className?: string;
+  onRefetch?: () => void;
 }

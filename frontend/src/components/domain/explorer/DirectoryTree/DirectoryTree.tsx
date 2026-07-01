@@ -13,7 +13,7 @@
  * - Error handling
  */
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { customFetchClient } from '@/api/fetch-client';

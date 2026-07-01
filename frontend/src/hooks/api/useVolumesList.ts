@@ -75,8 +75,10 @@ export function useVolumesList(options: UseVolumesListOptions = {}) {
 
   // Transform data to match expected format
   const volumes = useMemo(() => {
-    if (!data?.data) return [];
-    return data.data;
+    // React Query 'data' is the full API response: { data: Volume[], page, page_size, total }
+    // We want the 'data' property which contains the volumes array
+    if (!data?.data || !Array.isArray(data.data)) return [];
+    return data.data as any[];
   }, [data]);
 
   const pagination = useMemo(() => {

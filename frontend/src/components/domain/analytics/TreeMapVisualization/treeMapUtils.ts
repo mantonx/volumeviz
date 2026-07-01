@@ -13,7 +13,16 @@ export function transformToTreeMapData(
   files: FileItem[],
   rootPath: string = '/',
 ): TreeMapNode[] {
-  if (!files || files.length === 0) return [];
+  console.log('[treeMapUtils] Transform called with:', {
+    filesCount: files?.length,
+    rootPath,
+    sampleFile: files?.[0]
+  });
+
+  if (!files || files.length === 0) {
+    console.log('[treeMapUtils] No files, returning empty array');
+    return [];
+  }
 
   // Build a map of path -> node
   const nodeMap = new Map<string, TreeMapNode>();
@@ -35,6 +44,8 @@ export function transformToTreeMapData(
       extension: file.extension,
       modifiedTime: file.modified_time,
       children: file.is_directory ? [] : undefined,
+      // Add unique key based on full path to avoid duplicate key issues
+      key: file.path,
     };
 
     nodeMap.set(file.path, node);
@@ -82,6 +93,12 @@ export function transformToTreeMapData(
   // Sort by size (largest first)
   rootNodes.sort((a, b) => b.value - a.value);
   rootNodes.forEach((node) => sortChildren(node));
+
+  console.log('[treeMapUtils] Returning tree data:', {
+    rootNodesCount: rootNodes.length,
+    sampleNode: rootNodes[0],
+    totalSize: rootNodes.reduce((sum, n) => sum + n.value, 0)
+  });
 
   return rootNodes;
 }

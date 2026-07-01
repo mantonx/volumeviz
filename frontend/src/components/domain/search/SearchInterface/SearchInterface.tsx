@@ -9,7 +9,6 @@ import React, {
 import {
   Search,
   Filter,
-  Settings,
   Clock,
   Star,
   BookmarkPlus,
@@ -17,11 +16,9 @@ import {
   ChevronDown,
   ChevronUp,
   X,
-  ArrowUpDown,
   Grid3x3,
   List,
   Table,
-  Zap,
   FileText,
   Folder,
   Image,
@@ -29,15 +26,10 @@ import {
   Music,
   Archive,
   Code,
-  Calendar,
-  HardDrive,
-  Tag,
   AlertCircle,
-  CheckCircle,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
-import { ProgressBar } from '@/components/ui';
 import { StatusBadge } from '@/components/ui';
 
 import type {
@@ -47,9 +39,6 @@ import type {
   SearchQuery,
   SimpleSearchQuery,
   SearchFilters,
-  SearchResultItem,
-  SavedSearch,
-  SearchSuggestion,
   SearchQueryType,
   SearchScope,
   FileTypeCategory,

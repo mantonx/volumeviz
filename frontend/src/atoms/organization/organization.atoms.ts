@@ -30,7 +30,7 @@ export const organizationIdAtom = atom<number | null>(
 );
 
 // Helper atom to refresh org ID from token
-export const refreshOrganizationAtom = atom(null, (get, set) => {
+export const refreshOrganizationAtom = atom(null, (_get, set) => {
   const newOrgId = getOrganizationFromToken();
   console.log('[refreshOrganizationAtom] Refreshing org ID:', newOrgId);
   set(organizationIdAtom, newOrgId);

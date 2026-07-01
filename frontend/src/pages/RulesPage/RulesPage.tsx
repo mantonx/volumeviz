@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Plus, Play } from 'lucide-react';
 import type {
   InternalApiV1RulesRuleResponse as Rule,
-  InternalApiV1RulesConditionRequest as Condition,
   InternalApiV1RulesTrackingRulesConfigResponse as TrackingRulesConfig,
   GithubComMantonxVolumevizInternalServicesRulesPreviewResponse as PreviewResponse,
-  GithubComMantonxVolumevizInternalServicesRulesPreviewSummary as PreviewSummary,
-} from '../../api/generated/Api';
+} from '@/api/orval-generated/api';
 
 const RulesPage: React.FC = () => {
   const [config, setConfig] = useState<TrackingRulesConfig | null>(null);

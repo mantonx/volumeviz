@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Heart, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import type { HealthPageProps } from './HealthPage.types';
 
 /**

@@ -23,6 +23,7 @@ export const apiConfigAtom = atomWithStorage<ApiConfig>('api-config', {
   baseUrl: '/api/v1',
   timeout: 10000,
   retryAttempts: 3,
+  retryDelay: 1000,
 });
 
 // Notification settings

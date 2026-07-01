@@ -1,1 +1,0 @@
-export { SearchResultsGrid } from './SearchResultsGrid';

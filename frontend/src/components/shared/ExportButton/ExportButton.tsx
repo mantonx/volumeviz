@@ -45,9 +45,9 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
       </Button>
 
       <Modal
-        isOpen={isModalOpen}
+        open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Export Data"
+        header={{ title: 'Export Data' }}
         size="sm"
       >
         <div className="p-6">

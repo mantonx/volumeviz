@@ -9,11 +9,10 @@ export function ApiHealthChecker() {
   const {
     data: healthData,
     error,
-    refetch,
   } = useGetHealthDatabase({
     query: {
       refetchInterval: 10000, // Check every 10 seconds
-      retry: (failureCount, error) => {
+      retry: (failureCount) => {
         // Retry up to 3 times with exponential backoff
         return failureCount < 3;
       },

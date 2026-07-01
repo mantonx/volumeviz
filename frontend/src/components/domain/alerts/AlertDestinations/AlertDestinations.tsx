@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -10,14 +10,12 @@ import {
   Settings,
   Trash2,
   TestTube,
-  CheckCircle,
   AlertTriangle,
-  Clock,
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/utils';
 import { useAlertDestinations } from '@/hooks/useAlerts';
-import type { AlertDestination } from '@/api/alerts';
+import type { AlertDestination } from '@/hooks/useAlerts';
 import { CreateDestinationModal } from './CreateDestinationModal';
 import { EditDestinationModal } from './EditDestinationModal';
 import { TestDestinationModal } from './TestDestinationModal';
@@ -31,12 +29,12 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
 }) => {
   const {
     destinations,
-    loading,
+    isLoading,
     error,
-    operationLoading,
-    operationError,
-    fetchDestinations,
+    refetch,
     deleteDestination,
+    isDeleting,
+    deleteError,
   } = useAlertDestinations();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -44,25 +42,28 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
     useState<AlertDestination | null>(null);
   const [testingDestination, setTestingDestination] =
     useState<AlertDestination | null>(null);
-
-  useEffect(() => {
-    fetchDestinations();
-  }, [fetchDestinations]);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const handleDelete = async (destination: AlertDestination) => {
     if (
-      window.confirm(`Are you sure you want to delete "${destination.name}"?`)
+      !destination.id ||
+      !window.confirm(`Are you sure you want to delete "${destination.name}"?`)
     ) {
-      try {
-        await deleteDestination(destination.id);
-      } catch (error) {
-        // Error is handled by the hook
-      }
+      return;
+    }
+
+    try {
+      setDeletingId(destination.id);
+      await deleteDestination(destination.id);
+    } catch {
+      // Error is surfaced via deleteError below
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  const getDestinationIcon = (type: string) => {
-    switch (type.toLowerCase()) {
+  const getDestinationIcon = (type?: string) => {
+    switch (type?.toLowerCase()) {
       case 'slack':
         return '💬';
       case 'pushover':
@@ -73,13 +74,13 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
     }
   };
 
-  const getDestinationStatusColor = (isEnabled: boolean) => {
+  const getDestinationStatusColor = (isEnabled?: boolean) => {
     return isEnabled
       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
       : 'bg-surface-secondary text-secondary';
   };
 
-  if (loading && destinations.length === 0) {
+  if (isLoading && destinations.length === 0) {
     return (
       <div className={cn('flex items-center justify-center py-12', className)}>
         <div className="flex items-center gap-2 text-tertiary">
@@ -94,8 +95,8 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
     return (
       <ErrorState
         title="Failed to load destinations"
-        message={error}
-        onRetry={() => fetchDestinations()}
+        error={error}
+        onRetry={() => refetch()}
         className={className}
       />
     );
@@ -124,12 +125,10 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
       {destinations.length === 0 ? (
         <EmptyState
           title="No destinations configured"
-          message="Create your first alert destination to start receiving notifications"
+          description="Create your first alert destination to start receiving notifications"
           icon={Send}
-          action={{
-            label: 'Add Destination',
-            onClick: () => setShowCreateModal(true),
-          }}
+          actionLabel="Add Destination"
+          onAction={() => setShowCreateModal(true)}
         />
       ) : (
         <div className="grid gap-4">
@@ -155,12 +154,13 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
                       </Badge>
                     </div>
                     <p className="text-sm text-tertiary">
-                      {destination.description ||
-                        `${destination.type} notification`}
+                      {`${destination.type} notification`}
                     </p>
                     <div className="text-xs text-tertiary mt-1">
                       Type: {destination.type} • Created:{' '}
-                      {new Date(destination.created_at).toLocaleDateString()}
+                      {destination.created_at
+                        ? new Date(destination.created_at).toLocaleDateString()
+                        : 'Unknown'}
                     </div>
                   </div>
                 </div>
@@ -170,16 +170,9 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => setTestingDestination(destination)}
-                    disabled={
-                      operationLoading[`testDestination_${destination.id}`]
-                    }
                     className="flex items-center gap-1"
                   >
-                    {operationLoading[`testDestination_${destination.id}`] ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <TestTube className="h-3 w-3" />
-                    )}
+                    <TestTube className="h-3 w-3" />
                     Test
                   </Button>
 
@@ -197,12 +190,10 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => handleDelete(destination)}
-                    disabled={
-                      operationLoading[`deleteDestination_${destination.id}`]
-                    }
+                    disabled={isDeleting && deletingId === destination.id}
                     className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                   >
-                    {operationLoading[`deleteDestination_${destination.id}`] ? (
+                    {isDeleting && deletingId === destination.id ? (
                       <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
                       <Trash2 className="h-3 w-3" />
@@ -212,22 +203,11 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
                 </div>
               </div>
 
-              {operationError[`testDestination_${destination.id}`] && (
+              {deleteError && deletingId === destination.id && (
                 <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
                   <div className="flex items-center gap-2 text-red-700 text-sm">
                     <AlertTriangle className="h-4 w-4" />
-                    Test failed:{' '}
-                    {operationError[`testDestination_${destination.id}`]}
-                  </div>
-                </div>
-              )}
-
-              {operationError[`deleteDestination_${destination.id}`] && (
-                <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                  <div className="flex items-center gap-2 text-red-700 text-sm">
-                    <AlertTriangle className="h-4 w-4" />
-                    Delete failed:{' '}
-                    {operationError[`deleteDestination_${destination.id}`]}
+                    Delete failed: {deleteError}
                   </div>
                 </div>
               )}
@@ -242,7 +222,7 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
         onClose={() => setShowCreateModal(false)}
         onSuccess={() => {
           setShowCreateModal(false);
-          fetchDestinations();
+          refetch();
         }}
       />
 
@@ -253,7 +233,7 @@ export const AlertDestinations: React.FC<AlertDestinationsProps> = ({
           onClose={() => setEditingDestination(null)}
           onSuccess={() => {
             setEditingDestination(null);
-            fetchDestinations();
+            refetch();
           }}
         />
       )}

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { VOLUME_STATUS, STATUS_BADGE_CLASSES } from '../shared/constants';
 import { VolumeCardProps } from './VolumeCard.types';
 
 export const VolumeCard: React.FC<VolumeCardProps> = ({
@@ -50,28 +51,21 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
 
   // Status indicators
   const getStatusColor = () => {
-    switch (volume.status) {
-      case 'active':
-        return 'text-green-700 bg-green-100';
-      case 'scanning':
-        return 'text-blue-800 bg-blue-100';
-      case 'error':
-        return 'text-red-700 bg-red-100';
-      case 'inactive':
-        return 'text-secondary bg-surface-secondary';
-      default:
-        return 'text-secondary bg-surface-secondary';
-    }
+    const statusClasses = STATUS_BADGE_CLASSES[volume.status as keyof typeof STATUS_BADGE_CLASSES];
+    return statusClasses || STATUS_BADGE_CLASSES[VOLUME_STATUS.INACTIVE];
   };
 
   const getStatusIcon = () => {
     switch (volume.status) {
-      case 'active':
+      case VOLUME_STATUS.ACTIVE:
         return <CheckCircle2 className="w-4 h-4" />;
-      case 'scanning':
+      case VOLUME_STATUS.SCANNING:
         return <Activity className="w-4 h-4 animate-pulse" />;
-      case 'error':
+      case VOLUME_STATUS.ERROR:
         return <AlertCircle className="w-4 h-4" />;
+      case VOLUME_STATUS.PENDING:
+        return <Clock className="w-4 h-4" />;
+      case VOLUME_STATUS.INACTIVE:
       default:
         return <Clock className="w-4 h-4" />;
     }
@@ -86,7 +80,7 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
       className={cn(
         'bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-all duration-200 cursor-pointer',
         isSelected && 'ring-2 ring-blue-500 border-blue-300',
-        volume.status === 'error' && 'border-red-200 bg-red-50',
+        volume.status === VOLUME_STATUS.ERROR && 'border-red-200 bg-red-50',
         className,
       )}
       onClick={handleCardClick}
@@ -210,7 +204,7 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
       </div>
 
       {/* Footer Actions */}
-      {volume.status === 'error' && volume.error_message && (
+      {volume.status === VOLUME_STATUS.ERROR && volume.error_message && (
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
           <p className="text-sm text-red-700 flex items-center">
             <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />

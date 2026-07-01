@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import type {
   InternalApiV1MountsMountCatalogResponse as MountCatalogEntry,
   InternalApiV1MountsMountCatalogSummaryResponse as MountCatalogSummary,
-  InternalApiV1MountsDiscoverMountsRequest,
-  InternalApiV1MountsDiscoverMountsResponse,
-} from '../../api/generated/Api';
+} from '@/api/orval-generated/api';
 
 export const MountsPage: React.FC = () => {
   const [mounts, setMounts] = useState<MountCatalogEntry[]>([]);
@@ -18,9 +16,6 @@ export const MountsPage: React.FC = () => {
   const [composeProjectFilter, setComposeProjectFilter] = useState('');
   const [composeServiceFilter, setComposeServiceFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedMount, setSelectedMount] = useState<MountCatalogEntry | null>(
-    null,
-  );
 
   const fetchSummary = async () => {
     try {

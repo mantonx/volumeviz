@@ -1,120 +1,233 @@
 /**
  * Alert management hooks
  *
- * Provides centralized hooks for managing alerts, alert rules, and alert destinations
- * using the modern Orval-generated API hooks.
+ * Provides centralized, ergonomic hooks for managing alert rules, alert
+ * destinations, and alert deliveries on top of the Orval-generated API
+ * client. Each hook exposes:
+ *   - a plain array of the underlying entity (never undefined)
+ *   - isLoading / error (stringified, never the raw ErrorResponse object)
+ *   - refetch
+ *   - simple mutation wrappers with call signatures a component can use
+ *     directly, without knowing about the `{ id, data }` / `.mutateAsync`
+ *     shape the generated hooks expect.
  */
 
+import { useMemo } from 'react';
 import {
-  useGetAlerts,
-  useGetAlertsId,
-  useGetAlertsDeliveries,
-  useGetAlertsDestinations,
-  usePostAlertsDestinations,
-  useDeleteAlertsDestinationsId,
-  useGetAlertsDestinationsId,
-  usePutAlertsDestinationsId,
   useGetAlertsRules,
   usePostAlertsRules,
   useDeleteAlertsRulesId,
-  useGetAlertsRulesId,
   usePutAlertsRulesId,
   usePostAlertsRulesIdTest,
+  useGetAlertsDestinations,
+  usePostAlertsDestinations,
+  useDeleteAlertsDestinationsId,
+  usePutAlertsDestinationsId,
   usePostAlertsDestinationsIdTest,
+  useGetAlertsDeliveries,
+  type GithubComMantonxVolumevizInternalModelsAlertRule as AlertRule,
+  type GithubComMantonxVolumevizInternalModelsAlertDestination as AlertDestination,
+  type GithubComMantonxVolumevizInternalModelsAlertDelivery as AlertDelivery,
+  type GithubComMantonxVolumevizInternalModelsOffsetPagination as OffsetPagination,
+  type GithubComMantonxVolumevizInternalModelsCreateAlertRuleParams as CreateAlertRuleParams,
+  type GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParams as UpdateAlertRuleParams,
+  type GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParams as CreateAlertDestinationParams,
+  type GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParams as UpdateAlertDestinationParams,
+  type GetAlertsDeliveriesParams,
 } from '@/api/orval-generated/api';
 
-// Alert Rules Management
+// Re-export the real backend model types + params so components can import
+// them from this single module instead of reaching into the generated file.
+export type {
+  AlertRule,
+  AlertDestination,
+  AlertDelivery,
+  CreateAlertRuleParams,
+  UpdateAlertRuleParams,
+  CreateAlertDestinationParams,
+  UpdateAlertDestinationParams,
+};
+
+/** Shape of the `results` field returned by POST /alerts/rules/{id}/test. The
+ * alert engine's evaluator returns `interface{}` on the Go side, so this is
+ * intentionally loosely typed. */
+export type TestAlertRuleResult = unknown;
+
+/** Turn whatever error shape TanStack Query / our fetch client hands back
+ * into a plain, displayable string. Never leak the raw ErrorResponse object
+ * to the UI. */
+function stringifyError(error: unknown): string | null {
+  if (!error) return null;
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object') {
+    const err = error as Record<string, unknown>;
+    const data = (err.data as Record<string, unknown>) ?? err;
+    const message =
+      (data?.message as string) ||
+      (data?.error as string) ||
+      (err.message as string);
+    if (typeof message === 'string' && message.length > 0) {
+      return message;
+    }
+  }
+  return 'An unexpected error occurred';
+}
+
+// ---------------------------------------------------------------------------
+// Alert Rules
+// ---------------------------------------------------------------------------
+
 export const useAlertRules = () => {
-  const getRules = useGetAlertsRules();
-  const createRule = usePostAlertsRules();
-  const deleteRule = useDeleteAlertsRulesId();
-  const getRule = useGetAlertsRulesId;
-  const updateRule = usePutAlertsRulesId();
-  const testRule = usePostAlertsRulesIdTest();
+  const rulesQuery = useGetAlertsRules(undefined);
+  const createMutation = usePostAlertsRules();
+  const deleteMutation = useDeleteAlertsRulesId();
+  const updateMutation = usePutAlertsRulesId();
+  const testMutation = usePostAlertsRulesIdTest();
+
+  const rules: AlertRule[] = useMemo(() => {
+    const data = rulesQuery.data;
+    return data?.status === 200 ? (data.data.rules ?? []) : [];
+  }, [rulesQuery.data]);
+
+  const createRule = async (params: CreateAlertRuleParams): Promise<void> => {
+    await createMutation.mutateAsync({ data: params });
+    await rulesQuery.refetch();
+  };
+
+  const updateRule = async (
+    id: number,
+    params: UpdateAlertRuleParams,
+  ): Promise<void> => {
+    await updateMutation.mutateAsync({ id, data: params });
+    await rulesQuery.refetch();
+  };
+
+  const deleteRule = async (id: number): Promise<void> => {
+    await deleteMutation.mutateAsync({ id });
+    await rulesQuery.refetch();
+  };
+
+  const testRule = async (id: number): Promise<TestAlertRuleResult> => {
+    const response = await testMutation.mutateAsync({ id });
+    return response.status === 200 ? response.data.results : undefined;
+  };
 
   return {
-    rules: getRules.data,
-    isLoading: getRules.isLoading,
-    error: getRules.error,
-    refetch: getRules.refetch,
-    createRule: createRule.mutate,
-    createRuleAsync: createRule.mutateAsync,
-    deleteRule: deleteRule.mutate,
-    deleteRuleAsync: deleteRule.mutateAsync,
-    updateRule: updateRule.mutate,
-    updateRuleAsync: updateRule.mutateAsync,
-    testRule: testRule.mutate,
-    testRuleAsync: testRule.mutateAsync,
-    getRule,
-    isCreating: createRule.isPending,
-    isDeleting: deleteRule.isPending,
-    isUpdating: updateRule.isPending,
-    isTesting: testRule.isPending,
+    rules,
+    isLoading: rulesQuery.isLoading,
+    error: stringifyError(rulesQuery.error),
+    refetch: rulesQuery.refetch,
+
+    createRule,
+    updateRule,
+    deleteRule,
+    testRule,
+
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+    isTesting: testMutation.isPending,
+
+    createError: stringifyError(createMutation.error),
+    updateError: stringifyError(updateMutation.error),
+    deleteError: stringifyError(deleteMutation.error),
+    testError: stringifyError(testMutation.error),
   };
 };
 
-// Alert Destinations Management
+// ---------------------------------------------------------------------------
+// Alert Destinations
+// ---------------------------------------------------------------------------
+
 export const useAlertDestinations = () => {
-  const getDestinations = useGetAlertsDestinations();
-  const createDestination = usePostAlertsDestinations();
-  const deleteDestination = useDeleteAlertsDestinationsId();
-  const getDestination = useGetAlertsDestinationsId;
-  const updateDestination = usePutAlertsDestinationsId();
-  const testDestination = usePostAlertsDestinationsIdTest();
+  const destinationsQuery = useGetAlertsDestinations(undefined);
+  const createMutation = usePostAlertsDestinations();
+  const deleteMutation = useDeleteAlertsDestinationsId();
+  const updateMutation = usePutAlertsDestinationsId();
+  const testMutation = usePostAlertsDestinationsIdTest();
+
+  const destinations: AlertDestination[] = useMemo(() => {
+    const data = destinationsQuery.data;
+    return data?.status === 200 ? (data.data.destinations ?? []) : [];
+  }, [destinationsQuery.data]);
+
+  const createDestination = async (
+    params: CreateAlertDestinationParams,
+  ): Promise<void> => {
+    await createMutation.mutateAsync({ data: params });
+    await destinationsQuery.refetch();
+  };
+
+  const updateDestination = async (
+    id: number,
+    params: UpdateAlertDestinationParams,
+  ): Promise<void> => {
+    await updateMutation.mutateAsync({ id, data: params });
+    await destinationsQuery.refetch();
+  };
+
+  const deleteDestination = async (id: number): Promise<void> => {
+    await deleteMutation.mutateAsync({ id });
+    await destinationsQuery.refetch();
+  };
+
+  const testDestination = async (
+    id: number,
+  ): Promise<{ message: string; tested_at?: string }> => {
+    const response = await testMutation.mutateAsync({ id, data: {} });
+    return response.status === 200
+      ? { message: response.data.message ?? '', tested_at: response.data.tested_at }
+      : { message: 'Test failed' };
+  };
 
   return {
-    destinations: getDestinations.data,
-    isLoading: getDestinations.isLoading,
-    error: getDestinations.error,
-    refetch: getDestinations.refetch,
-    createDestination: createDestination.mutate,
-    createDestinationAsync: createDestination.mutateAsync,
-    deleteDestination: deleteDestination.mutate,
-    deleteDestinationAsync: deleteDestination.mutateAsync,
-    updateDestination: updateDestination.mutate,
-    updateDestinationAsync: updateDestination.mutateAsync,
-    testDestination: testDestination.mutate,
-    testDestinationAsync: testDestination.mutateAsync,
-    getDestination,
-    isCreating: createDestination.isPending,
-    isDeleting: deleteDestination.isPending,
-    isUpdating: updateDestination.isPending,
-    isTesting: testDestination.isPending,
+    destinations,
+    isLoading: destinationsQuery.isLoading,
+    error: stringifyError(destinationsQuery.error),
+    refetch: destinationsQuery.refetch,
+
+    createDestination,
+    updateDestination,
+    deleteDestination,
+    testDestination,
+
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+    isTesting: testMutation.isPending,
+
+    createError: stringifyError(createMutation.error),
+    updateError: stringifyError(updateMutation.error),
+    deleteError: stringifyError(deleteMutation.error),
+    testError: stringifyError(testMutation.error),
   };
 };
 
-// Alert Deliveries (History) Management
-export const useAlertDeliveries = () => {
-  const getDeliveries = useGetAlertsDeliveries();
+// ---------------------------------------------------------------------------
+// Alert Deliveries (History)
+// ---------------------------------------------------------------------------
+
+export const useAlertDeliveries = (params?: GetAlertsDeliveriesParams) => {
+  const deliveriesQuery = useGetAlertsDeliveries(params);
+
+  const deliveries: AlertDelivery[] = useMemo(() => {
+    const data = deliveriesQuery.data;
+    return data?.status === 200 ? (data.data.deliveries ?? []) : [];
+  }, [deliveriesQuery.data]);
+
+  const pagination: OffsetPagination = useMemo(() => {
+    const data = deliveriesQuery.data;
+    return data?.status === 200
+      ? (data.data.pagination ?? { limit: 50, offset: 0, total: 0 })
+      : { limit: 50, offset: 0, total: 0 };
+  }, [deliveriesQuery.data]);
 
   return {
-    deliveries: getDeliveries.data,
-    isLoading: getDeliveries.isLoading,
-    error: getDeliveries.error,
-    refetch: getDeliveries.refetch,
-  };
-};
-
-// Individual Alert Management
-export const useAlert = (alertId: string) => {
-  const getAlert = useGetAlertsId(alertId);
-
-  return {
-    alert: getAlert.data,
-    isLoading: getAlert.isLoading,
-    error: getAlert.error,
-    refetch: getAlert.refetch,
-  };
-};
-
-// All Alerts Management
-export const useAlerts = () => {
-  const getAlerts = useGetAlerts();
-
-  return {
-    alerts: getAlerts.data,
-    isLoading: getAlerts.isLoading,
-    error: getAlerts.error,
-    refetch: getAlerts.refetch,
+    deliveries,
+    pagination,
+    isLoading: deliveriesQuery.isLoading,
+    error: stringifyError(deliveriesQuery.error),
+    refetch: deliveriesQuery.refetch,
   };
 };

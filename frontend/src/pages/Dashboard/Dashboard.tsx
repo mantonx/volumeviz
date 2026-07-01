@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   HardDrive,
   Database,
-  Activity,
   BarChart3,
   Search,
   Settings,
@@ -11,15 +10,18 @@ import {
   PackageX,
   CheckCircle,
   Clock,
-  Loader2,
   PlayCircle,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { FeatureTour, useShouldShowTour } from '@/components/ui/FeatureTour';
 import { APP_TOUR_STEPS, APP_TOUR_ID } from '@/config/appTour';
-import { useGetVolumes, useGetAlerts } from '@/api/orval-generated/api';
-import { useGetOrganizationsMe } from '@/api/orval-generated/api';
+import {
+  useGetVolumes,
+  useGetAlerts,
+  useGetOrganizationsMe,
+  type VolumeV1,
+} from '@/api/orval-generated/api';
 import { formatBytes, formatDate } from '@/utils/formatters';
 import { SyncStatusBadge } from '@/components/shared/SyncStatusIndicator';
 
@@ -33,11 +35,7 @@ export function Dashboard() {
   const shouldShowTour = useShouldShowTour(APP_TOUR_ID);
   const [isTourOpen, setIsTourOpen] = useState(false);
 
-  const {
-    data: volumesData,
-    isLoading: volumesLoading,
-    isFetching: volumesFetching,
-  } = useGetVolumes(
+  const { data: volumesData, isFetching: volumesFetching } = useGetVolumes(
     {
       page: 1,
       page_size: 100,
@@ -45,25 +43,19 @@ export function Dashboard() {
     {
       query: {
         staleTime: 1000 * 60 * 5, // 5 minutes
-        placeholderData: { data: [], total: 0, page: 1, page_size: 100 },
       },
     },
   );
 
-  const {
-    data: alertsData,
-    isLoading: alertsLoading,
-    isFetching: alertsFetching,
-  } = useGetAlerts(
+  const { data: alertsData, isFetching: alertsFetching } = useGetAlerts(
     {
-      page: 1,
-      page_size: 10,
-      status: 'active',
+      limit: 10,
+      offset: 0,
+      status: 'firing',
     },
     {
       query: {
         staleTime: 1000 * 60 * 5,
-        placeholderData: { alerts: [], total: 0 },
       },
     },
   );
@@ -74,11 +66,14 @@ export function Dashboard() {
     },
   });
 
-  const volumes = volumesData?.data || [];
-  const alerts = alertsData?.alerts || [];
-  const activeAlerts = alerts.filter(
-    (alert) => alert.status === 'active' || alert.status === 'triggered',
-  );
+  const volumes = (
+    volumesData?.status === 200 ? (volumesData.data.data as VolumeV1[]) : []
+  ) ?? [];
+  const alerts = alertsData?.status === 200 ? alertsData.data.alerts ?? [] : [];
+  const activeAlerts = alerts.filter((alert) => alert.status === 'firing');
+
+  const organization =
+    orgData?.status === 200 ? orgData.data.organization : undefined;
 
   const totalSize = volumes.reduce(
     (sum, vol) => sum + (vol.size_bytes || 0),
@@ -172,13 +167,13 @@ export function Dashboard() {
             </div>
 
             {/* Organization Info */}
-            {orgData && orgData.description && (
+            {organization && organization.description && (
               <Card className="p-6 mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
                 <h2 className="text-xl font-semibold text-primary mb-2">
-                  {orgData.name}
+                  {organization.name}
                 </h2>
                 <p className="text-secondary">
-                  {orgData.description}
+                  {organization.description}
                 </p>
               </Card>
             )}
@@ -289,8 +284,8 @@ export function Dashboard() {
                         {activeAlerts.length !== 1 ? 's' : ''}
                       </p>
                       <p className="text-sm text-red-700 dark:text-red-300">
-                        {activeAlerts[0].name} and {activeAlerts.length - 1}{' '}
-                        more
+                        {activeAlerts[0].rule?.name ?? 'Unnamed rule'} and{' '}
+                        {activeAlerts.length - 1} more
                       </p>
                     </div>
                   </div>
@@ -418,7 +413,7 @@ export function Dashboard() {
                       return (
                         <Link
                           key={volume.name}
-                          to={`/volumes/${encodeURIComponent(volume.name)}`}
+                          to={`/volumes/${encodeURIComponent(volume.name ?? '')}`}
                           className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg hover:bg-surface-hover transition-colors"
                         >
                           <div className="flex items-center gap-3 flex-1 min-w-0">

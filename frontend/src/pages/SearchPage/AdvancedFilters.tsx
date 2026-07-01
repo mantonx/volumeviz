@@ -55,13 +55,17 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     const loadVolumes = async () => {
       setLoadingVolumes(true);
       try {
-        const volumeData = await getVolumes({ limit: 100 });
-        setVolumes(
-          volumeData.volumes.map((v: any) => ({
-            id: v.id || v.name,
-            name: v.name,
-          }))
-        );
+        const response = await getVolumes({ page_size: 100 });
+        if (response.status === 200) {
+          const volumeList =
+            (response.data.data as Array<{ name: string }> | undefined) ?? [];
+          setVolumes(
+            volumeList.map((v) => ({
+              id: v.name,
+              name: v.name,
+            }))
+          );
+        }
       } catch (error) {
         console.error('Failed to load volumes:', error);
       } finally {

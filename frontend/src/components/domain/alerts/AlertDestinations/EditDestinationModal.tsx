@@ -7,7 +7,7 @@ import { useAlertDestinations } from '@/hooks/useAlerts';
 import type {
   AlertDestination,
   UpdateAlertDestinationParams,
-} from '@/api/alerts';
+} from '@/hooks/useAlerts';
 
 export interface EditDestinationModalProps {
   destination: AlertDestination;
@@ -18,7 +18,6 @@ export interface EditDestinationModalProps {
 
 interface FormState {
   name: string;
-  description: string;
   is_enabled: boolean;
   config: Record<string, any>;
 }
@@ -29,11 +28,10 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { updateDestination, operationLoading, operationError } =
+  const { updateDestination, isUpdating, updateError } =
     useAlertDestinations();
   const [formState, setFormState] = useState<FormState>({
     name: '',
-    description: '',
     is_enabled: true,
     config: {},
   });
@@ -41,21 +39,17 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
     Record<string, string>
   >({});
 
-  const isLoading = operationLoading[`updateDestination_${destination.id}`];
-  const error = operationError[`updateDestination_${destination.id}`];
-
   // Initialize form with destination data
   useEffect(() => {
-    if (destination) {
+    if (destination && open) {
       setFormState({
-        name: destination.name,
-        description: destination.description || '',
-        is_enabled: destination.is_enabled,
+        name: destination.name ?? '',
+        is_enabled: destination.is_enabled ?? true,
         config: destination.config || {},
       });
       setValidationErrors({});
     }
-  }, [destination]);
+  }, [destination, open]);
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -106,22 +100,22 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateForm() || !destination.id || !destination.type) {
       return;
     }
 
     try {
       const params: UpdateAlertDestinationParams = {
         name: formState.name.trim(),
-        description: formState.description.trim() || undefined,
+        type: destination.type as UpdateAlertDestinationParams['type'],
         config: formState.config,
         is_enabled: formState.is_enabled,
       };
 
       await updateDestination(destination.id, params);
       onSuccess();
-    } catch (error) {
-      // Error is handled by the hook
+    } catch {
+      // Error is surfaced via updateError below
     }
   };
 
@@ -423,24 +417,6 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={formState.description}
-                  onChange={(e) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-line rounded-md bg-surface"
-                  placeholder="Optional description"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
                   Type
                 </label>
                 <div className="px-3 py-2 bg-surface-secondary border border-line rounded-md text-secondary capitalize">
@@ -476,34 +452,38 @@ export const EditDestinationModal: React.FC<EditDestinationModalProps> = ({
             {/* Type-specific configuration */}
             <div>
               <h3 className="text-lg font-medium text-primary mb-4">
-                {destination.type.charAt(0).toUpperCase() +
-                  destination.type.slice(1)}{' '}
+                {(destination.type ?? '').charAt(0).toUpperCase() +
+                  (destination.type ?? '').slice(1)}{' '}
                 Configuration
               </h3>
               {renderConfigFields()}
             </div>
 
             {/* Error display */}
-            {error && (
+            {updateError && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
                 <div className="flex items-center gap-2 text-red-700 text-sm">
                   <AlertTriangle className="h-4 w-4" />
-                  {error}
+                  {updateError}
                 </div>
               </div>
             )}
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-line">
-              <Button variant="outline" onClick={onClose} disabled={isLoading}>
+              <Button
+                variant="outline"
+                onClick={onClose}
+                disabled={isUpdating}
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isUpdating}
                 className="flex items-center gap-2"
               >
-                {isLoading ? (
+                {isUpdating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Save className="h-4 w-4" />

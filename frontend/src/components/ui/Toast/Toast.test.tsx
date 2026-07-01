@@ -32,11 +32,11 @@ const defaultProps: ToastProps = {
 };
 
 describe('Toast', () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null, advanceTimers: vi.advanceTimersByTime });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
   afterEach(() => {
@@ -229,8 +229,11 @@ describe('Toast', () => {
 
       const actionButton = screen.getByTestId('test-toast-action');
       await user.click(actionButton);
+      vi.advanceTimersByTime(300);
 
-      expect(mockOnDismiss).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(mockOnDismiss).toHaveBeenCalledTimes(1);
+      });
     });
 
     it('does not auto-dismiss after action when persistent', async () => {
@@ -248,6 +251,7 @@ describe('Toast', () => {
 
       const actionButton = screen.getByTestId('test-toast-action');
       await user.click(actionButton);
+      vi.advanceTimersByTime(300);
 
       expect(mockOnDismiss).not.toHaveBeenCalled();
     });
@@ -279,8 +283,11 @@ describe('Toast', () => {
 
       const closeButton = screen.getByTestId('test-toast-close');
       await user.click(closeButton);
+      vi.advanceTimersByTime(300);
 
-      expect(mockOnDismiss).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(mockOnDismiss).toHaveBeenCalledTimes(1);
+      });
     });
 
     it('does not call onDismiss when not dismissible', async () => {
@@ -414,6 +421,7 @@ describe('Toast', () => {
       render(<Toast {...defaultProps} onDismiss={mockOnDismiss} ref={ref} />);
 
       ref.current.dismiss();
+      vi.advanceTimersByTime(300);
       expect(mockOnDismiss).toHaveBeenCalledTimes(1);
     });
   });
@@ -441,7 +449,7 @@ describe('ToastProvider', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
   afterEach(() => {
@@ -460,7 +468,7 @@ describe('ToastProvider', () => {
   });
 
   it('shows info toast', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null, advanceTimers: vi.advanceTimersByTime });
 
     render(
       <ToastProvider>
@@ -474,7 +482,7 @@ describe('ToastProvider', () => {
   });
 
   it('shows different toast variants', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null, advanceTimers: vi.advanceTimersByTime });
 
     render(
       <ToastProvider>
@@ -492,7 +500,7 @@ describe('ToastProvider', () => {
   });
 
   it('clears all toasts', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null, advanceTimers: vi.advanceTimersByTime });
 
     render(
       <ToastProvider>
@@ -513,7 +521,7 @@ describe('ToastProvider', () => {
   });
 
   it('respects maxToasts limit', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null, advanceTimers: vi.advanceTimersByTime });
 
     const TestMaxToasts = () => {
       const toast = useToast();
@@ -544,7 +552,7 @@ describe('ToastProvider', () => {
   });
 
   it('handles promise toasts', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null, advanceTimers: vi.advanceTimersByTime });
 
     const TestPromise = () => {
       const toast = useToast();

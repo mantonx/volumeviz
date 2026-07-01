@@ -19,9 +19,9 @@ import {
   putOrganizationsId,
   deleteOrganizationsId,
   InternalApiV1OrganizationsCreateOrganizationRequest,
-  InternalOrganizationsUpdateOrganizationRequest,
+  InternalApiV1OrganizationsUpdateOrganizationRequest,
   InternalApiV1OrganizationsCreateOrganizationRequestPlanType,
-  InternalOrganizationsUpdateOrganizationRequestPlanType,
+  InternalApiV1OrganizationsUpdateOrganizationRequestPlanType,
 } from '@/api/client';
 
 interface Organization {
@@ -43,7 +43,6 @@ export const OrganizationsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -62,7 +61,7 @@ export const OrganizationsPage: React.FC = () => {
     plan_type: 'basic' as InternalApiV1OrganizationsCreateOrganizationRequestPlanType,
   });
 
-  const [editForm, setEditForm] = useState<InternalOrganizationsUpdateOrganizationRequest>({
+  const [editForm, setEditForm] = useState<InternalApiV1OrganizationsUpdateOrganizationRequest>({
     display_name: '',
   });
 
@@ -88,7 +87,6 @@ export const OrganizationsPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('[OrganizationsPage] Failed to fetch organizations:', err);
-      setError(err.message || 'Failed to load organizations');
     } finally {
       setLoading(false);
     }
@@ -173,7 +171,7 @@ export const OrganizationsPage: React.FC = () => {
       max_users: org.max_users,
       max_volumes: org.max_volumes,
       max_storage_gb: org.max_storage_gb,
-      plan_type: org.plan_type as InternalOrganizationsUpdateOrganizationRequestPlanType,
+      plan_type: org.plan_type as InternalApiV1OrganizationsUpdateOrganizationRequestPlanType,
     });
     setShowEditModal(true);
   };
@@ -516,7 +514,7 @@ export const OrganizationsPage: React.FC = () => {
                     </label>
                     <select
                       value={editForm.plan_type}
-                      onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value as InternalOrganizationsUpdateOrganizationRequestPlanType })}
+                      onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value as InternalApiV1OrganizationsUpdateOrganizationRequestPlanType })}
                       className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 bg-surface-secondary text-primary"
                     >
                       <option value="free">Free</option>

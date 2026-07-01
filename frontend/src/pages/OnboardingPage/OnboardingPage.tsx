@@ -11,13 +11,7 @@ import {
   Eye,
   Save,
 } from 'lucide-react';
-import type {
-  InternalApiV1MountsMountCatalogResponse,
-  InternalApiV1MountsMountCatalogSummaryResponse,
-  InternalApiV1RulesCreateRuleRequest,
-  GithubComMantonxVolumevizInternalServicesRulesPreviewRequest,
-  GithubComMantonxVolumevizInternalServicesRulesPreviewResponse,
-} from '../../api/generated/Api';
+import type { InternalApiV1MountsMountCatalogResponse } from '@/api/orval-generated/api';
 
 // Types for onboarding flow
 interface MountDiscovery {
@@ -627,8 +621,9 @@ const OnboardingPage: React.FC = () => {
       console.error('Failed to complete onboarding:', error);
 
       // Show error to user but still allow navigation
+      const message = error instanceof Error ? error.message : String(error);
       alert(
-        `Error saving rules: ${error.message}. You can configure rules manually from the Rules page.`,
+        `Error saving rules: ${message}. You can configure rules manually from the Rules page.`,
       );
 
       // Mark as attempted completion even if failed

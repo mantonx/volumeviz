@@ -5,47 +5,46 @@
  * Supports sorting, searching, and selection with high performance.
  */
 
-import { useFileList } from '@/api/explorer';
+import { useGetApiV1ExplorerFiles } from '@/api/orval-generated/api';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { PreviewImage } from '@/components/preview';
-import type { FileItem } from '@/atoms/explorer';
+import type { FileItem } from '../VirtualizedFileTable/VirtualizedFileTable.types';
 import { cn } from '@/utils';
 import {
   DownloadIcon,
   FileIcon,
   FileTextIcon,
   FolderIcon,
-  ImageIcon,
   MoreHorizontalIcon,
-  MusicIcon,
-  VideoIcon,
 } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
 interface FileTableProps {
+  volumeId: string;
+  currentPath: string;
   onFileSelect?: (file: FileItem) => void;
   onFileDoubleClick?: (file: FileItem) => void;
   className?: string;
 }
 
 const getFileIcon = (file: FileItem) => {
-  if (file.type === 'folder') {
+  if (file.is_directory) {
     return <FolderIcon className="w-4 h-4 text-blue-500" />;
   }
 
   // Use preview image for media files
   if (
-    file.mediaType &&
-    (file.mediaType.startsWith('image/') ||
-      file.mediaType.startsWith('video/') ||
-      file.mediaType.startsWith('audio/'))
+    file.media_type &&
+    (file.media_type.startsWith('image/') ||
+      file.media_type.startsWith('video/') ||
+      file.media_type.startsWith('audio/'))
   ) {
     return (
       <PreviewImage
-        fileId={file.id}
+        fileId={String(file.id ?? file.path)}
         fileName={file.name}
-        mediaType={file.mediaType}
+        mediaType={file.media_type}
         size="small"
         className="w-4 h-4 rounded"
         lazy={true}
@@ -55,7 +54,7 @@ const getFileIcon = (file: FileItem) => {
   }
 
   // Fallback icons for non-media files
-  if (file.mediaType?.startsWith('text/') || file.extension === 'txt') {
+  if (file.media_type?.startsWith('text/') || file.extension === 'txt') {
     return <FileTextIcon className="w-4 h-4 text-gray-500" />;
   }
 
@@ -81,6 +80,8 @@ const formatDate = (dateString: string): string => {
 };
 
 export const FileTable: React.FC<FileTableProps> = ({
+  volumeId,
+  currentPath,
   onFileSelect,
   onFileDoubleClick,
   className = '',
@@ -91,11 +92,21 @@ export const FileTable: React.FC<FileTableProps> = ({
     direction: 'asc' | 'desc';
   }>({ key: 'name', direction: 'asc' });
 
-  const { files, isLoading, error } = useFileList();
+  const {
+    data: filesData,
+    isLoading,
+    error,
+  } = useGetApiV1ExplorerFiles(
+    { volume_id: volumeId, path: currentPath, limit: 1000 },
+    { query: { enabled: !!volumeId } },
+  );
+
+  // Response is flat, not nested under .data (see ExplorerPage.tsx for the
+  // same pattern/comment).
+  const files = ((filesData as { files?: FileItem[] } | undefined)?.files ??
+    []) as FileItem[];
 
   const sortedFiles = useMemo(() => {
-    if (!files) return [];
-
     const sorted = [...files].sort((a, b) => {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
@@ -111,10 +122,10 @@ export const FileTable: React.FC<FileTableProps> = ({
       return 0;
     });
 
-    // Always show folders first
+    // Always show directories first
     return sorted.sort((a, b) => {
-      if (a.type === 'folder' && b.type === 'file') return -1;
-      if (a.type === 'file' && b.type === 'folder') return 1;
+      if (a.is_directory && !b.is_directory) return -1;
+      if (!a.is_directory && b.is_directory) return 1;
       return 0;
     });
   }, [files, sortConfig]);
@@ -129,7 +140,7 @@ export const FileTable: React.FC<FileTableProps> = ({
 
   const handleFileClick = useCallback(
     (file: FileItem) => {
-      setSelectedFile(file.id);
+      setSelectedFile(file.path);
       onFileSelect?.(file);
     },
     [onFileSelect],
@@ -146,7 +157,7 @@ export const FileTable: React.FC<FileTableProps> = ({
     return (
       <div className={cn('flex items-center justify-center p-8', className)}>
         <div className="text-center">
-          <p className="text-red-500">Error loading files: {error}</p>
+          <p className="text-red-500">Error loading files: {String(error)}</p>
         </div>
       </div>
     );
@@ -203,10 +214,10 @@ export const FileTable: React.FC<FileTableProps> = ({
             </th>
             <th
               className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider cursor-pointer hover:bg-surface-hover"
-              onClick={() => handleSort('modified')}
+              onClick={() => handleSort('modified_time')}
             >
               Modified
-              {sortConfig.key === 'modified' && (
+              {sortConfig.key === 'modified_time' && (
                 <span className="ml-1">
                   {sortConfig.direction === 'asc' ? '↑' : '↓'}
                 </span>
@@ -223,10 +234,10 @@ export const FileTable: React.FC<FileTableProps> = ({
         <tbody className="bg-surface divide-y divide-line">
           {sortedFiles.map((file) => (
             <tr
-              key={file.id}
+              key={file.path}
               className={cn(
                 'hover:bg-surface-hover cursor-pointer',
-                selectedFile === file.id && 'bg-blue-50 dark:bg-blue-900/20',
+                selectedFile === file.path && 'bg-blue-50 dark:bg-blue-900/20',
               )}
               onClick={() => handleFileClick(file)}
               onDoubleClick={() => handleFileDoubleClick(file)}
@@ -240,13 +251,15 @@ export const FileTable: React.FC<FileTableProps> = ({
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-tertiary">
-                {file.type === 'folder' ? '—' : formatFileSize(file.size)}
+                {file.is_directory
+                  ? '—'
+                  : formatFileSize(file.size ?? 0)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-tertiary">
-                {formatDate(file.modified)}
+                {file.modified_time ? formatDate(file.modified_time) : '—'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                {file.type === 'folder' ? (
+                {file.is_directory ? (
                   <Badge variant="secondary">Folder</Badge>
                 ) : file.extension ? (
                   <Badge variant="outline">
@@ -258,7 +271,7 @@ export const FileTable: React.FC<FileTableProps> = ({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex items-center justify-end space-x-2">
-                  {file.type === 'file' && (
+                  {!file.is_directory && (
                     <Button variant="ghost" size="sm">
                       <DownloadIcon className="w-4 h-4" />
                     </Button>

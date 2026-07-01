@@ -9,5 +9,5 @@ export const Progress: React.FC<ProgressProps> = ({
   value,
   className = '',
 }) => {
-  return <ProgressBar value={value} max={100} className={className} />;
+  return <ProgressBar value={value} className={className} />;
 };

@@ -92,7 +92,7 @@ export const addHistoricalUpdateAtom = atom(
 // Update system statistics
 export const updateSystemStatisticsAtom = atom(
   null,
-  (get, set, stats: StatisticsUpdate) => {
+  (_get, set, stats: StatisticsUpdate) => {
     set(systemStatisticsAtom, stats);
 
     // Also update performance metrics if available
@@ -105,7 +105,7 @@ export const updateSystemStatisticsAtom = atom(
 // Update system health
 export const updateSystemHealthAtom = atom(
   null,
-  (get, set, health: SystemHealthUpdate) => {
+  (_get, set, health: SystemHealthUpdate) => {
     set(systemHealthAtom, health);
   },
 );
@@ -176,7 +176,7 @@ export const addCapacityAlertAtom = atom(
 );
 
 // Clear all VolumeViz real-time data (useful for reset/reconnect)
-export const clearVolumeVizDataAtom = atom(null, (get, set) => {
+export const clearVolumeVizDataAtom = atom(null, (_get, set) => {
   set(historicalUpdatesAtom, []);
   set(systemStatisticsAtom, null);
   set(systemHealthAtom, null);

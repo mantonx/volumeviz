@@ -7,7 +7,7 @@ export interface VolumeCardProps {
     quota_bytes?: number;
     file_count?: number;
     container_count: number;
-    status: 'active' | 'inactive' | 'scanning' | 'error';
+    status: 'active' | 'inactive' | 'scanning' | 'error' | 'pending';
     last_scanned_at?: string;
     error_message?: string;
     created_at: string;

@@ -1,30 +1,16 @@
 import { selectedVolumeAtom } from '@/atoms/volumes';
 import { ScanProgressDetail } from '@/components/domain/scan/ScanProgressDetail';
-import { Dropdown } from '@/components/ui/Dropdown';
 import { VolumeDetailsModal } from '@/components/application/Modals';
-import { useVolumeOperations } from '@/hooks/api/useVolumeOperations';
 import { useVolumeBulkActions } from '@/hooks/volumes/useVolumeBulkActions';
-import { formatBytes } from '@/utils/formatters';
 import { cn } from '@/utils/ui';
 import { useSetAtom } from 'jotai';
-import {
-  Activity,
-  AlertCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  HardDrive,
-  MoreVertical,
-  ScanSearch,
-  Info,
-  Trash2,
-} from 'lucide-react';
+import { useVolumeRowActions } from './hooks/useVolumeRowActions';
+import { VolumeTableRow } from './VolumeTableRow';
+import { HardDrive } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { VolumeTableProps } from './VolumeTable.types';
 
-export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
+export const VolumeTable: React.FC<VolumeTableProps> = ({
   volumes,
   isLoading,
   onVolumeSelect,
@@ -32,9 +18,13 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
   onSelectionChange,
   showBulkActions = true,
   className,
+  onRefetch,
 }) => {
   const setSelectedVolume = useSetAtom(selectedVolumeAtom);
-  const { scanVolume, refreshVolumeSize } = useVolumeOperations();
+  const { trackVolume, untrackVolume, scanVolume } = useVolumeRowActions({
+    onRefetch,
+  });
+
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalVolumeName, setModalVolumeName] = useState<string>('');
@@ -91,33 +81,6 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
       newExpanded.add(volumeId);
     }
     setExpandedRows(newExpanded);
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
-      case 'scanning':
-        return <Activity className="w-4 h-4 text-blue-600 animate-pulse" />;
-      case 'error':
-        return <AlertCircle className="w-4 h-4 text-red-600" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-600" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full';
-    switch (status) {
-      case 'active':
-        return `${baseClasses} bg-green-100 text-green-800`;
-      case 'scanning':
-        return `${baseClasses} bg-blue-100 text-blue-800`;
-      case 'error':
-        return `${baseClasses} bg-red-100 text-red-800`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
-    }
   };
 
   const isAllSelected =
@@ -238,149 +201,19 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
                 : 0;
 
               const rows = [
-                <tr
+                <VolumeTableRow
                   key={`row-${volumeId}`}
-                  className={cn(
-                    'hover:bg-surface-hover cursor-pointer',
-                    isSelected && 'bg-blue-50',
-                  )}
-                >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        className="rounded border-line text-blue-600 focus:ring-blue-500"
-                        checked={isSelected}
-                        onChange={() => handleRowSelect(volumeId)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </td>
-
-                    <td
-                      className="px-6 py-4 whitespace-nowrap"
-                      onClick={() => handleRowClick(volume)}
-                    >
-                      <div className="flex items-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleExpanded(volumeId);
-                          }}
-                          className="mr-2 p-1 hover:bg-surface-secondary rounded"
-                        >
-                          {isExpanded ? (
-                            <ChevronDown className="w-4 h-4" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
-                        </button>
-                        <HardDrive className="w-5 h-5 text-gray-400 mr-3" />
-                        <div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openVolumeModal(volumeId);
-                            }}
-                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
-                          >
-                            {volume.name}
-                          </button>
-                          <div
-                            className="text-sm text-secondary truncate max-w-xs"
-                            title={volume.path}
-                          >
-                            {volume.path}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {getStatusIcon(volume.status)}
-                        <span
-                          className={cn('ml-2', getStatusBadge(volume.status))}
-                        >
-                          {volume.status}
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-primary">
-                        {formatBytes(volume.size_bytes)}
-                      </div>
-                      {volume.quota_bytes && (
-                        <div className="text-xs text-secondary">
-                          {sizePercentage.toFixed(1)}% of{' '}
-                          {formatBytes(volume.quota_bytes)}
-                        </div>
-                      )}
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {volume.scan_status === 'running' || volume.scan_status === 'pending' ? (
-                        <span className="text-blue-600 flex items-center gap-1.5">
-                          <Activity className="w-3.5 h-3.5 animate-pulse" />
-                          <span>Scanning...</span>
-                        </span>
-                      ) : volume.file_count !== null && volume.file_count !== undefined ? (
-                        <div>
-                          <div className="font-medium text-primary">{volume.file_count.toLocaleString()} files</div>
-                          {volume.last_scan_at && (
-                            <div className="text-xs text-secondary mt-0.5">
-                              {formatDistanceToNow(new Date(volume.last_scan_at), { addSuffix: true })}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-tertiary italic">Not scanned</span>
-                      )}
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">
-                      {volume.attachments_count || '—'}
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary">
-                      {volume.last_scan_at
-                        ? new Date(volume.last_scan_at).toLocaleDateString()
-                        : '—'}
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Dropdown
-                          items={[
-                            {
-                              id: 'scan',
-                              label: 'Scan Volume',
-                              icon: ScanSearch,
-                              onClick: () => scanVolume.mutateAsync(volumeId),
-                              disabled: volume.scan_status === 'running',
-                            },
-                            {
-                              id: 'details',
-                              label: 'View Details',
-                              icon: Info,
-                              onClick: () => openVolumeModal(volumeId),
-                            },
-                            {
-                              id: 'delete',
-                              label: 'Delete Volume',
-                              icon: Trash2,
-                              onClick: () => {
-                                // TODO: Add delete confirmation modal
-                                console.log('Delete volume:', volumeId);
-                              },
-                              destructive: true,
-                            },
-                          ]}
-                          trigger={<MoreVertical className="w-4 h-4" />}
-                          align="right"
-                        />
-                      </div>
-                    </td>
-                  </tr>,
+                  volume={volume}
+                  isSelected={isSelected}
+                  isExpanded={isExpanded}
+                  onSelect={handleRowSelect}
+                  onClick={handleRowClick}
+                  onToggleExpand={toggleExpanded}
+                  onOpenModal={openVolumeModal}
+                  onTrack={trackVolume}
+                  onUntrack={untrackVolume}
+                  onScan={(id) => scanVolume.mutateAsync(id)}
+                />,
               ];
 
               // Add expanded row if needed
@@ -422,30 +255,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = React.memo(({
       />
     </div>
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison to prevent re-render on volume scan progress updates
-  // Only re-render if volumes array length changes or if non-scan-progress fields change
-  if (prevProps.volumes.length !== nextProps.volumes.length) return false;
-  if (prevProps.isLoading !== nextProps.isLoading) return false;
-  if (prevProps.selectedVolumeIds.length !== nextProps.selectedVolumeIds.length) return false;
-  if (JSON.stringify(prevProps.selectedVolumeIds) !== JSON.stringify(nextProps.selectedVolumeIds)) return false;
-
-  // Check if non-progress volume fields changed
-  for (let i = 0; i < prevProps.volumes.length; i++) {
-    const prev = prevProps.volumes[i];
-    const next = nextProps.volumes[i];
-
-    // Only check fields that aren't scan progress related
-    if (prev.name !== next.name ||
-        prev.status !== next.status ||
-        prev.size_bytes !== next.size_bytes ||
-        prev.file_count !== next.file_count) {
-      return false;
-    }
-  }
-
-  return true; // Props are equal, skip re-render
-});
+};
 
 // Separate memoized component for expanded row to isolate WebSocket updates
 const ExpandedVolumeRow = React.memo<{

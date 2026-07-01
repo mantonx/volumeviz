@@ -1,4 +1,4 @@
-import React, {
+import {
   forwardRef,
   useImperativeHandle,
   useEffect,
@@ -7,7 +7,6 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import { createPortal } from 'react-dom';
 import {
   X,
   CheckCircle,
@@ -22,16 +21,13 @@ import type {
   ToastProps,
   ToastRef,
   ToastVariant,
-  ToastSize,
   ToastPosition,
 } from './Toast.types';
 import {
   defaultToastDurations,
   defaultToastSizes,
-  defaultToastPositions,
   defaultToastAnimations,
   toastVariantStyles,
-  defaultToastIcons,
 } from './Toast.types';
 
 /**
@@ -98,7 +94,7 @@ export const Toast = forwardRef<ToastRef, ToastProps>(
     const [visible, setVisible] = useState(isVisible);
     const [isEntering, setIsEntering] = useState(false);
     const [isExiting, setIsExiting] = useState(false);
-    const timeoutRef = useRef<NodeJS.Timeout>();
+    const timeoutRef = useRef<NodeJS.Timeout>(undefined);
 
     // Mount handling
     useEffect(() => {

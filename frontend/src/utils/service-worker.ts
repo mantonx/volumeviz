@@ -23,6 +23,13 @@ class ServiceWorkerManager {
       return;
     }
 
+    // DISABLED: Service worker causes caching issues in development mode
+    // Only enable in production builds
+    if (import.meta.env.DEV) {
+      logger.debug('Service Worker disabled in development mode');
+      return;
+    }
+
     try {
       await this.register();
       this.setupUpdateHandling();
@@ -250,9 +257,10 @@ export function useServiceWorker() {
 
 // Utility to check if app is running standalone (PWA)
 export function isPWA(): boolean {
+  const nav = window.navigator as Navigator & { standalone?: boolean };
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true ||
+    nav.standalone === true ||
     document.referrer.includes('android-app://')
   );
 }

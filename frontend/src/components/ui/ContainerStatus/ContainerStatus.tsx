@@ -8,7 +8,6 @@ import {
   PlayCircle,
   PauseCircle,
   AlertTriangle,
-  Users,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -44,15 +43,13 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
     return (
       <div className={cn('flex items-center gap-1.5', className)}>
         {hasContainers ? (
-          <PlayCircle
-            className="h-3.5 w-3.5 text-green-500"
-            title="Active containers"
-          />
+          <span title="Active containers">
+            <PlayCircle className="h-3.5 w-3.5 text-green-500" />
+          </span>
         ) : (
-          <PauseCircle
-            className="h-3.5 w-3.5 text-gray-400"
-            title="No active containers"
-          />
+          <span title="No active containers">
+            <PauseCircle className="h-3.5 w-3.5 text-gray-400" />
+          </span>
         )}
         {showCount && (
           <span
@@ -75,10 +72,9 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
       <div className="flex items-center gap-2">
         {hasContainers ? (
           <>
-            <PlayCircle
-              className="h-4 w-4 text-green-500"
-              title="Active containers"
-            />
+            <span title="Active containers">
+              <PlayCircle className="h-4 w-4 text-green-500" />
+            </span>
             <span className="text-sm font-medium text-primary">
               {actualContainerCount === 1
                 ? '1 container'
@@ -87,10 +83,9 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
           </>
         ) : (
           <>
-            <PauseCircle
-              className="h-4 w-4 text-gray-400"
-              title="No active containers"
-            />
+            <span title="No active containers">
+              <PauseCircle className="h-4 w-4 text-gray-400" />
+            </span>
             <span className="text-sm text-tertiary">
               No containers
             </span>
@@ -102,7 +97,7 @@ export const ContainerStatus: React.FC<ContainerStatusProps> = ({
         <div className="text-xs text-secondary">
           {/* Show first 2 containers or all if expanded */}
           {(isExpanded ? containers : containers.slice(0, 2)).map(
-            (container, index) => (
+            (container) => (
               <div key={container} className="truncate" title={container}>
                 {container}
               </div>

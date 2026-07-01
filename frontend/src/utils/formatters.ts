@@ -51,7 +51,10 @@ export function formatDate(
   }
 
   // Fall back to absolute date
-  const formatOptions: Intl.DateTimeFormatOptions = {
+  const formatOptionsMap: Record<
+    'short' | 'medium' | 'long',
+    Intl.DateTimeFormatOptions
+  > = {
     short: { month: 'short', day: 'numeric' },
     medium: { month: 'short', day: 'numeric', year: 'numeric' },
     long: {
@@ -61,9 +64,9 @@ export function formatDate(
       hour: '2-digit',
       minute: '2-digit',
     },
-  }[format];
+  };
 
-  return dateObj.toLocaleDateString(undefined, formatOptions);
+  return dateObj.toLocaleDateString(undefined, formatOptionsMap[format]);
 }
 
 /**

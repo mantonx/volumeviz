@@ -335,11 +335,7 @@ export interface ToastHelpers {
   loading: (message: string, options?: Partial<ToastOptions>) => string;
   promise: <T>(
     promise: Promise<T>,
-    {
-      loading: loadingMessage,
-      success: successMessage,
-      error: errorMessage,
-    }: {
+    messages: {
       loading: string;
       success: string | ((data: T) => string);
       error: string | ((error: Error) => string);

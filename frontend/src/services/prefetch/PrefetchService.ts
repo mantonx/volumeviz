@@ -225,7 +225,7 @@ export class PrefetchService {
   }
 
   // Subscribe to events
-  on(event: string, callback: (data: any) => void): void {
+  on(_event: string, callback: (data: any) => void): void {
     this.observers.push(callback);
   }
 
@@ -249,14 +249,14 @@ export class PrefetchService {
     // Frequency-based strategy
     this.addStrategy({
       name: 'frequency',
-      predict: (currentPath, patterns) => {
+      predict: (_currentPath, patterns) => {
         return patterns
           .filter((p) => p.frequency > 1)
           .sort((a, b) => b.frequency - a.frequency)
           .slice(0, 3)
           .map((p) => p.path);
       },
-      priority: (path, context) => {
+      priority: (path, _context) => {
         const pattern = this.navigationPatterns.get(path);
         if (!pattern) return 'low';
         return pattern.frequency > 5 ? 'high' : 'medium';

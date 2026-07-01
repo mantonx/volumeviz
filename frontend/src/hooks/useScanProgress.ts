@@ -64,7 +64,7 @@ export function useScanProgress(volumeId: string) {
 
   return {
     progress,
-    isScanning: progress?.status === 'running',
+    isScanning: progress?.overall_status === 'running',
     isConnected,
   };
 }

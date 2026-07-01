@@ -256,8 +256,21 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
 
   // Transform flat file list to hierarchical tree
   const treeData = useMemo(() => {
-    if (!files || files.length === 0) return [];
-    return transformToTreeMapData(files, currentPath);
+    console.log('[TreeMap] Transforming data:', {
+      filesCount: files?.length,
+      currentPath,
+      sampleFile: files?.[0]
+    });
+    if (!files || files.length === 0) {
+      console.log('[TreeMap] No files to display');
+      return [];
+    }
+    const result = transformToTreeMapData(files, currentPath);
+    console.log('[TreeMap] Transformed data:', {
+      nodesCount: result.length,
+      sampleNode: result[0]
+    });
+    return result;
   }, [files, currentPath]);
 
   // Get current view data (for drill-down)
@@ -426,6 +439,7 @@ export const TreeMapVisualization: React.FC<TreeMapVisualizationProps> = ({
           <Treemap
             data={currentViewData}
             dataKey="value"
+            nameKey="key"
             stroke={isDarkMode ? '#1f2937' : '#ffffff'}
             fill="#8884d8"
             content={

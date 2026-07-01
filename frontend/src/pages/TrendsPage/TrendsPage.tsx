@@ -11,7 +11,7 @@
  * - Export functionality for trend data
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   LineChart,
   Line,
@@ -31,7 +31,6 @@ import {
 } from 'recharts';
 import {
   TrendingUp,
-  TrendingDown,
   Calendar,
   Download,
   Filter,
@@ -83,7 +82,7 @@ export const TrendsPage: React.FC<TrendsPageProps> = ({ className = '' }) => {
   });
 
   // Use the real API hook
-  const { data: trendsData, isLoading, error, refresh } = useTrends();
+  const { data: trendsData, isLoading, refresh } = useTrends();
 
   // Extract data from API response with fallbacks
   const storageGrowthData: StorageGrowthDataPoint[] =

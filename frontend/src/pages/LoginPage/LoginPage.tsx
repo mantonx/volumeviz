@@ -12,7 +12,7 @@
 
 import React, { useState, FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Lock, User, Eye, EyeOff, AlertCircle, Building2 } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { postAuthLogin } from '@/api/orval-generated/api';
@@ -29,7 +29,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [organizationId, setOrganizationId] = useState('1'); // Default to org 1
+  const [organizationId] = useState('1'); // Default to org 1
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

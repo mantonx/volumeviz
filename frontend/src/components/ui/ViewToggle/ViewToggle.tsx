@@ -126,7 +126,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
             )}
             aria-label={`Switch to ${option.label} view`}
           >
-            {React.cloneElement(option.icon as React.ReactElement, {
+            {React.cloneElement(option.icon as React.ReactElement<{ className?: string }>, {
               className: iconSizeClasses[size],
             })}
             {showLabels && <span>{option.label}</span>}
@@ -154,7 +154,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
             sizeClasses[size],
           )}
         >
-          {React.cloneElement(selectedOption.icon as React.ReactElement, {
+          {React.cloneElement(selectedOption.icon as React.ReactElement<{ className?: string }>, {
             className: iconSizeClasses[size],
           })}
           <span>{selectedOption.label}</span>
@@ -186,7 +186,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
                     : 'text-secondary',
                 )}
               >
-                {React.cloneElement(option.icon as React.ReactElement, {
+                {React.cloneElement(option.icon as React.ReactElement<{ className?: string }>, {
                   className: iconSizeClasses[size],
                 })}
                 <span>{option.label}</span>
@@ -224,7 +224,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
           aria-label={`Switch to ${option.label} view`}
           aria-pressed={value === option.id}
         >
-          {React.cloneElement(option.icon as React.ReactElement, {
+          {React.cloneElement(option.icon as React.ReactElement<{ className?: string }>, {
             className: iconSizeClasses[size],
           })}
           {showLabels && <span>{option.label}</span>}

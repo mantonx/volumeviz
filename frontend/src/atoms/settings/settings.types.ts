@@ -2,6 +2,7 @@ export interface ApiConfig {
   baseUrl: string;
   timeout: number;
   retryAttempts: number;
+  retryDelay: number;
 }
 
 export interface FeatureFlags {

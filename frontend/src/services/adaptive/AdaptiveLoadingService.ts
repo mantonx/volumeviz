@@ -334,7 +334,7 @@ export class AdaptiveLoadingService {
     const perf = performance.getEntriesByType(
       'navigation',
     )[0] as PerformanceNavigationTiming;
-    if (perf && perf.loadEventEnd - perf.navigationStart > 3000) {
+    if (perf && perf.loadEventEnd - perf.startTime > 3000) {
       return 4; // Slower loading might indicate lower-end device
     }
 
@@ -414,7 +414,7 @@ export class AdaptiveLoadingService {
 
   private isStrategyCompatible(strategy: LoadingStrategy): boolean {
     const { conditions } = strategy;
-    const { deviceCapabilities, userBehavior } = this;
+    const { deviceCapabilities } = this;
 
     // Check network speed
     if (conditions.networkSpeed && conditions.networkSpeed !== 'auto') {
@@ -532,7 +532,9 @@ export class AdaptiveLoadingService {
     };
   }
 
-  private getDefaultParams(component: string): Record<string, any> {
+  private getDefaultParams(
+    component: 'treemap' | 'sunburst' | 'list' | 'explorer',
+  ): Record<string, any> {
     const defaults = {
       treemap: {
         chunkSize: 5000,

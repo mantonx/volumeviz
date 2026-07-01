@@ -7,7 +7,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
-import type { FilterState, MediaTypeCategory } from './AdvancedFilters.types';
+import type { FilterState } from './AdvancedFilters.types';
 
 export interface FilterChipsProps {
   filters: FilterState;
@@ -23,12 +23,6 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
   className = '',
 }) => {
   const chips: Array<{ key: string; label: string; onRemove: () => void }> = [];
-
-  // Helper to convert size to bytes for display
-  const convertToBytes = (value: number, unit: 'B' | 'KB' | 'MB' | 'GB' = 'MB'): number => {
-    const multipliers = { B: 1, KB: 1024, MB: 1024 * 1024, GB: 1024 * 1024 * 1024 };
-    return value * multipliers[unit];
-  };
 
   // Helper to format size
   const formatSize = (value: number, unit: 'B' | 'KB' | 'MB' | 'GB' = 'MB'): string => {

@@ -5,11 +5,11 @@
  * Optimized for media files with thumbnail previews.
  */
 
-import { useFileList } from '@/api/explorer';
+import { useGetApiV1ExplorerFiles } from '@/api/orval-generated/api';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { PreviewImage } from '@/components/preview';
-import type { FileItem } from '@/atoms/explorer';
+import type { FileItem } from '../VirtualizedFileTable/VirtualizedFileTable.types';
 import { cn } from '@/utils';
 import {
   DownloadIcon,
@@ -20,6 +20,8 @@ import {
 import React, { useCallback, useMemo, useState } from 'react';
 
 interface FileGridProps {
+  volumeId: string;
+  currentPath: string;
   onFileSelect?: (file: FileItem) => void;
   onFileDoubleClick?: (file: FileItem) => void;
   className?: string;
@@ -43,6 +45,8 @@ const formatDate = (dateString: string): string => {
 };
 
 export const FileGrid: React.FC<FileGridProps> = ({
+  volumeId,
+  currentPath,
   onFileSelect,
   onFileDoubleClick,
   className = '',
@@ -50,22 +54,32 @@ export const FileGrid: React.FC<FileGridProps> = ({
 }) => {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
 
-  const { files, isLoading, error } = useFileList();
+  const {
+    data: filesData,
+    isLoading,
+    error,
+  } = useGetApiV1ExplorerFiles(
+    { volume_id: volumeId, path: currentPath, limit: 1000 },
+    { query: { enabled: !!volumeId } },
+  );
+
+  const files = ((filesData as { files?: FileItem[] } | undefined)?.files ??
+    []) as FileItem[];
 
   const sortedFiles = useMemo(() => {
     if (!files) return [];
 
     // Sort files with folders first, then by name
     return [...files].sort((a, b) => {
-      if (a.type === 'folder' && b.type === 'file') return -1;
-      if (a.type === 'file' && b.type === 'folder') return 1;
+      if (a.is_directory && !b.is_directory) return -1;
+      if (!a.is_directory && b.is_directory) return 1;
       return a.name.localeCompare(b.name);
     });
   }, [files]);
 
   const handleFileClick = useCallback(
     (file: FileItem) => {
-      setSelectedFile(file.id);
+      setSelectedFile(file.path);
       onFileSelect?.(file);
     },
     [onFileSelect],
@@ -108,7 +122,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
     return (
       <div className={cn('flex items-center justify-center p-8', className)}>
         <div className="text-center">
-          <p className="text-red-500">Error loading files: {error}</p>
+          <p className="text-red-500">Error loading files: {String(error)}</p>
         </div>
       </div>
     );
@@ -141,19 +155,19 @@ export const FileGrid: React.FC<FileGridProps> = ({
       <div className={cn('grid gap-4', gridCols)}>
         {sortedFiles.map((file) => (
           <div
-            key={file.id}
+            key={file.path}
             className={cn(
               'group relative bg-surface rounded-lg border border-line',
               'hover:shadow-md hover:border-line transition-all duration-200',
               'cursor-pointer overflow-hidden',
-              selectedFile === file.id && 'ring-2 ring-blue-500',
+              selectedFile === file.path && 'ring-2 ring-blue-500',
             )}
             onClick={() => handleFileClick(file)}
             onDoubleClick={() => handleFileDoubleClick(file)}
           >
             {/* Preview/Icon Area */}
             <div className="aspect-square bg-surface-secondary flex items-center justify-center relative">
-              {file.type === 'folder' ? (
+              {file.is_directory ? (
                 <FolderIcon
                   className={cn(
                     'text-blue-500',
@@ -162,14 +176,14 @@ export const FileGrid: React.FC<FileGridProps> = ({
                     itemSize === 'large' && 'w-16 h-16',
                   )}
                 />
-              ) : file.mediaType &&
-                (file.mediaType.startsWith('image/') ||
-                  file.mediaType.startsWith('video/') ||
-                  file.mediaType.startsWith('audio/')) ? (
+              ) : file.media_type &&
+                (file.media_type.startsWith('image/') ||
+                  file.media_type.startsWith('video/') ||
+                  file.media_type.startsWith('audio/')) ? (
                 <PreviewImage
-                  fileId={file.id}
+                  fileId={String(file.id ?? file.path)}
                   fileName={file.name}
-                  mediaType={file.mediaType}
+                  mediaType={file.media_type}
                   size={previewSize}
                   className="w-full h-full"
                   lazy={true}
@@ -203,7 +217,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
               </div>
 
               {/* Download button for files */}
-              {file.type === 'file' && (
+              {!file.is_directory && (
                 <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="ghost"
@@ -228,10 +242,12 @@ export const FileGrid: React.FC<FileGridProps> = ({
 
               <div className="flex items-center justify-between text-xs text-tertiary">
                 <div className="flex flex-col space-y-1">
-                  {file.type === 'file' && (
-                    <span>{formatFileSize(file.size)}</span>
+                  {!file.is_directory && (
+                    <span>{formatFileSize(file.size ?? 0)}</span>
                   )}
-                  <span>{formatDate(file.modified)}</span>
+                  <span>
+                    {file.modified_time ? formatDate(file.modified_time) : '—'}
+                  </span>
                 </div>
 
                 {file.extension && (

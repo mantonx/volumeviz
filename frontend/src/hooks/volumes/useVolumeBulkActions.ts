@@ -4,13 +4,21 @@ import {
   PlayCircle,
   PauseCircle,
   Scan,
-  Trash2,
   Download,
   RefreshCw,
 } from 'lucide-react';
-import type { VolumeMount } from '../useVolumesAndMounts';
 import { useToast } from '@/components/ui';
-import { usePostVolumesBulkScan } from '@/api/orval-generated/api';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  usePostVolumesBulkScan,
+  usePostVolumesBulkTrack,
+  usePostVolumesBulkUntrack,
+} from '@/api/orval-generated/api';
+
+export interface VolumeMount {
+  id: string;
+  status: string;
+}
 
 export interface BulkAction {
   id: string;
@@ -36,16 +44,21 @@ export const useVolumeBulkActions = (
   options: UseVolumeBulkActionsOptions = {},
 ): BulkAction[] => {
   const { success, error: showError } = useToast();
+  const queryClient = useQueryClient();
   const bulkScanMutation = usePostVolumesBulkScan();
+  const bulkTrackMutation = usePostVolumesBulkTrack();
+  const bulkUntrackMutation = usePostVolumesBulkUntrack();
   const { onActionComplete, onActionError } = options;
 
   const handleBulkScan = useCallback(
     async (volumeIds: string[]) => {
       try {
         await bulkScanMutation.mutateAsync({
-          volume_ids: volumeIds,
-          method: 'du',
-          async: false,
+          data: {
+            volume_ids: volumeIds,
+            method: 'du',
+            async: false,
+          },
         });
         success(`Started scanning ${volumeIds.length} volume(s)`);
         onActionComplete?.('scan', volumeIds);
@@ -62,7 +75,10 @@ export const useVolumeBulkActions = (
   const handleBulkTrack = useCallback(
     async (volumeIds: string[]) => {
       try {
-        // NOTE: Bulk tracking API not available - individual volume tracking needed
+        await bulkTrackMutation.mutateAsync({
+          data: { volume_ids: volumeIds },
+        });
+        await queryClient.refetchQueries({ queryKey: ['/volumes'] });
         success(`Tracking enabled for ${volumeIds.length} volume(s)`);
         onActionComplete?.('track', volumeIds);
       } catch (err) {
@@ -72,13 +88,16 @@ export const useVolumeBulkActions = (
         onActionError?.('track', error);
       }
     },
-    [success, showError, onActionComplete, onActionError],
+    [bulkTrackMutation, queryClient, success, showError, onActionComplete, onActionError],
   );
 
   const handleBulkUntrack = useCallback(
     async (volumeIds: string[]) => {
       try {
-        // NOTE: API endpoint not available - bulk untrack API call
+        await bulkUntrackMutation.mutateAsync({
+          data: { volume_ids: volumeIds },
+        });
+        await queryClient.refetchQueries({ queryKey: ['/volumes'] });
         success(`Tracking disabled for ${volumeIds.length} volume(s)`);
         onActionComplete?.('untrack', volumeIds);
       } catch (err) {
@@ -88,23 +107,7 @@ export const useVolumeBulkActions = (
         onActionError?.('untrack', error);
       }
     },
-    [success, showError, onActionComplete, onActionError],
-  );
-
-  const handleBulkDelete = useCallback(
-    async (volumeIds: string[]) => {
-      try {
-        // NOTE: API endpoint not available - bulk delete API call
-        success(`Deleted ${volumeIds.length} volume(s)`);
-        onActionComplete?.('delete', volumeIds);
-      } catch (err) {
-        const error =
-          err instanceof Error ? err : new Error('Bulk delete failed');
-        showError(`Failed to delete volumes: ${error.message}`);
-        onActionError?.('delete', error);
-      }
-    },
-    [success, showError, onActionComplete, onActionError],
+    [bulkUntrackMutation, queryClient, success, showError, onActionComplete, onActionError],
   );
 
   const handleBulkExport = useCallback(
@@ -195,21 +198,12 @@ export const useVolumeBulkActions = (
         action: handleBulkRefresh,
         tooltip: 'Refresh selected volumes',
       },
-      {
-        id: 'delete',
-        label: 'Delete',
-        icon: Trash2,
-        action: handleBulkDelete,
-        variant: 'destructive',
-        tooltip: 'Delete selected volumes',
-      },
     ];
   }, [
     selectedVolumes,
     handleBulkScan,
     handleBulkTrack,
     handleBulkUntrack,
-    handleBulkDelete,
     handleBulkExport,
     handleBulkRefresh,
     success,

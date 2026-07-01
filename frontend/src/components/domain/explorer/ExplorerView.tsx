@@ -7,7 +7,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { SearchIcon, BarChart3Icon, BellIcon } from 'lucide-react';
-import { Tree } from './Tree';
+import { DirectoryTree } from './DirectoryTree';
 import { FileTable } from './FileTable';
 import { FileGrid } from './FileGrid/FileGrid';
 import { ViewToggle, type ViewType } from '@/components/ui/ViewToggle';
@@ -16,6 +16,7 @@ import { VolumeCharts } from './Charts';
 import { AlertCenter } from './AlertCenter';
 import { useRealtime } from '@/providers/realtime';
 import { ReadyState } from 'react-use-websocket';
+import type { FileItem } from './VirtualizedFileTable/VirtualizedFileTable.types';
 
 interface ExplorerViewProps {
   volumeId: string;
@@ -23,89 +24,23 @@ interface ExplorerViewProps {
   className?: string;
 }
 
-// Mock data for development
-const mockFiles = [
-  {
-    id: '1',
-    name: 'Documents',
-    type: 'folder' as const,
-    size: 0,
-    modified: '2024-03-15T10:30:00Z',
-    path: '/home/user/Documents',
-  },
-  {
-    id: '2',
-    name: 'Images',
-    type: 'folder' as const,
-    size: 0,
-    modified: '2024-03-14T16:45:00Z',
-    path: '/home/user/Images',
-  },
-  {
-    id: '3',
-    name: 'report.pdf',
-    type: 'file' as const,
-    size: 2048576,
-    modified: '2024-03-13T09:20:00Z',
-    extension: 'pdf',
-    mediaType: 'application/pdf',
-    path: '/home/user/report.pdf',
-  },
-  {
-    id: '4',
-    name: 'presentation.pptx',
-    type: 'file' as const,
-    size: 5242880,
-    modified: '2024-03-12T14:30:00Z',
-    extension: 'pptx',
-    mediaType:
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    path: '/home/user/presentation.pptx',
-  },
-  {
-    id: '5',
-    name: 'vacation.mp4',
-    type: 'file' as const,
-    size: 104857600,
-    modified: '2024-03-11T20:15:00Z',
-    extension: 'mp4',
-    mediaType: 'video/mp4',
-    path: '/home/user/vacation.mp4',
-  },
-];
-
-const mockFileMetadata = {
-  id: '3',
-  name: 'report.pdf',
-  path: '/home/user/report.pdf',
-  size: 2048576,
-  type: 'application/pdf',
-  extension: 'pdf',
-  mediaType: 'application/pdf',
-  created: '2024-03-10T08:00:00Z',
-  modified: '2024-03-13T09:20:00Z',
-  accessed: '2024-03-15T11:30:00Z',
-  permissions: '-rw-r--r--',
-  owner: 'user',
-  group: 'users',
-  rawMetadata: {
-    pdf: {
-      version: '1.4',
-      pages: 12,
-      title: 'Quarterly Report',
-      author: 'John Doe',
-      creator: 'Microsoft Word',
-      producer: 'Adobe PDF Library',
-      encrypted: false,
-    },
-    filesystem: {
-      inode: 123456,
-      links: 1,
-      blocks: 4096,
-      blockSize: 512,
-    },
-  },
-};
+// Adapts the explorer's FileItem (from the real /explorer/files API) to the
+// shape FileDrawer expects. FileDrawer's richer fields (duration, codec, raw
+// metadata, etc.) require a separate per-file metadata fetch that isn't wired
+// up yet — this only shows what's already available from the file list.
+function toDrawerMetadata(file: FileItem) {
+  return {
+    id: String(file.id ?? file.path),
+    name: file.name,
+    path: file.path,
+    size: file.size ?? 0,
+    type: file.media_type ?? (file.is_directory ? 'directory' : 'file'),
+    extension: file.extension,
+    mediaType: file.media_type,
+    created: file.modified_time ?? '',
+    modified: file.modified_time ?? '',
+  };
+}
 
 export const ExplorerView: React.FC<ExplorerViewProps> = ({
   volumeId,
@@ -113,7 +48,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
   className = '',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFile, setSelectedFile] = useState<any>(null);
+  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState('/');
   const [activeTab, setActiveTab] = useState<
@@ -121,7 +56,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
   >('explorer');
   const [viewMode, setViewMode] = useState<ViewType>('list');
 
-  const { isConnected, connectionStatus } = useRealtime();
+  const { connectionStatus } = useRealtime();
   const wsStatus = React.useMemo(() => {
     switch (connectionStatus) {
       case ReadyState.CONNECTING:
@@ -137,17 +72,17 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
     }
   }, [connectionStatus]);
 
-  const handleTreeNodeSelect = useCallback((node: any) => {
-    setCurrentPath(node.path);
+  const handleTreeNodeSelect = useCallback((path: string) => {
+    setCurrentPath(path);
   }, []);
 
-  const handleFileSelect = useCallback((file: any) => {
+  const handleFileSelect = useCallback((file: FileItem) => {
     setSelectedFile(file);
     setIsDrawerOpen(true);
   }, []);
 
-  const handleFileDoubleClick = useCallback((file: any) => {
-    if (file.type === 'folder') {
+  const handleFileDoubleClick = useCallback((file: FileItem) => {
+    if (file.is_directory) {
       setCurrentPath(file.path);
     }
   }, []);
@@ -181,9 +116,10 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
             </div>
           </div>
 
-          <Tree
+          <DirectoryTree
             volumeId={volumeId}
-            onNodeSelect={handleTreeNodeSelect}
+            onPathSelect={handleTreeNodeSelect}
+            selectedPath={currentPath}
             className="h-[calc(100vh-200px)]"
           />
         </div>
@@ -265,12 +201,16 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
               <div className="flex-1 overflow-hidden">
                 {viewMode === 'list' ? (
                   <FileTable
+                    volumeId={volumeId}
+                    currentPath={currentPath}
                     onFileSelect={handleFileSelect}
                     onFileDoubleClick={handleFileDoubleClick}
                     className="h-full"
                   />
                 ) : (
                   <FileGrid
+                    volumeId={volumeId}
+                    currentPath={currentPath}
                     onFileSelect={handleFileSelect}
                     onFileDoubleClick={handleFileDoubleClick}
                     className="h-full"
@@ -297,7 +237,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
 
       {/* File Metadata Drawer */}
       <FileDrawer
-        file={selectedFile ? mockFileMetadata : null}
+        file={selectedFile ? toDrawerMetadata(selectedFile) : null}
         isOpen={isDrawerOpen}
         onClose={handleDrawerClose}
       />

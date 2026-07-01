@@ -37,8 +37,16 @@ const permissionCategories = [
   },
 ];
 
+interface MockRole {
+  id: number;
+  name: string;
+  displayName: string;
+  description: string;
+  permissions: Record<string, boolean>;
+}
+
 // Mock roles data
-const mockRoles = [
+const mockRoles: MockRole[] = [
   {
     id: 1,
     name: 'admin',

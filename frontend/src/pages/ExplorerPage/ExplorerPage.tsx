@@ -9,10 +9,10 @@
  */
 
 import React, { useCallback, useState, useEffect } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   useGetVolumes,
-  useGetExplorerFiles,
+  useGetApiV1ExplorerFiles,
 } from '@/api/orval-generated/api';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -66,14 +66,14 @@ export function ExplorerPage({
   const [viewMode, setViewMode] = useState<'list' | 'treemap' | 'analytics'>('list');
 
   // WebSocket connection for real-time updates
-  const { isConnected } = useRealtime();
+  useRealtime();
 
   // Load files for current volume and path
   const {
     data: filesData,
     isLoading: filesLoading,
     refetch: refetchFiles,
-  } = useGetExplorerFiles(
+  } = useGetApiV1ExplorerFiles(
     {
       volume_id: volumeId || '',
       path: currentPath,
@@ -86,8 +86,10 @@ export function ExplorerPage({
     },
   );
 
-  // Extract files from response (response is flat, not nested under .data)
-  const files = (filesData?.files as FileItem[]) || [];
+  // Extract files from response
+  const files = (
+    filesData?.status === 200 ? filesData.data.files : undefined
+  ) as FileItem[] || [];
 
   // Load volumes when component mounts
   useEffect(() => {
@@ -100,10 +102,31 @@ export function ExplorerPage({
   React.useEffect(() => {
     const path = searchParams.get('path') || '/';
     const search = searchParams.get('search') || '';
+    const view = searchParams.get('view') as 'list' | 'treemap' | 'analytics' | null;
 
     setCurrentPath(path);
     setSearchQuery(search);
+    if (view && ['list', 'treemap', 'analytics'].includes(view)) {
+      setViewMode(view);
+    }
   }, [searchParams]);
+
+  // Handle view mode change
+  const handleViewModeChange = useCallback(
+    (mode: 'list' | 'treemap' | 'analytics') => {
+      setViewMode(mode);
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        if (mode === 'list') {
+          params.delete('view'); // list is default, no need to clutter URL
+        } else {
+          params.set('view', mode);
+        }
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
 
   // Handle search
   const handleSearchChange = useCallback(
@@ -375,7 +398,7 @@ export function ExplorerPage({
             {/* View Toggle */}
             <div className="inline-flex rounded-lg bg-surface-secondary p-1">
               <button
-                onClick={() => setViewMode('list')}
+                onClick={() => handleViewModeChange('list')}
                 className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
                   viewMode === 'list'
                     ? 'bg-surface-secondary shadow-sm text-primary'
@@ -388,7 +411,7 @@ export function ExplorerPage({
                 <span>List</span>
               </button>
               <button
-                onClick={() => setViewMode('treemap')}
+                onClick={() => handleViewModeChange('treemap')}
                 className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
                   viewMode === 'treemap'
                     ? 'bg-surface-secondary shadow-sm text-primary'
@@ -401,7 +424,7 @@ export function ExplorerPage({
                 <span>TreeMap</span>
               </button>
               <button
-                onClick={() => setViewMode('analytics')}
+                onClick={() => handleViewModeChange('analytics')}
                 className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
                   viewMode === 'analytics'
                     ? 'bg-surface-secondary shadow-sm text-primary'
@@ -538,10 +561,17 @@ export function ExplorerPage({
               </div>
             </Card>
           ) : (
-            <TreeMapVisualization
-              volumeId={volumeId}
-              files={filteredFiles}
-              currentPath={currentPath}
+            <>
+              {console.log('[ExplorerPage] Passing to TreeMap:', {
+                volumeId,
+                filesCount: filteredFiles.length,
+                currentPath,
+                sampleFiles: filteredFiles.slice(0, 3)
+              })}
+              <TreeMapVisualization
+                volumeId={volumeId}
+                files={filteredFiles}
+                currentPath={currentPath}
               onFileClick={(node) => {
                 const file: FileItem = {
                   name: node.name,
@@ -559,6 +589,7 @@ export function ExplorerPage({
               }}
               onNavigate={handleFolderClick}
             />
+            </>
           )}
         </div>
       ) : (

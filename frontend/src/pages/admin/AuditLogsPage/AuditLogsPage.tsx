@@ -10,7 +10,7 @@
  */
 
 import React, { useState } from 'react';
-import { FileText, Search, Filter, Download, AlertCircle } from 'lucide-react';
+import { FileText, Search, Filter, Download } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 

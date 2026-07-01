@@ -11,11 +11,10 @@
 
 import React, { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User, Mail, Eye, EyeOff, AlertCircle, Building2, CheckCircle } from 'lucide-react';
+import { Lock, User, Mail, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { postAuthRegister } from '@/api/orval-generated/api';
-import { useAuth } from '@/hooks/useAuth';
 
 interface RegisterPageProps {
   className?: string;
@@ -23,13 +22,12 @@ interface RegisterPageProps {
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({ className = '' }) => {
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [organizationId, setOrganizationId] = useState('1'); // Default to org 1
+  const [organizationId] = useState('1'); // Default to org 1
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,14 +72,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ className = '' }) =>
 
     try {
       // Call the register API
-      const response = await postAuthRegister({
+      await postAuthRegister({
         username,
         email,
         password,
         organization_id: parseInt(organizationId, 10),
       } as any);
-
-      const responseData = response as any;
 
       setSuccess(true);
 

@@ -4,7 +4,6 @@
  */
 
 import {
-  getErrorMessage,
   getErrorDetails,
   isApiError,
   getHttpStatusCode,
@@ -575,6 +574,17 @@ export function scanErrorToSummaryItem(
 } {
   const errorDisplay = formatScanErrorForDisplay(scanError);
 
+  // Map scan error severities to ErrorSummary severities
+  const severityMap: Record<
+    'critical' | 'error' | 'warning' | 'info',
+    'low' | 'medium' | 'high' | 'critical'
+  > = {
+    critical: 'critical',
+    error: 'high',
+    warning: 'medium',
+    info: 'low',
+  };
+
   // Map scan error categories to ErrorSummary categories
   const categoryMap: Record<
     string,
@@ -600,7 +610,7 @@ export function scanErrorToSummaryItem(
     id: `scan-error-${index}-${scanError.occurred_at}`,
     message: errorDisplay.title,
     code: scanError.error_type,
-    severity: errorDisplay.severity,
+    severity: severityMap[errorDisplay.severity],
     category: categoryMap[scanError.error_category] || 'unknown',
     timestamp: new Date(scanError.occurred_at),
     context: {

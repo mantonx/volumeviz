@@ -12,11 +12,10 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Search as SearchIcon,
   AlertCircle,
-  RotateCcw,
 } from 'lucide-react';
 import { SearchInterface, type SearchQuery } from '@/components/domain/search';
 import { ExportButton } from '@/components/shared/ExportButton';
@@ -25,8 +24,6 @@ import { searchApi } from '@/api/search';
 import { AdvancedFilters } from './AdvancedFilters';
 import { FilterChips } from './FilterChips';
 import {
-  filtersToUrlParams,
-  urlParamsToFilters,
   updateUrlWithFilters,
   getFiltersFromUrl,
   clearFiltersFromUrl
@@ -39,7 +36,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({
   selectedVolumeFilter = 'all',
 }) => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   // State management
   const [searchState, setSearchState] = useState<SearchState>({
@@ -149,7 +145,15 @@ export const SearchPage: React.FC<SearchPageProps> = ({
       setSearchResults(formattedResults);
       setSearchState((prev) => ({
         ...prev,
-        results: rawResults,
+        results: rawResults.map((r) => ({
+          fileId: Number(r.id),
+          path: r.path,
+          name: r.name,
+          size: r.size,
+          type: r.type,
+          modified: r.modified.toISOString(),
+          score: r.score,
+        })),
       }));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Search failed. Please try again.';

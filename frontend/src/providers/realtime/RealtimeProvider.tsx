@@ -165,7 +165,6 @@ const createVolumeVizMessageHandlers = (
   {
     type: 'scan.status',
     handler: (data) => {
-      logger.debug('[RealtimeProvider] scan.status handler triggered:', data);
       // Only update scan progress if there's actual scan activity
       if (data?.volume_id && data?.status === 'running') {
         const progressData = {
@@ -546,10 +545,14 @@ function RealtimeProviderInternal({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function RealtimeProvider({
+// Wrapper component that properly initializes atoms
+function RealtimeProviderWrapper({
   children,
-  websocketUrl = DEFAULT_WEBSOCKET_URL,
-}: RealtimeProviderProps) {
+  websocketUrl,
+}: {
+  children: React.ReactNode;
+  websocketUrl: string;
+}) {
   // Domain-specific atoms (for message handler creation)
   const [, addHistoricalUpdate] = useAtom(addHistoricalUpdateAtom);
   const [, updateSystemStatistics] = useAtom(updateSystemStatisticsAtom);
@@ -558,33 +561,6 @@ export function RealtimeProvider({
   const [, updateScanProgress] = useAtom(updateScanProgressAtom);
   const [, addCapacityAlert] = useAtom(addCapacityAlertAtom);
   const [, removeScanProgress] = useAtom(removeScanProgressAtom);
-
-  // Get JWT token from localStorage and append to WebSocket URL
-  const authenticatedWebSocketUrl = React.useMemo(() => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      logger.warn('[RealtimeProvider] No auth token found in localStorage');
-      return websocketUrl;
-    }
-
-    // Append token as query parameter
-    const separator = websocketUrl.includes('?') ? '&' : '?';
-    const urlWithToken = `${websocketUrl}${separator}token=${encodeURIComponent(token)}`;
-    logger.debug('[RealtimeProvider] WebSocket URL with auth token prepared');
-    return urlWithToken;
-  }, [websocketUrl]);
-
-  // Debug: Track renders
-  const renderCount = React.useRef(0);
-  React.useEffect(() => {
-    renderCount.current += 1;
-    console.log('[RealtimeProvider] RENDER COUNT:', renderCount.current);
-  });
-
-  logger.debug(
-    '[RealtimeProvider] Initializing with WebSocket URL:',
-    websocketUrl,
-  );
 
   // Memoize message handlers to prevent recreating on every render
   // Note: Jotai atom setters are stable and don't need to be in dependencies
@@ -603,6 +579,21 @@ export function RealtimeProvider({
     [],
   );
 
+  // Get JWT token from localStorage and append to WebSocket URL
+  const authenticatedWebSocketUrl = React.useMemo(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      logger.warn('[RealtimeProvider] No auth token found in localStorage');
+      return websocketUrl;
+    }
+
+    // Append token as query parameter
+    const separator = websocketUrl.includes('?') ? '&' : '?';
+    const urlWithToken = `${websocketUrl}${separator}token=${encodeURIComponent(token)}`;
+    logger.debug('[RealtimeProvider] WebSocket URL with auth token prepared');
+    return urlWithToken;
+  }, [websocketUrl]);
+
   const config: WebSocketConfig = React.useMemo(
     () => ({
       url: authenticatedWebSocketUrl,
@@ -618,6 +609,29 @@ export function RealtimeProvider({
     <WebSocketProvider config={config}>
       <RealtimeProviderInternal>{children}</RealtimeProviderInternal>
     </WebSocketProvider>
+  );
+}
+
+export function RealtimeProvider({
+  children,
+  websocketUrl = DEFAULT_WEBSOCKET_URL,
+}: RealtimeProviderProps) {
+  // Debug: Track renders
+  const renderCount = React.useRef(0);
+  React.useEffect(() => {
+    renderCount.current += 1;
+    console.log('[RealtimeProvider] RENDER COUNT:', renderCount.current);
+  });
+
+  logger.debug(
+    '[RealtimeProvider] Initializing with WebSocket URL:',
+    websocketUrl,
+  );
+
+  return (
+    <RealtimeProviderWrapper websocketUrl={websocketUrl}>
+      {children}
+    </RealtimeProviderWrapper>
   );
 }
 

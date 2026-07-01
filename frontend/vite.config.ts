@@ -30,7 +30,15 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     port: 5173,
-    host: true,
+    host: '0.0.0.0',
+    watch: {
+      usePolling: true, // Required for Docker
+    },
+    hmr: {
+      // For Docker: use host's localhost for WebSocket
+      host: 'localhost',
+      port: 5173,
+    },
     proxy: {
       '/api': {
         target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:8080',

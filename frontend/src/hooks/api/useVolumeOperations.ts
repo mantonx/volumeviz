@@ -6,10 +6,7 @@ import {
   usePostVolumesBulkScan,
 } from '@/api/orval-generated/api';
 import { lastRefreshAtom } from '@/atoms/volumes';
-import {
-  backgroundSyncManager,
-  useBackgroundSync,
-} from '@/utils/background-sync';
+import { useBackgroundSync } from '@/utils/background-sync';
 
 export interface UseVolumeOperationsReturn {
   scanVolume: {
@@ -42,7 +39,7 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
   // Size refresh mutation
   const sizeRefreshMutation = usePostVolumesIdSizeRefresh({
     mutation: {
-      onSuccess: (data, { id }) => {
+      onSuccess: () => {
         // Invalidate volume queries
         queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
         queryClient.invalidateQueries({ queryKey: ['getVolumesIdSize'] });
@@ -54,7 +51,7 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
   // Filesystem indexing mutation
   const filesystemIndexMutation = usePostVolumesIdFilesystemIndex({
     mutation: {
-      onSuccess: (data, { id }) => {
+      onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
         queryClient.invalidateQueries({
           queryKey: ['getVolumesIdFilesystemStatus'],
@@ -118,7 +115,7 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
     refreshVolumeSize: {
       mutateAsync: async (volumeId: string) => {
         if (isOnline) {
-          return sizeRefreshMutation.mutateAsync({ id: volumeId });
+          return sizeRefreshMutation.mutateAsync({ id: volumeId, data: {} });
         } else {
           // Queue for background sync when offline
           addPendingOperation({

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { VolumesList } from '@/components/domain/volumes';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { usePostVolumesBulkScan } from '@/api/orval-generated/api';
 import { useVolumeWebSocket } from '@/hooks/useVolumeWebSocket';
 import {
   HardDrive,
-  Trash2,
   RefreshCw,
-  AlertCircle,
   CheckCircle,
   Scan,
 } from 'lucide-react';
@@ -19,8 +19,7 @@ import {
  * Features:
  * - Volume listing with grid/table views
  * - Advanced filtering and search
- * - Create/Edit/Delete operations
- * - Bulk operations (scan, delete)
+ * - Bulk operations (scan)
  * - Real-time scan progress
  * - Volume analytics and insights
  * - Export functionality
@@ -28,33 +27,43 @@ import {
 export const VolumesPage: React.FC = () => {
   // Modal states
   const [isBulkScanModalOpen, setIsBulkScanModalOpen] = useState(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [selectedVolumes, setSelectedVolumes] = useState<string[]>([]);
+  const [selectedVolumes] = useState<string[]>([]);
 
   // Real-time updates via WebSocket
-  const { isConnected, onSizeUpdate, onMetadataUpdate, onScanProgress } = useVolumeWebSocket({
+  const { onSizeUpdate, onMetadataUpdate, onScanProgress } = useVolumeWebSocket({
     enabled: true,
   });
 
+  const queryClient = useQueryClient();
+
   // Track volume updates for refresh indicator
-  const [hasUpdates, setHasUpdates] = useState(false);
+  const [, setHasUpdates] = useState(false);
 
   // Listen for volume size updates
   useEffect(() => {
+    // Volumes are fetched with page/filter-specific query keys, so we
+    // invalidate by the shared '/volumes' prefix rather than trying to
+    // reconstruct the exact key VolumesList is currently using.
+    const refetchVolumes = () =>
+      queryClient.invalidateQueries({ queryKey: ['/volumes'] });
+
     const cleanupSize = onSizeUpdate((event) => {
       console.log('[VolumesPage] Volume size updated:', event);
       setHasUpdates(true);
-      // Could trigger a refetch or optimistically update the UI here
+      refetchVolumes();
     });
 
     const cleanupMetadata = onMetadataUpdate((event) => {
       console.log('[VolumesPage] Volume metadata updated:', event);
       setHasUpdates(true);
+      refetchVolumes();
     });
 
     const cleanupProgress = onScanProgress((event) => {
       console.log('[VolumesPage] Scan progress:', event);
-      // Could show progress indicator here
+      if (event.status === 'completed') {
+        refetchVolumes();
+      }
     });
 
     return () => {
@@ -62,7 +71,7 @@ export const VolumesPage: React.FC = () => {
       cleanupMetadata();
       cleanupProgress();
     };
-  }, [onSizeUpdate, onMetadataUpdate, onScanProgress]);
+  }, [onSizeUpdate, onMetadataUpdate, onScanProgress, queryClient]);
 
   // Bulk scan mutation
   const bulkScanMutation = usePostVolumesBulkScan();
@@ -73,7 +82,8 @@ export const VolumesPage: React.FC = () => {
       await bulkScanMutation.mutateAsync({
         data: {
           volume_ids: selectedVolumes,
-          full_scan: true,
+          async: true,
+          method: 'du',
         },
       });
       setIsBulkScanModalOpen(false);
@@ -81,38 +91,6 @@ export const VolumesPage: React.FC = () => {
     } catch (error) {
       console.error('Bulk scan failed:', error);
       // Show error notification
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const token = localStorage.getItem('auth_token');
-
-      const response = await fetch(`${baseUrl}/api/v1/volumes/bulk-delete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ volume_ids: selectedVolumes }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Bulk delete failed: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('Bulk delete completed:', result);
-
-      setIsDeleteConfirmOpen(false);
-      setSelectedVolumes([]);
-
-      // Refresh the volume list
-      window.location.reload();
-    } catch (error) {
-      console.error('Bulk delete failed:', error);
-      // TODO: Show error notification to user
     }
   };
 
@@ -143,21 +121,15 @@ export const VolumesPage: React.FC = () => {
                   <Scan className="w-4 h-4 mr-2" />
                   Scan Selected ({selectedVolumes.length})
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsDeleteConfirmOpen(true)}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Selected
-                </Button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Main Volume List */}
-        <VolumesList />
+        {/* Main Volume List with Error Boundary */}
+        <ErrorBoundary>
+          <VolumesList />
+        </ErrorBoundary>
 
         {/* Bulk Scan Confirmation Modal */}
         {isBulkScanModalOpen && (
@@ -205,45 +177,6 @@ export const VolumesPage: React.FC = () => {
                       Start Scan
                     </>
                   )}
-                </Button>
-              </div>
-            </div>
-          </Modal>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {isDeleteConfirmOpen && (
-          <Modal
-            open={isDeleteConfirmOpen}
-            onClose={() => setIsDeleteConfirmOpen(false)}
-            header={{ title: 'Confirm Deletion' }}
-          >
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    Delete {selectedVolumes.length} volume
-                    {selectedVolumes.length > 1 ? 's' : ''}?
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    This action cannot be undone. Volume data will be permanently
-                    removed from tracking (Docker volumes themselves will not be
-                    deleted).
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDeleteConfirmOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button variant="danger" onClick={handleBulkDelete}>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
                 </Button>
               </div>
             </div>

@@ -17,7 +17,6 @@ import {
   RefreshCw,
   Copy,
   ExternalLink,
-  Settings,
   BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -438,8 +437,8 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
                                 {attachment.mount_path}
                               </Badge>
                               <ContainerStatus
-                                isReadonly={!attachment.rw}
-                                size="sm"
+                                containers={[attachment.container_name]}
+                                compact
                               />
                             </div>
                           </div>

@@ -17,13 +17,13 @@ const meta: Meta<typeof VolumesPage> = {
         component: `
 # VolumesPage
 
-Comprehensive Docker volume management page with full CRUD operations.
+Comprehensive Docker volume management page.
 
 ## Features
 
 - **Volume Listing**: Grid and table views with advanced filtering
-- **CRUD Operations**: Create, Read, Update, Delete volumes
-- **Bulk Operations**: Scan multiple volumes, bulk delete
+- **Volume Operations**: View, scan, and track volumes
+- **Bulk Operations**: Scan multiple volumes simultaneously
 - **Real-time Updates**: WebSocket integration for scan progress
 - **Export Functionality**: Export volume data in various formats
 - **Advanced Search**: Multi-criteria search and filtering
@@ -33,7 +33,7 @@ Comprehensive Docker volume management page with full CRUD operations.
 The VolumesPage is the main interface for managing Docker volumes in VolumeViz.
 It integrates with:
 - VolumesList component for display
-- Modal components for CRUD operations
+- Modal components for operations
 - TanStack Query for data fetching
 - Jotai for state management
         `,

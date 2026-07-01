@@ -190,7 +190,6 @@ export function isValidQuickFilter(filter: QuickFilterConfig): boolean {
   return !!(
     filter.id &&
     filter.label &&
-    filter.icon &&
     filter.filterType &&
     filter.filterValue &&
     filter.description &&

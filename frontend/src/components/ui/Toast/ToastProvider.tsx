@@ -11,7 +11,6 @@ import { clsx } from 'clsx';
 
 import { Toast } from './Toast';
 import type {
-  ToastContextValue,
   ToastProviderProps,
   ToastContainerProps,
   ToastConfig,
@@ -21,11 +20,7 @@ import type {
   ToastVariant,
   ToastOptions,
 } from './Toast.types';
-import {
-  defaultToastPositions,
-  defaultToastSizes,
-  defaultToastDurations,
-} from './Toast.types';
+import { defaultToastPositions, defaultToastSizes } from './Toast.types';
 
 /**
  * Toast Context

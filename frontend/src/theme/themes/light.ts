@@ -83,6 +83,12 @@ export const lightTheme = {
 } as const;
 
 /**
- * Type for theme structure
+ * Type for theme structure. Declared structurally (not `typeof lightTheme`)
+ * so other themes (e.g. dark.ts) can use different color values for the
+ * same CSS variable keys, rather than being locked to light theme's literals.
  */
-export type Theme = typeof lightTheme;
+export type Theme = {
+  colors: Record<keyof typeof lightTheme.colors, string>;
+  typography: Record<keyof typeof lightTheme.typography, string>;
+  shadows: Record<keyof typeof lightTheme.shadows, string>;
+};

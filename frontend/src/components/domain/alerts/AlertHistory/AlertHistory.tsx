@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils';
 import { useAlertDeliveries } from '@/hooks/useAlerts';
-import type { AlertDelivery } from '@/api/alerts';
 
 export interface AlertHistoryProps {
   className?: string;
@@ -29,46 +28,41 @@ export interface AlertHistoryProps {
 
 type DeliveryStatus = 'all' | 'delivered' | 'failed' | 'pending' | 'retrying';
 
-export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
-  const { deliveries, loading, error, pagination, fetchDeliveries } =
-    useAlertDeliveries();
+const PAGE_SIZE = 50;
 
+export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
   const [statusFilter, setStatusFilter] = useState<DeliveryStatus>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredDeliveries, setFilteredDeliveries] = useState<AlertDelivery[]>(
-    [],
-  );
+  const [offset, setOffset] = useState(0);
 
-  useEffect(() => {
-    const params = statusFilter === 'all' ? {} : { status: statusFilter };
-    fetchDeliveries(params);
-  }, [fetchDeliveries, statusFilter]);
+  const { deliveries, pagination, isLoading, error, refetch } =
+    useAlertDeliveries({
+      limit: PAGE_SIZE,
+      offset,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+    });
 
-  useEffect(() => {
-    let filtered = deliveries;
+  const handleStatusFilterChange = (status: DeliveryStatus) => {
+    setStatusFilter(status);
+    setOffset(0);
+  };
 
-    if (searchTerm) {
-      filtered = deliveries.filter(
-        (delivery) =>
-          delivery.alert?.rule_name
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          delivery.destination?.name
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()),
-      );
-    }
-
-    setFilteredDeliveries(filtered);
+  const filteredDeliveries = useMemo(() => {
+    if (!searchTerm) return deliveries;
+    const term = searchTerm.toLowerCase();
+    return deliveries.filter(
+      (delivery) =>
+        delivery.alert?.rule?.name?.toLowerCase().includes(term) ||
+        delivery.destination?.name?.toLowerCase().includes(term),
+    );
   }, [deliveries, searchTerm]);
 
   const handleRefresh = () => {
-    const params = statusFilter === 'all' ? {} : { status: statusFilter };
-    fetchDeliveries(params);
+    refetch();
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
+  const getStatusIcon = (status?: string) => {
+    switch (status?.toLowerCase()) {
       case 'delivered':
         return (
           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -84,14 +78,12 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
           <RefreshCw className="h-4 w-4 text-blue-600 dark:text-blue-400" />
         );
       default:
-        return (
-          <AlertTriangle className="h-4 w-4 text-secondary" />
-        );
+        return <AlertTriangle className="h-4 w-4 text-secondary" />;
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+  const getStatusColor = (status?: string) => {
+    switch (status?.toLowerCase()) {
       case 'delivered':
         return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
       case 'failed':
@@ -105,22 +97,8 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
     }
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity?.toLowerCase()) {
-      case 'critical':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      case 'high':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'low':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-      default:
-        return 'bg-surface-secondary text-secondary';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Unknown';
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -141,7 +119,7 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
     }
   };
 
-  if (loading && deliveries.length === 0) {
+  if (isLoading && deliveries.length === 0) {
     return (
       <div className={cn('flex items-center justify-center py-12', className)}>
         <div className="flex items-center gap-2 text-tertiary">
@@ -156,12 +134,16 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
     return (
       <ErrorState
         title="Failed to load delivery history"
-        message={error}
+        error={error}
         onRetry={handleRefresh}
         className={className}
       />
     );
   }
+
+  const limit = pagination.limit ?? PAGE_SIZE;
+  const total = pagination.total ?? 0;
+  const currentOffset = pagination.offset ?? offset;
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -176,11 +158,11 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
         </div>
         <Button
           onClick={handleRefresh}
-          disabled={loading}
+          disabled={isLoading}
           className="flex items-center gap-2"
           variant="outline"
         >
-          <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+          <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
           Refresh
         </Button>
       </div>
@@ -193,7 +175,7 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
             <select
               value={statusFilter}
               onChange={(e) =>
-                setStatusFilter(e.target.value as DeliveryStatus)
+                handleStatusFilterChange(e.target.value as DeliveryStatus)
               }
               className="px-3 py-2 border border-line rounded-md bg-surface text-sm"
             >
@@ -218,7 +200,7 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
 
           {deliveries.length > 0 && (
             <div className="text-sm text-tertiary">
-              {filteredDeliveries.length} of {pagination.total} deliveries
+              {filteredDeliveries.length} of {total} deliveries
             </div>
           )}
         </div>
@@ -227,7 +209,7 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
       {filteredDeliveries.length === 0 ? (
         <EmptyState
           title="No delivery history"
-          message={
+          description={
             searchTerm
               ? 'No deliveries match your search criteria'
               : 'No alert deliveries have been recorded yet'
@@ -247,35 +229,27 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-primary truncate">
-                        {delivery.alert?.rule_name || 'Unknown Rule'}
+                        {delivery.alert?.rule?.name || 'Unknown Rule'}
                       </h4>
-                      <span className="text-tertiary">
-                        →
-                      </span>
+                      <span className="text-tertiary">→</span>
                       <span className="text-sm text-secondary truncate">
                         {delivery.destination?.name || 'Unknown Destination'}
                       </span>
-                      {delivery.alert?.severity && (
-                        <Badge
-                          variant="secondary"
-                          className={getSeverityColor(delivery.alert.severity)}
-                        >
-                          {delivery.alert.severity}
-                        </Badge>
-                      )}
                     </div>
 
                     <div className="flex items-center gap-4 text-xs text-tertiary">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {formatDate(delivery.attempted_at)}
+                        {formatDate(
+                          delivery.last_attempt_at || delivery.created_at,
+                        )}
                       </div>
 
-                      {delivery.attempts > 1 && (
+                      {(delivery.attempt_count ?? 0) > 1 && (
                         <div className="flex items-center gap-1">
                           <RefreshCw className="h-3 w-3" />
-                          {delivery.attempts} attempt
-                          {delivery.attempts > 1 ? 's' : ''}
+                          {delivery.attempt_count} attempt
+                          {(delivery.attempt_count ?? 0) > 1 ? 's' : ''}
                         </div>
                       )}
 
@@ -310,8 +284,10 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
                     variant="secondary"
                     className={getStatusColor(delivery.status)}
                   >
-                    {delivery.status.charAt(0).toUpperCase() +
-                      delivery.status.slice(1)}
+                    {delivery.status
+                      ? delivery.status.charAt(0).toUpperCase() +
+                        delivery.status.slice(1)
+                      : 'Unknown'}
                   </Badge>
 
                   {delivery.delivered_at && (
@@ -334,29 +310,23 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ className }) => {
       )}
 
       {/* Load More */}
-      {filteredDeliveries.length > 0 &&
-        pagination.offset + pagination.limit < pagination.total && (
-          <div className="text-center pt-4">
-            <Button
-              onClick={() =>
-                fetchDeliveries({
-                  offset: pagination.offset + pagination.limit,
-                  status: statusFilter === 'all' ? undefined : statusFilter,
-                })
-              }
-              disabled={loading}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4" />
-              )}
-              Load More
-            </Button>
-          </div>
-        )}
+      {filteredDeliveries.length > 0 && currentOffset + limit < total && (
+        <div className="text-center pt-4">
+          <Button
+            onClick={() => setOffset(currentOffset + limit)}
+            disabled={isLoading}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            Load More
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

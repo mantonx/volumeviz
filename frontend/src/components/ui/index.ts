@@ -31,17 +31,6 @@ export type {
   PhaseOrientation,
   PhaseSize,
 } from './PhaseIndicator';
-export { MetricCard } from './MetricCard';
-export type {
-  MetricCardProps,
-  MetricCardRef,
-  Metric,
-  MetricValueType,
-  MetricStatus,
-  MetricTrend,
-  MetricCardSize,
-  MetricCardLayout,
-} from './MetricCard';
 export { Modal, useModal } from './Modal';
 export type {
   ModalProps,
@@ -68,8 +57,6 @@ export type { StatusBadgeProps } from './StatusBadge';
 // Additional UI components
 export { Dropdown } from './Dropdown';
 export type { DropdownProps } from './Dropdown';
-export { PhaseTransitionNotification } from './PhaseTransitionNotification';
-export { PhaseTransitionToast } from './PhaseTransitionToast';
 export { ContainerStatus } from './ContainerStatus';
 export { FreshnessIndicator } from './FreshnessIndicator';
 export { GrowthIndicator } from './GrowthIndicator';

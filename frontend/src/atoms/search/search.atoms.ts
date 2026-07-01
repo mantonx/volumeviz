@@ -1,10 +1,6 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-import type {
-  SearchQuery,
-  SearchFilters,
-  AdvancedFilters,
-} from './search.types';
+import type { SearchQuery, AdvancedFilters } from './search.types';
 
 // Search query atom
 export const searchQueryAtom = atom<SearchQuery>({
@@ -89,7 +85,7 @@ export const hasActiveFiltersAtom = atom((get) => {
 });
 
 // Clear search results action
-export const clearSearchResultsAtom = atom(null, (get, set) => {
+export const clearSearchResultsAtom = atom(null, (_get, set) => {
   set(searchResultsAtom, []);
   set(searchTotalCountAtom, 0);
   set(searchErrorAtom, null);
@@ -97,7 +93,7 @@ export const clearSearchResultsAtom = atom(null, (get, set) => {
 });
 
 // Reset search state action
-export const resetSearchStateAtom = atom(null, (get, set) => {
+export const resetSearchStateAtom = atom(null, (_get, set) => {
   set(searchQueryAtom, {
     text: '',
     filters: {

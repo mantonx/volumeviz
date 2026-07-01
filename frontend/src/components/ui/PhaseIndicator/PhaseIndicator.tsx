@@ -4,7 +4,7 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
-import { Check, X, Clock, ChevronRight, ChevronDown } from 'lucide-react';
+import { Check, X, Clock, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
 
 import { ProgressBar } from '../ProgressBar';
@@ -15,10 +15,8 @@ import type {
   Phase,
   PhaseStatus,
   PhaseSize,
-  PhaseOrientation,
   PhaseDisplayConfig,
 } from './PhaseIndicator.types';
-import { defaultColorScheme } from './PhaseIndicator.types';
 
 /**
  * Get status icon for a phase
@@ -101,7 +99,6 @@ export const PhaseIndicator = forwardRef<
       showConnectors = true,
       animated = true,
       clickable = false,
-      colorScheme = defaultColorScheme,
       onPhaseClick,
       onPhaseHover,
       className,
@@ -176,7 +173,7 @@ export const PhaseIndicator = forwardRef<
     );
 
     // Render individual phase
-    const renderPhase = (phase: Phase, index: number) => {
+    const renderPhase = (phase: Phase) => {
       const isActive = phase.id === activePhase || phase.status === 'active';
       const isClickable =
         clickable && phase.clickable !== false && !phase.disabled;
@@ -247,9 +244,9 @@ export const PhaseIndicator = forwardRef<
               typeof phase.progress === 'number' && (
                 <div className="mt-2 w-full">
                   <ProgressBar
-                    progress={phase.progress}
+                    value={phase.progress}
                     size={size === 'lg' ? 'md' : 'sm'}
-                    showPercentage={size !== 'sm'}
+                    showLabel={size !== 'sm'}
                     animated={config.animated}
                   />
                 </div>
@@ -302,7 +299,7 @@ export const PhaseIndicator = forwardRef<
       >
         {phases.map((phase, index) => (
           <React.Fragment key={phase.id}>
-            {renderPhase(phase, index)}
+            {renderPhase(phase)}
             {index < phases.length - 1 &&
               renderConnector(phase, phases[index + 1], index)}
           </React.Fragment>

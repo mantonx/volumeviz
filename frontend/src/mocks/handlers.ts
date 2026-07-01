@@ -1,16 +1,59 @@
 import { http, HttpResponse } from 'msw';
-import type {
-  Volume,
-  Organization,
-  VolumeSize,
-  ScanStatus,
-  FileListResponse,
-  HealthCheckResponse,
-} from '@/api/orval-generated/api';
+import type { VolumeV1 } from '@/api/orval-generated/api';
 
 // Mock volume data using modern Orval types
-interface MockVolume extends Volume {
+interface MockVolume extends VolumeV1 {
   // Extend with any additional mock-specific fields if needed
+  id?: number;
+  status?: string;
+  used_bytes?: number;
+  available_bytes?: number;
+  mount_point?: string;
+}
+
+interface MockOrganization {
+  id: number;
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface MockVolumeSize {
+  volume_id: string;
+  size_bytes: number;
+  file_count: number;
+  last_updated: string;
+}
+
+interface MockScanStatus {
+  scan_id: string;
+  status: string;
+  volume_id?: string;
+  progress?: number;
+  started_at?: string;
+  completed_at?: string;
+}
+
+interface MockFileListResponse {
+  path: string;
+  volume_id: string;
+  files: Array<{
+    name: string;
+    path: string;
+    type: 'file' | 'directory';
+    size: number;
+    modified_at: string;
+    is_directory: boolean;
+    children_count?: number;
+  }>;
+  total_count: number;
+}
+
+interface MockHealthCheckResponse {
+  status: string;
+  timestamp: number;
+  checks: Record<string, { status: string }>;
 }
 
 interface MockAlert {
@@ -34,14 +77,6 @@ interface MockSystemInfo {
   last_scan: string;
   database_size: string;
   cache_size: string;
-}
-
-interface MockHealthStatus {
-  status: 'healthy' | 'degraded' | 'unhealthy';
-  database: 'connected' | 'disconnected';
-  websocket: 'connected' | 'disconnected';
-  version: string;
-  timestamp: string;
 }
 
 interface MockScanResult {
@@ -68,7 +103,7 @@ interface MockFileMetadata {
 }
 
 // Mock data using modern API structure
-const mockVolumes: Volume[] = [
+const mockVolumes: MockVolume[] = [
   {
     name: 'production-db-data',
     driver: 'local',
@@ -85,10 +120,10 @@ const mockVolumes: Volume[] = [
     last_scan_at: '2024-12-15T14:20:00Z',
     scan_status: 'completed',
     filesystem_capacity: {
-      total: 107374182400, // 100GB
-      used: 21474836480, // 20GB
-      available: 85899345920, // 80GB
-      percentage: 20,
+      total_bytes: 107374182400, // 100GB
+      used_bytes: 21474836480, // 20GB
+      available_bytes: 85899345920, // 80GB
+      usage_percent: 20,
     },
   },
   {
@@ -121,7 +156,7 @@ const mockVolumes: Volume[] = [
   },
 ];
 
-const mockOrganization: Organization = {
+const mockOrganization: MockOrganization = {
   id: 1,
   name: 'VolumeViz Demo Organization',
   description: 'Demo organization for VolumeViz testing and development',
@@ -185,7 +220,7 @@ const mockSystemInfo: MockSystemInfo = {
 export const handlers = [
   // Health Check
   http.get('/api/v1/health', () => {
-    const healthResponse: HealthCheckResponse = {
+    const healthResponse: MockHealthCheckResponse = {
       status: 'healthy',
       timestamp: Date.now(),
       checks: {
@@ -236,7 +271,7 @@ export const handlers = [
     // Apply search filter
     if (search) {
       filteredVolumes = filteredVolumes.filter((vol) =>
-        vol.name.toLowerCase().includes(search.toLowerCase()),
+        (vol.name ?? '').toLowerCase().includes(search.toLowerCase()),
       );
     }
 
@@ -272,7 +307,7 @@ export const handlers = [
       return HttpResponse.json({ error: 'Volume not found' }, { status: 404 });
     }
 
-    const sizeResponse: VolumeSize = {
+    const sizeResponse: MockVolumeSize = {
       volume_id: volumeId,
       size_bytes: volume.size_bytes || 0,
       file_count: Math.floor((volume.size_bytes || 0) / 10000), // Mock file count
@@ -298,16 +333,6 @@ export const handlers = [
     };
     mockVolumes.push(newVolume);
     return HttpResponse.json(newVolume, { status: 201 });
-  }),
-
-  http.delete('/api/v1/volumes/:id', ({ params }) => {
-    const volumeId = parseInt(params.id as string);
-    const index = mockVolumes.findIndex((v) => v.id === volumeId);
-    if (index === -1) {
-      return HttpResponse.json({ error: 'Volume not found' }, { status: 404 });
-    }
-    mockVolumes.splice(index, 1);
-    return HttpResponse.json({ message: 'Volume deleted successfully' });
   }),
 
   // Volume Scan
@@ -398,7 +423,7 @@ export const handlers = [
       ];
     }
 
-    const response: FileListResponse = {
+    const response: MockFileListResponse = {
       path,
       volume_id: volumeId,
       files,
@@ -416,7 +441,7 @@ export const handlers = [
     const states = ['running', 'completed', 'failed'];
     const randomState = states[Math.floor(Math.random() * states.length)];
 
-    const scanStatus: ScanStatus = {
+    const scanStatus: MockScanStatus = {
       scan_id: scanId,
       status: randomState,
       progress:

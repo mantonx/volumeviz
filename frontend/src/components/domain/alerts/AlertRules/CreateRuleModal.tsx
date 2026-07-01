@@ -1,18 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import {
-  X,
-  Plus,
-  Loader2,
-  AlertTriangle,
-  CheckCircle,
-  Target,
-  Trash2,
-} from 'lucide-react';
+import { X, Plus, Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/utils';
-import { useAlertRules, useAlertDestinations } from '@/hooks/useAlerts';
-import type { CreateAlertRuleParams, AlertDestination } from '@/api/alerts';
+import { useAlertRules } from '@/hooks/useAlerts';
+import type { CreateAlertRuleParams } from '@/hooks/useAlerts';
 
 export interface CreateRuleModalProps {
   open: boolean;
@@ -20,63 +12,37 @@ export interface CreateRuleModalProps {
   onSuccess: () => void;
 }
 
-type Severity = 'low' | 'medium' | 'high' | 'critical';
-type ConditionOperator = 'gt' | 'lt' | 'gte' | 'lte' | 'eq' | 'ne' | 'contains';
-
-interface RouteConfig {
-  destination_id: number;
-  destination_name?: string;
-  template?: {
-    subject?: string;
-    message?: string;
-  };
-}
+type Condition = 'gt' | 'lt' | 'gte' | 'lte' | 'eq' | 'ne';
 
 interface FormState {
   name: string;
   description: string;
   is_enabled: boolean;
-  severity: Severity;
-  condition: {
-    field: string;
-    operator: ConditionOperator;
-    value: string | number;
-  };
-  cooldown_seconds: number;
-  routes: RouteConfig[];
+  query: string;
+  condition: Condition;
+  threshold: number;
+  interval_seconds: number;
+  for_seconds: string;
 }
 
 const initialFormState: FormState = {
   name: '',
   description: '',
   is_enabled: true,
-  severity: 'medium',
-  condition: {
-    field: 'volume_size',
-    operator: 'gt',
-    value: 0,
-  },
-  cooldown_seconds: 300,
-  routes: [],
+  query: '',
+  condition: 'gt',
+  threshold: 0,
+  interval_seconds: 60,
+  for_seconds: '',
 };
 
-const conditionFields = [
-  { value: 'volume_size', label: 'Volume Size (bytes)' },
-  { value: 'file_count', label: 'File Count' },
-  { value: 'directory_count', label: 'Directory Count' },
-  { value: 'growth_rate', label: 'Growth Rate (bytes/day)' },
-  { value: 'free_space', label: 'Free Space (bytes)' },
-  { value: 'used_percentage', label: 'Used Percentage' },
-];
-
-const conditionOperators = [
+const conditionOptions: Array<{ value: Condition; label: string }> = [
   { value: 'gt', label: 'Greater Than (>)' },
   { value: 'gte', label: 'Greater Than or Equal (>=)' },
   { value: 'lt', label: 'Less Than (<)' },
   { value: 'lte', label: 'Less Than or Equal (<=)' },
   { value: 'eq', label: 'Equal To (=)' },
   { value: 'ne', label: 'Not Equal To (!=)' },
-  { value: 'contains', label: 'Contains' },
 ];
 
 export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({
@@ -84,21 +50,11 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { createRule, operationLoading, operationError } = useAlertRules();
-  const { destinations, fetchDestinations } = useAlertDestinations();
+  const { createRule, isCreating, createError } = useAlertRules();
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
-
-  const isLoading = operationLoading['createRule'];
-  const error = operationError['createRule'];
-
-  useEffect(() => {
-    if (open) {
-      fetchDestinations();
-    }
-  }, [open, fetchDestinations]);
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -107,24 +63,16 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({
       errors.name = 'Name is required';
     }
 
-    if (!formState.condition.field) {
-      errors.condition_field = 'Condition field is required';
+    if (!formState.query.trim()) {
+      errors.query = 'Query is required';
     }
 
-    if (!formState.condition.operator) {
-      errors.condition_operator = 'Condition operator is required';
+    if (formState.interval_seconds <= 0) {
+      errors.interval_seconds = 'Interval must be positive';
     }
 
-    if (formState.condition.value === '' || formState.condition.value == null) {
-      errors.condition_value = 'Condition value is required';
-    }
-
-    if (formState.cooldown_seconds < 0) {
-      errors.cooldown_seconds = 'Cooldown must be non-negative';
-    }
-
-    if (formState.routes.length === 0) {
-      errors.routes = 'At least one route is required';
+    if (formState.for_seconds !== '' && Number(formState.for_seconds) < 0) {
+      errors.for_seconds = 'Must be non-negative';
     }
 
     setValidationErrors(errors);
@@ -142,76 +90,24 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({
       const params: CreateAlertRuleParams = {
         name: formState.name.trim(),
         description: formState.description.trim() || undefined,
+        query: formState.query.trim(),
         condition: formState.condition,
-        severity: formState.severity,
-        cooldown_seconds: formState.cooldown_seconds,
+        threshold: formState.threshold,
+        interval: formState.interval_seconds * 1_000_000_000,
+        for:
+          formState.for_seconds !== ''
+            ? Number(formState.for_seconds) * 1_000_000_000
+            : undefined,
         is_enabled: formState.is_enabled,
-        routes: formState.routes.map((route) => ({
-          destination_id: route.destination_id,
-          template: route.template,
-        })),
       };
 
       await createRule(params);
       setFormState(initialFormState);
       setValidationErrors({});
       onSuccess();
-    } catch (error) {
-      // Error is handled by the hook
+    } catch {
+      // Error is surfaced via createError below
     }
-  };
-
-  const addRoute = () => {
-    if (destinations.length === 0) return;
-
-    const availableDestinations = destinations.filter(
-      (dest) =>
-        !formState.routes.some((route) => route.destination_id === dest.id),
-    );
-
-    if (availableDestinations.length === 0) return;
-
-    const firstAvailable = availableDestinations[0];
-    setFormState((prev) => ({
-      ...prev,
-      routes: [
-        ...prev.routes,
-        {
-          destination_id: firstAvailable.id,
-          destination_name: firstAvailable.name,
-          template: {
-            subject: '',
-            message: '',
-          },
-        },
-      ],
-    }));
-  };
-
-  const updateRoute = (index: number, updates: Partial<RouteConfig>) => {
-    setFormState((prev) => ({
-      ...prev,
-      routes: prev.routes.map((route, i) => {
-        if (i === index) {
-          const updated = { ...route, ...updates };
-          if (updates.destination_id) {
-            const destination = destinations.find(
-              (d) => d.id === updates.destination_id,
-            );
-            updated.destination_name = destination?.name;
-          }
-          return updated;
-        }
-        return route;
-      }),
-    }));
-  };
-
-  const removeRoute = (index: number) => {
-    setFormState((prev) => ({
-      ...prev,
-      routes: prev.routes.filter((_, i) => i !== index),
-    }));
   };
 
   if (!open) return null;
@@ -280,58 +176,6 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Severity *
-                  </label>
-                  <select
-                    value={formState.severity}
-                    onChange={(e) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        severity: e.target.value as Severity,
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-line rounded-md bg-surface"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="critical">Critical</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Cooldown (seconds) *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formState.cooldown_seconds}
-                    onChange={(e) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        cooldown_seconds: parseInt(e.target.value) || 0,
-                      }))
-                    }
-                    className={cn(
-                      'w-full px-3 py-2 border rounded-md bg-surface',
-                      validationErrors.cooldown_seconds
-                        ? 'border-red-300 dark:border-red-600'
-                        : 'border-line',
-                    )}
-                    placeholder="300"
-                  />
-                  {validationErrors.cooldown_seconds && (
-                    <p className="text-red-600 text-sm mt-1">
-                      {validationErrors.cooldown_seconds}
-                    </p>
-                  )}
-                </div>
-              </div>
-
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -359,262 +203,164 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({
               <h3 className="text-lg font-medium text-primary mb-4">
                 Alert Condition
               </h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-secondary mb-1">
-                    Field *
-                  </label>
-                  <select
-                    value={formState.condition.field}
-                    onChange={(e) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        condition: { ...prev.condition, field: e.target.value },
-                      }))
-                    }
-                    className={cn(
-                      'w-full px-3 py-2 border rounded-md bg-surface',
-                      validationErrors.condition_field
-                        ? 'border-red-300 dark:border-red-600'
-                        : 'border-line',
-                    )}
-                  >
-                    {conditionFields.map((field) => (
-                      <option key={field.value} value={field.value}>
-                        {field.label}
-                      </option>
-                    ))}
-                  </select>
-                  {validationErrors.condition_field && (
-                    <p className="text-red-600 text-sm mt-1">
-                      {validationErrors.condition_field}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Operator *
-                  </label>
-                  <select
-                    value={formState.condition.operator}
-                    onChange={(e) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        condition: {
-                          ...prev.condition,
-                          operator: e.target.value as ConditionOperator,
-                        },
-                      }))
-                    }
-                    className={cn(
-                      'w-full px-3 py-2 border rounded-md bg-surface',
-                      validationErrors.condition_operator
-                        ? 'border-red-300 dark:border-red-600'
-                        : 'border-line',
-                    )}
-                  >
-                    {conditionOperators.map((op) => (
-                      <option key={op.value} value={op.value}>
-                        {op.label}
-                      </option>
-                    ))}
-                  </select>
-                  {validationErrors.condition_operator && (
-                    <p className="text-red-600 text-sm mt-1">
-                      {validationErrors.condition_operator}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Value *
+                    Query *
                   </label>
                   <input
-                    type={
-                      formState.condition.operator === 'contains'
-                        ? 'text'
-                        : 'number'
-                    }
-                    value={formState.condition.value}
-                    onChange={(e) => {
-                      const value =
-                        formState.condition.operator === 'contains'
-                          ? e.target.value
-                          : parseFloat(e.target.value) || 0;
+                    type="text"
+                    value={formState.query}
+                    onChange={(e) =>
                       setFormState((prev) => ({
                         ...prev,
-                        condition: { ...prev.condition, value },
-                      }));
-                    }}
+                        query: e.target.value,
+                      }))
+                    }
                     className={cn(
-                      'w-full px-3 py-2 border rounded-md bg-surface',
-                      validationErrors.condition_value
+                      'w-full px-3 py-2 border rounded-md bg-surface font-mono text-sm',
+                      validationErrors.query
                         ? 'border-red-300 dark:border-red-600'
                         : 'border-line',
                     )}
-                    placeholder={
-                      formState.condition.operator === 'contains' ? 'text' : '0'
-                    }
+                    placeholder="volume_size_bytes"
                   />
-                  {validationErrors.condition_value && (
+                  {validationErrors.query && (
                     <p className="text-red-600 text-sm mt-1">
-                      {validationErrors.condition_value}
+                      {validationErrors.query}
                     </p>
                   )}
                 </div>
-              </div>
-            </div>
 
-            {/* Routes */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-primary">
-                  Alert Routes
-                </h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addRoute}
-                  disabled={
-                    destinations.length === 0 ||
-                    formState.routes.length >= destinations.length
-                  }
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Route
-                </Button>
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-1">
+                      Condition *
+                    </label>
+                    <select
+                      value={formState.condition}
+                      onChange={(e) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          condition: e.target.value as Condition,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-line rounded-md bg-surface"
+                    >
+                      {conditionOptions.map((op) => (
+                        <option key={op.value} value={op.value}>
+                          {op.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              {validationErrors.routes && (
-                <p className="text-red-600 text-sm mb-4">
-                  {validationErrors.routes}
-                </p>
-              )}
-
-              {destinations.length === 0 ? (
-                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-                  <p className="text-yellow-700 dark:text-yellow-400 text-sm">
-                    No destinations available. Create at least one alert
-                    destination before creating rules.
-                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-1">
+                      Threshold *
+                    </label>
+                    <input
+                      type="number"
+                      value={formState.threshold}
+                      onChange={(e) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          threshold: parseFloat(e.target.value) || 0,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-line rounded-md bg-surface"
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {formState.routes.map((route, index) => (
-                    <Card key={index} className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Target className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm font-medium text-primary">
-                            Route {index + 1}
-                          </span>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeRoute(index)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
 
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-secondary mb-1">
-                            Destination *
-                          </label>
-                          <select
-                            value={route.destination_id}
-                            onChange={(e) =>
-                              updateRoute(index, {
-                                destination_id: parseInt(e.target.value),
-                              })
-                            }
-                            className="w-full px-3 py-2 border border-line rounded-md bg-surface"
-                          >
-                            {destinations.map((dest) => (
-                              <option key={dest.id} value={dest.id}>
-                                {dest.name} ({dest.type})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-1">
+                      Evaluation Interval (seconds) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formState.interval_seconds}
+                      onChange={(e) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          interval_seconds: parseInt(e.target.value) || 0,
+                        }))
+                      }
+                      className={cn(
+                        'w-full px-3 py-2 border rounded-md bg-surface',
+                        validationErrors.interval_seconds
+                          ? 'border-red-300 dark:border-red-600'
+                          : 'border-line',
+                      )}
+                      placeholder="60"
+                    />
+                    {validationErrors.interval_seconds && (
+                      <p className="text-red-600 text-sm mt-1">
+                        {validationErrors.interval_seconds}
+                      </p>
+                    )}
+                  </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-sm font-medium text-secondary mb-1">
-                              Custom Subject
-                            </label>
-                            <input
-                              type="text"
-                              value={route.template?.subject || ''}
-                              onChange={(e) =>
-                                updateRoute(index, {
-                                  template: {
-                                    ...route.template,
-                                    subject: e.target.value,
-                                  },
-                                })
-                              }
-                              className="w-full px-3 py-2 border border-line rounded-md bg-surface text-sm"
-                              placeholder="Optional custom subject"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-secondary mb-1">
-                              Custom Message
-                            </label>
-                            <input
-                              type="text"
-                              value={route.template?.message || ''}
-                              onChange={(e) =>
-                                updateRoute(index, {
-                                  template: {
-                                    ...route.template,
-                                    message: e.target.value,
-                                  },
-                                })
-                              }
-                              className="w-full px-3 py-2 border border-line rounded-md bg-surface text-sm"
-                              placeholder="Optional custom message"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-1">
+                      For (seconds, optional)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formState.for_seconds}
+                      onChange={(e) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          for_seconds: e.target.value,
+                        }))
+                      }
+                      className={cn(
+                        'w-full px-3 py-2 border rounded-md bg-surface',
+                        validationErrors.for_seconds
+                          ? 'border-red-300 dark:border-red-600'
+                          : 'border-line',
+                      )}
+                      placeholder="How long the condition must persist"
+                    />
+                    {validationErrors.for_seconds && (
+                      <p className="text-red-600 text-sm mt-1">
+                        {validationErrors.for_seconds}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Error display */}
-            {error && (
+            {createError && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
                 <div className="flex items-center gap-2 text-red-700 text-sm">
                   <AlertTriangle className="h-4 w-4" />
-                  {error}
+                  {createError}
                 </div>
               </div>
             )}
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-line">
-              <Button variant="outline" onClick={onClose} disabled={isLoading}>
+              <Button
+                variant="outline"
+                onClick={onClose}
+                disabled={isCreating}
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isCreating}
                 className="flex items-center gap-2"
               >
-                {isLoading ? (
+                {isCreating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4" />

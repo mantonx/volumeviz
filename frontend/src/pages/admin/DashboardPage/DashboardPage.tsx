@@ -66,11 +66,11 @@ export const DashboardPage: React.FC = () => {
     activeScans: 0,
     storageTrackedTB: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [hasFetched, setHasFetched] = useState(false);
 
   // Real-time updates via WebSocket
-  const { isConnected, onSizeUpdate } = useVolumeWebSocket({
+  const { onSizeUpdate } = useVolumeWebSocket({
     enabled: true,
   });
 

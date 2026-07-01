@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -9,16 +9,13 @@ import {
   Settings,
   Trash2,
   TestTube,
-  CheckCircle,
   AlertTriangle,
-  Clock,
   Loader2,
   Activity,
-  Target,
 } from 'lucide-react';
 import { cn } from '@/utils';
 import { useAlertRules } from '@/hooks/useAlerts';
-import type { AlertRule } from '@/api/alerts';
+import type { AlertRule } from '@/hooks/useAlerts';
 import { CreateRuleModal } from './CreateRuleModal';
 import { EditRuleModal } from './EditRuleModal';
 import { TestRuleModal } from './TestRuleModal';
@@ -30,75 +27,52 @@ export interface AlertRulesProps {
 export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
   const {
     rules,
-    loading,
+    isLoading,
     error,
-    operationLoading,
-    operationError,
-    fetchRules,
+    refetch,
     deleteRule,
+    isDeleting,
+    deleteError,
   } = useAlertRules();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingRule, setEditingRule] = useState<AlertRule | null>(null);
   const [testingRule, setTestingRule] = useState<AlertRule | null>(null);
-
-  useEffect(() => {
-    fetchRules();
-  }, [fetchRules]);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const handleDelete = async (rule: AlertRule) => {
     if (
-      window.confirm(`Are you sure you want to delete the rule "${rule.name}"?`)
+      !rule.id ||
+      !window.confirm(`Are you sure you want to delete the rule "${rule.name}"?`)
     ) {
-      try {
-        await deleteRule(rule.id);
-      } catch (error) {
-        // Error is handled by the hook
-      }
+      return;
+    }
+
+    try {
+      setDeletingId(rule.id);
+      await deleteRule(rule.id);
+    } catch {
+      // Error is surfaced via deleteError below
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity.toLowerCase()) {
-      case 'critical':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      case 'high':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'low':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-      default:
-        return 'bg-surface-secondary text-secondary';
-    }
-  };
-
-  const getStatusColor = (isEnabled: boolean) => {
+  const getStatusColor = (isEnabled?: boolean) => {
     return isEnabled
       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
       : 'bg-surface-secondary text-secondary';
   };
 
-  const formatCondition = (condition: any) => {
-    if (!condition) return 'No condition';
-
-    // Handle different condition formats
-    if (
-      condition.field &&
-      condition.operator &&
-      condition.value !== undefined
-    ) {
-      return `${condition.field} ${condition.operator} ${condition.value}`;
-    }
-
-    if (condition.query) {
-      return condition.query;
-    }
-
-    return JSON.stringify(condition);
+  const formatInterval = (nanos?: number): string => {
+    if (!nanos) return 'Unknown';
+    const seconds = nanos / 1_000_000_000;
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+    return `${Math.round(seconds / 3600)}h`;
   };
 
-  if (loading && rules.length === 0) {
+  if (isLoading && rules.length === 0) {
     return (
       <div className={cn('flex items-center justify-center py-12', className)}>
         <div className="flex items-center gap-2 text-tertiary">
@@ -113,8 +87,8 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
     return (
       <ErrorState
         title="Failed to load alert rules"
-        message={error}
-        onRetry={() => fetchRules()}
+        error={error}
+        onRetry={() => refetch()}
         className={className}
       />
     );
@@ -124,12 +98,9 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
     <div className={cn('space-y-4', className)}>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium text-primary">
-            Alert Rules & Routes
-          </h3>
+          <h3 className="text-lg font-medium text-primary">Alert Rules</h3>
           <p className="text-sm text-tertiary">
-            Configure rules for when alerts should be triggered and where they
-            go
+            Configure rules for when alerts should be triggered
           </p>
         </div>
         <Button
@@ -144,12 +115,10 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
       {rules.length === 0 ? (
         <EmptyState
           title="No alert rules configured"
-          message="Create your first alert rule to start monitoring your volumes"
+          description="Create your first alert rule to start monitoring your volumes"
           icon={Activity}
-          action={{
-            label: 'Add Rule',
-            onClick: () => setShowCreateModal(true),
-          }}
+          actionLabel="Add Rule"
+          onAction={() => setShowCreateModal(true)}
         />
       ) : (
         <div className="grid gap-4">
@@ -170,26 +139,21 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
                         >
                           {rule.is_enabled ? 'Enabled' : 'Disabled'}
                         </Badge>
-                        <Badge
-                          variant="secondary"
-                          className={getSeverityColor(rule.severity)}
-                        >
-                          {rule.severity}
-                        </Badge>
                       </div>
                       <p className="text-sm text-tertiary truncate">
                         {rule.description || 'No description'}
                       </p>
-                      <div className="text-xs text-tertiary mt-1">
-                        <div className="flex items-center gap-4">
-                          <span>
-                            Condition: {formatCondition(rule.condition)}
+                      <div className="text-xs text-tertiary mt-1 space-y-1">
+                        <div className="flex items-center gap-4 flex-wrap">
+                          <span className="font-mono">
+                            {rule.query} {rule.condition} {rule.threshold}
                           </span>
-                          <span>Cooldown: {rule.cooldown_seconds}s</span>
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Target className="h-3 w-3" />
-                          Routes to: {rule.routes?.length || 0} destination(s)
+                        <div className="flex items-center gap-4 flex-wrap">
+                          <span>Every {formatInterval(rule.interval)}</span>
+                          {rule.for != null && (
+                            <span>For {formatInterval(rule.for)}</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -201,14 +165,9 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
                     variant="outline"
                     size="sm"
                     onClick={() => setTestingRule(rule)}
-                    disabled={operationLoading[`testRule_${rule.id}`]}
                     className="flex items-center gap-1"
                   >
-                    {operationLoading[`testRule_${rule.id}`] ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <TestTube className="h-3 w-3" />
-                    )}
+                    <TestTube className="h-3 w-3" />
                     Test
                   </Button>
 
@@ -226,10 +185,10 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleDelete(rule)}
-                    disabled={operationLoading[`deleteRule_${rule.id}`]}
+                    disabled={isDeleting && deletingId === rule.id}
                     className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                   >
-                    {operationLoading[`deleteRule_${rule.id}`] ? (
+                    {isDeleting && deletingId === rule.id ? (
                       <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
                       <Trash2 className="h-3 w-3" />
@@ -239,20 +198,11 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
                 </div>
               </div>
 
-              {operationError[`testRule_${rule.id}`] && (
+              {deleteError && deletingId === rule.id && (
                 <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
                   <div className="flex items-center gap-2 text-red-700 text-sm">
                     <AlertTriangle className="h-4 w-4" />
-                    Test failed: {operationError[`testRule_${rule.id}`]}
-                  </div>
-                </div>
-              )}
-
-              {operationError[`deleteRule_${rule.id}`] && (
-                <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                  <div className="flex items-center gap-2 text-red-700 text-sm">
-                    <AlertTriangle className="h-4 w-4" />
-                    Delete failed: {operationError[`deleteRule_${rule.id}`]}
+                    Delete failed: {deleteError}
                   </div>
                 </div>
               )}
@@ -267,7 +217,7 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
         onClose={() => setShowCreateModal(false)}
         onSuccess={() => {
           setShowCreateModal(false);
-          fetchRules();
+          refetch();
         }}
       />
 
@@ -278,7 +228,7 @@ export const AlertRules: React.FC<AlertRulesProps> = ({ className }) => {
           onClose={() => setEditingRule(null)}
           onSuccess={() => {
             setEditingRule(null);
-            fetchRules();
+            refetch();
           }}
         />
       )}

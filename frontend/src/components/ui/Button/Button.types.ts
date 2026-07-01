@@ -34,4 +34,6 @@ export interface ButtonProps
   className?: string;
   /** Button content */
   children?: React.ReactNode;
+  /** When true, the button will render as its child (e.g., as a Link component) */
+  asChild?: boolean;
 }

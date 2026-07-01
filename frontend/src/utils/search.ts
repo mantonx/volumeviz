@@ -4,7 +4,7 @@ import type {
   SimpleSearchQuery,
   SearchResultItem,
   SearchFilters,
-} from '../components/search/SearchInterface/SearchInterface.types';
+} from '../components/domain/search/SearchInterface/SearchInterface.types';
 
 /**
  * Search utilities interface

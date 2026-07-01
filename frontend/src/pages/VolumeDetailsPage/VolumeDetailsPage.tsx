@@ -1,5 +1,5 @@
 import {
-  useGetVolumes,
+  useGetVolumesName,
   useGetVolumesIdScanStatus,
   usePostVolumesIdSizeRefresh,
 } from '@/api/orval-generated/api';
@@ -8,8 +8,6 @@ import { FileMetadataView } from '@/components/domain/explorer/FileMetadataView'
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { volumesAtom } from '@/store';
-import { useAtomValue } from 'jotai';
 import {
   Activity,
   ArrowLeft,
@@ -19,57 +17,47 @@ import {
   RefreshCw,
   Tag,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 // Explorer UI integration for tree and browse functionality implemented
+
+// The scan-status endpoint returns a raw Go map (interfaces.ScanProgress
+// marshaled as JSON), which orval types as {[key: string]: unknown}. This
+// mirrors the real backend struct (internal/interfaces/scanner.go).
+interface ScanProgress {
+  status?: string;
+  bytes_processed?: number;
+  elapsed_seconds?: number;
+  last_update?: string;
+}
 
 const VolumeDetailsPage: React.FC = () => {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
   const {
-    data: volumesData,
-    isLoading: volumesLoading,
-    error: volumesError,
-  } = useGetVolumes({});
-  const {
-    data: scanStatus,
-    isLoading: scanLoading,
-    error: scanError,
-  } = useGetVolumesIdScanStatus(name || '', {
+    data: volumeData,
+    isLoading: volumeLoading,
+    error: volumeError,
+    refetch: refetchVolume,
+  } = useGetVolumesName(name || '', {
     query: { enabled: !!name },
+  });
+  const {
+    data: scanStatusData,
+    isLoading: isScanning,
+  } = useGetVolumesIdScanStatus(name || '', {
+    query: { enabled: !!name, retry: false },
   });
   const sizeRefreshMutation = usePostVolumesIdSizeRefresh();
 
-  const [volume, setVolume] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Find volume in current data
-  useEffect(() => {
-    if (volumesLoading) {
-      setLoading(true);
-      return;
-    }
-
-    if (volumesError) {
-      setError('Failed to load volumes');
-      setLoading(false);
-      return;
-    }
-
-    if (volumesData?.data) {
-      const foundVolume = volumesData.data.find((v) => v.name === name);
-      if (foundVolume) {
-        setVolume(foundVolume);
-        setError(null);
-      } else {
-        setError('Volume not found');
-      }
-    }
-
-    setLoading(false);
-  }, [name, volumesData, volumesLoading, volumesError]);
+  const volume = volumeData?.status === 200 ? volumeData.data : undefined;
+  const scanResult =
+    scanStatusData?.status === 200
+      ? (scanStatusData.data as ScanProgress)
+      : undefined;
+  const loading = volumeLoading;
+  const error = volumeError ? 'Failed to load volume' : null;
 
   const handleScan = async () => {
     if (!volume || !name) return;
@@ -95,12 +83,12 @@ const VolumeDetailsPage: React.FC = () => {
     return new Date(dateString).toLocaleString();
   };
 
-  const getStatusVariant = (isActive?: boolean) => {
-    return isActive ? 'success' : 'outline';
+  const getStatusVariant = (status?: string) => {
+    return status === 'active' ? 'success' : 'outline';
   };
 
-  const getStatusText = (isActive?: boolean): string => {
-    return isActive ? 'Active' : 'Inactive';
+  const getStatusText = (status?: string): string => {
+    return status === 'active' ? 'Active' : (status ?? 'Inactive');
   };
 
   if (loading) {
@@ -143,10 +131,7 @@ const VolumeDetailsPage: React.FC = () => {
     );
   }
 
-  const volumeId = volume.volume_id || volume.name;
-  const scanResult = scanResults[volumeId];
-  const isScanning = scanLoading[volumeId];
-  const scanErrorMessage = scanError[volumeId];
+  const volumeId = volume.name ?? name ?? '';
 
   return (
     <div className="space-y-6">
@@ -171,7 +156,7 @@ const VolumeDetailsPage: React.FC = () => {
             />
             {isScanning ? 'Scanning...' : 'Scan Size'}
           </Button>
-          <Button onClick={() => fetchVolumes({ q: name })}>
+          <Button onClick={() => refetchVolume()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -195,11 +180,11 @@ const VolumeDetailsPage: React.FC = () => {
               </p>
             </div>
             <div className="ml-auto flex space-x-2">
-              <Badge variant={getStatusVariant(volume.is_active)}>
-                {getStatusText(volume.is_active)}
+              <Badge variant={getStatusVariant(volume.status)}>
+                {getStatusText(volume.status)}
               </Badge>
               {volume.is_orphaned && (
-                <Badge variant="destructive">Orphaned</Badge>
+                <Badge variant="error">Orphaned</Badge>
               )}
               {volume.is_system && <Badge variant="secondary">System</Badge>}
             </div>
@@ -212,7 +197,7 @@ const VolumeDetailsPage: React.FC = () => {
                   Volume ID:
                 </span>
                 <span className="font-mono text-sm text-primary">
-                  {volume.volume_id || 'N/A'}
+                  {volume.name || 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -227,8 +212,8 @@ const VolumeDetailsPage: React.FC = () => {
                 <span className="text-sm text-secondary">
                   Status:
                 </span>
-                <Badge variant={getStatusVariant(volume.is_active)}>
-                  {getStatusText(volume.is_active)}
+                <Badge variant={getStatusVariant(volume.status)}>
+                  {getStatusText(volume.status)}
                 </Badge>
               </div>
             </div>
@@ -242,7 +227,7 @@ const VolumeDetailsPage: React.FC = () => {
                   {volume.size_bytes
                     ? formatSize(volume.size_bytes)
                     : scanResult
-                      ? formatSize(scanResult.size_bytes)
+                      ? formatSize(scanResult.bytes_processed)
                       : 'Unknown'}
                 </span>
               </div>
@@ -276,7 +261,7 @@ const VolumeDetailsPage: React.FC = () => {
                   {volume.size_bytes
                     ? formatSize(volume.size_bytes)
                     : scanResult
-                      ? formatSize(scanResult.size_bytes)
+                      ? formatSize(scanResult.bytes_processed)
                       : 'Unknown'}
                 </p>
               </div>
@@ -357,7 +342,7 @@ const VolumeDetailsPage: React.FC = () => {
       )}
 
       {/* Scan Information */}
-      {(scanResult || scanErrorMessage) && (
+      {scanResult && (
         <Card className="p-6">
           <div className="flex items-center space-x-3 mb-4">
             <Activity className="h-5 w-5 text-gray-500" />
@@ -365,50 +350,34 @@ const VolumeDetailsPage: React.FC = () => {
               Scan Information
             </h3>
           </div>
-          {scanErrorMessage ? (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <p className="text-red-700 dark:text-red-300">
-                <strong>Scan Error:</strong> {scanErrorMessage}
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary">Status:</span>
+              <span className="font-medium text-primary">
+                {scanResult.status || 'Unknown'}
+              </span>
             </div>
-          ) : scanResult ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-secondary">
-                  Size:
-                </span>
-                <span className="font-medium text-primary">
-                  {formatSize(scanResult.size_bytes)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-secondary">
-                  Method:
-                </span>
-                <span className="font-medium text-primary">
-                  {scanResult.method || 'Unknown'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-secondary">
-                  Duration:
-                </span>
-                <span className="font-medium text-primary">
-                  {scanResult.duration_ms
-                    ? `${scanResult.duration_ms}ms`
-                    : 'Unknown'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-secondary">
-                  Scanned At:
-                </span>
-                <span className="font-medium text-primary">
-                  {formatDate(scanResult.scanned_at)}
-                </span>
-              </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary">Processed:</span>
+              <span className="font-medium text-primary">
+                {formatSize(scanResult.bytes_processed)}
+              </span>
             </div>
-          ) : null}
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary">Elapsed:</span>
+              <span className="font-medium text-primary">
+                {scanResult.elapsed_seconds != null
+                  ? `${scanResult.elapsed_seconds}s`
+                  : 'Unknown'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary">Last Update:</span>
+              <span className="font-medium text-primary">
+                {formatDate(scanResult.last_update)}
+              </span>
+            </div>
+          </div>
         </Card>
       )}
 
@@ -421,12 +390,8 @@ const VolumeDetailsPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <ExplorerView
-                volumeId={volume.volume_id || volume.name}
-                volumeName={volume.name}
-                onFileSelect={(file) => {
-                  // Explorer tree and browse integration
-                  console.log('Selected file for metadata display:', file);
-                }}
+                volumeId={volumeId}
+                volumeName={volume.name || volumeId}
               />
             </div>
             <div>

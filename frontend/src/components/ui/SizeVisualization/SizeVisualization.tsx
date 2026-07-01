@@ -20,6 +20,15 @@ const getSizeTextColor = (percentage: number): string => {
   return 'text-red-600';
 };
 
+interface SizeVisualizationProps {
+  sizeBytes: number;
+  maxSizeBytes?: number;
+  showLabel?: boolean;
+  showPercentage?: boolean;
+  className?: string;
+  compact?: boolean;
+}
+
 export const SizeVisualization: React.FC<SizeVisualizationProps> = ({
   sizeBytes,
   maxSizeBytes,

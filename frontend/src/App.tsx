@@ -1,3 +1,10 @@
+import React, { Suspense, useEffect, useState, Component, ErrorInfo, ReactNode } from 'react';
+import {
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+} from 'react-router-dom';
 import { ApiHealthChecker } from '@/components/application';
 import { ProtectedRoute, RequireAdmin } from '@/components/auth';
 import { Layout } from '@/components/layout/Layout';
@@ -6,14 +13,48 @@ import { ToastProvider } from '@/components/ui';
 import { RealtimeProvider } from '@/providers/realtime';
 import { ThemeProvider } from '@/providers/theme/ThemeProvider';
 import { backgroundSyncManager } from '@/utils/background-sync';
-import { serviceWorkerManager } from '@/utils/service-worker';
-import React, { Suspense, useEffect, useState } from 'react';
-import {
-  Navigate,
-  Route,
-  BrowserRouter as Router,
-  Routes,
-} from 'react-router-dom';
+
+// Error Boundary for React errors
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-surface">
+          <div className="text-center p-8">
+            <h1 className="text-2xl font-bold text-primary mb-4">Something went wrong</h1>
+            <p className="text-secondary mb-4">
+              {this.state.error?.message || 'An unexpected error occurred'}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 // Lazy load pages for better code splitting
 const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
@@ -39,8 +80,6 @@ const AdminPermissionsPage = React.lazy(() => import('@/pages/admin/PermissionsP
 const AdminSystemSettingsPage = React.lazy(() => import('@/pages/admin/SystemSettingsPage'));
 
 // Legacy pages - kept for backward compatibility and Settings integration
-const ExplorerPage = React.lazy(() => import('@/pages/ExplorerPage'));
-const SearchPage = React.lazy(() => import('@/pages/SearchPage'));
 const MountsPage = React.lazy(() => import('@/pages/MountsPage'));
 const RulesPage = React.lazy(() => import('@/pages/RulesPage'));
 
@@ -129,14 +168,15 @@ const App: React.FC = () => {
   }
 
   return (
-    <ThemeProvider>
-      <div data-testid="app-root">
-        <ToastProvider>
-          <RealtimeProvider>
-            <ApiHealthChecker />
-            <Router>
-              <Suspense fallback={<PageLoadingSpinner />}>
-                  <Routes>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <div data-testid="app-root">
+          <ToastProvider>
+            <RealtimeProvider>
+              <ApiHealthChecker />
+              <Router>
+                <Suspense fallback={<PageLoadingSpinner />}>
+                    <Routes>
                   {/* Public Routes (no Layout) */}
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
@@ -229,11 +269,12 @@ const App: React.FC = () => {
                   />
                 </Routes>
               </Suspense>
-            </Router>
-        </RealtimeProvider>
-      </ToastProvider>
-    </div>
-    </ThemeProvider>
+              </Router>
+          </RealtimeProvider>
+        </ToastProvider>
+      </div>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 };
 

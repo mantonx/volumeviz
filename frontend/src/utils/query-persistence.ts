@@ -167,11 +167,12 @@ export function createPersistedQueryClient(options: {
     queryClient.getQueryCache().subscribe((event) => {
       if (event.type === 'added' || event.type === 'updated') {
         const { query } = event;
-        const { queryKey, data, meta } = query.state;
+        const { queryKey, meta } = query;
+        const { data, status } = query.state;
 
         // Only persist queries that have meta.persist = true
-        if (meta?.persist && data && query.state.status === 'success') {
-          persister.persistQuery(queryKey, data, query.options.staleTime);
+        if (meta?.persist && data && status === 'success') {
+          persister.persistQuery(queryKey as unknown[], data, staleTime);
         }
       }
     });
@@ -196,7 +197,6 @@ export function createPersistedQueryClient(options: {
 
 // Hook to use persisted query client
 export function useQueryPersistence() {
-  const queryClient = new QueryClient();
   const persister = new QueryPersister();
 
   return {

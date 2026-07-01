@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSetAtom } from 'jotai';
 import { customFetchClient } from '@/api/fetch-client';
 
 export interface FileOperationsReturn {
@@ -75,7 +74,7 @@ export function useFileOperations(): FileOperationsReturn {
         body: JSON.stringify({ type, size }),
       });
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       // Invalidate file queries to refresh preview info
       queryClient.invalidateQueries({ queryKey: ['explorer', 'browse'] });
       queryClient.invalidateQueries({

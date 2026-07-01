@@ -1,4 +1,5 @@
 import React from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/utils/class-names';
 import { ButtonProps, ButtonVariant, ButtonSize } from './Button.types';
 
@@ -64,24 +65,44 @@ export const Button: React.FC<ButtonProps> = React.memo(
     rightIcon,
     className,
     disabled,
+    asChild = false,
     ...props
   }) => {
     const isDisabled = disabled || loading;
+    const Comp = asChild ? Slot : 'button';
 
+    const buttonClass = cn(
+      // Base styles
+      'inline-flex items-center justify-center font-medium rounded-md transition-colors',
+      'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+      'disabled:opacity-50 disabled:cursor-not-allowed',
+      // Variant styles
+      buttonVariants[variant],
+      // Size styles
+      buttonSizes[size],
+      // Custom styles
+      className,
+    );
+
+    // When asChild is true, we can't wrap children with additional elements
+    // The child component must handle rendering icons and loading states itself
+    if (asChild) {
+      return (
+        <Comp
+          className={buttonClass}
+          disabled={isDisabled}
+          aria-disabled={isDisabled}
+          {...props}
+        >
+          {children}
+        </Comp>
+      );
+    }
+
+    // Normal button rendering with icons and loading support
     return (
-      <button
-        className={cn(
-          // Base styles
-          'inline-flex items-center justify-center font-medium rounded-md transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
-          // Variant styles
-          buttonVariants[variant],
-          // Size styles
-          buttonSizes[size],
-          // Custom styles
-          className,
-        )}
+      <Comp
+        className={buttonClass}
         disabled={isDisabled}
         aria-disabled={isDisabled}
         {...props}
@@ -98,7 +119,7 @@ export const Button: React.FC<ButtonProps> = React.memo(
             {rightIcon}
           </span>
         )}
-      </button>
+      </Comp>
     );
   },
 );

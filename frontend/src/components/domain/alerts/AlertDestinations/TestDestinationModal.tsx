@@ -1,17 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import {
-  X,
-  TestTube,
-  Loader2,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-} from 'lucide-react';
-import { cn } from '@/utils';
+import { X, TestTube, Loader2, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useAlertDestinations } from '@/hooks/useAlerts';
-import type { AlertDestination, TestDestinationRequest } from '@/api/alerts';
+import type { AlertDestination } from '@/hooks/useAlerts';
 
 export interface TestDestinationModalProps {
   destination: AlertDestination;
@@ -19,59 +11,30 @@ export interface TestDestinationModalProps {
   onClose: () => void;
 }
 
-interface FormState {
-  subject: string;
-  message: string;
-}
-
-const initialFormState: FormState = {
-  subject: 'Test Alert - VolumeViz',
-  message:
-    'This is a test message to verify your alert destination is working correctly.',
-};
-
 export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
   destination,
   open,
   onClose,
 }) => {
-  const { testDestination, operationLoading, operationError } =
-    useAlertDestinations();
-  const [formState, setFormState] = useState<FormState>(initialFormState);
+  const { testDestination, isTesting, testError } = useAlertDestinations();
   const [testResult, setTestResult] = useState<{
-    success: boolean;
     message: string;
-    delivered_at?: string;
+    tested_at?: string;
   } | null>(null);
 
-  const isLoading = operationLoading[`testDestination_${destination.id}`];
-  const error = operationError[`testDestination_${destination.id}`];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleTest = async () => {
+    if (!destination.id) return;
     try {
       setTestResult(null);
-
-      const params: TestDestinationRequest = {
-        subject: formState.subject.trim(),
-        message: formState.message.trim(),
-      };
-
-      const result = await testDestination(destination.id, params);
+      const result = await testDestination(destination.id);
       setTestResult(result);
-    } catch (error) {
-      // Error is handled by the hook
-      setTestResult({
-        success: false,
-        message: error instanceof Error ? error.message : 'Test failed',
-      });
+    } catch {
+      // Error is surfaced via testError below
     }
   };
 
   const handleClose = () => {
     setTestResult(null);
-    setFormState(initialFormState);
     onClose();
   };
 
@@ -112,106 +75,56 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
                 </p>
               </div>
             </div>
-            {destination.description && (
-              <p className="text-sm text-secondary">
-                {destination.description}
-              </p>
-            )}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Test Message Form */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
-                  Subject
-                </label>
-                <input
-                  type="text"
-                  value={formState.subject}
-                  onChange={(e) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      subject: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-line rounded-md bg-surface"
-                  placeholder="Test alert subject"
-                  required
-                />
+          <div className="space-y-6">
+            {!testResult && (
+              <div className="text-center">
+                <p className="text-secondary mb-4">
+                  Send a test notification to this destination to verify it is
+                  configured correctly.
+                </p>
+                <Button
+                  onClick={handleTest}
+                  disabled={isTesting}
+                  className="flex items-center gap-2 mx-auto"
+                >
+                  {isTesting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <TestTube className="h-4 w-4" />
+                  )}
+                  Send Test
+                </Button>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
-                  Message
-                </label>
-                <textarea
-                  value={formState.message}
-                  onChange={(e) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      message: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-line rounded-md bg-surface"
-                  rows={4}
-                  placeholder="Test alert message"
-                  required
-                />
-              </div>
-            </div>
+            )}
 
             {/* Test Result */}
-            {testResult && (
-              <div
-                className={cn(
-                  'p-4 border rounded-lg',
-                  testResult.success
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                    : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
-                )}
-              >
-                <div
-                  className={cn(
-                    'flex items-center gap-2 text-sm font-medium mb-2',
-                    testResult.success
-                      ? 'text-green-700 dark:text-green-400'
-                      : 'text-red-700',
-                  )}
-                >
-                  {testResult.success ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4" />
-                  )}
-                  {testResult.success ? 'Test Successful!' : 'Test Failed'}
+            {testResult && !testError && (
+              <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-2 text-sm font-medium mb-2 text-green-700 dark:text-green-400">
+                  <CheckCircle className="h-4 w-4" />
+                  Test Successful!
                 </div>
-                <p
-                  className={cn(
-                    'text-sm',
-                    testResult.success
-                      ? 'text-green-600 dark:text-green-300'
-                      : 'text-red-600 dark:text-red-300',
-                  )}
-                >
+                <p className="text-sm text-green-600 dark:text-green-300">
                   {testResult.message}
                 </p>
-                {testResult.delivered_at && (
+                {testResult.tested_at && (
                   <div className="flex items-center gap-1 mt-2 text-xs text-green-600 dark:text-green-400">
                     <Clock className="h-3 w-3" />
-                    Delivered at:{' '}
-                    {new Date(testResult.delivered_at).toLocaleString()}
+                    Tested at:{' '}
+                    {new Date(testResult.tested_at).toLocaleString()}
                   </div>
                 )}
               </div>
             )}
 
             {/* Error display */}
-            {error && !testResult && (
+            {testError && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
                 <div className="flex items-center gap-2 text-red-700 text-sm">
                   <AlertTriangle className="h-4 w-4" />
-                  {error}
+                  {testError}
                 </div>
               </div>
             )}
@@ -221,26 +134,26 @@ export const TestDestinationModal: React.FC<TestDestinationModalProps> = ({
               <Button
                 variant="outline"
                 onClick={handleClose}
-                disabled={isLoading}
+                disabled={isTesting}
               >
                 {testResult ? 'Close' : 'Cancel'}
               </Button>
-              {!testResult && (
+              {testResult && (
                 <Button
-                  type="submit"
-                  disabled={isLoading}
+                  onClick={handleTest}
+                  disabled={isTesting}
                   className="flex items-center gap-2"
                 >
-                  {isLoading ? (
+                  {isTesting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <TestTube className="h-4 w-4" />
                   )}
-                  Send Test
+                  Test Again
                 </Button>
               )}
             </div>
-          </form>
+          </div>
         </Card>
       </div>
     </div>

@@ -27,7 +27,7 @@ export function useScanNotifications(
   useEffect(() => {
     if (!progress) return;
 
-    const { status, scanId } = progress;
+    const { overall_status: status } = progress;
 
     if (status === 'running' && showStartNotification) {
       toast.success(`Scan started for volume ${volumeId}`, {
@@ -43,8 +43,7 @@ export function useScanNotifications(
       });
     }
   }, [
-    progress?.status,
-    progress?.scanId,
+    progress?.overall_status,
     volumeId,
     showStartNotification,
     showCompletionNotification,

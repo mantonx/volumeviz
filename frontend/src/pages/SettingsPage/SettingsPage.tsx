@@ -5,9 +5,7 @@ import {
   Settings,
   Monitor,
   Palette,
-  Bell,
   Database,
-  Shield,
   Save,
   RotateCcw,
   Info,
@@ -26,7 +24,7 @@ import {
   environmentAtom,
 } from '@/store';
 import { resetOnboarding } from '@/hooks/useOnboardingCheck';
-import type { SettingsPageProps, ThemeOption } from './SettingsPage.types';
+import type { SettingsPageProps } from './SettingsPage.types';
 
 /**
  * Settings page component for configuring VolumeViz application preferences.
@@ -58,14 +56,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
   const [apiConfig, setApiConfig] = useAtom(apiConfigAtom);
   const [features, setFeatures] = useAtom(featureFlagsAtom);
   const environment = useAtomValue(environmentAtom);
-
-  /**
-   * Handle theme selection with immediate application.
-   * Updates both the atom state and document root classes.
-   */
-  const handleThemeChange = (newTheme: ThemeOption) => {
-    setTheme(newTheme);
-  };
 
   /**
    * Handle auto-refresh interval changes with validation.
@@ -120,10 +110,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
         retryDelay: 1000,
       });
       setFeatures({
-        autoRefresh: true,
-        realTimeUpdates: false,
-        experimentalFeatures: false,
-        debugMode: environment.isDevelopment,
+        enableWebSocket: false,
+        enableRealTimeUpdates: true,
+        enableAdvancedSearch: true,
+        enableBulkOperations: true,
+        enableMetadataExtraction: true,
+        enablePreviewGeneration: false,
       });
     }
   };
@@ -167,22 +159,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
     ) {
       resetOnboarding();
       navigate('/onboarding');
-    }
-  };
-
-  /**
-   * Get theme display name for UI.
-   */
-  const getThemeDisplayName = (themeValue: ThemeOption): string => {
-    switch (themeValue) {
-      case 'light':
-        return 'Light';
-      case 'dark':
-        return 'Dark';
-      case 'system':
-        return 'System';
-      default:
-        return 'Unknown';
     }
   };
 
@@ -371,7 +347,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
               </p>
             </div>
             <Button
-              variant={autoRefresh ? 'default' : 'outline'}
+              variant={autoRefresh ? 'primary' : 'outline'}
               size="sm"
               onClick={() => setAutoRefresh(!autoRefresh)}
             >
@@ -446,7 +422,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
                   </Badge>
                 )}
                 <Button
-                  variant={enabled ? 'default' : 'outline'}
+                  variant={enabled ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() =>
                     handleFeatureToggle(key as keyof typeof features)
@@ -482,7 +458,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
               Environment:
             </span>
             <Badge
-              variant={environment.isProduction ? 'default' : 'secondary'}
+              variant={environment.isProduction ? 'primary' : 'secondary'}
             >
               {environment.nodeEnv}
             </Badge>

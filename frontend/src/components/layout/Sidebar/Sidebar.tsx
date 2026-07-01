@@ -1,7 +1,6 @@
+import { useGetVolumes, type VolumeV1 } from '@/api/orval-generated/api';
 import { Button } from '@/components/ui/Button';
-import { volumeStatsAtom } from '@/store';
 import { cn } from '@/utils';
-import { useAtomValue } from 'jotai';
 import {
   Activity,
   Bell,
@@ -9,12 +8,9 @@ import {
   HardDrive,
   Home,
   Layers,
-  Search,
   Settings,
-  Shield,
   TrendingUp,
   X,
-  Zap,
 } from 'lucide-react';
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -82,7 +78,15 @@ const secondaryNavigation: NavigationItem[] = [
 
 export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   const location = useLocation();
-  const volumeStats = useAtomValue(volumeStatsAtom);
+  const { data: volumesData } = useGetVolumes({ page: 1, page_size: 100 });
+  const volumes = (
+    volumesData?.status === 200 ? (volumesData.data.data as VolumeV1[]) : []
+  ) ?? [];
+  const volumeStats = {
+    total: volumes.length,
+    active: volumes.filter((v) => !v.is_orphaned).length,
+    totalSize: volumes.reduce((sum, v) => sum + (v.size_bytes ?? 0), 0),
+  };
 
   // Add badges to navigation items
   const enhancedNavigation = navigation.map((item) => {

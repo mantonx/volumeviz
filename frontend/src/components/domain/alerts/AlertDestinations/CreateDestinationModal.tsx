@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { X, Plus, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, Plus, Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/utils';
 import { useAlertDestinations } from '@/hooks/useAlerts';
-import type { CreateAlertDestinationParams } from '@/api/alerts';
+import type { CreateAlertDestinationParams } from '@/hooks/useAlerts';
 
 export interface CreateDestinationModalProps {
   open: boolean;
@@ -16,7 +16,6 @@ type DestinationType = 'webhook' | 'slack' | 'pushover';
 
 interface FormState {
   name: string;
-  description: string;
   type: DestinationType;
   is_enabled: boolean;
   config: Record<string, any>;
@@ -24,7 +23,6 @@ interface FormState {
 
 const initialFormState: FormState = {
   name: '',
-  description: '',
   type: 'webhook',
   is_enabled: true,
   config: {},
@@ -35,15 +33,12 @@ export const CreateDestinationModal: React.FC<CreateDestinationModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { createDestination, operationLoading, operationError } =
+  const { createDestination, isCreating, createError } =
     useAlertDestinations();
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
-
-  const isLoading = operationLoading['createDestination'];
-  const error = operationError['createDestination'];
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -101,7 +96,6 @@ export const CreateDestinationModal: React.FC<CreateDestinationModalProps> = ({
     try {
       const params: CreateAlertDestinationParams = {
         name: formState.name.trim(),
-        description: formState.description.trim() || undefined,
         type: formState.type,
         config: formState.config,
         is_enabled: formState.is_enabled,
@@ -111,8 +105,8 @@ export const CreateDestinationModal: React.FC<CreateDestinationModalProps> = ({
       setFormState(initialFormState);
       setValidationErrors({});
       onSuccess();
-    } catch (error) {
-      // Error is handled by the hook
+    } catch {
+      // Error is surfaced via createError below
     }
   };
 
@@ -423,24 +417,6 @@ export const CreateDestinationModal: React.FC<CreateDestinationModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={formState.description}
-                  onChange={(e) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-line rounded-md bg-surface"
-                  placeholder="Optional description"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
                   Type *
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -497,26 +473,30 @@ export const CreateDestinationModal: React.FC<CreateDestinationModalProps> = ({
             </div>
 
             {/* Error display */}
-            {error && (
+            {createError && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
                 <div className="flex items-center gap-2 text-red-700 text-sm">
                   <AlertTriangle className="h-4 w-4" />
-                  {error}
+                  {createError}
                 </div>
               </div>
             )}
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-line">
-              <Button variant="outline" onClick={onClose} disabled={isLoading}>
+              <Button
+                variant="outline"
+                onClick={onClose}
+                disabled={isCreating}
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isCreating}
                 className="flex items-center gap-2"
               >
-                {isLoading ? (
+                {isCreating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4" />

@@ -282,7 +282,7 @@ export function VirtualizedFileTable({
 
                 {/* Modified */}
                 <div className="col-span-3 flex items-center text-sm text-secondary">
-                  {formatDate(file.modified_time)}
+                  {file.modified_time ? formatDate(file.modified_time) : '—'}
                 </div>
 
                 {/* Type */}

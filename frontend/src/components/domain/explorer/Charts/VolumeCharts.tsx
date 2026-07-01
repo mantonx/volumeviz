@@ -5,10 +5,9 @@
  * Supports both 30-day and 90-day trend analysis.
  */
 
-import { useVolumeInsights } from '@/api/explorer';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { useGetTrendsVolumesVolumeId } from '@/api/orval-generated/api';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import {
   BarChart3Icon,
   LoaderIcon,
@@ -37,14 +36,43 @@ interface VolumeChartsProps {
   className?: string;
 }
 
-// Mock data for file type composition (since we don't have this endpoint yet)
-const mockCompositionData = [
-  { name: 'Videos', value: 45.3, size: 23.2, color: '#8b5cf6' },
-  { name: 'Images', value: 22.8, size: 11.7, color: '#06b6d4' },
-  { name: 'Documents', value: 18.7, size: 9.6, color: '#10b981' },
-  { name: 'Audio', value: 8.2, size: 4.2, color: '#f59e0b' },
-  { name: 'Archives', value: 3.4, size: 1.7, color: '#ef4444' },
-  { name: 'Other', value: 1.6, size: 0.8, color: '#6b7280' },
+// The trends endpoint returns a raw Go map (see internal/models/stats.go),
+// which orval types as {[key: string]: unknown}. These interfaces mirror
+// the real backend response shape.
+interface DailyStat {
+  date: string;
+  files_count: number;
+  total_bytes: number;
+  added_bytes: number;
+  removed_bytes: number;
+}
+
+interface MediaKindComposition {
+  media_kind?: string;
+  total_bytes: number;
+  percent_of_volume?: string;
+}
+
+interface TopGrowingFolder {
+  folder_name: string;
+  folder_path: string;
+  total_added_bytes: number;
+  total_added_files: number;
+}
+
+interface VolumeTrendsData {
+  daily_stats?: DailyStat[];
+  media_composition?: MediaKindComposition[] | null;
+  top_growing_folders?: TopGrowingFolder[] | null;
+}
+
+const COMPOSITION_COLORS = [
+  '#8b5cf6',
+  '#06b6d4',
+  '#10b981',
+  '#f59e0b',
+  '#ef4444',
+  '#6b7280',
 ];
 
 const formatFileSize = (bytes: number): string => {
@@ -61,49 +89,67 @@ const formatDate = (dateString: string): string => {
 };
 
 export const VolumeCharts: React.FC<VolumeChartsProps> = ({
+  volumeId,
   className = '',
 }) => {
   const [trendPeriod, setTrendPeriod] = useState<30 | 90>(30);
 
-  const { volumeStats, topFolders, isLoading, statsError, foldersError } =
-    useVolumeInsights();
+  const {
+    data: trendsData,
+    isLoading,
+    error,
+  } = useGetTrendsVolumesVolumeId(
+    volumeId,
+    { days: trendPeriod },
+    { query: { enabled: !!volumeId } },
+  );
 
-  const error = statsError || foldersError;
+  const trends =
+    trendsData?.status === 200
+      ? (trendsData.data as VolumeTrendsData)
+      : undefined;
 
-  // Transform daily stats for chart display
   const trendData = useMemo(() => {
-    if (!volumeStats || volumeStats.length === 0) return [];
+    if (!trends?.daily_stats) return [];
 
-    // Filter data based on selected period
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - trendPeriod);
-
-    return volumeStats
-      .filter((stat) => new Date(stat.date) >= cutoffDate)
+    return trends.daily_stats
       .map((stat) => ({
         date: stat.date,
-        size: stat.total_size,
-        files: stat.file_count,
-        growth: stat.growth_bytes,
+        size: stat.total_bytes,
+        files: stat.files_count,
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [volumeStats, trendPeriod]);
+  }, [trends]);
 
-  // Transform top folders for growth chart
   const growthData = useMemo(() => {
-    if (!topFolders || topFolders.length === 0) return [];
+    if (!trends?.top_growing_folders) return [];
 
-    return topFolders
-      .slice(0, 7) // Show top 7 folders
-      .map((folder) => ({
-        folder: folder.path,
-        size: folder.size,
-        files: folder.file_count,
-        // Calculate mock growth percentage (since we don't have historical data)
-        growth: Math.random() * 15 - 2, // Random between -2% and 13%
-        trend: Math.random() > 0.3 ? 'up' : 'down',
-      }));
-  }, [topFolders]);
+    return trends.top_growing_folders.slice(0, 7).map((folder) => ({
+      folder: folder.folder_path,
+      size: folder.total_added_bytes,
+      files: folder.total_added_files,
+    }));
+  }, [trends]);
+
+  const compositionData = useMemo(() => {
+    if (!trends?.media_composition) return [];
+
+    // Multiple rows per media_kind (one per date) — keep only the latest.
+    const latestByKind = new Map<string, MediaKindComposition>();
+    for (const entry of trends.media_composition) {
+      const kind = entry.media_kind ?? 'unknown';
+      latestByKind.set(kind, entry);
+    }
+
+    return Array.from(latestByKind.entries()).map(([kind, entry], index) => ({
+      name: kind,
+      size: entry.total_bytes,
+      percent: entry.percent_of_volume
+        ? parseFloat(entry.percent_of_volume)
+        : 0,
+      color: COMPOSITION_COLORS[index % COMPOSITION_COLORS.length],
+    }));
+  }, [trends]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -117,9 +163,7 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
               {entry.name}:{' '}
               {entry.dataKey === 'size'
                 ? formatFileSize(entry.value)
-                : entry.dataKey === 'growth'
-                  ? `${entry.value.toFixed(1)}%`
-                  : entry.value.toLocaleString()}
+                : entry.value.toLocaleString()}
             </p>
           ))}
         </div>
@@ -132,7 +176,9 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
     return (
       <div className={`flex items-center justify-center p-8 ${className}`}>
         <div className="text-center">
-          <p className="text-red-500">Error loading volume insights: {error}</p>
+          <p className="text-red-500">
+            Error loading volume insights: {String(error)}
+          </p>
         </div>
       </div>
     );
@@ -232,7 +278,7 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
         <div className="flex items-center space-x-2 mb-6">
           <BarChart3Icon className="w-5 h-5 text-green-500" />
           <h3 className="text-lg font-semibold text-primary">
-            Top Folders by Size
+            Top Growing Folders
           </h3>
         </div>
 
@@ -248,20 +294,18 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
                 <YAxis type="category" dataKey="folder" width={120} />
                 <Tooltip
                   formatter={(value: any, name: string) => [
-                    name === 'size'
-                      ? formatFileSize(value)
-                      : value.toLocaleString(),
-                    name === 'size' ? 'Size' : 'Files',
+                    name === 'size' ? formatFileSize(value) : value.toLocaleString(),
+                    name === 'size' ? 'Size Added' : 'Files Added',
                   ]}
                 />
                 <Legend />
-                <Bar dataKey="size" fill="#3b82f6" name="Size" />
+                <Bar dataKey="size" fill="#3b82f6" name="Size Added" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         ) : (
           <div className="h-80 flex items-center justify-center">
-            <p className="text-gray-500">No folder data available</p>
+            <p className="text-gray-500">No folder growth data available</p>
           </div>
         )}
       </Card>
@@ -273,63 +317,66 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
           <h3 className="text-lg font-semibold text-primary">
             File Type Composition
           </h3>
-          <Badge variant="outline" className="ml-auto">
-            Mock Data
-          </Badge>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={mockCompositionData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {mockCompositionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: any) => [`${value.toFixed(1)} GB`, 'Size']}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="space-y-3">
-            {mockCompositionData.map((item, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  <div
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: item.color }}
+        {compositionData.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={compositionData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={120}
+                    paddingAngle={2}
+                    dataKey="size"
+                  >
+                    {compositionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: any) => [formatFileSize(value), 'Size']}
                   />
-                  <span className="text-sm font-medium text-primary">
-                    {item.name}
-                  </span>
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="space-y-3">
+              {compositionData.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm font-medium text-primary capitalize">
+                      {item.name}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-primary">
+                      {formatFileSize(item.size)}
+                    </p>
+                    <p className="text-xs text-tertiary">
+                      {item.percent.toFixed(1)}%
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-primary">
-                    {item.size.toFixed(1)} GB
-                  </p>
-                  <p className="text-xs text-tertiary">
-                    {item.value.toFixed(1)}%
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="h-80 flex items-center justify-center">
+            <p className="text-gray-500">No composition data available</p>
+          </div>
+        )}
       </Card>
     </div>
   );

@@ -1,83 +1,192 @@
-import { useState, useCallback, useMemo } from 'react';
-import type { VolumeMount } from '../useVolumesAndMounts';
+/**
+ * useVolumeSelection Hook
+ *
+ * Manages multi-selection state for volumes with utilities for:
+ * - Single item selection/deselection
+ * - Select all/deselect all
+ * - Partial selection state
+ * - Clear selection
+ * - Get selected items
+ *
+ * Compatible with both array-based and Set-based selection patterns.
+ */
 
-export type SelectionMode = 'none' | 'page' | 'all';
+import { useState, useCallback } from 'react';
+
+export interface UseVolumeSelectionOptions {
+  /**
+   * Initial selected volume IDs
+   */
+  initialSelection?: string[];
+
+  /**
+   * Callback when selection changes
+   */
+  onSelectionChange?: (selectedIds: string[]) => void;
+}
 
 export interface UseVolumeSelectionReturn {
-  selectedIds: Set<string>;
-  selectAllMode: SelectionMode;
-  isSelected: (id: string) => boolean;
-  toggleSelection: (id: string) => void;
-  selectAll: (volumes: VolumeMount[]) => void;
-  selectPage: (volumes: VolumeMount[]) => void;
+  /**
+   * Currently selected volume IDs as array
+   */
+  selectedIds: string[];
+
+  /**
+   * Set selected IDs directly
+   */
+  setSelectedIds: (ids: string[]) => void;
+
+  /**
+   * Toggle selection for a single volume
+   */
+  toggleSelection: (volumeId: string) => void;
+
+  /**
+   * Select all volumes from provided list
+   */
+  selectAll: (volumes: Array<{ name: string }>) => void;
+
+  /**
+   * Toggle between select all and deselect all
+   */
+  toggleSelectAll: (volumes: Array<{ name: string }>) => void;
+
+  /**
+   * Deselect all volumes
+   */
   clearSelection: () => void;
-  setSelectedIds: (ids: Set<string>) => void;
+
+  /**
+   * Check if a specific volume is selected
+   */
+  isSelected: (volumeId: string) => boolean;
+
+  /**
+   * Check if all provided volumes are selected
+   */
+  isAllSelected: (volumes: Array<{ name: string }>) => boolean;
+
+  /**
+   * Check if some (but not all) volumes are selected
+   */
+  isPartiallySelected: (volumes: Array<{ name: string }>) => boolean;
+
+  /**
+   * Number of selected volumes
+   */
   selectedCount: number;
+
+  /**
+   * Whether any volumes are selected
+   */
   hasSelection: boolean;
+
+  /**
+   * Get selected volume objects from a list
+   */
+  getSelectedVolumes: <T extends { name: string }>(volumes: T[]) => T[];
 }
 
 /**
- * Hook for managing volume selection state
- * Handles individual, page, and all selection modes
+ * Custom hook for managing volume selection state
  */
 export const useVolumeSelection = (
-  initialSelection: Set<string> = new Set(),
+  options: UseVolumeSelectionOptions = {}
 ): UseVolumeSelectionReturn => {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(initialSelection);
-  const [selectAllMode, setSelectAllMode] = useState<SelectionMode>('none');
+  const { initialSelection = [], onSelectionChange } = options;
 
-  const isSelected = useCallback(
-    (id: string) => selectedIds.has(id),
-    [selectedIds],
+  const [selectedIds, setSelectedIdsInternal] = useState<string[]>(initialSelection);
+
+  // Wrapper to call onChange callback
+  const setSelectedIds = useCallback(
+    (ids: string[]) => {
+      setSelectedIdsInternal(ids);
+      onSelectionChange?.(ids);
+    },
+    [onSelectionChange]
   );
 
-  const toggleSelection = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
+  const toggleSelection = useCallback(
+    (volumeId: string) => {
+      setSelectedIdsInternal((prev: string[]) =>
+        prev.includes(volumeId)
+          ? prev.filter((id: string) => id !== volumeId)
+          : [...prev, volumeId]
+      );
+      const newSelection = selectedIds.includes(volumeId)
+        ? selectedIds.filter((id: string) => id !== volumeId)
+        : [...selectedIds, volumeId];
+      onSelectionChange?.(newSelection);
+    },
+    [selectedIds, onSelectionChange]
+  );
+
+  const selectAll = useCallback(
+    (volumes: Array<{ name: string }>) => {
+      setSelectedIds(volumes.map((v) => v.name));
+    },
+    [setSelectedIds]
+  );
+
+  const toggleSelectAll = useCallback(
+    (volumes: Array<{ name: string }>) => {
+      if (selectedIds.length === volumes.length) {
+        setSelectedIds([]);
       } else {
-        newSet.add(id);
+        setSelectedIds(volumes.map((v) => v.name));
       }
-      // Reset select all mode if manually toggling
-      if (newSet.size === 0) {
-        setSelectAllMode('none');
-      }
-      return newSet;
-    });
-  }, []);
-
-  const selectAll = useCallback((volumes: VolumeMount[]) => {
-    const allIds = new Set(volumes.map((v) => v.id));
-    setSelectedIds(allIds);
-    setSelectAllMode('all');
-  }, []);
-
-  const selectPage = useCallback((volumes: VolumeMount[]) => {
-    const pageIds = new Set(volumes.map((v) => v.id));
-    setSelectedIds(pageIds);
-    setSelectAllMode('page');
-  }, []);
+    },
+    [selectedIds.length, setSelectedIds]
+  );
 
   const clearSelection = useCallback(() => {
-    setSelectedIds(new Set());
-    setSelectAllMode('none');
-  }, []);
+    setSelectedIds([]);
+  }, [setSelectedIds]);
 
-  const selectedCount = useMemo(() => selectedIds.size, [selectedIds]);
-  const hasSelection = useMemo(() => selectedCount > 0, [selectedCount]);
+  const isSelected = useCallback(
+    (volumeId: string) => {
+      return selectedIds.includes(volumeId);
+    },
+    [selectedIds]
+  );
+
+  const isAllSelected = useCallback(
+    (volumes: Array<{ name: string }>) => {
+      return volumes.length > 0 && selectedIds.length === volumes.length;
+    },
+    [selectedIds]
+  );
+
+  const isPartiallySelected = useCallback(
+    (volumes: Array<{ name: string }>) => {
+      return selectedIds.length > 0 && selectedIds.length < volumes.length;
+    },
+    [selectedIds]
+  );
+
+  const selectedCount = selectedIds.length;
+  const hasSelection = selectedCount > 0;
+
+  const getSelectedVolumes = useCallback(
+    <T extends { name: string }>(volumes: T[]): T[] => {
+      return volumes.filter((v) => selectedIds.includes(v.name));
+    },
+    [selectedIds]
+  );
 
   return {
     selectedIds,
-    selectAllMode,
-    isSelected,
+    setSelectedIds,
     toggleSelection,
     selectAll,
-    selectPage,
+    toggleSelectAll,
     clearSelection,
-    setSelectedIds,
+    isSelected,
+    isAllSelected,
+    isPartiallySelected,
     selectedCount,
     hasSelection,
+    getSelectedVolumes,
   };
 };
 

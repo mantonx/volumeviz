@@ -1,17 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import {
-  Bell,
-  Settings,
-  History,
-  Plus,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Send,
-} from 'lucide-react';
+import { Bell, Settings, History, Send } from 'lucide-react';
 import { cn } from '@/utils';
 import { AlertDestinations } from '@/components/domain/alerts';
 import { AlertRules } from '@/components/domain/alerts';

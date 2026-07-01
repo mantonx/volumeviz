@@ -15,7 +15,7 @@
  * - URL state: /files?volume=foo&tab=search&path=/data
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FolderOpen, Search, Filter } from 'lucide-react';
 import { ExplorerPage } from '@/pages/ExplorerPage';

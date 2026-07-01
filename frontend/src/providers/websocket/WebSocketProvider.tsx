@@ -7,7 +7,6 @@ import {
   addMessageToHistoryAtom,
   addSubscriptionAtom,
   clearWebSocketDataAtom,
-  connectionStateAtom,
   lastMessageAtom,
   removeEventListenerAtom,
   removeSubscriptionAtom,
@@ -67,13 +66,13 @@ export function WebSocketProvider({
           : () => !!mergedConfig.shouldReconnect,
       reconnectInterval: mergedConfig.reconnectInterval,
       reconnectAttempts: mergedConfig.reconnectAttempts,
-      onOpen: (event: WebSocketEventMap['open']) => {
+      onOpen: () => {
         // Connection opened - silent unless debugging
       },
-      onClose: (event: WebSocketEventMap['close']) => {
+      onClose: () => {
         // Connection closed - silent unless debugging
       },
-      onError: (event: WebSocketEventMap['error']) => {
+      onError: () => {
         console.error('[WebSocket] Connection error');
       },
     }),

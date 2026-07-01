@@ -21,7 +21,6 @@ export type {
   SearchHistoryItem,
   SearchConfig,
   SearchCondition,
-  SearchUtils,
   SearchQueryType,
   SearchScope,
   SearchOperator,

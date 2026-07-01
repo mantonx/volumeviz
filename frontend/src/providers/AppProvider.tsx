@@ -21,10 +21,15 @@ interface AppProviderProps {
 }
 
 export function AppProvider({ children, initialState }: AppProviderProps) {
+  const hydrateValues: [any, any][] = [
+    [queryClientAtom, queryClient],
+    ...(initialState ? Array.from(initialState.entries()) : []),
+  ];
+
   return (
-    <JotaiProvider initialValues={initialState}>
+    <JotaiProvider>
       <QueryClientProvider client={queryClient}>
-        <HydrateAtoms initialValues={[[queryClientAtom, queryClient]]}>
+        <HydrateAtoms initialValues={hydrateValues}>
           {children}
           {import.meta.env.DEV && (
             <>
