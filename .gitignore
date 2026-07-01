@@ -151,3 +151,6 @@ venv/
 docs/_build/
 docs/site/
 bin/
+
+# Claude Code local tooling state
+.claude/

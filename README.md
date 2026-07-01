@@ -4,78 +4,52 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](docker-compose.yml)
 
-**VolumeViz** is a modern Docker volume analytics and monitoring platform with an intuitive web interface that provides comprehensive insights into storage usage, file organization, and media content across your containerized infrastructure.
+**VolumeViz** is a read-only Docker volume explorer for understanding disk usage across containerized services.
 
-> **🔍 Analytics-Focused**: VolumeViz is designed for read-only analysis and monitoring. File modification operations (delete, download, move) are intentionally excluded to maintain safe, non-destructive volume inspection.
+It scans mounted Docker volumes, builds a searchable file index, visualizes size distribution, and tracks growth over time — without modifying the data it inspects.
 
-> 📸 **Screenshots coming soon!** Check our [Storybook](https://volumeviz.io/storybook) for component demos.
+> **🔒 Safe by design**: VolumeViz mounts volumes read-only and does not provide file deletion, move, or modification actions. It only reads and reports.
 
-## 🎯 Core Features
+## 🎯 Feature Status
 
-VolumeViz is built around 7 core features designed to provide a complete storage management experience:
+VolumeViz is under active, pre-1.0 development. This table reflects what actually works today, not the long-term vision (see [ROADMAP.md](ROADMAP.md) for what's planned).
 
-### 🚀 **Onboarding**
-- **Smart Setup**: Guided first-time configuration with intelligent defaults
-- **Volume Discovery**: Automatic Docker volume detection and registration
-- **Organization Setup**: Multi-tenant account configuration with role-based access
-- **Quick Start**: Interactive tutorials and sample data for immediate value
+| Area | Status |
+| --- | --- |
+| Docker volume discovery | ✅ Working |
+| Full volume scan | ✅ Working |
+| Incremental scan (snapshot diff) | ✅ Working |
+| Checkpoint & resume on crash | ✅ Working |
+| Volume dashboard (size, count, scan status) | ✅ Working |
+| File explorer / directory tree | ⚠️ Partial — placeholder components, being reworked |
+| TreeMap / sunburst visualization | ⚠️ Partial |
+| Search | ⚠️ Stubbed — UI exists, backend not wired up |
+| Preview generation (images/video/audio) | ⚠️ Partial |
+| Alerts (webhook/Slack) | ⚠️ Basic, early |
+| Multi-tenant organizations | 🗺️ Roadmap |
+| SSO/SAML, MFA | 🗺️ Roadmap |
+| Kubernetes deployment manifests | 🗺️ Roadmap |
+| Growth forecasting | 🗺️ Roadmap |
 
-### 📊 **Dashboard** 
-- **Real-time Metrics**: Live storage analytics with WebSocket updates
-- **Visual Insights**: Interactive charts showing usage patterns and trends
-- **System Health**: Container status, scan progress, and performance indicators
-- **Customizable Views**: User-configurable widgets and layout preferences
+## 🚄 Scanning Large Volumes
 
-### 💾 **Volumes**
-- **Volume Management**: CRUD operations with detailed metadata and relationships
-- **Container Integration**: Track volume mounts and container dependencies
-- **Capacity Planning**: Growth forecasting with trend analysis and alerts
-- **Performance Metrics**: I/O patterns, access frequencies, and bottleneck identification
+VolumeViz is built to handle large, slow-changing volumes (1TB+) without re-scanning everything on every run:
 
-### 🗂️ **Explorer**
-- **Visual Navigation**: Interactive directory tree and file browser for space analysis
-- **File Browser**: High-performance virtualized table supporting 100k+ files with multi-select
-- **Preview System**: Thumbnail generation and metadata extraction for images, videos, and audio
-- **Analytics Focus**: Read-only analysis and insights (no file modification operations)
-
-### 🔍 **Search**
-- **Advanced Queries**: Multi-criteria search across files, metadata, and content
-- **Real-time Results**: Instant search with intelligent ranking and relevance
-- **Saved Searches**: Bookmark complex queries for recurring analysis
-- **Export Capabilities**: CSV/JSON export of search results and analytics
-
-### 📈 **Trends**
-- **Growth Analysis**: Historical storage trends with predictive modeling
-- **Usage Patterns**: File type distribution, access patterns, and seasonal variations
-- **Performance Analytics**: Scan duration, error rates, and system efficiency metrics
-- **Comparative Views**: Cross-volume analysis and benchmark comparisons
-
-### ⚠️ **Alerts**
-- **Smart Notifications**: Configurable alerts for capacity, performance, and anomalies
-- **Multi-channel Delivery**: Email, Slack, webhook integrations with customizable templates
-- **Escalation Policies**: Tiered alerting with automatic escalation and acknowledgment workflows
-- **Alert Analytics**: Trending and analysis of alert patterns for proactive management
-
-## 🚄 Performance for Large Volumes (1TB+)
-
-VolumeViz includes enterprise-grade features specifically designed for large-scale storage:
-
-### **Incremental Scanning** (99% faster rescans)
-- **Snapshot-Based Change Detection**: Tracks volume state over time using directory-level snapshots
-- **Smart Comparison**: Only rescans directories that changed (mtime + content hash verification)
-- **Massive Time Savings**: 2TB volume that takes 3 hours for first scan → 3 minutes for rescan with no changes
-- **Configurable Retention**: Automatic cleanup of old snapshots (default: 90 days)
+### **Incremental Scanning**
+- Tracks volume state over time using directory-level snapshots
+- Only rescans directories that changed (mtime + content hash verification)
+- On a large, mostly-stable volume, this can substantially reduce rescan time compared to a full rescan — actual savings depend on how much has changed
+- Configurable snapshot retention (default: 90 days)
 
 ### **Checkpoint & Resume**
-- **Progress Persistence**: Saves scan progress every 5 minutes (configurable)
-- **Crash Recovery**: Automatically resumes interrupted scans from last checkpoint
-- **Zero Data Loss**: Never lose hours of scanning work due to crashes or restarts
+- Saves scan progress periodically (default: every 5 minutes, configurable)
+- Automatically resumes interrupted scans from the last checkpoint after a crash or restart
 
 ### **Resilience Features**
-- **Retry Logic**: Automatic retry with exponential backoff for transient failures
-- **Circuit Breaker**: Prevents cascading failures after repeated errors
-- **Timeout Controls**: Per-method and overall timeouts prevent hung scans
-- **Multiple Scan Methods**: Automatic fallback between diskus → du → native
+- Retry with exponential backoff for transient failures
+- Circuit breaker to prevent cascading failures after repeated errors
+- Per-method and overall timeouts to prevent hung scans
+- Automatic fallback between scan methods: diskus → du → native
 
 ## 📦 Installation
 
@@ -94,15 +68,16 @@ docker-compose -f docker-compose.dev.yml up -d
 # Backend API: http://localhost:8080 (PostgreSQL) or http://localhost:8081 (SQLite)
 ```
 
-### Production Deployment
+### Self-Hosted Deployment
 
 ```bash
-# Use the production compose file
+# Use the base compose file
 docker-compose up -d
-
-# Or deploy to Kubernetes
-kubectl apply -f deployments/kubernetes/
 ```
+
+Kubernetes manifests are on the [roadmap](ROADMAP.md) but not yet available.
+
+> **Security note**: VolumeViz needs read access to Docker volumes, and read access to the Docker socket if you want automatic volume discovery. Run it only on machines you control — see [SECURITY.md](SECURITY.md). It does not modify scanned files.
 
 ## 🏗️ Architecture
 
@@ -156,7 +131,7 @@ SCAN_INTERVAL=6h
 SCAN_WORKERS=4
 SCAN_METHOD=diskus        # diskus, du, or native
 
-# Incremental Scanning (99% faster rescans for 1TB+ volumes)
+# Incremental Scanning (only rescans changed directories)
 SCAN_INCREMENTAL_ENABLED=true
 SCAN_SNAPSHOT_RETENTION_DAYS=90
 SCAN_INCREMENTAL_MAX_SNAPSHOT_AGE=168h
@@ -184,17 +159,16 @@ RETENTION_INACTIVE_FILES_DAYS=60    # Remove files not seen for 60 days
 
 ## 📊 API Documentation
 
-The VolumeViz API provides comprehensive RESTful endpoints organized around our core features:
+The VolumeViz API exposes RESTful endpoints organized around volume scanning and inspection:
 
-- **Organizations**: Multi-tenant account management and user access control
-- **Volumes**: CRUD operations, analytics, and container relationships
-- **Explorer**: File system navigation, metadata, and visualization data
-- **Analytics**: Statistical insights, trends, and performance metrics
+- **Volumes**: Registration, scanning, and analytics
+- **Explorer**: File system navigation and metadata
 - **Snapshots**: Volume snapshot history and incremental scan statistics
-- **Alerts**: Notification management and escalation policies
-- **Scheduler**: Job scheduling and management for periodic tasks (retention, cleanup, etc.)
+- **Scheduler**: Job scheduling for periodic tasks (retention, cleanup, etc.)
 - **System Health**: Service status, metrics, and diagnostic information
-- **WebSocket**: Real-time updates and event streaming
+- **WebSocket**: Real-time scan progress updates
+
+See the [Feature Status](#-feature-status) table above for what's production-quality versus early/in-progress (organizations, alerts, and search are still maturing).
 
 The API is fully documented with OpenAPI/Swagger specifications and includes:
 - Interactive API explorer at `/swagger/index.html`

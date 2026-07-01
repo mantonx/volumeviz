@@ -2,11 +2,11 @@
 
 **Version**: 2.0  
 **Last Updated**: September 2025  
-**Status**: Production Ready
+**Status**: Active development — pre-1.0. See the [Feature Status table](README.md#-feature-status) in the README for what's working versus in-progress.
 
 ## Overview
 
-VolumeViz is a modern, enterprise-grade storage monitoring and analysis application built with React, TypeScript, and advanced performance optimizations. This document outlines the clean, focused architecture designed around 7 core features with comprehensive technology stack integration.
+VolumeViz is a storage monitoring and analysis application built with React, TypeScript, and a Go backend. This document outlines the architecture; it describes the intended design across all feature areas, not all of which are complete — check the README's feature status table before assuming something described here is finished.
 
 ## Core Philosophy
 
@@ -532,7 +532,7 @@ This architecture provides VolumeViz with:
 - **📈 Scalability**: Efficient data handling, virtualization, caching
 - **🛡️ Reliability**: Comprehensive testing, error handling, type safety
 
-The result is a modern, enterprise-ready storage monitoring application that scales efficiently and provides an exceptional user experience across all device types.
+This is the target architecture; the [Feature Status table](README.md#-feature-status) tracks how much of it is actually built versus still in progress.
 
 ---
 

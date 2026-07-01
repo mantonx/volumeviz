@@ -169,8 +169,8 @@ services:
       # Example user-mounted volume (adjust path as needed)
       # This creates a volume that VolumeViz can discover and monitor
       - test_volume:/usr/share/nginx/html:ro
-      - tv_shows:/media/tv:ro
-      - movies:/media/movies:ro
+      # To mount additional media volumes (e.g. CIFS/NFS shares) for testing,
+      # see docs/examples/media-volumes.yml
     ports:
       - "8082:80"
     networks:
@@ -197,20 +197,8 @@ volumes:
     #   device: /path/to/your/data
     #   o: bind,ro
 
-  # CIFS volumes for media content
-  tv_shows:
-    driver: local
-    driver_opts:
-      type: none
-      device: /cifs/fictionalserver/tv
-      o: bind,ro
-
-  movies:
-    driver: local
-    driver_opts:
-      type: none
-      device: /cifs/fictionalserver/movies
-      o: bind,ro
+  # For mounting additional external media volumes (CIFS/NFS shares) into
+  # the test-container for local testing, see docs/examples/media-volumes.yml
 
 networks:
   volumeviz:
