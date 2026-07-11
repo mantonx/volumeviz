@@ -1,94 +1,100 @@
 # VolumeViz — Project Status (Reality Check)
 
-**Date:** 2026-06-30
-**Context:** Repo was dormant since the last commit (2025-10-10, ~8.5 months) with a large pile of uncommitted work still sitting in the working tree. This document is a ground-truth assessment of what's actually true right now — verified directly (build/typecheck/grep against the live files), not inferred from ROADMAP.md, ARCHITECTURE.md, or planning-doc claims. Treat this as the current source of truth; supersede it the next time a real audit is done, don't let it go stale the way `FILES_PAGE_ASSESSMENT.md` did.
+**Date:** 2026-07-10
+**Context:** Supersedes the 2026-06-30 version of this document, most of which is now stale — the tooling/trust problems it flagged (broken backend tests, frontend `tsc` errors, a fully-broken Alerts module, a hanging test suite) have since been fixed. This revision is a fresh, code-grounded re-audit (direct `grep`/read against HEAD, not inference from old docs) plus two corrections to work done *during* that fix pass, described below. Treat this as current; supersede it the next time a real audit is done.
 
 ## Bottom line
 
-The uncommitted work from the last session is mostly real and close to landable — not abandoned half-measures. But the build/test tooling itself is currently unreliable: a backend interface refactor was never propagated to ~14 test packages, the frontend has real (non-test) TypeScript errors, the frontend test suite hangs, and one frontend feature (Alerts) is fully broken due to a missing module. Fix the tooling and the broken module before building anything new on top — otherwise you're building on a foundation you can't verify.
+The toolchain is trustworthy again: backend builds/vets/tests clean, frontend has zero real `tsc` errors, and the test-suite hang is understood and fixed at the config level (see caveat below). What's left is genuine feature-completeness work, not tooling debt. It falls into three groups: (1) two newly-real features with zero test coverage, (2) small dishonest-UI spots where the app silently shows fake data or fake success instead of surfacing "not implemented," and (3) deeper backend gaps (pagination limits, SQLite parity, resume-after-restart) that are real but lower urgency since they don't mislead anyone.
 
-## Uncommitted work — is it safe to build on?
+## A note on how this document stays honest
 
-**Yes, mostly.** Three independent threads of work from the last session, none coordinated by a master plan, but each internally coherent:
+While fixing the frontend test suite this session, two tests were initially deleted because they asserted against UI that didn't exist in the current component (`SearchPage.tsx`'s "Find Duplicates" button, `VolumesPage.tsx`'s "Add Volume" button). Deleting a failing test to make the suite pass is exactly the failure mode this project needs to avoid — so both were investigated via git history before being finalized:
 
-- **Volumes page refactor** (`VolumesList`, `VolumeTable`, new `VolumesListHeader`/`Filters`/`Stats`, `VolumeTableRow`, export/selection hooks) — genuinely finished, matches its own plan doc, real line-count reductions, all new components actually imported and used.
-- **Volume tracking feature** (migration `000016_add_volume_tracking`, track/untrack replacing delete) — fully wired end-to-end on the Postgres path: migration → `current_schema.sql` → SQLC models/queries → repo → handlers → frontend hooks. The SQLite path is explicitly stubbed (`"tracking not yet implemented for SQLite"`) — a known, intentional gap, not a bug.
-- **Directory tree pagination fix** — the critical bug `FILES_PAGE_ASSESSMENT.md` flagged (hardcoded `limit=100`, only 4.6% of a large volume browsable) was fixed the same evening, before the doc was even finalized. `DirectoryTree.tsx` now has real infinite scroll, load-more, and server-side search. **That assessment doc is stale — archive it, don't read it as current state.**
+- **Duplicate detection** was real, silently deleted by an unrelated commit (`66208e3`, ostensibly about enrichment progress), and *had* real backend support that was itself never wired into the router. Both sides are now fixed for real: the backend route is registered (`internal/api/v1/router.go`), and `SearchPage.tsx` has a working `DuplicateDetectionModal.tsx` calling the real endpoint. See the Group 1 table below — it now needs tests.
+- **"Add Volume"** was also real, silently deleted by an unrelated commit (`43a0af8`, ostensibly about volume size display), but investigation showed it doesn't correspond to any real backend capability (VolumeViz discovers Docker volumes; there is no create-a-volume endpoint) — and the actual equivalent, tracking an already-discovered-but-untracked volume, already exists and works today via `VolumeTable.tsx`'s per-row "Track Volume" action. No restoration needed; confirmed correct as-is.
 
-Packaging-only gap: the `docs/openapi.yaml`/`openapi-3.0.yaml` diffs are huge (thousands of lines) but mostly catch-up drift from being uncommitted since August, not solely from this session's changes — regenerate cleanly before committing rather than trusting the diff at face value.
+A broader history scan for more instances of this "unrelated commit message masks a silent feature deletion" pattern found no other cases (see audit conducted this session — grep for the two commit hashes above if repeating this check later, and consider adding a rule against `--no-verify` / large unrelated diffs in bugfix commits going forward).
 
-## Backend
+## Toolchain health
 
 | Check | Result |
 |---|---|
 | `go build ./...` | ✅ Passes |
-| `go vet ./...` | ❌ 14 of ~24 internal packages fail |
-| `go test ./...` | 10 packages pass; 14 won't compile; 1 confirmed **panic** |
+| `go vet ./...` | ✅ Passes |
+| `go test ./...` | ✅ 30 packages pass, 0 failures (45 packages have no test files — mostly thin API handler packages) |
+| `npx tsc --noEmit -p .` (frontend) | ✅ 0 real (non-test/story) errors |
+| `npm run build` (Vite) | ✅ Passes (note: does not run `tsc` — always confirm type-correctness with `tsc --noEmit` directly, not build success) |
+| Frontend test suite (vitest) | ⚠️ See caveat below |
 
-**Root cause of the test breakage:** an interface refactor (`interfaces.DockerService` gained a method, `store.Store` gained `Checkpoints()`/`Alerts()`, sqlc types changed shape) was never propagated to tests/mocks. This is mechanical cleanup, not redesign — but until it's fixed, `go test` results can't be trusted for anything.
+**Vitest caveat:** the original hang (suite stopped making progress after ~5 of 42 files) had three distinct causes, all fixed:
+1. `Toast.test.tsx` mixed `vi.useFakeTimers()` with `@testing-library/user-event` v14 without `shouldAdvanceTime: true`, making `user.click()` await forever.
+2. `SearchPage.test.tsx` and `VolumesPage.test.tsx` had stale assertions (missing providers, asserting on removed/changed UI) that threw errors cascading into a JS heap OOM crash under load.
+3. The real root cause of the OOM: Node's default ~4GB worker heap ceiling is too small for this app's combined test-suite module graph (recharts, the large orval-generated API client, many providers) when a worker's assigned batch of files includes several heavy ones. Not a memory leak — confirmed via `--logHeapUsage` showing each individual test using tens of MB while the worker's *total* process heap tracked the configured ceiling exactly.
 
-Two real (non-test) bugs found:
-- **Panic**: `internal/services/docker/docker_service.go:220` — nil pointer dereference in `GetVolumeContainers`.
-- **Dead code path**: `internal/api/v1/scan/handler.go:1311` — an impossible type assertion means `GetMediaEnrichmentStatus` can never succeed; it silently always falls through to a placeholder response instead of erroring.
+Fix: `frontend/vitest.config.ts` now sets `maxWorkers` and `poolOptions.forks.execArgv` to raise the per-worker heap ceiling. This has needed adjusting more than once as different runs' worker/file assignment drew different worst-case combinations (4GB → 6GB → 10GB, `maxWorkers` 6 → 4) — the underlying module-graph weight is a real characteristic of this codebase, not fully eliminated, just given enough headroom. **If the suite OOMs again in the future, this is why — raise `execArgv`'s `--max-old-space-size` further or drop `maxWorkers`, don't assume a new leak.**
 
-Per-area verdicts (Working / Partial / Stubbed/Broken):
+Separately, `src/test/integration/volume-management.test.tsx` fails 15/15 — unrelated to the hang. Uses `jest.fn()` (no `jest` global in vitest) and calls `http`/`HttpResponse` from `msw` without importing them, and several assertions target UI (bulk-scan dropdown, offline sync queue, an `org-stats` testid) that doesn't exist in the current app. This file tests an aspirational/legacy UI, not the current one — needs a rewrite, not a patch, if it's worth keeping.
 
-| Area | Verdict | Note |
+## Group 1 — Real features, zero test coverage
+
+Both of these are live, reachable, and working correctly by manual/code inspection — they just have no automated verification, which is a real risk given how easily this session found two *other* real features get silently deleted by unrelated commits with no test to catch it.
+
+| Feature | Location | Note |
 |---|---|---|
-| Docker volume discovery | Partial | Hardcoded `ListAllVolumes(ctx, 1000, 0)`, no pagination past 1000 volumes (`volume_discovery.go:231`, TODO) |
-| Full scan | Working-ish | Substantial scheduler/handler code, but zero test coverage on the handler with the broken type assertion |
-| Incremental scan | Partial | Logic present, but `internal/scheduler` package test build fails — can't verify behavior |
-| Checkpoint/resume | Partial | Can't list recent checkpoints (`resume.go:140`, TODO) |
-| File/directory indexing | Partial | `DeleteFilesByFolder`/bulk insert not implemented on at least one path; SQLite largely stubbed |
-| Search | Stubbed | Saved-search result handling incomplete (4 TODOs in `search/saved.go`); suggestions not implemented |
-| Alerts (backend) | Partial | Engine/evaluator/delivery real, but `alerts_repo.go:492` hardcodes `RuleID: 0` — a correctness bug |
-| Multi-tenant orgs | Partial/Broken | User counts hardcoded to 0 (`organizations_repo.go:76-77`, "Users table not implemented yet"); integration test won't compile |
-| Scheduler/retention | Partial/Stubbed | 5+ TODOs in `lifecycle/retention.go`, several SQLite-specific paths explicitly not implemented |
-| WebSocket events | Partial | Broadcaster real, but two event types fire with **empty payloads** (`broadcaster.go:676-697`, explicit TODOs) |
-| Preview generation | Broken (per failing tests) | `CanGeneratePreview`/`GetSupportedTypes` behavior contradicts its own tests |
+| Duplicate detection | `internal/services/duplicate_detector.go` (372 lines), `internal/api/v1/duplicates/handler.go` (340 lines) | Newly registered into the router this session. Zero `*_test.go` files for either. Content-hash and size-based detection, hash verification — real logic, untested. |
+| Volume track/untrack UI | `frontend/src/components/domain/volumes/VolumeTable/` | Per-row dropdown "Track Volume"/"Untrack Volume", wired to real `usePostVolumesVolumeIdTrack`/`Untrack` mutations via `useVolumeRowActions.ts`. `find VolumeTable -name "*.test.*"` returns nothing. Also: `VolumeTableRow.types.ts:6` types `volume: any` with a TODO to use the real `VolumeV1` type. |
 
-**SQLite is a facade, not a supported backend.** `store/store_sqlite.go` returns `ErrNotImplemented` for organizations, users, checkpoints, snapshots, and the volumes repo. If SQLite support is claimed anywhere in docs, that claim is false today.
+## Group 2 — Dishonest UI (shows fake data/success instead of "not implemented")
 
-Other structural gaps: `CreateContainer`/`CreateVolumeMount` are unimplemented even on the Postgres path (`volumes_repo.go:347,468`); audit logging doesn't actually persist anything (`security/audit_logger.go:277` and others); auth session tracking is fake (`auth_service.go:231`, hardcoded `SessionID: "jwt-gen"`).
+These don't crash anything, but they actively mislead a user into thinking something worked or is real when it isn't. Lowest engineering effort, highest trust cost — worth doing before the deeper backend work.
 
-## Frontend
-
-| Check | Result |
+| Location | What it does now |
 |---|---|
-| `npm run build` (Vite) | ✅ Passes |
-| `npx tsc --noEmit -p .` | ❌ Fails — including real, non-test files |
-| Test suite (vitest) | ❌ Hangs after 5 of 42 files — broken tooling, not flakiness |
+| `frontend/src/pages/LoginPage/LoginPage.tsx:203` | "Forgot password" click just does `console.log('Password reset not implemented')` — no error, no message, silent no-op from the user's perspective |
+| `frontend/src/pages/UserProfilePage/UserProfilePage.tsx:15,49,54` | Change-password form submits to nothing; error message literally says "Change password feature is not yet implemented" — at least this one is honest, but the form shouldn't be there if so |
+| `frontend/src/pages/admin/SystemSettingsPage/SystemSettingsPage.tsx:69` | Save button is `// TODO: Call API to save settings` — appears to save, doesn't |
+| `frontend/src/pages/admin/AuditLogsPage/AuditLogsPage.tsx:18,77` | Renders a hardcoded `mockAuditLogs` array — every admin sees the same fake log entries regardless of real activity |
+| `frontend/src/pages/admin/PermissionsPage/PermissionsPage.tsx:49,157` | Same pattern — hardcoded `mockRoles` array, not real permission data |
+| `frontend/src/pages/OnboardingPage/OnboardingPage.tsx:272,352-353,359-360,472,482,488,497` | Silently substitutes a hardcoded 19-mount fake discovery result whenever real mount discovery returns zero results or errors (small yellow banner is the only hint); the "preview" step never calls a real API, always client-side arithmetic |
+| `frontend/src/pages/TrendsPage/TrendsPage.tsx:145-147` | Export button does `console.log(...)` only |
+| `frontend/src/components/domain/explorer/AlertCenter/AlertCenter.tsx:180,185` | Acknowledge/resolve buttons on live, reachable alerts are stubs — clicking them does nothing persistent |
 
-**Important methodology note:** Vite's build does not run the TypeScript checker, so "build passes" is not evidence the code typechecks. Confirm with `tsc --noEmit` directly — this distinction caused at least one wrong verdict during this audit (see Alerts below).
+## Group 3 — Deeper backend gaps (real, lower urgency)
 
-Real (non-test) `tsc` failures include: `src/utils/visualization/data-transformations.ts` referencing a `VolumeV1.id` field that no longer exists on the type; `src/utils/monitoring/error-tracking.ts` importing `@sentry/react`/`@sentry/tracing`, neither installed; TanStack Query API drift in `query-persistence.ts`.
+These are genuine missing functionality but fail loudly/obviously (empty results, errors) rather than lying — lower priority than Group 2.
 
-**MSW mocking is disabled app-wide** (`main.tsx:24`, "disabled for now to fix HMR stalling issues"). `mocks/handlers.ts` has zero effect on dev or prod behavior currently — any prior concern about mock-vs-real coverage gaps is moot unless/until MSW is re-enabled. If it is re-enabled, note one confirmed contract drift: `handlers.ts:257-262` nests pagination under a `pagination: {...}` object while `useVolumesList.ts:97-99` reads `total`/`page`/`page_size` from the response root — the volumes-list mock would silently return zero results.
-
-Per-page verdicts:
-
-| Page | Verdict | Note |
+| Area | Gap | Location |
 |---|---|---|
-| Dashboard | Working | Real hooks, real computed metrics |
-| VolumesPage / VolumesList | Working | Refactor genuinely finished and wired; two orphaned components (`VolumeStatusBadge`, `VolumeTrackingBadge`) built but never imported |
-| ExplorerPage / DirectoryTree | Working (was Broken, now fixed) | Real infinite scroll/search; but `ExplorerPage.tsx:80` has a **second, unaddressed hardcoded limit** (`limit: 1000`, no pagination) — same bug class as the fixed one, just a different code path. Also: dead `if (false && loading)` and an inline `{console.log(...)}` running every render |
-| TreeMapVisualization | Working | Pure presentational, fed real data; minor `// TODO: Connect to theme context`, debug `console.log` litter |
-| SearchPage | Working | Genuinely calls real backend search; only flaw is 3 dead view-toggle buttons in shared `SearchInterface` (`onClick={() => {}}`) |
-| **AlertsPage** | **Broken** | **Verified directly via `tsc`**: `import ... from '@/api/alerts'` — this module does not exist anywhere in the repo. Breaks compilation across 9 files (`AlertDestinations`, `AlertRules`, `AlertHistory`, and all their Create/Edit/Test modals). Where hooks are real, their return shape doesn't match what components destructure (e.g. `loading`/`fetchDestinations` expected, hook returns `isLoading`/`refetch`). The "Engine Status: Active" badge is also a static string, not derived from anything. |
-| TrendsPage | Partial | Storage-growth chart and growth stats are real. File-type pie chart and capacity-forecast chart are permanently zeroed/empty (`useTrends.ts:71-72,143-144`, explicit TODOs). "42 days" forecast figure is a hardcoded literal. Export button is `console.log` + TODO, fully non-functional |
-| OnboardingPage | Partial, silently so | Real wizard, real state machine, real POSTs to `/mounts`, `/rules`, `/tracking/apply`. Silently substitutes a hardcoded 19-mount `mockDiscovery` object whenever real discovery returns zero results or errors, with only a small yellow banner as a hint. The "preview" step never calls a real preview API — always client-side arithmetic guesswork, with a second hardcoded fallback if even that throws |
-| Organizations / multi-tenant | Partial | Admin CRUD page is fully real. No end-user org-switcher exists anywhere — multi-tenancy today is "the one org your JWT says you're in," plus an admin-only management screen |
+| Volume discovery | Hardcoded to first 1000 volumes, no pagination past that | `internal/services/filesystem/volume_discovery.go:231` |
+| Scan resume | `FindResumableScans` always returns empty — scans can't resume after a restart | `internal/services/scanner/resume.go:129-146` |
+| Volumes repo | `CreateContainer`/`CreateVolumeMount` unimplemented on both Postgres and SQLite | `internal/repo/volumes_repo.go:346-347,466-468,780-798` |
+| Search | Saved-search result handling stubbed (4 spots); suggestion search unimplemented | `internal/api/v1/search/saved.go`, `suggestions.go:88` |
+| Alerts | `RuleID` hardcoded to 0 when recording deliveries | `internal/repo/alerts_repo.go:492` |
+| Orgs | User counts hardcoded to 0 | `internal/repo/organizations_repo.go:76-77` |
+| Retention | 5 TODOs — pruning logic incomplete | `internal/services/lifecycle/retention.go` |
+| WebSocket | Scan-result/snapshot events broadcast with empty payloads | `internal/realtime/broadcaster.go:440,678-697` |
+| SQLite | Still a facade — no orgs/users/checkpoints/snapshots support, migrations unimplemented | `internal/store/store_sqlite.go`, `internal/migrate/migrate.go:45-46` |
+| Auth | Session tracking is fake (`SessionID: "jwt-gen"`) | `internal/services/auth/auth_service.go:231` |
+| Explorer | Hardcoded `limit: 1000` (no pagination past that); dead code (`if (false && loading)`); stray debug `console.log` in JSX | `frontend/src/pages/ExplorerPage/ExplorerPage.tsx:80,286,565` |
+| Trends | File-type pie chart and capacity-forecast chart permanently empty; "42 days" forecast is a hardcoded literal | `frontend/src/hooks/useTrends.ts:71-72,143-144`, `TrendsPage.tsx:322` |
+| Multi-tenant | No end-user org switcher exists anywhere — only an admin CRUD screen | n/a |
+| Mount catalog | 7 TODOs — attachment/orphan-detection/search logic incomplete | `internal/services/docker/mount_catalog_service.go` |
+| Scan handler | `recent_scan_errors`/`active_scans` DB views don't exist; feature disabled as a result | `internal/repo/scan_progress_repo.go:724,1111`, `internal/api/v1/scan/handler.go:1532` |
+| Previews/Mounts APIs | Delete/update endpoints explicitly return "not yet implemented" | `internal/api/v1/previews/handler.go:352-355`, `internal/api/v1/mounts/handler.go:369-371` |
 
-**Dead/orphaned components** (built, sometimes with their own internal `mockXxx` data, never imported by any live page): `AlertCenter`, `ExplorerView`, `ExplorerWithExport`, `VolumeCharts`, `DuplicateOverlay`, `AdaptiveExplorer`, `PrefetchedExplorer`, `CleanupWorkflow`, `TopNAnalysis`, `TimelineOverlay`, `UndoRollback`, plus the explicitly-deprecated `FileBrowser` (comment says so, and its import is broken if ever rendered). These aren't lying to users — they're not reachable — but they're dead weight worth deleting rather than fixing.
+## Confirmed already fixed (no longer accurate to call these gaps)
 
-**Smaller confirmed gaps, not yet prioritized:** `HealthPage` has a literal "Coming Soon" badge; `LoginPage`'s password reset is a no-op (`console.log`); `UserProfilePage` has an unimplemented change-password TODO; admin `SystemSettingsPage`'s save button is a no-op; admin `AuditLogsPage` and `PermissionsPage` both render hardcoded mock arrays.
+- Alerts module — fully real now (was completely broken, missing `@/api/alerts` module)
+- `VolumeStatusBadge`/`VolumeTrackingBadge` — wired into `VolumesListFilters`/`VolumesListStats`, no longer orphaned
+- `ExplorerView`/`VolumeCharts` — rewired to real backend API, no longer dead/fake-stub components
+- Audit logging — genuinely persists now via `internal/audit`'s `DefaultLogger`, wired in `router.go:363`
+- Preview generation's `CanGeneratePreview`/`GetSupportedTypes` — no longer contradicts its own tests
+- ~160 files of confirmed-dead frontend code (an abandoned visualization subsystem, duplicate/legacy components) — deleted
 
 ## Recommended order of work
 
-None of this is new feature work — it's restoring the ability to trust the toolchain before building on it:
-
-1. **Backend**: fix the 14 broken test packages (update mocks/signatures to match the refactored interfaces — mechanical) and the `docker_service.go:220` panic.
-2. **Frontend**: fix the real `tsc` errors (`VolumeV1.id`, missing Sentry deps, TanStack Query drift) and diagnose why vitest hangs past file 5.
-3. **Alerts**: create the missing `@/api/alerts` module (or fix the imports to point at wherever the types actually live now) and reconcile the hook/component contract mismatch across all 9 affected files.
-4. **Decide on the silent-mock-fallback pattern** in OnboardingPage and TrendsPage — at minimum, surface to the user when they're looking at fake data instead of hiding it.
-5. **Only then**: land the uncommitted Volumes/tracking work, delete the confirmed-dead Explorer components, and resume the README/docs credibility pass from earlier.
+1. **Group 1**: write tests for duplicate detection (backend) and volume track/untrack (frontend) — these are the highest-risk gap, since this session proved untested real features get silently deleted.
+2. **Group 2**: either implement or explicitly gate off (disabled button + tooltip, not a working-looking no-op) each dishonest-UI spot — cheap fixes, high trust payoff.
+3. **Group 3**: prioritize by what's actually blocking real usage — pagination limits and scan-resume-after-restart are probably more load-bearing than SQLite parity if Postgres is the only backend actually deployed.
+4. Fix or rewrite `src/test/integration/volume-management.test.tsx` (currently 15/15 failing, tests a UI that no longer exists) once Group 1/2 work stabilizes what it should actually assert against.
