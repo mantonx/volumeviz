@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useSetAtom } from 'jotai';
 import {
   HardDrive,
   Database,
@@ -16,9 +17,10 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { FeatureTour, useShouldShowTour } from '@/components/ui/FeatureTour';
 import { APP_TOUR_STEPS, APP_TOUR_ID } from '@/config/appTour';
+import { selectedVolumeAtom } from '@/atoms/volumes';
 import {
-  useGetVolumes,
-  useGetAlerts,
+  useGetApiV1Volumes,
+  useGetApiV1Alerts,
   useGetOrganizationsMe,
   type VolumeV1,
 } from '@/api/orval-generated/api';
@@ -34,8 +36,9 @@ export function Dashboard() {
   const location = useLocation();
   const shouldShowTour = useShouldShowTour(APP_TOUR_ID);
   const [isTourOpen, setIsTourOpen] = useState(false);
+  const setSelectedVolume = useSetAtom(selectedVolumeAtom);
 
-  const { data: volumesData, isFetching: volumesFetching } = useGetVolumes(
+  const { data: volumesData, isFetching: volumesFetching } = useGetApiV1Volumes(
     {
       page: 1,
       page_size: 100,
@@ -47,7 +50,7 @@ export function Dashboard() {
     },
   );
 
-  const { data: alertsData, isFetching: alertsFetching } = useGetAlerts(
+  const { data: alertsData, isFetching: alertsFetching } = useGetApiV1Alerts(
     {
       limit: 10,
       offset: 0,
@@ -75,13 +78,29 @@ export function Dashboard() {
   const organization =
     orgData?.status === 200 ? orgData.data.organization : undefined;
 
-  const totalSize = volumes.reduce(
-    (sum, vol) => sum + (vol.size_bytes || 0),
-    0,
-  );
-  const totalVolumes = volumes.length;
-  const trackedVolumes = volumes.filter((vol) => !vol.is_orphaned).length;
-  const orphanedVolumes = volumes.filter((vol) => vol.is_orphaned).length;
+  // Stat tiles read from the backend's summary (computed across every
+  // volume matching the request, not just this page) so they stay correct
+  // once the org has more volumes than a single page's page_size.
+  const summary = volumesData?.status === 200 ? volumesData.data.summary : undefined;
+  const totalSize = summary?.total_size_bytes ?? 0;
+  const totalVolumes = summary?.total_volumes ?? 0;
+  const trackedVolumes = summary?.tracked_volumes ?? 0;
+  const orphanedVolumes = summary?.orphaned_volumes ?? 0;
+
+  // "Recent" means recently scanned, not just whatever order the API
+  // happens to return — the API's default order surfaces anonymous,
+  // never-attached system volumes as often as anything a user would
+  // actually recognize. Volumes with a real last_scan_at sort newest
+  // first; never-scanned volumes sort after all of those (in their
+  // original relative order, since there's no meaningful "recent" for
+  // them yet).
+  const recentVolumes = [...volumes]
+    .sort((a, b) => {
+      const aTime = a.last_scan_at ? new Date(a.last_scan_at).getTime() : 0;
+      const bTime = b.last_scan_at ? new Date(b.last_scan_at).getTime() : 0;
+      return bTime - aTime;
+    })
+    .slice(0, 5);
 
   // Check if user just completed onboarding
   useEffect(() => {
@@ -383,7 +402,7 @@ export function Dashboard() {
                       ))}
                     </>
                   ) : (
-                    volumes.slice(0, 5).map((volume) => {
+                    recentVolumes.map((volume) => {
                       // Determine status
                       const isOrphaned = volume.is_orphaned;
                       const hasBeenScanned = !!volume.last_scan_at;
@@ -411,10 +430,10 @@ export function Dashboard() {
                       }
 
                       return (
-                        <Link
+                        <button
                           key={volume.name}
-                          to={`/volumes/${encodeURIComponent(volume.name ?? '')}`}
-                          className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg hover:bg-surface-hover transition-colors"
+                          onClick={() => setSelectedVolume(volume.name ?? null)}
+                          className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg hover:bg-surface-hover transition-colors text-left w-full"
                         >
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <HardDrive className="w-5 h-5 text-gray-400 flex-shrink-0" />
@@ -440,7 +459,7 @@ export function Dashboard() {
                               </p>
                             </div>
                           </div>
-                        </Link>
+                        </button>
                       );
                     })
                   )}
