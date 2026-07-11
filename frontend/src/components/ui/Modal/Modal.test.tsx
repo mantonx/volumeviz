@@ -277,7 +277,7 @@ describe('Modal', () => {
       render(<Modal {...defaultProps} backdrop={{ opacity: 75 }} />);
 
       const backdrop = screen.getByTestId('test-modal-backdrop');
-      expect(backdrop).toHaveClass('bg-opacity-75');
+      expect(backdrop).toHaveStyle({ opacity: '0.75' });
     });
 
     it('calls onClose when backdrop is clicked', async () => {
@@ -296,7 +296,7 @@ describe('Modal', () => {
         <Modal
           {...defaultProps}
           onClose={mockOnClose}
-          backdrop={{ closable: false }}
+          backdrop={{ show: true, closable: false }}
         />,
       );
 

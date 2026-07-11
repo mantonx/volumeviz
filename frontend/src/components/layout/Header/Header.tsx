@@ -4,7 +4,6 @@ import { useAtom, useAtomValue } from 'jotai';
 import {
   Menu,
   X,
-  Bell,
   Settings,
   User,
   HelpCircle,
@@ -19,9 +18,12 @@ import {
   UserCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { NotificationsDropdown } from './NotificationsDropdown';
+import { HelpPanel } from './HelpPanel';
 import { useRealtime } from '@/providers/realtime';
 import { ReadyState } from 'react-use-websocket';
 import { useAuth } from '@/hooks/useAuth';
+import { useGetApiV1HealthDatabase } from '@/api/orval-generated/api';
 import { themeAtom, websocketEnabledAtom } from '@/store';
 import { cn } from '@/utils';
 import type { HeaderProps, ThemeOption, ApiStatus } from './Header.types';
@@ -138,12 +140,27 @@ export const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate();
   const [theme, setTheme] = useAtom(themeAtom);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
 
-  // API status is now handled by TanStack Query - using placeholder values
+  // Real API status, derived from the same database-health check
+  // ApiHealthChecker already polls every 10s at the app root — TanStack
+  // Query dedupes this call against that one rather than issuing a second
+  // network request, since they share the same query key.
   const requestCount = 0;
-  const apiStatus: ApiStatus = 'online';
+  const {
+    data: healthData,
+    isLoading: healthLoading,
+    isError: healthIsError,
+  } = useGetApiV1HealthDatabase({
+    query: { refetchInterval: 10000 },
+  });
+  const apiStatus: ApiStatus = healthLoading
+    ? 'connecting'
+    : healthIsError || healthData?.status !== 200
+      ? 'error'
+      : 'online';
   const websocketEnabled = useAtomValue(websocketEnabledAtom);
   const {
     connectionStatus: wsReadyState,
@@ -190,6 +207,21 @@ export const Header: React.FC<HeaderProps> = ({
     const currentIndex = themes.indexOf(theme);
     const nextIndex = (currentIndex + 1) % themes.length;
     setTheme(themes[nextIndex]);
+  };
+
+  /**
+   * Short status label shown directly in the pill (title attribute carries
+   * the fuller text via getStatusText)
+   */
+  const getStatusLabel = (status: ApiStatus): string => {
+    switch (status) {
+      case 'online':
+        return 'OK';
+      case 'connecting':
+        return '...';
+      default:
+        return 'Error';
+    }
   };
 
   /**
@@ -307,7 +339,7 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <StatusIcon status={apiStatus} />
                 <span className="text-xs font-medium text-secondary">
-                  API: {apiStatus === 'online' ? 'OK' : 'Error'}
+                  API: {getStatusLabel(apiStatus)}
                 </span>
                 {requestCount > 0 && (
                   <span className="text-xs text-tertiary animate-pulse">
@@ -326,7 +358,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="flex items-center space-x-1">
                   <StatusIcon status={apiStatus} />
                   <span className="text-xs font-medium text-secondary">
-                    API: {apiStatus === 'online' ? 'OK' : 'Error'}
+                    API: {getStatusLabel(apiStatus)}
                   </span>
                 </div>
 
@@ -368,24 +400,17 @@ export const Header: React.FC<HeaderProps> = ({
             <ThemeIcon theme={theme} />
           </Button>
 
-          {/* Notifications (future feature) */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-secondary hover:text-primary"
-            title="Notifications"
-            aria-label="View notifications"
-          >
-            <Bell className="h-4 w-4" />
-          </Button>
+          {/* Notifications */}
+          <NotificationsDropdown />
 
-          {/* Settings Menu */}
+          {/* Settings */}
           <Button
             variant="ghost"
             size="sm"
             className="text-secondary hover:text-primary"
             title="Settings"
             aria-label="Open settings"
+            onClick={() => navigate('/settings')}
           >
             <Settings className="h-4 w-4" />
           </Button>
@@ -465,11 +490,14 @@ export const Header: React.FC<HeaderProps> = ({
             className="text-secondary hover:text-primary"
             title="Help"
             aria-label="Get help"
+            onClick={() => setIsHelpOpen(true)}
           >
             <HelpCircle className="h-4 w-4" />
           </Button>
         </div>
       </div>
+
+      <HelpPanel open={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
     </header>
   );
 };

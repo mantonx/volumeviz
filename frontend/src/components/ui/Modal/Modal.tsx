@@ -3,7 +3,6 @@ import React, {
   useImperativeHandle,
   useEffect,
   useRef,
-  useState,
   useCallback,
   createContext,
   useContext,
@@ -12,20 +11,17 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
 
-import type {
-  ModalProps,
-  ModalRef,
-  ModalContextValue,
-  ModalSize,
-  ModalVariant,
-  DrawerPosition,
-  ModalAnimation,
-} from './Modal.types';
+import type { ModalProps, ModalRef, ModalContextValue } from './Modal.types';
+import { useModalPhase } from './useModalPhase';
+import { useFocusTrap } from './useFocusTrap';
+import { useBodyScrollLock } from './useBodyScrollLock';
 import {
-  defaultModalSizes,
-  defaultDrawerSizes,
-  defaultAnimations,
-} from './Modal.types';
+  getContainerClasses,
+  getBackdropClasses,
+  getModalClasses,
+  getContentClasses,
+  getDrawerTransformStyle,
+} from './modalStyles';
 
 /**
  * Modal Context
@@ -41,138 +37,6 @@ export const useModal = (): ModalContextValue => {
     throw new Error('useModal must be used within a Modal component');
   }
   return context;
-};
-
-/**
- * Focus trap utility
- */
-const useFocusTrap = (
-  isOpen: boolean,
-  containerRef: React.RefObject<HTMLElement | null>,
-  enabled: boolean = true,
-) => {
-  const previousActiveElement = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!enabled || !isOpen) return;
-
-    // Store the previously focused element
-    previousActiveElement.current = document.activeElement as HTMLElement;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab' || !containerRef.current) return;
-
-      const focusableElements = containerRef.current.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-      const firstElement = focusableElements[0] as HTMLElement;
-      const lastElement = focusableElements[
-        focusableElements.length - 1
-      ] as HTMLElement;
-
-      if (event.shiftKey) {
-        if (document.activeElement === firstElement) {
-          event.preventDefault();
-          lastElement?.focus();
-        }
-      } else {
-        if (document.activeElement === lastElement) {
-          event.preventDefault();
-          firstElement?.focus();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-
-    // Focus first focusable element
-    const firstFocusable = containerRef.current?.querySelector(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    ) as HTMLElement;
-
-    if (firstFocusable) {
-      firstFocusable.focus();
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      // Return focus to previously focused element
-      if (previousActiveElement.current) {
-        previousActiveElement.current.focus();
-      }
-    };
-  }, [isOpen, enabled, containerRef]);
-};
-
-/**
- * Body scroll lock utility
- */
-const useBodyScrollLock = (isOpen: boolean, enabled: boolean = true) => {
-  useEffect(() => {
-    if (!enabled || !isOpen) return;
-
-    const originalStyle = window.getComputedStyle(document.body).overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = originalStyle;
-    };
-  }, [isOpen, enabled]);
-};
-
-/**
- * Get modal size classes
- */
-const getModalSizeClasses = (
-  size: ModalSize,
-  variant: ModalVariant,
-): string => {
-  const sizeMap = variant === 'drawer' ? defaultDrawerSizes : defaultModalSizes;
-  return sizeMap[size];
-};
-
-/**
- * Get drawer position classes
- */
-const getDrawerPositionClasses = (position: DrawerPosition): string => {
-  switch (position) {
-    case 'left':
-      return 'left-0 top-0 h-full';
-    case 'right':
-      return 'right-0 top-0 h-full';
-    case 'top':
-      return 'top-0 left-0 w-full';
-    case 'bottom':
-      return 'bottom-0 left-0 w-full';
-    default:
-      return 'right-0 top-0 h-full';
-  }
-};
-
-/**
- * Get animation classes
- */
-const getAnimationClasses = (
-  animation: ModalAnimation,
-  isOpen: boolean,
-  isEntering: boolean,
-  isExiting: boolean,
-): string => {
-  const config = defaultAnimations[animation];
-
-  if (isExiting) {
-    return clsx(config.exit, config.exitActive);
-  }
-
-  if (isEntering && isOpen) {
-    return clsx(config.enter, config.enterActive);
-  }
-
-  if (isOpen) {
-    return config.enterActive.replace(/transition-\S+/g, '').trim();
-  }
-
-  return config.enter;
 };
 
 /**
@@ -198,8 +62,8 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
       header,
       footer,
       children,
-      focusTrap = { enabled: true },
-      backdrop = { show: true, opacity: 50, closable: true },
+      focusTrap: focusTrapProp,
+      backdrop: backdropProp,
       closable = true,
       closeOnEscape = true,
       closeOnOutsideClick = true,
@@ -226,48 +90,33 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
   ) => {
     const modalRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
-    const [isEntering, setIsEntering] = useState(false);
-    const [isExiting, setIsExiting] = useState(false);
-    const [mounted, setMounted] = useState(false);
     const modalId = useRef(
       `modal-${Math.random().toString(36).substr(2, 9)}`,
     ).current;
 
-    // Hooks
-    useFocusTrap(open && mounted, modalRef, focusTrap.enabled);
-    useBodyScrollLock(open && mounted, preventBodyScroll);
+    // Merge field-by-field rather than relying on a default parameter for
+    // the whole object — a default param only applies when the prop is
+    // omitted entirely, so `backdrop={{opacity: 75}}` would otherwise
+    // silently drop `show: true` and the backdrop would stop rendering.
+    const focusTrap = { enabled: true, ...focusTrapProp };
+    const backdrop = {
+      show: true,
+      opacity: 50,
+      closable: true,
+      ...backdropProp,
+    };
 
-    // Mount handling
-    useEffect(() => {
-      setMounted(true);
-      return () => setMounted(false);
-    }, []);
+    const { phase, isRendered, isEntering, isExiting } = useModalPhase({
+      open,
+      animation,
+      animationDuration,
+      elementRef: modalRef,
+      onOpen,
+      onAnimationEnd,
+    });
 
-    // Animation handling
-    useEffect(() => {
-      if (!mounted) return;
-
-      if (open) {
-        setIsEntering(true);
-        onOpen?.();
-
-        const timer = setTimeout(() => {
-          setIsEntering(false);
-          onAnimationEnd?.();
-        }, animationDuration || defaultAnimations[animation].duration);
-
-        return () => clearTimeout(timer);
-      } else {
-        setIsExiting(true);
-
-        const timer = setTimeout(() => {
-          setIsExiting(false);
-          onAnimationEnd?.();
-        }, animationDuration || defaultAnimations[animation].duration);
-
-        return () => clearTimeout(timer);
-      }
-    }, [open, mounted, animation, animationDuration, onOpen, onAnimationEnd]);
+    useFocusTrap(open && isRendered, modalRef, focusTrap.enabled);
+    useBodyScrollLock(open && isRendered, preventBodyScroll);
 
     // Imperative API
     useImperativeHandle(
@@ -331,11 +180,11 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
 
     // Keyboard event listener
     useEffect(() => {
-      if (open && mounted) {
+      if (open && isRendered) {
         document.addEventListener('keydown', handleEscapeKey);
         return () => document.removeEventListener('keydown', handleEscapeKey);
       }
-    }, [open, mounted, handleEscapeKey]);
+    }, [open, isRendered, handleEscapeKey]);
 
     // Context value
     const contextValue: ModalContextValue = {
@@ -346,55 +195,34 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
       variant,
     };
 
-    // Don't render if not mounted or not visible
-    if (!mounted || (!open && !isExiting)) {
+    // `isRendered` (phase !== 'closed') is the single source of truth for
+    // whether this should be in the DOM — it only reaches 'closed' after
+    // the real exit transition has finished (see useModalPhase), so
+    // there's no separate "still animating out" case to account for here.
+    if (!isRendered) {
       return null;
     }
 
-    // Container classes
-    const containerClasses = clsx(
-      'fixed inset-0 z-50 flex items-center justify-center p-4',
-      variant === 'drawer' && 'p-0',
-      `z-${zIndex}`,
-    );
-
-    // Backdrop classes
-    const backdropClasses = clsx(
-      'fixed inset-0',
-      backdrop.show && `bg-black bg-opacity-${backdrop.opacity || 50}`,
-      backdrop.blur && 'backdrop-blur-sm',
+    const containerClasses = getContainerClasses(variant, zIndex);
+    const backdropClasses = getBackdropClasses(
+      backdrop.show,
+      backdrop.blur,
       backdropClassName,
     );
-
-    // Modal/Drawer classes
-    const modalClasses = clsx(
-      'relative bg-white shadow-xl',
-      variant === 'modal' && [
-        'rounded-lg',
-        'max-h-full',
-        getModalSizeClasses(size, variant),
-        'mx-auto',
-      ],
-      variant === 'drawer' && [
-        'fixed',
-        getDrawerPositionClasses(position),
-        getModalSizeClasses(size, variant),
-        position === 'left' || position === 'right'
-          ? 'max-h-full'
-          : 'max-w-full',
-      ],
-      getAnimationClasses(animation, open, isEntering, isExiting),
-      scrollable && 'overflow-hidden',
+    const modalClasses = getModalClasses({
+      variant,
+      size,
+      position,
+      animation,
+      open,
+      isEntering,
+      isExiting,
+      scrollable,
       className,
-    );
-
-    // Content classes
-    const contentClasses = clsx(
-      'flex flex-col',
-      scrollable ? 'overflow-hidden' : 'overflow-visible',
-      maxHeight &&
-        `max-h-[${typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight}]`,
-    );
+    });
+    const modalStyle: React.CSSProperties =
+      variant === 'drawer' ? getDrawerTransformStyle(position, phase) : {};
+    const contentClasses = getContentClasses(scrollable, maxHeight);
 
     // Header component
     const renderHeader = () => {
@@ -511,6 +339,7 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
           {backdrop.show && (
             <div
               className={backdropClasses}
+              style={{ opacity: (backdrop.opacity ?? 50) / 100 }}
               onClick={handleBackdropClick}
               data-testid={`${testId}-backdrop`}
             />
@@ -520,6 +349,7 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
           <div
             ref={modalRef}
             className={modalClasses}
+            style={modalStyle}
             tabIndex={-1}
             data-testid={`${testId}-content`}
           >
