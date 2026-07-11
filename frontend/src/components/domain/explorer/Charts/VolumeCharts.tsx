@@ -5,7 +5,7 @@
  * Supports both 30-day and 90-day trend analysis.
  */
 
-import { useGetTrendsVolumesVolumeId } from '@/api/orval-generated/api';
+import { useGetApiV1TrendsVolumesVolumeId } from '@/api/orval-generated/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
@@ -98,7 +98,7 @@ export const VolumeCharts: React.FC<VolumeChartsProps> = ({
     data: trendsData,
     isLoading,
     error,
-  } = useGetTrendsVolumesVolumeId(
+  } = useGetApiV1TrendsVolumesVolumeId(
     volumeId,
     { days: trendPeriod },
     { query: { enabled: !!volumeId } },

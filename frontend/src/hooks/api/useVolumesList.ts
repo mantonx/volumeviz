@@ -1,6 +1,6 @@
 import { useAtomValue } from 'jotai';
 import { useMemo } from 'react';
-import { useGetVolumes } from '@/api/orval-generated/api';
+import { useGetApiV1Volumes } from '@/api/orval-generated/api';
 import { organizationIdAtom, volumeFiltersAtom } from '@/atoms';
 
 export interface UseVolumesListOptions {
@@ -62,7 +62,7 @@ export function useVolumesList(options: UseVolumesListOptions = {}) {
 
   // Use the generated hook
   const { data, isLoading, error, refetch, isFetching, isRefetching } =
-    useGetVolumes(queryParams, {
+    useGetApiV1Volumes(queryParams, {
       query: {
         enabled: enabled, // Fetch volumes regardless of org (backend handles filtering)
         staleTime: 30 * 1000, // 30 seconds
@@ -73,17 +73,20 @@ export function useVolumesList(options: UseVolumesListOptions = {}) {
       },
     });
 
-  // Transform data to match expected format
+  // customFetchClient wraps successful responses as { data, status, headers
+  // }, and the volumes response body itself is { data: Volume[], page,
+  // page_size, total, filters } — flat pagination fields on the body, no
+  // nested pagination object. So the volumes array is at data.data.data and
+  // pagination fields are at data.data.page / .page_size / .total.
+  const body = data?.status === 200 ? data.data : undefined;
+
   const volumes = useMemo(() => {
-    // React Query 'data' is the full API response: { data: Volume[], page, page_size, total }
-    // We want the 'data' property which contains the volumes array
-    if (!data?.data || !Array.isArray(data.data)) return [];
-    return data.data as any[];
-  }, [data]);
+    if (!body?.data || !Array.isArray(body.data)) return [];
+    return body.data as any[];
+  }, [body]);
 
   const pagination = useMemo(() => {
-    // API returns pagination data at root level: { data, total, page, page_size }
-    if (!data) {
+    if (!body) {
       return {
         page,
         pageSize,
@@ -94,21 +97,20 @@ export function useVolumesList(options: UseVolumesListOptions = {}) {
       };
     }
 
-    const total = (data as any).total || 0;
-    const currentPage = (data as any).page || page;
-    const limit = (data as any).page_size || pageSize;
+    const currentPage = body.page ?? page;
+    const limit = body.page_size ?? pageSize;
+    const total = body.total ?? 0;
     const totalPages = Math.ceil(total / limit);
-    const hasMore = currentPage < totalPages;
 
     return {
       page: currentPage,
       pageSize: limit,
       total,
       totalPages,
-      hasNext: hasMore,
+      hasNext: currentPage < totalPages,
       hasPrevious: currentPage > 1,
     };
-  }, [data, page, pageSize]);
+  }, [body, page, pageSize]);
 
   return {
     volumes,

@@ -20,7 +20,7 @@ import {
   Image as ImageIcon,
   AlertCircle,
 } from 'lucide-react';
-import { useGetFilesIdMetadata, useGetFilesFileIdPreview } from '@/api/orval-generated/api';
+import { useGetApiV1FilesIdMetadata, useGetApiV1FilesFileIdPreview } from '@/api/orval-generated/api';
 import type {
   FileMetadataDrawerProps,
   MediaTypeCategory,
@@ -94,7 +94,7 @@ const ImagePreview: React.FC<{ fileId: number; fileName: string }> = ({
     data: previewData,
     isLoading,
     isError,
-  } = useGetFilesFileIdPreview(
+  } = useGetApiV1FilesFileIdPreview(
     fileId,
     { type: 'thumbnail', size: 'large' },
     {
@@ -241,7 +241,7 @@ export function FileMetadataDrawer({
     data: metadataResponse,
     isLoading: metadataLoading,
     isError: metadataError,
-  } = useGetFilesIdMetadata(
+  } = useGetApiV1FilesIdMetadata(
     file?.id || 0,
     {},
     {

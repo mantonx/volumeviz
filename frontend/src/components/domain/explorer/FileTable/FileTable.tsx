@@ -101,10 +101,10 @@ export const FileTable: React.FC<FileTableProps> = ({
     { query: { enabled: !!volumeId } },
   );
 
-  // Response is flat, not nested under .data (see ExplorerPage.tsx for the
-  // same pattern/comment).
-  const files = ((filesData as { files?: FileItem[] } | undefined)?.files ??
-    []) as FileItem[];
+  // customFetchClient wraps the raw body as { data, status, headers }; the
+  // actual API response body (with its `files` field) is under `.data`.
+  const files = ((filesData?.data as { files?: FileItem[] } | undefined)
+    ?.files ?? []) as FileItem[];
 
   const sortedFiles = useMemo(() => {
     const sorted = [...files].sort((a, b) => {

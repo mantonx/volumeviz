@@ -63,8 +63,10 @@ export const FileGrid: React.FC<FileGridProps> = ({
     { query: { enabled: !!volumeId } },
   );
 
-  const files = ((filesData as { files?: FileItem[] } | undefined)?.files ??
-    []) as FileItem[];
+  // customFetchClient wraps the raw body as { data, status, headers }; the
+  // actual API response body (with its `files` field) is under `.data`.
+  const files = ((filesData?.data as { files?: FileItem[] } | undefined)
+    ?.files ?? []) as FileItem[];
 
   const sortedFiles = useMemo(() => {
     if (!files) return [];

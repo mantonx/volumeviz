@@ -18,10 +18,16 @@ export type FileSearchResult = {
   path: string;
   size: number;
   type: 'file' | 'directory';
-  modified: Date;
+  modified?: Date;
   matched_content?: string;
   highlight_ranges?: Array<{ start: number; end: number }>;
   score?: number;
+};
+
+// Raw shape returned by GET /search/files: the backend sends modified_time
+// (see internal/api/v1/search/handler.go), not modified.
+type RawFileSearchResult = Omit<FileSearchResult, 'modified'> & {
+  modified_time?: string;
 };
 
 export type SavedSearch = {
@@ -78,7 +84,7 @@ export const searchApi = {
     }
 
     try {
-      const response = await customFetchClient<{ files: FileSearchResult[] }>('/search/files', {
+      const response = await customFetchClient<{ files: RawFileSearchResult[] }>('/search/files', {
         params: {
           q: request.query,
           minSize: request.size_min,
@@ -90,7 +96,10 @@ export const searchApi = {
           perPage: request.page_size || 20,
         },
       });
-      return response.files || [];
+      return (response.files || []).map((f) => ({
+        ...f,
+        modified: f.modified_time ? new Date(f.modified_time) : undefined,
+      }));
     } catch (error) {
       // Provide user-friendly error messages
       if (error instanceof Error) {

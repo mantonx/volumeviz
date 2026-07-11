@@ -94,7 +94,11 @@ export const customFetchClient = async <T = any>(
 
     // Handle non-2xx responses
     if (!response.ok) {
-      if (response.status === 401) {
+      // A 401 from these auth endpoints reflects a credentials check
+      // (wrong password), not an expired session - the caller already
+      // handles that response itself, so don't blow away the session.
+      const isCredentialsCheck = /\/auth\/(login|change-password)$/.test(pathname);
+      if (response.status === 401 && !isCredentialsCheck) {
         // Handle token expiration - clear all auth data
         console.error('[AUTH] 401 Unauthorized - clearing auth data and redirecting to login', {
           url: fullUrl.toString(),
@@ -115,10 +119,15 @@ export const customFetchClient = async <T = any>(
       );
     }
 
-    // Parse response
+    // Parse response. Orval's generated types (httpClient: 'fetch') model
+    // each endpoint's success response as { data, status: <literal 2xx> },
+    // matching the shape components discriminate on via `.status === 200`
+    // — wrap here so the runtime actually satisfies what the generated
+    // types (and every caller using that pattern) already assume.
     const contentType = response.headers.get('content-type');
     if (contentType?.includes('application/json')) {
-      return await response.json();
+      const data = await response.json();
+      return { data, status: response.status, headers: response.headers } as any;
     }
 
     // For non-JSON responses, return the response itself

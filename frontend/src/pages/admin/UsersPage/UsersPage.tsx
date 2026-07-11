@@ -15,10 +15,10 @@ import { User, Search, Plus, Edit, Trash2, CheckCircle, XCircle, Shield, X } fro
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import {
-  getUsers,
-  postUsers,
-  putUsersId,
-  deleteUsersId,
+  getApiV1Users,
+  postApiV1Users,
+  putApiV1UsersId,
+  deleteApiV1UsersId,
   InternalApiV1UsersCreateUserRequest,
   InternalApiV1UsersUpdateUserRequest,
   InternalApiV1UsersCreateUserRequestRole,
@@ -61,7 +61,7 @@ export const UsersPage: React.FC = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await getUsers({ page: 1, page_size: 100 });
+        const response = await getApiV1Users({ page: 1, page_size: 100 });
         const responseData = response.data as any;
 
         // Orval extracts the 'data' field from the API response, so response.data IS the array
@@ -89,7 +89,7 @@ export const UsersPage: React.FC = () => {
 
   const refreshUsers = async () => {
     try {
-      const response = await getUsers({ page: 1, page_size: 100 });
+      const response = await getApiV1Users({ page: 1, page_size: 100 });
       const responseData = response.data as any;
 
       // Orval extracts the 'data' field from the API response, so response.data IS the array
@@ -111,7 +111,7 @@ export const UsersPage: React.FC = () => {
   const handleCreateUser = async () => {
     try {
       console.log('[UsersPage] Creating user with data:', createForm);
-      await postUsers(createForm);
+      await postApiV1Users(createForm);
       showNotification('success', 'User created successfully');
       setShowCreateModal(false);
       setCreateForm({
@@ -135,7 +135,7 @@ export const UsersPage: React.FC = () => {
     if (!selectedUser) return;
 
     try {
-      await putUsersId(selectedUser.id, editForm);
+      await putApiV1UsersId(selectedUser.id, editForm);
       showNotification('success', 'User updated successfully');
       setShowEditModal(false);
       setSelectedUser(null);
@@ -151,7 +151,7 @@ export const UsersPage: React.FC = () => {
     if (!selectedUser) return;
 
     try {
-      await deleteUsersId(selectedUser.id);
+      await deleteApiV1UsersId(selectedUser.id);
       showNotification('success', 'User deleted successfully');
       setShowDeleteConfirm(false);
       setSelectedUser(null);

@@ -14,17 +14,17 @@
 
 import { useMemo } from 'react';
 import {
-  useGetAlertsRules,
-  usePostAlertsRules,
-  useDeleteAlertsRulesId,
-  usePutAlertsRulesId,
-  usePostAlertsRulesIdTest,
-  useGetAlertsDestinations,
-  usePostAlertsDestinations,
-  useDeleteAlertsDestinationsId,
-  usePutAlertsDestinationsId,
-  usePostAlertsDestinationsIdTest,
-  useGetAlertsDeliveries,
+  useGetApiV1AlertsRules,
+  usePostApiV1AlertsRules,
+  useDeleteApiV1AlertsRulesId,
+  usePutApiV1AlertsRulesId,
+  usePostApiV1AlertsRulesIdTest,
+  useGetApiV1AlertsDestinations,
+  usePostApiV1AlertsDestinations,
+  useDeleteApiV1AlertsDestinationsId,
+  usePutApiV1AlertsDestinationsId,
+  usePostApiV1AlertsDestinationsIdTest,
+  useGetApiV1AlertsDeliveries,
   type GithubComMantonxVolumevizInternalModelsAlertRule as AlertRule,
   type GithubComMantonxVolumevizInternalModelsAlertDestination as AlertDestination,
   type GithubComMantonxVolumevizInternalModelsAlertDelivery as AlertDelivery,
@@ -33,7 +33,7 @@ import {
   type GithubComMantonxVolumevizInternalModelsUpdateAlertRuleParams as UpdateAlertRuleParams,
   type GithubComMantonxVolumevizInternalModelsCreateAlertDestinationParams as CreateAlertDestinationParams,
   type GithubComMantonxVolumevizInternalModelsUpdateAlertDestinationParams as UpdateAlertDestinationParams,
-  type GetAlertsDeliveriesParams,
+  type GetApiV1AlertsDeliveriesParams,
 } from '@/api/orval-generated/api';
 
 // Re-export the real backend model types + params so components can import
@@ -79,11 +79,11 @@ function stringifyError(error: unknown): string | null {
 // ---------------------------------------------------------------------------
 
 export const useAlertRules = () => {
-  const rulesQuery = useGetAlertsRules(undefined);
-  const createMutation = usePostAlertsRules();
-  const deleteMutation = useDeleteAlertsRulesId();
-  const updateMutation = usePutAlertsRulesId();
-  const testMutation = usePostAlertsRulesIdTest();
+  const rulesQuery = useGetApiV1AlertsRules(undefined);
+  const createMutation = usePostApiV1AlertsRules();
+  const deleteMutation = useDeleteApiV1AlertsRulesId();
+  const updateMutation = usePutApiV1AlertsRulesId();
+  const testMutation = usePostApiV1AlertsRulesIdTest();
 
   const rules: AlertRule[] = useMemo(() => {
     const data = rulesQuery.data;
@@ -141,11 +141,11 @@ export const useAlertRules = () => {
 // ---------------------------------------------------------------------------
 
 export const useAlertDestinations = () => {
-  const destinationsQuery = useGetAlertsDestinations(undefined);
-  const createMutation = usePostAlertsDestinations();
-  const deleteMutation = useDeleteAlertsDestinationsId();
-  const updateMutation = usePutAlertsDestinationsId();
-  const testMutation = usePostAlertsDestinationsIdTest();
+  const destinationsQuery = useGetApiV1AlertsDestinations(undefined);
+  const createMutation = usePostApiV1AlertsDestinations();
+  const deleteMutation = useDeleteApiV1AlertsDestinationsId();
+  const updateMutation = usePutApiV1AlertsDestinationsId();
+  const testMutation = usePostApiV1AlertsDestinationsIdTest();
 
   const destinations: AlertDestination[] = useMemo(() => {
     const data = destinationsQuery.data;
@@ -208,8 +208,8 @@ export const useAlertDestinations = () => {
 // Alert Deliveries (History)
 // ---------------------------------------------------------------------------
 
-export const useAlertDeliveries = (params?: GetAlertsDeliveriesParams) => {
-  const deliveriesQuery = useGetAlertsDeliveries(params);
+export const useAlertDeliveries = (params?: GetApiV1AlertsDeliveriesParams) => {
+  const deliveriesQuery = useGetApiV1AlertsDeliveries(params);
 
   const deliveries: AlertDelivery[] = useMemo(() => {
     const data = deliveriesQuery.data;

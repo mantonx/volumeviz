@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useGetHealthDatabase } from '@/api/orval-generated/api';
+import { useGetApiV1HealthDatabase } from '@/api/orval-generated/api';
 import { logger } from '@/utils/logger';
 
 /**
@@ -9,7 +9,7 @@ export function ApiHealthChecker() {
   const {
     data: healthData,
     error,
-  } = useGetHealthDatabase({
+  } = useGetApiV1HealthDatabase({
     query: {
       refetchInterval: 10000, // Check every 10 seconds
       retry: (failureCount) => {
@@ -23,10 +23,10 @@ export function ApiHealthChecker() {
   useEffect(() => {
     logger.debug('[ApiHealthChecker] Starting health checks');
 
-    if (healthData) {
+    if (healthData?.status === 200) {
       logger.info(
         '[ApiHealthChecker] Health check completed:',
-        healthData.status,
+        healthData.data.status,
       );
     }
 
