@@ -48,6 +48,28 @@ SELECT * FROM recent_audit_events
 WHERE organization_id = $1
 LIMIT $2;
 
+-- name: SearchAuditLogsByOrg :many
+SELECT * FROM recent_audit_events
+WHERE organization_id = sqlc.arg(organization_id)
+    AND (sqlc.narg(action)::text IS NULL OR action = sqlc.narg(action))
+    AND (sqlc.narg(status)::text IS NULL OR status = sqlc.narg(status))
+    AND (sqlc.narg(search)::text IS NULL OR
+        username ILIKE '%' || sqlc.narg(search) || '%' OR
+        action ILIKE '%' || sqlc.narg(search) || '%' OR
+        details::text ILIKE '%' || sqlc.narg(search) || '%')
+ORDER BY created_at DESC
+LIMIT sqlc.arg(row_limit) OFFSET sqlc.arg(row_offset);
+
+-- name: CountSearchAuditLogsByOrg :one
+SELECT COUNT(*) FROM recent_audit_events
+WHERE organization_id = sqlc.arg(organization_id)
+    AND (sqlc.narg(action)::text IS NULL OR action = sqlc.narg(action))
+    AND (sqlc.narg(status)::text IS NULL OR status = sqlc.narg(status))
+    AND (sqlc.narg(search)::text IS NULL OR
+        username ILIKE '%' || sqlc.narg(search) || '%' OR
+        action ILIKE '%' || sqlc.narg(search) || '%' OR
+        details::text ILIKE '%' || sqlc.narg(search) || '%');
+
 -- name: DeleteOldAuditLogs :exec
 DELETE FROM audit_logs
 WHERE created_at < $1;

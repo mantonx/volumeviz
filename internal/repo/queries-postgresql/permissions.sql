@@ -6,7 +6,9 @@ INSERT INTO permissions (
     role, resource, action, organization_id
 ) VALUES (
     $1, $2, $3, $4
-) RETURNING *;
+)
+ON CONFLICT (role, resource, action, organization_id) DO UPDATE SET role = EXCLUDED.role
+RETURNING *;
 
 -- name: GetPermissionByID :one
 SELECT * FROM permissions WHERE id = $1;
@@ -41,6 +43,13 @@ ORDER BY role, resource, action;
 
 -- name: DeletePermission :exec
 DELETE FROM permissions WHERE id = $1;
+
+-- name: DeleteOrgRolePermission :exec
+DELETE FROM permissions
+WHERE role = sqlc.arg(role)
+  AND resource = sqlc.arg(resource)
+  AND action = sqlc.arg(action)
+  AND organization_id = sqlc.arg(organization_id);
 
 -- name: DeleteRolePermissions :exec
 DELETE FROM permissions WHERE role = $1 AND organization_id = $2;

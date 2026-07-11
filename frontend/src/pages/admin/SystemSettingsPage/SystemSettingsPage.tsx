@@ -1,368 +1,186 @@
 /**
- * SystemSettingsPage - Admin page for system configuration
+ * SystemSettingsPage - Admin page showing the running process's real
+ * configuration.
  *
- * Features:
- * - Configure system-wide settings
- * - Authentication settings
- * - Storage settings
- * - Notification settings
- * - API settings
+ * This is read-only, not editable. Every value here is loaded once from the
+ * environment when the backend process starts (scan interval/concurrency,
+ * retention windows, rate limits, CORS origins, etc) - none of it is
+ * runtime-editable state, so there's nothing for a "Save" button to persist
+ * without restarting the process and changing the underlying env vars.
  */
 
-import React, { useState, FormEvent } from 'react';
-import { Settings, Save, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import React from 'react';
+import { Settings, ShieldCheck, Gauge, Globe, ScanSearch, Clock3, Bell } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
+import { useGetApiV1SystemConfig } from '@/api/orval-generated/api';
 
-interface SystemSettings {
-  // Authentication
-  jwtExpirationMinutes: number;
-  refreshTokenExpirationDays: number;
-  maxLoginAttempts: number;
+const StatusPill: React.FC<{ enabled?: boolean }> = ({ enabled }) => (
+  <span
+    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+      enabled
+        ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+        : 'bg-surface-secondary text-tertiary'
+    }`}
+  >
+    {enabled ? 'Enabled' : 'Disabled'}
+  </span>
+);
 
-  // Storage
-  maxScanConcurrency: number;
-  scanIntervalMinutes: number;
-  retentionDays: number;
-
-  // Notifications
-  enableEmailNotifications: boolean;
-  smtpHost: string;
-  smtpPort: number;
-  smtpUsername: string;
-
-  // API
-  apiRateLimitPerMinute: number;
-  enableSwagger: boolean;
-  corsAllowedOrigins: string;
-}
-
-const defaultSettings: SystemSettings = {
-  jwtExpirationMinutes: 60,
-  refreshTokenExpirationDays: 7,
-  maxLoginAttempts: 5,
-  maxScanConcurrency: 3,
-  scanIntervalMinutes: 60,
-  retentionDays: 90,
-  enableEmailNotifications: false,
-  smtpHost: 'smtp.example.com',
-  smtpPort: 587,
-  smtpUsername: '',
-  apiRateLimitPerMinute: 100,
-  enableSwagger: true,
-  corsAllowedOrigins: '*',
-};
+const ConfigRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div className="flex items-center justify-between py-2 border-b border-line last:border-0">
+    <span className="text-sm text-secondary">{label}</span>
+    <span className="text-sm font-medium text-primary">{value}</span>
+  </div>
+);
 
 export const SystemSettingsPage: React.FC = () => {
-  const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
-  const [isSaving, setIsSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(false);
-    setIsSaving(true);
-
-    try {
-      // TODO: Call API to save settings
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to save settings');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const updateSetting = <K extends keyof SystemSettings>(
-    key: K,
-    value: SystemSettings[K]
-  ) => {
-    setSettings({ ...settings, [key]: value });
-  };
+  const { data, isLoading, isError } = useGetApiV1SystemConfig();
+  const config = data?.status === 200 ? data.data : undefined;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-primary">
-            System Settings
-          </h1>
-          <p className="mt-2 text-secondary">
-            Configure system-wide settings and preferences
-          </p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-primary">System Settings</h1>
+        <p className="mt-2 text-secondary">
+          The backend's currently active configuration. These values are read once from
+          environment variables when the process starts - changing any of them means updating
+          the env var and restarting, not editing them here.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Success/Error Messages */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-green-800">Settings saved successfully!</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-800">{error}</p>
-          </div>
-        )}
-
-        {/* Authentication Settings */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900">
-              <Settings className="h-5 w-5 text-blue-600 dark:text-blue-300" />
-            </div>
-            <h2 className="text-xl font-semibold text-primary">
-              Authentication
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">
-                JWT Expiration (minutes)
-              </label>
-              <input
-                type="number"
-                value={settings.jwtExpirationMinutes}
-                onChange={(e) =>
-                  updateSetting('jwtExpirationMinutes', parseInt(e.target.value))
-                }
-                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">
-                Refresh Token Expiration (days)
-              </label>
-              <input
-                type="number"
-                value={settings.refreshTokenExpirationDays}
-                onChange={(e) =>
-                  updateSetting('refreshTokenExpirationDays', parseInt(e.target.value))
-                }
-                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">
-                Max Login Attempts
-              </label>
-              <input
-                type="number"
-                value={settings.maxLoginAttempts}
-                onChange={(e) =>
-                  updateSetting('maxLoginAttempts', parseInt(e.target.value))
-                }
-                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Storage Settings */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900">
-              <Settings className="h-5 w-5 text-green-600 dark:text-green-300" />
-            </div>
-            <h2 className="text-xl font-semibold text-primary">
-              Storage & Scanning
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">
-                Max Concurrent Scans
-              </label>
-              <input
-                type="number"
-                value={settings.maxScanConcurrency}
-                onChange={(e) =>
-                  updateSetting('maxScanConcurrency', parseInt(e.target.value))
-                }
-                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">
-                Scan Interval (minutes)
-              </label>
-              <input
-                type="number"
-                value={settings.scanIntervalMinutes}
-                onChange={(e) =>
-                  updateSetting('scanIntervalMinutes', parseInt(e.target.value))
-                }
-                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">
-                Data Retention (days)
-              </label>
-              <input
-                type="number"
-                value={settings.retentionDays}
-                onChange={(e) =>
-                  updateSetting('retentionDays', parseInt(e.target.value))
-                }
-                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Notification Settings */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900">
-              <Settings className="h-5 w-5 text-purple-600 dark:text-purple-300" />
-            </div>
-            <h2 className="text-xl font-semibold text-primary">
-              Notifications
-            </h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center">
-              <input
-                id="enable-email"
-                type="checkbox"
-                checked={settings.enableEmailNotifications}
-                onChange={(e) =>
-                  updateSetting('enableEmailNotifications', e.target.checked)
-                }
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="enable-email"
-                className="ml-2 block text-sm text-primary"
-              >
-                Enable Email Notifications
-              </label>
-            </div>
-
-            {settings.enableEmailNotifications && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">
-                    SMTP Host
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.smtpHost}
-                    onChange={(e) => updateSetting('smtpHost', e.target.value)}
-                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">
-                    SMTP Port
-                  </label>
-                  <input
-                    type="number"
-                    value={settings.smtpPort}
-                    onChange={(e) =>
-                      updateSetting('smtpPort', parseInt(e.target.value))
-                    }
-                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">
-                    SMTP Username
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.smtpUsername}
-                    onChange={(e) => updateSetting('smtpUsername', e.target.value)}
-                    className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </Card>
-
-        {/* API Settings */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900">
-              <Settings className="h-5 w-5 text-orange-600 dark:text-orange-300" />
-            </div>
-            <h2 className="text-xl font-semibold text-primary">API</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">
-                Rate Limit (requests/minute)
-              </label>
-              <input
-                type="number"
-                value={settings.apiRateLimitPerMinute}
-                onChange={(e) =>
-                  updateSetting('apiRateLimitPerMinute', parseInt(e.target.value))
-                }
-                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">
-                CORS Allowed Origins
-              </label>
-              <input
-                type="text"
-                value={settings.corsAllowedOrigins}
-                onChange={(e) => updateSetting('corsAllowedOrigins', e.target.value)}
-                placeholder="* or https://example.com"
-                className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface text-primary"
-              />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                id="enable-swagger"
-                type="checkbox"
-                checked={settings.enableSwagger}
-                onChange={(e) => updateSetting('enableSwagger', e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="enable-swagger"
-                className="ml-2 block text-sm text-primary"
-              >
-                Enable Swagger API Documentation
-              </label>
-            </div>
-          </div>
-        </Card>
-
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isSaving} className="flex items-center gap-2">
-            <Save className="h-4 w-4" />
-            {isSaving ? 'Saving...' : 'Save Settings'}
-          </Button>
+      {isError && (
+        <div className="text-center py-12">
+          <Settings className="mx-auto h-12 w-12 text-red-400" />
+          <h3 className="mt-2 text-sm font-medium text-primary">Couldn't load configuration</h3>
+          <p className="mt-1 text-sm text-tertiary">
+            There was a problem reaching the server. Try again shortly.
+          </p>
         </div>
-      </form>
+      )}
+
+      {!isError && !isLoading && config && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900">
+                <Settings className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+              </div>
+              <h2 className="text-xl font-semibold text-primary">Server</h2>
+            </div>
+            <ConfigRow label="Mode" value={config.server?.mode ?? '—'} />
+            <ConfigRow label="Database" value={config.server?.database_type ?? '—'} />
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900">
+                <ShieldCheck className="h-5 w-5 text-purple-600 dark:text-purple-300" />
+              </div>
+              <h2 className="text-xl font-semibold text-primary">Authentication</h2>
+            </div>
+            <ConfigRow label="Auth enforcement" value={<StatusPill enabled={config.auth?.enabled} />} />
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900">
+                <Gauge className="h-5 w-5 text-orange-600 dark:text-orange-300" />
+              </div>
+              <h2 className="text-xl font-semibold text-primary">Rate Limiting</h2>
+            </div>
+            <ConfigRow label="Status" value={<StatusPill enabled={config.rate_limit?.enabled} />} />
+            <ConfigRow label="Requests / minute" value={config.rate_limit?.requests_per_minute ?? '—'} />
+            <ConfigRow label="Burst" value={config.rate_limit?.burst ?? '—'} />
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-teal-100 dark:bg-teal-900">
+                <Globe className="h-5 w-5 text-teal-600 dark:text-teal-300" />
+              </div>
+              <h2 className="text-xl font-semibold text-primary">CORS</h2>
+            </div>
+            <div className="text-sm text-secondary mb-2">Allowed origins</div>
+            <div className="flex flex-wrap gap-2">
+              {(config.cors?.allowed_origins ?? []).map((origin) => (
+                <code
+                  key={origin}
+                  className="bg-surface-secondary px-2 py-1 rounded text-xs text-primary"
+                >
+                  {origin}
+                </code>
+              ))}
+              {(config.cors?.allowed_origins ?? []).length === 0 && (
+                <span className="text-sm text-tertiary">None configured</span>
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900">
+                <ScanSearch className="h-5 w-5 text-green-600 dark:text-green-300" />
+              </div>
+              <h2 className="text-xl font-semibold text-primary">Scanning</h2>
+            </div>
+            <ConfigRow label="Status" value={<StatusPill enabled={config.scan?.enabled} />} />
+            <ConfigRow
+              label="Interval"
+              value={
+                config.scan?.interval_seconds
+                  ? `${Math.round(config.scan.interval_seconds / 60)} min`
+                  : '—'
+              }
+            />
+            <ConfigRow label="Concurrency" value={config.scan?.concurrency ?? '—'} />
+            <ConfigRow
+              label="Bind mounts"
+              value={<StatusPill enabled={config.scan?.bind_mounts_enabled} />}
+            />
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900">
+                <Clock3 className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+              </div>
+              <h2 className="text-xl font-semibold text-primary">Data Retention</h2>
+            </div>
+            <ConfigRow label="Status" value={<StatusPill enabled={config.retention?.enabled} />} />
+            <ConfigRow label="Scan jobs" value={`${config.retention?.scan_jobs_days ?? '—'} days`} />
+            <ConfigRow
+              label="Scan metrics"
+              value={`${config.retention?.scan_metrics_days ?? '—'} days`}
+            />
+            <ConfigRow
+              label="Scan phases"
+              value={`${config.retention?.scan_phases_days ?? '—'} days`}
+            />
+            <ConfigRow
+              label="File metadata"
+              value={`${config.retention?.file_metadata_days ?? '—'} days`}
+            />
+            <ConfigRow
+              label="Inactive files"
+              value={`${config.retention?.inactive_files_days ?? '—'} days`}
+            />
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-rose-100 dark:bg-rose-900">
+                <Bell className="h-5 w-5 text-rose-600 dark:text-rose-300" />
+              </div>
+              <h2 className="text-xl font-semibold text-primary">Alerts</h2>
+            </div>
+            <ConfigRow label="Status" value={<StatusPill enabled={config.alerts?.enabled} />} />
+            <ConfigRow
+              label="Evaluation interval"
+              value={`${config.alerts?.evaluation_interval_minutes ?? '—'} min`}
+            />
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

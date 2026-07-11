@@ -9,15 +9,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/middleware"
+	"github.com/mantonx/volumeviz/internal/api/v1/activity"
 	"github.com/mantonx/volumeviz/internal/api/v1/aggregate"
 	"github.com/mantonx/volumeviz/internal/api/v1/alerts"
+	"github.com/mantonx/volumeviz/internal/api/v1/auditlogs"
 	authAPI "github.com/mantonx/volumeviz/internal/api/v1/auth"
 	"github.com/mantonx/volumeviz/internal/api/v1/diag"
+	"github.com/mantonx/volumeviz/internal/api/v1/duplicates"
 	"github.com/mantonx/volumeviz/internal/api/v1/explorer"
 	"github.com/mantonx/volumeviz/internal/api/v1/health"
 	"github.com/mantonx/volumeviz/internal/api/v1/metadata"
 	"github.com/mantonx/volumeviz/internal/api/v1/mounts"
 	"github.com/mantonx/volumeviz/internal/api/v1/organizations"
+	"github.com/mantonx/volumeviz/internal/api/v1/permissions"
 	previewsAPI "github.com/mantonx/volumeviz/internal/api/v1/previews"
 	"github.com/mantonx/volumeviz/internal/api/v1/rules"
 	"github.com/mantonx/volumeviz/internal/api/v1/scan"
@@ -26,9 +30,12 @@ import (
 	"github.com/mantonx/volumeviz/internal/api/v1/snapshots"
 	"github.com/mantonx/volumeviz/internal/api/v1/stats"
 	"github.com/mantonx/volumeviz/internal/api/v1/system"
+	"github.com/mantonx/volumeviz/internal/api/v1/systemconfig"
 	"github.com/mantonx/volumeviz/internal/api/v1/trends"
 	"github.com/mantonx/volumeviz/internal/api/v1/users"
 	"github.com/mantonx/volumeviz/internal/api/v1/volumes"
+	"github.com/mantonx/volumeviz/internal/audit"
+	authServices "github.com/mantonx/volumeviz/internal/auth"
 	"github.com/mantonx/volumeviz/internal/config"
 	volumeConfig "github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/core/interfaces"
@@ -41,22 +48,20 @@ import (
 	"github.com/mantonx/volumeviz/internal/scheduler"
 	"github.com/mantonx/volumeviz/internal/security"
 	alertsService "github.com/mantonx/volumeviz/internal/services/alerts"
+	authServicePkg "github.com/mantonx/volumeviz/internal/services/auth"
 	"github.com/mantonx/volumeviz/internal/services/cache"
 	dockerService "github.com/mantonx/volumeviz/internal/services/docker"
 	"github.com/mantonx/volumeviz/internal/services/enrichers"
 	"github.com/mantonx/volumeviz/internal/services/filesystem"
 	coreMetrics "github.com/mantonx/volumeviz/internal/services/metrics"
+	organizationsService "github.com/mantonx/volumeviz/internal/services/organizations"
 	previewsService "github.com/mantonx/volumeviz/internal/services/previews"
 	"github.com/mantonx/volumeviz/internal/services/retention"
 	rulesService "github.com/mantonx/volumeviz/internal/services/rules"
-	jobScheduler "github.com/mantonx/volumeviz/internal/services/scheduler"
 	"github.com/mantonx/volumeviz/internal/services/scanner"
+	jobScheduler "github.com/mantonx/volumeviz/internal/services/scheduler"
 	statsService "github.com/mantonx/volumeviz/internal/services/stats"
 	"github.com/mantonx/volumeviz/internal/store"
-	"github.com/mantonx/volumeviz/internal/audit"
-	authServices "github.com/mantonx/volumeviz/internal/auth"
-	authServicePkg "github.com/mantonx/volumeviz/internal/services/auth"
-	organizationsService "github.com/mantonx/volumeviz/internal/services/organizations"
 	authUtils "github.com/mantonx/volumeviz/internal/utils/auth"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -86,7 +91,7 @@ type Router struct {
 	rulesEngine         *rulesService.TrackingRulesEngine      // Rules engine
 	rulesPreviewService *rulesService.EvaluationPreviewService // Rules preview service
 	auditLogger         audit.Logger                           // Audit logging service
-	permissionChecker   authServices.PermissionChecker        // Permission checking service
+	permissionChecker   authServices.PermissionChecker         // Permission checking service
 	authService         *authServicePkg.Service                // Auth service for login/register
 	organizationService organizationsService.Service           // Organization management service
 	jwtManager          *authUtils.JWTManager                  // JWT manager for authentication
@@ -498,7 +503,6 @@ func (r *Router) GetRealtimeService() *realtime.RealtimeService {
 	return r.realtimeService
 }
 
-
 // EventsService returns the events service if configured
 func (r *Router) EventsService() events.EventService {
 	return r.eventsService
@@ -533,10 +537,10 @@ func (r *Router) setupMiddleware(config *config.Config) {
 
 	// Security middleware
 	r.engine.Use(middleware.RequestIDMiddleware())
-	
+
 	// HTTPS redirect middleware (only in production when TLS is enabled)
 	r.engine.Use(middleware.HTTPSRedirectMiddleware(config.TLS.Enabled))
-	
+
 	// Enhanced security headers with HSTS if TLS is enabled
 	securityConfig := &middleware.SecurityConfig{
 		ContentTypeOptions:           "nosniff",
@@ -699,10 +703,32 @@ func (r *Router) setupRoutes(config *config.Config) {
 		{
 			// Volumes router - organization scoped
 			volumesRouter := volumes.NewRouterWithScanner(r.dockerService, r.store, r.progressBroadcaster, r.scanner)
-			volumesRouter.RegisterRoutes(orgScopedRoutes)
+			volumesAuthConfig := middleware.NewAuthConfig(r.jwtManager, config.Auth.Enabled)
+			volumesRouter.RegisterRoutesWithAuth(orgScopedRoutes, volumesAuthConfig)
 
 			// Store volumes handler for Phase 3 integration
 			r.volumesHandler = volumesRouter.Handler()
+			r.volumesHandler.SetAuditLogger(r.auditLogger)
+
+			// Activity router - recent audit-log events, organization scoped
+			activityRouter := activity.NewRouter(r.auditLogger)
+			activityRouter.RegisterRoutes(orgScopedRoutes)
+
+			// Audit log browsing/export routes - organization scoped, admin only
+			auditLogsRouter := auditlogs.NewRouter(r.auditLogger)
+			auditLogsRouter.RegisterRoutes(orgScopedRoutes, volumesAuthConfig)
+
+			// Roles/permissions routes - organization scoped, admin only
+			permissionsQueries := r.store.Queries().(*sqlc.Queries)
+			permissionsRouter := permissions.NewRouter(permissionsQueries)
+			permissionsRouter.RegisterRoutes(orgScopedRoutes, volumesAuthConfig)
+
+			// System config summary - process-global (not organization
+			// scoped), admin only. Registered on v1 directly rather than
+			// orgScopedRoutes since it doesn't depend on organization
+			// context and shouldn't fail if that context is ever missing.
+			systemConfigRouter := systemconfig.NewRouter(config)
+			systemConfigRouter.RegisterRoutes(v1, volumesAuthConfig)
 
 			// Explorer router for directory browsing and file operations - organization scoped
 			explorer.RegisterRoutes(orgScopedRoutes, r.store)
@@ -744,6 +770,11 @@ func (r *Router) setupRoutes(config *config.Config) {
 			// Search router for advanced file search and saved searches - organization scoped
 			searchRouter := search.NewRouter(r.store)
 			searchRouter.RegisterRoutes(orgScopedRoutes)
+
+			// Duplicates router for content-hash and size-based duplicate file detection - organization scoped
+			duplicatesHandler := duplicates.NewHandler(r.store)
+			duplicatesHandler.RegisterRoutes(orgScopedRoutes)
+			log.Printf("[INFO] Duplicates API routes registered successfully (organization-scoped)")
 
 			// Snapshots router for incremental scanning snapshot management - organization scoped
 			if config.Scan.IncrementalEnabled {

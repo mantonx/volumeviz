@@ -23,6 +23,7 @@ const (
 	ErrorCodeUnauthorized  ErrorCode = "unauthorized"
 	ErrorCodeForbidden     ErrorCode = "forbidden"
 	ErrorCodeNotFound      ErrorCode = "not_found"
+	ErrorCodeConflict      ErrorCode = "conflict"
 	ErrorCodeRateLimited   ErrorCode = "rate_limited"
 	ErrorCodeInternal      ErrorCode = "internal"
 	ErrorCodeDatabaseError ErrorCode = "database_error"
@@ -369,6 +370,11 @@ func RespondWithForbidden(c *gin.Context, message string) {
 // RespondWithNotFound sends a 404 Not Found error
 func RespondWithNotFound(c *gin.Context, message string) {
 	RespondWithError(c, 404, ErrorCodeNotFound, message, nil)
+}
+
+// RespondWithConflict sends a 409 Conflict error
+func RespondWithConflict(c *gin.Context, message string, details map[string]interface{}) {
+	RespondWithError(c, 409, ErrorCodeConflict, message, details)
 }
 
 // RespondWithRateLimited sends a 429 Rate Limited error
