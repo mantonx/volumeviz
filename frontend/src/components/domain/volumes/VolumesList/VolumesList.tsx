@@ -7,6 +7,7 @@ import { useVolumeSelection } from '@/hooks/volumes/useVolumeSelection';
 import { useAtom } from 'jotai';
 import { HardDrive, Plus } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { VolumeCard } from '../VolumeCard';
 import { VolumeTable } from '../VolumeTable';
 import { BulkScanModal } from '../modals';
@@ -19,6 +20,7 @@ interface VolumesListProps {
 }
 
 export function VolumesList({ className = '' }: VolumesListProps) {
+  const navigate = useNavigate();
   const { currentOrgId } = useOrganization();
   const [filters, setFilters] = useAtom(volumeFiltersAtom);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
@@ -120,10 +122,6 @@ export function VolumesList({ className = '' }: VolumesListProps) {
           isLoading={isLoading}
           selectedVolumeIds={selectedVolumeIds}
           onSelectionChange={setSelectedVolumeIds}
-          onVolumeSelect={(volume) => {
-            // Handle volume selection for detailed view
-            console.log('Selected volume:', volume);
-          }}
           showBulkActions={true}
           onRefetch={refetch}
         />
@@ -177,6 +175,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
                 {!filters.searchTerm && filters.status === 'all' && (
                   <button
                     type="button"
+                    onClick={() => navigate('/onboarding')}
                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 "
                   >
                     <Plus className="-ml-1 mr-2 h-4 w-4" />

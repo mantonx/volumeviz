@@ -16,17 +16,20 @@ import {
   Activity,
   TrendingUp,
   CheckCircle,
+  XCircle,
+  AlertCircle,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { getVolumes, getOrganizations, getUsers } from '@/api/client';
+import { Badge } from '@/components/ui/Badge';
+import { getApiV1Volumes, getApiV1Organizations, getApiV1Users } from '@/api/client';
+import { useGetApiV1Health, useGetApiV1ActivityRecent } from '@/api/orval-generated/api';
 import { useVolumeWebSocket } from '@/hooks/useVolumeWebSocket';
+import { formatDate } from '@/utils/formatters';
 
 interface DashboardStats {
   totalUsers: number;
   totalOrganizations: number;
   totalVolumes: number;
-  totalScans: number;
-  activeScans: number;
   storageTrackedTB: number;
 }
 
@@ -62,8 +65,6 @@ export const DashboardPage: React.FC = () => {
     totalUsers: 0,
     totalOrganizations: 0,
     totalVolumes: 0,
-    totalScans: 0,
-    activeScans: 0,
     storageTrackedTB: 0,
   });
   const [, setLoading] = useState(true);
@@ -74,13 +75,23 @@ export const DashboardPage: React.FC = () => {
     enabled: true,
   });
 
-  // Log on every render to track when state changes
-  console.log(`[Dashboard] Rendering at ${performance.now().toFixed(0)}ms with stats:`, stats);
+  const { data: healthResponse } = useGetApiV1Health({
+    query: { refetchInterval: 15000 },
+  });
+  const health =
+    healthResponse?.status === 200 || healthResponse?.status === 206
+      ? healthResponse.data
+      : undefined;
+
+  const { data: activityResponse, isLoading: activityLoading } = useGetApiV1ActivityRecent({
+    limit: 5,
+  });
+  const recentEvents =
+    activityResponse?.status === 200 ? activityResponse.data.events ?? [] : [];
 
   // Listen for volume size updates to refresh storage stats
   useEffect(() => {
     const cleanup = onSizeUpdate((event) => {
-      console.log('[Dashboard] Volume size updated, refreshing storage stats:', event);
       // Optimistically update the storage total
       setStats(prev => ({
         ...prev,
@@ -94,24 +105,17 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     // Prevent double-fetch from React StrictMode
     if (hasFetched) {
-      console.log('[Dashboard] Skipping duplicate fetch (already fetched)');
       return;
     }
 
     const fetchStats = async () => {
       try {
-        const startTime = performance.now();
-        console.log('[Dashboard] Starting to fetch stats...');
-
         // Fetch all stats in parallel for better performance
         const [usersResult, orgsResult, volumesResult] = await Promise.allSettled([
-          getUsers({ page: 1, page_size: 100 }),
-          getOrganizations({ page: 1, page_size: 100 }),
-          getVolumes({ page: 1, page_size: 1000 }),
+          getApiV1Users({ page: 1, page_size: 100 }),
+          getApiV1Organizations({ page: 1, page_size: 100 }),
+          getApiV1Volumes({ page: 1, page_size: 1000 }),
         ]);
-
-        const endTime = performance.now();
-        console.log(`[Dashboard] All API calls completed in ${(endTime - startTime).toFixed(0)}ms`);
 
         // Extract users count
         let totalUsers = 0;
@@ -156,51 +160,24 @@ export const DashboardPage: React.FC = () => {
         } else {
           console.error('Failed to fetch volumes:', volumesResult.reason);
         }
-        const activeScans = 0;
 
-        const newStats = {
+        setStats({
           totalUsers,
           totalOrganizations,
           totalVolumes,
-          totalScans: 0, // TODO: Add scan stats when API is available
-          activeScans,
           storageTrackedTB: totalBytes,
-        };
-
-        console.log('[Dashboard] About to call setStats with:', newStats);
-        const beforeSetStats = performance.now();
-        setStats(newStats);
-        const afterSetStats = performance.now();
-        console.log(`[Dashboard] setStats called in ${(afterSetStats - beforeSetStats).toFixed(2)}ms`);
+        });
       } catch (err) {
         console.error('Failed to fetch dashboard stats:', err);
       } finally {
         setLoading(false);
         setHasFetched(true);
-        console.log('[Dashboard] Fetch complete, loading set to false');
       }
     };
 
     fetchStats();
   }, [hasFetched]);
 
-  const systemHealth = {
-    api: 'healthy',
-    database: 'healthy',
-    storage: 'healthy',
-    lastCheck: new Date().toISOString(),
-  };
-  const formatTimestamp = (timestamp: string): string => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (minutes < 1440) return `${Math.floor(minutes / 60)}h ago`;
-    return `${Math.floor(minutes / 1440)}d ago`;
-  };
 
   return (
     <div className="space-y-6">
@@ -267,7 +244,7 @@ export const DashboardPage: React.FC = () => {
             <div>
               <p className="text-sm text-secondary">Total Scans</p>
               <p className="text-3xl font-bold text-primary mt-2">
-                {stats.totalScans}
+                {health?.checks?.scheduler?.total_completed ?? '—'}
               </p>
             </div>
             <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-orange-100 dark:bg-orange-900">
@@ -282,7 +259,7 @@ export const DashboardPage: React.FC = () => {
             <div>
               <p className="text-sm text-secondary">Active Scans</p>
               <p className="text-3xl font-bold text-primary mt-2">
-                {stats.activeScans}
+                {health?.checks?.scheduler?.active_scans ?? '—'}
               </p>
             </div>
             <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-yellow-100 dark:bg-yellow-900">
@@ -316,58 +293,85 @@ export const DashboardPage: React.FC = () => {
           System Health
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <div>
-              <p className="text-sm font-medium text-primary">API</p>
-              <p className="text-xs text-tertiary capitalize">
-                {systemHealth.api}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <div>
-              <p className="text-sm font-medium text-primary">Database</p>
-              <p className="text-xs text-tertiary capitalize">
-                {systemHealth.database}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <div>
-              <p className="text-sm font-medium text-primary">Storage</p>
-              <p className="text-xs text-tertiary capitalize">
-                {systemHealth.storage}
-              </p>
-            </div>
-          </div>
+          <HealthCheckRow label="Docker" status={health?.checks?.docker?.status} />
+          <HealthCheckRow label="Database" status={health?.checks?.database?.status} />
+          <HealthCheckRow label="Scan Scheduler" status={health?.checks?.scheduler?.status} />
         </div>
-        <p className="mt-4 text-xs text-tertiary">
-          Last checked: {formatTimestamp(systemHealth.lastCheck)}
-        </p>
+        {health?.timestamp && (
+          <p className="mt-4 text-xs text-tertiary">
+            Last checked: {formatDate(new Date(health.timestamp * 1000).toISOString())}
+          </p>
+        )}
       </Card>
 
-      {/* Recent Activity - Placeholder until audit log API is available */}
+      {/* Recent Activity - real audit-log events */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-primary">
             Recent Activity
           </h2>
         </div>
-        <div className="text-center py-8">
-          <Activity className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-primary">
-            Activity log coming soon
-          </h3>
-          <p className="mt-1 text-sm text-tertiary">
-            Recent system activity will be displayed here
-          </p>
-        </div>
+        {activityLoading ? (
+          <p className="text-sm text-secondary py-4">Loading...</p>
+        ) : recentEvents.length === 0 ? (
+          <div className="text-center py-8">
+            <Activity className="mx-auto h-12 w-12 text-tertiary" />
+            <h3 className="mt-2 text-sm font-medium text-primary">
+              No activity yet
+            </h3>
+            <p className="mt-1 text-sm text-tertiary">
+              Actions like volume deletion or tracking changes will show up here
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-line">
+            {recentEvents.map((event) => (
+              <li key={event.id} className="py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-primary">{event.action}</p>
+                  {event.resource_id && (
+                    <p className="text-xs text-tertiary">
+                      {event.resource_type}: {event.resource_id}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={event.status === 'success' ? 'success' : 'error'}>
+                    {event.status}
+                  </Badge>
+                  {event.timestamp && (
+                    <span className="text-xs text-tertiary">
+                      {formatDate(event.timestamp)}
+                    </span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
     </div>
   );
 };
+
+function HealthCheckRow({ label, status }: { label: string; status?: string }) {
+  const Icon = status === 'healthy' ? CheckCircle : status === 'unhealthy' ? XCircle : AlertCircle;
+  const iconColor =
+    status === 'healthy'
+      ? 'text-green-600'
+      : status === 'unhealthy'
+        ? 'text-red-600'
+        : 'text-yellow-600';
+
+  return (
+    <div className="flex items-center gap-3">
+      <Icon className={`h-5 w-5 ${iconColor}`} />
+      <div>
+        <p className="text-sm font-medium text-primary">{label}</p>
+        <p className="text-xs text-tertiary capitalize">{status ?? 'unknown'}</p>
+      </div>
+    </div>
+  );
+}
 
 export default DashboardPage;

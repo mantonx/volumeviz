@@ -6,12 +6,32 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/events"
 	"github.com/mantonx/volumeviz/internal/mocks"
 	"github.com/mantonx/volumeviz/internal/services/docker"
 )
+
+// mockEventService is a minimal events.EventService stub for testing
+// GetAppHealth's degraded-status logic when the events subsystem is unhealthy
+type mockEventService struct {
+	connected bool
+}
+
+func (m *mockEventService) Start(ctx context.Context) error { return nil }
+func (m *mockEventService) Stop(ctx context.Context) error   { return nil }
+func (m *mockEventService) IsConnected() bool                { return m.connected }
+func (m *mockEventService) GetLastEventTime() *time.Time     { return nil }
+func (m *mockEventService) GetMetrics() *events.EventMetrics {
+	return &events.EventMetrics{
+		ProcessedTotal: map[events.EventType]int64{},
+		ErrorsTotal:    map[string]int64{},
+		ReconcileRuns:  map[string]int64{},
+	}
+}
 
 func TestHandler_GetDockerHealth(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -160,6 +180,37 @@ func TestHandler_GetAppHealth(t *testing.T) {
 				t.Errorf("Expected health status %s", tt.expectedHealth)
 			}
 		})
+	}
+}
+
+// TestHandler_GetAppHealth_EventsUnhealthy verifies that GetAppHealth
+// correctly reports "degraded" when the events subsystem is unhealthy - this
+// previously relied on a type assertion (checks["events"].(gin.H)) that
+// silently failed once events health became a typed struct, meaning the
+// overall status incorrectly stayed "healthy" even with events disconnected.
+func TestHandler_GetAppHealth_EventsUnhealthy(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mockClient := &mocks.MockDockerClient{
+		IsConnectedFunc: func(ctx context.Context) bool { return true },
+	}
+	dockerService := docker.NewDockerServiceWithClient(mockClient)
+	handler := NewHandler(dockerService, nil, &mockEventService{connected: false}, nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("GET", "/api/v1/health", nil)
+
+	handler.GetAppHealth(c)
+
+	if w.Code != http.StatusPartialContent {
+		t.Errorf("Expected status %d, got %d", http.StatusPartialContent, w.Code)
+	}
+	if !contains(w.Body.String(), `"status":"degraded"`) {
+		t.Errorf("Expected overall status degraded, got body: %s", w.Body.String())
+	}
+	if !contains(w.Body.String(), `"status":"unhealthy"`) {
+		t.Errorf("Expected events check to report unhealthy, got body: %s", w.Body.String())
 	}
 }
 
