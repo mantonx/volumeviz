@@ -20,7 +20,7 @@ import (
 // getVolumesFromDatabase retrieves volumes from the database (<100ms)
 // This is the database-first approach that replaces Docker API calls
 // Phase 3: Now with cache-aside pattern for even better performance
-func (h *Handler) getVolumesFromDatabase(ctx context.Context, pagination *apiutils.PaginationParams, sortParams []apiutils.SortParam, filters *apiutils.VolumeFilters) ([]models.VolumeV1, int64, error) {
+func (h *Handler) getVolumesFromDatabase(ctx context.Context, pagination *apiutils.PaginationParams, sortParams []apiutils.SortParam, filters *apiutils.VolumeFilters) ([]models.VolumeV1, int64, models.VolumeListSummaryV1, error) {
 	// Get organization ID from context
 	orgID, hasOrg := middleware.GetOrganizationID(ctx)
 	if !hasOrg {
@@ -144,8 +144,10 @@ func (h *Handler) getVolumesFromDatabase(ctx context.Context, pagination *apiuti
 	// Sort volumes
 	h.sortVolumes(apiVolumes, sortParams)
 
-	// Calculate total before pagination
+	// Calculate total and summary stats before pagination - these must reflect
+	// every volume matching the filters, not just the page being returned.
 	total := int64(len(apiVolumes))
+	summary := summarizeVolumes(apiVolumes)
 
 	// Apply pagination
 	start := pagination.Offset
@@ -158,7 +160,7 @@ func (h *Handler) getVolumesFromDatabase(ctx context.Context, pagination *apiuti
 	}
 	apiVolumes = apiVolumes[start:end]
 
-	return apiVolumes, total, nil
+	return apiVolumes, total, summary, nil
 }
 
 // convertDBVolumeToAPI converts a database volume to API format

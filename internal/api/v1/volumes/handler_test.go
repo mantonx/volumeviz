@@ -363,6 +363,7 @@ type mockDockerService struct {
 	isDockerAvailable   func(ctx context.Context) bool
 	getVolumesByDriver  func(ctx context.Context, driver string) ([]models.Volume, error)
 	getVolumesByLabel   func(ctx context.Context, labelKey, labelValue string) ([]models.Volume, error)
+	removeVolume        func(ctx context.Context, volumeID string, force bool) error
 }
 
 func (m *mockDockerService) Ping(ctx context.Context) error {
@@ -429,6 +430,13 @@ func (m *mockDockerService) GetVolumesByLabel(ctx context.Context, labelKey, lab
 }
 
 func (m *mockDockerService) Close() error {
+	return nil
+}
+
+func (m *mockDockerService) RemoveVolume(ctx context.Context, volumeID string, force bool) error {
+	if m.removeVolume != nil {
+		return m.removeVolume(ctx, volumeID, force)
+	}
 	return nil
 }
 

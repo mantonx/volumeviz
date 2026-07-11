@@ -4,6 +4,29 @@ import (
 	"time"
 )
 
+// VolumeListSummaryV1 holds aggregate counts across every volume matching the
+// list request's filters, independent of the page currently being returned -
+// computed from the full filtered set so stat tiles don't silently undercount
+// once the result exceeds a single page.
+type VolumeListSummaryV1 struct {
+	TotalVolumes    int64 `json:"total_volumes" example:"142"`
+	TrackedVolumes  int64 `json:"tracked_volumes" example:"87"`
+	OrphanedVolumes int64 `json:"orphaned_volumes" example:"12"`
+	TotalSizeBytes  int64 `json:"total_size_bytes" example:"483183820800"`
+} // @name VolumeListSummaryV1
+
+// VolumesListResponse is the response shape for GET /api/v1/volumes - a
+// paginated page of volumes plus a summary of the full filtered set.
+type VolumesListResponse struct {
+	Data     []VolumeV1             `json:"data"`
+	Page     int                    `json:"page"`
+	PageSize int                    `json:"page_size"`
+	Total    int64                  `json:"total"`
+	Sort     string                 `json:"sort,omitempty"`
+	Filters  map[string]interface{} `json:"filters,omitempty"`
+	Summary  VolumeListSummaryV1    `json:"summary"`
+} // @name VolumesListResponse
+
 // VolumeV1 represents a volume in the v1 API format
 type VolumeV1 struct {
 	Name               string              `json:"name" example:"tv-shows-readonly"`

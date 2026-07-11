@@ -67,6 +67,11 @@ func (m *MockDockerServiceBench) GetVolumesByLabel(ctx context.Context, labelKey
 	return args.Get(0).([]models.Volume), args.Error(1)
 }
 
+func (m *MockDockerServiceBench) RemoveVolume(ctx context.Context, volumeID string, force bool) error {
+	args := m.Called(ctx, volumeID, force)
+	return args.Error(0)
+}
+
 // generateMockVolumes creates a large number of mock volumes for testing
 func generateMockVolumes(count int) []models.Volume {
 	volumes := make([]models.Volume, count)

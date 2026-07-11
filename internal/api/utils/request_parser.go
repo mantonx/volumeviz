@@ -183,24 +183,27 @@ type PagedResponse struct {
 	Filters  map[string]interface{} `json:"filters,omitempty"`
 }
 
+// BuildSortString renders sort params as the "field:direction,..." form used
+// in list-endpoint responses.
+func BuildSortString(sortParams []SortParam) string {
+	if len(sortParams) == 0 {
+		return ""
+	}
+	sortParts := make([]string, 0, len(sortParams))
+	for _, param := range sortParams {
+		sortParts = append(sortParts, fmt.Sprintf("%s:%s", param.Field, param.Direction))
+	}
+	return strings.Join(sortParts, ",")
+}
+
 // BuildPagedResponse creates a standardized paged response
 func BuildPagedResponse(data interface{}, pagination *PaginationParams, total int64, sortParams []SortParam, filters map[string]interface{}) PagedResponse {
-	// Build sort string for response
-	var sortStr string
-	if len(sortParams) > 0 {
-		var sortParts []string
-		for _, param := range sortParams {
-			sortParts = append(sortParts, fmt.Sprintf("%s:%s", param.Field, param.Direction))
-		}
-		sortStr = strings.Join(sortParts, ",")
-	}
-
 	return PagedResponse{
 		Data:     data,
 		Page:     pagination.Page,
 		PageSize: pagination.PageSize,
 		Total:    total,
-		Sort:     sortStr,
+		Sort:     BuildSortString(sortParams),
 		Filters:  filters,
 	}
 }

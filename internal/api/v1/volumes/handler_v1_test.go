@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/api/models"
 	apiutils "github.com/mantonx/volumeviz/internal/api/utils"
 	"github.com/mantonx/volumeviz/internal/mocks"
 	coremodels "github.com/mantonx/volumeviz/internal/models"
@@ -122,6 +123,33 @@ func TestListVolumes_V1API(t *testing.T) {
 				err := json.Unmarshal(body, &response)
 				assert.NoError(t, err)
 				assert.Equal(t, "local", response.Filters["driver"])
+			},
+		},
+		{
+			name:  "summary reflects the full filtered set, not just the returned page",
+			query: "page=1&page_size=1",
+			setupMock: func(m *mocks.DockerService) {
+				volumes := []coremodels.Volume{
+					{ID: 1, VolumeID: "vol1", Name: "vol1", Driver: "local", UsageData: &coremodels.VolumeUsage{Size: 100}},
+					{ID: 2, VolumeID: "vol2", Name: "vol2", Driver: "local", UsageData: &coremodels.VolumeUsage{Size: 200}},
+				}
+				m.On("ListVolumes", mock.Anything).Return(volumes, nil)
+				m.On("GetVolumeContainersBatch", mock.Anything, mock.Anything).Return(map[string][]coremodels.VolumeContainer{
+					"vol1": {{ContainerID: "c1"}},
+				}, nil)
+			},
+			expectedStatus: 200,
+			checkResponse: func(t *testing.T, body []byte) {
+				var response models.VolumesListResponse
+				err := json.Unmarshal(body, &response)
+				assert.NoError(t, err)
+				// Only 1 volume comes back on this page...
+				assert.Len(t, response.Data, 1)
+				assert.Equal(t, int64(2), response.Total)
+				// ...but the summary must reflect both volumes in the filtered set.
+				assert.Equal(t, int64(2), response.Summary.TotalVolumes)
+				assert.Equal(t, int64(300), response.Summary.TotalSizeBytes)
+				assert.Equal(t, int64(1), response.Summary.OrphanedVolumes) // vol2 has no containers
 			},
 		},
 		{
