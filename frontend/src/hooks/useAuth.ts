@@ -66,6 +66,10 @@ export const useAuth = (): UseAuthReturn => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     setIsAuthenticated(true);
+    // useAuth() is a plain hook, not a shared context — other components
+    // (e.g. RealtimeProvider) that read localStorage directly wouldn't
+    // otherwise learn the token just changed in this tab.
+    window.dispatchEvent(new Event('auth-token-changed'));
   }, []);
 
   // Logout function
@@ -75,6 +79,7 @@ export const useAuth = (): UseAuthReturn => {
     localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
+    window.dispatchEvent(new Event('auth-token-changed'));
     navigate('/login');
   }, [navigate]);
 

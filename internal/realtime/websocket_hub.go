@@ -43,13 +43,13 @@ type Hub struct {
 
 // Connection represents a WebSocket connection with metadata
 type Connection struct {
-	ID             string
-	WS             *websocket.Conn
-	Send           chan RealtimeMessage
-	Rooms          map[string]bool // rooms this connection is subscribed to
-	Context        context.Context
-	Cancel         context.CancelFunc
-	LastSeen       time.Time
+	ID       string
+	WS       *websocket.Conn
+	Send     chan RealtimeMessage
+	Rooms    map[string]bool // rooms this connection is subscribed to
+	Context  context.Context
+	Cancel   context.CancelFunc
+	LastSeen time.Time
 	// Authentication context
 	UserID          string
 	UserRole        string
@@ -153,7 +153,7 @@ func (h *Hub) handleRegister(conn *Connection) {
 
 	h.connections[conn.ID] = conn
 	conn.LastSeen = time.Now()
-	
+
 	log.Printf("[WEBSOCKET-HUB] Client registered: %s (total: %d)", conn.ID, len(h.connections))
 
 	// Send welcome message
@@ -198,7 +198,7 @@ func (h *Hub) handleUnregister(conn *Connection) {
 	delete(h.connections, conn.ID)
 	close(conn.Send)
 	conn.Cancel()
-	
+
 	log.Printf("[WEBSOCKET-HUB] Client unregistered: %s (total: %d)", conn.ID, len(h.connections))
 }
 
@@ -231,7 +231,7 @@ func (h *Hub) handleBroadcast(broadcastMsg BroadcastMessage) {
 	}
 
 	if sentCount > 0 {
-		log.Printf("[WEBSOCKET-HUB] Broadcasted '%s' to room '%s' (%d clients)", 
+		log.Printf("[WEBSOCKET-HUB] Broadcasted '%s' to room '%s' (%d clients)",
 			broadcastMsg.Message.Type, broadcastMsg.Room, sentCount)
 	}
 }
@@ -241,7 +241,7 @@ func (h *Hub) cleanupStaleConnections() {
 	h.mutex.RLock()
 	staleConnections := make([]*Connection, 0)
 	cutoff := time.Now().Add(-time.Minute * 10)
-	
+
 	for _, conn := range h.connections {
 		if conn.LastSeen.Before(cutoff) {
 			staleConnections = append(staleConnections, conn)
@@ -369,14 +369,29 @@ func (h *Hub) broadcastCurrentVolumeStates() {
 		return
 	}
 
-	// Check if there are any subscribers to broadcast to
+	// Check if there are any subscribers to broadcast to.
+	//
+	// Note: this ticker only ever reports real volume.state data (is_active,
+	// driver, mountpoint, etc from the store) — it does NOT broadcast
+	// scan.status. Real scan progress already flows through a separate,
+	// fully-wired pipeline (VolumeScanner -> ProgressManager -> Broadcaster
+	// -> Hub.BroadcastScanProgress/BroadcastScanEvent, see
+	// internal/services/scanner/progress_manager.go), which emits genuine
+	// scan.progress/scan.started/scan.completed/scan.failed events only
+	// while a scan is actually running. A previous version of this ticker
+	// also fabricated a "scan.status" message (hardcoded progress: 100.0,
+	// "Current volume status") for every volume on every tick regardless of
+	// whether it was scanning — that was pure duplicate noise on top of the
+	// real pipeline, and at ~10s intervals with dozens of volumes it was
+	// enough of a frontend state-update burst to trip React's
+	// "Maximum update depth exceeded" guard. Removed rather than throttled,
+	// since the real pipeline already covers this need correctly.
 	h.mutex.RLock()
 	hasVolumeUpdateSubs := len(h.rooms["volume_updates"]) > 0
-	hasScanProgressSubs := len(h.rooms["scan_progress_all"]) > 0
 	totalConnections := len(h.connections)
 	h.mutex.RUnlock()
 
-	if !hasVolumeUpdateSubs && !hasScanProgressSubs {
+	if !hasVolumeUpdateSubs {
 		return // No subscribers for volume updates
 	}
 
@@ -457,46 +472,6 @@ func (h *Hub) broadcastCurrentVolumeStates() {
 				}
 			}
 		}
-
-		// Broadcast to scan.progress subscribers for this org
-		if hasScanProgressSubs {
-			for _, volume := range volumes {
-				var totalSize int64
-				if volume.UsageData != nil {
-					totalSize = volume.UsageData.Size
-				}
-
-				progressData := map[string]interface{}{
-					"volume_id":    volume.VolumeID,
-					"volume_name":  volume.Name,
-					"status":       volume.Status,
-					"last_scanned": volume.LastScanned,
-					"total_size":   totalSize,
-					"driver":       volume.Driver,
-					"mountpoint":   volume.Mountpoint,
-					"is_active":    volume.IsActive,
-					"message":      "Current volume status",
-					"timestamp":    time.Now().Unix(),
-					"progress":     100.0, // Not actively scanning, so 100%
-				}
-
-				// Send to each authenticated connection in this org
-				for _, conn := range conns {
-					if conn.Rooms["scan_progress_all"] {
-						select {
-						case conn.Send <- RealtimeMessage{
-							Type:      "scan.status",
-							Data:      progressData,
-							Timestamp: time.Now(),
-							Room:      "scan_progress_all",
-						}:
-						default:
-							log.Printf("[WEBSOCKET-HUB] Failed to send to connection %s (buffer full)", conn.ID)
-						}
-					}
-				}
-			}
-		}
 	}
 
 	// Broadcast all volumes to system admins
@@ -530,25 +505,13 @@ func (h *Hub) broadcastCurrentVolumeStates() {
 			}
 
 			for _, conn := range systemAdminConnections {
-				if hasVolumeUpdateSubs && conn.Rooms["volume_updates"] {
+				if conn.Rooms["volume_updates"] {
 					select {
 					case conn.Send <- RealtimeMessage{
 						Type:      "volume.state",
 						Data:      volumeData,
 						Timestamp: time.Now(),
 						Room:      "volume_updates",
-					}:
-					default:
-						log.Printf("[WEBSOCKET-HUB] Failed to send to system admin connection %s", conn.ID)
-					}
-				}
-				if hasScanProgressSubs && conn.Rooms["scan_progress_all"] {
-					select {
-					case conn.Send <- RealtimeMessage{
-						Type:      "scan.status",
-						Data:      volumeData,
-						Timestamp: time.Now(),
-						Room:      "scan_progress_all",
 					}:
 					default:
 						log.Printf("[WEBSOCKET-HUB] Failed to send to system admin connection %s", conn.ID)
@@ -903,11 +866,11 @@ func (h *Hub) sendInitialStateData(conn *Connection, event, room string) {
 	case "system.events":
 		// Send current system state with basic stats
 		systemData := map[string]interface{}{
-			"message":         "Connected to system events",
-			"room":            room,
-			"server_time":     time.Now().Unix(),
-			"uptime_seconds":  time.Since(time.Now().Add(-time.Hour)).Seconds(), // Placeholder
-			"note":            "System events will appear here",
+			"message":        "Connected to system events",
+			"room":           room,
+			"server_time":    time.Now().Unix(),
+			"uptime_seconds": time.Since(time.Now().Add(-time.Hour)).Seconds(), // Placeholder
+			"note":           "System events will appear here",
 		}
 
 		initialMsg := RealtimeMessage{

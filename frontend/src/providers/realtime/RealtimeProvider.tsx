@@ -390,96 +390,89 @@ function RealtimeProviderInternal({ children }: { children: React.ReactNode }) {
     [addEventListenerInternal],
   );
 
-  // Set up event listeners to trigger internal handlers
-  useWebSocketEventListener('scan.progress', (data) => {
-    eventListeners.current
-      .get('scan.progress')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('scan.started', (data) => {
-    eventListeners.current
-      .get('scan.started')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('scan.completed', (data) => {
-    eventListeners.current
-      .get('scan.completed')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('scan.failed', (data) => {
-    eventListeners.current
-      .get('scan.failed')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('historical.updated', (data) => {
-    eventListeners.current
-      .get('historical.updated')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('statistics.usage_updated', (data) => {
+  // Relay a WebSocket event to whatever internal listeners have registered
+  // for it via addEventListenerInternal. Each of the 14 relays below must be
+  // a referentially-stable function across renders (useCallback with `[]`
+  // deps, capturing eventType directly since it's a compile-time literal
+  // string, not a variable) — useWebSocketEventListener's effect depends on
+  // `callback`, so a fresh inline arrow function per render (as this file
+  // used to pass) makes that dependency array "change" every render,
+  // forcing a cleanup+resubscribe cycle 14 times per render. Combined with a
+  // backend that could legitimately burst dozens of messages in quick
+  // succession, that was enough churn to trip React's "Maximum update depth
+  // exceeded" guard (see FIXES.md item 9b).
+  const relayScanProgress = useCallback((data: unknown) => {
+    eventListeners.current.get('scan.progress')?.forEach((cb) => cb(data));
+  }, []);
+  const relayScanStarted = useCallback((data: unknown) => {
+    eventListeners.current.get('scan.started')?.forEach((cb) => cb(data));
+  }, []);
+  const relayScanCompleted = useCallback((data: unknown) => {
+    eventListeners.current.get('scan.completed')?.forEach((cb) => cb(data));
+  }, []);
+  const relayScanFailed = useCallback((data: unknown) => {
+    eventListeners.current.get('scan.failed')?.forEach((cb) => cb(data));
+  }, []);
+  const relayHistoricalUpdated = useCallback((data: unknown) => {
+    eventListeners.current.get('historical.updated')?.forEach((cb) => cb(data));
+  }, []);
+  const relayStatisticsUsageUpdated = useCallback((data: unknown) => {
     eventListeners.current
       .get('statistics.usage_updated')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('statistics.performance_updated', (data) => {
+      ?.forEach((cb) => cb(data));
+  }, []);
+  const relayStatisticsPerformanceUpdated = useCallback((data: unknown) => {
     eventListeners.current
       .get('statistics.performance_updated')
-      ?.forEach((callback) => callback(data));
-  });
+      ?.forEach((cb) => cb(data));
+  }, []);
+  const relayStatisticsAlert = useCallback((data: unknown) => {
+    eventListeners.current.get('statistics.alert')?.forEach((cb) => cb(data));
+  }, []);
+  const relayHealthUpdated = useCallback((data: unknown) => {
+    eventListeners.current.get('health.updated')?.forEach((cb) => cb(data));
+  }, []);
+  const relayHealthCritical = useCallback((data: unknown) => {
+    eventListeners.current.get('health.critical')?.forEach((cb) => cb(data));
+  }, []);
+  const relayErrorOccurred = useCallback((data: unknown) => {
+    eventListeners.current.get('error.occurred')?.forEach((cb) => cb(data));
+  }, []);
+  const relayErrorCritical = useCallback((data: unknown) => {
+    eventListeners.current.get('error.critical')?.forEach((cb) => cb(data));
+  }, []);
+  const relayVolumeUpdated = useCallback((data: unknown) => {
+    eventListeners.current.get('volume.updated')?.forEach((cb) => cb(data));
+  }, []);
+  const relayVolumeState = useCallback((data: unknown) => {
+    eventListeners.current.get('volume.state')?.forEach((cb) => cb(data));
+  }, []);
+  const relayScanStatus = useCallback((data: unknown) => {
+    eventListeners.current.get('scan.status')?.forEach((cb) => cb(data));
+  }, []);
 
-  useWebSocketEventListener('statistics.alert', (data) => {
-    eventListeners.current
-      .get('statistics.alert')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('health.updated', (data) => {
-    eventListeners.current
-      .get('health.updated')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('health.critical', (data) => {
-    eventListeners.current
-      .get('health.critical')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('error.occurred', (data) => {
-    eventListeners.current
-      .get('error.occurred')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('error.critical', (data) => {
-    eventListeners.current
-      .get('error.critical')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('volume.updated', (data) => {
-    eventListeners.current
-      .get('volume.updated')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('volume.state', (data) => {
-    eventListeners.current
-      .get('volume.state')
-      ?.forEach((callback) => callback(data));
-  });
-
-  useWebSocketEventListener('scan.status', (data) => {
-    eventListeners.current
-      .get('scan.status')
-      ?.forEach((callback) => callback(data));
-  });
+  // Set up event listeners to trigger internal handlers
+  useWebSocketEventListener('scan.progress', relayScanProgress);
+  useWebSocketEventListener('scan.started', relayScanStarted);
+  useWebSocketEventListener('scan.completed', relayScanCompleted);
+  useWebSocketEventListener('scan.failed', relayScanFailed);
+  useWebSocketEventListener('historical.updated', relayHistoricalUpdated);
+  useWebSocketEventListener(
+    'statistics.usage_updated',
+    relayStatisticsUsageUpdated,
+  );
+  useWebSocketEventListener(
+    'statistics.performance_updated',
+    relayStatisticsPerformanceUpdated,
+  );
+  useWebSocketEventListener('statistics.alert', relayStatisticsAlert);
+  useWebSocketEventListener('health.updated', relayHealthUpdated);
+  useWebSocketEventListener('health.critical', relayHealthCritical);
+  useWebSocketEventListener('error.occurred', relayErrorOccurred);
+  useWebSocketEventListener('error.critical', relayErrorCritical);
+  useWebSocketEventListener('volume.updated', relayVolumeUpdated);
+  useWebSocketEventListener('volume.state', relayVolumeState);
+  useWebSocketEventListener('scan.status', relayScanStatus);
 
   // Global subscription to ALL scan progress updates (no filters)
   // This ensures progress data is always available when volumes are expanded
@@ -579,20 +572,38 @@ function RealtimeProviderWrapper({
     [],
   );
 
-  // Get JWT token from localStorage and append to WebSocket URL
+  // RealtimeProvider mounts once near the app root, before login happens —
+  // a plain one-time localStorage read here would permanently miss the
+  // token. Track it as state and refresh on the same-tab 'auth-token-changed'
+  // event (dispatched by useAuth's login/logout) and the cross-tab native
+  // 'storage' event, so the WebSocket URL updates once a token appears.
+  const [authToken, setAuthToken] = React.useState(() =>
+    localStorage.getItem('auth_token'),
+  );
+
+  React.useEffect(() => {
+    const refreshToken = () => setAuthToken(localStorage.getItem('auth_token'));
+    window.addEventListener('auth-token-changed', refreshToken);
+    window.addEventListener('storage', refreshToken);
+    return () => {
+      window.removeEventListener('auth-token-changed', refreshToken);
+      window.removeEventListener('storage', refreshToken);
+    };
+  }, []);
+
+  // Append JWT token to WebSocket URL
   const authenticatedWebSocketUrl = React.useMemo(() => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
+    if (!authToken) {
       logger.warn('[RealtimeProvider] No auth token found in localStorage');
       return websocketUrl;
     }
 
     // Append token as query parameter
     const separator = websocketUrl.includes('?') ? '&' : '?';
-    const urlWithToken = `${websocketUrl}${separator}token=${encodeURIComponent(token)}`;
+    const urlWithToken = `${websocketUrl}${separator}token=${encodeURIComponent(authToken)}`;
     logger.debug('[RealtimeProvider] WebSocket URL with auth token prepared');
     return urlWithToken;
-  }, [websocketUrl]);
+  }, [websocketUrl, authToken]);
 
   const config: WebSocketConfig = React.useMemo(
     () => ({
@@ -616,13 +627,6 @@ export function RealtimeProvider({
   children,
   websocketUrl = DEFAULT_WEBSOCKET_URL,
 }: RealtimeProviderProps) {
-  // Debug: Track renders
-  const renderCount = React.useRef(0);
-  React.useEffect(() => {
-    renderCount.current += 1;
-    console.log('[RealtimeProvider] RENDER COUNT:', renderCount.current);
-  });
-
   logger.debug(
     '[RealtimeProvider] Initializing with WebSocket URL:',
     websocketUrl,
