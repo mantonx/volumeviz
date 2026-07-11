@@ -304,6 +304,17 @@ db-generate-check:
 	fi
 
 # Generate OpenAPI documentation
+#
+# This produces two related but separately-consumed outputs, both derived
+# from the same @Router/@Summary/etc annotations on handler functions:
+#   - docs/swagger.json, docs/swagger.yaml, docs/docs.go (Swagger 2.0),
+#     generated directly by swag from the Go source.
+#   - docs/openapi-3.0.yaml (OpenAPI 3.0), which the frontend's Orval client
+#     reads directly (see frontend/orval.config.*) — this used to be
+#     hand-maintained and could silently drift from the real API (this bit
+#     the project once already: swag-generated routes and openapi-3.0.yaml
+#     disagreed on path prefixes for months). It's now mechanically derived
+#     from swagger.json via swagger2openapi so it can't drift again.
 docs:
 	@echo "Generating OpenAPI documentation..."
 	@if ! command -v swag > /dev/null 2>&1; then \
@@ -315,7 +326,9 @@ docs:
 	else \
 		swag init -g cmd/server/main.go -o docs/ --parseDependency --parseInternal; \
 	fi
-	@echo "OpenAPI docs generated in docs/"
+	@echo "Converting swagger.json -> OpenAPI 3.0 (docs/openapi-3.0.yaml)..."
+	@cd frontend && npx --yes swagger2openapi ../docs/swagger.json -o ../docs/openapi-3.0.yaml --yaml
+	@echo "OpenAPI docs generated in docs/ (Swagger 2.0 + OpenAPI 3.0)"
 
 # Download dependencies
 deps:

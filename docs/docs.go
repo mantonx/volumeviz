@@ -24,7 +24,45 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/alerts": {
+        "/api/v1/activity/recent": {
+            "get": {
+                "description": "Get the most recent audit-log events (volume operations, tracking changes, etc.) for the current organization",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "activity"
+                ],
+                "summary": "Get recent activity",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Number of events to return (default 10, max 50)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/RecentActivityResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/alerts": {
             "get": {
                 "description": "Get a list of alerts with pagination and filtering",
                 "consumes": [
@@ -79,7 +117,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/deliveries": {
+        "/api/v1/alerts/deliveries": {
             "get": {
                 "description": "Get delivery history with pagination and filtering",
                 "consumes": [
@@ -140,7 +178,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/destinations": {
+        "/api/v1/alerts/destinations": {
             "get": {
                 "description": "Get a list of alert destinations with pagination",
                 "consumes": [
@@ -233,7 +271,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/destinations/{id}": {
+        "/api/v1/alerts/destinations/{id}": {
             "get": {
                 "description": "Get a specific alert destination by ID",
                 "consumes": [
@@ -373,7 +411,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/destinations/{id}/test": {
+        "/api/v1/alerts/destinations/{id}/test": {
             "post": {
                 "description": "Send a test message to an alert destination",
                 "consumes": [
@@ -432,7 +470,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/engine/evaluate": {
+        "/api/v1/alerts/engine/evaluate": {
             "post": {
                 "description": "Manually trigger evaluation of all alert rules",
                 "consumes": [
@@ -461,7 +499,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/engine/status": {
+        "/api/v1/alerts/engine/status": {
             "get": {
                 "description": "Get comprehensive alerts engine status and statistics",
                 "consumes": [
@@ -490,7 +528,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/routes": {
+        "/api/v1/alerts/routes": {
             "get": {
                 "description": "Get a list of alert routes with pagination",
                 "consumes": [
@@ -583,7 +621,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/routes/{id}": {
+        "/api/v1/alerts/routes/{id}": {
             "get": {
                 "description": "Get a specific alert route by ID",
                 "consumes": [
@@ -723,7 +761,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/rules": {
+        "/api/v1/alerts/rules": {
             "get": {
                 "description": "Get a list of alert rules with pagination",
                 "consumes": [
@@ -816,7 +854,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/rules/{id}": {
+        "/api/v1/alerts/rules/{id}": {
             "get": {
                 "description": "Get a specific alert rule by ID",
                 "consumes": [
@@ -956,7 +994,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/rules/{id}/test": {
+        "/api/v1/alerts/rules/{id}/test": {
             "post": {
                 "description": "Test an alert rule against current metrics without creating alerts",
                 "consumes": [
@@ -1000,7 +1038,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/{id}": {
+        "/api/v1/alerts/{id}": {
             "get": {
                 "description": "Get a specific alert by ID",
                 "consumes": [
@@ -1039,6 +1077,298 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/audit-logs": {
+            "get": {
+                "description": "Search and filter audit-log events (who did what, when) for the current organization. Admin only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audit-logs"
+                ],
+                "summary": "Search audit logs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by exact action name (e.g. volume.delete)",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by status (success, failure)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Free-text search across username, action, and details",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of entries to return (default 25, max 200)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of entries to skip for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AuditLogSearchResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/audit-logs/export": {
+            "get": {
+                "description": "Export filtered audit-log events for the current organization as a CSV file. Admin only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "audit-logs"
+                ],
+                "summary": "Export audit logs as CSV",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by exact action name (e.g. volume.delete)",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by status (success, failure)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Free-text search across username, action, and details",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "CSV file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/change-password": {
+            "post": {
+                "description": "Change the current user's password. Requires the current password for verification.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change password",
+                "parameters": [
+                    {
+                        "description": "Current and new password",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.PasswordChangeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated, or current password is incorrect",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/login": {
+            "post": {
+                "description": "Authenticate user and get JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "login",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/register": {
+            "post": {
+                "description": "Register a new user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register",
+                "parameters": [
+                    {
+                        "description": "Registration details",
+                        "name": "register",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_auth.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -1123,7 +1453,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duplicates.DuplicateDetectionResponse"
+                            "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateDetectionResponse"
                         }
                     },
                     "400": {
@@ -1197,7 +1527,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duplicates.DuplicateDetectionResponse"
+                            "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateDetectionResponse"
                         }
                     },
                     "400": {
@@ -1243,7 +1573,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/duplicates.DuplicateGroup"
+                            "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateGroup"
                         }
                     }
                 ],
@@ -1251,7 +1581,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duplicates.DuplicateGroup"
+                            "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateGroup"
                         }
                     },
                     "400": {
@@ -2038,6 +2368,223 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/files/{file_id}/preview": {
+            "get": {
+                "description": "Get existing preview or generate new preview for a specific file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "previews"
+                ],
+                "summary": "Get or generate preview by file ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "File ID",
+                        "name": "file_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "thumbnail",
+                            "poster",
+                            "cover"
+                        ],
+                        "type": "string",
+                        "default": "thumbnail",
+                        "description": "Preview type",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "small",
+                            "medium",
+                            "large"
+                        ],
+                        "type": "string",
+                        "default": "medium",
+                        "description": "Preview size",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Time offset for video thumbnails (e.g., '5.0' for 5 seconds)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Preview file data",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "File not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/{id}/details": {
+            "get": {
+                "description": "Get comprehensive information about a specific file including metadata",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get file details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "File ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/FileDetailsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/{id}/metadata": {
+            "get": {
+                "description": "Get enriched metadata for a specific file (media properties, EXIF, etc.)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get file metadata",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "File ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "media",
+                            "exif",
+                            "ffmpeg"
+                        ],
+                        "type": "string",
+                        "description": "Metadata kind filter",
+                        "name": "kind",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/FileMetadataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/filesystem/capabilities": {
+            "get": {
+                "description": "Get information about filesystem indexing capabilities and configuration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "filesystem"
+                ],
+                "summary": "Get filesystem indexing capabilities",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/FilesystemCapabilitiesResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/fs/aggregate": {
             "get": {
                 "description": "Get hierarchical file system data with aggregated sizes and counts for visualization",
@@ -2121,6 +2668,174 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/health": {
+            "get": {
+                "description": "Aggregates Docker, database, events, and scheduler health into one overall status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Check overall application health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AppHealth"
+                        }
+                    },
+                    "206": {
+                        "description": "Partial Content",
+                        "schema": {
+                            "$ref": "#/definitions/AppHealth"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/health/database": {
+            "get": {
+                "description": "Get database connection status via store interface",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Check database health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/DatabaseHealth"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/DatabaseHealth"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/health/docker": {
+            "get": {
+                "description": "Get Docker daemon connection status and version information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Check Docker health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/DockerHealth"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/health/events": {
+            "get": {
+                "description": "Get Docker events service status and metrics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Check Docker events health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/EventsHealth"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/EventsHealth"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/health/scheduler": {
+            "get": {
+                "description": "Get scan scheduler status and metrics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Check scan scheduler health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SchedulerHealth"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/SchedulerHealth"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/media/capabilities": {
+            "get": {
+                "description": "Get information about available media enrichers and their capabilities",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Get media enrichment capabilities",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MediaCapabilitiesResponse"
                         }
                     }
                 }
@@ -3064,6 +3779,134 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/organizations": {
+            "get": {
+                "description": "List all organizations in the system (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "List all organizations",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 25,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of organizations",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new organization (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Create organization",
+                "parameters": [
+                    {
+                        "description": "Organization creation details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_organizations.CreateOrganizationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created organization",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_organizations.OrganizationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - organization already exists",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/organizations/me": {
             "get": {
                 "description": "Get the organization details for the authenticated user",
@@ -3221,6 +4064,149 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "put": {
+                "description": "Update organization details by ID (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Update organization",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Organization ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Organization update details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_organizations.UpdateOrganizationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated organization",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_organizations.OrganizationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Organization not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an organization by ID (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Delete organization",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Organization ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Organization deleted successfully"
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Organization not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - organization has users or volumes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
             }
         },
         "/api/v1/organizations/{id}/stats": {
@@ -3270,6 +4256,388 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/permissions": {
+            "get": {
+                "description": "Get the full permission matrix (which roles can do what) for the current organization, including org-specific overrides and global defaults. Admin only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "List roles and permissions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ListPermissionsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Grant or revoke an org-scoped permission for a role. Global/built-in default grants cannot be revoked here. Admin only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Update a role permission",
+                "parameters": [
+                    {
+                        "description": "Permission update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdatePermissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Cannot revoke a global default permission",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/previews": {
+            "post": {
+                "description": "Generate a new preview (thumbnail, poster, or cover) for a file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "previews"
+                ],
+                "summary": "Generate preview",
+                "parameters": [
+                    {
+                        "description": "Preview generation request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_previews.PreviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Preview generated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_previews.PreviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/previews/health": {
+            "get": {
+                "description": "Check the health status of the preview service and its dependencies",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "previews"
+                ],
+                "summary": "Preview service health check",
+                "responses": {
+                    "200": {
+                        "description": "Service health status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/previews/stats": {
+            "get": {
+                "description": "Get statistics about preview generation and usage",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "previews"
+                ],
+                "summary": "Get preview statistics",
+                "responses": {
+                    "200": {
+                        "description": "Preview statistics",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/previews/supported": {
+            "get": {
+                "description": "Get list of supported media types for preview generation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "previews"
+                ],
+                "summary": "Get supported media types",
+                "responses": {
+                    "200": {
+                        "description": "Supported media types",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/previews/{file_id}": {
+            "get": {
+                "description": "Serve a preview file by file ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "previews"
+                ],
+                "summary": "Get preview file",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "File ID",
+                        "name": "file_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "thumbnail",
+                            "poster",
+                            "cover"
+                        ],
+                        "type": "string",
+                        "description": "Preview type",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "small",
+                            "medium",
+                            "large"
+                        ],
+                        "type": "string",
+                        "description": "Preview size",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Preview file data",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Preview not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all previews for a specific file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "previews"
+                ],
+                "summary": "Delete preview",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "File ID",
+                        "name": "file_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Previews deleted successfully"
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/reports/orphaned": {
+            "get": {
+                "description": "Get paginated list of volumes that are not attached to any containers",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "volumes"
+                ],
+                "summary": "Get orphaned volumes",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number for pagination (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 25, max: 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field and direction (e.g., 'name:asc', 'size_bytes:desc'). Available fields: name, size_bytes, created_at",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list of orphaned volumes",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -3359,6 +4727,26 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/rules/schema": {
+            "get": {
+                "description": "Returns the fields and operators available for building tracking-rule conditions, for use in a dynamic rule-creation form",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tracking-rules"
+                ],
+                "summary": "Get rule builder schema",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_rules.GetSchemaResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/rules/templates": {
             "get": {
                 "description": "Lists available rule templates for quick rule creation",
@@ -3388,6 +4776,46 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/internal_api_v1_rules.ListRuleTemplatesResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/rules/validate": {
+            "post": {
+                "description": "Validates a rule's name, action, priority, and conditions (including field/operator compatibility and regex syntax) without persisting it",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tracking-rules"
+                ],
+                "summary": "Validate a tracking rule",
+                "parameters": [
+                    {
+                        "description": "Rule to validate",
+                        "name": "rule",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_rules.ValidateRuleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_rules.ValidateRuleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
                         }
                     }
                 }
@@ -3613,6 +5041,274 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scans/active": {
+            "get": {
+                "description": "Get list of all currently active/running scans",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scan"
+                ],
+                "summary": "Get active scans",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit number of results (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Active scans with pagination",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scans/recent-errors": {
+            "get": {
+                "description": "Get recent scan errors across all scans with filtering",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scan"
+                ],
+                "summary": "Get recent scan errors",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Hours back to search (default: 24)",
+                        "name": "hours",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by error type",
+                        "name": "error_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by phase name",
+                        "name": "phase",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit number of results (default: 50)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Recent scan errors",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scans/{id}/status": {
+            "get": {
+                "description": "Get the status of a volume scan by volume ID or scan ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scan"
+                ],
+                "summary": "Get scan status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume ID or Scan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Scan status information",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Scan not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scans/{scanId}/errors": {
+            "get": {
+                "description": "Get detailed error information for a scan with filtering and pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scan"
+                ],
+                "summary": "Get scan errors",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "scanId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by phase name",
+                        "name": "phase",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by error type",
+                        "name": "error_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit number of results (default: 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Scan errors with pagination",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scans/{scanId}/progress": {
+            "get": {
+                "description": "Get comprehensive progress information including phases, sub-phases, items, errors, and confidence indicators",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scan"
+                ],
+                "summary": "Get detailed scan progress with sub-phase information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "scanId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comprehensive scan progress with sub-phase details",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -4223,6 +5919,428 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/snapshots/stats": {
+            "get": {
+                "description": "Get aggregate statistics about volume snapshots",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "snapshots"
+                ],
+                "summary": "Get snapshot statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/snapshots/volumes/{volume_id}": {
+            "get": {
+                "description": "Get snapshot history for a specific volume",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "snapshots"
+                ],
+                "summary": "Get volume snapshots",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume ID",
+                        "name": "volume_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit number of results",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/snapshots/volumes/{volume_id}/latest": {
+            "get": {
+                "description": "Get the most recent snapshot for a specific volume",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "snapshots"
+                ],
+                "summary": "Get latest snapshot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume ID",
+                        "name": "volume_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stats/daily": {
+            "get": {
+                "description": "Get daily aggregated statistics for a volume",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "Get daily stats",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume ID",
+                        "name": "volume_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of days to retrieve",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/VolumeStatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stats/media": {
+            "get": {
+                "description": "Get statistics aggregated by media type (images, videos, documents, etc.)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "Get media statistics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume ID",
+                        "name": "volume_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Media statistics",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stats/storage": {
+            "get": {
+                "description": "Get detailed storage usage statistics including size distribution and growth trends",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "Get storage statistics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume ID",
+                        "name": "volume_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Storage statistics",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stats/top-folders": {
+            "get": {
+                "description": "Get the largest folders in a volume by total size",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "Get top folders by size",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume ID",
+                        "name": "volume_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of folders to return",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/TopFoldersResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/system/config": {
+            "get": {
+                "description": "Get a read-only summary of the process's active configuration (scan/retention/rate-limit/CORS settings, etc). All values are loaded once at startup - none are editable here. Admin only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Get current system configuration",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SystemConfigResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/system/info": {
+            "get": {
+                "description": "Get detailed system information including service version and Docker status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Get system information",
+                "responses": {
+                    "200": {
+                        "description": "System information",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/system/version": {
+            "get": {
+                "description": "Get API version information and available endpoints",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Get API version",
+                "responses": {
+                    "200": {
+                        "description": "API version information",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/tracking/apply": {
             "post": {
                 "description": "Applies tracking rules to update mount tracking status in the catalog",
@@ -4482,1914 +6600,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/volumes/bulk-track": {
-            "post": {
-                "description": "Track multiple volumes in a single request",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "volumes"
-                ],
-                "summary": "Bulk track volumes",
-                "operationId": "postVolumesBulkTrack",
-                "parameters": [
-                    {
-                        "description": "Volume IDs to track",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_volumes.BulkTrackVolumesRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Bulk track results",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_volumes.BulkTrackVolumesResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/volumes/bulk-untrack": {
-            "post": {
-                "description": "Untrack multiple volumes in a single request",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "volumes"
-                ],
-                "summary": "Bulk untrack volumes",
-                "operationId": "postVolumesBulkUntrack",
-                "parameters": [
-                    {
-                        "description": "Volume IDs to untrack",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_volumes.BulkTrackVolumesRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Bulk untrack results",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_volumes.BulkTrackVolumesResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/volumes/{name}/track": {
-            "post": {
-                "description": "Set a volume to tracked status. When tracked, the volume will be scanned and its data indexed.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "volumes"
-                ],
-                "summary": "Track a volume",
-                "operationId": "postVolumesVolumeIdTrack",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Volume name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Volume successfully tracked",
-                        "schema": {
-                            "$ref": "#/definitions/VolumeV1"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Volume not found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/volumes/{name}/untrack": {
-            "post": {
-                "description": "Set a volume to untracked status and remove its data from the database. The Docker volume itself remains intact.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "volumes"
-                ],
-                "summary": "Untrack a volume",
-                "operationId": "postVolumesVolumeIdUntrack",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Volume name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Volume successfully untracked",
-                        "schema": {
-                            "$ref": "#/definitions/VolumeV1"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Volume not found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/login": {
-            "post": {
-                "description": "Authenticate user and get JWT token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Login",
-                "parameters": [
-                    {
-                        "description": "Login credentials",
-                        "name": "login",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/register": {
-            "post": {
-                "description": "Register a new user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Register",
-                "parameters": [
-                    {
-                        "description": "Registration details",
-                        "name": "register",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.RegisterRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_auth.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/files/{file_id}/preview": {
-            "get": {
-                "description": "Get existing preview or generate new preview for a specific file",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "previews"
-                ],
-                "summary": "Get or generate preview by file ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "File ID",
-                        "name": "file_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "thumbnail",
-                            "poster",
-                            "cover"
-                        ],
-                        "type": "string",
-                        "default": "thumbnail",
-                        "description": "Preview type",
-                        "name": "type",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "small",
-                            "medium",
-                            "large"
-                        ],
-                        "type": "string",
-                        "default": "medium",
-                        "description": "Preview size",
-                        "name": "size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Time offset for video thumbnails (e.g., '5.0' for 5 seconds)",
-                        "name": "offset",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Preview file data",
-                        "schema": {
-                            "type": "file"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "File not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/files/{id}/details": {
-            "get": {
-                "description": "Get comprehensive information about a specific file including metadata",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Get file details",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "File ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/FileDetailsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/files/{id}/metadata": {
-            "get": {
-                "description": "Get enriched metadata for a specific file (media properties, EXIF, etc.)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Get file metadata",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "File ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "media",
-                            "exif",
-                            "ffmpeg"
-                        ],
-                        "type": "string",
-                        "description": "Metadata kind filter",
-                        "name": "kind",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/FileMetadataResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/filesystem/capabilities": {
-            "get": {
-                "description": "Get information about filesystem indexing capabilities and configuration",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "filesystem"
-                ],
-                "summary": "Get filesystem indexing capabilities",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/FilesystemCapabilitiesResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/health/database": {
-            "get": {
-                "description": "Get database connection status via store interface",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Check database health",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/health/docker": {
-            "get": {
-                "description": "Get Docker daemon connection status and version information",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Check Docker health",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/DockerHealth"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/health/events": {
-            "get": {
-                "description": "Get Docker events service status and metrics",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Check Docker events health",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/health/scheduler": {
-            "get": {
-                "description": "Get scan scheduler status and metrics",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Check scan scheduler health",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/media/capabilities": {
-            "get": {
-                "description": "Get information about available media enrichers and their capabilities",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "media"
-                ],
-                "summary": "Get media enrichment capabilities",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/MediaCapabilitiesResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/organizations": {
-            "get": {
-                "description": "List all organizations in the system (admin only)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "organizations"
-                ],
-                "summary": "List all organizations",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 25,
-                        "description": "Page size",
-                        "name": "page_size",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of organizations",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden - admin required",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a new organization (admin only)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "organizations"
-                ],
-                "summary": "Create organization",
-                "parameters": [
-                    {
-                        "description": "Organization creation details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_organizations.CreateOrganizationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created organization",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_organizations.OrganizationResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden - admin required",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict - organization already exists",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/organizations/{id}": {
-            "put": {
-                "description": "Update organization details by ID (admin only)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "organizations"
-                ],
-                "summary": "Update organization",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Organization ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Organization update details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_organizations.UpdateOrganizationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Updated organization",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_organizations.OrganizationResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden - admin required",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Organization not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete an organization by ID (admin only)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "organizations"
-                ],
-                "summary": "Delete organization",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Organization ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Organization deleted successfully"
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden - admin required",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Organization not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict - organization has users or volumes",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/previews": {
-            "post": {
-                "description": "Generate a new preview (thumbnail, poster, or cover) for a file",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "previews"
-                ],
-                "summary": "Generate preview",
-                "parameters": [
-                    {
-                        "description": "Preview generation request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_previews.PreviewRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Preview generated successfully",
-                        "schema": {
-                            "$ref": "#/definitions/internal_api_v1_previews.PreviewResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/previews/health": {
-            "get": {
-                "description": "Check the health status of the preview service and its dependencies",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "previews"
-                ],
-                "summary": "Preview service health check",
-                "responses": {
-                    "200": {
-                        "description": "Service health status",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/previews/stats": {
-            "get": {
-                "description": "Get statistics about preview generation and usage",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "previews"
-                ],
-                "summary": "Get preview statistics",
-                "responses": {
-                    "200": {
-                        "description": "Preview statistics",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/previews/supported": {
-            "get": {
-                "description": "Get list of supported media types for preview generation",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "previews"
-                ],
-                "summary": "Get supported media types",
-                "responses": {
-                    "200": {
-                        "description": "Supported media types",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/previews/{file_id}": {
-            "get": {
-                "description": "Serve a preview file by file ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "previews"
-                ],
-                "summary": "Get preview file",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "File ID",
-                        "name": "file_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "thumbnail",
-                            "poster",
-                            "cover"
-                        ],
-                        "type": "string",
-                        "description": "Preview type",
-                        "name": "type",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "small",
-                            "medium",
-                            "large"
-                        ],
-                        "type": "string",
-                        "description": "Preview size",
-                        "name": "size",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Preview file data",
-                        "schema": {
-                            "type": "file"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Preview not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete all previews for a specific file",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "previews"
-                ],
-                "summary": "Delete preview",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "File ID",
-                        "name": "file_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Previews deleted successfully"
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/reports/orphaned": {
-            "get": {
-                "description": "Get paginated list of volumes that are not attached to any containers",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "volumes"
-                ],
-                "summary": "Get orphaned volumes",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination (default: 1)",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of items per page (default: 25, max: 100)",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Sort field and direction (e.g., 'name:asc', 'size_bytes:desc'). Available fields: name, size_bytes, created_at",
-                        "name": "sort",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Paginated list of orphaned volumes",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/scans/active": {
-            "get": {
-                "description": "Get list of all currently active/running scans",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scan"
-                ],
-                "summary": "Get active scans",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Limit number of results (default: 20)",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Offset for pagination (default: 0)",
-                        "name": "offset",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Active scans with pagination",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/scans/recent-errors": {
-            "get": {
-                "description": "Get recent scan errors across all scans with filtering",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scan"
-                ],
-                "summary": "Get recent scan errors",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Hours back to search (default: 24)",
-                        "name": "hours",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by error type",
-                        "name": "error_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by phase name",
-                        "name": "phase",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Limit number of results (default: 50)",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Recent scan errors",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/scans/{id}/status": {
-            "get": {
-                "description": "Get the status of a volume scan by volume ID or scan ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scan"
-                ],
-                "summary": "Get scan status",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Volume ID or Scan ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Scan status information",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Scan not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/scans/{scanId}/errors": {
-            "get": {
-                "description": "Get detailed error information for a scan with filtering and pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scan"
-                ],
-                "summary": "Get scan errors",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Scan ID",
-                        "name": "scanId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by phase name",
-                        "name": "phase",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by error type",
-                        "name": "error_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Limit number of results (default: 50)",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Offset for pagination (default: 0)",
-                        "name": "offset",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Scan errors with pagination",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/scans/{scanId}/progress": {
-            "get": {
-                "description": "Get comprehensive progress information including phases, sub-phases, items, errors, and confidence indicators",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scan"
-                ],
-                "summary": "Get detailed scan progress with sub-phase information",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Scan ID",
-                        "name": "scanId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Comprehensive scan progress with sub-phase details",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/snapshots/stats": {
-            "get": {
-                "description": "Get aggregate statistics about volume snapshots",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "snapshots"
-                ],
-                "summary": "Get snapshot statistics",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/snapshots/volumes/{volume_id}": {
-            "get": {
-                "description": "Get snapshot history for a specific volume",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "snapshots"
-                ],
-                "summary": "Get volume snapshots",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Volume ID",
-                        "name": "volume_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Limit number of results",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/snapshots/volumes/{volume_id}/latest": {
-            "get": {
-                "description": "Get the most recent snapshot for a specific volume",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "snapshots"
-                ],
-                "summary": "Get latest snapshot",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Volume ID",
-                        "name": "volume_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/stats/daily": {
-            "get": {
-                "description": "Get daily aggregated statistics for a volume",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "stats"
-                ],
-                "summary": "Get daily stats",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Volume ID",
-                        "name": "volume_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of days to retrieve",
-                        "name": "days",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/VolumeStatsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/stats/media": {
-            "get": {
-                "description": "Get statistics aggregated by media type (images, videos, documents, etc.)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "stats"
-                ],
-                "summary": "Get media statistics",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Volume ID",
-                        "name": "volume_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Media statistics",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/stats/storage": {
-            "get": {
-                "description": "Get detailed storage usage statistics including size distribution and growth trends",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "stats"
-                ],
-                "summary": "Get storage statistics",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Volume ID",
-                        "name": "volume_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Storage statistics",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/stats/top-folders": {
-            "get": {
-                "description": "Get the largest folders in a volume by total size",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "stats"
-                ],
-                "summary": "Get top folders by size",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Volume ID",
-                        "name": "volume_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of folders to return",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/TopFoldersResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/system/info": {
-            "get": {
-                "description": "Get detailed system information including service version and Docker status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "system"
-                ],
-                "summary": "Get system information",
-                "responses": {
-                    "200": {
-                        "description": "System information",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/system/version": {
-            "get": {
-                "description": "Get API version information and available endpoints",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "system"
-                ],
-                "summary": "Get API version",
-                "responses": {
-                    "200": {
-                        "description": "API version information",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/trends/summary": {
+        "/api/v1/trends/summary": {
             "get": {
                 "description": "Get aggregated trends summary for all volumes in the system",
                 "consumes": [
@@ -6406,8 +6617,7 @@ const docTemplate = `{
                     "200": {
                         "description": "All volumes trends summary",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/AllVolumesTrendsSummaryV1"
                         }
                     },
                     "500": {
@@ -6420,7 +6630,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/trends/volumes/{volumeId}": {
+        "/api/v1/trends/volumes/{volumeId}": {
             "get": {
                 "description": "Get trend analysis for a specific volume over a specified time period",
                 "consumes": [
@@ -6446,14 +6656,19 @@ const docTemplate = `{
                         "description": "Number of days to analyze (default: 30, max: 365)",
                         "name": "days",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bucket size for daily_stats: day, week, or month (default: day)",
+                        "name": "aggregation",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Volume trends data",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/VolumeTrendsDataV1"
                         }
                     },
                     "400": {
@@ -6473,7 +6688,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/trends/volumes/{volumeId}/30day": {
+        "/api/v1/trends/volumes/{volumeId}/30day": {
             "get": {
                 "description": "Get 30-day trend summary for a volume",
                 "consumes": [
@@ -6520,7 +6735,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/trends/volumes/{volumeId}/7day": {
+        "/api/v1/trends/volumes/{volumeId}/7day": {
             "get": {
                 "description": "Get 7-day trend summary for a volume",
                 "consumes": [
@@ -6567,7 +6782,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/trends/volumes/{volumeId}/deltas": {
+        "/api/v1/trends/volumes/{volumeId}/deltas": {
             "get": {
                 "description": "Get growth deltas (changes) for a volume over time",
                 "consumes": [
@@ -6627,7 +6842,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/trends/volumes/{volumeId}/series": {
+        "/api/v1/trends/volumes/{volumeId}/series": {
             "get": {
                 "description": "Get step series data for a volume suitable for time-series charting",
                 "consumes": [
@@ -6687,7 +6902,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/trends/volumes/{volumeId}/slope": {
+        "/api/v1/trends/volumes/{volumeId}/slope": {
             "get": {
                 "description": "Calculate the trend slope for a volume to determine growth rate",
                 "consumes": [
@@ -6747,7 +6962,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users": {
+        "/api/v1/users": {
             "get": {
                 "description": "List all users in the organization (admin only)",
                 "produces": [
@@ -6865,7 +7080,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}": {
+        "/api/v1/users/{id}": {
             "get": {
                 "description": "Get a specific user by ID (admin only)",
                 "produces": [
@@ -7041,7 +7256,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes": {
+        "/api/v1/volumes": {
             "get": {
                 "description": "Get paginated list of Docker volumes with filtering, sorting, and search capabilities",
                 "consumes": [
@@ -7118,9 +7333,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Paginated list of volumes",
+                        "description": "Paginated list of volumes with aggregate summary",
                         "schema": {
-                            "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse"
+                            "$ref": "#/definitions/VolumesListResponse"
                         }
                     },
                     "400": {
@@ -7138,7 +7353,54 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/bulk-scan": {
+        "/api/v1/volumes/bulk-delete": {
+            "post": {
+                "description": "Permanently delete multiple volumes in a single request. Requires admin role. Each volume must be unattached; failures for individual volumes don't stop the rest of the batch. This action cannot be undone.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "volumes"
+                ],
+                "summary": "Bulk delete volumes",
+                "operationId": "postVolumesBulkDelete",
+                "parameters": [
+                    {
+                        "description": "Volume IDs to delete",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_volumes.BulkDeleteVolumesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bulk delete results",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_volumes.BulkDeleteVolumesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/volumes/bulk-scan": {
             "post": {
                 "description": "Scan multiple volumes at once, with support for async processing",
                 "consumes": [
@@ -7187,7 +7449,101 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/cache/invalidate": {
+        "/api/v1/volumes/bulk-track": {
+            "post": {
+                "description": "Track multiple volumes in a single request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "volumes"
+                ],
+                "summary": "Bulk track volumes",
+                "operationId": "postVolumesBulkTrack",
+                "parameters": [
+                    {
+                        "description": "Volume IDs to track",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_volumes.BulkTrackVolumesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bulk track results",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_volumes.BulkTrackVolumesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/volumes/bulk-untrack": {
+            "post": {
+                "description": "Untrack multiple volumes in a single request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "volumes"
+                ],
+                "summary": "Bulk untrack volumes",
+                "operationId": "postVolumesBulkUntrack",
+                "parameters": [
+                    {
+                        "description": "Volume IDs to untrack",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_volumes.BulkTrackVolumesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bulk untrack results",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_v1_volumes.BulkTrackVolumesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/volumes/cache/invalidate": {
             "post": {
                 "description": "Clears all entries from the volume cache",
                 "consumes": [
@@ -7211,7 +7567,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/cache/stats": {
+        "/api/v1/volumes/cache/stats": {
             "get": {
                 "description": "Returns statistics about the volume cache (hit rate, size, etc.)",
                 "consumes": [
@@ -7235,7 +7591,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/export/csv": {
+        "/api/v1/volumes/export/csv": {
             "get": {
                 "description": "Export filtered and sorted volumes list in CSV format",
                 "consumes": [
@@ -7314,7 +7670,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/export/json": {
+        "/api/v1/volumes/export/json": {
             "get": {
                 "description": "Export filtered and sorted volumes list in JSON format",
                 "consumes": [
@@ -7394,7 +7750,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/{id}/filesystem/index": {
+        "/api/v1/volumes/{id}/filesystem/index": {
             "post": {
                 "description": "Manually trigger filesystem indexing for a specific volume",
                 "consumes": [
@@ -7452,7 +7808,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/{id}/media/enrich": {
+        "/api/v1/volumes/{id}/media/enrich": {
             "post": {
                 "description": "Manually trigger media metadata enrichment for a specific volume",
                 "consumes": [
@@ -7496,7 +7852,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/{id}/media/status": {
+        "/api/v1/volumes/{id}/media/status": {
             "get": {
                 "description": "Get the current status of media enrichment for a volume",
                 "consumes": [
@@ -7540,7 +7896,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/{id}/scan/status": {
+        "/api/v1/volumes/{id}/scan/status": {
             "get": {
                 "description": "Get the status of a volume scan by volume ID or scan ID",
                 "consumes": [
@@ -7594,7 +7950,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/{id}/size": {
+        "/api/v1/volumes/{id}/size": {
             "get": {
                 "description": "Get the current size and statistics of a Docker volume",
                 "consumes": [
@@ -7644,7 +8000,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/{id}/size/refresh": {
+        "/api/v1/volumes/{id}/size/refresh": {
             "post": {
                 "description": "Clear cache and recalculate volume size, optionally async",
                 "consumes": [
@@ -7702,7 +8058,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/{name}": {
+        "/api/v1/volumes/{name}": {
             "get": {
                 "description": "Get detailed information about a specific Docker volume by name",
                 "consumes": [
@@ -7750,9 +8106,65 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "Permanently delete a Docker volume. Requires admin role. The volume must not be attached to any container — Docker itself enforces this. This action cannot be undone.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "volumes"
+                ],
+                "summary": "Delete a volume",
+                "operationId": "deleteVolumesVolumeId",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Volume successfully deleted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Volume not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Volume is still attached to a container",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
             }
         },
-        "/volumes/{name}/attachments": {
+        "/api/v1/volumes/{name}/attachments": {
             "get": {
                 "description": "Get list of containers that have the specified volume mounted",
                 "consumes": [
@@ -7802,7 +8214,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/{name}/stats": {
+        "/api/v1/volumes/{name}/stats": {
             "get": {
                 "description": "Get detailed statistics and usage information for a specific volume",
                 "consumes": [
@@ -7852,7 +8264,109 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes/{volumeId}/filesystem/status": {
+        "/api/v1/volumes/{name}/track": {
+            "post": {
+                "description": "Set a volume to tracked status. When tracked, the volume will be scanned and its data indexed.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "volumes"
+                ],
+                "summary": "Track a volume",
+                "operationId": "postVolumesVolumeIdTrack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Volume successfully tracked",
+                        "schema": {
+                            "$ref": "#/definitions/VolumeV1"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Volume not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/volumes/{name}/untrack": {
+            "post": {
+                "description": "Set a volume to untracked status and remove its data from the database. The Docker volume itself remains intact.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "volumes"
+                ],
+                "summary": "Untrack a volume",
+                "operationId": "postVolumesVolumeIdUntrack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Volume successfully untracked",
+                        "schema": {
+                            "$ref": "#/definitions/VolumeV1"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Volume not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/volumes/{volumeId}/filesystem/status": {
             "get": {
                 "description": "Get the current status of filesystem indexing for a volume",
                 "consumes": [
@@ -7904,6 +8418,38 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "ActivityEventV1": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "volume.delete"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "resource_id": {
+                    "type": "string",
+                    "example": "a1b2c3d4"
+                },
+                "resource_type": {
+                    "type": "string",
+                    "example": "volume"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "success",
+                        "failure"
+                    ],
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
         "AggregateMetadata": {
             "type": "object",
             "properties": {
@@ -8049,6 +8595,85 @@ const docTemplate = `{
                 }
             }
         },
+        "AllVolumesTrendsSummaryV1": {
+            "type": "object",
+            "properties": {
+                "average_growth_rate": {
+                    "type": "number",
+                    "example": 4.8
+                },
+                "generated_at": {
+                    "type": "string"
+                },
+                "period": {
+                    "$ref": "#/definitions/TrendsPeriodV1"
+                },
+                "total_storage_growth": {
+                    "type": "integer",
+                    "example": 12884901888
+                },
+                "total_volumes_tracked": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "volumes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VolumeTrendsSummaryEntryV1"
+                    }
+                },
+                "volumes_with_decline": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "volumes_with_growth": {
+                    "type": "integer",
+                    "example": 9
+                }
+            }
+        },
+        "AppHealth": {
+            "type": "object",
+            "properties": {
+                "checks": {
+                    "$ref": "#/definitions/AppHealthChecks"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "healthy",
+                        "degraded"
+                    ],
+                    "example": "healthy"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "version": {
+                    "$ref": "#/definitions/github_com_mantonx_volumeviz_internal_version.Info"
+                }
+            }
+        },
+        "AppHealthChecks": {
+            "type": "object",
+            "properties": {
+                "database": {
+                    "$ref": "#/definitions/DatabaseHealth"
+                },
+                "docker": {
+                    "$ref": "#/definitions/DockerHealth"
+                },
+                "events": {
+                    "$ref": "#/definitions/EventsHealth"
+                },
+                "migrations": {
+                    "$ref": "#/definitions/MigrationsHealth"
+                },
+                "scheduler": {
+                    "$ref": "#/definitions/SchedulerHealth"
+                }
+            }
+        },
         "AsyncScanResponse": {
             "type": "object",
             "properties": {
@@ -8063,6 +8688,81 @@ const docTemplate = `{
                 "volume_id": {
                     "type": "string",
                     "example": "tv-shows-readonly"
+                }
+            }
+        },
+        "AuditLogEntryV1": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "volume.delete"
+                },
+                "details": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "email": {
+                    "type": "string",
+                    "example": "admin@example.com"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "ip_address": {
+                    "type": "string",
+                    "example": "192.168.1.100"
+                },
+                "resource_id": {
+                    "type": "string",
+                    "example": "a1b2c3d4"
+                },
+                "resource_type": {
+                    "type": "string",
+                    "example": "volume"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "success",
+                        "failure"
+                    ],
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "username": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "AuditLogSearchResponse": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AuditLogEntryV1"
+                    }
+                },
+                "offset": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 128
                 }
             }
         },
@@ -8089,6 +8789,86 @@ const docTemplate = `{
                         "tv-shows-readonly",
                         "movies-readonly"
                     ]
+                }
+            }
+        },
+        "CapacityForecastPointV1": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "projected_size_bytes": {
+                    "type": "integer",
+                    "example": 12884901888
+                }
+            }
+        },
+        "CapacityForecastV1": {
+            "type": "object",
+            "properties": {
+                "current_size_bytes": {
+                    "type": "integer",
+                    "example": 10737418240
+                },
+                "daily_growth_bytes": {
+                    "type": "number",
+                    "example": 104857600
+                },
+                "days_until_capacity": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "disk_available_bytes": {
+                    "type": "integer",
+                    "example": 114419344240
+                },
+                "series": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CapacityForecastPointV1"
+                    }
+                }
+            }
+        },
+        "DailyStatV1": {
+            "type": "object",
+            "properties": {
+                "added_bytes": {
+                    "type": "integer",
+                    "example": 52428800
+                },
+                "added_files": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-07-10"
+                },
+                "disk_available_bytes": {
+                    "type": "integer",
+                    "example": 114419344240
+                },
+                "disk_total_bytes": {
+                    "type": "integer",
+                    "example": 1000204886016
+                },
+                "files_count": {
+                    "type": "integer",
+                    "example": 4213
+                },
+                "removed_bytes": {
+                    "type": "integer",
+                    "example": 1048576
+                },
+                "removed_files": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total_bytes": {
+                    "type": "integer",
+                    "example": 10737418240
                 }
             }
         },
@@ -8122,6 +8902,27 @@ const docTemplate = `{
                 "volume_id": {
                     "type": "string",
                     "example": "tv-shows-readonly"
+                }
+            }
+        },
+        "DatabaseHealth": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "healthy",
+                        "unhealthy",
+                        "unknown"
+                    ],
+                    "example": "healthy"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "store-managed"
                 }
             }
         },
@@ -8197,6 +8998,58 @@ const docTemplate = `{
                 "error": {
                     "type": "string",
                     "example": "Invalid request"
+                }
+            }
+        },
+        "EventsHealth": {
+            "type": "object",
+            "properties": {
+                "connected": {
+                    "type": "boolean"
+                },
+                "dropped_total": {
+                    "type": "integer"
+                },
+                "errors_total": {
+                    "type": "integer"
+                },
+                "last_event_age_seconds": {
+                    "type": "integer"
+                },
+                "last_event_timestamp": {
+                    "type": "integer"
+                },
+                "last_reconnect_timestamp": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "processed_total": {
+                    "type": "integer"
+                },
+                "queue_size": {
+                    "type": "integer"
+                },
+                "reconciliation_runs": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "reconnects_total": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "healthy",
+                        "degraded",
+                        "unhealthy",
+                        "not_configured"
+                    ],
+                    "example": "healthy"
                 }
             }
         },
@@ -8548,6 +9401,41 @@ const docTemplate = `{
                 }
             }
         },
+        "ListPermissionsResponse": {
+            "type": "object",
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "read",
+                        "write",
+                        "delete"
+                    ]
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "volumes",
+                        "scans",
+                        "files",
+                        "users",
+                        "organizations"
+                    ]
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/RolePermissionsV1"
+                    }
+                }
+            }
+        },
         "MediaCapabilitiesResponse": {
             "type": "object",
             "properties": {
@@ -8695,6 +9583,31 @@ const docTemplate = `{
                 }
             }
         },
+        "MediaKindCompositionV1": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "2026-07-10"
+                },
+                "files_count": {
+                    "type": "integer",
+                    "example": 812
+                },
+                "media_kind": {
+                    "type": "string",
+                    "example": "video"
+                },
+                "percent_of_volume": {
+                    "type": "string",
+                    "example": "42.5"
+                },
+                "total_bytes": {
+                    "type": "integer",
+                    "example": 8589934592
+                }
+            }
+        },
         "MediaKindOption": {
             "type": "object",
             "properties": {
@@ -8709,6 +9622,15 @@ const docTemplate = `{
                 "value": {
                     "type": "string",
                     "example": "video"
+                }
+            }
+        },
+        "MigrationsHealth": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "store-managed"
                 }
             }
         },
@@ -8884,6 +9806,17 @@ const docTemplate = `{
                 }
             }
         },
+        "RecentActivityResponse": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ActivityEventV1"
+                    }
+                }
+            }
+        },
         "RefreshRequest": {
             "type": "object",
             "properties": {
@@ -8894,6 +9827,29 @@ const docTemplate = `{
                 "method": {
                     "type": "string",
                     "example": "du"
+                }
+            }
+        },
+        "RolePermissionsV1": {
+            "type": "object",
+            "properties": {
+                "grants": {
+                    "description": "Grants maps \"resource:action\" (e.g. \"volumes:write\") to whether the\nrole currently holds that grant",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "boolean"
+                    }
+                },
+                "org_grants": {
+                    "description": "OrgGrants lists which \"resource:action\" keys are org-specific\noverrides (toggleable) rather than global built-in defaults\n(read-only from this API - see PUT /api/v1/permissions)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "boolean"
+                    }
+                },
+                "role": {
+                    "type": "string",
+                    "example": "operator"
                 }
             }
         },
@@ -9033,6 +9989,78 @@ const docTemplate = `{
                 }
             }
         },
+        "SchedulerHealth": {
+            "type": "object",
+            "properties": {
+                "active_scans": {
+                    "type": "integer"
+                },
+                "completed_by_status": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "error_counts": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "last_run_age_seconds": {
+                    "type": "integer"
+                },
+                "last_run_timestamp": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "next_run_in_seconds": {
+                    "type": "integer"
+                },
+                "next_run_timestamp": {
+                    "type": "integer"
+                },
+                "queue_depth": {
+                    "type": "integer"
+                },
+                "running": {
+                    "type": "boolean"
+                },
+                "scan_durations_avg": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number",
+                        "format": "float64"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "healthy",
+                        "degraded",
+                        "stopped",
+                        "not_configured"
+                    ],
+                    "example": "healthy"
+                },
+                "total_completed": {
+                    "type": "integer"
+                },
+                "total_failed": {
+                    "type": "integer"
+                },
+                "worker_count": {
+                    "type": "integer"
+                },
+                "worker_utilization": {
+                    "type": "number"
+                }
+            }
+        },
         "StatsSummary": {
             "type": "object",
             "properties": {
@@ -9063,6 +10091,148 @@ const docTemplate = `{
                 }
             }
         },
+        "SystemConfigAlerts": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "evaluation_interval_minutes": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "SystemConfigAuth": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "SystemConfigCORS": {
+            "type": "object",
+            "properties": {
+                "allowed_origins": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "http://localhost:3000"
+                    ]
+                }
+            }
+        },
+        "SystemConfigRateLimit": {
+            "type": "object",
+            "properties": {
+                "burst": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "requests_per_minute": {
+                    "type": "integer",
+                    "example": 60
+                }
+            }
+        },
+        "SystemConfigResponse": {
+            "type": "object",
+            "properties": {
+                "alerts": {
+                    "$ref": "#/definitions/SystemConfigAlerts"
+                },
+                "auth": {
+                    "$ref": "#/definitions/SystemConfigAuth"
+                },
+                "cors": {
+                    "$ref": "#/definitions/SystemConfigCORS"
+                },
+                "rate_limit": {
+                    "$ref": "#/definitions/SystemConfigRateLimit"
+                },
+                "retention": {
+                    "$ref": "#/definitions/SystemConfigRetention"
+                },
+                "scan": {
+                    "$ref": "#/definitions/SystemConfigScan"
+                },
+                "server": {
+                    "$ref": "#/definitions/SystemConfigServer"
+                }
+            }
+        },
+        "SystemConfigRetention": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "file_metadata_days": {
+                    "type": "integer",
+                    "example": 180
+                },
+                "inactive_files_days": {
+                    "type": "integer",
+                    "example": 60
+                },
+                "scan_jobs_days": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "scan_metrics_days": {
+                    "type": "integer",
+                    "example": 90
+                },
+                "scan_phases_days": {
+                    "type": "integer",
+                    "example": 7
+                }
+            }
+        },
+        "SystemConfigScan": {
+            "type": "object",
+            "properties": {
+                "bind_mounts_enabled": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "concurrency": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "interval_seconds": {
+                    "type": "integer",
+                    "example": 21600
+                }
+            }
+        },
+        "SystemConfigServer": {
+            "type": "object",
+            "properties": {
+                "database_type": {
+                    "type": "string",
+                    "example": "postgres"
+                },
+                "mode": {
+                    "type": "string",
+                    "example": "release"
+                }
+            }
+        },
         "TopFoldersResponse": {
             "type": "object",
             "properties": {
@@ -9075,6 +10245,180 @@ const docTemplate = `{
                 "volume_id": {
                     "type": "string",
                     "example": "tv-shows-readonly"
+                }
+            }
+        },
+        "TopGrowingFolderV1": {
+            "type": "object",
+            "properties": {
+                "avg_daily_added_bytes": {
+                    "type": "string"
+                },
+                "days_tracked": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "folder_id": {
+                    "type": "integer"
+                },
+                "folder_name": {
+                    "type": "string",
+                    "example": "movies"
+                },
+                "folder_path": {
+                    "type": "string",
+                    "example": "/data/movies"
+                },
+                "total_added_bytes": {
+                    "type": "integer",
+                    "example": 5368709120
+                },
+                "total_added_files": {
+                    "type": "integer",
+                    "example": 8
+                }
+            }
+        },
+        "TrendAnalysisV1": {
+            "type": "object",
+            "properties": {
+                "bytes_change_30d": {
+                    "type": "integer",
+                    "example": 524288000
+                },
+                "bytes_change_7d": {
+                    "type": "integer",
+                    "example": 104857600
+                },
+                "bytes_growth_rate_30d": {
+                    "type": "string",
+                    "example": "5.4"
+                },
+                "bytes_growth_rate_7d": {
+                    "type": "string",
+                    "example": "1.2"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-07-10"
+                },
+                "files_change_30d": {
+                    "type": "integer",
+                    "example": 64
+                },
+                "files_change_7d": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "files_count": {
+                    "type": "integer",
+                    "example": 4213
+                },
+                "total_bytes": {
+                    "type": "integer",
+                    "example": 10737418240
+                }
+            }
+        },
+        "TrendsPeriodV1": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "end": {
+                    "type": "string"
+                },
+                "start": {
+                    "type": "string"
+                }
+            }
+        },
+        "TrendsSummaryStatsV1": {
+            "type": "object",
+            "properties": {
+                "avg_daily_growth_bytes": {
+                    "type": "number",
+                    "example": 35791394.13
+                },
+                "avg_daily_growth_files": {
+                    "type": "number",
+                    "example": 4
+                },
+                "current_files": {
+                    "type": "integer",
+                    "example": 4213
+                },
+                "current_size": {
+                    "type": "integer",
+                    "example": 10737418240
+                },
+                "total_growth_bytes": {
+                    "type": "integer",
+                    "example": 1073741824
+                },
+                "total_growth_files": {
+                    "type": "integer",
+                    "example": 120
+                }
+            }
+        },
+        "UpdatePermissionRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "resource",
+                "role"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": [
+                        "read",
+                        "write",
+                        "delete"
+                    ],
+                    "example": "write"
+                },
+                "granted": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "resource": {
+                    "type": "string",
+                    "example": "volumes"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "operator",
+                        "user",
+                        "viewer"
+                    ],
+                    "example": "operator"
+                }
+            }
+        },
+        "VolumeListSummaryV1": {
+            "type": "object",
+            "properties": {
+                "orphaned_volumes": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "total_size_bytes": {
+                    "type": "integer",
+                    "example": 483183820800
+                },
+                "total_volumes": {
+                    "type": "integer",
+                    "example": 142
+                },
+                "tracked_volumes": {
+                    "type": "integer",
+                    "example": 87
                 }
             }
         },
@@ -9103,6 +10447,112 @@ const docTemplate = `{
                 "volume_id": {
                     "type": "string",
                     "example": "tv-shows-readonly"
+                }
+            }
+        },
+        "VolumeTrendsDataPointV1": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "2026-07-10"
+                },
+                "file_count": {
+                    "type": "integer",
+                    "example": 4213
+                },
+                "total_size": {
+                    "type": "integer",
+                    "example": 10737418240
+                }
+            }
+        },
+        "VolumeTrendsDataV1": {
+            "type": "object",
+            "properties": {
+                "aggregation": {
+                    "type": "string",
+                    "enum": [
+                        "day",
+                        "week",
+                        "month"
+                    ],
+                    "example": "day"
+                },
+                "capacity_forecast": {
+                    "$ref": "#/definitions/CapacityForecastV1"
+                },
+                "daily_stats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/DailyStatV1"
+                    }
+                },
+                "generated_at": {
+                    "type": "string"
+                },
+                "media_composition": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MediaKindCompositionV1"
+                    }
+                },
+                "period": {
+                    "$ref": "#/definitions/TrendsPeriodV1"
+                },
+                "summary": {
+                    "$ref": "#/definitions/TrendsSummaryStatsV1"
+                },
+                "top_growing_folders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/TopGrowingFolderV1"
+                    }
+                },
+                "trend_analysis": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/TrendAnalysisV1"
+                    }
+                },
+                "volume_id": {
+                    "type": "string",
+                    "example": "a1b2c3d4"
+                }
+            }
+        },
+        "VolumeTrendsSummaryEntryV1": {
+            "type": "object",
+            "properties": {
+                "data_points": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VolumeTrendsDataPointV1"
+                    }
+                },
+                "statistics": {
+                    "$ref": "#/definitions/VolumeTrendsSummaryStatsV1"
+                },
+                "volume_id": {
+                    "type": "string",
+                    "example": "a1b2c3d4"
+                }
+            }
+        },
+        "VolumeTrendsSummaryStatsV1": {
+            "type": "object",
+            "properties": {
+                "current_size": {
+                    "type": "integer",
+                    "example": 10737418240
+                },
+                "growth_rate_percent": {
+                    "type": "number",
+                    "example": 5.2
+                },
+                "total_growth": {
+                    "type": "integer",
+                    "example": 1073741824
                 }
             }
         },
@@ -9248,123 +10698,33 @@ const docTemplate = `{
                 }
             }
         },
-        "duplicates.DetectionParameters": {
+        "VolumesListResponse": {
             "type": "object",
             "properties": {
-                "include_empty": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "max_size": {
-                    "type": "integer",
-                    "example": 104857600
-                },
-                "min_size": {
-                    "type": "integer",
-                    "example": 1048576
-                },
-                "path": {
-                    "type": "string",
-                    "example": "/movies"
-                },
-                "volume_id": {
-                    "type": "string",
-                    "example": "media-library"
-                }
-            }
-        },
-        "duplicates.DuplicateDetectionResponse": {
-            "type": "object",
-            "properties": {
-                "groups": {
+                "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/duplicates.DuplicateGroup"
+                        "$ref": "#/definitions/VolumeV1"
                     }
                 },
-                "parameters": {
-                    "$ref": "#/definitions/duplicates.DetectionParameters"
+                "filters": {
+                    "type": "object",
+                    "additionalProperties": true
                 },
-                "processing_time_ms": {
+                "page": {
                     "type": "integer"
                 },
+                "page_size": {
+                    "type": "integer"
+                },
+                "sort": {
+                    "type": "string"
+                },
                 "summary": {
-                    "$ref": "#/definitions/duplicates.DuplicateSummary"
+                    "$ref": "#/definitions/VolumeListSummaryV1"
                 },
-                "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
-        "duplicates.DuplicateGroup": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer",
-                    "example": 3
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/DuplicateFile"
-                    }
-                },
-                "hash": {
-                    "type": "string",
-                    "example": "d41d8cd98f00b204e9800998ecf8427e"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "dup-1"
-                },
-                "size": {
-                    "type": "integer",
-                    "example": 2048000
-                },
-                "wasted_space": {
-                    "type": "integer",
-                    "example": 4096000
-                }
-            }
-        },
-        "duplicates.DuplicateSummary": {
-            "type": "object",
-            "properties": {
-                "largest_group": {
-                    "type": "object",
-                    "properties": {
-                        "count": {
-                            "type": "integer",
-                            "example": 8
-                        },
-                        "id": {
-                            "type": "string",
-                            "example": "dup-5"
-                        },
-                        "wasted_space": {
-                            "type": "integer",
-                            "example": 134217728
-                        }
-                    }
-                },
-                "processed_files": {
-                    "type": "integer",
-                    "example": 10000
-                },
-                "total_duplicates": {
-                    "type": "integer",
-                    "example": 42
-                },
-                "total_groups": {
-                    "type": "integer",
-                    "example": 15
-                },
-                "total_wasted_space": {
-                    "type": "integer",
-                    "example": 536870912
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -10478,6 +11838,29 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_mantonx_volumeviz_internal_version.Info": {
+            "type": "object",
+            "properties": {
+                "build_date": {
+                    "type": "string"
+                },
+                "git_branch": {
+                    "type": "string"
+                },
+                "git_commit": {
+                    "type": "string"
+                },
+                "go_version": {
+                    "type": "string"
+                },
+                "platform": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_api_v1_auth.AuthResponse": {
             "type": "object",
             "properties": {
@@ -10504,6 +11887,22 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_auth.PasswordChangeRequest": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8
                 }
             }
         },
@@ -10581,6 +11980,126 @@ const docTemplate = `{
                 "ModePolling",
                 "ModeSSE"
             ]
+        },
+        "internal_api_v1_duplicates.DetectionParameters": {
+            "type": "object",
+            "properties": {
+                "include_empty": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "max_size": {
+                    "type": "integer",
+                    "example": 104857600
+                },
+                "min_size": {
+                    "type": "integer",
+                    "example": 1048576
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/movies"
+                },
+                "volume_id": {
+                    "type": "string",
+                    "example": "media-library"
+                }
+            }
+        },
+        "internal_api_v1_duplicates.DuplicateDetectionResponse": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateGroup"
+                    }
+                },
+                "parameters": {
+                    "$ref": "#/definitions/internal_api_v1_duplicates.DetectionParameters"
+                },
+                "processing_time_ms": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateSummary"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_duplicates.DuplicateGroup": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/DuplicateFile"
+                    }
+                },
+                "hash": {
+                    "type": "string",
+                    "example": "d41d8cd98f00b204e9800998ecf8427e"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "dup-1"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 2048000
+                },
+                "wasted_space": {
+                    "type": "integer",
+                    "example": 4096000
+                }
+            }
+        },
+        "internal_api_v1_duplicates.DuplicateSummary": {
+            "type": "object",
+            "properties": {
+                "largest_group": {
+                    "type": "object",
+                    "properties": {
+                        "count": {
+                            "type": "integer",
+                            "example": 8
+                        },
+                        "id": {
+                            "type": "string",
+                            "example": "dup-5"
+                        },
+                        "wasted_space": {
+                            "type": "integer",
+                            "example": 134217728
+                        }
+                    }
+                },
+                "processed_files": {
+                    "type": "integer",
+                    "example": 10000
+                },
+                "total_duplicates": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "total_groups": {
+                    "type": "integer",
+                    "example": 15
+                },
+                "total_wasted_space": {
+                    "type": "integer",
+                    "example": 536870912
+                }
+            }
         },
         "internal_api_v1_explorer.AppliedFilters": {
             "description": "Applied filters for the file query",
@@ -11715,6 +13234,55 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api_v1_rules.FieldDefinition": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "operators": {
+                    "description": "Available operators for this field",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "description": "string, boolean, number",
+                    "type": "string"
+                },
+                "values": {
+                    "description": "For enum-like fields",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_api_v1_rules.GetSchemaResponse": {
+            "type": "object",
+            "properties": {
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_rules.FieldDefinition"
+                    }
+                },
+                "operators": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_rules.OperatorDefinition"
+                    }
+                }
+            }
+        },
         "internal_api_v1_rules.ListMountOverridesResponse": {
             "type": "object",
             "properties": {
@@ -11779,6 +13347,24 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_rules.OperatorDefinition": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "value_type": {
+                    "description": "single, multiple, none",
                     "type": "string"
                 }
             }
@@ -11991,6 +13577,97 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/internal_api_v1_rules.RuleConfigUpdate"
                     }
+                }
+            }
+        },
+        "internal_api_v1_rules.ValidateRuleRequest": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_rules.ConditionRequest"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_v1_rules.ValidateRuleResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_rules.ValidationError"
+                    }
+                },
+                "is_valid": {
+                    "type": "boolean"
+                },
+                "preview": {
+                    "$ref": "#/definitions/internal_api_v1_rules.ValidationPreview"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_rules.ValidationWarning"
+                    }
+                }
+            }
+        },
+        "internal_api_v1_rules.ValidationError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "field": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_rules.ValidationPreview": {
+            "type": "object",
+            "properties": {
+                "conflicts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "estimated_matches": {
+                    "type": "integer"
+                },
+                "sample_mounts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_api_v1_rules.ValidationWarning": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "field": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },
@@ -12438,6 +14115,45 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_volumes.BulkDeleteVolumesRequest": {
+            "type": "object",
+            "required": [
+                "volume_ids"
+            ],
+            "properties": {
+                "volume_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_api_v1_volumes.BulkDeleteVolumesResponse": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "error": {
+                                "type": "string"
+                            },
+                            "volume_id": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "succeeded": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

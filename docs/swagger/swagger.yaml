@@ -961,90 +961,6 @@ definitions:
         example: network
         type: string
     type: object
-  duplicates.DetectionParameters:
-    properties:
-      include_empty:
-        example: false
-        type: boolean
-      max_size:
-        example: 104857600
-        type: integer
-      min_size:
-        example: 1048576
-        type: integer
-      path:
-        example: /movies
-        type: string
-      volume_id:
-        example: media-library
-        type: string
-    type: object
-  duplicates.DuplicateDetectionResponse:
-    properties:
-      groups:
-        items:
-          $ref: '#/definitions/duplicates.DuplicateGroup'
-        type: array
-      parameters:
-        $ref: '#/definitions/duplicates.DetectionParameters'
-      processing_time_ms:
-        type: integer
-      summary:
-        $ref: '#/definitions/duplicates.DuplicateSummary'
-      timestamp:
-        type: string
-    type: object
-  duplicates.DuplicateGroup:
-    properties:
-      count:
-        example: 3
-        type: integer
-      created_at:
-        type: string
-      files:
-        items:
-          $ref: '#/definitions/DuplicateFile'
-        type: array
-      hash:
-        example: d41d8cd98f00b204e9800998ecf8427e
-        type: string
-      id:
-        example: dup-1
-        type: string
-      size:
-        example: 2048000
-        type: integer
-      wasted_space:
-        example: 4096000
-        type: integer
-    type: object
-  duplicates.DuplicateSummary:
-    properties:
-      largest_group:
-        properties:
-          count:
-            example: 8
-            type: integer
-          id:
-            example: dup-5
-            type: string
-          wasted_space:
-            example: 134217728
-            type: integer
-        type: object
-      processed_files:
-        example: 10000
-        type: integer
-      total_duplicates:
-        example: 42
-        type: integer
-      total_groups:
-        example: 15
-        type: integer
-      total_wasted_space:
-        example: 536870912
-        type: integer
-    type: object
   gin.H:
     additionalProperties: {}
     type: object
@@ -1880,6 +1796,90 @@ definitions:
     - ModeWebSocket
     - ModePolling
     - ModeSSE
+  internal_api_v1_duplicates.DetectionParameters:
+    properties:
+      include_empty:
+        example: false
+        type: boolean
+      max_size:
+        example: 104857600
+        type: integer
+      min_size:
+        example: 1048576
+        type: integer
+      path:
+        example: /movies
+        type: string
+      volume_id:
+        example: media-library
+        type: string
+    type: object
+  internal_api_v1_duplicates.DuplicateDetectionResponse:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/internal_api_v1_duplicates.DuplicateGroup'
+        type: array
+      parameters:
+        $ref: '#/definitions/internal_api_v1_duplicates.DetectionParameters'
+      processing_time_ms:
+        type: integer
+      summary:
+        $ref: '#/definitions/internal_api_v1_duplicates.DuplicateSummary'
+      timestamp:
+        type: string
+    type: object
+  internal_api_v1_duplicates.DuplicateGroup:
+    properties:
+      count:
+        example: 3
+        type: integer
+      created_at:
+        type: string
+      files:
+        items:
+          $ref: '#/definitions/DuplicateFile'
+        type: array
+      hash:
+        example: d41d8cd98f00b204e9800998ecf8427e
+        type: string
+      id:
+        example: dup-1
+        type: string
+      size:
+        example: 2048000
+        type: integer
+      wasted_space:
+        example: 4096000
+        type: integer
+    type: object
+  internal_api_v1_duplicates.DuplicateSummary:
+    properties:
+      largest_group:
+        properties:
+          count:
+            example: 8
+            type: integer
+          id:
+            example: dup-5
+            type: string
+          wasted_space:
+            example: 134217728
+            type: integer
+        type: object
+      processed_files:
+        example: 10000
+        type: integer
+      total_duplicates:
+        example: 42
+        type: integer
+      total_groups:
+        example: 15
+        type: integer
+      total_wasted_space:
+        example: 536870912
+        type: integer
+    type: object
   internal_api_v1_explorer.AppliedFilters:
     description: Applied filters for the file query
     properties:
@@ -4053,7 +4053,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duplicates.DuplicateDetectionResponse'
+            $ref: '#/definitions/internal_api_v1_duplicates.DuplicateDetectionResponse'
         "400":
           description: Bad Request
           schema:
@@ -4105,7 +4105,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duplicates.DuplicateDetectionResponse'
+            $ref: '#/definitions/internal_api_v1_duplicates.DuplicateDetectionResponse'
         "400":
           description: Bad Request
           schema:
@@ -4135,14 +4135,14 @@ paths:
         name: group
         required: true
         schema:
-          $ref: '#/definitions/duplicates.DuplicateGroup'
+          $ref: '#/definitions/internal_api_v1_duplicates.DuplicateGroup'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duplicates.DuplicateGroup'
+            $ref: '#/definitions/internal_api_v1_duplicates.DuplicateGroup'
         "400":
           description: Bad Request
           schema:

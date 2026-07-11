@@ -1,5 +1,28 @@
 basePath: /api/v1
 definitions:
+  ActivityEventV1:
+    properties:
+      action:
+        example: volume.delete
+        type: string
+      id:
+        example: 42
+        type: integer
+      resource_id:
+        example: a1b2c3d4
+        type: string
+      resource_type:
+        example: volume
+        type: string
+      status:
+        enum:
+        - success
+        - failure
+        example: success
+        type: string
+      timestamp:
+        type: string
+    type: object
   AggregateMetadata:
     properties:
       cache_hit:
@@ -103,6 +126,60 @@ definitions:
         example: directory
         type: string
     type: object
+  AllVolumesTrendsSummaryV1:
+    properties:
+      average_growth_rate:
+        example: 4.8
+        type: number
+      generated_at:
+        type: string
+      period:
+        $ref: '#/definitions/TrendsPeriodV1'
+      total_storage_growth:
+        example: 12884901888
+        type: integer
+      total_volumes_tracked:
+        example: 12
+        type: integer
+      volumes:
+        items:
+          $ref: '#/definitions/VolumeTrendsSummaryEntryV1'
+        type: array
+      volumes_with_decline:
+        example: 1
+        type: integer
+      volumes_with_growth:
+        example: 9
+        type: integer
+    type: object
+  AppHealth:
+    properties:
+      checks:
+        $ref: '#/definitions/AppHealthChecks'
+      status:
+        enum:
+        - healthy
+        - degraded
+        example: healthy
+        type: string
+      timestamp:
+        type: integer
+      version:
+        $ref: '#/definitions/github_com_mantonx_volumeviz_internal_version.Info'
+    type: object
+  AppHealthChecks:
+    properties:
+      database:
+        $ref: '#/definitions/DatabaseHealth'
+      docker:
+        $ref: '#/definitions/DockerHealth'
+      events:
+        $ref: '#/definitions/EventsHealth'
+      migrations:
+        $ref: '#/definitions/MigrationsHealth'
+      scheduler:
+        $ref: '#/definitions/SchedulerHealth'
+    type: object
   AsyncScanResponse:
     properties:
       scan_id:
@@ -114,6 +191,60 @@ definitions:
       volume_id:
         example: tv-shows-readonly
         type: string
+    type: object
+  AuditLogEntryV1:
+    properties:
+      action:
+        example: volume.delete
+        type: string
+      details:
+        additionalProperties: true
+        type: object
+      email:
+        example: admin@example.com
+        type: string
+      id:
+        example: 42
+        type: integer
+      ip_address:
+        example: 192.168.1.100
+        type: string
+      resource_id:
+        example: a1b2c3d4
+        type: string
+      resource_type:
+        example: volume
+        type: string
+      status:
+        enum:
+        - success
+        - failure
+        example: success
+        type: string
+      timestamp:
+        type: string
+      user_id:
+        example: 7
+        type: integer
+      username:
+        example: admin
+        type: string
+    type: object
+  AuditLogSearchResponse:
+    properties:
+      limit:
+        example: 25
+        type: integer
+      logs:
+        items:
+          $ref: '#/definitions/AuditLogEntryV1'
+        type: array
+      offset:
+        example: 0
+        type: integer
+      total:
+        example: 128
+        type: integer
     type: object
   BulkScanRequest:
     properties:
@@ -132,6 +263,63 @@ definitions:
         type: array
     required:
     - volume_ids
+    type: object
+  CapacityForecastPointV1:
+    properties:
+      date:
+        type: string
+      projected_size_bytes:
+        example: 12884901888
+        type: integer
+    type: object
+  CapacityForecastV1:
+    properties:
+      current_size_bytes:
+        example: 10737418240
+        type: integer
+      daily_growth_bytes:
+        example: 104857600
+        type: number
+      days_until_capacity:
+        example: 42
+        type: integer
+      disk_available_bytes:
+        example: 114419344240
+        type: integer
+      series:
+        items:
+          $ref: '#/definitions/CapacityForecastPointV1'
+        type: array
+    type: object
+  DailyStatV1:
+    properties:
+      added_bytes:
+        example: 52428800
+        type: integer
+      added_files:
+        example: 12
+        type: integer
+      date:
+        example: "2026-07-10"
+        type: string
+      disk_available_bytes:
+        example: 114419344240
+        type: integer
+      disk_total_bytes:
+        example: 1000204886016
+        type: integer
+      files_count:
+        example: 4213
+        type: integer
+      removed_bytes:
+        example: 1048576
+        type: integer
+      removed_files:
+        example: 1
+        type: integer
+      total_bytes:
+        example: 10737418240
+        type: integer
     type: object
   DailyStats:
     properties:
@@ -155,6 +343,21 @@ definitions:
         type: integer
       volume_id:
         example: tv-shows-readonly
+        type: string
+    type: object
+  DatabaseHealth:
+    properties:
+      error:
+        type: string
+      status:
+        enum:
+        - healthy
+        - unhealthy
+        - unknown
+        example: healthy
+        type: string
+      type:
+        example: store-managed
         type: string
     type: object
   DockerHealth:
@@ -209,6 +412,42 @@ definitions:
     properties:
       error:
         example: Invalid request
+        type: string
+    type: object
+  EventsHealth:
+    properties:
+      connected:
+        type: boolean
+      dropped_total:
+        type: integer
+      errors_total:
+        type: integer
+      last_event_age_seconds:
+        type: integer
+      last_event_timestamp:
+        type: integer
+      last_reconnect_timestamp:
+        type: integer
+      message:
+        type: string
+      processed_total:
+        type: integer
+      queue_size:
+        type: integer
+      reconciliation_runs:
+        additionalProperties:
+          format: int64
+          type: integer
+        type: object
+      reconnects_total:
+        type: integer
+      status:
+        enum:
+        - healthy
+        - degraded
+        - unhealthy
+        - not_configured
+        example: healthy
         type: string
     type: object
   ExtensionOption:
@@ -462,6 +701,31 @@ definitions:
         example: 5368709120
         type: integer
     type: object
+  ListPermissionsResponse:
+    properties:
+      actions:
+        example:
+        - read
+        - write
+        - delete
+        items:
+          type: string
+        type: array
+      resources:
+        example:
+        - volumes
+        - scans
+        - files
+        - users
+        - organizations
+        items:
+          type: string
+        type: array
+      roles:
+        items:
+          $ref: '#/definitions/RolePermissionsV1'
+        type: array
+    type: object
   MediaCapabilitiesResponse:
     properties:
       enabled:
@@ -571,6 +835,24 @@ definitions:
         example: tv-shows
         type: string
     type: object
+  MediaKindCompositionV1:
+    properties:
+      date:
+        example: "2026-07-10"
+        type: string
+      files_count:
+        example: 812
+        type: integer
+      media_kind:
+        example: video
+        type: string
+      percent_of_volume:
+        example: "42.5"
+        type: string
+      total_bytes:
+        example: 8589934592
+        type: integer
+    type: object
   MediaKindOption:
     properties:
       file_count:
@@ -581,6 +863,12 @@ definitions:
         type: string
       value:
         example: video
+        type: string
+    type: object
+  MigrationsHealth:
+    properties:
+      status:
+        example: store-managed
         type: string
     type: object
   MimeTypeOption:
@@ -699,6 +987,13 @@ definitions:
         example: 1234
         type: integer
     type: object
+  RecentActivityResponse:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/ActivityEventV1'
+        type: array
+    type: object
   RefreshRequest:
     properties:
       async:
@@ -706,6 +1001,27 @@ definitions:
         type: boolean
       method:
         example: du
+        type: string
+    type: object
+  RolePermissionsV1:
+    properties:
+      grants:
+        additionalProperties:
+          type: boolean
+        description: |-
+          Grants maps "resource:action" (e.g. "volumes:write") to whether the
+          role currently holds that grant
+        type: object
+      org_grants:
+        additionalProperties:
+          type: boolean
+        description: |-
+          OrgGrants lists which "resource:action" keys are org-specific
+          overrides (toggleable) rather than global built-in defaults
+          (read-only from this API - see PUT /api/v1/permissions)
+        type: object
+      role:
+        example: operator
         type: string
     type: object
   RollbackFailure:
@@ -802,6 +1118,56 @@ definitions:
         example: tv-shows-readonly
         type: string
     type: object
+  SchedulerHealth:
+    properties:
+      active_scans:
+        type: integer
+      completed_by_status:
+        additionalProperties:
+          format: int64
+          type: integer
+        type: object
+      error_counts:
+        additionalProperties:
+          format: int64
+          type: integer
+        type: object
+      last_run_age_seconds:
+        type: integer
+      last_run_timestamp:
+        type: integer
+      message:
+        type: string
+      next_run_in_seconds:
+        type: integer
+      next_run_timestamp:
+        type: integer
+      queue_depth:
+        type: integer
+      running:
+        type: boolean
+      scan_durations_avg:
+        additionalProperties:
+          format: float64
+          type: number
+        type: object
+      status:
+        enum:
+        - healthy
+        - degraded
+        - stopped
+        - not_configured
+        example: healthy
+        type: string
+      total_completed:
+        type: integer
+      total_failed:
+        type: integer
+      worker_count:
+        type: integer
+      worker_utilization:
+        type: number
+    type: object
   StatsSummary:
     properties:
       average_growth:
@@ -824,6 +1190,104 @@ definitions:
         example: 1073741824
         type: integer
     type: object
+  SystemConfigAlerts:
+    properties:
+      enabled:
+        example: false
+        type: boolean
+      evaluation_interval_minutes:
+        example: 1
+        type: integer
+    type: object
+  SystemConfigAuth:
+    properties:
+      enabled:
+        example: true
+        type: boolean
+    type: object
+  SystemConfigCORS:
+    properties:
+      allowed_origins:
+        example:
+        - http://localhost:3000
+        items:
+          type: string
+        type: array
+    type: object
+  SystemConfigRateLimit:
+    properties:
+      burst:
+        example: 30
+        type: integer
+      enabled:
+        example: true
+        type: boolean
+      requests_per_minute:
+        example: 60
+        type: integer
+    type: object
+  SystemConfigResponse:
+    properties:
+      alerts:
+        $ref: '#/definitions/SystemConfigAlerts'
+      auth:
+        $ref: '#/definitions/SystemConfigAuth'
+      cors:
+        $ref: '#/definitions/SystemConfigCORS'
+      rate_limit:
+        $ref: '#/definitions/SystemConfigRateLimit'
+      retention:
+        $ref: '#/definitions/SystemConfigRetention'
+      scan:
+        $ref: '#/definitions/SystemConfigScan'
+      server:
+        $ref: '#/definitions/SystemConfigServer'
+    type: object
+  SystemConfigRetention:
+    properties:
+      enabled:
+        example: true
+        type: boolean
+      file_metadata_days:
+        example: 180
+        type: integer
+      inactive_files_days:
+        example: 60
+        type: integer
+      scan_jobs_days:
+        example: 30
+        type: integer
+      scan_metrics_days:
+        example: 90
+        type: integer
+      scan_phases_days:
+        example: 7
+        type: integer
+    type: object
+  SystemConfigScan:
+    properties:
+      bind_mounts_enabled:
+        example: false
+        type: boolean
+      concurrency:
+        example: 3
+        type: integer
+      enabled:
+        example: true
+        type: boolean
+      interval_seconds:
+        example: 21600
+        type: integer
+    type: object
+  SystemConfigServer:
+    properties:
+      database_type:
+        example: postgres
+        type: string
+      mode:
+        example: release
+        type: string
+    type: object
   TopFoldersResponse:
     properties:
       folders:
@@ -833,6 +1297,132 @@ definitions:
       volume_id:
         example: tv-shows-readonly
         type: string
+    type: object
+  TopGrowingFolderV1:
+    properties:
+      avg_daily_added_bytes:
+        type: string
+      days_tracked:
+        example: 30
+        type: integer
+      folder_id:
+        type: integer
+      folder_name:
+        example: movies
+        type: string
+      folder_path:
+        example: /data/movies
+        type: string
+      total_added_bytes:
+        example: 5368709120
+        type: integer
+      total_added_files:
+        example: 8
+        type: integer
+    type: object
+  TrendAnalysisV1:
+    properties:
+      bytes_change_7d:
+        example: 104857600
+        type: integer
+      bytes_change_30d:
+        example: 524288000
+        type: integer
+      bytes_growth_rate_7d:
+        example: "1.2"
+        type: string
+      bytes_growth_rate_30d:
+        example: "5.4"
+        type: string
+      date:
+        example: "2026-07-10"
+        type: string
+      files_change_7d:
+        example: 12
+        type: integer
+      files_change_30d:
+        example: 64
+        type: integer
+      files_count:
+        example: 4213
+        type: integer
+      total_bytes:
+        example: 10737418240
+        type: integer
+    type: object
+  TrendsPeriodV1:
+    properties:
+      days:
+        example: 30
+        type: integer
+      end:
+        type: string
+      start:
+        type: string
+    type: object
+  TrendsSummaryStatsV1:
+    properties:
+      avg_daily_growth_bytes:
+        example: 3.579139413e+07
+        type: number
+      avg_daily_growth_files:
+        example: 4
+        type: number
+      current_files:
+        example: 4213
+        type: integer
+      current_size:
+        example: 10737418240
+        type: integer
+      total_growth_bytes:
+        example: 1073741824
+        type: integer
+      total_growth_files:
+        example: 120
+        type: integer
+    type: object
+  UpdatePermissionRequest:
+    properties:
+      action:
+        enum:
+        - read
+        - write
+        - delete
+        example: write
+        type: string
+      granted:
+        example: true
+        type: boolean
+      resource:
+        example: volumes
+        type: string
+      role:
+        enum:
+        - admin
+        - operator
+        - user
+        - viewer
+        example: operator
+        type: string
+    required:
+    - action
+    - resource
+    - role
+    type: object
+  VolumeListSummaryV1:
+    properties:
+      orphaned_volumes:
+        example: 12
+        type: integer
+      total_size_bytes:
+        example: 483183820800
+        type: integer
+      total_volumes:
+        example: 142
+        type: integer
+      tracked_volumes:
+        example: 87
+        type: integer
     type: object
   VolumeStatsResponse:
     properties:
@@ -853,6 +1443,79 @@ definitions:
       volume_id:
         example: tv-shows-readonly
         type: string
+    type: object
+  VolumeTrendsDataPointV1:
+    properties:
+      date:
+        example: "2026-07-10"
+        type: string
+      file_count:
+        example: 4213
+        type: integer
+      total_size:
+        example: 10737418240
+        type: integer
+    type: object
+  VolumeTrendsDataV1:
+    properties:
+      aggregation:
+        enum:
+        - day
+        - week
+        - month
+        example: day
+        type: string
+      capacity_forecast:
+        $ref: '#/definitions/CapacityForecastV1'
+      daily_stats:
+        items:
+          $ref: '#/definitions/DailyStatV1'
+        type: array
+      generated_at:
+        type: string
+      media_composition:
+        items:
+          $ref: '#/definitions/MediaKindCompositionV1'
+        type: array
+      period:
+        $ref: '#/definitions/TrendsPeriodV1'
+      summary:
+        $ref: '#/definitions/TrendsSummaryStatsV1'
+      top_growing_folders:
+        items:
+          $ref: '#/definitions/TopGrowingFolderV1'
+        type: array
+      trend_analysis:
+        items:
+          $ref: '#/definitions/TrendAnalysisV1'
+        type: array
+      volume_id:
+        example: a1b2c3d4
+        type: string
+    type: object
+  VolumeTrendsSummaryEntryV1:
+    properties:
+      data_points:
+        items:
+          $ref: '#/definitions/VolumeTrendsDataPointV1'
+        type: array
+      statistics:
+        $ref: '#/definitions/VolumeTrendsSummaryStatsV1'
+      volume_id:
+        example: a1b2c3d4
+        type: string
+    type: object
+  VolumeTrendsSummaryStatsV1:
+    properties:
+      current_size:
+        example: 10737418240
+        type: integer
+      growth_rate_percent:
+        example: 5.2
+        type: number
+      total_growth:
+        example: 1073741824
+        type: integer
     type: object
   VolumeV1:
     properties:
@@ -961,88 +1624,24 @@ definitions:
         example: network
         type: string
     type: object
-  duplicates.DetectionParameters:
+  VolumesListResponse:
     properties:
-      include_empty:
-        example: false
-        type: boolean
-      max_size:
-        example: 104857600
-        type: integer
-      min_size:
-        example: 1048576
-        type: integer
-      path:
-        example: /movies
-        type: string
-      volume_id:
-        example: media-library
-        type: string
-    type: object
-  duplicates.DuplicateDetectionResponse:
-    properties:
-      groups:
+      data:
         items:
-          $ref: '#/definitions/duplicates.DuplicateGroup'
+          $ref: '#/definitions/VolumeV1'
         type: array
-      parameters:
-        $ref: '#/definitions/duplicates.DetectionParameters'
-      processing_time_ms:
-        type: integer
-      summary:
-        $ref: '#/definitions/duplicates.DuplicateSummary'
-      timestamp:
-        type: string
-    type: object
-  duplicates.DuplicateGroup:
-    properties:
-      count:
-        example: 3
-        type: integer
-      created_at:
-        type: string
-      files:
-        items:
-          $ref: '#/definitions/DuplicateFile'
-        type: array
-      hash:
-        example: d41d8cd98f00b204e9800998ecf8427e
-        type: string
-      id:
-        example: dup-1
-        type: string
-      size:
-        example: 2048000
-        type: integer
-      wasted_space:
-        example: 4096000
-        type: integer
-    type: object
-  duplicates.DuplicateSummary:
-    properties:
-      largest_group:
-        properties:
-          count:
-            example: 8
-            type: integer
-          id:
-            example: dup-5
-            type: string
-          wasted_space:
-            example: 134217728
-            type: integer
+      filters:
+        additionalProperties: true
         type: object
-      processed_files:
-        example: 10000
+      page:
         type: integer
-      total_duplicates:
-        example: 42
+      page_size:
         type: integer
-      total_groups:
-        example: 15
-        type: integer
-      total_wasted_space:
-        example: 536870912
+      sort:
+        type: string
+      summary:
+        $ref: '#/definitions/VolumeListSummaryV1'
+      total:
         type: integer
     type: object
   gin.H:
@@ -1808,6 +2407,21 @@ definitions:
         format: int64
         type: integer
     type: object
+  github_com_mantonx_volumeviz_internal_version.Info:
+    properties:
+      build_date:
+        type: string
+      git_branch:
+        type: string
+      git_commit:
+        type: string
+      go_version:
+        type: string
+      platform:
+        type: string
+      version:
+        type: string
+    type: object
   internal_api_v1_auth.AuthResponse:
     properties:
       token:
@@ -1826,6 +2440,17 @@ definitions:
     required:
     - password
     - username
+    type: object
+  internal_api_v1_auth.PasswordChangeRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+    required:
+    - current_password
+    - new_password
     type: object
   internal_api_v1_auth.RegisterRequest:
     properties:
@@ -1880,6 +2505,90 @@ definitions:
     - ModeWebSocket
     - ModePolling
     - ModeSSE
+  internal_api_v1_duplicates.DetectionParameters:
+    properties:
+      include_empty:
+        example: false
+        type: boolean
+      max_size:
+        example: 104857600
+        type: integer
+      min_size:
+        example: 1048576
+        type: integer
+      path:
+        example: /movies
+        type: string
+      volume_id:
+        example: media-library
+        type: string
+    type: object
+  internal_api_v1_duplicates.DuplicateDetectionResponse:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/internal_api_v1_duplicates.DuplicateGroup'
+        type: array
+      parameters:
+        $ref: '#/definitions/internal_api_v1_duplicates.DetectionParameters'
+      processing_time_ms:
+        type: integer
+      summary:
+        $ref: '#/definitions/internal_api_v1_duplicates.DuplicateSummary'
+      timestamp:
+        type: string
+    type: object
+  internal_api_v1_duplicates.DuplicateGroup:
+    properties:
+      count:
+        example: 3
+        type: integer
+      created_at:
+        type: string
+      files:
+        items:
+          $ref: '#/definitions/DuplicateFile'
+        type: array
+      hash:
+        example: d41d8cd98f00b204e9800998ecf8427e
+        type: string
+      id:
+        example: dup-1
+        type: string
+      size:
+        example: 2048000
+        type: integer
+      wasted_space:
+        example: 4096000
+        type: integer
+    type: object
+  internal_api_v1_duplicates.DuplicateSummary:
+    properties:
+      largest_group:
+        properties:
+          count:
+            example: 8
+            type: integer
+          id:
+            example: dup-5
+            type: string
+          wasted_space:
+            example: 134217728
+            type: integer
+        type: object
+      processed_files:
+        example: 10000
+        type: integer
+      total_duplicates:
+        example: 42
+        type: integer
+      total_groups:
+        example: 15
+        type: integer
+      total_wasted_space:
+        example: 536870912
+        type: integer
+    type: object
   internal_api_v1_explorer.AppliedFilters:
     description: Applied filters for the file query
     properties:
@@ -2693,6 +3402,39 @@ definitions:
     - conditions
     - name
     type: object
+  internal_api_v1_rules.FieldDefinition:
+    properties:
+      description:
+        type: string
+      display_name:
+        type: string
+      name:
+        type: string
+      operators:
+        description: Available operators for this field
+        items:
+          type: string
+        type: array
+      type:
+        description: string, boolean, number
+        type: string
+      values:
+        description: For enum-like fields
+        items:
+          type: string
+        type: array
+    type: object
+  internal_api_v1_rules.GetSchemaResponse:
+    properties:
+      fields:
+        items:
+          $ref: '#/definitions/internal_api_v1_rules.FieldDefinition'
+        type: array
+      operators:
+        items:
+          $ref: '#/definitions/internal_api_v1_rules.OperatorDefinition'
+        type: array
+    type: object
   internal_api_v1_rules.ListMountOverridesResponse:
     properties:
       overrides:
@@ -2735,6 +3477,18 @@ definitions:
       reason:
         type: string
       updated_at:
+        type: string
+    type: object
+  internal_api_v1_rules.OperatorDefinition:
+    properties:
+      description:
+        type: string
+      display_name:
+        type: string
+      name:
+        type: string
+      value_type:
+        description: single, multiple, none
         type: string
     type: object
   internal_api_v1_rules.RuleConfigUpdate:
@@ -2880,6 +3634,65 @@ definitions:
         type: array
     required:
     - rules
+    type: object
+  internal_api_v1_rules.ValidateRuleRequest:
+    properties:
+      action:
+        type: string
+      conditions:
+        items:
+          $ref: '#/definitions/internal_api_v1_rules.ConditionRequest'
+        type: array
+      name:
+        type: string
+      priority:
+        type: integer
+    type: object
+  internal_api_v1_rules.ValidateRuleResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/internal_api_v1_rules.ValidationError'
+        type: array
+      is_valid:
+        type: boolean
+      preview:
+        $ref: '#/definitions/internal_api_v1_rules.ValidationPreview'
+      warnings:
+        items:
+          $ref: '#/definitions/internal_api_v1_rules.ValidationWarning'
+        type: array
+    type: object
+  internal_api_v1_rules.ValidationError:
+    properties:
+      code:
+        type: string
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  internal_api_v1_rules.ValidationPreview:
+    properties:
+      conflicts:
+        items:
+          type: string
+        type: array
+      estimated_matches:
+        type: integer
+      sample_mounts:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_api_v1_rules.ValidationWarning:
+    properties:
+      code:
+        type: string
+      field:
+        type: string
+      message:
+        type: string
     type: object
   internal_api_v1_search.CreateSavedSearchRequest:
     properties:
@@ -3192,6 +4005,31 @@ definitions:
       username:
         type: string
     type: object
+  internal_api_v1_volumes.BulkDeleteVolumesRequest:
+    properties:
+      volume_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - volume_ids
+    type: object
+  internal_api_v1_volumes.BulkDeleteVolumesResponse:
+    properties:
+      failed:
+        items:
+          properties:
+            error:
+              type: string
+            volume_id:
+              type: string
+          type: object
+        type: array
+      succeeded:
+        items:
+          type: string
+        type: array
+    type: object
   internal_api_v1_volumes.BulkTrackVolumesRequest:
     properties:
       volume_ids:
@@ -3325,7 +4163,33 @@ info:
   title: VolumeViz API
   version: "1.0"
 paths:
-  /alerts:
+  /api/v1/activity/recent:
+    get:
+      consumes:
+      - application/json
+      description: Get the most recent audit-log events (volume operations, tracking
+        changes, etc.) for the current organization
+      parameters:
+      - description: Number of events to return (default 10, max 50)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/RecentActivityResponse'
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get recent activity
+      tags:
+      - activity
+  /api/v1/alerts:
     get:
       consumes:
       - application/json
@@ -3361,7 +4225,7 @@ paths:
       summary: List alerts
       tags:
       - alerts
-  /alerts/{id}:
+  /api/v1/alerts/{id}:
     get:
       consumes:
       - application/json
@@ -3390,7 +4254,7 @@ paths:
       summary: Get alert
       tags:
       - alerts
-  /alerts/deliveries:
+  /api/v1/alerts/deliveries:
     get:
       consumes:
       - application/json
@@ -3430,7 +4294,7 @@ paths:
       summary: Get delivery history
       tags:
       - alerts
-  /alerts/destinations:
+  /api/v1/alerts/destinations:
     get:
       consumes:
       - application/json
@@ -3491,7 +4355,7 @@ paths:
       summary: Create alert destination
       tags:
       - alerts
-  /alerts/destinations/{id}:
+  /api/v1/alerts/destinations/{id}:
     delete:
       consumes:
       - application/json
@@ -3584,7 +4448,7 @@ paths:
       summary: Update alert destination
       tags:
       - alerts
-  /alerts/destinations/{id}/test:
+  /api/v1/alerts/destinations/{id}/test:
     post:
       consumes:
       - application/json
@@ -3623,7 +4487,7 @@ paths:
       summary: Test alert destination
       tags:
       - alerts
-  /alerts/engine/evaluate:
+  /api/v1/alerts/engine/evaluate:
     post:
       consumes:
       - application/json
@@ -3642,7 +4506,7 @@ paths:
       summary: Trigger alert evaluation
       tags:
       - alerts
-  /alerts/engine/status:
+  /api/v1/alerts/engine/status:
     get:
       consumes:
       - application/json
@@ -3661,7 +4525,7 @@ paths:
       summary: Get alerts engine status
       tags:
       - alerts
-  /alerts/routes:
+  /api/v1/alerts/routes:
     get:
       consumes:
       - application/json
@@ -3722,7 +4586,7 @@ paths:
       summary: Create alert route
       tags:
       - alerts
-  /alerts/routes/{id}:
+  /api/v1/alerts/routes/{id}:
     delete:
       consumes:
       - application/json
@@ -3815,7 +4679,7 @@ paths:
       summary: Update alert route
       tags:
       - alerts
-  /alerts/rules:
+  /api/v1/alerts/rules:
     get:
       consumes:
       - application/json
@@ -3876,7 +4740,7 @@ paths:
       summary: Create alert rule
       tags:
       - alerts
-  /alerts/rules/{id}:
+  /api/v1/alerts/rules/{id}:
     delete:
       consumes:
       - application/json
@@ -3969,7 +4833,7 @@ paths:
       summary: Update alert rule
       tags:
       - alerts
-  /alerts/rules/{id}/test:
+  /api/v1/alerts/rules/{id}/test:
     post:
       consumes:
       - application/json
@@ -3998,6 +4862,205 @@ paths:
       summary: Test alert rule
       tags:
       - alerts
+  /api/v1/audit-logs:
+    get:
+      consumes:
+      - application/json
+      description: Search and filter audit-log events (who did what, when) for the
+        current organization. Admin only.
+      parameters:
+      - description: Filter by exact action name (e.g. volume.delete)
+        in: query
+        name: action
+        type: string
+      - description: Filter by status (success, failure)
+        in: query
+        name: status
+        type: string
+      - description: Free-text search across username, action, and details
+        in: query
+        name: search
+        type: string
+      - description: Number of entries to return (default 25, max 200)
+        in: query
+        name: limit
+        type: integer
+      - description: Number of entries to skip for pagination
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AuditLogSearchResponse'
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Search audit logs
+      tags:
+      - audit-logs
+  /api/v1/audit-logs/export:
+    get:
+      consumes:
+      - application/json
+      description: Export filtered audit-log events for the current organization as
+        a CSV file. Admin only.
+      parameters:
+      - description: Filter by exact action name (e.g. volume.delete)
+        in: query
+        name: action
+        type: string
+      - description: Filter by status (success, failure)
+        in: query
+        name: status
+        type: string
+      - description: Free-text search across username, action, and details
+        in: query
+        name: search
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV file
+          schema:
+            type: file
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Export audit logs as CSV
+      tags:
+      - audit-logs
+  /api/v1/auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Change the current user's password. Requires the current password
+        for verification.
+      parameters:
+      - description: Current and new password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.PasswordChangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Not authenticated, or current password is incorrect
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Change password
+      tags:
+      - auth
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and get JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login
+      tags:
+      - auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: Registration details
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register
+      tags:
+      - auth
   /api/v1/diag/realtime:
     get:
       consumes:
@@ -4053,7 +5116,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duplicates.DuplicateDetectionResponse'
+            $ref: '#/definitions/internal_api_v1_duplicates.DuplicateDetectionResponse'
         "400":
           description: Bad Request
           schema:
@@ -4105,7 +5168,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duplicates.DuplicateDetectionResponse'
+            $ref: '#/definitions/internal_api_v1_duplicates.DuplicateDetectionResponse'
         "400":
           description: Bad Request
           schema:
@@ -4135,14 +5198,14 @@ paths:
         name: group
         required: true
         schema:
-          $ref: '#/definitions/duplicates.DuplicateGroup'
+          $ref: '#/definitions/internal_api_v1_duplicates.DuplicateGroup'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duplicates.DuplicateGroup'
+            $ref: '#/definitions/internal_api_v1_duplicates.DuplicateGroup'
         "400":
           description: Bad Request
           schema:
@@ -4697,6 +5760,154 @@ paths:
       summary: Get tree children
       tags:
       - Explorer
+  /api/v1/files/{file_id}/preview:
+    get:
+      consumes:
+      - application/json
+      description: Get existing preview or generate new preview for a specific file
+      parameters:
+      - description: File ID
+        in: path
+        name: file_id
+        required: true
+        type: integer
+      - default: thumbnail
+        description: Preview type
+        enum:
+        - thumbnail
+        - poster
+        - cover
+        in: query
+        name: type
+        type: string
+      - default: medium
+        description: Preview size
+        enum:
+        - small
+        - medium
+        - large
+        in: query
+        name: size
+        type: string
+      - description: Time offset for video thumbnails (e.g., '5.0' for 5 seconds)
+        in: query
+        name: offset
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Preview file data
+          schema:
+            type: file
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: File not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get or generate preview by file ID
+      tags:
+      - previews
+  /api/v1/files/{id}/details:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive information about a specific file including metadata
+      parameters:
+      - description: File ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/FileDetailsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get file details
+      tags:
+      - files
+  /api/v1/files/{id}/metadata:
+    get:
+      consumes:
+      - application/json
+      description: Get enriched metadata for a specific file (media properties, EXIF,
+        etc.)
+      parameters:
+      - description: File ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Metadata kind filter
+        enum:
+        - media
+        - exif
+        - ffmpeg
+        in: query
+        name: kind
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/FileMetadataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
+      summary: Get file metadata
+      tags:
+      - files
+  /api/v1/filesystem/capabilities:
+    get:
+      consumes:
+      - application/json
+      description: Get information about filesystem indexing capabilities and configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/FilesystemCapabilitiesResponse'
+      summary: Get filesystem indexing capabilities
+      tags:
+      - filesystem
   /api/v1/fs/aggregate:
     get:
       consumes:
@@ -4760,6 +5971,117 @@ paths:
       summary: Get aggregated file system data
       tags:
       - Explorer
+  /api/v1/health:
+    get:
+      consumes:
+      - application/json
+      description: Aggregates Docker, database, events, and scheduler health into
+        one overall status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AppHealth'
+        "206":
+          description: Partial Content
+          schema:
+            $ref: '#/definitions/AppHealth'
+      summary: Check overall application health
+      tags:
+      - health
+  /api/v1/health/database:
+    get:
+      consumes:
+      - application/json
+      description: Get database connection status via store interface
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/DatabaseHealth'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/DatabaseHealth'
+      summary: Check database health
+      tags:
+      - health
+  /api/v1/health/docker:
+    get:
+      consumes:
+      - application/json
+      description: Get Docker daemon connection status and version information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/DockerHealth'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Check Docker health
+      tags:
+      - health
+  /api/v1/health/events:
+    get:
+      consumes:
+      - application/json
+      description: Get Docker events service status and metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/EventsHealth'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/EventsHealth'
+      summary: Check Docker events health
+      tags:
+      - health
+  /api/v1/health/scheduler:
+    get:
+      consumes:
+      - application/json
+      description: Get scan scheduler status and metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SchedulerHealth'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/SchedulerHealth'
+      summary: Check scan scheduler health
+      tags:
+      - health
+  /api/v1/media/capabilities:
+    get:
+      consumes:
+      - application/json
+      description: Get information about available media enrichers and their capabilities
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MediaCapabilitiesResponse'
+      summary: Get media enrichment capabilities
+      tags:
+      - media
   /api/v1/metadata/files/by-duration:
     get:
       consumes:
@@ -5411,7 +6733,143 @@ paths:
       summary: Cleanup backup files
       tags:
       - operations
+  /api/v1/organizations:
+    get:
+      consumes:
+      - application/json
+      description: List all organizations in the system (admin only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 25
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of organizations
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List all organizations
+      tags:
+      - organizations
+    post:
+      consumes:
+      - application/json
+      description: Create a new organization (admin only)
+      parameters:
+      - description: Organization creation details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_organizations.CreateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created organization
+          schema:
+            $ref: '#/definitions/internal_api_v1_organizations.OrganizationResponse'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin required
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - organization already exists
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create organization
+      tags:
+      - organizations
   /api/v1/organizations/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an organization by ID (admin only)
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Organization deleted successfully
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Organization not found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - organization has users or volumes
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete organization
+      tags:
+      - organizations
     get:
       consumes:
       - application/json
@@ -5440,6 +6898,57 @@ paths:
             additionalProperties: true
             type: object
       summary: Get organization by ID
+      tags:
+      - organizations
+    put:
+      consumes:
+      - application/json
+      description: Update organization details by ID (admin only)
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Organization update details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_organizations.UpdateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated organization
+          schema:
+            $ref: '#/definitions/internal_api_v1_organizations.OrganizationResponse'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Organization not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update organization
       tags:
       - organizations
   /api/v1/organizations/{id}/stats:
@@ -5555,6 +7064,268 @@ paths:
       summary: Update current organization
       tags:
       - organizations
+  /api/v1/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get the full permission matrix (which roles can do what) for the
+        current organization, including org-specific overrides and global defaults.
+        Admin only.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ListPermissionsResponse'
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List roles and permissions
+      tags:
+      - permissions
+    put:
+      consumes:
+      - application/json
+      description: Grant or revoke an org-scoped permission for a role. Global/built-in
+        default grants cannot be revoked here. Admin only.
+      parameters:
+      - description: Permission update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Cannot revoke a global default permission
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update a role permission
+      tags:
+      - permissions
+  /api/v1/previews:
+    post:
+      consumes:
+      - application/json
+      description: Generate a new preview (thumbnail, poster, or cover) for a file
+      parameters:
+      - description: Preview generation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_previews.PreviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Preview generated successfully
+          schema:
+            $ref: '#/definitions/internal_api_v1_previews.PreviewResponse'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Generate preview
+      tags:
+      - previews
+  /api/v1/previews/{file_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all previews for a specific file
+      parameters:
+      - description: File ID
+        in: path
+        name: file_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Previews deleted successfully
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete preview
+      tags:
+      - previews
+    get:
+      consumes:
+      - application/json
+      description: Serve a preview file by file ID
+      parameters:
+      - description: File ID
+        in: path
+        name: file_id
+        required: true
+        type: integer
+      - description: Preview type
+        enum:
+        - thumbnail
+        - poster
+        - cover
+        in: query
+        name: type
+        type: string
+      - description: Preview size
+        enum:
+        - small
+        - medium
+        - large
+        in: query
+        name: size
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Preview file data
+          schema:
+            type: file
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Preview not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get preview file
+      tags:
+      - previews
+  /api/v1/previews/health:
+    get:
+      consumes:
+      - application/json
+      description: Check the health status of the preview service and its dependencies
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service health status
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Preview service health check
+      tags:
+      - previews
+  /api/v1/previews/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics about preview generation and usage
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Preview statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get preview statistics
+      tags:
+      - previews
+  /api/v1/previews/supported:
+    get:
+      consumes:
+      - application/json
+      description: Get list of supported media types for preview generation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Supported media types
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get supported media types
+      tags:
+      - previews
+  /api/v1/reports/orphaned:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of volumes that are not attached to any containers
+      parameters:
+      - description: 'Page number for pagination (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 25, max: 100)'
+        in: query
+        name: page_size
+        type: integer
+      - description: 'Sort field and direction (e.g., ''name:asc'', ''size_bytes:desc'').
+          Available fields: name, size_bytes, created_at'
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of orphaned volumes
+          schema:
+            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get orphaned volumes
+      tags:
+      - volumes
   /api/v1/rules:
     get:
       description: Lists all tracking rules with optional filtering by enabled status
@@ -5760,6 +7531,20 @@ paths:
       summary: Enable a tracking rule
       tags:
       - tracking-rules
+  /api/v1/rules/schema:
+    get:
+      description: Returns the fields and operators available for building tracking-rule
+        conditions, for use in a dynamic rule-creation form
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_rules.GetSchemaResponse'
+      summary: Get rule builder schema
+      tags:
+      - tracking-rules
   /api/v1/rules/templates:
     get:
       description: Lists available rule templates for quick rule creation
@@ -5782,6 +7567,213 @@ paths:
       summary: Get rule templates
       tags:
       - tracking-rules
+  /api/v1/rules/validate:
+    post:
+      consumes:
+      - application/json
+      description: Validates a rule's name, action, priority, and conditions (including
+        field/operator compatibility and regex syntax) without persisting it
+      parameters:
+      - description: Rule to validate
+        in: body
+        name: rule
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_rules.ValidateRuleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_v1_rules.ValidateRuleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Validate a tracking rule
+      tags:
+      - tracking-rules
+  /api/v1/scans/{id}/status:
+    get:
+      consumes:
+      - application/json
+      description: Get the status of a volume scan by volume ID or scan ID
+      parameters:
+      - description: Volume ID or Scan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Scan status information
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Scan not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get scan status
+      tags:
+      - scan
+  /api/v1/scans/{scanId}/errors:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed error information for a scan with filtering and pagination
+      parameters:
+      - description: Scan ID
+        in: path
+        name: scanId
+        required: true
+        type: string
+      - description: Filter by phase name
+        in: query
+        name: phase
+        type: string
+      - description: Filter by error type
+        in: query
+        name: error_type
+        type: string
+      - description: 'Limit number of results (default: 50)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Offset for pagination (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Scan errors with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get scan errors
+      tags:
+      - scan
+  /api/v1/scans/{scanId}/progress:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive progress information including phases, sub-phases,
+        items, errors, and confidence indicators
+      parameters:
+      - description: Scan ID
+        in: path
+        name: scanId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Comprehensive scan progress with sub-phase details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get detailed scan progress with sub-phase information
+      tags:
+      - scan
+  /api/v1/scans/active:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all currently active/running scans
+      parameters:
+      - description: 'Limit number of results (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Offset for pagination (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Active scans with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get active scans
+      tags:
+      - scan
+  /api/v1/scans/recent-errors:
+    get:
+      consumes:
+      - application/json
+      description: Get recent scan errors across all scans with filtering
+      parameters:
+      - description: 'Hours back to search (default: 24)'
+        in: query
+        name: hours
+        type: integer
+      - description: Filter by error type
+        in: query
+        name: error_type
+        type: string
+      - description: Filter by phase name
+        in: query
+        name: phase
+        type: string
+      - description: 'Limit number of results (default: 50)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Recent scan errors
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get recent scan errors
+      tags:
+      - scan
   /api/v1/scheduler/jobs:
     get:
       description: Get status information for all scheduled jobs
@@ -6182,6 +8174,294 @@ paths:
       summary: Get search suggestions
       tags:
       - Search
+  /api/v1/snapshots/stats:
+    get:
+      description: Get aggregate statistics about volume snapshots
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get snapshot statistics
+      tags:
+      - snapshots
+  /api/v1/snapshots/volumes/{volume_id}:
+    get:
+      description: Get snapshot history for a specific volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: volume_id
+        required: true
+        type: string
+      - default: 10
+        description: Limit number of results
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get volume snapshots
+      tags:
+      - snapshots
+  /api/v1/snapshots/volumes/{volume_id}/latest:
+    get:
+      description: Get the most recent snapshot for a specific volume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: volume_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get latest snapshot
+      tags:
+      - snapshots
+  /api/v1/stats/daily:
+    get:
+      consumes:
+      - application/json
+      description: Get daily aggregated statistics for a volume
+      parameters:
+      - description: Volume ID
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: Number of days to retrieve
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/VolumeStatsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get daily stats
+      tags:
+      - stats
+  /api/v1/stats/media:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics aggregated by media type (images, videos, documents,
+        etc.)
+      parameters:
+      - description: Volume ID
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Media statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get media statistics
+      tags:
+      - stats
+  /api/v1/stats/storage:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed storage usage statistics including size distribution
+        and growth trends
+      parameters:
+      - description: Volume ID
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Storage statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get storage statistics
+      tags:
+      - stats
+  /api/v1/stats/top-folders:
+    get:
+      consumes:
+      - application/json
+      description: Get the largest folders in a volume by total size
+      parameters:
+      - description: Volume ID
+        in: query
+        name: volume_id
+        required: true
+        type: string
+      - description: Number of folders to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/TopFoldersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get top folders by size
+      tags:
+      - stats
+  /api/v1/system/config:
+    get:
+      consumes:
+      - application/json
+      description: Get a read-only summary of the process's active configuration (scan/retention/rate-limit/CORS
+        settings, etc). All values are loaded once at startup - none are editable
+        here. Admin only.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SystemConfigResponse'
+      summary: Get current system configuration
+      tags:
+      - system
+  /api/v1/system/info:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed system information including service version and Docker
+        status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: System information
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get system information
+      tags:
+      - system
+  /api/v1/system/version:
+    get:
+      consumes:
+      - application/json
+      description: Get API version information and available endpoints
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: API version information
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get API version
+      tags:
+      - system
   /api/v1/tracking/apply:
     post:
       consumes:
@@ -6355,1298 +8635,7 @@ paths:
       summary: Update tracking rules configuration
       tags:
       - tracking-rules-config
-  /api/v1/volumes/{name}/track:
-    post:
-      consumes:
-      - application/json
-      description: Set a volume to tracked status. When tracked, the volume will be
-        scanned and its data indexed.
-      operationId: postVolumesVolumeIdTrack
-      parameters:
-      - description: Volume name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Volume successfully tracked
-          schema:
-            $ref: '#/definitions/VolumeV1'
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Volume not found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Track a volume
-      tags:
-      - volumes
-  /api/v1/volumes/{name}/untrack:
-    post:
-      consumes:
-      - application/json
-      description: Set a volume to untracked status and remove its data from the database.
-        The Docker volume itself remains intact.
-      operationId: postVolumesVolumeIdUntrack
-      parameters:
-      - description: Volume name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Volume successfully untracked
-          schema:
-            $ref: '#/definitions/VolumeV1'
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Volume not found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Untrack a volume
-      tags:
-      - volumes
-  /api/v1/volumes/bulk-track:
-    post:
-      consumes:
-      - application/json
-      description: Track multiple volumes in a single request
-      operationId: postVolumesBulkTrack
-      parameters:
-      - description: Volume IDs to track
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Bulk track results
-          schema:
-            $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesResponse'
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Bulk track volumes
-      tags:
-      - volumes
-  /api/v1/volumes/bulk-untrack:
-    post:
-      consumes:
-      - application/json
-      description: Untrack multiple volumes in a single request
-      operationId: postVolumesBulkUntrack
-      parameters:
-      - description: Volume IDs to untrack
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Bulk untrack results
-          schema:
-            $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesResponse'
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Bulk untrack volumes
-      tags:
-      - volumes
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      description: Authenticate user and get JWT token
-      parameters:
-      - description: Login credentials
-        in: body
-        name: login
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_auth.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Login
-      tags:
-      - auth
-  /auth/register:
-    post:
-      consumes:
-      - application/json
-      description: Register a new user
-      parameters:
-      - description: Registration details
-        in: body
-        name: register
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_auth.RegisterRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/internal_api_v1_auth.AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Register
-      tags:
-      - auth
-  /files/{file_id}/preview:
-    get:
-      consumes:
-      - application/json
-      description: Get existing preview or generate new preview for a specific file
-      parameters:
-      - description: File ID
-        in: path
-        name: file_id
-        required: true
-        type: integer
-      - default: thumbnail
-        description: Preview type
-        enum:
-        - thumbnail
-        - poster
-        - cover
-        in: query
-        name: type
-        type: string
-      - default: medium
-        description: Preview size
-        enum:
-        - small
-        - medium
-        - large
-        in: query
-        name: size
-        type: string
-      - description: Time offset for video thumbnails (e.g., '5.0' for 5 seconds)
-        in: query
-        name: offset
-        type: string
-      produces:
-      - application/octet-stream
-      responses:
-        "200":
-          description: Preview file data
-          schema:
-            type: file
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: File not found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get or generate preview by file ID
-      tags:
-      - previews
-  /files/{id}/details:
-    get:
-      consumes:
-      - application/json
-      description: Get comprehensive information about a specific file including metadata
-      parameters:
-      - description: File ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/FileDetailsResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: Get file details
-      tags:
-      - files
-  /files/{id}/metadata:
-    get:
-      consumes:
-      - application/json
-      description: Get enriched metadata for a specific file (media properties, EXIF,
-        etc.)
-      parameters:
-      - description: File ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Metadata kind filter
-        enum:
-        - media
-        - exif
-        - ffmpeg
-        in: query
-        name: kind
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/FileMetadataResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_models.ErrorResponse'
-      summary: Get file metadata
-      tags:
-      - files
-  /filesystem/capabilities:
-    get:
-      consumes:
-      - application/json
-      description: Get information about filesystem indexing capabilities and configuration
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/FilesystemCapabilitiesResponse'
-      summary: Get filesystem indexing capabilities
-      tags:
-      - filesystem
-  /health/database:
-    get:
-      consumes:
-      - application/json
-      description: Get database connection status via store interface
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "503":
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Check database health
-      tags:
-      - health
-  /health/docker:
-    get:
-      consumes:
-      - application/json
-      description: Get Docker daemon connection status and version information
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/DockerHealth'
-        "503":
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Check Docker health
-      tags:
-      - health
-  /health/events:
-    get:
-      consumes:
-      - application/json
-      description: Get Docker events service status and metrics
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "503":
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Check Docker events health
-      tags:
-      - health
-  /health/scheduler:
-    get:
-      consumes:
-      - application/json
-      description: Get scan scheduler status and metrics
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "503":
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Check scan scheduler health
-      tags:
-      - health
-  /media/capabilities:
-    get:
-      consumes:
-      - application/json
-      description: Get information about available media enrichers and their capabilities
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/MediaCapabilitiesResponse'
-      summary: Get media enrichment capabilities
-      tags:
-      - media
-  /organizations:
-    get:
-      consumes:
-      - application/json
-      description: List all organizations in the system (admin only)
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 25
-        description: Page size
-        in: query
-        name: page_size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: List of organizations
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden - admin required
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: List all organizations
-      tags:
-      - organizations
-    post:
-      consumes:
-      - application/json
-      description: Create a new organization (admin only)
-      parameters:
-      - description: Organization creation details
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_organizations.CreateOrganizationRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created organization
-          schema:
-            $ref: '#/definitions/internal_api_v1_organizations.OrganizationResponse'
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden - admin required
-          schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Conflict - organization already exists
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Create organization
-      tags:
-      - organizations
-  /organizations/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete an organization by ID (admin only)
-      parameters:
-      - description: Organization ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: Organization deleted successfully
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden - admin required
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Organization not found
-          schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Conflict - organization has users or volumes
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Delete organization
-      tags:
-      - organizations
-    put:
-      consumes:
-      - application/json
-      description: Update organization details by ID (admin only)
-      parameters:
-      - description: Organization ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Organization update details
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_organizations.UpdateOrganizationRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Updated organization
-          schema:
-            $ref: '#/definitions/internal_api_v1_organizations.OrganizationResponse'
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden - admin required
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Organization not found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Update organization
-      tags:
-      - organizations
-  /previews:
-    post:
-      consumes:
-      - application/json
-      description: Generate a new preview (thumbnail, poster, or cover) for a file
-      parameters:
-      - description: Preview generation request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_api_v1_previews.PreviewRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Preview generated successfully
-          schema:
-            $ref: '#/definitions/internal_api_v1_previews.PreviewResponse'
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Generate preview
-      tags:
-      - previews
-  /previews/{file_id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete all previews for a specific file
-      parameters:
-      - description: File ID
-        in: path
-        name: file_id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: Previews deleted successfully
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Delete preview
-      tags:
-      - previews
-    get:
-      consumes:
-      - application/json
-      description: Serve a preview file by file ID
-      parameters:
-      - description: File ID
-        in: path
-        name: file_id
-        required: true
-        type: integer
-      - description: Preview type
-        enum:
-        - thumbnail
-        - poster
-        - cover
-        in: query
-        name: type
-        type: string
-      - description: Preview size
-        enum:
-        - small
-        - medium
-        - large
-        in: query
-        name: size
-        type: string
-      produces:
-      - application/octet-stream
-      responses:
-        "200":
-          description: Preview file data
-          schema:
-            type: file
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Preview not found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get preview file
-      tags:
-      - previews
-  /previews/health:
-    get:
-      consumes:
-      - application/json
-      description: Check the health status of the preview service and its dependencies
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Service health status
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Preview service health check
-      tags:
-      - previews
-  /previews/stats:
-    get:
-      consumes:
-      - application/json
-      description: Get statistics about preview generation and usage
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Preview statistics
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get preview statistics
-      tags:
-      - previews
-  /previews/supported:
-    get:
-      consumes:
-      - application/json
-      description: Get list of supported media types for preview generation
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Supported media types
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get supported media types
-      tags:
-      - previews
-  /reports/orphaned:
-    get:
-      consumes:
-      - application/json
-      description: Get paginated list of volumes that are not attached to any containers
-      parameters:
-      - description: 'Page number for pagination (default: 1)'
-        in: query
-        name: page
-        type: integer
-      - description: 'Number of items per page (default: 25, max: 100)'
-        in: query
-        name: page_size
-        type: integer
-      - description: 'Sort field and direction (e.g., ''name:asc'', ''size_bytes:desc'').
-          Available fields: name, size_bytes, created_at'
-        in: query
-        name: sort
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Paginated list of orphaned volumes
-          schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get orphaned volumes
-      tags:
-      - volumes
-  /scans/{id}/status:
-    get:
-      consumes:
-      - application/json
-      description: Get the status of a volume scan by volume ID or scan ID
-      parameters:
-      - description: Volume ID or Scan ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Scan status information
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Scan not found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get scan status
-      tags:
-      - scan
-  /scans/{scanId}/errors:
-    get:
-      consumes:
-      - application/json
-      description: Get detailed error information for a scan with filtering and pagination
-      parameters:
-      - description: Scan ID
-        in: path
-        name: scanId
-        required: true
-        type: string
-      - description: Filter by phase name
-        in: query
-        name: phase
-        type: string
-      - description: Filter by error type
-        in: query
-        name: error_type
-        type: string
-      - description: 'Limit number of results (default: 50)'
-        in: query
-        name: limit
-        type: integer
-      - description: 'Offset for pagination (default: 0)'
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Scan errors with pagination
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get scan errors
-      tags:
-      - scan
-  /scans/{scanId}/progress:
-    get:
-      consumes:
-      - application/json
-      description: Get comprehensive progress information including phases, sub-phases,
-        items, errors, and confidence indicators
-      parameters:
-      - description: Scan ID
-        in: path
-        name: scanId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Comprehensive scan progress with sub-phase details
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get detailed scan progress with sub-phase information
-      tags:
-      - scan
-  /scans/active:
-    get:
-      consumes:
-      - application/json
-      description: Get list of all currently active/running scans
-      parameters:
-      - description: 'Limit number of results (default: 20)'
-        in: query
-        name: limit
-        type: integer
-      - description: 'Offset for pagination (default: 0)'
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Active scans with pagination
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get active scans
-      tags:
-      - scan
-  /scans/recent-errors:
-    get:
-      consumes:
-      - application/json
-      description: Get recent scan errors across all scans with filtering
-      parameters:
-      - description: 'Hours back to search (default: 24)'
-        in: query
-        name: hours
-        type: integer
-      - description: Filter by error type
-        in: query
-        name: error_type
-        type: string
-      - description: Filter by phase name
-        in: query
-        name: phase
-        type: string
-      - description: 'Limit number of results (default: 50)'
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Recent scan errors
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get recent scan errors
-      tags:
-      - scan
-  /snapshots/stats:
-    get:
-      description: Get aggregate statistics about volume snapshots
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get snapshot statistics
-      tags:
-      - snapshots
-  /snapshots/volumes/{volume_id}:
-    get:
-      description: Get snapshot history for a specific volume
-      parameters:
-      - description: Volume ID
-        in: path
-        name: volume_id
-        required: true
-        type: string
-      - default: 10
-        description: Limit number of results
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get volume snapshots
-      tags:
-      - snapshots
-  /snapshots/volumes/{volume_id}/latest:
-    get:
-      description: Get the most recent snapshot for a specific volume
-      parameters:
-      - description: Volume ID
-        in: path
-        name: volume_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get latest snapshot
-      tags:
-      - snapshots
-  /stats/daily:
-    get:
-      consumes:
-      - application/json
-      description: Get daily aggregated statistics for a volume
-      parameters:
-      - description: Volume ID
-        in: query
-        name: volume_id
-        required: true
-        type: string
-      - description: Number of days to retrieve
-        in: query
-        name: days
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/VolumeStatsResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get daily stats
-      tags:
-      - stats
-  /stats/media:
-    get:
-      consumes:
-      - application/json
-      description: Get statistics aggregated by media type (images, videos, documents,
-        etc.)
-      parameters:
-      - description: Volume ID
-        in: query
-        name: volume_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Media statistics
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get media statistics
-      tags:
-      - stats
-  /stats/storage:
-    get:
-      consumes:
-      - application/json
-      description: Get detailed storage usage statistics including size distribution
-        and growth trends
-      parameters:
-      - description: Volume ID
-        in: query
-        name: volume_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Storage statistics
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get storage statistics
-      tags:
-      - stats
-  /stats/top-folders:
-    get:
-      consumes:
-      - application/json
-      description: Get the largest folders in a volume by total size
-      parameters:
-      - description: Volume ID
-        in: query
-        name: volume_id
-        required: true
-        type: string
-      - description: Number of folders to return
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/TopFoldersResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get top folders by size
-      tags:
-      - stats
-  /system/info:
-    get:
-      consumes:
-      - application/json
-      description: Get detailed system information including service version and Docker
-        status
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: System information
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get system information
-      tags:
-      - system
-  /system/version:
-    get:
-      consumes:
-      - application/json
-      description: Get API version information and available endpoints
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: API version information
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get API version
-      tags:
-      - system
-  /trends/summary:
+  /api/v1/trends/summary:
     get:
       consumes:
       - application/json
@@ -7657,8 +8646,7 @@ paths:
         "200":
           description: All volumes trends summary
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/AllVolumesTrendsSummaryV1'
         "500":
           description: Internal server error
           schema:
@@ -7667,7 +8655,7 @@ paths:
       summary: Get all volumes trends summary
       tags:
       - trends
-  /trends/volumes/{volumeId}:
+  /api/v1/trends/volumes/{volumeId}:
     get:
       consumes:
       - application/json
@@ -7683,14 +8671,17 @@ paths:
         in: query
         name: days
         type: integer
+      - description: 'Bucket size for daily_stats: day, week, or month (default: day)'
+        in: query
+        name: aggregation
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: Volume trends data
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/VolumeTrendsDataV1'
         "400":
           description: Bad request
           schema:
@@ -7704,7 +8695,7 @@ paths:
       summary: Get volume trends
       tags:
       - trends
-  /trends/volumes/{volumeId}/7day:
+  /api/v1/trends/volumes/{volumeId}/7day:
     get:
       consumes:
       - application/json
@@ -7736,7 +8727,7 @@ paths:
       summary: Get 7-day trend
       tags:
       - trends
-  /trends/volumes/{volumeId}/30day:
+  /api/v1/trends/volumes/{volumeId}/30day:
     get:
       consumes:
       - application/json
@@ -7768,7 +8759,7 @@ paths:
       summary: Get 30-day trend
       tags:
       - trends
-  /trends/volumes/{volumeId}/deltas:
+  /api/v1/trends/volumes/{volumeId}/deltas:
     get:
       consumes:
       - application/json
@@ -7809,7 +8800,7 @@ paths:
       summary: Get volume growth deltas
       tags:
       - trends
-  /trends/volumes/{volumeId}/series:
+  /api/v1/trends/volumes/{volumeId}/series:
     get:
       consumes:
       - application/json
@@ -7850,7 +8841,7 @@ paths:
       summary: Get volume step series
       tags:
       - trends
-  /trends/volumes/{volumeId}/slope:
+  /api/v1/trends/volumes/{volumeId}/slope:
     get:
       consumes:
       - application/json
@@ -7891,7 +8882,7 @@ paths:
       summary: Get volume trend slope
       tags:
       - trends
-  /users:
+  /api/v1/users:
     get:
       description: List all users in the organization (admin only)
       parameters:
@@ -7972,7 +8963,7 @@ paths:
       summary: Create a new user
       tags:
       - users
-  /users/{id}:
+  /api/v1/users/{id}:
     delete:
       description: Delete a user (admin only)
       parameters:
@@ -8093,7 +9084,7 @@ paths:
       summary: Update a user
       tags:
       - users
-  /volumes:
+  /api/v1/volumes:
     get:
       consumes:
       - application/json
@@ -8147,9 +9138,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Paginated list of volumes
+          description: Paginated list of volumes with aggregate summary
           schema:
-            $ref: '#/definitions/github_com_mantonx_volumeviz_internal_api_utils.PagedResponse'
+            $ref: '#/definitions/VolumesListResponse'
         "400":
           description: Bad request
           schema:
@@ -8161,7 +9152,7 @@ paths:
       summary: List Docker volumes
       tags:
       - volumes
-  /volumes/{id}/filesystem/index:
+  /api/v1/volumes/{id}/filesystem/index:
     post:
       consumes:
       - application/json
@@ -8199,7 +9190,7 @@ paths:
       summary: Trigger filesystem indexing
       tags:
       - filesystem
-  /volumes/{id}/media/enrich:
+  /api/v1/volumes/{id}/media/enrich:
     post:
       consumes:
       - application/json
@@ -8228,7 +9219,7 @@ paths:
       summary: Trigger media enrichment
       tags:
       - media
-  /volumes/{id}/media/status:
+  /api/v1/volumes/{id}/media/status:
     get:
       consumes:
       - application/json
@@ -8257,7 +9248,7 @@ paths:
       summary: Get media enrichment status
       tags:
       - media
-  /volumes/{id}/scan/status:
+  /api/v1/volumes/{id}/scan/status:
     get:
       consumes:
       - application/json
@@ -8294,7 +9285,7 @@ paths:
       summary: Get scan status
       tags:
       - scan
-  /volumes/{id}/size:
+  /api/v1/volumes/{id}/size:
     get:
       consumes:
       - application/json
@@ -8327,7 +9318,7 @@ paths:
       summary: Get volume size
       tags:
       - scan
-  /volumes/{id}/size/refresh:
+  /api/v1/volumes/{id}/size/refresh:
     post:
       consumes:
       - application/json
@@ -8365,7 +9356,47 @@ paths:
       summary: Refresh volume size
       tags:
       - scan
-  /volumes/{name}:
+  /api/v1/volumes/{name}:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete a Docker volume. Requires admin role. The volume
+        must not be attached to any container — Docker itself enforces this. This
+        action cannot be undone.
+      operationId: deleteVolumesVolumeId
+      parameters:
+      - description: Volume name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume successfully deleted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Volume not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Volume is still attached to a container
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete a volume
+      tags:
+      - volumes
     get:
       consumes:
       - application/json
@@ -8398,7 +9429,7 @@ paths:
       summary: Get volume details
       tags:
       - volumes
-  /volumes/{name}/attachments:
+  /api/v1/volumes/{name}/attachments:
     get:
       consumes:
       - application/json
@@ -8431,7 +9462,7 @@ paths:
       summary: Get volume attachments
       tags:
       - volumes
-  /volumes/{name}/stats:
+  /api/v1/volumes/{name}/stats:
     get:
       consumes:
       - application/json
@@ -8464,7 +9495,77 @@ paths:
       summary: Get volume statistics
       tags:
       - volumes
-  /volumes/{volumeId}/filesystem/status:
+  /api/v1/volumes/{name}/track:
+    post:
+      consumes:
+      - application/json
+      description: Set a volume to tracked status. When tracked, the volume will be
+        scanned and its data indexed.
+      operationId: postVolumesVolumeIdTrack
+      parameters:
+      - description: Volume name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume successfully tracked
+          schema:
+            $ref: '#/definitions/VolumeV1'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Volume not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Track a volume
+      tags:
+      - volumes
+  /api/v1/volumes/{name}/untrack:
+    post:
+      consumes:
+      - application/json
+      description: Set a volume to untracked status and remove its data from the database.
+        The Docker volume itself remains intact.
+      operationId: postVolumesVolumeIdUntrack
+      parameters:
+      - description: Volume name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Volume successfully untracked
+          schema:
+            $ref: '#/definitions/VolumeV1'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Volume not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Untrack a volume
+      tags:
+      - volumes
+  /api/v1/volumes/{volumeId}/filesystem/status:
     get:
       consumes:
       - application/json
@@ -8497,7 +9598,40 @@ paths:
       summary: Get filesystem indexing status
       tags:
       - filesystem
-  /volumes/bulk-scan:
+  /api/v1/volumes/bulk-delete:
+    post:
+      consumes:
+      - application/json
+      description: Permanently delete multiple volumes in a single request. Requires
+        admin role. Each volume must be unattached; failures for individual volumes
+        don't stop the rest of the batch. This action cannot be undone.
+      operationId: postVolumesBulkDelete
+      parameters:
+      - description: Volume IDs to delete
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_volumes.BulkDeleteVolumesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bulk delete results
+          schema:
+            $ref: '#/definitions/internal_api_v1_volumes.BulkDeleteVolumesResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Bulk delete volumes
+      tags:
+      - volumes
+  /api/v1/volumes/bulk-scan:
     post:
       consumes:
       - application/json
@@ -8530,7 +9664,69 @@ paths:
       summary: Bulk scan volumes
       tags:
       - scan
-  /volumes/cache/invalidate:
+  /api/v1/volumes/bulk-track:
+    post:
+      consumes:
+      - application/json
+      description: Track multiple volumes in a single request
+      operationId: postVolumesBulkTrack
+      parameters:
+      - description: Volume IDs to track
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bulk track results
+          schema:
+            $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Bulk track volumes
+      tags:
+      - volumes
+  /api/v1/volumes/bulk-untrack:
+    post:
+      consumes:
+      - application/json
+      description: Untrack multiple volumes in a single request
+      operationId: postVolumesBulkUntrack
+      parameters:
+      - description: Volume IDs to untrack
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bulk untrack results
+          schema:
+            $ref: '#/definitions/internal_api_v1_volumes.BulkTrackVolumesResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Bulk untrack volumes
+      tags:
+      - volumes
+  /api/v1/volumes/cache/invalidate:
     post:
       consumes:
       - application/json
@@ -8546,7 +9742,7 @@ paths:
       summary: Invalidate volume cache
       tags:
       - volumes
-  /volumes/cache/stats:
+  /api/v1/volumes/cache/stats:
     get:
       consumes:
       - application/json
@@ -8562,7 +9758,7 @@ paths:
       summary: Get volume cache statistics
       tags:
       - volumes
-  /volumes/export/csv:
+  /api/v1/volumes/export/csv:
     get:
       consumes:
       - application/json
@@ -8614,7 +9810,7 @@ paths:
       summary: Export volumes as CSV
       tags:
       - volumes
-  /volumes/export/json:
+  /api/v1/volumes/export/json:
     get:
       consumes:
       - application/json

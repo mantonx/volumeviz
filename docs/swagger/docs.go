@@ -1123,7 +1123,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duplicates.DuplicateDetectionResponse"
+                            "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateDetectionResponse"
                         }
                     },
                     "400": {
@@ -1197,7 +1197,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duplicates.DuplicateDetectionResponse"
+                            "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateDetectionResponse"
                         }
                     },
                     "400": {
@@ -1243,7 +1243,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/duplicates.DuplicateGroup"
+                            "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateGroup"
                         }
                     }
                 ],
@@ -1251,7 +1251,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duplicates.DuplicateGroup"
+                            "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateGroup"
                         }
                     },
                     "400": {
@@ -9248,126 +9248,6 @@ const docTemplate = `{
                 }
             }
         },
-        "duplicates.DetectionParameters": {
-            "type": "object",
-            "properties": {
-                "include_empty": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "max_size": {
-                    "type": "integer",
-                    "example": 104857600
-                },
-                "min_size": {
-                    "type": "integer",
-                    "example": 1048576
-                },
-                "path": {
-                    "type": "string",
-                    "example": "/movies"
-                },
-                "volume_id": {
-                    "type": "string",
-                    "example": "media-library"
-                }
-            }
-        },
-        "duplicates.DuplicateDetectionResponse": {
-            "type": "object",
-            "properties": {
-                "groups": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/duplicates.DuplicateGroup"
-                    }
-                },
-                "parameters": {
-                    "$ref": "#/definitions/duplicates.DetectionParameters"
-                },
-                "processing_time_ms": {
-                    "type": "integer"
-                },
-                "summary": {
-                    "$ref": "#/definitions/duplicates.DuplicateSummary"
-                },
-                "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
-        "duplicates.DuplicateGroup": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer",
-                    "example": 3
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/DuplicateFile"
-                    }
-                },
-                "hash": {
-                    "type": "string",
-                    "example": "d41d8cd98f00b204e9800998ecf8427e"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "dup-1"
-                },
-                "size": {
-                    "type": "integer",
-                    "example": 2048000
-                },
-                "wasted_space": {
-                    "type": "integer",
-                    "example": 4096000
-                }
-            }
-        },
-        "duplicates.DuplicateSummary": {
-            "type": "object",
-            "properties": {
-                "largest_group": {
-                    "type": "object",
-                    "properties": {
-                        "count": {
-                            "type": "integer",
-                            "example": 8
-                        },
-                        "id": {
-                            "type": "string",
-                            "example": "dup-5"
-                        },
-                        "wasted_space": {
-                            "type": "integer",
-                            "example": 134217728
-                        }
-                    }
-                },
-                "processed_files": {
-                    "type": "integer",
-                    "example": 10000
-                },
-                "total_duplicates": {
-                    "type": "integer",
-                    "example": 42
-                },
-                "total_groups": {
-                    "type": "integer",
-                    "example": 15
-                },
-                "total_wasted_space": {
-                    "type": "integer",
-                    "example": 536870912
-                }
-            }
-        },
         "gin.H": {
             "type": "object",
             "additionalProperties": {}
@@ -10581,6 +10461,126 @@ const docTemplate = `{
                 "ModePolling",
                 "ModeSSE"
             ]
+        },
+        "internal_api_v1_duplicates.DetectionParameters": {
+            "type": "object",
+            "properties": {
+                "include_empty": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "max_size": {
+                    "type": "integer",
+                    "example": 104857600
+                },
+                "min_size": {
+                    "type": "integer",
+                    "example": 1048576
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/movies"
+                },
+                "volume_id": {
+                    "type": "string",
+                    "example": "media-library"
+                }
+            }
+        },
+        "internal_api_v1_duplicates.DuplicateDetectionResponse": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateGroup"
+                    }
+                },
+                "parameters": {
+                    "$ref": "#/definitions/internal_api_v1_duplicates.DetectionParameters"
+                },
+                "processing_time_ms": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "$ref": "#/definitions/internal_api_v1_duplicates.DuplicateSummary"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_v1_duplicates.DuplicateGroup": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/DuplicateFile"
+                    }
+                },
+                "hash": {
+                    "type": "string",
+                    "example": "d41d8cd98f00b204e9800998ecf8427e"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "dup-1"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 2048000
+                },
+                "wasted_space": {
+                    "type": "integer",
+                    "example": 4096000
+                }
+            }
+        },
+        "internal_api_v1_duplicates.DuplicateSummary": {
+            "type": "object",
+            "properties": {
+                "largest_group": {
+                    "type": "object",
+                    "properties": {
+                        "count": {
+                            "type": "integer",
+                            "example": 8
+                        },
+                        "id": {
+                            "type": "string",
+                            "example": "dup-5"
+                        },
+                        "wasted_space": {
+                            "type": "integer",
+                            "example": 134217728
+                        }
+                    }
+                },
+                "processed_files": {
+                    "type": "integer",
+                    "example": 10000
+                },
+                "total_duplicates": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "total_groups": {
+                    "type": "integer",
+                    "example": 15
+                },
+                "total_wasted_space": {
+                    "type": "integer",
+                    "example": 536870912
+                }
+            }
         },
         "internal_api_v1_explorer.AppliedFilters": {
             "description": "Applied filters for the file query",
