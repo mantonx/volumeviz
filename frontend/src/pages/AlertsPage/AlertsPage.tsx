@@ -6,6 +6,7 @@ import { cn } from '@/utils';
 import { AlertDestinations } from '@/components/domain/alerts';
 import { AlertRules } from '@/components/domain/alerts';
 import { AlertHistory } from '@/components/domain/alerts';
+import { useGetApiV1AlertsEngineStatus } from '@/api/orval-generated/api';
 
 export interface AlertsPageProps {
   className?: string;
@@ -16,6 +17,27 @@ type TabType = 'destinations' | 'rules' | 'history';
 export const AlertsPage: React.FC<AlertsPageProps> = ({ className }) => {
   const [activeTab, setActiveTab] = useState<TabType>('destinations');
 
+  // Real engine status: a 200 response means the engine responded, which is
+  // the honest signal available here — the response body's `engine` field
+  // is a loosely-typed interface{} on the backend, not worth parsing for a
+  // simple badge when HTTP success/failure already tells the truth.
+  const {
+    data: engineStatusData,
+    isLoading: engineStatusLoading,
+    isError: engineStatusIsError,
+  } = useGetApiV1AlertsEngineStatus({
+    query: { refetchInterval: 30000 },
+  });
+  const engineActive =
+    !engineStatusLoading &&
+    !engineStatusIsError &&
+    engineStatusData?.status === 200;
+  const engineStatusLabel = engineStatusLoading
+    ? 'Checking...'
+    : engineActive
+      ? 'Active'
+      : 'Unavailable';
+
   const tabs = [
     {
       id: 'destinations' as const,
@@ -25,7 +47,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ className }) => {
     },
     {
       id: 'rules' as const,
-      label: 'Rules & Routes',
+      label: 'Alert Routing',
       icon: Settings,
       description: 'Configure alert rules and routing',
     },
@@ -63,9 +85,12 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ className }) => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="flex items-center gap-1">
+          <Badge
+            variant={engineActive ? 'secondary' : 'error'}
+            className="flex items-center gap-1"
+          >
             <Bell className="h-3 w-3" />
-            Engine Status: Active
+            Engine Status: {engineStatusLabel}
           </Badge>
         </div>
       </div>

@@ -59,7 +59,6 @@ class ErrorBoundary extends Component<
 // Lazy load pages for better code splitting
 const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
 const VolumesPage = React.lazy(() => import('@/pages/VolumesPage'));
-const VolumeDetailsPage = React.lazy(() => import('@/pages/VolumeDetailsPage'));
 const FilesPage = React.lazy(() => import('@/pages/FilesPage'));
 const TrendsPage = React.lazy(() => import('@/pages/TrendsPage'));
 const AlertsPage = React.lazy(() => import('@/pages/AlertsPage'));
@@ -74,13 +73,10 @@ const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
 // Admin pages
 const AdminDashboardPage = React.lazy(() => import('@/pages/admin/DashboardPage'));
 const AdminUsersPage = React.lazy(() => import('@/pages/admin/UsersPage'));
-const AdminOrganizationsPage = React.lazy(() => import('@/pages/admin/OrganizationsPage'));
 const AdminAuditLogsPage = React.lazy(() => import('@/pages/admin/AuditLogsPage'));
 const AdminPermissionsPage = React.lazy(() => import('@/pages/admin/PermissionsPage'));
 const AdminSystemSettingsPage = React.lazy(() => import('@/pages/admin/SystemSettingsPage'));
 
-// Legacy pages - kept for backward compatibility and Settings integration
-const MountsPage = React.lazy(() => import('@/pages/MountsPage'));
 const RulesPage = React.lazy(() => import('@/pages/RulesPage'));
 
 const PageLoadingSpinner = () => (
@@ -131,6 +127,17 @@ const App: React.FC = () => {
 
     checkOnboardingStatus();
 
+    // shouldRedirectToOnboarding is only computed once, here, at mount —
+    // OnboardingPage's completion step sets localStorage but that alone
+    // doesn't make this component re-render, so without this listener a
+    // user who just finished onboarding gets bounced straight back into it
+    // by the stale `true` value the very first mount computed.
+    const handleOnboardingComplete = () => setShouldRedirectToOnboarding(false);
+    window.addEventListener(
+      'volumeviz-onboarding-complete',
+      handleOnboardingComplete,
+    );
+
     // Set up background sync event listener
     const handleBackgroundSync = () => {
       // Background sync triggered from service worker
@@ -148,6 +155,10 @@ const App: React.FC = () => {
 
     return () => {
       window.removeEventListener('sw-background-sync', handleBackgroundSync);
+      window.removeEventListener(
+        'volumeviz-onboarding-complete',
+        handleOnboardingComplete,
+      );
     };
   }, []);
 
@@ -191,7 +202,6 @@ const App: React.FC = () => {
                             <Routes>
                               <Route index element={<AdminDashboardPage />} />
                               <Route path="users" element={<AdminUsersPage />} />
-                              <Route path="organizations" element={<AdminOrganizationsPage />} />
                               <Route path="audit" element={<AdminAuditLogsPage />} />
                               <Route path="permissions" element={<AdminPermissionsPage />} />
                               <Route path="settings" element={<AdminSystemSettingsPage />} />
@@ -229,30 +239,10 @@ const App: React.FC = () => {
                             />
                             {/* Main Navigation Routes */}
                             <Route path="/volumes" element={<VolumesPage />} />
-                            <Route
-                              path="/volumes/:name"
-                              element={<VolumeDetailsPage />}
-                            />
                             <Route path="/files" element={<FilesPage />} />
                             <Route path="/trends" element={<TrendsPage />} />
                             <Route path="/alerts" element={<AlertsPage />} />
 
-                            {/* Legacy Routes - redirect to new unified /files page */}
-                            <Route
-                              path="/explorer"
-                              element={<Navigate to="/files" replace />}
-                            />
-                            <Route
-                              path="/explorer/:volumeId"
-                              element={<Navigate to="/files" replace />}
-                            />
-                            <Route
-                              path="/search"
-                              element={<Navigate to="/files" replace />}
-                            />
-
-                            {/* Advanced/Settings Routes */}
-                            <Route path="/mounts" element={<MountsPage />} />
                             <Route path="/rules" element={<RulesPage />} />
 
                             {/* System Routes */}

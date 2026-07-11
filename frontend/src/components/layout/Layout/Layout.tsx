@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { useAtomValue } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { VolumeDetailsModal } from '@/components/application/Modals';
+import { selectedVolumeAtom } from '@/atoms/volumes';
 import { resolvedThemeAtom } from '@/store';
 import { cn } from '@/utils';
 import type { LayoutProps } from './Layout.types';
@@ -27,6 +29,7 @@ import type { LayoutProps } from './Layout.types';
 export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const resolvedTheme = useAtomValue(resolvedThemeAtom);
+  const [selectedVolume, setSelectedVolume] = useAtom(selectedVolumeAtom);
 
   // Apply theme to document root for global dark mode support
   React.useEffect(() => {
@@ -53,6 +56,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
           <div className="px-4 sm:px-6 lg:px-8">{children}</div>
         </main>
       </div>
+
+      {/* Volume details modal, triggerable from any page via selectedVolumeAtom */}
+      <VolumeDetailsModal
+        isOpen={!!selectedVolume}
+        onClose={() => setSelectedVolume(null)}
+        volumeName={selectedVolume ?? ''}
+      />
     </div>
   );
 };

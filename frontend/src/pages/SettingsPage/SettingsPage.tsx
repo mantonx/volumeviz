@@ -406,21 +406,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
                     .replace(/^./, (str) => str.toUpperCase())}
                 </h3>
                 <p className="text-sm text-tertiary">
-                  {key === 'autoRefresh' && 'Enable automatic data refreshing'}
-                  {key === 'realTimeUpdates' &&
-                    'Real-time WebSocket updates (experimental)'}
-                  {key === 'experimentalFeatures' &&
-                    'Access to beta features and functionality'}
-                  {key === 'debugMode' &&
-                    'Enable debug logging and developer tools'}
+                  {key === 'enableWebSocket' &&
+                    'Use WebSocket connections for live updates instead of polling'}
+                  {key === 'enableRealTimeUpdates' &&
+                    'Push real-time updates to the UI as they happen'}
+                  {key === 'enableAdvancedSearch' &&
+                    'Enable advanced search filters and query syntax'}
+                  {key === 'enableBulkOperations' &&
+                    'Allow bulk actions (scan, track, delete) across multiple volumes at once'}
+                  {key === 'enableMetadataExtraction' &&
+                    'Extract extended file metadata during scans'}
+                  {key === 'enablePreviewGeneration' &&
+                    'Generate thumbnail previews for supported file types'}
                 </p>
               </div>
               <div className="flex items-center space-x-2">
-                {key === 'experimentalFeatures' && enabled && (
-                  <Badge variant="warning" className="text-xs">
-                    Beta
-                  </Badge>
-                )}
                 <Button
                   variant={enabled ? 'primary' : 'outline'}
                   size="sm"

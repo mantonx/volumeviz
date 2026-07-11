@@ -9,9 +9,9 @@
  */
 
 import React, { useCallback, useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
-  useGetVolumes,
+  useGetApiV1Volumes,
   useGetApiV1ExplorerFiles,
 } from '@/api/orval-generated/api';
 import { Button } from '@/components/ui/Button';
@@ -20,12 +20,8 @@ import { useRealtime } from '@/providers/realtime';
 import {
   FileIcon,
   FolderIcon,
-  SearchIcon,
-  Database,
-  HardDrive,
   ChevronRight,
   Home,
-  ArrowLeft,
   List,
   LayoutGrid,
   BarChart3,
@@ -45,25 +41,26 @@ export function ExplorerPage({
   selectedVolumeFilter = 'all'
 }: ExplorerPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
 
   // Use selectedVolumeFilter prop instead of URL params
   const volumeId = selectedVolumeFilter !== 'all' ? selectedVolumeFilter : null;
   const isGlobalView = selectedVolumeFilter === 'all';
 
   // API hooks
-  const { data: volumesResponse, isLoading: loading, refetch: fetchVolumes } = useGetVolumes();
+  const { data: volumesResponse, refetch: fetchVolumes } = useGetApiV1Volumes();
   const volumes = (volumesResponse?.data && 'data' in volumesResponse.data
     ? (volumesResponse.data.data as any[])
     : []) || [];
 
   // State management
   const [currentPath, setCurrentPath] = useState('/');
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [selectedFileForDrawer, setSelectedFileForDrawer] = useState<FileItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'treemap' | 'analytics'>('list');
+  // Directory tree self-reports whether the volume has any directories at
+  // all, so the sidebar can be hidden instead of showing a permanent empty box.
+  const [directoriesAreEmpty, setDirectoriesAreEmpty] = useState(false);
 
   // WebSocket connection for real-time updates
   useRealtime();
@@ -101,11 +98,9 @@ export function ExplorerPage({
   // URL synchronization
   React.useEffect(() => {
     const path = searchParams.get('path') || '/';
-    const search = searchParams.get('search') || '';
     const view = searchParams.get('view') as 'list' | 'treemap' | 'analytics' | null;
 
     setCurrentPath(path);
-    setSearchQuery(search);
     if (view && ['list', 'treemap', 'analytics'].includes(view)) {
       setViewMode(view);
     }
@@ -121,23 +116,6 @@ export function ExplorerPage({
           params.delete('view'); // list is default, no need to clutter URL
         } else {
           params.set('view', mode);
-        }
-        return params;
-      });
-    },
-    [setSearchParams],
-  );
-
-  // Handle search
-  const handleSearchChange = useCallback(
-    (query: string) => {
-      setSearchQuery(query);
-      setSearchParams((prev) => {
-        const params = new URLSearchParams(prev);
-        if (query === '') {
-          params.delete('search');
-        } else {
-          params.set('search', query);
         }
         return params;
       });
@@ -229,12 +207,10 @@ export function ExplorerPage({
     return crumbs;
   }, [currentPath]);
 
-  // Filter files by search query
-  const filteredFiles = React.useMemo(() => {
-    if (!searchQuery) return files;
-    const query = searchQuery.toLowerCase();
-    return files.filter((file) => file.name?.toLowerCase().includes(query));
-  }, [files, searchQuery]);
+  // "filteredFiles" is a holdover name from the removed in-page filename
+  // filter - it's just the current folder's files now. Cross-volume search
+  // lives in the real Search tab.
+  const filteredFiles = files;
 
   // Handle export
   const handleExport = useCallback(
@@ -282,169 +258,59 @@ export function ExplorerPage({
     );
   }
 
-  // Old volume selection grid (kept for backwards compatibility when accessed directly)
-  if (false && loading) {
-    return (
-      <div className="container mx-auto py-6">
-        {loading ? (
-          <Card className="p-8 text-center">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Loading volumes...</span>
-            </div>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {volumes.map((volume) => (
-              <Card
-                key={volume.name}
-                className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(`/explorer/${volume.name}`)}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center">
-                    <HardDrive className="h-6 w-6 text-blue-600 mr-3" />
-                    <div>
-                      <h3 className="font-semibold text-gray-900 truncate">
-                        {volume.name}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {volume.driver} volume
-                      </p>
-                    </div>
-                  </div>
-                  {!volume.is_orphaned && (
-                    <div className="flex items-center text-green-600">
-                      <div className="w-2 h-2 bg-green-600 rounded-full mr-1" />
-                      <span className="text-xs">Active</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Containers:</span>
-                    <span className="text-gray-900">
-                      {volume.attachments_count || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Status:</span>
-                    <span
-                      className={`${volume.is_orphaned ? 'text-yellow-600' : 'text-green-600'}`}
-                    >
-                      {volume.is_orphaned ? 'Orphaned' : 'In Use'}
-                    </span>
-                  </div>
-                </div>
-
-                <Button
-                  className="w-full mt-4"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/explorer/${volume.name}`);
-                  }}
-                >
-                  Explore Volume
-                </Button>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {!loading && volumes.length === 0 && (
-          <Card className="p-8 text-center">
-            <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No volumes found
-            </h3>
-            <p className="text-gray-600 mb-4">
-              There are no Docker volumes available to explore.
-            </p>
-            <Button onClick={() => fetchVolumes()} variant="outline">
-              Refresh Volumes
-            </Button>
-          </Card>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className={`container mx-auto py-6 ${className}`}>
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/explorer')}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              Volume Explorer
-            </h1>
-            <p className="mt-2 text-gray-600 ml-12">
-              Browsing:{' '}
-              <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                {volumeId}
-              </span>
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            {/* View Toggle */}
-            <div className="inline-flex rounded-lg bg-surface-secondary p-1">
-              <button
-                onClick={() => handleViewModeChange('list')}
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
-                  viewMode === 'list'
-                    ? 'bg-surface-secondary shadow-sm text-primary'
-                    : 'text-secondary hover:text-primary'
-                }`}
-                aria-label="Switch to list view"
-                aria-pressed={viewMode === 'list'}
-              >
-                <List className="w-4 h-4" />
-                <span>List</span>
-              </button>
-              <button
-                onClick={() => handleViewModeChange('treemap')}
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
-                  viewMode === 'treemap'
-                    ? 'bg-surface-secondary shadow-sm text-primary'
-                    : 'text-secondary hover:text-primary'
-                }`}
-                aria-label="Switch to treemap view"
-                aria-pressed={viewMode === 'treemap'}
-              >
-                <LayoutGrid className="w-4 h-4" />
-                <span>TreeMap</span>
-              </button>
-              <button
-                onClick={() => handleViewModeChange('analytics')}
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
-                  viewMode === 'analytics'
-                    ? 'bg-surface-secondary shadow-sm text-primary'
-                    : 'text-secondary hover:text-primary'
-                }`}
-                aria-label="Switch to analytics view"
-                aria-pressed={viewMode === 'analytics'}
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span>Analytics</span>
-              </button>
-            </div>
-          </div>
+      {/* View mode toggle - the volume itself is already shown by FilesPage's
+          header/dropdown, so this page doesn't repeat it. */}
+      <div className="mb-6 flex justify-end">
+        <div className="inline-flex rounded-lg bg-surface-secondary p-1">
+          <button
+            onClick={() => handleViewModeChange('list')}
+            className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
+              viewMode === 'list'
+                ? 'bg-surface-secondary shadow-sm text-primary'
+                : 'text-secondary hover:text-primary'
+            }`}
+            aria-label="Switch to list view"
+            aria-pressed={viewMode === 'list'}
+          >
+            <List className="w-4 h-4" />
+            <span>List</span>
+          </button>
+          <button
+            onClick={() => handleViewModeChange('treemap')}
+            className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
+              viewMode === 'treemap'
+                ? 'bg-surface-secondary shadow-sm text-primary'
+                : 'text-secondary hover:text-primary'
+            }`}
+            aria-label="Switch to treemap view"
+            aria-pressed={viewMode === 'treemap'}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span>TreeMap</span>
+          </button>
+          <button
+            onClick={() => handleViewModeChange('analytics')}
+            className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all duration-200 ${
+              viewMode === 'analytics'
+                ? 'bg-surface-secondary shadow-sm text-primary'
+                : 'text-secondary hover:text-primary'
+            }`}
+            aria-label="Switch to analytics view"
+            aria-pressed={viewMode === 'analytics'}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Analytics</span>
+          </button>
         </div>
       </div>
 
       {/* Main content area with tree and file list */}
       <div className="grid grid-cols-12 gap-6">
-        {/* Directory Tree Sidebar - Only show in list view */}
-        {viewMode === 'list' && (
+        {/* Directory Tree Sidebar - only in list view, and only once we know
+            the volume actually has directories to show */}
+        {viewMode === 'list' && !directoriesAreEmpty && (
           <div className="col-span-3">
             <Card className="p-4 h-[calc(100vh-250px)] overflow-hidden flex flex-col">
               <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -455,7 +321,7 @@ export function ExplorerPage({
                 volumeId={volumeId}
                 selectedPath={currentPath}
                 onPathSelect={handleFolderClick}
-                searchQuery={searchQuery}
+                onEmptyStateChange={setDirectoriesAreEmpty}
                 className="flex-1"
               />
             </Card>
@@ -463,7 +329,7 @@ export function ExplorerPage({
         )}
 
         {/* File List, TreeMap, or Analytics Area */}
-        <div className={viewMode === 'list' ? 'col-span-9' : 'col-span-12'}>
+        <div className={viewMode === 'list' && !directoriesAreEmpty ? 'col-span-9' : 'col-span-12'}>
           {/* Breadcrumb Navigation */}
           <div className="mb-4">
             <Card className="p-3">
@@ -486,20 +352,6 @@ export function ExplorerPage({
             ))}
           </div>
         </Card>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search files and folders..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
-        </div>
       </div>
 
       {/* File List, TreeMap, or Analytics */}
@@ -562,12 +414,6 @@ export function ExplorerPage({
             </Card>
           ) : (
             <>
-              {console.log('[ExplorerPage] Passing to TreeMap:', {
-                volumeId,
-                filesCount: filteredFiles.length,
-                currentPath,
-                sampleFiles: filteredFiles.slice(0, 3)
-              })}
               <TreeMapVisualization
                 volumeId={volumeId}
                 files={filteredFiles}

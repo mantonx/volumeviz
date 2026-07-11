@@ -12,7 +12,6 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Users,
-  Building2,
   FileText,
   Settings,
   Shield,
@@ -47,12 +46,6 @@ const navItems: NavItem[] = [
     path: '/admin/users',
     icon: Users,
     description: 'Manage user accounts',
-  },
-  {
-    name: 'Organizations',
-    path: '/admin/organizations',
-    icon: Building2,
-    description: 'Manage organizations',
   },
   {
     name: 'Audit Logs',

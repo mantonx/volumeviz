@@ -1,7 +1,18 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Provider } from 'jotai';
+import { ToastProvider } from '@/components/ui/Toast';
 import { Layout } from './Layout';
+
+// Layout always mounts VolumeDetailsModal (triggered globally via
+// selectedVolumeAtom, even when closed), which calls useToast() - every
+// test needs a real ToastProvider ancestor, not just a jotai Provider.
+const renderWithProviders = (ui: React.ReactElement) =>
+  render(
+    <Provider>
+      <ToastProvider>{ui}</ToastProvider>
+    </Provider>,
+  );
 
 // Mock the Header and Sidebar components
 vi.mock('../Header', () => ({
@@ -31,34 +42,24 @@ describe('Layout', () => {
   });
 
   it('renders children content correctly', () => {
-    render(
-      <Provider>
-        <Layout>
-          <div>Test Page Content</div>
-        </Layout>
-      </Provider>,
+    renderWithProviders(
+      <Layout>
+        <div>Test Page Content</div>
+      </Layout>,
     );
 
     expect(screen.getByText('Test Page Content')).toBeInTheDocument();
   });
 
   it('renders header and sidebar components', () => {
-    render(
-      <Provider>
-        <Layout>Content</Layout>
-      </Provider>,
-    );
+    renderWithProviders(<Layout>Content</Layout>);
 
     expect(screen.getByTestId('header')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
   });
 
   it('manages sidebar open/close state correctly', () => {
-    render(
-      <Provider>
-        <Layout>Content</Layout>
-      </Provider>,
-    );
+    renderWithProviders(<Layout>Content</Layout>);
 
     // Initially sidebar should be closed
     expect(screen.getByText('Sidebar Open: false')).toBeInTheDocument();
@@ -75,12 +76,10 @@ describe('Layout', () => {
   });
 
   it('applies custom className to main content area', () => {
-    render(
-      <Provider>
-        <Layout className="custom-spacing">
-          <div>Content</div>
-        </Layout>
-      </Provider>,
+    renderWithProviders(
+      <Layout className="custom-spacing">
+        <div>Content</div>
+      </Layout>,
     );
 
     const mainElement = screen.getByRole('main');
@@ -88,11 +87,7 @@ describe('Layout', () => {
   });
 
   it('applies base layout structure classes', () => {
-    render(
-      <Provider>
-        <Layout>Content</Layout>
-      </Provider>,
-    );
+    renderWithProviders(<Layout>Content</Layout>);
 
     // Check for main layout container
     const layoutContainer = screen

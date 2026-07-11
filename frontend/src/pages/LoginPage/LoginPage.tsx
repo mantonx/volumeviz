@@ -2,12 +2,11 @@
  * LoginPage - User authentication page
  *
  * Features:
- * - Username/password login with organization ID
+ * - Username/password login
  * - JWT token management
  * - Remember me functionality
  * - Error handling and validation
  * - Redirect after successful login
- * - Organization-scoped authentication
  */
 
 import React, { useState, FormEvent } from 'react';
@@ -15,7 +14,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { postAuthLogin } from '@/api/orval-generated/api';
+import { postApiV1AuthLogin } from '@/api/orval-generated/api';
 import { useAuth } from '@/hooks/useAuth';
 
 interface LoginPageProps {
@@ -29,7 +28,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [organizationId] = useState('1'); // Default to org 1
+  // This app is single-organization; org 1 is the only organization that
+  // has ever existed here, so this is fixed rather than user-facing.
+  const [organizationId] = useState('1');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,13 +43,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
 
     try {
       // Call the login API
-      const response = await postAuthLogin({
+      const response = await postApiV1AuthLogin({
         username,
         password,
         organization_id: parseInt(organizationId, 10),
       } as any);
 
-      const responseData = response as any;
+      const responseData = (response as any).data;
 
       // Store the JWT token and user info
       if (responseData.token) {
@@ -197,13 +198,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
                 </label>
               </div>
 
-              <button
-                type="button"
-                className="text-sm font-medium text-blue-600 hover:text-blue-500"
-                onClick={() => console.log('Password reset not implemented')}
+              <span
+                className="text-sm text-secondary"
+                title="Self-service password reset isn't available yet — contact your administrator"
               >
-                Forgot password?
-              </button>
+                Forgot password? Contact your administrator.
+              </span>
             </div>
 
             {/* Submit Button */}
@@ -229,9 +229,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ className = '' }) => {
               <code className="bg-blue-100 px-1 rounded font-medium">
                 demouser / NewPassword123
               </code>
-            </p>
-            <p className="text-xs text-blue-900 mt-1">
-              Organization ID is set to 1 by default.
             </p>
           </div>
         </Card>

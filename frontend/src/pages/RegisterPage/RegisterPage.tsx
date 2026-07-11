@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, User, Mail, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { postAuthRegister } from '@/api/orval-generated/api';
+import { postApiV1AuthRegister } from '@/api/orval-generated/api';
 
 interface RegisterPageProps {
   className?: string;
@@ -27,7 +27,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ className = '' }) =>
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [organizationId] = useState('1'); // Default to org 1
+  // This app is single-organization; org 1 is the only organization that
+  // has ever existed here, so this is fixed rather than user-facing.
+  const [organizationId] = useState('1');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,7 +74,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ className = '' }) =>
 
     try {
       // Call the register API
-      await postAuthRegister({
+      await postApiV1AuthRegister({
         username,
         email,
         password,
@@ -297,9 +299,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ className = '' }) =>
               )}
             </div>
 
-            {/* Organization ID Field (hidden) */}
-            <input type="hidden" value={organizationId} />
-
             {/* Submit Button */}
             <Button type="submit" className="w-full" disabled={isLoading || password !== confirmPassword}>
               {isLoading ? (
@@ -313,13 +312,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ className = '' }) =>
             </Button>
           </form>
 
-          {/* Development Note */}
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-900 mb-1 font-semibold">Development Mode:</p>
-            <p className="text-xs text-blue-900">
-              Registering with organization ID 1 (default organization)
-            </p>
-          </div>
         </Card>
 
         {/* Footer */}

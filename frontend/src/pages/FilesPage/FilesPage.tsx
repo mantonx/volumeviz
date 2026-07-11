@@ -20,7 +20,7 @@ import { useSearchParams } from 'react-router-dom';
 import { FolderOpen, Search, Filter } from 'lucide-react';
 import { ExplorerPage } from '@/pages/ExplorerPage';
 import { SearchPage } from '@/pages/SearchPage';
-import { useGetVolumes } from '@/api/orval-generated/api';
+import { useGetApiV1Volumes } from '@/api/orval-generated/api';
 
 type ViewMode = 'browse' | 'search';
 
@@ -33,13 +33,19 @@ export const FilesPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>(initialTab || 'browse');
 
   // Load volumes for the dropdown filter
-  const { data: volumesResponse, isLoading: volumesLoading } = useGetVolumes({
+  const { data: volumesResponse, isLoading: volumesLoading } = useGetApiV1Volumes({
     system: false,
     page_size: 100,
   });
 
-  // Parse volumes from response - response is { data: Volume[], page, total }
-  const volumes = (volumesResponse?.data as any[]) || [];
+  // customFetchClient wraps successful responses as { data, status, headers },
+  // and the volumes response body itself is { data: Volume[], page, total } -
+  // so the volumes array is at data.data.data, only reachable once narrowed
+  // to the 200 response (status is a discriminant between success/error body
+  // shapes).
+  const volumesBody =
+    volumesResponse?.status === 200 ? volumesResponse.data : undefined;
+  const volumes = (volumesBody?.data as any[]) || [];
 
   // Update URL when view mode changes
   const handleViewModeChange = (mode: ViewMode) => {

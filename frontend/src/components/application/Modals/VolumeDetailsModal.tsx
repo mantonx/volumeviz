@@ -16,7 +16,6 @@ import {
   CheckCircle,
   RefreshCw,
   Copy,
-  ExternalLink,
   BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -540,15 +539,6 @@ export const VolumeDetailsModal: React.FC<VolumeDetailsModalProps> = ({
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>
-            {volume && (
-              <Button
-                onClick={() => window.open(`/volumes/${volume.name}`, '_blank')}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open in New Tab
-              </Button>
-            )}
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useGetVolumes, type VolumeV1 } from '@/api/orval-generated/api';
+import { useGetApiV1Volumes, type VolumeV1 } from '@/api/orval-generated/api';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils';
 import {
@@ -9,6 +9,7 @@ import {
   Home,
   Layers,
   Settings,
+  Shield,
   TrendingUp,
   X,
 } from 'lucide-react';
@@ -59,6 +60,12 @@ const navigation: NavigationItem[] = [
     icon: Bell,
     description: 'Alert management & notifications',
   },
+  {
+    name: 'Tracking Rules',
+    href: '/rules',
+    icon: Shield,
+    description: 'Configure which mounts get auto-tracked',
+  },
 ];
 
 const secondaryNavigation: NavigationItem[] = [
@@ -78,7 +85,7 @@ const secondaryNavigation: NavigationItem[] = [
 
 export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   const location = useLocation();
-  const { data: volumesData } = useGetVolumes({ page: 1, page_size: 100 });
+  const { data: volumesData } = useGetApiV1Volumes({ page: 1, page_size: 100 });
   const volumes = (
     volumesData?.status === 200 ? (volumesData.data.data as VolumeV1[]) : []
   ) ?? [];
