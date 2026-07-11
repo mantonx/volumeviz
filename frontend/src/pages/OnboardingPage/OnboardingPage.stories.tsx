@@ -5,7 +5,7 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { BrowserRouter } from 'react-router-dom';
-import { OnboardingPage } from './OnboardingPage';
+import OnboardingPage from './OnboardingPage';
 
 const meta = {
   title: 'Pages/OnboardingPage',

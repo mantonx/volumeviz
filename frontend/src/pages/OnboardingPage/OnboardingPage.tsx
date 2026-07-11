@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight,
   ArrowLeft,
@@ -38,6 +39,12 @@ interface OnboardingState {
   selectedPreset: string | null;
   customRules: any[];
   previewResults: any | null;
+  // Real rule IDs created (via POST /api/v1/rules) so the Preview step can
+  // evaluate them for real via POST /api/v1/tracking/preview - the preview
+  // endpoint only evaluates already-persisted rules, it can't take ad-hoc
+  // rule payloads inline. Cleaned up (DELETE) if the user goes back to
+  // change preset; left alone and reused (not recreated) on Complete.
+  createdRuleIds: number[] | null;
 }
 
 const STEPS = [
@@ -183,6 +190,7 @@ const PRESETS: OnboardingPreset[] = [
 
 const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [state, setState] = useState<OnboardingState>(() => {
     // Try to restore state from localStorage
     try {
@@ -196,9 +204,14 @@ const OnboardingPage: React.FC = () => {
         if (isComplete !== 'true') {
           return {
             ...parsedState,
-            // Don't restore discovery or preview results as they may be stale
+            // Don't restore discovery, preview results, or created rule IDs
+            // as they may be stale (a reload loses the in-memory IDs but not
+            // the server-side rows, so generating a fresh preview here would
+            // create a second set of rules rather than reusing the first -
+            // an accepted, low-consequence edge case, not a correctness bug)
             discovery: null,
             previewResults: null,
+            createdRuleIds: null,
           };
         }
       }
@@ -213,9 +226,12 @@ const OnboardingPage: React.FC = () => {
       selectedPreset: null,
       customRules: [],
       previewResults: null,
+      createdRuleIds: null,
     };
   });
   const [loading, setLoading] = useState(false);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   // Transform mount catalog data to discovery format
   const transformMountDataToDiscovery = (
@@ -268,33 +284,6 @@ const OnboardingPage: React.FC = () => {
     return discovery;
   };
 
-  // Mock discovery data for now
-  const mockDiscovery: MountDiscovery = {
-    totalMounts: 19,
-    volumeCount: 12,
-    bindCount: 6,
-    tmpfsCount: 1,
-    orphanedCount: 2,
-    composeProjects: {
-      volumeviz: 8,
-      monitoring: 6,
-      'dev-stack': 3,
-      backup: 2,
-    },
-    composeServices: {
-      postgres: 3,
-      redis: 2,
-      grafana: 2,
-      prometheus: 2,
-      backup: 2,
-      nginx: 1,
-      api: 1,
-      worker: 1,
-      frontend: 1,
-      other: 4,
-    },
-  };
-
   // Save state to localStorage whenever it changes
   useEffect(() => {
     try {
@@ -317,6 +306,7 @@ const OnboardingPage: React.FC = () => {
   useEffect(() => {
     if (state.currentStep === 0 && !state.discovery) {
       setLoading(true);
+      setDiscoveryError(null);
 
       const loadDiscoveryData = async () => {
         try {
@@ -326,7 +316,6 @@ const OnboardingPage: React.FC = () => {
 
           // If no mounts found, trigger discovery first
           if (!data.mounts || data.mounts.length === 0) {
-            console.log('No mounts found, triggering discovery...');
             const discoveryResponse = await fetch('/api/v1/mounts/discover', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -342,22 +331,19 @@ const OnboardingPage: React.FC = () => {
           }
 
           const mounts = data.mounts || [];
-          console.log('Loaded mounts for discovery:', mounts.length);
 
-          // Transform API response to discovery format
+          // Transform API response to discovery format. A genuinely empty
+          // result (0 real mounts on this host) is honest, valid data —
+          // shown as-is rather than papered over with fake numbers.
           const discovery = transformMountDataToDiscovery(mounts);
-
-          // If still no mounts, use mock data to demonstrate the wizard
-          if (discovery.totalMounts === 0) {
-            console.log('No mounts discovered, using mock data for demo');
-            setState((prev) => ({ ...prev, discovery: mockDiscovery }));
-          } else {
-            setState((prev) => ({ ...prev, discovery }));
-          }
+          setState((prev) => ({ ...prev, discovery }));
         } catch (error) {
           console.error('Failed to load mount discovery data:', error);
-          // Fall back to mock data on error
-          setState((prev) => ({ ...prev, discovery: mockDiscovery }));
+          setDiscoveryError(
+            error instanceof Error
+              ? error.message
+              : 'Failed to load mount discovery data',
+          );
         } finally {
           setLoading(false);
         }
@@ -373,23 +359,51 @@ const OnboardingPage: React.FC = () => {
     }
   };
 
+  // Deletes any rules generatePreview created for real, so going back to
+  // change preset (or re-generating) doesn't leave duplicate/stale rule
+  // rows behind. Best-effort - a delete failure here just means an unused
+  // rule row remains (same accepted risk as the abandoned-tab-close case).
+  const deleteCreatedRules = async (ruleIds: number[]) => {
+    await Promise.allSettled(
+      ruleIds.map((id) =>
+        fetch(`/api/v1/rules/${id}`, { method: 'DELETE' }),
+      ),
+    );
+  };
+
   const prevStep = () => {
     if (state.currentStep > 0) {
-      setState((prev) => ({ ...prev, currentStep: prev.currentStep - 1 }));
+      if (state.currentStep === 2 && state.createdRuleIds) {
+        deleteCreatedRules(state.createdRuleIds);
+      }
+      setState((prev) => ({
+        ...prev,
+        currentStep: prev.currentStep - 1,
+        previewResults: null,
+        createdRuleIds: null,
+      }));
     }
   };
 
   const selectPreset = (presetId: string) => {
-    setState((prev) => ({ ...prev, selectedPreset: presetId }));
+    if (state.createdRuleIds) {
+      deleteCreatedRules(state.createdRuleIds);
+    }
+    setState((prev) => ({
+      ...prev,
+      selectedPreset: presetId,
+      previewResults: null,
+      createdRuleIds: null,
+    }));
   };
 
   const generatePreview = async () => {
     if (!state.selectedPreset) return;
 
     setLoading(true);
+    setPreviewError(null);
 
     try {
-      // Get the rules for the selected preset
       const selectedPresetData = PRESETS.find(
         (p) => p.id === state.selectedPreset,
       );
@@ -397,104 +411,99 @@ const OnboardingPage: React.FC = () => {
         throw new Error('Selected preset not found');
       }
 
-      // For onboarding, we'll generate a mock preview based on the discovery data and preset logic
-      // Since the preview API expects existing rule IDs, we can't use it during onboarding
-      const totalMounts = state.discovery?.totalMounts || 0;
-
-      // Calculate preview based on preset logic and discovery data
-      let mountsIncluded = 0;
-      let mountsExcluded = 0;
-
-      if (totalMounts === 0) {
-        // When using mock discovery data, use the mock totals for calculations
-        const mockTotal =
-          state.discovery === mockDiscovery ? mockDiscovery.totalMounts : 0;
-
-        if (mockTotal > 0) {
-          // Use mock data calculations
-          switch (state.selectedPreset) {
-            case 'server':
-              mountsIncluded =
-                mockDiscovery.volumeCount +
-                Math.floor(mockDiscovery.bindCount * 0.5); // ~13
-              mountsExcluded = mockTotal - mountsIncluded; // ~6
-              break;
-            case 'strict':
-              mountsIncluded = mockDiscovery.volumeCount; // 12 volumes only
-              mountsExcluded = mockTotal - mountsIncluded; // 7 excluded
-              break;
-            case 'custom':
-              mountsIncluded = 0; // Custom starts with no rules
-              mountsExcluded = 0;
-              break;
-            default:
-              mountsIncluded = mockTotal;
-              mountsExcluded = 0;
-          }
-        } else {
-          // Truly no mounts available
-          mountsIncluded = 0;
-          mountsExcluded = 0;
-        }
-      } else {
-        // Calculate based on real mount discovery data
-        switch (state.selectedPreset) {
-          case 'server':
-            // Server preset includes volumes and some bind mounts, excludes home dirs and read-only
-            mountsIncluded =
-              (state.discovery?.volumeCount || 0) +
-              Math.floor((state.discovery?.bindCount || 0) * 0.5);
-            mountsExcluded = totalMounts - mountsIncluded;
-            break;
-          case 'strict':
-            // Strict preset only includes volumes
-            mountsIncluded = state.discovery?.volumeCount || 0;
-            mountsExcluded = totalMounts - mountsIncluded;
-            break;
-          case 'custom':
-            mountsIncluded = 0; // Custom starts with no rules
-            mountsExcluded = 0;
-            break;
-          default:
-            mountsIncluded = totalMounts;
-            mountsExcluded = 0;
-        }
+      // The preview endpoint treats an empty rule_ids list as "preview all
+      // enabled rules system-wide", not "preview zero rules" - so a
+      // zero-rule preset (Custom) must skip the API call entirely rather
+      // than send [] and get back unrelated pre-existing rules' results.
+      if (selectedPresetData.rules.length === 0) {
+        setState((prev) => ({
+          ...prev,
+          createdRuleIds: [],
+          previewResults: {
+            summary: {
+              totalMounts: state.discovery?.totalMounts ?? 0,
+              mountsIncluded: 0,
+              mountsExcluded: 0,
+              mountsUnmatched: state.discovery?.totalMounts ?? 0,
+            },
+          },
+        }));
+        setLoading(false);
+        return;
       }
 
-      // Use the correct total mounts (either real data or mock data)
-      const effectiveTotal =
-        totalMounts > 0
-          ? totalMounts
-          : state.discovery === mockDiscovery
-            ? mockDiscovery.totalMounts
-            : 0;
+      // POST /api/v1/tracking/preview evaluates already-persisted rule rows
+      // by ID (it can't take ad-hoc rule payloads inline) — so create the
+      // preset's rules for real first. dry_run below only controls whether
+      // an evaluation log record is written; it never applies tracking
+      // status, so this is safe to do before the user has confirmed anything.
+      const createdRuleIds: number[] = [];
+      for (const rule of selectedPresetData.rules) {
+        const response = await fetch('/api/v1/rules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: rule.name,
+            description: `Auto-generated from ${selectedPresetData.name} preset during onboarding`,
+            action: rule.action,
+            priority: rule.priority,
+            is_enabled: true,
+            conditions: rule.conditions,
+          }),
+        });
 
-      const mockPreview = {
-        summary: {
-          totalMounts: effectiveTotal,
-          mountsMatched: mountsIncluded + mountsExcluded,
-          mountsIncluded,
-          mountsExcluded,
-          mountsUnmatched: effectiveTotal - mountsIncluded - mountsExcluded,
+        if (!response.ok) {
+          throw new Error(
+            `Failed to save rule "${rule.name}": ${response.status}`,
+          );
+        }
+
+        const savedRule = await response.json();
+        createdRuleIds.push(savedRule.id);
+      }
+
+      const previewResponse = await fetch('/api/v1/tracking/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rule_ids: createdRuleIds,
+          include_rule_details: false,
+          include_unmatched: true,
+          dry_run: true,
+        }),
+      });
+
+      if (!previewResponse.ok) {
+        throw new Error(
+          `Failed to preview tracking rules: ${previewResponse.status}`,
+        );
+      }
+
+      const preview = await previewResponse.json();
+
+      setState((prev) => ({
+        ...prev,
+        createdRuleIds,
+        previewResults: {
+          summary: {
+            totalMounts: preview.summary?.total_mounts ?? 0,
+            mountsIncluded: preview.summary?.mounts_included ?? 0,
+            mountsExcluded: preview.summary?.mounts_excluded ?? 0,
+            mountsUnmatched: preview.summary?.mounts_unmatched ?? 0,
+          },
         },
-      };
-
-      console.log('Generated preview:', mockPreview);
-      setState((prev) => ({ ...prev, previewResults: mockPreview }));
+      }));
     } catch (error) {
       console.error('Failed to generate preview:', error);
-
-      // Absolute fallback
-      const mockPreview = {
-        summary: {
-          totalMounts: state.discovery?.totalMounts || 19,
-          mountsMatched: 15,
-          mountsIncluded: 13,
-          mountsExcluded: 2,
-          mountsUnmatched: 4,
-        },
-      };
-      setState((prev) => ({ ...prev, previewResults: mockPreview }));
+      // Leave previewResults unset on failure rather than fabricating
+      // plausible-looking numbers — the Preview step already renders an
+      // honest "no preview available" state when previewResults is null.
+      setState((prev) => ({ ...prev, previewResults: null }));
+      setPreviewError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to generate a tracking preview',
+      );
     }
 
     setLoading(false);
@@ -502,6 +511,7 @@ const OnboardingPage: React.FC = () => {
 
   const triggerDiscovery = async () => {
     setLoading(true);
+    setDiscoveryError(null);
 
     try {
       // Trigger mount discovery
@@ -522,24 +532,18 @@ const OnboardingPage: React.FC = () => {
       const data = await mountsResponse.json();
       const mounts = data.mounts || [];
 
-      console.log('Discovery triggered, found mounts:', mounts.length);
-
-      // Transform to discovery format
+      // Transform to discovery format. A genuine zero-mounts result is
+      // shown as-is via the existing "No Docker Mounts Discovered" panel
+      // (state.discovery.totalMounts === 0) rather than swapped for fake
+      // sample data — the panel already explains what that means and how
+      // to retry.
       const discovery = transformMountDataToDiscovery(mounts);
-
-      if (discovery.totalMounts === 0) {
-        // Still no mounts, inform user but keep mock data for demo
-        alert(
-          'No Docker mounts were discovered. Make sure Docker is running and you have some containers with volumes mounted.',
-        );
-        setState((prev) => ({ ...prev, discovery: mockDiscovery }));
-      } else {
-        setState((prev) => ({ ...prev, discovery }));
-      }
+      setState((prev) => ({ ...prev, discovery }));
     } catch (error) {
       console.error('Failed to trigger discovery:', error);
-      alert('Failed to discover mounts. Using sample data for demonstration.');
-      setState((prev) => ({ ...prev, discovery: mockDiscovery }));
+      setDiscoveryError(
+        error instanceof Error ? error.message : 'Failed to discover mounts',
+      );
     } finally {
       setLoading(false);
     }
@@ -559,32 +563,37 @@ const OnboardingPage: React.FC = () => {
         throw new Error('Selected preset not found');
       }
 
-      // Save each rule via the API
-      const savedRules = [];
-      for (const rule of selectedPresetData.rules) {
-        const response = await fetch('/api/v1/rules', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: rule.name,
-            description: `Auto-generated from ${selectedPresetData.name} preset during onboarding`,
-            action: rule.action,
-            priority: rule.priority,
-            is_enabled: true,
-            conditions: rule.conditions,
-          }),
-        });
+      // Rules were already created for real during the Preview step (see
+      // generatePreview) so the preview and the applied result are
+      // guaranteed to match. Only fall back to creating them here if the
+      // user somehow reached Complete without generating a preview first
+      // (canProceed already gates step 2 on previewResults existing, so
+      // this is a defensive fallback, not the normal path).
+      let createdRuleCount = state.createdRuleIds?.length ?? 0;
+      if (state.createdRuleIds === null) {
+        for (const rule of selectedPresetData.rules) {
+          const response = await fetch('/api/v1/rules', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: rule.name,
+              description: `Auto-generated from ${selectedPresetData.name} preset during onboarding`,
+              action: rule.action,
+              priority: rule.priority,
+              is_enabled: true,
+              conditions: rule.conditions,
+            }),
+          });
 
-        if (!response.ok) {
-          throw new Error(
-            `Failed to save rule "${rule.name}": ${response.status}`,
-          );
+          if (!response.ok) {
+            throw new Error(
+              `Failed to save rule "${rule.name}": ${response.status}`,
+            );
+          }
         }
-
-        const savedRule = await response.json();
-        savedRules.push(savedRule);
+        createdRuleCount = selectedPresetData.rules.length;
       }
 
       // Apply the rules to update tracking status
@@ -608,12 +617,25 @@ const OnboardingPage: React.FC = () => {
       // Clean up onboarding state as it's no longer needed
       localStorage.removeItem('volumeviz_onboarding_state');
 
+      // App.tsx's shouldRedirectToOnboarding is computed once at mount and
+      // isn't re-derived on client-side navigation, so without this a
+      // first-time user completing onboarding gets bounced straight back
+      // into it by that stale value.
+      window.dispatchEvent(new Event('volumeviz-onboarding-complete'));
+
+      // The Dashboard's volumes query may have been fetched (and cached
+      // for 5 minutes) before tracking/apply just changed is_tracked on
+      // every volume — without this it shows stale/empty data right after
+      // onboarding "completes".
+      await queryClient.invalidateQueries({ queryKey: ['/api/v1/volumes'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/v1/mounts'] });
+
       // Navigate to dashboard with success state
       navigate('/', {
         state: {
           onboardingComplete: true,
           trackedCount: state.previewResults?.summary?.mountsIncluded || 0,
-          rulesCreated: savedRules.length,
+          rulesCreated: createdRuleCount,
           presetUsed: selectedPresetData.name,
         },
       });
@@ -628,6 +650,7 @@ const OnboardingPage: React.FC = () => {
 
       // Mark as attempted completion even if failed
       localStorage.setItem('volumeviz_onboarding_attempted', 'true');
+      window.dispatchEvent(new Event('volumeviz-onboarding-complete'));
       navigate('/');
     }
 
@@ -676,8 +699,10 @@ const OnboardingPage: React.FC = () => {
                   <li>• VolumeViz doesn't have permission to access Docker</li>
                 </ul>
                 <p className="text-yellow-700 dark:text-yellow-300 text-sm">
-                  You can continue with the demo data below, or click "Refresh
-                  Discovery" after starting some containers.
+                  Click "Refresh Discovery" below after starting some
+                  containers with volumes mounted, or continue and set up
+                  tracking rules now — they'll apply automatically once real
+                  mounts appear.
                 </p>
               </div>
             </div>
@@ -723,10 +748,13 @@ const OnboardingPage: React.FC = () => {
               </div>
             </div>
             {state.discovery.orphanedCount > 0 && (
-              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <p className="text-sm text-red-700 dark:text-red-300">
-                  ⚠️ {state.discovery.orphanedCount} orphaned mount(s) found (no
-                  active containers)
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  {state.discovery.orphanedCount} of these aren't attached to a
+                  running container right now — that's normal for data
+                  volumes between restarts, not necessarily a problem. You can
+                  still track them; VolumeViz will pick them back up when a
+                  container reattaches.
                 </p>
               </div>
             )}
@@ -763,20 +791,26 @@ const OnboardingPage: React.FC = () => {
                 Compose Projects
               </h3>
               <div className="space-y-2">
-                {Object.entries(state.discovery.composeProjects).map(
-                  ([project, count]) => (
-                    <div
-                      key={project}
-                      className="flex justify-between items-center"
-                    >
-                      <span className="text-sm text-secondary">
-                        {project}
-                      </span>
-                      <span className="px-2 py-1 bg-surface-secondary rounded text-sm">
-                        {count}
-                      </span>
-                    </div>
-                  ),
+                {Object.keys(state.discovery.composeProjects).length === 0 ? (
+                  <p className="text-sm text-tertiary">
+                    No Docker Compose projects detected among these mounts.
+                  </p>
+                ) : (
+                  Object.entries(state.discovery.composeProjects).map(
+                    ([project, count]) => (
+                      <div
+                        key={project}
+                        className="flex justify-between items-center"
+                      >
+                        <span className="text-sm text-secondary">
+                          {project}
+                        </span>
+                        <span className="px-2 py-1 bg-surface-secondary rounded text-sm">
+                          {count}
+                        </span>
+                      </div>
+                    ),
+                  )
                 )}
               </div>
             </div>
@@ -786,27 +820,50 @@ const OnboardingPage: React.FC = () => {
                 Top Services
               </h3>
               <div className="space-y-2">
-                {Object.entries(state.discovery.composeServices)
-                  .sort(([, a], [, b]) => b - a)
-                  .slice(0, 6)
-                  .map(([service, count]) => (
-                    <div
-                      key={service}
-                      className="flex justify-between items-center"
-                    >
-                      <span className="text-sm text-secondary">
-                        {service}
-                      </span>
-                      <span className="px-2 py-1 bg-surface-secondary rounded text-sm">
-                        {count}
-                      </span>
-                    </div>
-                  ))}
+                {Object.keys(state.discovery.composeServices).length === 0 ? (
+                  <p className="text-sm text-tertiary">
+                    No Docker Compose services detected among these mounts.
+                  </p>
+                ) : (
+                  Object.entries(state.discovery.composeServices)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 6)
+                    .map(([service, count]) => (
+                      <div
+                        key={service}
+                        className="flex justify-between items-center"
+                      >
+                        <span className="text-sm text-secondary">
+                          {service}
+                        </span>
+                        <span className="px-2 py-1 bg-surface-secondary rounded text-sm">
+                          {count}
+                        </span>
+                      </div>
+                    ))
+                )}
               </div>
             </div>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="text-center py-8">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+            <h3 className="text-lg font-medium text-red-800 dark:text-red-200 mb-2">
+              Couldn't Load Mount Discovery
+            </h3>
+            <p className="text-red-700 dark:text-red-300 text-sm mb-4">
+              {discoveryError || 'Something went wrong while discovering Docker mounts.'}
+            </p>
+            <button
+              onClick={triggerDiscovery}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -818,7 +875,9 @@ const OnboardingPage: React.FC = () => {
           Choose Your Tracking Strategy
         </h2>
         <p className="mt-2 text-secondary">
-          Select a preset that matches your use case, or start with custom rules
+          A preset is a small set of rules — each one says "include" or
+          "exclude" mounts matching some condition. Pick one below, or start
+          from scratch with Custom.
         </p>
       </div>
 
@@ -882,6 +941,11 @@ const OnboardingPage: React.FC = () => {
 
       {!state.previewResults ? (
         <div className="text-center py-8">
+          {previewError && (
+            <p className="mb-4 text-sm text-red-600 dark:text-red-400">
+              {previewError} — you can try again below.
+            </p>
+          )}
           <button
             onClick={generatePreview}
             disabled={loading || !state.selectedPreset}
@@ -904,9 +968,14 @@ const OnboardingPage: React.FC = () => {
         <div className="space-y-6">
           {/* Preview Summary */}
           <div className="bg-surface rounded-lg p-6 shadow">
-            <h3 className="text-lg font-medium text-primary mb-4">
+            <h3 className="text-lg font-medium text-primary">
               Tracking Results
             </h3>
+            <p className="text-sm text-tertiary mb-4">
+              These numbers come from actually running the rules below against
+              your real discovered mounts — this is exactly what happens when
+              you finish setup.
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
