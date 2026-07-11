@@ -42,6 +42,30 @@ services:
     networks:
       - volumeviz-network-dev
 
+  # One-shot dev seed: waits for backend-postgres to report healthy (which
+  # only happens once its auto-migration has created the schema), then
+  # inserts a demo login (demouser / NewPassword123, matching the hint on
+  # the login page) and a couple of sample volumes. Safe to re-run
+  # (scripts/seed.sql is idempotent) and exits once done — restart it
+  # manually with `docker compose -f docker-compose.dev.yml up seed` if you
+  # need to re-seed after wiping the volume.
+  seed:
+    image: postgres:15-alpine
+    container_name: volumeviz-seed-dev
+    entrypoint: ["sh", "-c"]
+    command:
+      - "psql \"$$DATABASE_URL\" -v ON_ERROR_STOP=1 -f /seed.sql"
+    environment:
+      DATABASE_URL: "postgres://volumeviz:volumeviz@postgres:5432/volumeviz?sslmode=disable"
+    volumes:
+      - ./scripts/seed.sql:/seed.sql:ro
+    depends_on:
+      backend-postgres:
+        condition: service_healthy
+    networks:
+      - volumeviz-network-dev
+    restart: "no"
+
   # VolumeViz backend with PostgreSQL
   backend-postgres:
     build:
@@ -65,7 +89,9 @@ services:
       ALLOW_ORIGINS: "http://localhost:5173,http://localhost:5177,http://localhost:3000"
       SCAN_ENABLED: "true"
       VV_FILESYSTEM_INDEXING_ENABLED: "true"
-      AUTH_ENABLED: "false"
+      AUTO_MIGRATE: "true"
+      ALERTS_ENABLED: "true"
+      AUTH_ENABLED: "true"
       AUTH_HS256_SECRET: "your-super-secret-jwt-key-for-development-only-change-in-production"
       GOCACHE: "/tmp/gocache"
       GOMODCACHE: "/tmp/gomodcache"
@@ -80,6 +106,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      # Only reports healthy once migrations have run and the app can reach
+      # the DB — the /health endpoint's database check fails until then.
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.volumeviz-postgres.loadbalancer.server.port=8080"
