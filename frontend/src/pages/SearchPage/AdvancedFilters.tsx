@@ -5,75 +5,32 @@
  * - File size (min/max with unit selector)
  * - Date range (modified dates)
  * - File type (extensions)
- * - Media type (categories)
- * - Volume selection
  * - Path filtering
+ *
+ * Volume scoping lives in FilesPage's own volume dropdown, not here - a
+ * second, redundant volume multi-select used to live in this panel but
+ * nothing it collected ever reached the search API.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Filter,
   X,
   ChevronDown,
   ChevronUp,
   Calendar,
-  HardDrive,
   FileType,
   Folder,
-  Image,
-  Video,
-  Music,
-  FileArchive,
-  Code,
-  FileText,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { getVolumes } from '@/api/orval-generated/api';
-import type { AdvancedFiltersProps, FilterState, MediaTypeCategory } from './AdvancedFilters.types';
+import type { AdvancedFiltersProps, FilterState } from './AdvancedFilters.types';
 
 export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   filters,
   onFiltersChange,
   className = '',
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [volumes, setVolumes] = useState<Array<{ id: string; name: string }>>([]);
-  const [loadingVolumes, setLoadingVolumes] = useState(false);
-
-  // Media type icons
-  const mediaTypeIcons: Record<MediaTypeCategory, React.ReactNode> = {
-    image: <Image className="w-4 h-4" />,
-    video: <Video className="w-4 h-4" />,
-    audio: <Music className="w-4 h-4" />,
-    document: <FileText className="w-4 h-4" />,
-    archive: <FileArchive className="w-4 h-4" />,
-    code: <Code className="w-4 h-4" />,
-  };
-
-  // Load volumes on mount
-  useEffect(() => {
-    const loadVolumes = async () => {
-      setLoadingVolumes(true);
-      try {
-        const response = await getVolumes({ page_size: 100 });
-        if (response.status === 200) {
-          const volumeList =
-            (response.data.data as Array<{ name: string }> | undefined) ?? [];
-          setVolumes(
-            volumeList.map((v) => ({
-              id: v.name,
-              name: v.name,
-            }))
-          );
-        }
-      } catch (error) {
-        console.error('Failed to load volumes:', error);
-      } finally {
-        setLoadingVolumes(false);
-      }
-    };
-    loadVolumes();
-  }, []);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Helper to update filters
   const updateFilter = <K extends keyof FilterState>(
@@ -275,40 +232,6 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             )}
           </div>
 
-          {/* Media Type Filter */}
-          <div>
-            <label className="block text-sm font-medium text-secondary mb-2">
-              Media Types
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {(
-                ['image', 'video', 'audio', 'document', 'archive', 'code'] as MediaTypeCategory[]
-              ).map((type) => (
-                <label
-                  key={type}
-                  className="flex items-center gap-2 px-3 py-2 border border-line rounded-md bg-surface-secondary hover:bg-surface-hover cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={filters.mediaTypes?.includes(type) || false}
-                    onChange={(e) => {
-                      const current = filters.mediaTypes || [];
-                      const updated = e.target.checked
-                        ? [...current, type]
-                        : current.filter((t) => t !== type);
-                      updateFilter('mediaTypes', updated.length > 0 ? updated : undefined);
-                    }}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="flex items-center gap-1.5 text-sm text-primary">
-                    {mediaTypeIcons[type]}
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-
           {/* File Type Filter */}
           <div>
             <label className="block text-sm font-medium text-secondary mb-2 flex items-center gap-2">
@@ -330,37 +253,6 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             />
             <p className="mt-1 text-xs text-tertiary">
               Enter file extensions separated by commas
-            </p>
-          </div>
-
-          {/* Volume Filter */}
-          <div>
-            <label className="block text-sm font-medium text-secondary mb-2 flex items-center gap-2">
-              <HardDrive className="w-4 h-4" />
-              Volumes
-            </label>
-            {loadingVolumes ? (
-              <div className="text-sm text-tertiary">Loading volumes...</div>
-            ) : (
-              <select
-                multiple
-                value={filters.volumes || []}
-                onChange={(e) => {
-                  const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
-                  updateFilter('volumes', selected.length > 0 ? selected : undefined);
-                }}
-                className="w-full px-3 py-2 border border-line rounded-md text-sm bg-surface-secondary text-primary focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                size={Math.min(volumes.length, 4)}
-              >
-                {volumes.map((volume) => (
-                  <option key={volume.id} value={volume.id}>
-                    {volume.name}
-                  </option>
-                ))}
-              </select>
-            )}
-            <p className="mt-1 text-xs text-tertiary">
-              Hold Ctrl/Cmd to select multiple volumes
             </p>
           </div>
 

@@ -12,7 +12,18 @@ import { SearchPage } from './SearchPage';
 vi.mock('@/components/domain/search', () => ({
   SearchInterface: ({ onSearch, onResultClick }: any) => (
     <div data-testid="search-interface">
-      <button onClick={() => onSearch('test query')}>Mock Search</button>
+      <button
+        onClick={() =>
+          onSearch({
+            query: 'test query',
+            type: 'simple',
+            scope: 'all',
+            filters: {},
+          })
+        }
+      >
+        Mock Search
+      </button>
       <button onClick={() => onResultClick({ id: 'file-123' })}>
         Mock Result Click
       </button>
@@ -54,9 +65,7 @@ describe('SearchPage', () => {
 
       expect(screen.getByText('Search & Discovery')).toBeInTheDocument();
       expect(
-        screen.getByText(
-          'Find files, detect duplicates, and analyze your storage',
-        ),
+        screen.getByText('Find files and analyze your storage'),
       ).toBeInTheDocument();
     });
 
@@ -104,7 +113,7 @@ describe('SearchPage', () => {
       });
     });
 
-    it('displays duplicate detection options', async () => {
+    it('prompts to select a volume when none is selected', async () => {
       const user = userEvent.setup();
       render(<SearchPage />, { wrapper: createWrapper() });
 
@@ -115,35 +124,17 @@ describe('SearchPage', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/compare by content hash/i),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText(/compare by file size and name/i),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText(/include similar filenames/i),
+          screen.getByText(/select a single volume in advanced filters/i),
         ).toBeInTheDocument();
       });
+
+      // No scan button should be offered without a volume selected
+      expect(
+        screen.queryByRole('button', { name: /^scan volume$/i }),
+      ).not.toBeInTheDocument();
     });
 
-    it('has content hash and size/name options checked by default', async () => {
-      const user = userEvent.setup();
-      render(<SearchPage />, { wrapper: createWrapper() });
-
-      const duplicatesButton = screen.getByRole('button', {
-        name: /find duplicates/i,
-      });
-      await user.click(duplicatesButton);
-
-      await waitFor(() => {
-        const checkboxes = screen.getAllByRole('checkbox');
-        expect(checkboxes[0]).toBeChecked(); // content hash
-        expect(checkboxes[1]).toBeChecked(); // size and name
-        expect(checkboxes[2]).not.toBeChecked(); // fuzzy matching
-      });
-    });
-
-    it('closes modal when cancel is clicked', async () => {
+    it('closes when Close is clicked', async () => {
       const user = userEvent.setup();
       render(<SearchPage />, { wrapper: createWrapper() });
 
@@ -158,8 +149,8 @@ describe('SearchPage', () => {
         ).toBeInTheDocument();
       });
 
-      const cancelButton = screen.getByRole('button', { name: /^cancel$/i });
-      await user.click(cancelButton);
+      const closeButton = screen.getByRole('button', { name: /^close$/i });
+      await user.click(closeButton);
 
       await waitFor(() => {
         expect(
@@ -190,7 +181,6 @@ describe('SearchPage', () => {
 
   describe('Search Functionality', () => {
     it('handles search from SearchInterface component', async () => {
-      const consoleLogSpy = vi.spyOn(console, 'log');
       const user = userEvent.setup();
 
       render(<SearchPage />, { wrapper: createWrapper() });
@@ -199,13 +189,8 @@ describe('SearchPage', () => {
       await user.click(mockSearchButton);
 
       await waitFor(() => {
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          'Searching for:',
-          'test query',
-        );
+        expect(window.location.search).toContain('q=test+query');
       });
-
-      consoleLogSpy.mockRestore();
     });
 
     it('does not show statistics when no results', () => {
@@ -266,56 +251,17 @@ describe('SearchPage', () => {
         screen.getByRole('button', { name: /find duplicates/i }),
       ).toBeInTheDocument();
     });
-
-    it('modal has proper focus management', async () => {
-      const user = userEvent.setup();
-      render(<SearchPage />, { wrapper: createWrapper() });
-
-      const duplicatesButton = screen.getByRole('button', {
-        name: /find duplicates/i,
-      });
-      await user.click(duplicatesButton);
-
-      await waitFor(() => {
-        const modal = screen.getByText('Duplicate File Detection');
-        expect(modal).toBeInTheDocument();
-        // Modal component should handle focus trap
-      });
-    });
-
-    it('checkboxes have proper labels', async () => {
-      const user = userEvent.setup();
-      render(<SearchPage />, { wrapper: createWrapper() });
-
-      const duplicatesButton = screen.getByRole('button', {
-        name: /find duplicates/i,
-      });
-      await user.click(duplicatesButton);
-
-      await waitFor(() => {
-        const labels = [
-          /compare by content hash/i,
-          /compare by file size and name/i,
-          /include similar filenames/i,
-        ];
-
-        labels.forEach((labelText) => {
-          expect(screen.getByText(labelText)).toBeInTheDocument();
-        });
-      });
-    });
   });
 
   describe('Responsive Design', () => {
     it('renders correctly on mobile viewports', () => {
-      // Would use viewport utilities or CSS queries
       render(<SearchPage />, { wrapper: createWrapper() });
 
-      // Check that responsive classes are applied
+      // Check that responsive classes are applied to the header row
       const mainContainer = screen
         .getByText('Search & Discovery')
-        .closest('div');
-      expect(mainContainer).toHaveClass('flex', 'items-center');
+        .closest('h1')?.parentElement?.parentElement;
+      expect(mainContainer).toHaveClass('flex', 'items-center', 'justify-between');
     });
   });
 
@@ -329,33 +275,6 @@ describe('SearchPage', () => {
       await user.click(mockSearchButton);
 
       // State should update (would check via state inspection or effects)
-    });
-
-    it('manages modal open/close state correctly', async () => {
-      const user = userEvent.setup();
-      render(<SearchPage />, { wrapper: createWrapper() });
-
-      // Open modal
-      const duplicatesButton = screen.getByRole('button', {
-        name: /find duplicates/i,
-      });
-      await user.click(duplicatesButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText('Duplicate File Detection'),
-        ).toBeInTheDocument();
-      });
-
-      // Close modal
-      const cancelButton = screen.getByRole('button', { name: /^cancel$/i });
-      await user.click(cancelButton);
-
-      await waitFor(() => {
-        expect(
-          screen.queryByText('Duplicate File Detection'),
-        ).not.toBeInTheDocument();
-      });
     });
   });
 

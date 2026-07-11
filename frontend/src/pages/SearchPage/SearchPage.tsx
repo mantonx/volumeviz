@@ -4,6 +4,7 @@
  * Features:
  * - Multi-criteria search (name, content, metadata)
  * - Advanced filtering (size, type, date, volume)
+ * - Duplicate file detection (single-volume, content-hash based)
  * - Saved searches for recurring queries
  * - Search history tracking
  * - Export search results (CSV, JSON)
@@ -16,13 +17,16 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search as SearchIcon,
   AlertCircle,
+  Copy,
 } from 'lucide-react';
 import { SearchInterface, type SearchQuery } from '@/components/domain/search';
 import { ExportButton } from '@/components/shared/ExportButton';
+import { Button } from '@/components/ui/Button';
 import { exportFilesToCSV, exportFilesToJSON, getDefaultFileExportOptions } from '@/utils/fileExport';
 import { searchApi } from '@/api/search';
 import { AdvancedFilters } from './AdvancedFilters';
 import { FilterChips } from './FilterChips';
+import { DuplicateDetectionModal } from './DuplicateDetectionModal';
 import {
   updateUrlWithFilters,
   getFiltersFromUrl,
@@ -52,6 +56,14 @@ export const SearchPage: React.FC<SearchPageProps> = ({
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>({});
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+
+  // Duplicate detection is scoped to a single volume — only offer it when
+  // exactly one volume is selected in Advanced Filters.
+  const duplicateDetectionVolumeId =
+    advancedFilters.volumes?.length === 1
+      ? advancedFilters.volumes[0]
+      : undefined;
 
   // Apply volume filter automatically
   useEffect(() => {
@@ -151,7 +163,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({
           name: r.name,
           size: r.size,
           type: r.type,
-          modified: r.modified.toISOString(),
+          modified: r.modified?.toISOString(),
           score: r.score,
         })),
       }));
@@ -262,6 +274,14 @@ export const SearchPage: React.FC<SearchPageProps> = ({
                 variant="outline"
                 size="sm"
               />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDuplicateModalOpen(true)}
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Find Duplicates
+              </Button>
             </div>
           </div>
         </div>
@@ -339,7 +359,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({
               handleExport(format as 'csv' | 'json');
             }}
             showAdvanced={true}
-            showFilters={true}
+            enableFilters={false}
             showSavedSearches={true}
             showHistory={true}
             enableRealTimeSearch={false}
@@ -348,6 +368,13 @@ export const SearchPage: React.FC<SearchPageProps> = ({
         </div>
 
       </div>
+
+      <DuplicateDetectionModal
+        open={isDuplicateModalOpen}
+        onClose={() => setIsDuplicateModalOpen(false)}
+        volumeId={duplicateDetectionVolumeId}
+        path={advancedFilters.pathFilter || '/'}
+      />
     </div>
   );
 };

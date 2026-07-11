@@ -24,7 +24,7 @@ export interface SearchResult {
   name: string;
   size: number;
   type: string;
-  modified: string;
+  modified?: string;
   score?: number;
   highlights?: {
     field: string;

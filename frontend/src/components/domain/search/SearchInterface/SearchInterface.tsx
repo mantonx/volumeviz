@@ -66,6 +66,7 @@ export const SearchInterface = forwardRef<
       config = {},
       showAdvanced = false,
       showFilters = false,
+      enableFilters = true,
       showSavedSearches = false,
       showHistory = false,
       enableRealTimeSearch = true,
@@ -404,25 +405,27 @@ export const SearchInterface = forwardRef<
         </select>
 
         {/* Filter toggle */}
-        <button
-          onClick={() =>
-            setState((prev) => ({ ...prev, showFilters: !prev.showFilters }))
-          }
-          className={clsx(
-            'flex items-center gap-1 px-3 py-1 rounded-md text-sm',
-            state.showFilters
-              ? 'bg-blue-100 text-blue-700'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
-          )}
-        >
-          <Filter className="w-4 h-4" />
-          Filters
-          {state.showFilters ? (
-            <ChevronUp className="w-3 h-3" />
-          ) : (
-            <ChevronDown className="w-3 h-3" />
-          )}
-        </button>
+        {enableFilters && (
+          <button
+            onClick={() =>
+              setState((prev) => ({ ...prev, showFilters: !prev.showFilters }))
+            }
+            className={clsx(
+              'flex items-center gap-1 px-3 py-1 rounded-md text-sm',
+              state.showFilters
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+            )}
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            {state.showFilters ? (
+              <ChevronUp className="w-3 h-3" />
+            ) : (
+              <ChevronDown className="w-3 h-3" />
+            )}
+          </button>
+        )}
 
         {/* Saved searches toggle */}
         <button

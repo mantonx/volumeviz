@@ -280,8 +280,13 @@ export interface SearchInterfaceProps {
   /** Show advanced search options */
   showAdvanced?: boolean;
 
-  /** Show search filters */
+  /** Whether the filters panel starts open */
   showFilters?: boolean;
+
+  /** Whether the filters feature (toggle button + panel) is offered at all.
+   * Defaults to true. Set false to remove it entirely for a consumer whose
+   * filter state isn't actually wired to a real search call. */
+  enableFilters?: boolean;
 
   /** Show saved searches panel */
   showSavedSearches?: boolean;
