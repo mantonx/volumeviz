@@ -12,12 +12,11 @@ import { User, Mail, Shield, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
-// TODO: Implement change password endpoint
-// import { postAuthChangePassword } from '@/api/orval-generated/api';
+import { usePostApiV1AuthChangePassword } from '@/api/orval-generated/api';
+import { FetchError } from '@/api/fetch-client';
 
 export const UserProfilePage: React.FC = () => {
   const { user } = useAuth();
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,6 +25,8 @@ export const UserProfilePage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const changePassword = usePostApiV1AuthChangePassword();
+  const isChangingPassword = changePassword.isPending;
 
   const handlePasswordChange = async (e: FormEvent) => {
     e.preventDefault();
@@ -43,17 +44,13 @@ export const UserProfilePage: React.FC = () => {
       return;
     }
 
-    setIsChangingPassword(true);
-
     try {
-      // TODO: Implement change password endpoint
-      // await postAuthChangePassword({
-      //   current_password: currentPassword,
-      //   new_password: newPassword,
-      // } as any);
-      setError('Change password feature is not yet implemented');
-      setIsChangingPassword(false);
-      return;
+      await changePassword.mutateAsync({
+        data: {
+          current_password: currentPassword,
+          new_password: newPassword,
+        },
+      });
 
       setSuccess(true);
       setCurrentPassword('');
@@ -62,18 +59,16 @@ export const UserProfilePage: React.FC = () => {
 
       // Hide success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Password change error:', err);
 
-      if (err.data?.error) {
-        setError(err.data.error);
-      } else if (err.message) {
+      if (err instanceof FetchError) {
+        setError(err.data?.error || err.message);
+      } else if (err instanceof Error) {
         setError(err.message);
       } else {
         setError('Failed to change password. Please try again.');
       }
-    } finally {
-      setIsChangingPassword(false);
     }
   };
 

@@ -62,7 +62,7 @@ type AuthResponse struct {
 // @Failure 401 {object} map[string]interface{}
 // @Failure 403 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /auth/login [post]
+// @Router /api/v1/auth/login [post]
 func (h *Handler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -105,7 +105,7 @@ func (h *Handler) Login(c *gin.Context) {
 // @Failure 400 {object} map[string]interface{}
 // @Failure 409 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /auth/register [post]
+// @Router /api/v1/auth/register [post]
 func (h *Handler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -135,6 +135,18 @@ func (h *Handler) Register(c *gin.Context) {
 }
 
 // ChangePassword handles password change for authenticated users
+// @Summary Change password
+// @Description Change the current user's password. Requires the current password for verification.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body PasswordChangeRequest true "Current and new password"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{} "Not authenticated, or current password is incorrect"
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /api/v1/auth/change-password [post]
 func (h *Handler) ChangePassword(c *gin.Context) {
 	// Get user ID from context (set by auth middleware)
 	userIDStr, exists := c.Get("user_id")
