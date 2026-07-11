@@ -4,6 +4,7 @@ package volumes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -11,11 +12,13 @@ import (
 	"strings"
 	"time"
 
+	cerrdefs "github.com/containerd/errdefs"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mantonx/volumeviz/internal/api/middleware"
 	"github.com/mantonx/volumeviz/internal/api/models"
 	apiutils "github.com/mantonx/volumeviz/internal/api/utils"
+	"github.com/mantonx/volumeviz/internal/audit"
 	"github.com/mantonx/volumeviz/internal/config"
 	"github.com/mantonx/volumeviz/internal/db/sqlc"
 	"github.com/mantonx/volumeviz/internal/interfaces"
@@ -34,7 +37,8 @@ type Handler struct {
 	systemVolumeRegex *regexp.Regexp
 	volumeScanner     interfaces.VolumeScanner // VolumeViz scanner for size calculation
 	volumeMapping     *config.VolumeMappingConfig
-	cache             VolumeCache // In-memory cache for volume data (Phase 3)
+	cache             VolumeCache  // In-memory cache for volume data (Phase 3)
+	auditLogger       audit.Logger // Audit trail for destructive operations; nil-safe, defaults to no-op
 }
 
 // VolumeCache interface for caching volume data
@@ -71,13 +75,22 @@ func NewHandlerWithScanner(dockerService interfaces.DockerService, store store.S
 		systemVolumeRegex: regex,
 		volumeScanner:     scanner,
 		volumeMapping:     config.NewVolumeMappingConfig(),
-		cache:             nil, // Cache is optional, set via SetCache()
+		cache:             nil,                   // Cache is optional, set via SetCache()
+		auditLogger:       audit.NewNoopLogger(), // Overridden via SetAuditLogger() when audit logging is enabled
 	}
 }
 
 // SetCache sets the volume cache on the handler (Phase 3 optimization)
 func (h *Handler) SetCache(cache VolumeCache) {
 	h.cache = cache
+}
+
+// SetAuditLogger sets the audit logger used to record destructive operations
+// (e.g. volume deletion). Defaults to a no-op logger if never called.
+func (h *Handler) SetAuditLogger(logger audit.Logger) {
+	if logger != nil {
+		h.auditLogger = logger
+	}
 }
 
 // GetCacheStats returns cache statistics
@@ -87,7 +100,7 @@ func (h *Handler) SetCache(cache VolumeCache) {
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{} "Cache statistics"
-// @Router /volumes/cache/stats [get]
+// @Router /api/v1/volumes/cache/stats [get]
 func (h *Handler) GetCacheStats(c *gin.Context) {
 	if h.cache == nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -108,7 +121,7 @@ func (h *Handler) GetCacheStats(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{} "Cache invalidated"
-// @Router /volumes/cache/invalidate [post]
+// @Router /api/v1/volumes/cache/invalidate [post]
 func (h *Handler) InvalidateCache(c *gin.Context) {
 	if h.cache == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -140,10 +153,10 @@ func (h *Handler) InvalidateCache(c *gin.Context) {
 // @Param system query bool false "Include system volumes (default: false)"
 // @Param created_after query string false "Filter volumes created after date (RFC3339 format)"
 // @Param created_before query string false "Filter volumes created before date (RFC3339 format)"
-// @Success 200 {object} apiutils.PagedResponse "Paginated list of volumes"
+// @Success 200 {object} models.VolumesListResponse "Paginated list of volumes with aggregate summary"
 // @Failure 400 {object} models.ErrorResponse "Bad request"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /volumes [get]
+// @Router /api/v1/volumes [get]
 func (h *Handler) ListVolumes(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -172,7 +185,7 @@ func (h *Handler) ListVolumes(c *gin.Context) {
 	// Get volumes from database (fast, <100ms)
 	// The reconciliation service keeps the database in sync with Docker
 	// Fallback to Docker API if database is unavailable
-	apiVolumes, total, err := h.getVolumesFromDatabase(ctx, pagination, sortParams, filters)
+	apiVolumes, total, summary, err := h.getVolumesFromDatabase(ctx, pagination, sortParams, filters)
 
 	if err != nil {
 		apiutils.RespondWithInternalError(c, "Failed to list volumes", err)
@@ -195,8 +208,15 @@ func (h *Handler) ListVolumes(c *gin.Context) {
 	}
 
 	// Build paginated response
-	response := apiutils.BuildPagedResponse(apiVolumes, pagination, total, sortParams, filtersMap)
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, models.VolumesListResponse{
+		Data:     apiVolumes,
+		Page:     pagination.Page,
+		PageSize: pagination.PageSize,
+		Total:    total,
+		Sort:     apiutils.BuildSortString(sortParams),
+		Filters:  filtersMap,
+		Summary:  summary,
+	})
 }
 
 // volumePassesFilters checks if a volume passes the given filters
@@ -234,14 +254,14 @@ func (h *Handler) volumePassesFilters(vol models.VolumeV1, filters *apiutils.Vol
 }
 
 // getVolumesFromDocker retrieves volumes from Docker API with filtering
-func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils.PaginationParams, sortParams []apiutils.SortParam, filters *apiutils.VolumeFilters) ([]models.VolumeV1, int64, error) {
+func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils.PaginationParams, sortParams []apiutils.SortParam, filters *apiutils.VolumeFilters) ([]models.VolumeV1, int64, models.VolumeListSummaryV1, error) {
 	// Get organization ID from context
 	orgID, hasOrg := middleware.GetOrganizationID(ctx)
 
 	// Get all volumes from Docker
 	volumes, err := h.dockerService.ListVolumes(ctx)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, models.VolumeListSummaryV1{}, err
 	}
 
 	// Apply basic filters first
@@ -396,8 +416,10 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 	// Sort volumes
 	h.sortVolumes(apiVolumes, sortParams)
 
-	// Calculate total before pagination
+	// Calculate total and summary stats before pagination - these must reflect
+	// every volume matching the filters, not just the page being returned.
 	total := int64(len(apiVolumes))
+	summary := summarizeVolumes(apiVolumes)
 
 	// Apply pagination
 	start := pagination.Offset
@@ -410,7 +432,26 @@ func (h *Handler) getVolumesFromDocker(ctx context.Context, pagination *apiutils
 	}
 	apiVolumes = apiVolumes[start:end]
 
-	return apiVolumes, total, nil
+	return apiVolumes, total, summary, nil
+}
+
+// summarizeVolumes computes aggregate stats across a full (unpaginated) set
+// of volumes, so dashboard-style stat tiles stay correct once the result
+// exceeds a single page.
+func summarizeVolumes(volumes []models.VolumeV1) models.VolumeListSummaryV1 {
+	summary := models.VolumeListSummaryV1{TotalVolumes: int64(len(volumes))}
+	for _, vol := range volumes {
+		if vol.IsOrphaned {
+			summary.OrphanedVolumes++
+		}
+		if vol.IsTracked != nil && *vol.IsTracked {
+			summary.TrackedVolumes++
+		}
+		if vol.SizeBytes != nil {
+			summary.TotalSizeBytes += *vol.SizeBytes
+		}
+	}
+	return summary
 }
 
 // filterVolumes applies filters to the volume list
@@ -822,7 +863,7 @@ func sortVolumesByGrowthRate(volumes []models.VolumeV1, asc bool) {
 // @Failure 400 {object} models.ErrorResponse "Bad request"
 // @Failure 404 {object} models.ErrorResponse "Volume not found"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /volumes/{name} [get]
+// @Router /api/v1/volumes/{name} [get]
 func (h *Handler) GetVolume(c *gin.Context) {
 	ctx := c.Request.Context()
 	volumeName := c.Param("name")
@@ -1018,7 +1059,7 @@ func (h *Handler) GetVolume(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse "Bad request"
 // @Failure 404 {object} models.ErrorResponse "Volume not found"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /volumes/{name}/attachments [get]
+// @Router /api/v1/volumes/{name}/attachments [get]
 func (h *Handler) GetVolumeAttachments(c *gin.Context) {
 	ctx := c.Request.Context()
 	volumeName := c.Param("name")
@@ -1091,7 +1132,7 @@ func (h *Handler) GetVolumeAttachments(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse "Bad request"
 // @Failure 404 {object} models.ErrorResponse "Volume not found"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /volumes/{name}/stats [get]
+// @Router /api/v1/volumes/{name}/stats [get]
 func (h *Handler) GetVolumeStats(c *gin.Context) {
 	ctx := c.Request.Context()
 	volumeID := c.Param("name")
@@ -1308,7 +1349,7 @@ func isAnonymousVolume(name string) bool {
 // @Success 200 {object} apiutils.PagedResponse "Paginated list of orphaned volumes"
 // @Failure 400 {object} models.ErrorResponse "Bad request"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /reports/orphaned [get]
+// @Router /api/v1/reports/orphaned [get]
 func (h *Handler) GetOrphanedVolumes(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -1448,7 +1489,7 @@ func (h *Handler) sortOrphanedVolumes(volumes []models.OrphanedVolumeV1, sortPar
 // @Success 200 {file} file "CSV file download"
 // @Failure 400 {object} models.ErrorResponse "Bad request"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /volumes/export/csv [get]
+// @Router /api/v1/volumes/export/csv [get]
 func (h *Handler) ExportVolumesCSV(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -1487,7 +1528,7 @@ func (h *Handler) ExportVolumesCSV(c *gin.Context) {
 	}
 
 	// Get volumes from Docker API (same as ListVolumes endpoint)
-	volumes, _, err := h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
+	volumes, _, _, err := h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
 	if err != nil {
 		apiutils.RespondWithInternalError(c, "Failed to fetch volumes for export", err)
 		return
@@ -1546,7 +1587,7 @@ func (h *Handler) ExportVolumesCSV(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "JSON export"
 // @Failure 400 {object} models.ErrorResponse "Bad request"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /volumes/export/json [get]
+// @Router /api/v1/volumes/export/json [get]
 func (h *Handler) ExportVolumesJSON(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -1585,7 +1626,7 @@ func (h *Handler) ExportVolumesJSON(c *gin.Context) {
 	}
 
 	// Get volumes from Docker API (same as ListVolumes endpoint)
-	volumes, _, err := h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
+	volumes, _, _, err := h.getVolumesFromDocker(ctx, pagination, sortParams, filters)
 	if err != nil {
 		apiutils.RespondWithInternalError(c, "Failed to fetch volumes for export", err)
 		return
@@ -1839,6 +1880,252 @@ func (h *Handler) BulkTrackVolumes(c *gin.Context) {
 			if h.cache != nil {
 				h.cache.Invalidate(volumeID)
 			}
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// =============================================================================
+// Volume Deletion Endpoints
+//
+// These are the first endpoints in VolumeViz that mutate real Docker state
+// (every other write path only flips a flag in VolumeViz's own database).
+// Deletion is permanent and cannot be undone, so this section is deliberately
+// more defensive than the rest of the handler:
+//   - Requires RoleAdmin (stricter than the RoleOperator floor every other
+//     mutation gets from middleware.ProtectMutatingOperations).
+//   - Re-checks live container attachment immediately before calling Docker,
+//     rather than trusting any previously-computed/cached orphan status —
+//     orphan status isn't persisted anywhere in this codebase, it's always
+//     computed fresh from GetVolumeContainers, so this guard *is* the
+//     freshest data available, not a stale-cache workaround.
+//   - Always calls Docker with force=false, so the daemon's own "volume is
+//     in use" rejection remains a final backstop even if the guard above
+//     raced with a container attaching between the check and the call.
+//   - Every attempt (success or failure) is written to the audit log.
+// =============================================================================
+
+// deleteVolumeError carries the HTTP status a failed deleteOneVolume call
+// should map to, so DeleteVolume can respond with the right status/body
+// while BulkDeleteVolumes can just record .Error() per failed item.
+type deleteVolumeError struct {
+	status  int
+	message string
+}
+
+func (e *deleteVolumeError) Error() string { return e.message }
+
+// deleteOneVolume performs the full guarded delete of a single volume:
+// org-ownership check, live in-use check, real Docker removal, VolumeViz DB
+// row cleanup, cache invalidation, and audit logging. Shared by both
+// DeleteVolume and BulkDeleteVolumes so the safety checks can't drift
+// between the single and bulk code paths.
+func (h *Handler) deleteOneVolume(ctx context.Context, orgID int64, volumeID string) error {
+	logDetails := map[string]interface{}{"volume_id": volumeID}
+	writeAudit := func(status string, err error) {
+		if h.auditLogger == nil {
+			return
+		}
+		details := make(map[string]interface{}, len(logDetails)+1)
+		for k, v := range logDetails {
+			details[k] = v
+		}
+		if err != nil {
+			details["error"] = err.Error()
+		}
+		_ = h.auditLogger.LogEvent(ctx, audit.Event{
+			OrganizationID: orgID,
+			Action:         "VOLUME_DELETE",
+			ResourceType:   "volume",
+			ResourceID:     volumeID,
+			Status:         status,
+			Details:        details,
+		})
+	}
+
+	// Org-ownership check — same boundary GetVolume/GetVolumeAttachments
+	// already enforce, required here since this is a destructive operation.
+	if h.store != nil {
+		dbVol, err := h.store.Volumes().GetVolumeByVolumeID(ctx, orgID, volumeID)
+		if err != nil || dbVol == nil || dbVol.OrganizationID == nil || *dbVol.OrganizationID != orgID {
+			notFoundErr := &deleteVolumeError{status: http.StatusNotFound, message: fmt.Sprintf("volume '%s' not found", volumeID)}
+			writeAudit("failure", notFoundErr)
+			return notFoundErr
+		}
+	}
+
+	// Live in-use guard: re-derive attachment state fresh, immediately
+	// before deleting, rather than trusting any earlier computation.
+	containers, err := h.dockerService.GetVolumeContainers(ctx, volumeID)
+	if err != nil {
+		writeAudit("failure", err)
+		return &deleteVolumeError{status: http.StatusInternalServerError, message: fmt.Sprintf("failed to verify volume is unattached: %s", err.Error())}
+	}
+	if len(containers) > 0 {
+		names := make([]string, len(containers))
+		for i, c := range containers {
+			names[i] = c.Name
+		}
+		logDetails["attached_containers"] = names
+		conflictErr := &deleteVolumeError{status: http.StatusConflict, message: fmt.Sprintf("volume '%s' is still attached to %d container(s)", volumeID, len(containers))}
+		writeAudit("failure", conflictErr)
+		return conflictErr
+	}
+
+	// Real Docker deletion. force=false is intentional and not configurable
+	// via this handler — Docker's own in-use protection stays as the final
+	// backstop against deleting an attached volume.
+	if err := h.dockerService.RemoveVolume(ctx, volumeID, false); err != nil {
+		switch {
+		case cerrdefs.IsNotFound(err):
+			// Already gone — treat as success (idempotent), still clean up
+			// VolumeViz's own row below rather than returning early.
+		case cerrdefs.IsConflict(err):
+			conflictErr := &deleteVolumeError{status: http.StatusConflict, message: fmt.Sprintf("volume '%s' is in use", volumeID)}
+			writeAudit("failure", conflictErr)
+			return conflictErr
+		default:
+			writeAudit("failure", err)
+			return &deleteVolumeError{status: http.StatusInternalServerError, message: fmt.Sprintf("failed to remove volume: %s", err.Error())}
+		}
+	}
+
+	// Clean up VolumeViz's own record so the deleted volume doesn't linger
+	// in the UI until the next reconciliation pass.
+	if h.store != nil {
+		if err := h.store.Volumes().HardDeleteVolume(ctx, orgID, volumeID); err != nil {
+			// The real Docker volume is already gone at this point — a
+			// failure here is a local bookkeeping issue, not a reason to
+			// report the whole delete as failed to the caller. Still audit
+			// it distinctly so it's visible.
+			logDetails["db_cleanup_error"] = err.Error()
+		}
+	}
+
+	if h.cache != nil {
+		h.cache.Invalidate(volumeID)
+	}
+
+	writeAudit("success", nil)
+	return nil
+}
+
+// DeleteVolume permanently deletes a single Docker volume
+// @Summary Delete a volume
+// @Description Permanently delete a Docker volume. Requires admin role. The volume must not be attached to any container — Docker itself enforces this. This action cannot be undone.
+// @Tags volumes
+// @ID deleteVolumesVolumeId
+// @Accept json
+// @Produce json
+// @Param name path string true "Volume name"
+// @Success 200 {object} map[string]interface{} "Volume successfully deleted"
+// @Failure 400 {object} models.ErrorResponse "Invalid request"
+// @Failure 404 {object} models.ErrorResponse "Volume not found"
+// @Failure 409 {object} models.ErrorResponse "Volume is still attached to a container"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /api/v1/volumes/{name} [delete]
+func (h *Handler) DeleteVolume(c *gin.Context) {
+	volumeID := c.Param("name")
+	if volumeID == "" {
+		apiutils.RespondWithBadRequest(c, "Volume name is required", nil)
+		return
+	}
+
+	orgID, hasOrg := middleware.GetOrganizationID(c.Request.Context())
+	if !hasOrg {
+		orgID = 1
+	}
+
+	if err := h.deleteOneVolume(c.Request.Context(), orgID, volumeID); err != nil {
+		var delErr *deleteVolumeError
+		if errors.As(err, &delErr) {
+			switch delErr.status {
+			case http.StatusNotFound:
+				apiutils.RespondWithNotFound(c, delErr.message)
+			case http.StatusConflict:
+				apiutils.RespondWithConflict(c, delErr.message, nil)
+			default:
+				apiutils.RespondWithInternalError(c, delErr.message, nil)
+			}
+			return
+		}
+		apiutils.RespondWithInternalError(c, "Failed to delete volume", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   fmt.Sprintf("Volume '%s' deleted", volumeID),
+		"volume_id": volumeID,
+	})
+}
+
+// BulkDeleteVolumesRequest represents a bulk delete request
+type BulkDeleteVolumesRequest struct {
+	VolumeIDs []string `json:"volume_ids" binding:"required"`
+}
+
+// BulkDeleteVolumesResponse represents a bulk delete response
+type BulkDeleteVolumesResponse struct {
+	Succeeded []string `json:"succeeded"`
+	Failed    []struct {
+		VolumeID string `json:"volume_id"`
+		Error    string `json:"error"`
+	} `json:"failed,omitempty"`
+}
+
+// BulkDeleteVolumes deletes multiple volumes at once. This is also how
+// "prune all orphaned volumes" is implemented: the frontend fetches the
+// orphan list once, shows it to the user for confirmation, then submits
+// exactly those IDs here — the set of volumes actually deleted is always
+// exactly what the caller asked for, never re-derived server-side at
+// execution time, so there's no risk of deleting something the user never
+// saw named in a confirmation dialog.
+// @Summary Bulk delete volumes
+// @Description Permanently delete multiple volumes in a single request. Requires admin role. Each volume must be unattached; failures for individual volumes don't stop the rest of the batch. This action cannot be undone.
+// @Tags volumes
+// @ID postVolumesBulkDelete
+// @Accept json
+// @Produce json
+// @Param request body BulkDeleteVolumesRequest true "Volume IDs to delete"
+// @Success 200 {object} BulkDeleteVolumesResponse "Bulk delete results"
+// @Failure 400 {object} models.ErrorResponse "Invalid request"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /api/v1/volumes/bulk-delete [post]
+func (h *Handler) BulkDeleteVolumes(c *gin.Context) {
+	var req BulkDeleteVolumesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apiutils.RespondWithBadRequest(c, "Invalid request body", map[string]interface{}{"error": err.Error()})
+		return
+	}
+	if len(req.VolumeIDs) == 0 {
+		apiutils.RespondWithBadRequest(c, "At least one volume ID is required", nil)
+		return
+	}
+
+	orgID, hasOrg := middleware.GetOrganizationID(c.Request.Context())
+	if !hasOrg {
+		orgID = 1
+	}
+
+	var response BulkDeleteVolumesResponse
+	response.Succeeded = make([]string, 0)
+	response.Failed = make([]struct {
+		VolumeID string `json:"volume_id"`
+		Error    string `json:"error"`
+	}, 0)
+
+	for _, volumeID := range req.VolumeIDs {
+		if err := h.deleteOneVolume(c.Request.Context(), orgID, volumeID); err != nil {
+			response.Failed = append(response.Failed, struct {
+				VolumeID string `json:"volume_id"`
+				Error    string `json:"error"`
+			}{
+				VolumeID: volumeID,
+				Error:    err.Error(),
+			})
+		} else {
+			response.Succeeded = append(response.Succeeded, volumeID)
 		}
 	}
 

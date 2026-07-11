@@ -22,7 +22,6 @@ export interface VolumeTableProps {
   isLoading?: boolean;
   selectedVolumeIds?: string[];
   onSelectionChange?: (selectedIds: string[]) => void;
-  onVolumeSelect?: (volume: any) => void;
   showBulkActions?: boolean;
   className?: string;
   onRefetch?: () => void;

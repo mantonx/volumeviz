@@ -31,6 +31,11 @@ func (m *MockDockerClient) InspectContainer(ctx context.Context, containerID str
 	return args.Get(0).(containertypes.InspectResponse), args.Error(1)
 }
 
+func (m *MockDockerClient) RemoveVolume(ctx context.Context, volumeID string, force bool) error {
+	args := m.Called(ctx, volumeID, force)
+	return args.Error(0)
+}
+
 func (m *MockDockerClient) Ping(ctx context.Context) error {
 	args := m.Called(ctx)
 	return args.Error(0)

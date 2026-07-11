@@ -1,19 +1,19 @@
 import { selectedVolumeAtom } from '@/atoms/volumes';
 import { ScanProgressDetail } from '@/components/domain/scan/ScanProgressDetail';
-import { VolumeDetailsModal } from '@/components/application/Modals';
+import { DeleteVolumeModal } from '@/components/domain/volumes/modals';
 import { useVolumeBulkActions } from '@/hooks/volumes/useVolumeBulkActions';
+import { useVolumeDelete } from '@/hooks/volumes/useVolumeDelete';
 import { cn } from '@/utils/ui';
 import { useSetAtom } from 'jotai';
 import { useVolumeRowActions } from './hooks/useVolumeRowActions';
 import { VolumeTableRow } from './VolumeTableRow';
-import { HardDrive } from 'lucide-react';
+import { HardDrive, Trash2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { VolumeTableProps } from './VolumeTable.types';
 
 export const VolumeTable: React.FC<VolumeTableProps> = ({
   volumes,
   isLoading,
-  onVolumeSelect,
   selectedVolumeIds = [],
   onSelectionChange,
   showBulkActions = true,
@@ -26,15 +26,18 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
   });
 
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalVolumeName, setModalVolumeName] = useState<string>('');
 
-  // Convert selected volumes for bulk actions
+  // Convert selected volumes for bulk actions. Rows are keyed and selected
+  // by volume.name everywhere in this file (the API doesn't return an `id`
+  // field at all), so this must filter on `name` too — filtering on `.id`
+  // here previously meant this list was always empty, silently disabling
+  // every bulk action gated by an isEnabled(selectedVolumes) check (e.g.
+  // Track/Untrack) even when rows were genuinely selected.
   const selectedVolumes = useMemo(
     () =>
       volumes
-        .filter((v) => selectedVolumeIds.includes(v.id))
-        .map((v) => ({ ...v, status: v.status as any })),
+        .filter((v) => selectedVolumeIds.includes(v.name))
+        .map((v) => ({ ...v, id: v.name, status: v.status as any })),
     [volumes, selectedVolumeIds],
   );
 
@@ -45,6 +48,40 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
       onSelectionChange?.([]);
     },
   });
+
+  const {
+    pendingVolumes: pendingDeleteVolumes,
+    failures: deleteFailures,
+    isModalOpen: isDeleteModalOpen,
+    isDeleting,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+  } = useVolumeDelete();
+
+  const handleDeleteRow = (volumeId: string) => {
+    const volume = volumes.find((v) => v.name === volumeId);
+    requestDelete([{ name: volumeId, size_bytes: volume?.size_bytes }]);
+  };
+
+  const handleDeleteSelected = () => {
+    const toDelete = selectedVolumes.map((v) => ({
+      name: v.name,
+      size_bytes: v.size_bytes,
+    }));
+    requestDelete(toDelete);
+  };
+
+  const handleConfirmDelete = async () => {
+    const allSucceeded = await confirmDelete();
+    // Only clear the table's own selection once everything succeeded — a
+    // partial bulk failure keeps the modal open scoped to just the failed
+    // volumes, and clearing selection at that point would desync the
+    // checkboxes from what's still being confirmed.
+    if (allSucceeded) {
+      onSelectionChange?.([]);
+    }
+  };
 
   const handleSelectAll = () => {
     if (selectedVolumeIds.length === volumes.length) {
@@ -65,12 +102,10 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
   const handleRowClick = (volume: any) => {
     // Use volume.name as the unique identifier since API doesn't return 'id'
     setSelectedVolume(volume.name || volume.id);
-    onVolumeSelect?.(volume);
   };
 
   const openVolumeModal = (volumeName: string) => {
-    setModalVolumeName(volumeName);
-    setIsModalOpen(true);
+    setSelectedVolume(volumeName);
   };
 
   const toggleExpanded = (volumeId: string) => {
@@ -146,6 +181,17 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
                     {action.label}
                   </button>
                 ))}
+              {/* Delete is intentionally not part of useVolumeBulkActions'
+                  fire-immediately array — it opens the confirm modal first,
+                  the mutation only runs after the user types "delete". */}
+              <button
+                onClick={handleDeleteSelected}
+                className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200"
+                title="Delete selected volumes"
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Delete
+              </button>
             </div>
           </div>
         </div>
@@ -213,6 +259,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
                   onTrack={trackVolume}
                   onUntrack={untrackVolume}
                   onScan={(id) => scanVolume.mutateAsync(id)}
+                  onDelete={handleDeleteRow}
                 />,
               ];
 
@@ -247,11 +294,14 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
         </div>
       )}
 
-      {/* Volume Details Modal */}
-      <VolumeDetailsModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        volumeName={modalVolumeName}
+      {/* Delete Volume Confirmation Modal */}
+      <DeleteVolumeModal
+        isOpen={isDeleteModalOpen}
+        onClose={cancelDelete}
+        onConfirm={handleConfirmDelete}
+        volumes={pendingDeleteVolumes}
+        isDeleting={isDeleting}
+        failures={deleteFailures}
       />
     </div>
   );

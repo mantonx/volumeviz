@@ -25,6 +25,7 @@ type VolumesRepo interface {
 	UpdateVolume(ctx context.Context, organizationID int64, params models.UpdateVolumeParams) (*models.Volume, error)
 	UpdateLastScanned(ctx context.Context, organizationID int64, volumeID string, lastScanned time.Time) error
 	SoftDeleteVolume(ctx context.Context, organizationID int64, volumeID string) error
+	HardDeleteVolume(ctx context.Context, organizationID int64, volumeID string) error
 	UpsertVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error)
 	GetVolumeStats(ctx context.Context, organizationID int64, volumeID string) (*models.VolumeStats, error)
 	CountVolumes(ctx context.Context, organizationID int64) (int64, error)
@@ -58,7 +59,7 @@ type volumesRepo struct {
 	queries *sqlc.Queries
 }
 
-// volumesRepoSQLite implements VolumesRepo using SQLite sqlc generated queries  
+// volumesRepoSQLite implements VolumesRepo using SQLite sqlc generated queries
 type volumesRepoSQLite struct {
 	queries *sqlcSQLite.Queries
 }
@@ -85,14 +86,14 @@ func (r *volumesRepo) CreateVolume(ctx context.Context, organizationID int64, pa
 		MountPoint:     params.Mountpoint,
 		ContainerNames: []string{}, // Initialize as empty
 		IsActive:       pgtype.Bool{Bool: params.IsActive, Valid: true},
-		TotalSizeBytes: pgtype.Int8{Valid: false}, // Will be filled later
-		UsedSizeBytes:  pgtype.Int8{Valid: false}, // Will be filled later
-		FreeSizeBytes:  pgtype.Int8{Valid: false}, // Will be filled later
-		FilesystemType: pgtype.Text{Valid: false}, // Will be detected later
-		ContainerCount: pgtype.Int4{Valid: false}, // Will be counted later
-		FirstSeenAt:    pgtype.Timestamptz{Time: now, Valid: true}, // Set to current time
-		LastScanAt:     pgtype.Timestamptz{Valid: false}, // No scan yet
-		LastModifiedAt: pgtype.Timestamptz{Valid: false}, // Will be detected later
+		TotalSizeBytes: pgtype.Int8{Valid: false},                       // Will be filled later
+		UsedSizeBytes:  pgtype.Int8{Valid: false},                       // Will be filled later
+		FreeSizeBytes:  pgtype.Int8{Valid: false},                       // Will be filled later
+		FilesystemType: pgtype.Text{Valid: false},                       // Will be detected later
+		ContainerCount: pgtype.Int4{Valid: false},                       // Will be counted later
+		FirstSeenAt:    pgtype.Timestamptz{Time: now, Valid: true},      // Set to current time
+		LastScanAt:     pgtype.Timestamptz{Valid: false},                // No scan yet
+		LastModifiedAt: pgtype.Timestamptz{Valid: false},                // Will be detected later
 		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true}, // Organization context
 	})
 	if err != nil {
@@ -100,12 +101,12 @@ func (r *volumesRepo) CreateVolume(ctx context.Context, organizationID int64, pa
 	}
 
 	return &models.Volume{
-		VolumeID:     result.VolumeID,
-		Name:         pgTextToString(result.DisplayName),
-		Mountpoint:   result.MountPoint,
-		IsActive:     pgBoolToBool(result.IsActive),
-		CreatedAt:    result.CreatedAt,
-		UpdatedAt:    result.UpdatedAt,
+		VolumeID:   result.VolumeID,
+		Name:       pgTextToString(result.DisplayName),
+		Mountpoint: result.MountPoint,
+		IsActive:   pgBoolToBool(result.IsActive),
+		CreatedAt:  result.CreatedAt,
+		UpdatedAt:  result.UpdatedAt,
 		// Note: Other fields like ID, Driver, Labels, Options, Scope, Status not in current schema
 	}, nil
 }
@@ -242,6 +243,22 @@ func (r *volumesRepo) SoftDeleteVolume(ctx context.Context, organizationID int64
 	return nil
 }
 
+// HardDeleteVolume permanently removes a volume's row from VolumeViz's own
+// database. Callers are responsible for having already deleted the real
+// Docker volume first — this only cleans up VolumeViz's local record so a
+// just-deleted volume doesn't linger in the UI until the next reconciliation
+// pass.
+func (r *volumesRepo) HardDeleteVolume(ctx context.Context, organizationID int64, volumeID string) error {
+	err := r.queries.HardDeleteVolume(ctx, sqlc.HardDeleteVolumeParams{
+		VolumeID:       volumeID,
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to hard delete volume: %w", err)
+	}
+	return nil
+}
+
 func (r *volumesRepo) UpsertVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error) {
 	now := time.Now()
 
@@ -275,14 +292,14 @@ func (r *volumesRepo) UpsertVolume(ctx context.Context, organizationID int64, pa
 		MountPoint:     params.Mountpoint,
 		ContainerNames: []string{}, // Initialize as empty
 		IsActive:       pgtype.Bool{Bool: params.IsActive, Valid: true},
-		TotalSizeBytes: pgtype.Int8{Valid: false}, // Will be filled later
-		UsedSizeBytes:  pgtype.Int8{Valid: false}, // Will be filled later
-		FreeSizeBytes:  pgtype.Int8{Valid: false}, // Will be filled later
-		FilesystemType: pgtype.Text{Valid: false}, // Will be detected later
-		ContainerCount: pgtype.Int4{Valid: false}, // Will be counted later
-		FirstSeenAt:    pgtype.Timestamptz{Time: now, Valid: true}, // Set to current time for new volumes
-		LastScanAt:     pgtype.Timestamptz{Valid: false}, // No scan yet
-		LastModifiedAt: pgtype.Timestamptz{Valid: false}, // Will be detected later
+		TotalSizeBytes: pgtype.Int8{Valid: false},                       // Will be filled later
+		UsedSizeBytes:  pgtype.Int8{Valid: false},                       // Will be filled later
+		FreeSizeBytes:  pgtype.Int8{Valid: false},                       // Will be filled later
+		FilesystemType: pgtype.Text{Valid: false},                       // Will be detected later
+		ContainerCount: pgtype.Int4{Valid: false},                       // Will be counted later
+		FirstSeenAt:    pgtype.Timestamptz{Time: now, Valid: true},      // Set to current time for new volumes
+		LastScanAt:     pgtype.Timestamptz{Valid: false},                // No scan yet
+		LastModifiedAt: pgtype.Timestamptz{Valid: false},                // Will be detected later
 		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true}, // Organization context
 		Driver:         pgtype.Text{String: params.Driver, Valid: params.Driver != ""},
 		Scope:          pgtype.Text{String: params.Scope, Valid: params.Scope != ""},
@@ -299,7 +316,7 @@ func (r *volumesRepo) UpsertVolume(ctx context.Context, organizationID int64, pa
 		Driver:     pgTextToString(result.Driver),
 		Scope:      pgTextToString(result.Scope),
 		Mountpoint: result.MountPoint,
-		Labels:     params.Labels, // Pass through original map
+		Labels:     params.Labels,  // Pass through original map
 		Options:    params.Options, // Pass through original map
 		IsActive:   pgBoolToBool(result.IsActive),
 		CreatedAt:  result.CreatedAt,
@@ -323,8 +340,8 @@ func (r *volumesRepo) GetVolumeStats(ctx context.Context, organizationID int64, 
 	return &models.VolumeStats{
 		TotalVolumes:   totalVolumes,
 		ActiveVolumes:  activeVolumes,
-		UniqueDrivers:  0, // TODO: Implement when volume schema includes driver field
-		ScannedVolumes: 0, // TODO: Count volumes with last_scan_at not null
+		UniqueDrivers:  0,   // TODO: Implement when volume schema includes driver field
+		ScannedVolumes: 0,   // TODO: Count volumes with last_scan_at not null
 		NewestVolume:   nil, // TODO: Get MAX(created_at) when volume schema available
 		OldestVolume:   nil, // TODO: Get MIN(created_at) when volume schema available
 	}, nil
@@ -397,7 +414,7 @@ func (r *volumesRepo) UpsertContainer(ctx context.Context, params models.CreateC
 		MountCatalogID:  pgtype.Int8{Valid: false}, // NULL for standalone container entries (no mount relationship)
 		ContainerID:     params.ContainerID,
 		ContainerName:   pgtype.Text{String: params.Name, Valid: params.Name != ""},
-		DestinationPath: "", // Not applicable for standalone containers
+		DestinationPath: "",   // Not applicable for standalone containers
 		AccessMode:      "rw", // Default access mode
 		ContainerState:  pgtype.Text{String: params.State, Valid: params.State != ""},
 		ContainerImage:  pgtype.Text{String: params.Image, Valid: params.Image != ""},
@@ -417,7 +434,7 @@ func (r *volumesRepo) UpsertContainer(ctx context.Context, params models.CreateC
 				ContainerImage:  pgtype.Text{String: params.Image, Valid: params.Image != ""},
 				ContainerLabels: labelsJSON,
 			}
-			
+
 			result, err = r.queries.UpdateContainer(ctx, updateParams)
 			if err != nil {
 				return nil, err
@@ -504,7 +521,7 @@ func (r *volumesRepo) UpsertVolumeMount(ctx context.Context, params models.Creat
 func (r *volumesRepo) GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*models.VolumeMount, error) {
 	// Use pgtype.Text for the query parameter
 	volumeParam := pgtype.Text{String: volumeID, Valid: true}
-	
+
 	results, err := r.queries.GetVolumeMountsByVolume(ctx, volumeParam)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get volume mounts by volume: %w", err)
@@ -516,9 +533,9 @@ func (r *volumesRepo) GetVolumeMountsByVolume(ctx context.Context, volumeID stri
 		volumeMount := &models.VolumeMount{
 			ID:          result.ID,
 			VolumeID:    pgTextToString(result.VolumeName), // Use volume name if available
-			ContainerID: "", // This will need to be populated from container attachments
+			ContainerID: "",                                // This will need to be populated from container attachments
 			MountPath:   result.SourcePath,
-			AccessMode:  "rw", // Default access mode
+			AccessMode:  "rw",             // Default access mode
 			IsActive:    result.IsTracked, // Use tracking status as active status
 			CreatedAt:   result.CreatedAt,
 			UpdatedAt:   result.UpdatedAt,
@@ -592,7 +609,7 @@ func (r *volumesRepo) convertRowToVolume(row interface{}) (*models.Volume, error
 }
 
 // =============================================================================
-// SQLITE IMPLEMENTATION 
+// SQLITE IMPLEMENTATION
 // TODO: Update SQLite implementation to match organization-scoped interface
 // =============================================================================
 
@@ -602,7 +619,7 @@ func (r *volumesRepoSQLite) CreateVolume(ctx context.Context, organizationID int
 		VolumeID:       params.VolumeID,
 		DisplayName:    sql.NullString{String: params.Name, Valid: params.Name != ""},
 		MountPoint:     params.Mountpoint,
-		ContainerNames: sql.NullString{String: "[]", Valid: true}, // JSON array as string  
+		ContainerNames: sql.NullString{String: "[]", Valid: true},       // JSON array as string
 		IsActive:       sql.NullInt64{Int64: 1, Valid: params.IsActive}, // Boolean as integer
 		// Other fields will be filled later or default to NULL/0
 	})
@@ -695,7 +712,7 @@ func (r *volumesRepoSQLite) UpdateVolume(ctx context.Context, organizationID int
 		VolumeID:       params.VolumeID,
 		DisplayName:    sql.NullString{String: params.Name, Valid: params.Name != ""},
 		MountPoint:     params.Mountpoint,
-		ContainerNames: sql.NullString{String: "[]", Valid: true}, // JSON array as string
+		ContainerNames: sql.NullString{String: "[]", Valid: true},       // JSON array as string
 		IsActive:       sql.NullInt64{Int64: 1, Valid: params.IsActive}, // Boolean as integer
 		// Other fields handled by SQLC defaults
 	})
@@ -727,6 +744,10 @@ func (r *volumesRepoSQLite) UpdateLastScanned(ctx context.Context, organizationI
 func (r *volumesRepoSQLite) SoftDeleteVolume(ctx context.Context, organizationID int64, volumeID string) error {
 	// Same issue as PostgreSQL - schema uses string volume_id primary key
 	return fmt.Errorf("SoftDeleteVolume not supported - current schema uses string volume_id primary key, not int64 id")
+}
+
+func (r *volumesRepoSQLite) HardDeleteVolume(ctx context.Context, organizationID int64, volumeID string) error {
+	return fmt.Errorf("HardDeleteVolume not supported on SQLite backend")
 }
 
 func (r *volumesRepoSQLite) UpsertVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error) {
@@ -761,10 +782,10 @@ func (r *volumesRepoSQLite) GetVolumeStats(ctx context.Context, organizationID i
 	return &models.VolumeStats{
 		TotalVolumes:   totalVolumes,
 		ActiveVolumes:  activeVolumes,
-		UniqueDrivers:  0,            // TODO: Count distinct drivers when schema includes driver field
-		ScannedVolumes: 0,            // TODO: Count volumes with last_scan_at not null
-		NewestVolume:   nil,          // TODO: Get MAX(created_at) when needed
-		OldestVolume:   nil,          // TODO: Get MIN(created_at) when needed
+		UniqueDrivers:  0,   // TODO: Count distinct drivers when schema includes driver field
+		ScannedVolumes: 0,   // TODO: Count volumes with last_scan_at not null
+		NewestVolume:   nil, // TODO: Get MAX(created_at) when needed
+		OldestVolume:   nil, // TODO: Get MIN(created_at) when needed
 	}, nil
 }
 
@@ -834,7 +855,7 @@ func (r *volumesRepoSQLite) UpsertVolumeMount(ctx context.Context, params models
 func (r *volumesRepoSQLite) GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*models.VolumeMount, error) {
 	// Use SQL NullString for SQLite query parameter
 	volumeParam := sql.NullString{String: volumeID, Valid: true}
-	
+
 	results, err := r.queries.GetVolumeMountsByVolume(ctx, volumeParam)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get volume mounts by volume: %w", err)
@@ -846,9 +867,9 @@ func (r *volumesRepoSQLite) GetVolumeMountsByVolume(ctx context.Context, volumeI
 		volumeMount := &models.VolumeMount{
 			ID:          result.ID,
 			VolumeID:    sqlNullStringToString(result.VolumeName), // Use volume name if available
-			ContainerID: "", // This will need to be populated from container attachments
+			ContainerID: "",                                       // This will need to be populated from container attachments
 			MountPath:   result.SourcePath,
-			AccessMode:  "rw", // Default access mode
+			AccessMode:  "rw",                  // Default access mode
 			IsActive:    result.IsTracked == 1, // Convert SQLite integer to boolean
 			CreatedAt:   result.CreatedAt,
 			UpdatedAt:   result.UpdatedAt,

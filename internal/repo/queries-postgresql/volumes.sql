@@ -86,9 +86,16 @@ SET last_scan_at = $2, updated_at = NOW()
 WHERE volume_id = $1 AND organization_id = $3;
 
 -- name: SoftDeleteVolume :exec
-UPDATE volumes 
+UPDATE volumes
 SET is_active = false, updated_at = NOW()
 WHERE volume_id = $1 AND organization_id = $2;
+
+-- name: HardDeleteVolume :exec
+-- Org-scoped permanent row delete, used after the real Docker volume has
+-- already been removed. Not to be confused with the unscoped DeleteVolume
+-- query above, which is currently unused and would be a tenant-isolation
+-- bug if called directly.
+DELETE FROM volumes WHERE volume_id = $1 AND organization_id = $2;
 
 -- name: UpsertVolume :one
 INSERT INTO volumes (

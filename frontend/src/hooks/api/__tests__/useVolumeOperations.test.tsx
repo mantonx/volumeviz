@@ -9,26 +9,71 @@ import { Provider as JotaiProvider } from 'jotai';
 import { ReactNode } from 'react';
 import { useVolumeOperations } from '../useVolumeOperations';
 import { setupServer } from 'msw/node';
-import { http, HttpResponse } from 'msw';
-import { backgroundSyncManager } from '@/utils/background-sync';
+import { http, HttpResponse, delay } from 'msw';
+import { backgroundSyncManager, useBackgroundSync } from '@/utils/background-sync';
+
+// Default (online) return value for the mocked useBackgroundSync hook.
+// Individual tests override this with `useBackgroundSync.mockReturnValue`
+// to simulate offline state; afterEach restores this default so the
+// override doesn't leak into subsequent tests (vi.clearAllMocks() only
+// clears call history, not custom mockReturnValue implementations).
+const defaultBackgroundSyncState = () => ({
+  isOnline: true,
+  pendingCount: 0,
+  syncInProgress: false,
+  addPendingOperation: vi.fn(),
+  forceSync: vi.fn(),
+  clearPending: vi.fn(),
+});
+
+// Offline state used by individual tests. Routes addPendingOperation through
+// the mocked backgroundSyncManager singleton (as the real useBackgroundSync
+// hook does) so assertions against backgroundSyncManager.addPendingOperation
+// observe the calls made by the hook under test.
+const offlineBackgroundSyncState = () => ({
+  isOnline: false,
+  pendingCount: 0,
+  syncInProgress: false,
+  addPendingOperation: backgroundSyncManager.addPendingOperation,
+  forceSync: vi.fn(),
+  clearPending: vi.fn(),
+});
 
 // Mock background sync manager
-jest.mock('@/utils/background-sync', () => ({
+vi.mock('@/utils/background-sync', () => ({
   backgroundSyncManager: {
-    addPendingOperation: jest.fn(),
+    addPendingOperation: vi.fn(),
   },
-  useBackgroundSync: () => ({
-    isOnline: true,
-    pendingCount: 0,
-    syncInProgress: false,
-    addPendingOperation: jest.fn(),
-    forceSync: jest.fn(),
-    clearPending: jest.fn(),
-  }),
+  useBackgroundSync: vi.fn(),
 }));
 
 // MSW server for testing
 const server = setupServer(
+  // Error simulation for scanVolume (registered before the parameterized
+  // handler below since MSW matches routes in registration order and the
+  // literal path would otherwise be shadowed by the `:volumeId` matcher)
+  http.post('/api/v1/volumes/error-test/scan', () => {
+    return HttpResponse.json(
+      { error: 'Simulated server error' },
+      { status: 500 },
+    );
+  }),
+
+  // Volume scan endpoint (scheduler-based scan_job enqueue, used by
+  // scanVolume — distinct from the synchronous size/refresh endpoint)
+  http.post('/api/v1/volumes/:volumeId/scan', ({ params }) => {
+    const volumeId = params.volumeId as string;
+    return HttpResponse.json(
+      {
+        message: 'Volume scan enqueued',
+        scan_id: `scan_${volumeId}_${Date.now()}`,
+        volume: volumeId,
+        status_url: `/api/v1/scans/scan_${volumeId}/status`,
+      },
+      { status: 202 },
+    );
+  }),
+
   // Volume size refresh endpoint
   http.post('/api/v1/volumes/:volumeId/size/refresh', ({ params }) => {
     const volumeId = params.volumeId as string;
@@ -100,17 +145,23 @@ describe('useVolumeOperations', () => {
     server.listen();
   });
 
+  beforeEach(() => {
+    vi.mocked(useBackgroundSync).mockImplementation(
+      defaultBackgroundSyncState,
+    );
+  });
+
   afterEach(() => {
     server.resetHandlers();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterAll(() => {
     server.close();
   });
 
-  describe('scanVolume (size refresh)', () => {
-    it('should successfully refresh volume size when online', async () => {
+  describe('scanVolume (scheduler-based scan)', () => {
+    it('should successfully enqueue a scan when online', async () => {
       const { result } = renderHook(() => useVolumeOperations(), {
         wrapper: createTestWrapper(),
       });
@@ -120,37 +171,31 @@ describe('useVolumeOperations', () => {
       // Trigger volume scan
       const promise = result.current.scanVolume.mutateAsync('test-volume');
 
-      // Should be loading during the request
-      expect(result.current.scanVolume.isLoading).toBe(true);
+      // scanVolume bypasses the mutation hook and calls fetch() directly
+      // (see useVolumeOperations.ts), so isLoading is always false for it.
+      expect(result.current.scanVolume.isLoading).toBe(false);
 
       // Wait for completion
       const response = await promise;
 
+      // scanVolume hits the scheduler's /scan endpoint, which enqueues an
+      // async scan_job and returns its id — not the size/refresh payload.
       expect(response).toEqual({
-        volume_id: 'test-volume',
-        size_bytes: 1048576000,
-        file_count: 10000,
-        last_updated: expect.any(String),
+        message: 'Volume scan enqueued',
+        scan_id: expect.stringMatching(/^scan_test-volume_\d+$/),
+        volume: 'test-volume',
+        status_url: expect.any(String),
       });
 
-      // Should no longer be loading
-      await waitFor(() => {
-        expect(result.current.scanVolume.isLoading).toBe(false);
-      });
+      // Should still not be "loading" afterwards
+      expect(result.current.scanVolume.isLoading).toBe(false);
     });
 
     it('should queue operation for background sync when offline', async () => {
       // Mock offline state
-      jest
-        .mocked(require('@/utils/background-sync').useBackgroundSync)
-        .mockReturnValue({
-          isOnline: false,
-          pendingCount: 0,
-          syncInProgress: false,
-          addPendingOperation: jest.fn(),
-          forceSync: jest.fn(),
-          clearPending: jest.fn(),
-        });
+      vi
+        .mocked(useBackgroundSync)
+        .mockReturnValue(offlineBackgroundSyncState());
 
       const { result } = renderHook(() => useVolumeOperations(), {
         wrapper: createTestWrapper(),
@@ -200,6 +245,23 @@ describe('useVolumeOperations', () => {
     });
 
     it('should track loading state correctly', async () => {
+      // MSW resolves this handler almost instantly, which normally makes
+      // the "pending" window too narrow for waitFor's polling interval to
+      // observe. Add a small artificial delay so isPending: true is
+      // reliably observable before the mutation settles.
+      server.use(
+        http.post('/api/v1/volumes/:volumeId/size/refresh', async ({ params }) => {
+          await delay(50);
+          const volumeId = params.volumeId as string;
+          return HttpResponse.json({
+            volume_id: volumeId,
+            size_bytes: 1048576000,
+            file_count: 10000,
+            last_updated: new Date().toISOString(),
+          });
+        }),
+      );
+
       const { result } = renderHook(() => useVolumeOperations(), {
         wrapper: createTestWrapper(),
       });
@@ -208,7 +270,13 @@ describe('useVolumeOperations', () => {
 
       const promise =
         result.current.refreshVolumeSize.mutateAsync('test-volume');
-      expect(result.current.refreshVolumeSize.isLoading).toBe(true);
+
+      // React Query notifies subscribers asynchronously (via a microtask),
+      // so the isPending flag doesn't flip synchronously after calling
+      // mutateAsync — it must be observed with waitFor.
+      await waitFor(() => {
+        expect(result.current.refreshVolumeSize.isLoading).toBe(true);
+      });
 
       await promise;
 
@@ -237,16 +305,9 @@ describe('useVolumeOperations', () => {
 
     it('should queue filesystem indexing when offline with higher retry count', async () => {
       // Mock offline state
-      jest
-        .mocked(require('@/utils/background-sync').useBackgroundSync)
-        .mockReturnValue({
-          isOnline: false,
-          pendingCount: 0,
-          syncInProgress: false,
-          addPendingOperation: jest.fn(),
-          forceSync: jest.fn(),
-          clearPending: jest.fn(),
-        });
+      vi
+        .mocked(useBackgroundSync)
+        .mockReturnValue(offlineBackgroundSyncState());
 
       const { result } = renderHook(() => useVolumeOperations(), {
         wrapper: createTestWrapper(),
@@ -294,16 +355,9 @@ describe('useVolumeOperations', () => {
 
     it('should queue individual volumes when offline', async () => {
       // Mock offline state
-      jest
-        .mocked(require('@/utils/background-sync').useBackgroundSync)
-        .mockReturnValue({
-          isOnline: false,
-          pendingCount: 0,
-          syncInProgress: false,
-          addPendingOperation: jest.fn(),
-          forceSync: jest.fn(),
-          clearPending: jest.fn(),
-        });
+      vi
+        .mocked(useBackgroundSync)
+        .mockReturnValue(offlineBackgroundSyncState());
 
       const { result } = renderHook(() => useVolumeOperations(), {
         wrapper: createTestWrapper(),

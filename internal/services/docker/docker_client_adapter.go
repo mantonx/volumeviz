@@ -50,6 +50,10 @@ func (a *DockerClientAdapter) InspectVolume(ctx context.Context, volumeID string
 	return a.service.InspectVolume(ctx, volumeID)
 }
 
+func (a *DockerClientAdapter) RemoveVolume(ctx context.Context, volumeID string, force bool) error {
+	return a.service.RemoveVolume(ctx, volumeID, force)
+}
+
 // Container operations
 func (a *DockerClientAdapter) ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error) {
 	return a.service.ListContainers(ctx, filterMap)

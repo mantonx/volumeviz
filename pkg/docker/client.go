@@ -110,6 +110,20 @@ func (c *Client) InspectVolume(ctx context.Context, volumeID string) (volume.Vol
 	return vol, nil
 }
 
+// RemoveVolume removes a Docker volume. force=false (the only mode this
+// wrapper is ever called with today) leaves Docker's own in-use protection
+// intact — the daemon rejects removal of a volume still attached to any
+// container, returning a typed conflict error (see errdefs.IsConflict).
+func (c *Client) RemoveVolume(ctx context.Context, volumeID string, force bool) error {
+	ctx, cancel := c.contextWithTimeout(ctx)
+	defer cancel()
+
+	if err := c.cli.VolumeRemove(ctx, volumeID, force); err != nil {
+		return fmt.Errorf("failed to remove volume %s: %w", volumeID, err)
+	}
+	return nil
+}
+
 // ListContainers lists all containers with optional filters
 func (c *Client) ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error) {
 	ctx, cancel := c.contextWithTimeout(ctx)

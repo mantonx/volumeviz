@@ -6,7 +6,10 @@ import (
 	"testing"
 	"time"
 
+	cerrdefs "github.com/containerd/errdefs"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/volume"
 )
 
 func TestNewClient(t *testing.T) {
@@ -249,6 +252,85 @@ func TestClient_InspectContainer(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error for non-existent container")
 	}
+}
+
+// TestClient_RemoveVolume exercises RemoveVolume against a real Docker
+// daemon (skipped entirely if one isn't reachable, matching every other
+// test in this file) — this is the one piece of behavior that's genuinely
+// risky to only unit-test against a mock: whether force=false's
+// version-gating and Docker's real in-use rejection actually behave the way
+// deleteOneVolume's error classification (cerrdefs.IsConflict/IsNotFound)
+// assumes.
+func TestClient_RemoveVolume(t *testing.T) {
+	client, err := NewClient("", 30*time.Second)
+	if err != nil {
+		t.Skip("Docker not available")
+	}
+	defer client.Close()
+
+	ctx := context.Background()
+	if err := client.Ping(ctx); err != nil {
+		t.Skip("Docker daemon not responding")
+	}
+
+	t.Run("removes an unattached volume", func(t *testing.T) {
+		volName := "volumeviz-test-remove-unattached"
+		if _, err := client.cli.VolumeCreate(ctx, volume.CreateOptions{Name: volName}); err != nil {
+			t.Skipf("could not create test volume: %v", err)
+		}
+		// Best-effort cleanup in case the assertion below fails before we
+		// get to the real removal, so a failed test run doesn't leak state.
+		defer client.cli.VolumeRemove(ctx, volName, true) //nolint:errcheck
+
+		if err := client.RemoveVolume(ctx, volName, false); err != nil {
+			t.Errorf("RemoveVolume() on unattached volume failed: %v", err)
+		}
+
+		if _, err := client.InspectVolume(ctx, volName); err == nil {
+			t.Error("volume still exists after RemoveVolume() reported success")
+		}
+	})
+
+	t.Run("rejects removal of a volume attached to a running container", func(t *testing.T) {
+		volName := "volumeviz-test-remove-attached"
+		if _, err := client.cli.VolumeCreate(ctx, volume.CreateOptions{Name: volName}); err != nil {
+			t.Skipf("could not create test volume: %v", err)
+		}
+		defer client.cli.VolumeRemove(ctx, volName, true) //nolint:errcheck
+
+		containerResp, err := client.cli.ContainerCreate(ctx,
+			&containertypes.Config{Image: "busybox", Cmd: []string{"sleep", "60"}},
+			&containertypes.HostConfig{Binds: []string{volName + ":/data"}},
+			nil, nil, "volumeviz-test-remove-attached-container")
+		if err != nil {
+			t.Skipf("could not create test container (likely no 'busybox' image pulled locally): %v", err)
+		}
+		defer func() {
+			_ = client.cli.ContainerRemove(ctx, containerResp.ID, containertypes.RemoveOptions{Force: true})
+		}()
+
+		if err := client.cli.ContainerStart(ctx, containerResp.ID, containertypes.StartOptions{}); err != nil {
+			t.Skipf("could not start test container: %v", err)
+		}
+
+		err = client.RemoveVolume(ctx, volName, false)
+		if err == nil {
+			t.Fatal("expected RemoveVolume() to fail for a volume attached to a running container, got nil error")
+		}
+		if !cerrdefs.IsConflict(err) {
+			t.Errorf("expected a conflict error classifiable via cerrdefs.IsConflict, got: %v", err)
+		}
+	})
+
+	t.Run("not-found is classifiable via cerrdefs.IsNotFound", func(t *testing.T) {
+		err := client.RemoveVolume(ctx, "volumeviz-test-remove-does-not-exist", false)
+		if err == nil {
+			t.Fatal("expected RemoveVolume() to fail for a non-existent volume, got nil error")
+		}
+		if !cerrdefs.IsNotFound(err) {
+			t.Errorf("expected a not-found error classifiable via cerrdefs.IsNotFound, got: %v", err)
+		}
+	})
 }
 
 func TestClient_Events(t *testing.T) {

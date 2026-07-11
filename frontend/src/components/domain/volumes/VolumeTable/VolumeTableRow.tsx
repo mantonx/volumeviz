@@ -29,6 +29,7 @@ import {
   Info,
   PlayCircle,
   PauseCircle,
+  Trash2,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -79,6 +80,7 @@ export const VolumeTableRow: React.FC<VolumeTableRowProps> = ({
   onTrack,
   onUntrack,
   onScan,
+  onDelete,
 }) => {
   const volumeId = volume.name;
   const sizePercentage = volume.quota_bytes
@@ -244,6 +246,13 @@ export const VolumeTableRow: React.FC<VolumeTableRowProps> = ({
                 label: 'View Details',
                 icon: Info,
                 onClick: () => onOpenModal(volumeId),
+              },
+              {
+                id: 'delete',
+                label: 'Delete Volume',
+                icon: Trash2,
+                onClick: () => onDelete(volumeId),
+                destructive: true,
               },
             ]}
             trigger={<MoreVertical className="w-4 h-4 text-secondary" />}

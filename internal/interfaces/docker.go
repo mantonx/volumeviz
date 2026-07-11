@@ -22,6 +22,7 @@ type DockerClient interface {
 	// Volume operations
 	ListVolumes(ctx context.Context, filterMap map[string][]string) (volume.ListResponse, error)
 	InspectVolume(ctx context.Context, volumeID string) (volume.Volume, error)
+	RemoveVolume(ctx context.Context, volumeID string, force bool) error
 
 	// Container operations
 	ListContainers(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error)

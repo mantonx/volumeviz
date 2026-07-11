@@ -72,4 +72,9 @@ func (m *DockerService) GetVolumeContainersBatch(ctx context.Context, volumeName
 	return args.Get(0).(map[string][]models.VolumeContainer), args.Error(1)
 }
 
+func (m *DockerService) RemoveVolume(ctx context.Context, volumeID string, force bool) error {
+	args := m.Called(ctx, volumeID, force)
+	return args.Error(0)
+}
+
 // Other methods can be added as needed based on the interface

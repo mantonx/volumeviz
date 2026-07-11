@@ -10,7 +10,7 @@ import {
 import { useToast } from '@/components/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  usePostVolumesBulkScan,
+  usePostApiV1VolumesBulkScan,
   usePostVolumesBulkTrack,
   usePostVolumesBulkUntrack,
 } from '@/api/orval-generated/api';
@@ -45,7 +45,7 @@ export const useVolumeBulkActions = (
 ): BulkAction[] => {
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
-  const bulkScanMutation = usePostVolumesBulkScan();
+  const bulkScanMutation = usePostApiV1VolumesBulkScan();
   const bulkTrackMutation = usePostVolumesBulkTrack();
   const bulkUntrackMutation = usePostVolumesBulkUntrack();
   const { onActionComplete, onActionError } = options;
@@ -78,7 +78,7 @@ export const useVolumeBulkActions = (
         await bulkTrackMutation.mutateAsync({
           data: { volume_ids: volumeIds },
         });
-        await queryClient.refetchQueries({ queryKey: ['/volumes'] });
+        await queryClient.refetchQueries({ queryKey: ['/api/v1/volumes'] });
         success(`Tracking enabled for ${volumeIds.length} volume(s)`);
         onActionComplete?.('track', volumeIds);
       } catch (err) {
@@ -97,7 +97,7 @@ export const useVolumeBulkActions = (
         await bulkUntrackMutation.mutateAsync({
           data: { volume_ids: volumeIds },
         });
-        await queryClient.refetchQueries({ queryKey: ['/volumes'] });
+        await queryClient.refetchQueries({ queryKey: ['/api/v1/volumes'] });
         success(`Tracking disabled for ${volumeIds.length} volume(s)`);
         onActionComplete?.('untrack', volumeIds);
       } catch (err) {

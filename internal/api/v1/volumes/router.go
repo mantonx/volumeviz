@@ -2,6 +2,7 @@ package volumes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/mantonx/volumeviz/internal/api/middleware"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/realtime"
 	"github.com/mantonx/volumeviz/internal/store"
@@ -31,8 +32,18 @@ func (r *Router) Handler() *Handler {
 	return r.handler
 }
 
-// RegisterRoutes registers all volume-related routes
+// RegisterRoutes registers all volume-related routes using the default
+// (auth-disabled) middleware config. Prefer RegisterRoutesWithAuth when the
+// caller has a real *middleware.AuthConfig available, so role checks on
+// destructive routes stay consistent with the rest of the auth stack.
 func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
+	r.RegisterRoutesWithAuth(group, nil)
+}
+
+// RegisterRoutesWithAuth registers all volume-related routes, gating the
+// admin-only delete endpoints with authConfig (nil is treated as
+// auth-disabled, matching middleware.DefaultAuthConfig).
+func (r *Router) RegisterRoutesWithAuth(group *gin.RouterGroup, authConfig *middleware.AuthConfig) {
 	// Volume endpoints
 	volumes := group.Group("/volumes")
 	{
@@ -59,6 +70,13 @@ func (r *Router) RegisterRoutes(group *gin.RouterGroup) {
 		// Volume tracking operations
 		volumes.POST("/:name/track", r.handler.TrackVolume)
 		volumes.POST("/:name/untrack", r.handler.UntrackVolume)
+
+		// Volume deletion — permanently removes real Docker state, so these
+		// require admin role on top of the operator floor every other
+		// mutation gets from the global ProtectMutatingOperations middleware.
+		requireAdmin := middleware.RequireRoleWithConfig(authConfig, middleware.RoleAdmin)
+		volumes.DELETE("/:name", requireAdmin, r.handler.DeleteVolume)
+		volumes.POST("/bulk-delete", requireAdmin, r.handler.BulkDeleteVolumes)
 	}
 
 	// Reports endpoints

@@ -61,7 +61,7 @@ export const useVolumeRowActions = (
     mutation: {
       onSuccess: () => {
         // Invalidate all volumes queries to ensure fresh data
-        queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/v1/volumes'] });
         // Also call the refetch callback for immediate UI update
         onRefetch?.();
         toast.success('Volume is now being tracked');
@@ -76,7 +76,7 @@ export const useVolumeRowActions = (
     mutation: {
       onSuccess: () => {
         // Invalidate all volumes queries to ensure fresh data
-        queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/v1/volumes'] });
         // Also call the refetch callback for immediate UI update
         onRefetch?.();
         toast.success('Volume is no longer being tracked');

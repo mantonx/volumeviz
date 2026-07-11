@@ -23,6 +23,7 @@ type MockDockerClient struct {
 	// Volumes
 	ListVolumesFunc   func(ctx context.Context, filterMap map[string][]string) (volume.ListResponse, error)
 	InspectVolumeFunc func(ctx context.Context, volumeID string) (volume.Volume, error)
+	RemoveVolumeFunc  func(ctx context.Context, volumeID string, force bool) error
 
 	// Containers
 	ListContainersFunc   func(ctx context.Context, filterMap map[string][]string) ([]containertypes.Summary, error)
@@ -38,6 +39,7 @@ type MockDockerClient struct {
 	VersionCalls          int
 	ListVolumesCalls      int
 	InspectVolumeCalls    int
+	RemoveVolumeCalls     int
 	ListContainersCalls   int
 	InspectContainerCalls int
 	EventsCalls           int
@@ -101,6 +103,15 @@ func (m *MockDockerClient) InspectVolume(ctx context.Context, volumeID string) (
 		return m.InspectVolumeFunc(ctx, volumeID)
 	}
 	return volume.Volume{}, fmt.Errorf("volume not found")
+}
+
+// RemoveVolume mocks the RemoveVolume method
+func (m *MockDockerClient) RemoveVolume(ctx context.Context, volumeID string, force bool) error {
+	m.RemoveVolumeCalls++
+	if m.RemoveVolumeFunc != nil {
+		return m.RemoveVolumeFunc(ctx, volumeID, force)
+	}
+	return nil
 }
 
 // ListContainers mocks the ListContainers method

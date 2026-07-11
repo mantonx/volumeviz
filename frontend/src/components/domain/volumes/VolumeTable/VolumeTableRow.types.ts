@@ -22,4 +22,6 @@ export interface VolumeTableRowProps {
   onUntrack: (volumeId: string) => Promise<void>;
   /** Scan volume action */
   onScan: (volumeId: string) => Promise<void>;
+  /** Stage this volume for deletion (opens the confirm modal) */
+  onDelete: (volumeId: string) => void;
 }

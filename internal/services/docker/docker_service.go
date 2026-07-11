@@ -413,6 +413,14 @@ func (s *DockerService) InspectVolume(ctx context.Context, volumeID string) (vol
 	return s.client.InspectVolume(ctx, volumeID)
 }
 
+// RemoveVolume permanently deletes a Docker volume. Callers are responsible
+// for confirming the volume isn't attached to any container before calling
+// this — force=false additionally leaves Docker's own daemon-side in-use
+// check as a final backstop against deleting an attached volume.
+func (s *DockerService) RemoveVolume(ctx context.Context, volumeID string, force bool) error {
+	return s.client.RemoveVolume(ctx, volumeID, force)
+}
+
 // InspectContainer is an alias for GetVolumeContainers' internal implementation
 // Returns detailed container information in the Docker API format
 func (s *DockerService) InspectContainer(ctx context.Context, containerID string) (containertypes.InspectResponse, error) {

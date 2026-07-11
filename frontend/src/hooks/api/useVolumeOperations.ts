@@ -1,9 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useSetAtom } from 'jotai';
 import {
-  usePostVolumesIdSizeRefresh,
-  usePostVolumesIdFilesystemIndex,
-  usePostVolumesBulkScan,
+  usePostApiV1VolumesIdSizeRefresh,
+  usePostApiV1VolumesIdFilesystemIndex,
+  usePostApiV1VolumesBulkScan,
 } from '@/api/orval-generated/api';
 import { lastRefreshAtom } from '@/atoms/volumes';
 import { useBackgroundSync } from '@/utils/background-sync';
@@ -37,42 +37,47 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
   const { isOnline, addPendingOperation } = useBackgroundSync();
 
   // Size refresh mutation
-  const sizeRefreshMutation = usePostVolumesIdSizeRefresh({
+  const sizeRefreshMutation = usePostApiV1VolumesIdSizeRefresh({
     mutation: {
       onSuccess: () => {
-        // Invalidate volume queries
-        queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
-        queryClient.invalidateQueries({ queryKey: ['getVolumesIdSize'] });
-        setLastRefresh(Date.now());
-      },
-    },
-  });
-
-  // Filesystem indexing mutation
-  const filesystemIndexMutation = usePostVolumesIdFilesystemIndex({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
+        // Invalidate volume queries. The per-volume size query key is
+        // templated with the volume ID (`/api/v1/volumes/${id}/size`), so a
+        // predicate match on the path prefix catches it regardless of which
+        // volume was refreshed.
+        queryClient.invalidateQueries({ queryKey: ['/api/v1/volumes'] });
         queryClient.invalidateQueries({
-          queryKey: ['getVolumesIdFilesystemStatus'],
+          predicate: (query) =>
+            typeof query.queryKey[0] === 'string' &&
+            query.queryKey[0].startsWith('/api/v1/volumes/') &&
+            query.queryKey[0].endsWith('/size'),
         });
         setLastRefresh(Date.now());
       },
     },
   });
 
-  // Bulk scan mutation
-  const bulkScanMutation = usePostVolumesBulkScan({
+  // Filesystem indexing mutation
+  const filesystemIndexMutation = usePostApiV1VolumesIdFilesystemIndex({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/v1/volumes'] });
+        setLastRefresh(Date.now());
+      },
+    },
+  });
+
+  // Bulk scan mutation
+  const bulkScanMutation = usePostApiV1VolumesBulkScan({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/v1/volumes'] });
         setLastRefresh(Date.now());
       },
     },
   });
 
   const refreshVolumes = () => {
-    queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/v1/volumes'] });
     setLastRefresh(Date.now());
   };
 
@@ -97,7 +102,7 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
           const data = await response.json();
 
           // Invalidate queries to refresh UI
-          queryClient.invalidateQueries({ queryKey: ['getVolumes'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/v1/volumes'] });
 
           return data;
         } else {

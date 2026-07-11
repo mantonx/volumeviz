@@ -131,7 +131,7 @@ func AuthMiddleware(config *AuthConfig) gin.HandlerFunc {
 		// Store user information in context for use by handlers
 		c.Set("user_id", claims.UserID)
 		c.Set("user_role", claims.Role)
-		
+
 		// Store organization ID if present in token
 		if claims.OrganizationID != nil {
 			c.Set("organization_id", *claims.OrganizationID)
@@ -183,9 +183,31 @@ func ProtectMutatingOperations(config *AuthConfig) gin.HandlerFunc {
 	})
 }
 
-// RequireRole middleware requires a specific minimum role
+// RequireRole middleware requires a specific minimum role. Like
+// AuthMiddleware and ProtectMutatingOperations, it no-ops when
+// authentication is globally disabled (config.Auth.Enabled=false) rather
+// than rejecting every request, since there's no user/role to check in that
+// mode — auth-disabled is a deliberate local/dev configuration, not a
+// partial-auth state.
 func RequireRole(requiredRole UserRole) gin.HandlerFunc {
+	return RequireRoleWithConfig(nil, requiredRole)
+}
+
+// RequireRoleWithConfig is RequireRole with explicit control over whether
+// the check applies at all. Pass the same *AuthConfig used to build
+// AuthMiddleware so this middleware's enabled/disabled state can't drift
+// from the rest of the auth stack.
+func RequireRoleWithConfig(config *AuthConfig, requiredRole UserRole) gin.HandlerFunc {
+	if config == nil {
+		config = DefaultAuthConfig()
+	}
+
 	return gin.HandlerFunc(func(c *gin.Context) {
+		if !config.Enabled {
+			c.Next()
+			return
+		}
+
 		userRole := c.GetString("user_role")
 		if userRole == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
@@ -243,4 +265,3 @@ func GetUserRole(c *gin.Context) UserRole {
 	}
 	return ""
 }
-

@@ -540,7 +540,7 @@ func TestDockerService_convertToVolumeModel(t *testing.T) {
 				Labels:     map[string]string{"env": "test"},
 				Options:    map[string]string{"type": "none"},
 				Scope:      "local",
-				Status: "active",
+				Status:     "active",
 				UsageData: &models.VolumeUsage{
 					RefCount: 3,
 					Size:     2048,
@@ -713,6 +713,66 @@ func TestDockerService_GetVolumesByLabel(t *testing.T) {
 				if len(volumes) != len(tt.volumes.Volumes) {
 					t.Errorf("GetVolumesByLabel() returned %d volumes, want %d", len(volumes), len(tt.volumes.Volumes))
 				}
+			}
+		})
+	}
+}
+
+func TestDockerService_RemoveVolume(t *testing.T) {
+	tests := []struct {
+		name      string
+		volumeID  string
+		force     bool
+		removeErr error
+		wantErr   bool
+	}{
+		{
+			name:     "successful removal",
+			volumeID: "test-volume",
+			force:    false,
+			wantErr:  false,
+		},
+		{
+			name:      "removal error propagates",
+			volumeID:  "test-volume",
+			force:     false,
+			removeErr: errors.New("volume is in use"),
+			wantErr:   true,
+		},
+		{
+			name:     "force removal passes through",
+			volumeID: "test-volume",
+			force:    true,
+			wantErr:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotVolumeID string
+			var gotForce bool
+			mockClient := &mocks.MockDockerClient{
+				RemoveVolumeFunc: func(ctx context.Context, volumeID string, force bool) error {
+					gotVolumeID = volumeID
+					gotForce = force
+					return tt.removeErr
+				},
+			}
+
+			service := NewDockerServiceWithClient(mockClient)
+			err := service.RemoveVolume(context.Background(), tt.volumeID, tt.force)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RemoveVolume() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if gotVolumeID != tt.volumeID {
+				t.Errorf("RemoveVolume() called with volumeID %q, want %q", gotVolumeID, tt.volumeID)
+			}
+			if gotForce != tt.force {
+				t.Errorf("RemoveVolume() called with force %v, want %v", gotForce, tt.force)
+			}
+			if mockClient.RemoveVolumeCalls != 1 {
+				t.Errorf("RemoveVolume() called %d times, want 1", mockClient.RemoveVolumeCalls)
 			}
 		})
 	}
