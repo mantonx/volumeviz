@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	apimodels "github.com/mantonx/volumeviz/internal/api/models"
 	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/store"
@@ -34,10 +35,11 @@ func NewHandler(store store.Store, statsService interfaces.StatsService) *Handle
 // @Produce json
 // @Param volumeId path string true "Volume ID"
 // @Param days query int false "Number of days to analyze (default: 30, max: 365)"
-// @Success 200 {object} map[string]interface{} "Volume trends data"
+// @Param aggregation query string false "Bucket size for daily_stats: day, week, or month (default: day)"
+// @Success 200 {object} apimodels.VolumeTrendsDataV1 "Volume trends data"
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /trends/volumes/{volumeId} [get]
+// @Router /api/v1/trends/volumes/{volumeId} [get]
 func (h *Handler) GetVolumeTrends(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -57,12 +59,22 @@ func (h *Handler) GetVolumeTrends(c *gin.Context) {
 		days = parsed
 	}
 
+	aggregation := c.DefaultQuery("aggregation", "day")
+	if aggregation != "day" && aggregation != "week" && aggregation != "month" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "aggregation must be 'day', 'week', or 'month'",
+			"code":    "INVALID_AGGREGATION",
+			"message": "aggregation must be 'day', 'week', or 'month'",
+		})
+		return
+	}
+
 	// Calculate date range
 	endDate := time.Now().Truncate(24 * time.Hour)
 	startDate := endDate.AddDate(0, 0, -days)
 
 	// Get comprehensive trends data using our daily stats service
-	trendsData, err := h.getTrendsDataFromStats(c.Request.Context(), volumeID, startDate, endDate, days)
+	trendsData, err := h.getTrendsDataFromStats(c.Request.Context(), volumeID, startDate, endDate, days, aggregation)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to get trends data",
@@ -72,18 +84,11 @@ func (h *Handler) GetVolumeTrends(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": trendsData,
-		"meta": gin.H{
-			"volume_id":   volumeID,
-			"period_days": days,
-			"date_range": gin.H{
-				"start": startDate.Format("2006-01-02"),
-				"end":   endDate.Format("2006-01-02"),
-			},
-			"generated_at": time.Now(),
-		},
-	})
+	trendsData.Aggregation = aggregation
+	trendsData.Period = apimodels.TrendsPeriodV1{Start: startDate, End: endDate, Days: days}
+	trendsData.GeneratedAt = time.Now()
+
+	c.JSON(http.StatusOK, trendsData)
 }
 
 // GetVolumeGrowthDeltas returns growth deltas for a volume
@@ -98,7 +103,7 @@ func (h *Handler) GetVolumeTrends(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "Volume growth deltas"
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /trends/volumes/{volumeId}/deltas [get]
+// @Router /api/v1/trends/volumes/{volumeId}/deltas [get]
 func (h *Handler) GetVolumeGrowthDeltas(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -190,7 +195,7 @@ func (h *Handler) GetVolumeGrowthDeltas(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "Volume step series data"
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /trends/volumes/{volumeId}/series [get]
+// @Router /api/v1/trends/volumes/{volumeId}/series [get]
 func (h *Handler) GetVolumeStepSeries(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -271,7 +276,7 @@ func (h *Handler) GetVolumeStepSeries(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "Volume trend slope data"
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /trends/volumes/{volumeId}/slope [get]
+// @Router /api/v1/trends/volumes/{volumeId}/slope [get]
 func (h *Handler) GetVolumeTrendSlope(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -383,7 +388,7 @@ func (h *Handler) GetVolumeTrendSlope(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "7-day trend summary"
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /trends/volumes/{volumeId}/7day [get]
+// @Router /api/v1/trends/volumes/{volumeId}/7day [get]
 func (h *Handler) Get7DayTrend(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -458,7 +463,7 @@ func (h *Handler) Get7DayTrend(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "30-day trend summary"
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /trends/volumes/{volumeId}/30day [get]
+// @Router /api/v1/trends/volumes/{volumeId}/30day [get]
 func (h *Handler) Get30DayTrend(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 
@@ -523,53 +528,126 @@ func (h *Handler) Get30DayTrend(c *gin.Context) {
 	})
 }
 
+// volumeTrendsSummaryLimit caps how many volumes GetAllVolumesTrendsSummary
+// will pull daily stats for in one request
+const volumeTrendsSummaryLimit = 500
+
 // GetAllVolumesTrendsSummary returns a summary of trends for all volumes
 // @Summary Get all volumes trends summary
 // @Description Get aggregated trends summary for all volumes in the system
 // @Tags trends
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]interface{} "All volumes trends summary"
+// @Success 200 {object} apimodels.AllVolumesTrendsSummaryV1 "All volumes trends summary"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /trends/summary [get]
+// @Router /api/v1/trends/summary [get]
 func (h *Handler) GetAllVolumesTrendsSummary(c *gin.Context) {
-	// For now, return basic summary structure
-	// In a full implementation, this would aggregate trends across all volumes
-	summary := gin.H{
-		"total_volumes_tracked": 0,
-		"volumes_with_growth":   0,
-		"volumes_with_decline":  0,
-		"average_growth_rate":   0.0,
-		"total_storage_growth":  0,
-		"period": gin.H{
-			"start": time.Now().AddDate(0, 0, -30),
-			"end":   time.Now(),
-			"days":  30,
-		},
-		"generated_at": time.Now(),
+	const days = 30
+	endDate := time.Now().Truncate(24 * time.Hour)
+	startDate := endDate.AddDate(0, 0, -days)
+
+	// System-wide summary: not scoped to a single organization, matching this
+	// endpoint's route (no org context in the URL)
+	volumes, err := h.store.Volumes().ListAllVolumes(c.Request.Context(), volumeTrendsSummaryLimit, 0)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to list volumes",
+			"code":    "VOLUMES_ERROR",
+			"message": err.Error(),
+		})
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": summary,
-		"meta": gin.H{
-			"endpoint": "/trends/summary",
-			"note":     "This endpoint returns aggregated trends across all volumes",
+	volumeSummaries := make([]apimodels.VolumeTrendsSummaryEntryV1, 0, len(volumes))
+	volumesWithGrowth := 0
+	volumesWithDecline := 0
+	var totalStorageGrowth int64
+	var growthRateSum float64
+	volumesWithStats := 0
+
+	for _, volume := range volumes {
+		stats, err := h.statsService.GetVolumeStatsHistory(c.Request.Context(), volume.VolumeID, startDate, endDate)
+		if err != nil || len(stats) == 0 {
+			continue
+		}
+
+		var volumeGrowth int64
+		for _, stat := range stats {
+			volumeGrowth += stat.AddedBytes - stat.RemovedBytes
+		}
+
+		latest := stats[0]
+		var growthRatePercent float64
+		baseline := latest.TotalBytes - volumeGrowth
+		if baseline > 0 {
+			growthRatePercent = float64(volumeGrowth) / float64(baseline) * 100
+		}
+
+		if volumeGrowth > 0 {
+			volumesWithGrowth++
+		} else if volumeGrowth < 0 {
+			volumesWithDecline++
+		}
+		totalStorageGrowth += volumeGrowth
+		growthRateSum += growthRatePercent
+		volumesWithStats++
+
+		dataPoints := make([]apimodels.VolumeTrendsDataPointV1, len(stats))
+		for i, stat := range stats {
+			dataPoints[i] = apimodels.VolumeTrendsDataPointV1{
+				Date:      stat.Date.Format("2006-01-02"),
+				TotalSize: stat.TotalBytes,
+				FileCount: stat.FilesCount,
+			}
+		}
+
+		volumeSummaries = append(volumeSummaries, apimodels.VolumeTrendsSummaryEntryV1{
+			VolumeID: volume.VolumeID,
+			Statistics: apimodels.VolumeTrendsSummaryStatsV1{
+				TotalGrowth:       volumeGrowth,
+				GrowthRatePercent: growthRatePercent,
+				CurrentSize:       latest.TotalBytes,
+			},
+			DataPoints: dataPoints,
+		})
+	}
+
+	var averageGrowthRate float64
+	if volumesWithStats > 0 {
+		averageGrowthRate = growthRateSum / float64(volumesWithStats)
+	}
+
+	summary := apimodels.AllVolumesTrendsSummaryV1{
+		TotalVolumesTracked: len(volumes),
+		VolumesWithGrowth:   volumesWithGrowth,
+		VolumesWithDecline:  volumesWithDecline,
+		AverageGrowthRate:   averageGrowthRate,
+		TotalStorageGrowth:  totalStorageGrowth,
+		Volumes:             volumeSummaries,
+		Period: apimodels.TrendsPeriodV1{
+			Start: startDate,
+			End:   endDate,
+			Days:  days,
 		},
-	})
+		GeneratedAt: time.Now(),
+	}
+
+	c.JSON(http.StatusOK, summary)
 }
 
 // getTrendsDataFromStats creates comprehensive trends data using our daily stats service
-func (h *Handler) getTrendsDataFromStats(ctx context.Context, volumeID string, startDate, endDate time.Time, days int) (interface{}, error) {
+func (h *Handler) getTrendsDataFromStats(ctx context.Context, volumeID string, startDate, endDate time.Time, days int, aggregation string) (apimodels.VolumeTrendsDataV1, error) {
 	// Get volume stats history
 	volumeStats, err := h.statsService.GetVolumeStatsHistory(ctx, volumeID, startDate, endDate)
 	if err != nil {
-		return nil, err
+		return apimodels.VolumeTrendsDataV1{}, err
 	}
+	volumeStats = bucketDailyStats(volumeStats, aggregation)
 
 	// Get trend analysis data
 	trendAnalysis, err := h.statsService.GetTrendAnalysis(ctx, volumeID, startDate, endDate)
 	if err != nil {
-		return nil, err
+		return apimodels.VolumeTrendsDataV1{}, err
 	}
 
 	// Get latest volume stats for current totals
@@ -610,21 +688,23 @@ func (h *Handler) getTrendsDataFromStats(ctx context.Context, volumeID string, s
 		}
 	}
 
-	// Build comprehensive response
-	trendsData := gin.H{
-		"volume_id": volumeID,
-		"summary": gin.H{
-			"current_size":           getCurrentSize(latestStats),
-			"current_files":          getCurrentFiles(latestStats),
-			"total_growth_bytes":     totalGrowthBytes,
-			"total_growth_files":     totalGrowthFiles,
-			"avg_daily_growth_bytes": avgDailyGrowthBytes,
-			"avg_daily_growth_files": avgDailyGrowthFiles,
+	capacityForecast := buildCapacityForecast(volumeStats, avgDailyGrowthBytes, endDate)
+
+	trendsData := apimodels.VolumeTrendsDataV1{
+		VolumeID: volumeID,
+		Summary: apimodels.TrendsSummaryStatsV1{
+			CurrentSize:         getCurrentSize(latestStats),
+			CurrentFiles:        getCurrentFiles(latestStats),
+			TotalGrowthBytes:    totalGrowthBytes,
+			TotalGrowthFiles:    totalGrowthFiles,
+			AvgDailyGrowthBytes: avgDailyGrowthBytes,
+			AvgDailyGrowthFiles: avgDailyGrowthFiles,
 		},
-		"daily_stats":         volumeStats,
-		"trend_analysis":      trendAnalysis,
-		"media_composition":   mediaComposition,
-		"top_growing_folders": topGrowingFolders,
+		DailyStats:        dailyStatsToV1(volumeStats),
+		TrendAnalysis:     trendAnalysisToV1(trendAnalysis),
+		MediaComposition:  mediaCompositionToV1(mediaComposition),
+		TopGrowingFolders: topGrowingFoldersToV1(topGrowingFolders),
+		CapacityForecast:  capacityForecast,
 	}
 
 	return trendsData, nil
@@ -643,4 +723,185 @@ func getCurrentFiles(stats *models.DailyStat) int64 {
 		return stats.FilesCount
 	}
 	return 0
+}
+
+func dailyStatsToV1(stats []*models.DailyStat) []apimodels.DailyStatV1 {
+	out := make([]apimodels.DailyStatV1, len(stats))
+	for i, stat := range stats {
+		out[i] = apimodels.DailyStatV1{
+			Date:               stat.Date.Format("2006-01-02"),
+			TotalBytes:         stat.TotalBytes,
+			FilesCount:         stat.FilesCount,
+			AddedBytes:         stat.AddedBytes,
+			RemovedBytes:       stat.RemovedBytes,
+			AddedFiles:         stat.AddedFiles,
+			RemovedFiles:       stat.RemovedFiles,
+			DiskTotalBytes:     stat.DiskTotalBytes,
+			DiskAvailableBytes: stat.DiskAvailableBytes,
+		}
+	}
+	return out
+}
+
+func trendAnalysisToV1(analysis []*models.TrendAnalysis) []apimodels.TrendAnalysisV1 {
+	if analysis == nil {
+		return nil
+	}
+	out := make([]apimodels.TrendAnalysisV1, len(analysis))
+	for i, a := range analysis {
+		out[i] = apimodels.TrendAnalysisV1{
+			Date:               a.Date.Format("2006-01-02"),
+			FilesCount:         a.FilesCount,
+			TotalBytes:         a.TotalBytes,
+			BytesChange7d:      a.BytesChange7d,
+			FilesChange7d:      a.FilesChange7d,
+			BytesChange30d:     a.BytesChange30d,
+			FilesChange30d:     a.FilesChange30d,
+			BytesGrowthRate7d:  a.BytesGrowthRate7d,
+			BytesGrowthRate30d: a.BytesGrowthRate30d,
+		}
+	}
+	return out
+}
+
+func mediaCompositionToV1(composition []*models.MediaKindComposition) []apimodels.MediaKindCompositionV1 {
+	if composition == nil {
+		return nil
+	}
+	out := make([]apimodels.MediaKindCompositionV1, len(composition))
+	for i, c := range composition {
+		out[i] = apimodels.MediaKindCompositionV1{
+			MediaKind:       c.MediaKind,
+			Date:            c.Date.Format("2006-01-02"),
+			FilesCount:      c.FilesCount,
+			TotalBytes:      c.TotalBytes,
+			PercentOfVolume: c.PercentOfVolume,
+		}
+	}
+	return out
+}
+
+func topGrowingFoldersToV1(folders []*models.TopGrowingFolder) []apimodels.TopGrowingFolderV1 {
+	if folders == nil {
+		return nil
+	}
+	out := make([]apimodels.TopGrowingFolderV1, len(folders))
+	for i, f := range folders {
+		out[i] = apimodels.TopGrowingFolderV1{
+			FolderID:           f.FolderID,
+			FolderName:         f.FolderName,
+			FolderPath:         f.FolderPath,
+			TotalAddedBytes:    f.TotalAddedBytes,
+			TotalAddedFiles:    f.TotalAddedFiles,
+			AvgDailyAddedBytes: f.AvgDailyAddedBytes,
+			DaysTracked:        f.DaysTracked,
+		}
+	}
+	return out
+}
+
+// bucketDailyStats groups daily stat rows into week or month buckets,
+// summing the added/removed deltas within each bucket and keeping the most
+// recent row's point-in-time totals (TotalBytes/FilesCount/disk capacity) as
+// that bucket's representative snapshot. "day" aggregation is a no-op since
+// daily_stats is already daily-granular - there's no finer-grained data
+// source (e.g. hourly) to bucket up from.
+func bucketDailyStats(stats []*models.DailyStat, aggregation string) []*models.DailyStat {
+	if aggregation == "day" || len(stats) == 0 {
+		return stats
+	}
+
+	// stats is ordered by date DESC; bucketKey groups dates that fall in the
+	// same ISO week or same calendar month
+	bucketKey := func(d time.Time) time.Time {
+		if aggregation == "month" {
+			return time.Date(d.Year(), d.Month(), 1, 0, 0, 0, 0, d.Location())
+		}
+		// week: bucket by the Monday that starts that ISO week
+		weekday := int(d.Weekday())
+		if weekday == 0 {
+			weekday = 7 // ISO: Sunday is 7, not 0
+		}
+		return d.AddDate(0, 0, -(weekday - 1)).Truncate(24 * time.Hour)
+	}
+
+	buckets := make([]*models.DailyStat, 0, len(stats))
+	var current *models.DailyStat
+	var currentKey time.Time
+
+	for _, stat := range stats {
+		key := bucketKey(stat.Date)
+		if current == nil || !key.Equal(currentKey) {
+			// stats[0] (most recent) becomes each new bucket's snapshot values;
+			// subsequent same-bucket rows only contribute their deltas below
+			snapshot := *stat
+			current = &snapshot
+			current.Date = key
+			currentKey = key
+			buckets = append(buckets, current)
+			continue
+		}
+		current.AddedBytes += stat.AddedBytes
+		current.RemovedBytes += stat.RemovedBytes
+		current.AddedFiles += stat.AddedFiles
+		current.RemovedFiles += stat.RemovedFiles
+	}
+
+	return buckets
+}
+
+// capacityForecastDays is how far forward to project storage growth
+const capacityForecastDays = 90
+
+// buildCapacityForecast projects a volume's size forward from its most recent
+// known size using its observed average daily growth rate, and (if the host
+// filesystem's available space was captured during a recent scan) reports how
+// many days remain until that growth would exhaust the available disk space.
+// Returns nil if there isn't enough data to make an honest projection.
+func buildCapacityForecast(volumeStats []*models.DailyStat, avgDailyGrowthBytes float64, asOf time.Time) *apimodels.CapacityForecastV1 {
+	if len(volumeStats) == 0 {
+		return nil
+	}
+
+	// volumeStats is ordered by date DESC (see GetVolumeStatsHistory), so the
+	// first entry with data is the most recent
+	latest := volumeStats[0]
+	currentSize := latest.TotalBytes
+
+	var availableBytes *int64
+	for _, stat := range volumeStats {
+		if stat.DiskAvailableBytes != nil {
+			availableBytes = stat.DiskAvailableBytes
+			break
+		}
+	}
+
+	series := make([]apimodels.CapacityForecastPointV1, 0, capacityForecastDays)
+	for i := 1; i <= capacityForecastDays; i++ {
+		projected := currentSize + int64(avgDailyGrowthBytes*float64(i))
+		if projected < 0 {
+			projected = 0
+		}
+		series = append(series, apimodels.CapacityForecastPointV1{
+			Date:               asOf.AddDate(0, 0, i),
+			ProjectedSizeBytes: projected,
+		})
+	}
+
+	forecast := &apimodels.CapacityForecastV1{
+		DailyGrowthBytes: avgDailyGrowthBytes,
+		CurrentSizeBytes: currentSize,
+		Series:           series,
+	}
+
+	if availableBytes != nil {
+		forecast.DiskAvailableBytes = availableBytes
+		if avgDailyGrowthBytes > 0 {
+			daysUntilFull := int(float64(*availableBytes) / avgDailyGrowthBytes)
+			forecast.DaysUntilCapacity = &daysUntilFull
+		}
+		// Flat or shrinking usage: DaysUntilCapacity stays nil (no meaningful exhaustion date)
+	}
+
+	return forecast
 }

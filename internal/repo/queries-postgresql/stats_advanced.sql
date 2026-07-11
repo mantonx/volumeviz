@@ -107,13 +107,13 @@ SELECT
     $1 as volume_id,
     COUNT(*) as data_points,
     MAX(date) as latest_date,
-    SUM(total_files) as total_files,
-    SUM(total_size_bytes) as total_bytes,
-    AVG(size_change_bytes)::bigint as avg_daily_change,
+    COALESCE(SUM(total_files), 0) as total_files,
+    COALESCE(SUM(total_size_bytes), 0) as total_bytes,
+    COALESCE(AVG(size_change_bytes)::bigint, 0) as avg_daily_change,
     AVG(growth_percent)::numeric as avg_growth_rate,
     MAX(size_change_bytes) as max_daily_change,
     MIN(size_change_bytes) as min_daily_change,
-    STDDEV(size_change_bytes)::bigint as change_stddev
+    COALESCE(STDDEV(size_change_bytes)::bigint, 0) as change_stddev
 FROM stats_window;
 
 -- name: GetStorageGrowthTrend :many
@@ -234,6 +234,15 @@ ON CONFLICT (volume_id, date) DO UPDATE SET
     modified_files = EXCLUDED.modified_files,
     deleted_files = EXCLUDED.deleted_files,
     updated_at = CURRENT_TIMESTAMP;
+
+-- name: UpdateDailyStatsDiskCapacity :exec
+-- Records the host filesystem capacity observed for a volume's mount at scan
+-- time. Separate from ComputeVolumeDailyStats since this data comes from a
+-- host syscall (Statfs), not from an aggregate over the files table.
+UPDATE daily_stats
+SET disk_total_bytes = $3,
+    disk_available_bytes = $4
+WHERE volume_id = $1 AND date = $2;
 
 -- name: GetMissingStatsDates :many
 WITH date_range AS (

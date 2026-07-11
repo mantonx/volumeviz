@@ -211,28 +211,18 @@ func (r *StatsRepo) GetVolumeGrowthInfo(ctx context.Context, volumeID string) (*
 
 // GetDailyStats retrieves daily stats for a volume within a date range
 func (r *StatsRepo) GetDailyStats(ctx context.Context, volumeID string, startDate, endDate time.Time) ([]*models.DailyStat, error) {
-	rows, err := r.queries.GetVolumeStatsHistory(ctx, sqlc.GetVolumeStatsHistoryParams{
-		VolumeID:     volumeID,
-		DateFrom:     timeToPgDate(startDate),
-		DateTo:       timeToPgDate(endDate),
-		ResultOffset: 0,
-		ResultLimit:  1000, // Default limit
+	return r.GetVolumeStatsHistory(ctx, volumeID, startDate, endDate)
+}
+
+// UpdateDailyStatsDiskCapacity records the host filesystem capacity observed
+// for a volume's mount at scan time, on that day's daily_stats row
+func (r *StatsRepo) UpdateDailyStatsDiskCapacity(ctx context.Context, volumeID string, date time.Time, totalBytes, availableBytes int64) error {
+	return r.queries.UpdateDailyStatsDiskCapacity(ctx, sqlc.UpdateDailyStatsDiskCapacityParams{
+		VolumeID:           volumeID,
+		Date:               timeToPgDate(date),
+		DiskTotalBytes:     int64PtrToPgInt8(&totalBytes),
+		DiskAvailableBytes: int64PtrToPgInt8(&availableBytes),
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	stats := make([]*models.DailyStat, len(rows))
-	for i, row := range rows {
-		stats[i] = &models.DailyStat{
-			ID:         row.ID,
-			VolumeID:   row.VolumeID,
-			Date:       pgDateToTime(row.Date),
-			ComputedAt: row.CreatedAt,
-		}
-	}
-
-	return stats, nil
 }
 
 // GetVolumeStatsHistory retrieves volume-level stats history
@@ -250,15 +240,36 @@ func (r *StatsRepo) GetVolumeStatsHistory(ctx context.Context, volumeID string, 
 
 	stats := make([]*models.DailyStat, len(rows))
 	for i, row := range rows {
-		stats[i] = &models.DailyStat{
-			ID:         row.ID,
-			VolumeID:   row.VolumeID,
-			Date:       pgDateToTime(row.Date),
-			ComputedAt: row.CreatedAt,
-		}
+		stats[i] = dailyStatsRowToModel(row)
 	}
 
 	return stats, nil
+}
+
+// dailyStatsRowToModel converts a sqlc DailyStats row into the domain DailyStat model
+func dailyStatsRowToModel(row sqlc.DailyStats) *models.DailyStat {
+	sizeChange := pgInt8ToInt64(row.SizeChangeBytes)
+	var addedBytes, removedBytes int64
+	if sizeChange > 0 {
+		addedBytes = sizeChange
+	} else {
+		removedBytes = -sizeChange
+	}
+
+	return &models.DailyStat{
+		ID:                 row.ID,
+		VolumeID:           row.VolumeID,
+		Date:               pgDateToTime(row.Date),
+		ComputedAt:         row.CreatedAt,
+		TotalBytes:         pgInt8ToInt64(row.TotalSizeBytes),
+		AddedBytes:         addedBytes,
+		RemovedBytes:       removedBytes,
+		FilesCount:         pgInt8ToInt64(row.TotalFiles),
+		AddedFiles:         pgInt8ToInt64(row.NewFiles),
+		RemovedFiles:       pgInt8ToInt64(row.DeletedFiles),
+		DiskTotalBytes:     pgInt8ToInt64Ptr(row.DiskTotalBytes),
+		DiskAvailableBytes: pgInt8ToInt64Ptr(row.DiskAvailableBytes),
+	}
 }
 
 // Stub implementations for missing SQLC methods
@@ -364,11 +375,21 @@ func (r *StatsRepo) GetTrendAnalysis(ctx context.Context, volumeID string, days 
 		latestDate = ld
 	}
 
+	var filesCount int64
+	if fc, ok := row.TotalFiles.(int64); ok {
+		filesCount = fc
+	}
+
+	var totalBytes int64
+	if tb, ok := row.TotalBytes.(int64); ok {
+		totalBytes = tb
+	}
+
 	return &models.TrendAnalysis{
 		VolumeID:   volumeID,
 		Date:       latestDate,
-		FilesCount: row.TotalFiles,
-		TotalBytes: row.TotalBytes,
+		FilesCount: filesCount,
+		TotalBytes: totalBytes,
 		ComputedAt: time.Now(),
 	}, nil
 }

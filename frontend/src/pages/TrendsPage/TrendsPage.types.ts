@@ -33,11 +33,14 @@ export interface VolumeGrowthTrend {
 export interface CapacityForecast {
   date: Date;
   predictedSize: number;
-  confidenceInterval: {
-    lower: number;
-    upper: number;
-  };
-  capacityThreshold?: number;
+}
+
+export interface CapacityForecastSummary {
+  dailyGrowthBytes: number;
+  currentSizeBytes: number;
+  diskAvailableBytes?: number;
+  daysUntilCapacity?: number;
+  series: CapacityForecast[];
 }
 
 export interface TrendFilters {

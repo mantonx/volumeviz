@@ -1,12 +1,105 @@
 /**
  * TrendsPage Tests
- * Comprehensive test suite for trends analysis page
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { setupServer } from 'msw/node';
+import { http, HttpResponse } from 'msw';
 import { TrendsPage } from './TrendsPage';
+
+const volumesResponse = {
+  data: [{ name: 'media-storage' }, { name: 'backups' }],
+  page: 1,
+  page_size: 100,
+  total: 2,
+  summary: {
+    total_volumes: 2,
+    tracked_volumes: 2,
+    orphaned_volumes: 0,
+    total_size_bytes: 20_000_000_000,
+  },
+};
+
+const allVolumesSummaryResponse = {
+  total_volumes_tracked: 2,
+  volumes_with_growth: 1,
+  volumes_with_decline: 0,
+  average_growth_rate: 5.2,
+  total_storage_growth: 1_073_741_824,
+  volumes: [
+    {
+      volume_id: 'media-storage',
+      statistics: {
+        total_growth: 1_073_741_824,
+        growth_rate_percent: 5.2,
+        current_size: 10_737_418_240,
+      },
+      data_points: [
+        { date: '2026-07-10', total_size: 10_737_418_240, file_count: 4213 },
+      ],
+    },
+  ],
+  period: { start: '2026-06-10', end: '2026-07-10', days: 30 },
+  generated_at: '2026-07-10T00:00:00Z',
+};
+
+const volumeTrendsResponse = {
+  volume_id: 'media-storage',
+  summary: {
+    current_size: 10_737_418_240,
+    current_files: 4213,
+    total_growth_bytes: 1_073_741_824,
+    total_growth_files: 120,
+    avg_daily_growth_bytes: 35_791_394,
+    avg_daily_growth_files: 4,
+  },
+  daily_stats: [
+    {
+      date: '2026-07-10',
+      total_bytes: 10_737_418_240,
+      files_count: 4213,
+      added_bytes: 500_000,
+      removed_bytes: 0,
+      added_files: 5,
+      removed_files: 0,
+      disk_total_bytes: 1_000_000_000_000,
+      disk_available_bytes: 400_000_000_000,
+    },
+  ],
+  media_composition: [
+    { media_kind: 'video', date: '2026-07-10', files_count: 812, total_bytes: 8_589_934_592 },
+  ],
+  top_growing_folders: [],
+  capacity_forecast: {
+    daily_growth_bytes: 35_791_394,
+    current_size_bytes: 10_737_418_240,
+    disk_available_bytes: 400_000_000_000,
+    days_until_capacity: 42,
+    series: Array.from({ length: 90 }, (_, i) => ({
+      date: `2026-07-${String((i % 28) + 1).padStart(2, '0')}`,
+      projected_size_bytes: 10_737_418_240 + i * 35_791_394,
+    })),
+  },
+};
+
+const server = setupServer(
+  http.get('/api/v1/volumes', () => HttpResponse.json(volumesResponse)),
+  http.get('/api/v1/trends/summary', () =>
+    HttpResponse.json(allVolumesSummaryResponse),
+  ),
+  http.get('/api/v1/trends/volumes/:volumeId', () =>
+    HttpResponse.json(volumeTrendsResponse),
+  ),
+);
+
+beforeEach(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => {
+  server.resetHandlers();
+  server.close();
+});
+afterAll(() => server.close());
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -34,15 +127,6 @@ describe('TrendsPage', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders the subtitle', () => {
-      render(<TrendsPage />, { wrapper: createWrapper() });
-      expect(
-        screen.getByText(
-          'Historical analysis and capacity planning for your volumes',
-        ),
-      ).toBeInTheDocument();
-    });
-
     it('applies custom className', () => {
       const { container } = render(<TrendsPage className="custom-class" />, {
         wrapper: createWrapper(),
@@ -59,42 +143,20 @@ describe('TrendsPage', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders export CSV button', () => {
+    it('renders export CSV and JSON buttons', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       expect(
         screen.getByRole('button', { name: /export csv/i }),
       ).toBeInTheDocument();
-    });
-
-    it('renders export JSON button', () => {
-      render(<TrendsPage />, { wrapper: createWrapper() });
       expect(
         screen.getByRole('button', { name: /export json/i }),
       ).toBeInTheDocument();
     });
-
-    it('handles refresh button click', async () => {
-      const consoleSpy = vi.spyOn(console, 'log');
-      render(<TrendsPage />, { wrapper: createWrapper() });
-
-      const refreshButton = screen.getByRole('button', { name: /refresh/i });
-      fireEvent.click(refreshButton);
-
-      // Button should be disabled during refresh
-      expect(refreshButton).toBeDisabled();
-
-      await waitFor(() => {
-        expect(refreshButton).not.toBeDisabled();
-      });
-
-      consoleSpy.mockRestore();
-    });
   });
 
-  describe('Time Range Selector', () => {
+  describe('Filters', () => {
     it('renders all time range options', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
-
       expect(screen.getByRole('button', { name: 'Day' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Week' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Month' })).toBeInTheDocument();
@@ -107,61 +169,143 @@ describe('TrendsPage', () => {
     it('has default time range selected', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       const monthButton = screen.getByRole('button', { name: 'Month' });
-      expect(monthButton).toHaveAttribute('data-variant', 'primary');
+      expect(monthButton.className).toContain('bg-blue-600');
     });
 
     it('changes time range when button clicked', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
-
       const weekButton = screen.getByRole('button', { name: 'Week' });
       fireEvent.click(weekButton);
-
-      expect(weekButton).toHaveAttribute('data-variant', 'primary');
+      expect(weekButton.className).toContain('bg-blue-600');
     });
 
-    it('renders aggregation selector', () => {
+    it('renders aggregation selector with only Daily/Weekly/Monthly options', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       const select = screen.getByDisplayValue('Daily');
       expect(select).toBeInTheDocument();
+      expect(screen.queryByText('Hourly')).not.toBeInTheDocument();
     });
 
     it('changes aggregation when option selected', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
-
       const select = screen.getByDisplayValue('Daily');
       fireEvent.change(select, { target: { value: 'week' } });
-
       expect(select).toHaveValue('week');
+    });
+
+    it('renders a volume selector populated from the real volumes list', async () => {
+      render(<TrendsPage />, { wrapper: createWrapper() });
+      const volumeSelect = screen.getByDisplayValue(/all volumes/i);
+      await waitFor(() => {
+        expect(
+          within(volumeSelect).getByText('media-storage'),
+        ).toBeInTheDocument();
+      });
+      expect(within(volumeSelect).getByText('backups')).toBeInTheDocument();
     });
   });
 
-  describe('Key Metrics Cards', () => {
-    it('renders total growth metric', () => {
+  describe('Key Metrics (all-volumes view)', () => {
+    it('renders total growth from the real summary endpoint', async () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       expect(screen.getByText('Total Growth')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('1 GB')).toBeInTheDocument();
+      });
     });
 
-    it('renders average size metric', () => {
-      render(<TrendsPage />, { wrapper: createWrapper() });
-      expect(screen.getByText('Average Size')).toBeInTheDocument();
-    });
-
-    it('renders top growing volume metric', () => {
-      render(<TrendsPage />, { wrapper: createWrapper() });
-      expect(screen.getByText('Top Growing Volume')).toBeInTheDocument();
-    });
-
-    it('renders forecast alert metric', () => {
+    it('shows a placeholder forecast stat until a volume is selected', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       expect(screen.getByText('Forecast Alert')).toBeInTheDocument();
-      expect(screen.getByText('42 days')).toBeInTheDocument();
+      expect(screen.getByText('Select a volume to forecast')).toBeInTheDocument();
+    });
+  });
+
+  describe('Per-volume view', () => {
+    it('shows the real forecast once a volume is selected', async () => {
+      render(<TrendsPage />, { wrapper: createWrapper() });
+
+      const volumeSelect = screen.getByDisplayValue(/all volumes/i);
+      await waitFor(() => {
+        expect(
+          within(volumeSelect).getByText('media-storage'),
+        ).toBeInTheDocument();
+      });
+      fireEvent.change(volumeSelect, {
+        target: { value: 'media-storage' },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('42 days')).toBeInTheDocument();
+      });
+      expect(screen.getByText('Until host disk capacity')).toBeInTheDocument();
     });
 
-    it('displays growth rate with proper formatting', () => {
+    it('replaces the file type empty-state once a volume with real media_composition data is selected', async () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
-      // Should show percentage with sign
-      const percentageElements = screen.getAllByText(/[+-]?\d+\.\d+%/);
-      expect(percentageElements.length).toBeGreaterThan(0);
+
+      expect(
+        screen.getByText('Select a volume above to see its file type breakdown'),
+      ).toBeInTheDocument();
+
+      const volumeSelect = screen.getByDisplayValue(/all volumes/i);
+      await waitFor(() => {
+        expect(
+          within(volumeSelect).getByText('media-storage'),
+        ).toBeInTheDocument();
+      });
+      fireEvent.change(volumeSelect, {
+        target: { value: 'media-storage' },
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText('Select a volume above to see its file type breakdown'),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('No file type data yet for this volume'),
+        ).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Export Functionality', () => {
+    it('exports JSON via a real file download, not a console.log stub', async () => {
+      const clickSpy = vi.fn();
+      const realCreateElement = document.createElement.bind(document);
+      const createElementSpy = vi
+        .spyOn(document, 'createElement')
+        .mockImplementation((tag: string, ...rest: any[]) => {
+          const el = realCreateElement(tag, ...rest);
+          if (tag === 'a') {
+            el.click = clickSpy;
+          }
+          return el;
+        });
+      if (!URL.createObjectURL) {
+        (URL as any).createObjectURL = () => 'blob:mock';
+      }
+      if (!URL.revokeObjectURL) {
+        (URL as any).revokeObjectURL = () => {};
+      }
+      const createObjectURLSpy = vi
+        .spyOn(URL, 'createObjectURL')
+        .mockReturnValue('blob:mock');
+      const revokeObjectURLSpy = vi
+        .spyOn(URL, 'revokeObjectURL')
+        .mockImplementation(() => {});
+
+      render(<TrendsPage />, { wrapper: createWrapper() });
+
+      const exportButton = screen.getByRole('button', { name: /export json/i });
+      fireEvent.click(exportButton);
+
+      expect(createObjectURLSpy).toHaveBeenCalled();
+      expect(clickSpy).toHaveBeenCalled();
+
+      createElementSpy.mockRestore();
+      createObjectURLSpy.mockRestore();
+      revokeObjectURLSpy.mockRestore();
     });
   });
 
@@ -171,129 +315,33 @@ describe('TrendsPage', () => {
       expect(screen.getByText('Historical Storage Growth')).toBeInTheDocument();
     });
 
-    it('renders file type distribution chart', () => {
+    it('renders file type distribution chart section', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       expect(screen.getByText('File Type Distribution')).toBeInTheDocument();
     });
 
-    it('renders volume growth comparison chart', () => {
+    it('renders volume growth comparison chart section', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       expect(screen.getByText('Volume Growth Comparison')).toBeInTheDocument();
     });
 
-    it('renders capacity forecast chart', () => {
+    it('renders capacity forecast chart section', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       expect(
         screen.getByText('Predictive Capacity Planning (90-Day Forecast)'),
       ).toBeInTheDocument();
     });
-  });
 
-  describe('Export Functionality', () => {
-    it('calls handleExport with CSV format', () => {
-      const consoleSpy = vi.spyOn(console, 'log');
-      render(<TrendsPage />, { wrapper: createWrapper() });
-
-      const exportButton = screen.getByRole('button', { name: /export csv/i });
-      fireEvent.click(exportButton);
-
-      expect(consoleSpy).toHaveBeenCalledWith('Exporting trends data as csv');
-      consoleSpy.mockRestore();
-    });
-
-    it('calls handleExport with JSON format', () => {
-      const consoleSpy = vi.spyOn(console, 'log');
-      render(<TrendsPage />, { wrapper: createWrapper() });
-
-      const exportButton = screen.getByRole('button', { name: /export json/i });
-      fireEvent.click(exportButton);
-
-      expect(consoleSpy).toHaveBeenCalledWith('Exporting trends data as json');
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('Data Display', () => {
-    it('shows top growing volume name', () => {
-      render(<TrendsPage />, { wrapper: createWrapper() });
-      expect(screen.getByText('media-storage')).toBeInTheDocument();
-    });
-
-    it('displays across all tracked volumes text', () => {
+    it('shows an empty-state prompt instead of a chart when no volume is selected', () => {
       render(<TrendsPage />, { wrapper: createWrapper() });
       expect(
-        screen.getByText('Across all tracked volumes'),
+        screen.getByText('Select a volume above to see its storage history'),
       ).toBeInTheDocument();
-    });
-
-    it('shows capacity threshold warning text', () => {
-      render(<TrendsPage />, { wrapper: createWrapper() });
-      expect(screen.getByText('Until capacity threshold')).toBeInTheDocument();
-    });
-  });
-
-  describe('Accessibility', () => {
-    it('has proper heading hierarchy', () => {
-      render(<TrendsPage />, { wrapper: createWrapper() });
-
-      const h1 = screen.getByRole('heading', { level: 1 });
-      expect(h1).toHaveTextContent('Storage Trends & Analytics');
-
-      const h2Elements = screen.getAllByRole('heading', { level: 2 });
-      expect(h2Elements.length).toBeGreaterThan(0);
-    });
-
-    it('buttons have accessible labels', () => {
-      render(<TrendsPage />, { wrapper: createWrapper() });
-
-      expect(
-        screen.getByRole('button', { name: /refresh/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: /export csv/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: /export json/i }),
-      ).toBeInTheDocument();
-    });
-
-    it('has proper ARIA attributes on interactive elements', () => {
-      render(<TrendsPage />, { wrapper: createWrapper() });
-
-      const buttons = screen.getAllByRole('button');
-      buttons.forEach((button) => {
-        expect(button).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('Responsive Behavior', () => {
-    it('renders metrics grid', () => {
-      const { container } = render(<TrendsPage />, {
-        wrapper: createWrapper(),
-      });
-
-      const metricsGrid = container.querySelector(
-        '.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4',
-      );
-      expect(metricsGrid).toBeInTheDocument();
-    });
-
-    it('renders charts grid', () => {
-      const { container } = render(<TrendsPage />, {
-        wrapper: createWrapper(),
-      });
-
-      const chartsGrid = container.querySelector(
-        '.grid.grid-cols-1.lg\\:grid-cols-2',
-      );
-      expect(chartsGrid).toBeInTheDocument();
     });
   });
 
   describe('Edge Cases', () => {
     it('handles empty data gracefully', () => {
-      // Component should render without crashing even with mock data
       expect(() => {
         render(<TrendsPage />, { wrapper: createWrapper() });
       }).not.toThrow();

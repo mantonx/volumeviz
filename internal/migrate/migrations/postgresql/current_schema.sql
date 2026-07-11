@@ -612,7 +612,9 @@ CREATE TABLE public.daily_stats (
     other_files bigint DEFAULT 0,
     scan_duration_ms bigint,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    organization_id bigint
+    organization_id bigint,
+    disk_total_bytes bigint,
+    disk_available_bytes bigint
 );
 
 

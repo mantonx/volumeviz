@@ -6,20 +6,22 @@ import (
 
 // DailyStat represents daily aggregate statistics for volumes/folders/media kinds
 type DailyStat struct {
-	ID            int64     `json:"id"`
-	Date          time.Time `json:"date"`
-	VolumeID      string    `json:"volume_id"`
-	FolderID      *int64    `json:"folder_id,omitempty"`
-	MediaKind     *string   `json:"media_kind,omitempty"`
-	FilesCount    int64     `json:"files_count"`
-	TotalBytes    int64     `json:"total_bytes"`
-	AddedBytes    int64     `json:"added_bytes"`
-	RemovedBytes  int64     `json:"removed_bytes"`
-	AddedFiles    int64     `json:"added_files"`
-	RemovedFiles  int64     `json:"removed_files"`
-	ComputedAt    time.Time `json:"computed_at"`
-	ScanID        *string   `json:"scan_id,omitempty"`
-	JobDurationMs *int64    `json:"job_duration_ms,omitempty"`
+	ID                 int64     `json:"id"`
+	Date               time.Time `json:"date"`
+	VolumeID           string    `json:"volume_id"`
+	FolderID           *int64    `json:"folder_id,omitempty"`
+	MediaKind          *string   `json:"media_kind,omitempty"`
+	FilesCount         int64     `json:"files_count"`
+	TotalBytes         int64     `json:"total_bytes"`
+	AddedBytes         int64     `json:"added_bytes"`
+	RemovedBytes       int64     `json:"removed_bytes"`
+	AddedFiles         int64     `json:"added_files"`
+	RemovedFiles       int64     `json:"removed_files"`
+	ComputedAt         time.Time `json:"computed_at"`
+	ScanID             *string   `json:"scan_id,omitempty"`
+	JobDurationMs      *int64    `json:"job_duration_ms,omitempty"`
+	DiskTotalBytes     *int64    `json:"disk_total_bytes,omitempty"`
+	DiskAvailableBytes *int64    `json:"disk_available_bytes,omitempty"`
 }
 
 // CreateDailyStatParams parameters for creating daily stats

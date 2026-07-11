@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mantonx/volumeviz/internal/api/v1/trends"
+	"github.com/mantonx/volumeviz/internal/interfaces"
 	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/repo"
 	"github.com/mantonx/volumeviz/internal/store"
@@ -22,8 +23,8 @@ type MockStatsService struct {
 	mock.Mock
 }
 
-func (m *MockStatsService) OnScanCompleted(ctx context.Context, volumeID string, scanID *string) error {
-	args := m.Called(ctx, volumeID, scanID)
+func (m *MockStatsService) OnScanCompleted(ctx context.Context, volumeID string, scanID *string, fsInfo *interfaces.FilesystemInfo) error {
+	args := m.Called(ctx, volumeID, scanID, fsInfo)
 	return args.Error(0)
 }
 
@@ -115,6 +116,201 @@ func (m *MockStatsService) GetTrendAnalysis(ctx context.Context, volumeID string
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]*models.TrendAnalysis), args.Error(1)
+}
+
+// MockVolumesRepo for testing - only GetAllVolumesTrendsSummary exercises this
+type MockVolumesRepo struct {
+	mock.Mock
+}
+
+func (m *MockVolumesRepo) CreateVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error) {
+	args := m.Called(ctx, organizationID, params)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) GetVolumeByID(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
+	args := m.Called(ctx, organizationID, volumeID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) GetVolumeByVolumeID(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
+	args := m.Called(ctx, organizationID, volumeID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) ListVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error) {
+	args := m.Called(ctx, organizationID, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) UpdateVolume(ctx context.Context, organizationID int64, params models.UpdateVolumeParams) (*models.Volume, error) {
+	args := m.Called(ctx, organizationID, params)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) UpdateLastScanned(ctx context.Context, organizationID int64, volumeID string, lastScanned time.Time) error {
+	args := m.Called(ctx, organizationID, volumeID, lastScanned)
+	return args.Error(0)
+}
+
+func (m *MockVolumesRepo) SoftDeleteVolume(ctx context.Context, organizationID int64, volumeID string) error {
+	args := m.Called(ctx, organizationID, volumeID)
+	return args.Error(0)
+}
+
+func (m *MockVolumesRepo) HardDeleteVolume(ctx context.Context, organizationID int64, volumeID string) error {
+	args := m.Called(ctx, organizationID, volumeID)
+	return args.Error(0)
+}
+
+func (m *MockVolumesRepo) UpsertVolume(ctx context.Context, organizationID int64, params models.CreateVolumeParams) (*models.Volume, error) {
+	args := m.Called(ctx, organizationID, params)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) GetVolumeStats(ctx context.Context, organizationID int64, volumeID string) (*models.VolumeStats, error) {
+	args := m.Called(ctx, organizationID, volumeID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.VolumeStats), args.Error(1)
+}
+
+func (m *MockVolumesRepo) CountVolumes(ctx context.Context, organizationID int64) (int64, error) {
+	args := m.Called(ctx, organizationID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockVolumesRepo) CreateContainer(ctx context.Context, params models.CreateContainerParams) (*models.Container, error) {
+	args := m.Called(ctx, params)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Container), args.Error(1)
+}
+
+func (m *MockVolumesRepo) GetContainerByContainerID(ctx context.Context, containerID string) (*models.Container, error) {
+	args := m.Called(ctx, containerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Container), args.Error(1)
+}
+
+func (m *MockVolumesRepo) UpsertContainer(ctx context.Context, params models.CreateContainerParams) (*models.Container, error) {
+	args := m.Called(ctx, params)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Container), args.Error(1)
+}
+
+func (m *MockVolumesRepo) CreateVolumeMount(ctx context.Context, params models.CreateVolumeMountParams) (*models.VolumeMount, error) {
+	args := m.Called(ctx, params)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.VolumeMount), args.Error(1)
+}
+
+func (m *MockVolumesRepo) UpsertVolumeMount(ctx context.Context, params models.CreateVolumeMountParams) (*models.VolumeMount, error) {
+	args := m.Called(ctx, params)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.VolumeMount), args.Error(1)
+}
+
+func (m *MockVolumesRepo) GetVolumeMountsByVolume(ctx context.Context, volumeID string) ([]*models.VolumeMount, error) {
+	args := m.Called(ctx, volumeID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.VolumeMount), args.Error(1)
+}
+
+func (m *MockVolumesRepo) GetVolumeByVolumeIDSystemLevel(ctx context.Context, volumeID string) (*models.Volume, error) {
+	args := m.Called(ctx, volumeID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) ListAllVolumes(ctx context.Context, limit, offset int32) ([]*models.Volume, error) {
+	args := m.Called(ctx, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) SetVolumeTracked(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
+	args := m.Called(ctx, organizationID, volumeID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) SetVolumeUntracked(ctx context.Context, organizationID int64, volumeID string) (*models.Volume, error) {
+	args := m.Called(ctx, organizationID, volumeID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) GetVolumeTrackingStatus(ctx context.Context, organizationID int64, volumeID string) (*models.VolumeTrackingStatus, error) {
+	args := m.Called(ctx, organizationID, volumeID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.VolumeTrackingStatus), args.Error(1)
+}
+
+func (m *MockVolumesRepo) ListTrackedVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error) {
+	args := m.Called(ctx, organizationID, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) ListUntrackedVolumes(ctx context.Context, organizationID int64, limit, offset int32) ([]*models.Volume, error) {
+	args := m.Called(ctx, organizationID, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.Volume), args.Error(1)
+}
+
+func (m *MockVolumesRepo) CountTrackedVolumes(ctx context.Context, organizationID int64) (int64, error) {
+	args := m.Called(ctx, organizationID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockVolumesRepo) CountUntrackedVolumes(ctx context.Context, organizationID int64) (int64, error) {
+	args := m.Called(ctx, organizationID)
+	return args.Get(0).(int64), args.Error(1)
 }
 
 // MockStore for testing - simplified to only include methods actually used
@@ -257,6 +453,7 @@ func setupTestRouter(handler *trends.Handler) *gin.Engine {
 	router.GET("/trends/volumes/:volumeId/slope", handler.GetVolumeTrendSlope)
 	router.GET("/trends/volumes/:volumeId/7day", handler.Get7DayTrend)
 	router.GET("/trends/volumes/:volumeId/30day", handler.Get30DayTrend)
+	router.GET("/trends/summary", handler.GetAllVolumesTrendsSummary)
 
 	return router
 }
@@ -331,15 +528,12 @@ func TestHandler_GetVolumeTrends(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
-	// Check response structure
-	assert.Contains(t, response, "data")
-	assert.Contains(t, response, "meta")
-
-	data := response["data"].(map[string]interface{})
-	assert.Equal(t, volumeID, data["volume_id"])
-	assert.Contains(t, data, "summary")
-	assert.Contains(t, data, "daily_stats")
-	assert.Contains(t, data, "trend_analysis")
+	// Check response structure - the response body itself is the trends
+	// data, not wrapped in a data/meta envelope
+	assert.Equal(t, volumeID, response["volume_id"])
+	assert.Contains(t, response, "summary")
+	assert.Contains(t, response, "daily_stats")
+	assert.Contains(t, response, "trend_analysis")
 
 	mockStatsService.AssertExpectations(t)
 }
@@ -682,6 +876,241 @@ func TestHandler_EmptyData(t *testing.T) {
 	assert.Equal(t, float64(0), meta["data_points"])
 
 	mockStatsService.AssertExpectations(t)
+}
+
+func TestHandler_GetVolumeTrends_CapacityForecast(t *testing.T) {
+	mockStore := new(MockStore)
+	mockStatsService := new(MockStatsService)
+	handler := trends.NewHandler(mockStore, mockStatsService)
+	router := setupTestRouter(handler)
+
+	volumeID := "test-volume"
+	now := time.Now()
+	endDate := now.Truncate(24 * time.Hour)
+	startDate := endDate.AddDate(0, 0, -30)
+
+	// Most recent stat (index 0, since results are ordered by date DESC) has
+	// disk capacity captured and shows a positive growth trend
+	volumeStats := []*models.DailyStat{
+		{
+			ID:                 2,
+			Date:               endDate,
+			VolumeID:           volumeID,
+			TotalBytes:         6000000,
+			AddedBytes:         500000,
+			RemovedBytes:       0,
+			DiskTotalBytes:     ptrInt64(1000000000),
+			DiskAvailableBytes: ptrInt64(400000000),
+		},
+		{
+			ID:           1,
+			Date:         endDate.AddDate(0, 0, -1),
+			VolumeID:     volumeID,
+			TotalBytes:   5500000,
+			AddedBytes:   500000,
+			RemovedBytes: 0,
+		},
+	}
+
+	mockStatsService.On("GetVolumeStatsHistory", mock.Anything, volumeID, startDate, endDate).Return(volumeStats, nil)
+	mockStatsService.On("GetTrendAnalysis", mock.Anything, volumeID, startDate, endDate).Return([]*models.TrendAnalysis{}, nil)
+	mockStatsService.On("GetLatestVolumeStats", mock.Anything, volumeID).Return(volumeStats[0], nil)
+	mockStatsService.On("GetMediaKindComposition", mock.Anything, volumeID, startDate, endDate).Return([]*models.MediaKindComposition{}, nil)
+	mockStatsService.On("GetTopGrowingFolders", mock.Anything, volumeID, 30, int32(10)).Return([]*models.TopGrowingFolder{}, nil)
+
+	req := httptest.NewRequest("GET", "/trends/volumes/"+volumeID+"?days=30", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	forecast, ok := response["capacity_forecast"].(map[string]interface{})
+	assert.True(t, ok, "expected capacity_forecast object in response")
+
+	assert.Equal(t, float64(400000000), forecast["disk_available_bytes"])
+	assert.Contains(t, forecast, "days_until_capacity")
+	assert.NotNil(t, forecast["days_until_capacity"])
+	assert.Greater(t, forecast["days_until_capacity"], float64(0))
+
+	series, ok := forecast["series"].([]interface{})
+	assert.True(t, ok, "expected forecast series array")
+	assert.Len(t, series, 90)
+
+	mockStatsService.AssertExpectations(t)
+}
+
+func TestHandler_GetVolumeTrends_MonthlyAggregation(t *testing.T) {
+	mockStore := new(MockStore)
+	mockStatsService := new(MockStatsService)
+	handler := trends.NewHandler(mockStore, mockStatsService)
+	router := setupTestRouter(handler)
+
+	volumeID := "test-volume"
+	// Two distinct calendar months, ordered date DESC as the real query returns
+	julyStats := []*models.DailyStat{
+		{Date: time.Date(2026, 7, 15, 0, 0, 0, 0, time.UTC), TotalBytes: 9000000, FilesCount: 90, AddedBytes: 300000, AddedFiles: 5},
+		{Date: time.Date(2026, 7, 5, 0, 0, 0, 0, time.UTC), TotalBytes: 8500000, FilesCount: 85, AddedBytes: 200000, AddedFiles: 3},
+	}
+	juneStats := []*models.DailyStat{
+		{Date: time.Date(2026, 6, 20, 0, 0, 0, 0, time.UTC), TotalBytes: 8000000, FilesCount: 80, AddedBytes: 100000, AddedFiles: 2},
+	}
+	volumeStats := append(julyStats, juneStats...)
+
+	now := time.Now()
+	endDate := now.Truncate(24 * time.Hour)
+	startDate := endDate.AddDate(0, 0, -60)
+
+	mockStatsService.On("GetVolumeStatsHistory", mock.Anything, volumeID, startDate, endDate).Return(volumeStats, nil)
+	mockStatsService.On("GetTrendAnalysis", mock.Anything, volumeID, startDate, endDate).Return([]*models.TrendAnalysis{}, nil)
+	mockStatsService.On("GetLatestVolumeStats", mock.Anything, volumeID).Return(volumeStats[0], nil)
+	mockStatsService.On("GetMediaKindComposition", mock.Anything, volumeID, startDate, endDate).Return([]*models.MediaKindComposition{}, nil)
+	mockStatsService.On("GetTopGrowingFolders", mock.Anything, volumeID, 60, int32(10)).Return([]*models.TopGrowingFolder{}, nil)
+
+	req := httptest.NewRequest("GET", "/trends/volumes/"+volumeID+"?days=60&aggregation=month", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	dailyStats := response["daily_stats"].([]interface{})
+	assert.Len(t, dailyStats, 2, "expected the 3 daily rows to collapse into 2 monthly buckets")
+
+	julyBucket := dailyStats[0].(map[string]interface{})
+	assert.Equal(t, "2026-07-01", julyBucket["date"])
+	assert.Equal(t, float64(9000000), julyBucket["total_bytes"], "bucket snapshot should use the most recent day's total, not a sum")
+	assert.Equal(t, float64(500000), julyBucket["added_bytes"], "bucket deltas should sum across days in the same month")
+	assert.Equal(t, float64(8), julyBucket["added_files"])
+
+	juneBucket := dailyStats[1].(map[string]interface{})
+	assert.Equal(t, "2026-06-01", juneBucket["date"])
+	assert.Equal(t, float64(100000), juneBucket["added_bytes"])
+
+	mockStatsService.AssertExpectations(t)
+}
+
+func TestHandler_GetVolumeTrends_InvalidAggregation(t *testing.T) {
+	mockStore := new(MockStore)
+	mockStatsService := new(MockStatsService)
+	handler := trends.NewHandler(mockStore, mockStatsService)
+	router := setupTestRouter(handler)
+
+	req := httptest.NewRequest("GET", "/trends/volumes/test-volume?aggregation=hour", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_GetVolumeTrends_CapacityForecastFlatGrowth(t *testing.T) {
+	mockStore := new(MockStore)
+	mockStatsService := new(MockStatsService)
+	handler := trends.NewHandler(mockStore, mockStatsService)
+	router := setupTestRouter(handler)
+
+	volumeID := "test-volume"
+	now := time.Now()
+	endDate := now.Truncate(24 * time.Hour)
+	startDate := endDate.AddDate(0, 0, -30)
+
+	// No growth at all: days_until_capacity should be omitted/null, not a
+	// bogus number like 0 or a negative
+	volumeStats := []*models.DailyStat{
+		{
+			ID:                 1,
+			Date:               endDate,
+			VolumeID:           volumeID,
+			TotalBytes:         5000000,
+			AddedBytes:         0,
+			RemovedBytes:       0,
+			DiskTotalBytes:     ptrInt64(1000000000),
+			DiskAvailableBytes: ptrInt64(400000000),
+		},
+	}
+
+	mockStatsService.On("GetVolumeStatsHistory", mock.Anything, volumeID, startDate, endDate).Return(volumeStats, nil)
+	mockStatsService.On("GetTrendAnalysis", mock.Anything, volumeID, startDate, endDate).Return([]*models.TrendAnalysis{}, nil)
+	mockStatsService.On("GetLatestVolumeStats", mock.Anything, volumeID).Return(volumeStats[0], nil)
+	mockStatsService.On("GetMediaKindComposition", mock.Anything, volumeID, startDate, endDate).Return([]*models.MediaKindComposition{}, nil)
+	mockStatsService.On("GetTopGrowingFolders", mock.Anything, volumeID, 30, int32(10)).Return([]*models.TopGrowingFolder{}, nil)
+
+	req := httptest.NewRequest("GET", "/trends/volumes/"+volumeID+"?days=30", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	forecast := response["capacity_forecast"].(map[string]interface{})
+	assert.Nil(t, forecast["days_until_capacity"])
+
+	mockStatsService.AssertExpectations(t)
+}
+
+func TestHandler_GetAllVolumesTrendsSummary(t *testing.T) {
+	mockStore := new(MockStore)
+	mockStatsService := new(MockStatsService)
+	mockVolumesRepo := new(MockVolumesRepo)
+	handler := trends.NewHandler(mockStore, mockStatsService)
+	router := setupTestRouter(handler)
+
+	now := time.Now()
+	endDate := now.Truncate(24 * time.Hour)
+	startDate := endDate.AddDate(0, 0, -30)
+
+	volumes := []*models.Volume{
+		{VolumeID: "vol-growing"},
+		{VolumeID: "vol-shrinking"},
+		{VolumeID: "vol-no-stats"},
+	}
+
+	mockStore.On("Volumes").Return(mockVolumesRepo)
+	mockVolumesRepo.On("ListAllVolumes", mock.Anything, int32(500), int32(0)).Return(volumes, nil)
+
+	growingStats := []*models.DailyStat{
+		{Date: endDate, TotalBytes: 6000000, AddedBytes: 1000000, RemovedBytes: 0},
+		{Date: endDate.AddDate(0, 0, -1), TotalBytes: 5000000, AddedBytes: 0, RemovedBytes: 0},
+	}
+	shrinkingStats := []*models.DailyStat{
+		{Date: endDate, TotalBytes: 4000000, AddedBytes: 0, RemovedBytes: 1000000},
+		{Date: endDate.AddDate(0, 0, -1), TotalBytes: 5000000, AddedBytes: 0, RemovedBytes: 0},
+	}
+
+	mockStatsService.On("GetVolumeStatsHistory", mock.Anything, "vol-growing", startDate, endDate).Return(growingStats, nil)
+	mockStatsService.On("GetVolumeStatsHistory", mock.Anything, "vol-shrinking", startDate, endDate).Return(shrinkingStats, nil)
+	mockStatsService.On("GetVolumeStatsHistory", mock.Anything, "vol-no-stats", startDate, endDate).Return([]*models.DailyStat{}, nil)
+
+	req := httptest.NewRequest("GET", "/trends/summary", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, float64(3), response["total_volumes_tracked"])
+	assert.Equal(t, float64(1), response["volumes_with_growth"])
+	assert.Equal(t, float64(1), response["volumes_with_decline"])
+
+	// vol-no-stats contributed nothing (skipped, no data), so only 2 of 3
+	// volumes appear in the detailed breakdown
+	volumesData := response["volumes"].([]interface{})
+	assert.Len(t, volumesData, 2)
+
+	mockStatsService.AssertExpectations(t)
+	mockVolumesRepo.AssertExpectations(t)
 }
 
 // Helper functions

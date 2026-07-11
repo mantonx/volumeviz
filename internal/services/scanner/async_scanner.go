@@ -210,7 +210,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 			// Trigger daily stats computation if stats service is available (async)
 			if vs.statsService != nil {
 				go func() {
-					if err := vs.statsService.OnScanCompleted(context.Background(), volumeID, &scanID); err != nil && vs.logger != nil {
+					if err := vs.statsService.OnScanCompleted(context.Background(), volumeID, &scanID, result.FilesystemCapacity); err != nil && vs.logger != nil {
 						vs.logger.Printf("Failed to compute daily stats for async scan %s (volume %s): %v", scanID, volumeID, err)
 					}
 				}()

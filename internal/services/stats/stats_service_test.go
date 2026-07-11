@@ -400,7 +400,7 @@ func TestStatsService_OnScanCompleted_Success(t *testing.T) {
 	mockRepo.On("UpdateStatsJob", ctx, mock.AnythingOfType("models.UpdateStatsJobParams")).Return(nil)
 
 	// Execute
-	err := service.OnScanCompleted(ctx, volumeID, &scanID)
+	err := service.OnScanCompleted(ctx, volumeID, &scanID, nil)
 
 	// Assert
 	assert.NoError(t, err)
@@ -432,7 +432,7 @@ func TestStatsService_OnScanCompleted_ComputationFailure(t *testing.T) {
 	mockRepo.On("UpdateStatsJob", ctx, mock.AnythingOfType("models.UpdateStatsJobParams")).Return(nil)
 
 	// Execute
-	err := service.OnScanCompleted(ctx, volumeID, &scanID)
+	err := service.OnScanCompleted(ctx, volumeID, &scanID, nil)
 
 	// Assert
 	assert.Error(t, err)

@@ -10,8 +10,10 @@ import (
 // StatsService defines the interface for daily statistics management
 type StatsService interface {
 	// OnScanCompleted is called when a volume scan completes
-	// This triggers daily stats computation for the current date
-	OnScanCompleted(ctx context.Context, volumeID string, scanID *string) error
+	// This triggers daily stats computation for the current date. fsInfo is
+	// the host filesystem capacity observed during the scan (nil if unavailable)
+	// and is persisted alongside the computed daily stats for capacity forecasting.
+	OnScanCompleted(ctx context.Context, volumeID string, scanID *string, fsInfo *FilesystemInfo) error
 
 	// ComputeHistoricalStats computes stats for a date range (used by nightly reconciliation)
 	ComputeHistoricalStats(ctx context.Context, volumeID string, startDate, endDate time.Time) error

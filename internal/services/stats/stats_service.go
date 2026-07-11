@@ -39,7 +39,7 @@ func NewStatsService(statsRepo *repo.StatsRepo, store store.Store, metrics inter
 
 // OnScanCompleted is called when a volume scan completes
 // This triggers daily stats computation for the current date with organization validation
-func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, scanID *string) error {
+func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, scanID *string, fsInfo *interfaces.FilesystemInfo) error {
 	// Validate volume belongs to accessible organization and get its organizationID
 	volume, err := s.store.Volumes().GetVolumeByVolumeIDSystemLevel(ctx, volumeID)
 	if err != nil {
@@ -81,6 +81,14 @@ func (s *StatsService) OnScanCompleted(ctx context.Context, volumeID string, sca
 	// Compute stats
 	err = s.statsRepo.ComputeVolumeDailyStats(ctx, volumeID, today)
 	duration := time.Since(startTime)
+
+	// Persist host disk capacity observed during this scan, if available, so
+	// capacity forecasting can project growth against real free disk space
+	if err == nil && fsInfo != nil {
+		if capErr := s.statsRepo.UpdateDailyStatsDiskCapacity(ctx, volumeID, today, fsInfo.TotalBytes, fsInfo.AvailableBytes); capErr != nil && s.logger != nil {
+			s.logger.Printf("Failed to record disk capacity for volume %s: %v", volumeID, capErr)
+		}
+	}
 
 	// Update job record
 	var status string
@@ -266,17 +274,25 @@ func (s *StatsService) GetJobMetrics(ctx context.Context, jobType string, sinceD
 	return s.statsRepo.GetJobMetrics(ctx, jobType, sinceDays)
 }
 
-// GetLatestVolumeStats retrieves the most recent stats for a volume
+// latestStatsLookbackDays bounds how far back GetLatestVolumeStats searches
+// for a volume's most recent daily stat row (a volume may not have been
+// rescanned recently, so "latest" isn't necessarily from today)
+const latestStatsLookbackDays = 365
+
+// GetLatestVolumeStats retrieves the most recent daily stat row for a volume
 func (s *StatsService) GetLatestVolumeStats(ctx context.Context, volumeID string) (*models.DailyStat, error) {
-	_, err := s.statsRepo.GetLatestVolumeStats(ctx, volumeID)
+	// GetVolumeStatsHistory orders by date DESC, so the first row (if any)
+	// within the lookback window is the volume's latest daily stat
+	endDate := time.Now().Truncate(24 * time.Hour)
+	startDate := endDate.AddDate(0, 0, -latestStatsLookbackDays)
+	stats, err := s.statsRepo.GetVolumeStatsHistory(ctx, volumeID, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
-	// Convert VolumeStats to DailyStat (placeholder conversion)
-	return &models.DailyStat{
-		VolumeID: volumeID,
-		// Add conversion logic here when models are aligned
-	}, nil
+	if len(stats) == 0 {
+		return nil, nil
+	}
+	return stats[0], nil
 }
 
 // GetVolumeStatsHistory retrieves volume stats history for a date range
