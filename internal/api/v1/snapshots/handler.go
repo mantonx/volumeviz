@@ -27,7 +27,7 @@ func NewHandler(store store.Store) *Handler {
 // @Produce json
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /snapshots/stats [get]
+// @Router /api/v1/snapshots/stats [get]
 func (h *Handler) GetStats(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -59,7 +59,7 @@ func (h *Handler) GetStats(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /snapshots/volumes/{volume_id} [get]
+// @Router /api/v1/snapshots/volumes/{volume_id} [get]
 func (h *Handler) GetVolumeSnapshots(c *gin.Context) {
 	ctx := c.Request.Context()
 	volumeID := c.Param("volume_id")
@@ -107,7 +107,7 @@ func (h *Handler) GetVolumeSnapshots(c *gin.Context) {
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /snapshots/volumes/{volume_id}/latest [get]
+// @Router /api/v1/snapshots/volumes/{volume_id}/latest [get]
 func (h *Handler) GetLatestSnapshot(c *gin.Context) {
 	ctx := c.Request.Context()
 	volumeID := c.Param("volume_id")

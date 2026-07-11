@@ -64,7 +64,7 @@ type PreviewResponse struct {
 // @Success 201 {object} PreviewResponse "Preview generated successfully"
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /previews [post]
+// @Router /api/v1/previews [post]
 func (h *Handler) GeneratePreview(c *gin.Context) {
 	var req PreviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -140,7 +140,7 @@ func (h *Handler) GeneratePreview(c *gin.Context) {
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 404 {object} map[string]interface{} "Preview not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /previews/{file_id} [get]
+// @Router /api/v1/previews/{file_id} [get]
 func (h *Handler) GetPreview(c *gin.Context) {
 	fileIDStr := c.Param("file_id")
 	fileID, err := strconv.ParseInt(fileIDStr, 10, 64)
@@ -262,7 +262,7 @@ func (h *Handler) GetPreview(c *gin.Context) {
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 404 {object} map[string]interface{} "File not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /files/{file_id}/preview [get]
+// @Router /api/v1/files/{file_id}/preview [get]
 func (h *Handler) GetPreviewByFile(c *gin.Context) {
 	fileIDStr := c.Param("file_id")
 	fileID, err := strconv.ParseInt(fileIDStr, 10, 64)
@@ -340,7 +340,7 @@ func (h *Handler) GetPreviewByFile(c *gin.Context) {
 // @Success 204 "Previews deleted successfully"
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /previews/{file_id} [delete]
+// @Router /api/v1/previews/{file_id} [delete]
 func (h *Handler) DeletePreview(c *gin.Context) {
 	fileIDStr := c.Param("file_id")
 	_, err := strconv.ParseInt(fileIDStr, 10, 64)
@@ -364,7 +364,7 @@ func (h *Handler) DeletePreview(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} map[string]interface{} "Preview statistics"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /previews/stats [get]
+// @Router /api/v1/previews/stats [get]
 func (h *Handler) GetStats(c *gin.Context) {
 	stats := h.service.GetStats()
 	c.JSON(http.StatusOK, stats)
@@ -377,7 +377,7 @@ func (h *Handler) GetStats(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{} "Supported media types"
-// @Router /previews/supported [get]
+// @Router /api/v1/previews/supported [get]
 func (h *Handler) GetSupportedTypes(c *gin.Context) {
 	supported := h.service.GetSupportedTypes()
 	c.JSON(http.StatusOK, gin.H{"supported_types": supported})
@@ -390,7 +390,7 @@ func (h *Handler) GetSupportedTypes(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{} "Service health status"
-// @Router /previews/health [get]
+// @Router /api/v1/previews/health [get]
 func (h *Handler) HealthCheck(c *gin.Context) {
 	// Check if required tools are available
 	health := gin.H{

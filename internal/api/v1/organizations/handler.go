@@ -391,7 +391,7 @@ func (h *Handler) GetOrganizationStats(c *gin.Context) {
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 403 {object} map[string]interface{} "Forbidden - admin required"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /organizations [get]
+// @Router /api/v1/organizations [get]
 func (h *Handler) ListOrganizations(c *gin.Context) {
 	// Admin check is handled by middleware
 
@@ -456,7 +456,7 @@ func (h *Handler) ListOrganizations(c *gin.Context) {
 // @Failure 403 {object} map[string]interface{} "Forbidden - admin required"
 // @Failure 409 {object} map[string]interface{} "Conflict - organization already exists"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /organizations [post]
+// @Router /api/v1/organizations [post]
 func (h *Handler) CreateOrganization(c *gin.Context) {
 	var req CreateOrganizationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -505,7 +505,7 @@ func (h *Handler) CreateOrganization(c *gin.Context) {
 // @Failure 403 {object} map[string]interface{} "Forbidden - admin required"
 // @Failure 404 {object} map[string]interface{} "Organization not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /organizations/{id} [put]
+// @Router /api/v1/organizations/{id} [put]
 func (h *Handler) UpdateOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 
@@ -561,7 +561,7 @@ func (h *Handler) UpdateOrganization(c *gin.Context) {
 // @Failure 404 {object} map[string]interface{} "Organization not found"
 // @Failure 409 {object} map[string]interface{} "Conflict - organization has users or volumes"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /organizations/{id} [delete]
+// @Router /api/v1/organizations/{id} [delete]
 func (h *Handler) DeleteOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 

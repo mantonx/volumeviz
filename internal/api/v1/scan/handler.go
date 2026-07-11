@@ -63,7 +63,7 @@ func (h *Handler) SetEnrichmentManager(manager interfaces.EnrichmentManager) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /volumes/{id}/size [get]
+// @Router /api/v1/volumes/{id}/size [get]
 func (h *Handler) GetSizeAnalysisStatus(c *gin.Context) {
 	volumeID := c.Param("name")
 
@@ -110,7 +110,7 @@ func (h *Handler) GetSizeAnalysisStatus(c *gin.Context) {
 // @Success 202 {object} models.AsyncScanResponse "Async scan started"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /volumes/{id}/size/refresh [post]
+// @Router /api/v1/volumes/{id}/size/refresh [post]
 func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 	volumeID := c.Param("name")
 
@@ -237,7 +237,7 @@ func (h *Handler) RefreshVolumeSize(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "Comprehensive scan progress with sub-phase details"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
-// @Router /scans/{scanId}/progress [get]
+// @Router /api/v1/scans/{scanId}/progress [get]
 func (h *Handler) GetScanProgress(c *gin.Context) {
 	scanID := c.Param("id")
 	if scanID == "" {
@@ -522,8 +522,8 @@ func (h *Handler) calculatePerformanceStats(phases []coremodels.ScanPhase, statu
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 404 {object} map[string]interface{} "Scan not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /scans/{id}/status [get]
-// @Router /volumes/{id}/scan/status [get]
+// @Router /api/v1/scans/{id}/status [get]
+// @Router /api/v1/volumes/{id}/scan/status [get]
 func (h *Handler) GetScanStatus(c *gin.Context) {
 	id := c.Param("name")
 	if id == "" {
@@ -587,7 +587,7 @@ func (h *Handler) GetScanStatus(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "Bulk scan results"
 // @Failure 400 {object} map[string]interface{} "Bad request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /volumes/bulk-scan [post]
+// @Router /api/v1/volumes/bulk-scan [post]
 func (h *Handler) BulkScan(c *gin.Context) {
 	var req models.BulkScanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -1011,7 +1011,7 @@ func (h *Handler) GetSchedulerCapabilities(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 503 {object} models.ErrorResponse "Filesystem indexing not enabled"
-// @Router /volumes/{volumeId}/filesystem/status [get]
+// @Router /api/v1/volumes/{volumeId}/filesystem/status [get]
 func (h *Handler) GetFilesystemIndexingStatus(c *gin.Context) {
 	volumeID := c.Param("volumeId")
 	if volumeID == "" {
@@ -1094,7 +1094,7 @@ func (h *Handler) GetFilesystemIndexingStatus(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 409 {object} models.ErrorResponse "Indexing already in progress"
 // @Failure 503 {object} models.ErrorResponse "Filesystem indexing not enabled"
-// @Router /volumes/{id}/filesystem/index [post]
+// @Router /api/v1/volumes/{id}/filesystem/index [post]
 func (h *Handler) TriggerFilesystemIndexing(c *gin.Context) {
 	volumeID := c.Param("name")
 	if volumeID == "" {
@@ -1175,7 +1175,7 @@ func (h *Handler) TriggerFilesystemIndexing(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {object} models.FilesystemCapabilitiesResponse
-// @Router /filesystem/capabilities [get]
+// @Router /api/v1/filesystem/capabilities [get]
 func (h *Handler) GetFilesystemIndexingCapabilities(c *gin.Context) {
 	capabilities := gin.H{
 		"enabled": false,
@@ -1232,7 +1232,7 @@ func (h *Handler) GetFilesystemIndexingCapabilities(c *gin.Context) {
 // @Success 202 {object} models.MediaEnrichmentResponse "Enrichment started"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 503 {object} models.ErrorResponse "Media enrichment not enabled"
-// @Router /volumes/{id}/media/enrich [post]
+// @Router /api/v1/volumes/{id}/media/enrich [post]
 func (h *Handler) TriggerMediaEnrichment(c *gin.Context) {
 	volumeID := c.Param("name")
 	if volumeID == "" {
@@ -1281,7 +1281,7 @@ func (h *Handler) TriggerMediaEnrichment(c *gin.Context) {
 // @Success 200 {object} models.MediaEnrichmentStatusResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 503 {object} models.ErrorResponse "Media enrichment not enabled"
-// @Router /volumes/{id}/media/status [get]
+// @Router /api/v1/volumes/{id}/media/status [get]
 func (h *Handler) GetMediaEnrichmentStatus(c *gin.Context) {
 	volumeID := c.Param("name")
 	if volumeID == "" {
@@ -1334,7 +1334,7 @@ func (h *Handler) GetMediaEnrichmentStatus(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "Scan errors with pagination"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
-// @Router /scans/{scanId}/errors [get]
+// @Router /api/v1/scans/{scanId}/errors [get]
 func (h *Handler) GetScanErrors(c *gin.Context) {
 	scanID := c.Param("id")
 	if scanID == "" {
@@ -1426,7 +1426,7 @@ func (h *Handler) GetScanErrors(c *gin.Context) {
 // @Param offset query int false "Offset for pagination (default: 0)"
 // @Success 200 {object} map[string]interface{} "Active scans with pagination"
 // @Failure 500 {object} models.ErrorResponse
-// @Router /scans/active [get]
+// @Router /api/v1/scans/active [get]
 func (h *Handler) GetActiveScans(c *gin.Context) {
 	if h.store == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
@@ -1501,7 +1501,7 @@ func (h *Handler) GetActiveScans(c *gin.Context) {
 // @Param limit query int false "Limit number of results (default: 50)"
 // @Success 200 {object} map[string]interface{} "Recent scan errors"
 // @Failure 500 {object} models.ErrorResponse
-// @Router /scans/recent-errors [get]
+// @Router /api/v1/scans/recent-errors [get]
 func (h *Handler) GetRecentScanErrors(c *gin.Context) {
 	if h.store == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
@@ -1613,7 +1613,7 @@ func max(a, b int) int {
 // @Accept json
 // @Produce json
 // @Success 200 {object} models.MediaCapabilitiesResponse
-// @Router /media/capabilities [get]
+// @Router /api/v1/media/capabilities [get]
 func (h *Handler) GetMediaEnrichmentCapabilities(c *gin.Context) {
 	if h.enrichmentManager == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{

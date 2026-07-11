@@ -39,7 +39,7 @@ func NewHandler(store store.Store, statsService *stats.StatsService) *Handler {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /stats/daily [get]
+// @Router /api/v1/stats/daily [get]
 func (h *Handler) GetDailyStats(c *gin.Context) {
 	volumeID := c.Query("volume_id")
 	if volumeID == "" {
@@ -89,7 +89,7 @@ func (h *Handler) GetDailyStats(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /stats/top-folders [get]
+// @Router /api/v1/stats/top-folders [get]
 func (h *Handler) GetTopFolders(c *gin.Context) {
 	volumeID := c.Query("volume_id")
 	if volumeID == "" {
@@ -140,7 +140,7 @@ func (h *Handler) GetTopFolders(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /stats/media [get]
+// @Router /api/v1/stats/media [get]
 func (h *Handler) GetMediaStats(c *gin.Context) {
 	volumeID := c.Query("volume_id")
 	if volumeID == "" {
@@ -185,7 +185,7 @@ func (h *Handler) GetMediaStats(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /stats/storage [get]
+// @Router /api/v1/stats/storage [get]
 func (h *Handler) GetStorageStats(c *gin.Context) {
 	volumeID := c.Query("volume_id")
 	if volumeID == "" {

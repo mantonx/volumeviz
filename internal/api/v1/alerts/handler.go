@@ -37,7 +37,7 @@ func NewHandler(store store.Store, alertEngine interfaces.AlertEngine) *Handler 
 // @Success 201 {object} models.AlertRule
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/rules [post]
+// @Router /api/v1/alerts/rules [post]
 func (h *Handler) CreateAlertRule(c *gin.Context) {
 	var params models.CreateAlertRuleParams
 	if err := c.ShouldBindJSON(&params); err != nil {
@@ -72,7 +72,7 @@ func (h *Handler) CreateAlertRule(c *gin.Context) {
 // @Param enabled query bool false "Filter by enabled status"
 // @Success 200 {object} models.AlertRulesListResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/rules [get]
+// @Router /api/v1/alerts/rules [get]
 func (h *Handler) GetAlertRules(c *gin.Context) {
 	// Parse pagination parameters
 	limit := 50
@@ -133,7 +133,7 @@ func (h *Handler) GetAlertRules(c *gin.Context) {
 // @Success 200 {object} models.AlertRule
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/rules/{id} [get]
+// @Router /api/v1/alerts/rules/{id} [get]
 func (h *Handler) GetAlertRule(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -162,7 +162,7 @@ func (h *Handler) GetAlertRule(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/rules/{id} [put]
+// @Router /api/v1/alerts/rules/{id} [put]
 func (h *Handler) UpdateAlertRule(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -205,7 +205,7 @@ func (h *Handler) UpdateAlertRule(c *gin.Context) {
 // @Success 204
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/rules/{id} [delete]
+// @Router /api/v1/alerts/rules/{id} [delete]
 func (h *Handler) DeleteAlertRule(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -231,7 +231,7 @@ func (h *Handler) DeleteAlertRule(c *gin.Context) {
 // @Success 200 {object} models.TestAlertRuleResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/rules/{id}/test [post]
+// @Router /api/v1/alerts/rules/{id}/test [post]
 func (h *Handler) TestAlertRule(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -272,7 +272,7 @@ func (h *Handler) TestAlertRule(c *gin.Context) {
 // @Success 201 {object} models.AlertDestination
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/destinations [post]
+// @Router /api/v1/alerts/destinations [post]
 func (h *Handler) CreateAlertDestination(c *gin.Context) {
 	var params models.CreateAlertDestinationParams
 	if err := c.ShouldBindJSON(&params); err != nil {
@@ -311,7 +311,7 @@ func (h *Handler) CreateAlertDestination(c *gin.Context) {
 // @Param enabled query bool false "Filter by enabled status"
 // @Success 200 {object} models.AlertDestinationsListResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/destinations [get]
+// @Router /api/v1/alerts/destinations [get]
 func (h *Handler) GetAlertDestinations(c *gin.Context) {
 	// Parse pagination parameters
 	limit := 50
@@ -372,7 +372,7 @@ func (h *Handler) GetAlertDestinations(c *gin.Context) {
 // @Success 200 {object} models.AlertDestination
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/destinations/{id} [get]
+// @Router /api/v1/alerts/destinations/{id} [get]
 func (h *Handler) GetAlertDestination(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -401,7 +401,7 @@ func (h *Handler) GetAlertDestination(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/destinations/{id} [put]
+// @Router /api/v1/alerts/destinations/{id} [put]
 func (h *Handler) UpdateAlertDestination(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -448,7 +448,7 @@ func (h *Handler) UpdateAlertDestination(c *gin.Context) {
 // @Success 204
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/destinations/{id} [delete]
+// @Router /api/v1/alerts/destinations/{id} [delete]
 func (h *Handler) DeleteAlertDestination(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -476,7 +476,7 @@ func (h *Handler) DeleteAlertDestination(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/destinations/{id}/test [post]
+// @Router /api/v1/alerts/destinations/{id}/test [post]
 func (h *Handler) TestAlertDestination(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -518,7 +518,7 @@ func (h *Handler) TestAlertDestination(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} models.EngineStatusResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/engine/status [get]
+// @Router /api/v1/alerts/engine/status [get]
 func (h *Handler) GetEngineStatus(c *gin.Context) {
 	stats, err := h.alertEngine.GetStats(c.Request.Context())
 	if err != nil {
@@ -540,7 +540,7 @@ func (h *Handler) GetEngineStatus(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} models.TriggerEvaluationResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/engine/evaluate [post]
+// @Router /api/v1/alerts/engine/evaluate [post]
 func (h *Handler) TriggerEvaluation(c *gin.Context) {
 	if err := h.alertEngine.TriggerEvaluation(c.Request.Context()); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to trigger evaluation", "details": err.Error()})
@@ -565,7 +565,7 @@ func (h *Handler) TriggerEvaluation(c *gin.Context) {
 // @Param rule_id query int false "Filter by rule ID"
 // @Success 200 {object} models.AlertsListResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts [get]
+// @Router /api/v1/alerts [get]
 func (h *Handler) GetAlerts(c *gin.Context) {
 	// Parse pagination parameters
 	limit := 50
@@ -631,7 +631,7 @@ func (h *Handler) GetAlerts(c *gin.Context) {
 // @Success 200 {object} models.Alert
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/{id} [get]
+// @Router /api/v1/alerts/{id} [get]
 func (h *Handler) GetAlert(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -660,7 +660,7 @@ func (h *Handler) GetAlert(c *gin.Context) {
 // @Success 201 {object} models.AlertRoute
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/routes [post]
+// @Router /api/v1/alerts/routes [post]
 func (h *Handler) CreateAlertRoute(c *gin.Context) {
 	var params models.CreateAlertRouteParams
 	if err := c.ShouldBindJSON(&params); err != nil {
@@ -695,7 +695,7 @@ func (h *Handler) CreateAlertRoute(c *gin.Context) {
 // @Param destination_id query int false "Filter by destination ID"
 // @Success 200 {object} models.AlertRoutesListResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/routes [get]
+// @Router /api/v1/alerts/routes [get]
 func (h *Handler) GetAlertRoutes(c *gin.Context) {
 	// Parse pagination parameters
 	limit := 50
@@ -759,7 +759,7 @@ func (h *Handler) GetAlertRoutes(c *gin.Context) {
 // @Success 200 {object} models.AlertRoute
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/routes/{id} [get]
+// @Router /api/v1/alerts/routes/{id} [get]
 func (h *Handler) GetAlertRoute(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -788,7 +788,7 @@ func (h *Handler) GetAlertRoute(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/routes/{id} [put]
+// @Router /api/v1/alerts/routes/{id} [put]
 func (h *Handler) UpdateAlertRoute(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -831,7 +831,7 @@ func (h *Handler) UpdateAlertRoute(c *gin.Context) {
 // @Success 204
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/routes/{id} [delete]
+// @Router /api/v1/alerts/routes/{id} [delete]
 func (h *Handler) DeleteAlertRoute(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -860,7 +860,7 @@ func (h *Handler) DeleteAlertRoute(c *gin.Context) {
 // @Param status query string false "Filter by delivery status"
 // @Success 200 {object} models.AlertDeliveriesListResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /alerts/deliveries [get]
+// @Router /api/v1/alerts/deliveries [get]
 func (h *Handler) GetDeliveryHistory(c *gin.Context) {
 	// Parse pagination parameters
 	limit := 50

@@ -58,7 +58,7 @@ type UpdateUserRequest struct {
 // @Failure 401 {object} map[string]interface{}
 // @Failure 403 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /users [get]
+// @Router /api/v1/users [get]
 func (h *Handler) ListUsers(c *gin.Context) {
 	// Get organization ID from context (set by auth middleware)
 	orgID, exists := c.Get("organization_id")
@@ -135,7 +135,7 @@ func (h *Handler) ListUsers(c *gin.Context) {
 // @Failure 401 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /users/{id} [get]
+// @Router /api/v1/users/{id} [get]
 func (h *Handler) GetUser(c *gin.Context) {
 	// Get organization ID from context
 	orgID, exists := c.Get("organization_id")
@@ -191,7 +191,7 @@ func (h *Handler) GetUser(c *gin.Context) {
 // @Failure 401 {object} map[string]interface{}
 // @Failure 409 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /users [post]
+// @Router /api/v1/users [post]
 func (h *Handler) CreateUser(c *gin.Context) {
 	var req CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -252,7 +252,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 // @Failure 401 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /users/{id} [put]
+// @Router /api/v1/users/{id} [put]
 func (h *Handler) UpdateUser(c *gin.Context) {
 	// Get organization ID from context
 	orgID, exists := c.Get("organization_id")
@@ -343,7 +343,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 // @Failure 401 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /users/{id} [delete]
+// @Router /api/v1/users/{id} [delete]
 func (h *Handler) DeleteUser(c *gin.Context) {
 	// Get organization ID from context
 	orgID, exists := c.Get("organization_id")

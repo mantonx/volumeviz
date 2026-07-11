@@ -39,7 +39,7 @@ func NewHandler(store store.Store) *Handler {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /files/{id}/details [get]
+// @Router /api/v1/files/{id}/details [get]
 func (h *Handler) GetFileDetails(c *gin.Context) {
 	fileIDStr := c.Param("id")
 	fileID, err := strconv.ParseInt(fileIDStr, 10, 64)
@@ -103,7 +103,7 @@ func (h *Handler) GetFileDetails(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /files/{id}/metadata [get]
+// @Router /api/v1/files/{id}/metadata [get]
 func (h *Handler) GetFileMetadata(c *gin.Context) {
 	fileIDStr := c.Param("id")
 	fileID, err := strconv.ParseInt(fileIDStr, 10, 64)

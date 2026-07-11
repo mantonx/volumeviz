@@ -27,7 +27,7 @@ func NewHandler(dockerService interfaces.DockerService) *Handler {
 // @Produce json
 // @Success 200 {object} map[string]interface{} "System information"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /system/info [get]
+// @Router /api/v1/system/info [get]
 func (h *Handler) GetSystemInfo(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -60,7 +60,7 @@ func (h *Handler) GetSystemInfo(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{} "API version information"
-// @Router /system/version [get]
+// @Router /api/v1/system/version [get]
 func (h *Handler) GetVersion(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"api_version": "v1",
