@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -809,15 +810,17 @@ func (h *Handler) applyTrackingChanges(ctx context.Context, preview *rules.Previ
 
 	// Apply changes to mount catalog (update tracking status)
 	for _, change := range changes {
-		// Convert string MountID to int64
-		mountID, err := strconv.ParseInt(change.MountID, 10, 64)
+		// change.MountID is the Docker-facing mount identifier (e.g. a
+		// volume name), not the mount catalog's numeric primary key —
+		// look up the row to get the real ID before updating it.
+		mount, err := h.mountsRepo.GetMountByMountID(ctx, change.MountID)
 		if err != nil {
-			return 0, nil, fmt.Errorf("invalid mount ID %s: %w", change.MountID, err)
+			return 0, nil, fmt.Errorf("mount not found %s: %w", change.MountID, err)
 		}
-		
+
 		// Update tracking status
 		isTracked := change.NewAction == "include"
-		err = h.mountsRepo.UpdateMountTrackingStatus(ctx, mountID, isTracked)
+		err = h.mountsRepo.UpdateMountTrackingStatus(ctx, mount.ID, isTracked)
 		if err != nil {
 			return 0, nil, fmt.Errorf("failed to update tracking status for mount %s: %w", change.MountID, err)
 		}
@@ -918,4 +921,199 @@ func getStaticRuleTemplates() []*RuleTemplate {
 			UpdatedAt: time.Now(),
 		},
 	}
+}
+
+// GetSchema returns the available fields and operators for building rule conditions
+// @Summary Get rule builder schema
+// @Description Returns the fields and operators available for building tracking-rule conditions, for use in a dynamic rule-creation form
+// @Tags tracking-rules
+// @Produce json
+// @Success 200 {object} GetSchemaResponse
+// @Router /api/v1/rules/schema [get]
+func (h *Handler) GetSchema(c *gin.Context) {
+	response := &GetSchemaResponse{
+		Fields:    AvailableFields,
+		Operators: AvailableOperators,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ValidateRule validates a rule configuration without creating it
+// @Summary Validate a tracking rule
+// @Description Validates a rule's name, action, priority, and conditions (including field/operator compatibility and regex syntax) without persisting it
+// @Tags tracking-rules
+// @Accept json
+// @Produce json
+// @Param rule body ValidateRuleRequest true "Rule to validate"
+// @Success 200 {object} ValidateRuleResponse
+// @Failure 400 {object} gin.H
+// @Router /api/v1/rules/validate [post]
+func (h *Handler) ValidateRule(c *gin.Context) {
+	var req ValidateRuleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		return
+	}
+
+	response := &ValidateRuleResponse{
+		IsValid:  true,
+		Errors:   []ValidationError{},
+		Warnings: []ValidationWarning{},
+	}
+
+	// Validate name
+	if req.Name == "" {
+		response.IsValid = false
+		response.Errors = append(response.Errors, ValidationError{
+			Field:   "name",
+			Message: "Rule name is required",
+			Code:    "required",
+		})
+	}
+
+	// Validate action
+	if req.Action != "include" && req.Action != "exclude" {
+		response.IsValid = false
+		response.Errors = append(response.Errors, ValidationError{
+			Field:   "action",
+			Message: "Action must be 'include' or 'exclude'",
+			Code:    "invalid_value",
+		})
+	}
+
+	// Validate priority
+	if req.Priority < 0 {
+		response.Warnings = append(response.Warnings, ValidationWarning{
+			Field:   "priority",
+			Message: "Negative priority values may cause unexpected behavior",
+			Code:    "negative_priority",
+		})
+	}
+
+	// Validate conditions
+	if len(req.Conditions) == 0 {
+		response.IsValid = false
+		response.Errors = append(response.Errors, ValidationError{
+			Field:   "conditions",
+			Message: "At least one condition is required",
+			Code:    "required",
+		})
+	}
+
+	for i, condition := range req.Conditions {
+		// Validate field name
+		if !isValidField(condition.FieldName) {
+			response.IsValid = false
+			response.Errors = append(response.Errors, ValidationError{
+				Field:   fmt.Sprintf("conditions[%d].field_name", i),
+				Message: fmt.Sprintf("Unknown field '%s'", condition.FieldName),
+				Code:    "invalid_field",
+			})
+		}
+
+		// Validate operator
+		if !isValidOperator(condition.Operator) {
+			response.IsValid = false
+			response.Errors = append(response.Errors, ValidationError{
+				Field:   fmt.Sprintf("conditions[%d].operator", i),
+				Message: fmt.Sprintf("Unknown operator '%s'", condition.Operator),
+				Code:    "invalid_operator",
+			})
+		}
+
+		// Validate operator compatibility with field
+		if !isOperatorValidForField(condition.FieldName, condition.Operator) {
+			response.IsValid = false
+			response.Errors = append(response.Errors, ValidationError{
+				Field:   fmt.Sprintf("conditions[%d].operator", i),
+				Message: fmt.Sprintf("Operator '%s' is not valid for field '%s'", condition.Operator, condition.FieldName),
+				Code:    "incompatible_operator",
+			})
+		}
+
+		// Validate values based on operator
+		if isMultipleValueOperator(condition.Operator) {
+			if len(condition.Values) == 0 {
+				response.IsValid = false
+				response.Errors = append(response.Errors, ValidationError{
+					Field:   fmt.Sprintf("conditions[%d].values", i),
+					Message: fmt.Sprintf("Operator '%s' requires multiple values", condition.Operator),
+					Code:    "missing_values",
+				})
+			}
+		} else {
+			if condition.Value == nil || *condition.Value == "" {
+				response.IsValid = false
+				response.Errors = append(response.Errors, ValidationError{
+					Field:   fmt.Sprintf("conditions[%d].value", i),
+					Message: fmt.Sprintf("Operator '%s' requires a single value", condition.Operator),
+					Code:    "missing_value",
+				})
+			}
+		}
+
+		// Validate regex patterns
+		if condition.Operator == "regex" || condition.Operator == "not_regex" {
+			if condition.Value != nil {
+				if _, err := regexp.Compile(*condition.Value); err != nil {
+					response.IsValid = false
+					response.Errors = append(response.Errors, ValidationError{
+						Field:   fmt.Sprintf("conditions[%d].value", i),
+						Message: fmt.Sprintf("Invalid regular expression: %v", err),
+						Code:    "invalid_regex",
+					})
+				}
+			}
+		}
+	}
+
+	// Add preview if validation passed
+	if response.IsValid {
+		response.Preview = &ValidationPreview{
+			EstimatedMatches: 0, // Would be calculated based on current mounts
+			SampleMounts:     []string{},
+			Conflicts:        []string{},
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// Helper functions for validation
+
+func isValidField(fieldName string) bool {
+	for _, field := range AvailableFields {
+		if field.Name == fieldName {
+			return true
+		}
+	}
+	return false
+}
+
+func isValidOperator(operator string) bool {
+	for _, op := range AvailableOperators {
+		if op.Name == operator {
+			return true
+		}
+	}
+	return false
+}
+
+func isOperatorValidForField(fieldName, operator string) bool {
+	for _, field := range AvailableFields {
+		if field.Name == fieldName {
+			for _, validOp := range field.Operators {
+				if validOp == operator {
+					return true
+				}
+			}
+			return false
+		}
+	}
+	return false
+}
+
+func isMultipleValueOperator(operator string) bool {
+	return operator == "in" || operator == "not_in"
 }

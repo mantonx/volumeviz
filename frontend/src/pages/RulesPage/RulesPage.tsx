@@ -1,58 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Shield, Plus, Play } from 'lucide-react';
-import type {
-  InternalApiV1RulesRuleResponse as Rule,
-  InternalApiV1RulesTrackingRulesConfigResponse as TrackingRulesConfig,
-  GithubComMantonxVolumevizInternalServicesRulesPreviewResponse as PreviewResponse,
+import type { InternalApiV1RulesRuleResponse as Rule } from '@/api/orval-generated/api';
+import {
+  useGetApiV1TrackingRules,
+  usePutApiV1TrackingRules,
+  usePostApiV1TrackingPreview,
+  usePostApiV1TrackingApply,
 } from '@/api/orval-generated/api';
+import { CreateRuleModal } from './CreateRuleModal';
 
 const RulesPage: React.FC = () => {
-  const [config, setConfig] = useState<TrackingRulesConfig | null>(null);
-  const [preview, setPreview] = useState<PreviewResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [draggedRule, setDraggedRule] = useState<Rule | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchConfig = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/v1/tracking/rules');
-      if (!response.ok) throw new Error('Failed to fetch rules configuration');
-      const data = await response.json();
-      setConfig(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch rules');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: configData,
+    isLoading: loading,
+    refetch: refetchConfig,
+  } = useGetApiV1TrackingRules();
+  const config = configData?.status === 200 ? configData.data : undefined;
+
+  const previewMutation = usePostApiV1TrackingPreview();
+  const preview = previewMutation.data?.status === 200 ? previewMutation.data.data : undefined;
+  const previewLoading = previewMutation.isPending;
+
+  const updateConfigMutation = usePutApiV1TrackingRules();
+  const applyMutation = usePostApiV1TrackingApply();
 
   const previewRules = async () => {
+    setError(null);
     try {
-      setPreviewLoading(true);
-      const response = await fetch('/api/v1/tracking/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          include_rule_details: true,
-          include_unmatched: false,
-          dry_run: true,
-        }),
+      await previewMutation.mutateAsync({
+        data: { include_rule_details: true, include_unmatched: false, dry_run: true },
       });
-      if (!response.ok) throw new Error('Failed to preview rules');
-      const data = await response.json();
-      setPreview(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to preview rules');
-    } finally {
-      setPreviewLoading(false);
     }
   };
 
   const updateRulesConfig = async (rules: Rule[]) => {
+    setError(null);
     try {
       // Reassign priorities based on order
       const updatedRules = rules.map((rule, index) => ({
@@ -61,15 +49,8 @@ const RulesPage: React.FC = () => {
         is_enabled: rule.is_enabled || false,
       }));
 
-      const response = await fetch('/api/v1/tracking/rules', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rules: updatedRules }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update rules configuration');
-      const data = await response.json();
-      setConfig(data);
+      await updateConfigMutation.mutateAsync({ data: { rules: updatedRules } });
+      await refetchConfig();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update rules');
     }
@@ -97,26 +78,19 @@ const RulesPage: React.FC = () => {
   };
 
   const applyRules = async () => {
+    setError(null);
     try {
-      const response = await fetch('/api/v1/tracking/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dry_run: false }),
-      });
-
-      if (!response.ok) throw new Error('Failed to apply rules');
-
-      // Refresh data after applying
-      await fetchConfig();
+      await applyMutation.mutateAsync({ data: { dry_run: false } });
+      await refetchConfig();
       await previewRules();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to apply rules');
     }
   };
 
-  useEffect(() => {
-    fetchConfig();
+  React.useEffect(() => {
     previewRules();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDragStart = (e: React.DragEvent, rule: Rule, index: number) => {
@@ -471,33 +445,15 @@ const RulesPage: React.FC = () => {
         )}
       </div>
 
-      {/* Create Rule Form Placeholder */}
-      {showCreateForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-surface rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4 text-primary">
-              Create New Rule
-            </h3>
-            <p className="text-secondary mb-4">
-              Rule creation form would go here...
-            </p>
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 text-secondary hover:text-gray-800 hover:text-primary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CreateRuleModal
+        open={showCreateForm}
+        onClose={() => setShowCreateForm(false)}
+        onCreated={() => {
+          setShowCreateForm(false);
+          refetchConfig();
+          previewRules();
+        }}
+      />
     </div>
   );
 };
