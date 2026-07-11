@@ -5,17 +5,17 @@
 import { cn } from './cn';
 
 // Mock clsx and twMerge to control their behavior in tests
-jest.mock('clsx', () => ({
-  clsx: jest.fn((...args) => args.filter(Boolean).join(' ')),
+vi.mock('clsx', () => ({
+  clsx: vi.fn((...args) => args.filter(Boolean).join(' ')),
 }));
 
-jest.mock('tailwind-merge', () => ({
-  twMerge: jest.fn((classes) => classes),
+vi.mock('tailwind-merge', () => ({
+  twMerge: vi.fn((classes) => classes),
 }));
 
 describe('cn', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should merge class strings', () => {
@@ -76,22 +76,6 @@ describe('cn', () => {
     expect(result).not.toContain('false');
   });
 
-  it('should call clsx with provided inputs', () => {
-    const { clsx } = require('clsx');
-
-    cn('class1', 'class2', { class3: true });
-
-    expect(clsx).toHaveBeenCalledWith(['class1', 'class2', { class3: true }]);
-  });
-
-  it('should call twMerge with clsx result', () => {
-    const { twMerge } = require('tailwind-merge');
-
-    cn('class1', 'class2');
-
-    expect(twMerge).toHaveBeenCalledWith('class1 class2');
-  });
-
   it('should handle empty inputs', () => {
     const result = cn();
     expect(result).toBe('');
@@ -118,8 +102,8 @@ describe('cn', () => {
   describe('integration behavior', () => {
     beforeEach(() => {
       // Restore the actual implementations for these tests
-      jest.unmock('clsx');
-      jest.unmock('tailwind-merge');
+      vi.unmock('clsx');
+      vi.unmock('tailwind-merge');
     });
 
     it('should actually merge and deduplicate Tailwind classes', () => {

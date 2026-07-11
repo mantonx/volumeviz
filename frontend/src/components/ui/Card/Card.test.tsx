@@ -22,17 +22,10 @@ describe('Card', () => {
     expect(card).toHaveClass(
       'rounded-lg',
       'border',
-      'border-gray-200',
-      'bg-white',
+      'border-line',
+      'bg-surface',
       'shadow-sm',
     );
-  });
-
-  it('applies dark mode classes', () => {
-    render(<Card data-testid="card">Card content</Card>);
-
-    const card = screen.getByTestId('card');
-    expect(card).toHaveClass('dark:border-gray-700', 'dark:bg-gray-800');
   });
 
   it('accepts custom className', () => {

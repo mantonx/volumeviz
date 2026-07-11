@@ -48,6 +48,12 @@ const getPreviewUrl = (
   return url.toString();
 };
 
+// Default timestamp (in seconds) used to extract a poster frame for video
+// previews when the caller doesn't specify one. Mirrors the default used by
+// the usePreview hook (see src/hooks/usePreview.ts) and the backend's
+// VV_PREVIEW_VIDEO_TIME_OFFSET fallback.
+const DEFAULT_VIDEO_TIME_OFFSET = 5.0;
+
 const canGeneratePreview = (mediaType: string): boolean => {
   return (
     mediaType.startsWith('image/') ||
@@ -146,11 +152,16 @@ export const PreviewImage: React.FC<PreviewImageProps> = ({
   const previewType = getPreviewType(mediaType);
   const displayAlt = alt || `${previewType} for ${fileName}`;
 
+  // For video files (poster frames) include a time offset so the backend
+  // extracts a representative frame rather than defaulting to frame 0.
+  const timeOffset =
+    previewType === 'poster' ? DEFAULT_VIDEO_TIME_OFFSET : undefined;
+
   // Create srcset for responsive images
   const createSrcSet = () => {
-    const small = getPreviewUrl(fileId, 'small');
-    const medium = getPreviewUrl(fileId, 'medium');
-    const large = getPreviewUrl(fileId, 'large');
+    const small = getPreviewUrl(fileId, 'small', timeOffset);
+    const medium = getPreviewUrl(fileId, 'medium', timeOffset);
+    const large = getPreviewUrl(fileId, 'large', timeOffset);
 
     return `${small} 256w, ${medium} 512w, ${large} 1024w`;
   };
@@ -205,7 +216,7 @@ export const PreviewImage: React.FC<PreviewImageProps> = ({
       {/* Blur-up placeholder (small version loaded first) */}
       {showBlurUp && isInView && !state.error && (
         <img
-          src={getPreviewUrl(fileId, 'small')}
+          src={getPreviewUrl(fileId, 'small', timeOffset)}
           alt=""
           className={cn(
             'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
@@ -226,7 +237,7 @@ export const PreviewImage: React.FC<PreviewImageProps> = ({
             type="image/webp"
           />
           <img
-            src={getPreviewUrl(fileId, size)}
+            src={getPreviewUrl(fileId, size, timeOffset)}
             alt={displayAlt}
             className={cn(
               'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',

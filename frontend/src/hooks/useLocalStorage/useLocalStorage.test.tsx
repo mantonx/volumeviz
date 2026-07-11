@@ -12,20 +12,20 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {};
 
   return {
-    getItem: jest.fn((key: string) => store[key] || null),
-    setItem: jest.fn((key: string, value: string) => {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
       store[key] = value;
     }),
-    removeItem: jest.fn((key: string) => {
+    removeItem: vi.fn((key: string) => {
       delete store[key];
     }),
-    clear: jest.fn(() => {
+    clear: vi.fn(() => {
       store = {};
     }),
     get length() {
       return Object.keys(store).length;
     },
-    key: jest.fn((index: number) => Object.keys(store)[index] || null),
+    key: vi.fn((index: number) => Object.keys(store)[index] || null),
   };
 })();
 
@@ -44,7 +44,7 @@ const renderUseLocalStorage = <T extends any>(
 describe('useLocalStorage', () => {
   beforeEach(() => {
     localStorageMock.clear();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return default value when localStorage is empty', () => {
@@ -129,10 +129,10 @@ describe('useLocalStorage', () => {
   });
 
   it('should use custom serializer', () => {
-    const customSerialize = jest.fn(
+    const customSerialize = vi.fn(
       (value: any) => `custom-${JSON.stringify(value)}`,
     );
-    const customDeserialize = jest.fn((value: string) =>
+    const customDeserialize = vi.fn((value: string) =>
       JSON.parse(value.replace('custom-', '')),
     );
 
@@ -153,7 +153,7 @@ describe('useLocalStorage', () => {
   });
 
   it('should handle localStorage errors gracefully', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
     // Mock localStorage.setItem to throw an error
     localStorageMock.setItem.mockImplementationOnce(() => {
@@ -177,7 +177,7 @@ describe('useLocalStorage', () => {
   });
 
   it('should handle invalid JSON in localStorage', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
     // Set invalid JSON directly
     localStorageMock.getItem.mockReturnValueOnce('invalid-json{');
@@ -203,7 +203,6 @@ describe('useLocalStorage', () => {
     const storageEvent = new StorageEvent('storage', {
       key: 'sync-key',
       newValue: JSON.stringify('updated-from-other-tab'),
-      storageArea: localStorage,
     });
 
     act(() => {
@@ -224,7 +223,6 @@ describe('useLocalStorage', () => {
     const storageEvent = new StorageEvent('storage', {
       key: 'other-key',
       newValue: JSON.stringify('other-value'),
-      storageArea: localStorage,
     });
 
     act(() => {
@@ -248,7 +246,6 @@ describe('useLocalStorage', () => {
     const storageEvent = new StorageEvent('storage', {
       key: 'remove-key',
       newValue: null,
-      storageArea: localStorage,
     });
 
     act(() => {
@@ -259,7 +256,7 @@ describe('useLocalStorage', () => {
   });
 
   it('should cleanup storage event listener on unmount', () => {
-    const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+    const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
 
     const { unmount } = renderUseLocalStorage('cleanup-key', 'default', {
       syncAcrossTabs: true,

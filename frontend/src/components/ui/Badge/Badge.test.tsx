@@ -29,7 +29,7 @@ describe('Badge', () => {
   it('applies outline variant classes', () => {
     render(<Badge variant="outline">Outline</Badge>);
     const badge = screen.getByText('Outline');
-    expect(badge).toHaveClass('border', 'border-gray-200');
+    expect(badge).toHaveClass('border', 'border-line', 'text-secondary');
   });
 
   it('accepts custom className', () => {

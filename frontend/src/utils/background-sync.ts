@@ -15,6 +15,7 @@ export class BackgroundSyncManager {
   private storageKey = 'volumeviz-pending-operations';
   private isOnline = navigator.onLine;
   private syncInProgress = false;
+  private syncPromise: Promise<void> | null = null;
 
   constructor() {
     // Listen to online/offline events
@@ -96,13 +97,30 @@ export class BackgroundSyncManager {
     console.log('Gone offline - operations will be queued');
   }
 
-  // Sync all pending operations
+  // Sync all pending operations. If a sync is already running, callers
+  // await the same in-flight promise rather than getting an immediate
+  // no-op — otherwise a caller racing against a sync triggered elsewhere
+  // (e.g. the auto-sync kicked off by addPendingOperation) would resolve
+  // before the real work finished, observing stale pending/retry state.
   async syncPendingOperations(): Promise<void> {
-    if (!this.isOnline || this.syncInProgress) {
+    if (!this.isOnline) {
       return;
     }
 
+    if (this.syncInProgress && this.syncPromise) {
+      return this.syncPromise;
+    }
+
     this.syncInProgress = true;
+    this.syncPromise = this.runSync().finally(() => {
+      this.syncInProgress = false;
+      this.syncPromise = null;
+    });
+
+    return this.syncPromise;
+  }
+
+  private async runSync(): Promise<void> {
     const pending = this.getPendingOperations();
 
     console.log(`Syncing ${pending.length} pending operations`);
@@ -127,8 +145,6 @@ export class BackgroundSyncManager {
         }
       }
     }
-
-    this.syncInProgress = false;
   }
 
   // Execute a pending operation
@@ -221,11 +237,11 @@ export function useBackgroundSync() {
     backgroundSyncManager.getSyncStatus(),
   );
 
-  React.useEffect(() => {
-    const updateStatus = () => {
-      setStatus(backgroundSyncManager.getSyncStatus());
-    };
+  const updateStatus = React.useCallback(() => {
+    setStatus(backgroundSyncManager.getSyncStatus());
+  }, []);
 
+  React.useEffect(() => {
     // Update status periodically
     const interval = setInterval(updateStatus, 1000);
 
@@ -238,17 +254,38 @@ export function useBackgroundSync() {
       window.removeEventListener('online', updateStatus);
       window.removeEventListener('offline', updateStatus);
     };
-  }, []);
+  }, [updateStatus]);
+
+  // Wrap the mutating manager methods so status reflects the caller's own
+  // action immediately, instead of waiting for the next 1s poll tick or a
+  // network event — addPendingOperation/clearPending/forceSync are actions
+  // the consumer just took, so the UI should update in the same tick.
+  const addPendingOperation = React.useCallback(
+    (
+      ...args: Parameters<typeof backgroundSyncManager.addPendingOperation>
+    ) => {
+      const result = backgroundSyncManager.addPendingOperation(...args);
+      updateStatus();
+      return result;
+    },
+    [updateStatus],
+  );
+
+  const forceSync = React.useCallback(async () => {
+    await backgroundSyncManager.forcSync();
+    updateStatus();
+  }, [updateStatus]);
+
+  const clearPending = React.useCallback(() => {
+    backgroundSyncManager.clearPendingOperations();
+    updateStatus();
+  }, [updateStatus]);
 
   return {
     ...status,
-    addPendingOperation: backgroundSyncManager.addPendingOperation.bind(
-      backgroundSyncManager,
-    ),
-    forceSync: backgroundSyncManager.forcSync.bind(backgroundSyncManager),
-    clearPending: backgroundSyncManager.clearPendingOperations.bind(
-      backgroundSyncManager,
-    ),
+    addPendingOperation,
+    forceSync,
+    clearPending,
   };
 }
 

@@ -15,10 +15,12 @@ describe('formatBytes', () => {
     expect(formatBytes(0)).toBe('0 B');
   });
 
+  // formatBytes runs its result through parseFloat(x.toFixed(decimals)),
+  // which strips trailing zeros by design (1.50 -> 1.5) for cleaner output.
   it('should format bytes correctly', () => {
     expect(formatBytes(512)).toBe('512 B');
     expect(formatBytes(1024)).toBe('1 KB');
-    expect(formatBytes(1536)).toBe('1.50 KB');
+    expect(formatBytes(1536)).toBe('1.5 KB');
   });
 
   it('should format kilobytes correctly', () => {
@@ -27,18 +29,18 @@ describe('formatBytes', () => {
   });
 
   it('should format megabytes correctly', () => {
-    expect(formatBytes(1024 * 1024 * 2.5)).toBe('2.50 MB');
+    expect(formatBytes(1024 * 1024 * 2.5)).toBe('2.5 MB');
     expect(formatBytes(1024 * 1024 * 1024)).toBe('1 GB');
   });
 
   it('should format gigabytes correctly', () => {
-    expect(formatBytes(1024 * 1024 * 1024 * 1.5)).toBe('1.50 GB');
+    expect(formatBytes(1024 * 1024 * 1024 * 1.5)).toBe('1.5 GB');
   });
 
   it('should respect decimal places', () => {
     expect(formatBytes(1536, 0)).toBe('2 KB');
     expect(formatBytes(1536, 1)).toBe('1.5 KB');
-    expect(formatBytes(1536, 3)).toBe('1.500 KB');
+    expect(formatBytes(1536, 3)).toBe('1.5 KB');
   });
 
   it('should handle negative decimal places', () => {
@@ -54,12 +56,12 @@ describe('formatBytes', () => {
 describe('formatDate', () => {
   beforeAll(() => {
     // Mock Date.now to return a fixed timestamp
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2024-01-15T12:00:00Z'));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-15T12:00:00Z'));
   });
 
   afterAll(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('should format relative time for recent dates', () => {
@@ -194,19 +196,21 @@ describe('truncateString', () => {
   });
 
   it('should truncate from the start', () => {
+    // maxLength 20 - '...'.length 3 = 17 chars of content kept
     expect(truncateString(longString, 20, 'start')).toBe(
-      '...eds to be truncated',
+      '...s to be truncated',
     );
   });
 
   it('should truncate from the middle', () => {
+    // 17 content chars split 9/8 around the ellipsis
     expect(truncateString(longString, 20, 'middle')).toBe(
-      'This is...truncated',
+      'This is a...runcated',
     );
   });
 
   it('should handle edge cases', () => {
-    expect(truncateString('test', 3)).toBe('test'); // String shorter than maxLength
+    expect(truncateString('test', 3)).toBe('...'); // 'test' (4) > maxLength (3), no room for content + ellipsis
     expect(truncateString('test', 4)).toBe('test'); // String equal to maxLength
     expect(truncateString('test', 10)).toBe('test'); // String much shorter
   });

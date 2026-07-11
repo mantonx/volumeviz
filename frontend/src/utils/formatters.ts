@@ -112,6 +112,11 @@ export function truncateString(
   const ellipsis = '...';
   const truncatedLength = maxLength - ellipsis.length;
 
+  // maxLength too small to fit any real content alongside the ellipsis —
+  // negative truncatedLength would otherwise make slice(0, negative) /
+  // slice(-negative) keep almost the whole string instead of none of it.
+  if (truncatedLength <= 0) return ellipsis;
+
   switch (position) {
     case 'start':
       return ellipsis + str.slice(-truncatedLength);

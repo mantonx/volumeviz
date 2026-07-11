@@ -15,12 +15,28 @@ Object.defineProperty(process, 'env', {
 });
 
 // Mock IntersectionObserver
-const mockIntersectionObserver = jest.fn();
-mockIntersectionObserver.mockReturnValue({
-  observe: () => null,
-  unobserve: () => null,
-  disconnect: () => null,
-});
+//
+// The component uses IntersectionObserver to lazily flip `isInView` to
+// `true` once the element scrolls into the viewport. jsdom has no real
+// layout/intersection engine, so we simulate an element that is
+// immediately visible by invoking the observer callback synchronously
+// with `isIntersecting: true` as soon as `observe()` is called - this is
+// what a real browser does for elements already on screen at mount time,
+// and it's what every test below assumes when it queries for the
+// rendered `<img>` right after `render()` with no `waitFor`.
+const mockIntersectionObserver = vi.fn();
+mockIntersectionObserver.mockImplementation(
+  (callback: IntersectionObserverCallback) => ({
+    observe: () => {
+      callback(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+    },
+    unobserve: () => null,
+    disconnect: () => null,
+  }),
+);
 window.IntersectionObserver = mockIntersectionObserver;
 
 describe('PreviewImage', () => {
@@ -78,7 +94,7 @@ describe('PreviewImage', () => {
   });
 
   it('handles click events', () => {
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
     render(<PreviewImage {...defaultProps} onClick={handleClick} />);
 
     fireEvent.click(screen.getByRole('img').parentElement!);
@@ -88,7 +104,11 @@ describe('PreviewImage', () => {
   it('applies custom className', () => {
     render(<PreviewImage {...defaultProps} className="custom-class" />);
 
-    const container = screen.getByRole('img').parentElement;
+    // The <img> is nested inside a <picture> wrapper, so its immediate
+    // parent is <picture>, not the component's outer container. Walk up
+    // to the actual container (identified by its base layout class) to
+    // check the custom className was applied there.
+    const container = screen.getByRole('img').closest('.relative');
     expect(container).toHaveClass('custom-class');
   });
 
@@ -106,7 +126,7 @@ describe('PreviewImage', () => {
   });
 
   it('calls onLoad callback when image loads', async () => {
-    const handleLoad = jest.fn();
+    const handleLoad = vi.fn();
     render(<PreviewImage {...defaultProps} onLoad={handleLoad} lazy={false} />);
 
     const img = screen.getByRole('img');
@@ -118,7 +138,7 @@ describe('PreviewImage', () => {
   });
 
   it('calls onError callback when image fails to load', async () => {
-    const handleError = jest.fn();
+    const handleError = vi.fn();
     render(
       <PreviewImage {...defaultProps} onError={handleError} lazy={false} />,
     );
@@ -168,8 +188,10 @@ describe('PreviewImage', () => {
 });
 
 // Add custom test IDs to the component for testing
-jest.mock('./PreviewImage', () => {
-  const actual = jest.requireActual('./PreviewImage');
+vi.mock('./PreviewImage', async () => {
+  const actual = await vi.importActual<typeof import('./PreviewImage')>(
+    './PreviewImage',
+  );
   return {
     ...actual,
     PreviewImage: (props: any) => {

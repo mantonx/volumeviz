@@ -29,7 +29,7 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 // Mock fetch
-const mockFetch = jest.fn();
+const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 // Mock navigator.onLine
@@ -44,14 +44,14 @@ const originalAddEventListener = window.addEventListener;
 const originalRemoveEventListener = window.removeEventListener;
 
 beforeAll(() => {
-  window.addEventListener = jest.fn((event, callback) => {
+  window.addEventListener = vi.fn((event, callback) => {
     if (!mockEventListeners[event]) {
       mockEventListeners[event] = [];
     }
     mockEventListeners[event].push(callback as Function);
   });
 
-  window.removeEventListener = jest.fn((event, callback) => {
+  window.removeEventListener = vi.fn((event, callback) => {
     if (mockEventListeners[event]) {
       const index = mockEventListeners[event].indexOf(callback as Function);
       if (index > -1) {
@@ -72,6 +72,15 @@ const triggerNetworkEvent = (type: 'online' | 'offline') => {
     value: type === 'online',
   });
 
+  // The module-level `backgroundSyncManager` singleton (imported at module
+  // load time, before `window.addEventListener` is mocked in `beforeAll`)
+  // registers its online/offline listeners on the *real* window, not in
+  // `mockEventListeners`. Dispatch a real event first so the singleton
+  // updates its `isOnline` state before any mocked listeners below (e.g.
+  // the `useBackgroundSync` hook's status updater, which reads the
+  // singleton's state) run and observe it.
+  window.dispatchEvent(new Event(type));
+
   if (mockEventListeners[type]) {
     mockEventListeners[type].forEach((callback) => callback());
   }
@@ -81,15 +90,21 @@ describe('BackgroundSyncManager', () => {
   let syncManager: BackgroundSyncManager;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockLocalStorage.clear();
+
+    // Default to online. BackgroundSyncManager reads `navigator.onLine`
+    // once in its constructor and never re-reads it afterwards (it only
+    // updates via online/offline event listeners), so this must be reset
+    // *before* constructing `syncManager` below or a previous test that
+    // left `navigator.onLine` as `false` would leak a stale `isOnline`
+    // into this test's manager.
+    Object.defineProperty(navigator, 'onLine', { value: true });
+
     syncManager = new BackgroundSyncManager();
 
     // Mock auth token
     mockLocalStorage.setItem('auth_token', 'test-token');
-
-    // Default to online
-    Object.defineProperty(navigator, 'onLine', { value: true });
   });
 
   describe('initialization', () => {
@@ -150,7 +165,7 @@ describe('BackgroundSyncManager', () => {
     });
 
     it('should trigger sync if online', async () => {
-      const syncSpy = jest.spyOn(syncManager, 'syncPendingOperations');
+      const syncSpy = vi.spyOn(syncManager, 'syncPendingOperations');
 
       syncManager.addPendingOperation({
         type: 'scan',
@@ -298,7 +313,11 @@ describe('BackgroundSyncManager', () => {
     });
 
     it('should not sync when offline', async () => {
-      Object.defineProperty(navigator, 'onLine', { value: false });
+      // Use triggerNetworkEvent (not a raw Object.defineProperty) so the
+      // manager's `offline` listener actually fires and updates its
+      // internal `isOnline` cache — the manager never re-reads
+      // `navigator.onLine` directly outside of that listener.
+      triggerNetworkEvent('offline');
 
       syncManager.addPendingOperation({
         type: 'scan',
@@ -357,7 +376,7 @@ describe('BackgroundSyncManager', () => {
     });
 
     it('should trigger sync when coming back online', async () => {
-      const syncSpy = jest.spyOn(syncManager, 'syncPendingOperations');
+      const syncSpy = vi.spyOn(syncManager, 'syncPendingOperations');
 
       triggerNetworkEvent('online');
 
@@ -389,19 +408,25 @@ describe('BackgroundSyncManager', () => {
 
   describe('error handling', () => {
     it('should handle localStorage errors gracefully', () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
 
-      // Mock localStorage error
-      jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-        throw new Error('LocalStorage error');
-      });
+      // Mock localStorage error. Note: `window.localStorage` in this test
+      // file is a bespoke plain-object mock (`mockLocalStorage`, defined
+      // above), not an instance backed by `Storage.prototype` — spying on
+      // `Storage.prototype.getItem` would never intercept calls made
+      // through it, so we spy on the mock's own method instead.
+      const getItemSpy = vi
+        .spyOn(mockLocalStorage, 'getItem')
+        .mockImplementation(() => {
+          throw new Error('LocalStorage error');
+        });
 
       const operations = syncManager.getPendingOperations();
       expect(operations).toEqual([]);
       expect(consoleSpy).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
-      jest.restoreAllMocks();
+      getItemSpy.mockRestore();
     });
 
     it('should handle missing auth token', async () => {
@@ -475,7 +500,7 @@ describe('useBackgroundSync hook', () => {
   });
 
   it('should cleanup interval on unmount', () => {
-    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+    const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
 
     const { unmount } = renderHook(() => useBackgroundSync());
 

@@ -7,15 +7,15 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAsync } from './useAsync';
 
 // Mock async functions for testing
-const successfulAsyncFn = jest.fn(() => Promise.resolve('success'));
-const failingAsyncFn = jest.fn(() => Promise.reject(new Error('Failed')));
-const slowAsyncFn = jest.fn(
+const successfulAsyncFn = vi.fn(() => Promise.resolve('success'));
+const failingAsyncFn = vi.fn(() => Promise.reject(new Error('Failed')));
+const slowAsyncFn = vi.fn(
   () => new Promise((resolve) => setTimeout(() => resolve('slow'), 100)),
 );
 
 describe('useAsync', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should initialize with loading false and no data/error', () => {
@@ -31,9 +31,12 @@ describe('useAsync', () => {
   });
 
   it('should execute immediately by default', async () => {
+    // successfulAsyncFn resolves in the same tick, so the loading:true -> false
+    // transition can complete before this line runs — assert on the durable
+    // outcome (it was called, it succeeded) rather than the transient flag.
+    // See "should show loading state during execution" for that assertion,
+    // using a slow async fn that can't resolve within the same act() flush.
     const { result } = renderHook(() => useAsync(successfulAsyncFn));
-
-    expect(result.current.loading).toBe(true);
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -166,7 +169,7 @@ describe('useAsync', () => {
   });
 
   it('should handle non-Error rejections', async () => {
-    const stringErrorFn = jest.fn(() => Promise.reject('String error'));
+    const stringErrorFn = vi.fn(() => Promise.reject('String error'));
 
     const { result } = renderHook(() =>
       useAsync(stringErrorFn, { immediate: false }),
