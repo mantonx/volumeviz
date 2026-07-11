@@ -24,6 +24,10 @@ export interface DirectoryTreeProps {
   selectedPath?: string;
   searchQuery?: string;
   className?: string;
+  /** Called with true once the volume is confirmed to have no directories
+   * at all (not loading, not errored) - lets the parent hide the whole
+   * sidebar instead of showing a permanently empty box. */
+  onEmptyStateChange?: (isEmpty: boolean) => void;
 }
 
 interface FolderNode {
@@ -304,6 +308,7 @@ export function DirectoryTree({
   selectedPath,
   searchQuery = '',
   className = '',
+  onEmptyStateChange,
 }: DirectoryTreeProps) {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set(['/']));
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -322,6 +327,15 @@ export function DirectoryTree({
 
   // No client-side filtering needed - server does the search
   const filteredRootFolders = rootFolders;
+
+  // Report genuinely-empty state (no directories at all, not just no search
+  // matches) so the parent can hide the sidebar instead of showing a
+  // permanently empty box.
+  useEffect(() => {
+    if (!searchQuery.trim() && !isLoading) {
+      onEmptyStateChange?.(rootFolders.length === 0);
+    }
+  }, [searchQuery, isLoading, rootFolders.length, onEmptyStateChange]);
 
   // Infinite scroll detection for root folders
   useEffect(() => {

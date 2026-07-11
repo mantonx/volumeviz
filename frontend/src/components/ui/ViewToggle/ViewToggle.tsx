@@ -27,6 +27,22 @@ const defaultOptions: ViewOption[] = [
   { id: 'grid', label: 'Grid', icon: <Grid3X3 className="w-4 h-4" /> },
 ];
 
+// ViewOption.icon is typed as React.ReactNode (matching what callers can
+// reasonably pass), but every variant below needs to resize it via
+// cloneElement, which requires a real element — cloneElement throws on
+// null/undefined/strings/etc. This renders nothing for a non-cloneable icon
+// instead of crashing the whole page, since a missing icon is a cosmetic
+// gap, not something that should take down navigation.
+const renderIcon = (
+  icon: React.ReactNode,
+  sizeClass: string,
+): React.ReactNode => {
+  if (!React.isValidElement(icon)) return null;
+  return React.cloneElement(icon as React.ReactElement<{ className?: string }>, {
+    className: sizeClass,
+  });
+};
+
 /**
  * View toggle component for switching between different volume display modes in VolumeViz.
  *
@@ -126,9 +142,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
             )}
             aria-label={`Switch to ${option.label} view`}
           >
-            {React.cloneElement(option.icon as React.ReactElement<{ className?: string }>, {
-              className: iconSizeClasses[size],
-            })}
+            {renderIcon(option.icon, iconSizeClasses[size])}
             {showLabels && <span>{option.label}</span>}
           </button>
         ))}
@@ -154,9 +168,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
             sizeClasses[size],
           )}
         >
-          {React.cloneElement(selectedOption.icon as React.ReactElement<{ className?: string }>, {
-            className: iconSizeClasses[size],
-          })}
+          {renderIcon(selectedOption.icon, iconSizeClasses[size])}
           <span>{selectedOption.label}</span>
         </button>
 
@@ -186,9 +198,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
                     : 'text-secondary',
                 )}
               >
-                {React.cloneElement(option.icon as React.ReactElement<{ className?: string }>, {
-                  className: iconSizeClasses[size],
-                })}
+                {renderIcon(option.icon, iconSizeClasses[size])}
                 <span>{option.label}</span>
               </button>
             ))}
@@ -224,9 +234,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
           aria-label={`Switch to ${option.label} view`}
           aria-pressed={value === option.id}
         >
-          {React.cloneElement(option.icon as React.ReactElement<{ className?: string }>, {
-            className: iconSizeClasses[size],
-          })}
+          {renderIcon(option.icon, iconSizeClasses[size])}
           {showLabels && <span>{option.label}</span>}
         </button>
       ))}

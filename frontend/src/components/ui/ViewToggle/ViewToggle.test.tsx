@@ -2,25 +2,34 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ViewToggle, ViewOption, ViewType } from './ViewToggle';
 
+// Icon content is intentionally icon-only (no text matching the option's
+// label) — real icons (e.g. lucide-react's `LayoutGrid`) don't render
+// visible text either, and giving the mock icon the same text as its
+// label makes it ambiguous with the label `<span>` that dropdown /
+// showLabels variants render alongside it.
 const mockOptions: ViewOption[] = [
   {
     id: 'cards',
     label: 'Cards',
-    icon: <div data-testid="cards-icon">Cards</div>,
+    icon: <div data-testid="cards-icon">[icon]</div>,
   },
-  { id: 'list', label: 'List', icon: <div data-testid="list-icon">List</div> },
+  {
+    id: 'list',
+    label: 'List',
+    icon: <div data-testid="list-icon">[icon]</div>,
+  },
   {
     id: 'table',
     label: 'Table',
-    icon: <div data-testid="table-icon">Table</div>,
+    icon: <div data-testid="table-icon">[icon]</div>,
   },
 ];
 
 describe('ViewToggle', () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders segmented variant by default', () => {

@@ -6,7 +6,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { SearchIcon, BarChart3Icon, BellIcon } from 'lucide-react';
+import { SearchIcon, BarChart3Icon, BellIcon, List, Grid3X3 } from 'lucide-react';
 import { DirectoryTree } from './DirectoryTree';
 import { FileTable } from './FileTable';
 import { FileGrid } from './FileGrid/FileGrid';
@@ -179,8 +179,8 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
                     value={viewMode}
                     onChange={setViewMode}
                     options={[
-                      { id: 'list', label: 'List', icon: null },
-                      { id: 'grid', label: 'Grid', icon: null },
+                      { id: 'list', label: 'List', icon: <List /> },
+                      { id: 'grid', label: 'Grid', icon: <Grid3X3 /> },
                     ]}
                   />
                 </div>
