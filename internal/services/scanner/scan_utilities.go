@@ -21,8 +21,11 @@ func (vs *VolumeScanner) scanWithMethod(
 ) (*interfaces.ScanResult, error) {
 	start := time.Now()
 
-	// Create scan context with timeout
-	scanCtx, cancel := context.WithTimeout(ctx, vs.config.Scanning.DefaultTimeout)
+	// Create scan context with timeout. This is the single enforced timeout
+	// for a method attempt — each ScanMethod.Scan implementation derives its
+	// own internal context from the one passed in, rather than applying a
+	// second timeout of its own, so PerMethodTimeout is the actual ceiling.
+	scanCtx, cancel := context.WithTimeout(ctx, vs.config.Scanning.PerMethodTimeout)
 	defer cancel()
 
 	// Pre-scan validation
@@ -331,13 +334,13 @@ func CalculateEstimationConfidence(
 	}
 
 	progress := float64(processedItems) / float64(totalItems)
-	
+
 	// Factor 1: Progress-based confidence (more data = higher confidence)
 	progressConfidence := 0.0
 	switch {
 	case progress >= 0.75: // 75%+ complete
 		progressConfidence = 1.0
-	case progress >= 0.50: // 50-75% complete  
+	case progress >= 0.50: // 50-75% complete
 		progressConfidence = 0.8
 	case progress >= 0.25: // 25-50% complete
 		progressConfidence = 0.6
@@ -352,7 +355,7 @@ func CalculateEstimationConfidence(
 	switch {
 	case elapsedSeconds >= 30: // 30+ seconds of data
 		timeConfidence = 1.0
-	case elapsedSeconds >= 15: // 15-30 seconds 
+	case elapsedSeconds >= 15: // 15-30 seconds
 		timeConfidence = 0.8
 	case elapsedSeconds >= 5: // 5-15 seconds
 		timeConfidence = 0.6

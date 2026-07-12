@@ -258,7 +258,7 @@ export const VolumeTable: React.FC<VolumeTableProps> = ({
                   onOpenModal={openVolumeModal}
                   onTrack={trackVolume}
                   onUntrack={untrackVolume}
-                  onScan={(id) => scanVolume.mutateAsync(id)}
+                  onScan={scanVolume}
                   onDelete={handleDeleteRow}
                 />,
               ];

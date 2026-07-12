@@ -265,47 +265,6 @@ func initializeVolumeSyncJob(dockerService interfaces.DockerService, store store
 	return volumeSyncJob, nil
 }
 
-// autoResumeIncompleteScans finds and resumes interrupted scans on startup
-func autoResumeIncompleteScans(store store.Store, scanner interfaces.VolumeScanner, cfg *config.Config) {
-	ctx := context.Background()
-
-	log.Println("[AUTO-RESUME] Checking for incomplete scans...")
-
-	// Note: We'd need to add a query to get recent scans with checkpoints
-	// For now, this is a placeholder that demonstrates the pattern
-	// TODO: Add GetIncompleteScanIDs() query to checkpoint repo
-	_ = scanner // Scanner would be used for resuming scans
-
-	if store.Checkpoints() == nil {
-		log.Println("[AUTO-RESUME] Checkpointing not available (SQLite or not configured)")
-		return
-	}
-
-	// Get checkpoint stats to see if there are any recent checkpoints
-	stats, err := store.Checkpoints().GetStats(ctx)
-	if err != nil {
-		log.Printf("[AUTO-RESUME] Failed to get checkpoint stats: %v", err)
-		return
-	}
-
-	if stats.TotalCheckpoints == 0 {
-		log.Println("[AUTO-RESUME] No checkpoints found")
-		return
-	}
-
-	log.Printf("[AUTO-RESUME] Found %d recent checkpoints across %d scans",
-		stats.TotalCheckpoints, stats.TotalScans)
-	log.Printf("[AUTO-RESUME] Auto-resume functionality ready - scans will resume on next scan request")
-
-	// Note: Full auto-resume would require:
-	// 1. Query to get incomplete scan IDs from checkpoints
-	// 2. For each scan: load checkpoint and call scanner.ResumeScan(scanID)
-	// 3. Handle errors gracefully
-	//
-	// For now, checkpoints are saved and can be used for manual resume or
-	// when a new scan is requested for the same volume
-}
-
 func main() {
 	// Print version information
 	versionInfo := version.Get()
@@ -514,11 +473,6 @@ func main() {
 
 	// Health handler is now configured with store directly
 	log.Printf("Health handler configured with store interface")
-
-	// Auto-resume incomplete scans if enabled
-	if cfg.Scan.AutoResumeEnabled {
-		go autoResumeIncompleteScans(storeInstance, nil, cfg)
-	}
 
 	// Start events service if enabled
 	if cfg.Events.Enabled && apiRouter.EventsService() != nil {

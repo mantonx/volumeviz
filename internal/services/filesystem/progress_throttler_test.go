@@ -38,7 +38,6 @@ func (m *MockStore) Folders() *repo.FoldersRepo { return nil }
 func (m *MockStore) FileMetadata() *repo.FileMetadataRepo { return nil }
 func (m *MockStore) Alerts() repo.AlertsRepo { return nil }
 func (m *MockStore) Search() *repo.SearchRepo { return nil }
-func (m *MockStore) Checkpoints() repo.CheckpointRepo { return nil }
 func (m *MockStore) Snapshots() repo.SnapshotRepo { return nil }
 func (m *MockStore) Users() repo.UsersRepository { return nil }
 func (m *MockStore) Organizations() repo.OrganizationsRepo { return nil }

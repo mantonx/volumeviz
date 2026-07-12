@@ -149,7 +149,7 @@ func TestDefaultConfig(t *testing.T) {
 	// Test scanning defaults
 	assert.Equal(t, 5*time.Minute, config.Scanning.DefaultTimeout)
 	assert.Equal(t, 5, config.Scanning.MaxConcurrent)
-	assert.Equal(t, []string{"diskus", "du", "native"}, config.Scanning.PreferredMethods)
+	assert.Equal(t, []string{"walker"}, config.Scanning.PreferredMethods)
 	assert.True(t, config.Scanning.ProgressReporting)
 
 	// Test cache defaults

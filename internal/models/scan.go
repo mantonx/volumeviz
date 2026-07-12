@@ -67,12 +67,6 @@ type ScanConfig struct {
 	IndexingTimeout       time.Duration `yaml:"indexing_timeout"`
 	CircuitBreakerEnabled bool          `yaml:"circuit_breaker_enabled"`
 
-	// Checkpointing configuration
-	CheckpointEnabled       bool          `yaml:"checkpoint_enabled"`
-	CheckpointInterval      time.Duration `yaml:"checkpoint_interval"`
-	CheckpointItemThreshold int64         `yaml:"checkpoint_item_threshold"`
-	AutoResumeEnabled       bool          `yaml:"auto_resume_enabled"`
-
 	// Incremental scanning configuration
 	IncrementalEnabled        bool          `yaml:"incremental_enabled"`
 	SnapshotRetentionDays     int           `yaml:"snapshot_retention_days"`
@@ -100,7 +94,7 @@ func DefaultConfig() Config {
 		Scanning: ScanConfig{
 			DefaultTimeout:    5 * time.Minute,
 			MaxConcurrent:     5,
-			PreferredMethods:  []string{"diskus", "du", "native"},
+			PreferredMethods:  []string{"walker"},
 			ProgressReporting: true,
 
 			// Resilience defaults
@@ -112,12 +106,6 @@ func DefaultConfig() Config {
 			OverallTimeout:        2 * time.Hour,
 			IndexingTimeout:       4 * time.Hour,
 			CircuitBreakerEnabled: true,
-
-			// Checkpointing defaults
-			CheckpointEnabled:       true,
-			CheckpointInterval:      5 * time.Minute,
-			CheckpointItemThreshold: 100000,
-			AutoResumeEnabled:       true,
 		},
 		Cache: CacheConfig{
 			Type:    "memory",

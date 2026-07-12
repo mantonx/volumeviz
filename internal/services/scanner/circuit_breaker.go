@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/mantonx/volumeviz/internal/interfaces"
 )
 
 var (
@@ -130,14 +132,14 @@ func (cb *CircuitBreaker) GetStats() map[string]interface{} {
 	defer cb.mu.RUnlock()
 
 	return map[string]interface{}{
-		"state":              string(cb.state),
-		"failures":           cb.failures,
-		"successes":          cb.successes,
-		"last_failure_time":  cb.lastFailureTime,
-		"last_state_change":  cb.lastStateChange,
-		"failure_threshold":  cb.failureThreshold,
-		"success_threshold":  cb.successThreshold,
-		"reset_timeout":      cb.resetTimeout,
+		"state":             string(cb.state),
+		"failures":          cb.failures,
+		"successes":         cb.successes,
+		"last_failure_time": cb.lastFailureTime,
+		"last_state_change": cb.lastStateChange,
+		"failure_threshold": cb.failureThreshold,
+		"success_threshold": cb.successThreshold,
+		"reset_timeout":     cb.resetTimeout,
 	}
 }
 
@@ -150,4 +152,27 @@ func (cb *CircuitBreaker) Reset() {
 	cb.failures = 0
 	cb.successes = 0
 	cb.lastStateChange = time.Now()
+}
+
+// newCircuitBreakersForMethods builds one CircuitBreaker per scan method,
+// keyed by name, so a failing method (e.g. diskus erroring repeatedly) trips
+// only its own breaker rather than blocking every other method too.
+func newCircuitBreakersForMethods(methods []interfaces.ScanMethod, enabled bool) map[string]*CircuitBreaker {
+	breakers := make(map[string]*CircuitBreaker, len(methods))
+	for _, method := range methods {
+		if enabled {
+			breakers[method.Name()] = NewCircuitBreaker(
+				5,             // Open after 5 consecutive failures
+				2,             // Close after 2 consecutive successes
+				1*time.Minute, // Try again after 1 minute
+			)
+		} else {
+			// No-op circuit breaker that never opens
+			breakers[method.Name()] = &CircuitBreaker{
+				state:            StateClosed,
+				failureThreshold: 999999, // Effectively disabled
+			}
+		}
+	}
+	return breakers
 }

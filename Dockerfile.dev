@@ -1,14 +1,18 @@
 # Development Dockerfile with media enrichment tools
 FROM cosmtrek/air:latest
 
+ARG TARGETARCH
+
 # Install media processing tools:
 # - ffmpeg for video/audio metadata extraction and preview generation
 # - exiftool for image metadata extraction
 # - libvips-tools for efficient image thumbnail generation (WebP conversion)
+# - curl for the container healthcheck (docker-compose.dev.yml)
 RUN apt-get update && apt-get install -y \
   ffmpeg \
   exiftool \
   libvips-tools \
+  curl \
   && rm -rf /var/lib/apt/lists/*
 
 # Verify tools are installed

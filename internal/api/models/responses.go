@@ -30,7 +30,7 @@ type ScanResult struct {
 	FileCount      int           `json:"file_count" example:"12543"`
 	DirectoryCount int           `json:"directory_count" example:"1204"`
 	LargestFile    int64         `json:"largest_file" example:"8589934592"`
-	Method         string        `json:"method" example:"du"`
+	Method         string        `json:"method" example:"walker"`
 	ScannedAt      time.Time     `json:"scanned_at"`
 	Duration       time.Duration `json:"duration" example:"13248000000"`
 	CacheHit       bool          `json:"cache_hit" example:"false"`
@@ -93,7 +93,7 @@ type ScanProgress struct {
 	LastError   string   `json:"last_error,omitempty" example:"Permission denied: /protected/dir"`
 
 	// Legacy fields (for backward compatibility)
-	Method string `json:"method" example:"native"`
+	Method string `json:"method" example:"walker"`
 	Error  string `json:"error,omitempty"`
 } // @name ScanProgress
 
@@ -112,7 +112,7 @@ type PhaseInfo struct {
 type BulkScanRequest struct {
 	VolumeIDs []string `json:"volume_ids" binding:"required" example:"tv-shows-readonly,movies-readonly"`
 	Async     bool     `json:"async" example:"false"`
-	Method    string   `json:"method,omitempty" example:"du"`
+	Method    string   `json:"method,omitempty" example:"walker"`
 } // @name BulkScanRequest
 
 // BulkScanResponse represents the response from a bulk scan operation
@@ -128,17 +128,17 @@ type BulkScanResponse struct {
 // RefreshRequest represents a request to refresh volume size
 type RefreshRequest struct {
 	Async  bool   `json:"async" example:"false"`
-	Method string `json:"method,omitempty" example:"du"`
+	Method string `json:"method,omitempty" example:"walker"`
 } // @name RefreshRequest
 
 // MethodInfo provides information about available scan methods
 type MethodInfo struct {
-	Name        string   `json:"name" example:"du"`
+	Name        string   `json:"name" example:"walker"`
 	Available   bool     `json:"available" example:"true"`
-	Description string   `json:"description" example:"du-based volume scanning"`
-	Performance string   `json:"performance" example:"medium" enums:"fast,medium,slow"`
+	Description string   `json:"description" example:"parallel work-stealing volume scanning"`
+	Performance string   `json:"performance" example:"fast" enums:"fast,medium,slow"`
 	Accuracy    string   `json:"accuracy" example:"high" enums:"high,medium,basic"`
-	Features    []string `json:"features" example:"reliable,standard_tool"`
+	Features    []string `json:"features" example:"parallel,detailed_stats,progress_reporting,always_available"`
 } // @name MethodInfo
 
 // SystemInfoResponse represents system information

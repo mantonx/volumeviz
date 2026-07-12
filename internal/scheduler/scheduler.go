@@ -718,11 +718,13 @@ func (s *Scheduler) isBindMountAllowed(volumeName string) bool {
 	return false
 }
 
+// selectScanMethod returns the scan method label recorded on scan_jobs rows
+// for display/audit purposes. This does not select actual scan behavior —
+// the scanner only has one method (Walker, see internal/services/scanner/
+// walker.go) since diskus/du were removed as external dependencies once
+// benchmarking showed a parallelized Go walker matched or beat both.
 func (s *Scheduler) selectScanMethod() string {
-	if len(s.config.MethodsOrder) > 0 {
-		return s.config.MethodsOrder[0]
-	}
-	return "du" // fallback
+	return "walker"
 }
 
 func (s *Scheduler) calculateWorkerUtilization() float64 {

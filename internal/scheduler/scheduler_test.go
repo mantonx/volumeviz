@@ -172,7 +172,6 @@ func (m *MockStore) Stats() *repo.StatsRepo {
 	return args.Get(0).(*repo.StatsRepo)
 }
 
-func (m *MockStore) Checkpoints() repo.CheckpointRepo { return nil }
 func (m *MockStore) Snapshots() repo.SnapshotRepo     { return nil }
 func (m *MockStore) Users() repo.UsersRepository      { return nil }
 func (m *MockStore) Organizations() repo.OrganizationsRepo { return nil }
@@ -289,7 +288,6 @@ func createTestScheduler() (*Scheduler, *MockVolumeScanner, *MockScanRepository,
 			Interval:          5 * time.Minute,
 			Concurrency:       2,
 			TimeoutPerVolume:  30 * time.Second,
-			MethodsOrder:      []string{"diskus", "du"},
 			BindMountsEnabled: false,
 			BindAllowList:     []string{},
 			SkipPattern:       "^test_",
@@ -308,7 +306,6 @@ func TestNewScheduler(t *testing.T) {
 			Interval:          5 * time.Minute,
 			Concurrency:       2,
 			TimeoutPerVolume:  30 * time.Second,
-			MethodsOrder:      []string{"diskus", "du"},
 			BindMountsEnabled: false,
 			BindAllowList:     []string{},
 			SkipPattern:       "",
@@ -340,7 +337,6 @@ func TestNewSchedulerWithInvalidSkipPattern(t *testing.T) {
 			Interval:          5 * time.Minute,
 			Concurrency:       2,
 			TimeoutPerVolume:  30 * time.Second,
-			MethodsOrder:      []string{"diskus", "du"},
 			BindMountsEnabled: false,
 			BindAllowList:     []string{},
 			SkipPattern:       "[invalid-regex",
@@ -731,15 +727,14 @@ func TestIsBindMountAllowed(t *testing.T) {
 }
 
 func TestSelectScanMethod(t *testing.T) {
+	// selectScanMethod only labels scan_jobs rows for display/audit — the
+	// scanner itself has a single method (Walker) since diskus/du were
+	// removed, so this is no longer configurable and always returns the
+	// same value.
 	scheduler, _, _, _, _ := createTestScheduler()
 
 	method := scheduler.selectScanMethod()
-	assert.Equal(t, "diskus", method) // First in MethodsOrder
-
-	// Test fallback when no methods configured
-	scheduler.config.MethodsOrder = []string{}
-	method = scheduler.selectScanMethod()
-	assert.Equal(t, "du", method) // Fallback
+	assert.Equal(t, "walker", method)
 }
 
 func TestEnhancedFeatures(t *testing.T) {

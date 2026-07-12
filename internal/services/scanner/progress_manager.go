@@ -186,71 +186,20 @@ func (pm *ProgressManager) CleanupScan(scanID string) {
 	}
 }
 
-// broadcastProgress sends progress updates via WebSocket
+// broadcastProgress is intentionally a no-op.
+//
+// The ProgressManager retains in-memory scan state for GetProgress and for
+// applying UpdateProgress mutations, but it is NO LONGER a WebSocket emitter.
+// Every scan.progress message now originates from the single DB-sourced path
+// (VolumeScanner.broadcastComprehensive → BroadcastComprehensiveScanProgress),
+// so there is one ordered stream and one wire shape per scan. Broadcasting a
+// second, in-memory-sourced payload from here is exactly what caused the two
+// paths to interleave out-of-order and spam the frontend's monotonic guard.
+//
+// Kept as a no-op method (rather than deleting the call sites) so the existing
+// StartScan/UpdateProgress/FinishPhase flow is unchanged and obviously safe.
 func (pm *ProgressManager) broadcastProgress(scanID string) {
-	if pm.broadcaster == nil {
-		return
-	}
-
-	progress, exists := pm.activeScans[scanID]
-	if !exists {
-		return
-	}
-
-	// Convert in-memory progress to broadcast format
-	// Calculate overall progress and prepare phase data
-	phases := []map[string]interface{}{}
-	overallProgress := 0.0
-	totalPhases := len(progress.Phases)
-	
-	for phaseName, phaseInfo := range progress.Phases {
-		phaseData := map[string]interface{}{
-			"phase_name":      phaseName,
-			"status":         phaseInfo.Status,
-			"progress":       int(phaseInfo.Progress * 100), // Convert to percentage
-			"items_processed": phaseInfo.ItemsProcessed,
-			"items_total":    0, // ItemsTotal not available in PhaseInfo
-		}
-		
-		if phaseInfo.StartedAt != nil {
-			phaseData["started_at"] = phaseInfo.StartedAt.Format(time.RFC3339)
-		}
-		if phaseInfo.CompletedAt != nil {
-			phaseData["completed_at"] = phaseInfo.CompletedAt.Format(time.RFC3339)
-		}
-		
-		phases = append(phases, phaseData)
-		overallProgress += phaseInfo.Progress
-	}
-	
-	if totalPhases > 0 {
-		overallProgress = (overallProgress / float64(totalPhases)) * 100
-	}
-
-	// Prepare broadcast data with actual in-memory progress
-	broadcastData := map[string]interface{}{
-		"scan_id":          scanID,
-		"volume_id":        progress.VolumeID,
-		"overall_status":   string(progress.Status),
-		"overall_progress": int(overallProgress),
-		"phases":          phases,
-		"started_at":      progress.StartedAt.Format(time.RFC3339),
-		"current_path":    progress.CurrentPath,
-		"files_scanned":   progress.FilesScanned,
-		"folders_scanned": progress.FoldersScanned,
-		"bytes_processed": progress.BytesProcessed,
-		"total_bytes":     progress.TotalBytes,
-	}
-	
-	// Add performance stats if available
-	if progress.ElapsedSeconds > 0 {
-		broadcastData["performance_stats"] = map[string]interface{}{
-			"elapsed_seconds": progress.ElapsedSeconds,
-		}
-	}
-
-	// Use the direct broadcast method with in-memory data
-	pm.broadcaster.BroadcastScanProgress(progress.VolumeID, scanID, broadcastData)
+	// no-op — see doc comment. Single broadcast path lives on VolumeScanner.
 }
 
 // Helper methods for updating different types of progress
@@ -300,25 +249,28 @@ func (pm *ProgressManager) updateMediaEnrichmentProgress(progress *interfaces.Sc
 }
 
 func (pm *ProgressManager) calculateOverallProgress(phases map[string]*interfaces.PhaseInfo) float64 {
+	return overallProgressFromPhaseInfo(phases)
+}
+
+// overallProgressFromPhaseInfo adapts the in-memory PhaseInfo map (progress as
+// 0.0–1.0 float) to the canonical weighted aggregation in internal/models, and
+// returns a 0.0–1.0 float to match the in-memory ScanProgress.Progress field.
+// This is the ONLY weighting used by the scanner package now — the old local
+// 0.1/0.8/0.1 and item-complexity tables are gone; everything defers to
+// models.PhaseWeights so the in-memory number agrees with what's broadcast.
+func overallProgressFromPhaseInfo(phases map[string]*interfaces.PhaseInfo) float64 {
 	if phases == nil {
 		return 0.0
 	}
-
-	// Weight each phase (volume_scan: 10%, filesystem_indexing: 80%, media_enrichment: 10%)
-	weights := map[string]float64{
-		"volume_scan":         0.1,
-		"filesystem_indexing": 0.8,
-		"media_enrichment":    0.1,
+	canonical := make([]models.PhaseProgress, 0, len(phases))
+	for name, info := range phases {
+		canonical = append(canonical, models.PhaseProgress{
+			Name:    name,
+			Status:  info.Status,
+			Percent: info.Progress * 100, // 0.0–1.0 → 0–100
+		})
 	}
-
-	var totalProgress float64
-	for phaseName, weight := range weights {
-		if phase, exists := phases[phaseName]; exists {
-			totalProgress += phase.Progress * weight
-		}
-	}
-
-	return totalProgress
+	return float64(models.OverallProgress(canonical)) / 100.0 // 0–100 → 0.0–1.0
 }
 
 // ProgressUpdate represents a progress update from a scan method

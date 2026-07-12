@@ -327,49 +327,14 @@ func (h *Handler) GetScanProgress(c *gin.Context) {
 		}
 	}
 
-	// Calculate overall progress from phase data
-	var overallProgress float64 = 0.0
-	phaseWeights := map[string]float64{
-		"volume_scan":         0.15, // 15%
-		"filesystem_indexing": 0.70, // 70%
-		"media_enrichment":    0.15, // 15%
-	}
-
-	totalWeight := 0.0
-	weightedProgress := 0.0
-
-	for _, phase := range phases {
-		if weight, exists := phaseWeights[phase.PhaseName]; exists {
-			totalWeight += weight
-
-			// Calculate phase progress based on status and progress
-			var phaseProgress float64
-			switch phase.Status {
-			case "completed":
-				phaseProgress = 100.0
-			case "failed":
-				// Failed phases still contribute their partial progress
-				phaseProgress = float64(phase.Progress)
-			case "running":
-				phaseProgress = float64(phase.Progress)
-			case "pending", "skipped":
-				phaseProgress = 0.0
-			default:
-				phaseProgress = 0.0
-			}
-
-			weightedProgress += weight * phaseProgress
-		}
-	}
-
-	// Calculate final overall progress
-	if totalWeight > 0 {
-		overallProgress = weightedProgress / totalWeight
-	}
+	// Overall progress from the single canonical aggregation (this handler's
+	// former inline weighted table was the reference implementation; it now
+	// lives in models.OverallProgress so every emitter shares it).
+	overallProgress := coremodels.OverallProgressFromScanPhases(phases)
 
 	// For completed scans, ensure 100% progress
 	if overallStatus == "completed" {
-		overallProgress = 100.0
+		overallProgress = 100
 	}
 
 	// Get timing information

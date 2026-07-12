@@ -2609,14 +2609,6 @@ ALTER TABLE ONLY public.file_previews
 
 
 --
--- Name: files files_path_hash_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
---
-
-ALTER TABLE ONLY public.files
-    ADD CONSTRAINT files_path_hash_key UNIQUE (path_hash);
-
-
---
 -- Name: files files_pkey; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
 
@@ -2625,11 +2617,14 @@ ALTER TABLE ONLY public.files
 
 
 --
--- Name: folders folders_path_hash_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
+-- Name: files files_volume_id_path_key; Type: CONSTRAINT; Schema: public; Owner: volumeviz
 --
+-- Added by migration 000019: path_hash (sha256(path), no volume_id) cannot
+-- be globally unique across volumes — two different volumes indexing the
+-- same absolute path is a real, unremarkable scenario, not an edge case.
 
-ALTER TABLE ONLY public.folders
-    ADD CONSTRAINT folders_path_hash_key UNIQUE (path_hash);
+ALTER TABLE ONLY public.files
+    ADD CONSTRAINT files_volume_id_path_key UNIQUE (volume_id, path);
 
 
 --

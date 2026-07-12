@@ -1,22 +1,29 @@
 /**
  * NotificationsDropdown - real, wired-to-live-data notifications.
  *
- * Surfaces three genuinely real event sources already used elsewhere in the
- * app (Dashboard's alert banner, the scan-progress subsystem): firing
- * alerts, actively-running scans, and scan errors from the last 24 hours.
+ * Surfaces four genuinely real event sources already used elsewhere in the
+ * app (Dashboard's alert banner, the scan-progress subsystem, and the toast
+ * system): firing alerts, actively-running scans, server-recorded scan
+ * errors from the last 24 hours, and recent client-side error/warning
+ * toasts. That last source matters for failures that never reach the
+ * backend at all — e.g. a request rejected with 401 before any scan job is
+ * created has no server-side scan-error row to query, so without this it
+ * would look identical to "nothing happened" even though something failed.
  * No invented notification types — if a source has nothing to show, it's
  * simply omitted, and an empty overall state is shown honestly rather than
  * padded with placeholder content.
  */
 import { useRef, useEffect, useState } from 'react';
+import { useAtomValue } from 'jotai';
 import { Link } from 'react-router-dom';
-import { Bell, AlertCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { Bell, AlertCircle, Loader2, AlertTriangle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
   useGetApiV1Alerts,
   useGetApiV1ScansActive,
   useGetApiV1ScansRecentErrors,
 } from '@/api/orval-generated/api';
+import { notificationsAtom } from '@/atoms/ui';
 
 interface ActiveScanItem {
   volume_id?: string;
@@ -59,6 +66,7 @@ export function NotificationsDropdown() {
       { limit: 5, hours: 24 },
       { query: { enabled: isOpen, staleTime: 30 * 1000 } },
     );
+  const clientNotifications = useAtomValue(notificationsAtom);
 
   const alerts =
     alertsData?.status === 200 ? alertsData.data.alerts ?? [] : [];
@@ -72,8 +80,10 @@ export function NotificationsDropdown() {
       : [];
 
   const isLoading = alertsFetching || scansFetching || errorsFetching;
-  const badgeCount = alerts.length + recentErrors.length;
-  const hasAnything = badgeCount > 0 || activeScans.length > 0;
+  const badgeCount =
+    alerts.length + recentErrors.length + clientNotifications.length;
+  const hasAnything =
+    badgeCount > 0 || activeScans.length > 0;
 
   return (
     <div className="relative" ref={menuRef}>
@@ -114,6 +124,7 @@ export function NotificationsDropdown() {
                 <p className="text-xs text-tertiary mt-1">
                   No firing alerts, active scans, or recent errors
                 </p>
+                <p className="text-xs text-tertiary">(client or server-side)</p>
               </div>
             ) : (
               <div className="py-1">
@@ -151,6 +162,31 @@ export function NotificationsDropdown() {
                       <p className="text-xs text-tertiary truncate">
                         {err.error_message ?? 'Unknown error'}
                       </p>
+                    </div>
+                  </div>
+                ))}
+
+                {clientNotifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="flex items-start gap-3 px-4 py-3"
+                  >
+                    <XCircle
+                      className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                        notification.type === 'error'
+                          ? 'text-red-500'
+                          : 'text-orange-500'
+                      }`}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm text-primary truncate">
+                        {notification.title}
+                      </p>
+                      {notification.message && (
+                        <p className="text-xs text-tertiary truncate">
+                          {notification.message}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}

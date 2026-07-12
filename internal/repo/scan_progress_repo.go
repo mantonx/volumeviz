@@ -597,13 +597,16 @@ func (r *scanProgressRepo) GetActiveScansSummary(ctx context.Context) ([]*models
 			currentPhase = phases[0]
 		}
 
-		// Calculate overall progress from view data
-		overallProgress := 0
-		if scan.OverallProgressPercent != nil {
-			if floatVal, ok := scan.OverallProgressPercent.(float64); ok {
-				overallProgress = int(floatVal)
+		// Overall progress from the single canonical aggregation, computed from
+		// the same phase rows every other emitter uses — NOT the SQL view's
+		// overall_progress_percent column, which was an 8th, divergent source.
+		canonicalPhases := make([]models.ScanPhase, 0, len(phases))
+		for _, p := range phases {
+			if p != nil {
+				canonicalPhases = append(canonicalPhases, *p)
 			}
 		}
+		overallProgress := models.OverallProgressFromScanPhases(canonicalPhases)
 
 		// Calculate elapsed seconds
 		elapsedSeconds := 0

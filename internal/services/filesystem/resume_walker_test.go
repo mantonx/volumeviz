@@ -47,7 +47,6 @@ func (m *MockResumeStore) Files() *repo.FilesRepo { return nil }
 func (m *MockResumeStore) FileMetadata() *repo.FileMetadataRepo { return nil }
 func (m *MockResumeStore) Alerts() repo.AlertsRepo { return nil }
 func (m *MockResumeStore) Search() *repo.SearchRepo { return nil }
-func (m *MockResumeStore) Checkpoints() repo.CheckpointRepo { return nil }
 func (m *MockResumeStore) Snapshots() repo.SnapshotRepo { return nil }
 func (m *MockResumeStore) Users() repo.UsersRepository { return nil }
 func (m *MockResumeStore) Organizations() repo.OrganizationsRepo { return nil }

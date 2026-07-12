@@ -39,7 +39,6 @@ type Querier interface {
 	CountAlertsByOrganization(ctx context.Context, organizationID pgtype.Int8) (int64, error)
 	CountAuditLogsByOrg(ctx context.Context, organizationID int64) (int64, error)
 	CountAuditLogsByUser(ctx context.Context, userID pgtype.Int8) (int64, error)
-	CountCheckpointsByScan(ctx context.Context, scanID string) (int64, error)
 	CountDeliveriesByStatus(ctx context.Context, status string) (int64, error)
 	CountEnabledAlertDestinations(ctx context.Context) (int64, error)
 	CountEnabledAlertRules(ctx context.Context) (int64, error)
@@ -100,8 +99,6 @@ type Querier interface {
 	CreateAlertRule(ctx context.Context, arg CreateAlertRuleParams) (AlertRules, error)
 	// Audit logs queries for VolumeViz
 	CreateAuditLog(ctx context.Context, arg CreateAuditLogParams) (AuditLogs, error)
-	// Checkpoint repository queries for scan resume capability
-	CreateCheckpoint(ctx context.Context, arg CreateCheckpointParams) (ScanCheckpoints, error)
 	// Container operations (using docker_mount_attachments)
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (DockerMountAttachments, error)
 	// Essential statistics queries for PostgreSQL
@@ -189,9 +186,7 @@ type Querier interface {
 	DeleteAlertRoute(ctx context.Context, id int64) error
 	DeleteAlertRule(ctx context.Context, id int64) error
 	DeleteAlertsByRule(ctx context.Context, ruleID int64) error
-	DeleteAllCheckpointsForScan(ctx context.Context, scanID string) error
 	DeleteAuditLogsByOrg(ctx context.Context, organizationID int64) error
-	DeleteCheckpoint(ctx context.Context, arg DeleteCheckpointParams) error
 	DeleteDeliveriesByAlert(ctx context.Context, alertID int64) error
 	DeleteFile(ctx context.Context, id int64) error
 	DeleteFileMetadata(ctx context.Context, fileID int64) error
@@ -201,7 +196,6 @@ type Querier interface {
 	DeleteFoldersByVolume(ctx context.Context, volumeID string) error
 	DeleteInvitation(ctx context.Context, id int64) error
 	DeleteOldAuditLogs(ctx context.Context, createdAt time.Time) error
-	DeleteOldCheckpoints(ctx context.Context, createdAt time.Time) (int64, error)
 	// Retention queries for cleanup
 	DeleteOldFileMetadata(ctx context.Context, extractedAt pgtype.Timestamptz) error
 	// Retention queries for cleanup
@@ -256,7 +250,6 @@ type Querier interface {
 	// =============================================================================
 	GetAlertStats(ctx context.Context) (GetAlertStatsRow, error)
 	GetAlertStatsByOrganization(ctx context.Context, organizationID pgtype.Int8) (GetAlertStatsByOrganizationRow, error)
-	GetAllCheckpointsForScan(ctx context.Context, scanID string) ([]ScanCheckpoints, error)
 	GetAuditLogByID(ctx context.Context, id int64) (AuditLogs, error)
 	// =============================================================================
 	// CAPACITY PREDICTION
@@ -264,9 +257,6 @@ type Querier interface {
 	GetCapacityPrediction(ctx context.Context, arg GetCapacityPredictionParams) (GetCapacityPredictionRow, error)
 	// Get directories that changed between two snapshots (prev_snapshot_id, curr_snapshot_id)
 	GetChangedDirectories(ctx context.Context, arg GetChangedDirectoriesParams) ([]GetChangedDirectoriesRow, error)
-	GetCheckpoint(ctx context.Context, arg GetCheckpointParams) (ScanCheckpoints, error)
-	GetCheckpointStats(ctx context.Context) (GetCheckpointStatsRow, error)
-	GetCheckpointsByVolume(ctx context.Context, arg GetCheckpointsByVolumeParams) ([]ScanCheckpoints, error)
 	GetCompletedScanJobs(ctx context.Context, arg GetCompletedScanJobsParams) ([]ScanJobs, error)
 	GetContainerByContainerID(ctx context.Context, containerID string) (DockerMountAttachments, error)
 	GetDailyStatsForDate(ctx context.Context, arg GetDailyStatsForDateParams) ([]DailyStats, error)
@@ -323,7 +313,6 @@ type Querier interface {
 	GetJobStatusByID(ctx context.Context, id int64) (StatsJobs, error)
 	GetLargestFiles(ctx context.Context, arg GetLargestFilesParams) ([]GetLargestFilesRow, error)
 	GetLargestFolders(ctx context.Context, arg GetLargestFoldersParams) ([]GetLargestFoldersRow, error)
-	GetLatestCheckpointForScan(ctx context.Context, scanID string) (ScanCheckpoints, error)
 	GetLatestRuleEvaluation(ctx context.Context, ruleID pgtype.Int8) (TrackingRuleEvaluations, error)
 	GetLatestSnapshotForVolume(ctx context.Context, volumeID string) (VolumeSnapshots, error)
 	GetLatestVolumeSize(ctx context.Context, volumeID string) (VolumeSizes, error)

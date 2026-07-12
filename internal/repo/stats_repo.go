@@ -540,15 +540,52 @@ func (r *StatsRepo) GetJobMetrics(ctx context.Context, jobType string, sinceDays
 	return metrics, nil
 }
 
-// InsertVolumeStats inserts volume statistics
+// InsertVolumeStats inserts per-directory size rollups. Not yet implemented:
+// there's no backing table/query for DirRollup in the schema, and (unlike
+// InsertScanResult) nothing in the codebase calls this today, so this stays
+// a genuine no-op rather than writing to the wrong place.
 func (r *StatsRepo) InsertVolumeStats(ctx context.Context, stats *models.DirRollup) error {
-	// TODO: Implement using appropriate SQLC method when available
 	return nil
 }
 
-// InsertScanResult inserts scan results
+// InsertScanResult persists a completed scan's total size against the
+// volume it scanned. This is what makes a user-triggered "Scan" actually
+// show up afterward: the scanner package (diskus/du/native) computes a
+// correct result, but until this existed it was returned in the HTTP
+// response and then discarded — the volume list only ever reflected
+// whatever the separate SizeCalculator background sweep last wrote via
+// UpdateVolumeStats. Mirrors that same query/params shape so both paths
+// agree on where a volume's size lives.
 func (r *StatsRepo) InsertScanResult(ctx context.Context, scanResult *interfaces.ScanResult) error {
-	// TODO: Implement using appropriate SQLC method when available
+	if r.queries == nil {
+		return fmt.Errorf("database queries not available")
+	}
+
+	organizationID := int64(1) // Default fallback, matches the established
+	// pattern elsewhere in this single-org deployment (see
+	// internal/services/scanner/filesystem_integration.go).
+	if volume, err := r.queries.GetVolumeSystemLevel(ctx, scanResult.VolumeID); err == nil {
+		if volume.OrganizationID.Valid {
+			organizationID = volume.OrganizationID.Int64
+		}
+	}
+
+	_, err := r.queries.UpdateVolumeStats(ctx, sqlc.UpdateVolumeStatsParams{
+		VolumeID:       scanResult.VolumeID,
+		TotalSizeBytes: pgtype.Int8{Int64: scanResult.TotalSize, Valid: true},
+		// Used/free size aren't known from a plain size scan (only Docker's
+		// own usage-data API or filesystem capacity stats provide that
+		// breakdown) — left unset here, matching SizeCalculator's own
+		// filesystem-walk fallback, which does the same when it lacks that
+		// data.
+		UsedSizeBytes:  pgtype.Int8{Valid: false},
+		FreeSizeBytes:  pgtype.Int8{Valid: false},
+		OrganizationID: pgtype.Int8{Int64: organizationID, Valid: true},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update volume stats: %w", err)
+	}
+
 	return nil
 }
 

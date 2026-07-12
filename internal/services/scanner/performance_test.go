@@ -14,28 +14,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestDiskusPerformanceRequirements validates that diskus meets the 100GB < 30s requirement
-func TestDiskusPerformanceRequirements(t *testing.T) {
+// TestWalkerPerformanceRequirements validates that Walker meets the
+// 100GB < 30s requirement (extrapolated from a smaller sample, same
+// approach used before this test targeted diskus).
+func TestWalkerPerformanceRequirements(t *testing.T) {
 	config := models.ScanConfig{
-		DefaultTimeout: 5 * time.Minute,
+		PerMethodTimeout: 5 * time.Minute,
 	}
-	method := NewDiskusMethod(config, nil)
+	method := NewWalker(config)
 
-	// Skip if diskus is not available
-	if !method.Available() {
-		t.Skip("diskus not available, skipping performance test")
-	}
-
-	// Create a test directory with substantial content
-	tempDir, err := os.MkdirTemp("", "diskus_perf_test")
+	tempDir, err := os.MkdirTemp("", "walker_perf_test")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
-	// Create test files to simulate a reasonably large volume
-	// Note: In real testing, you'd test against actual large volumes
 	totalSize := int64(0)
 	for i := 0; i < 100; i++ {
-		testFile, err := os.Create(tempDir + "/test_file_" + string(rune(i)) + ".txt")
+		testFile, err := os.Create(fmt.Sprintf("%s/test_file_%d.txt", tempDir, i))
 		assert.NoError(t, err)
 
 		// Create 10MB files (1GB total for 100 files)
@@ -46,7 +40,6 @@ func TestDiskusPerformanceRequirements(t *testing.T) {
 		testFile.Close()
 	}
 
-	// Performance test
 	start := time.Now()
 	result, err := method.Scan(context.Background(), tempDir)
 	duration := time.Since(start)
@@ -57,7 +50,7 @@ func TestDiskusPerformanceRequirements(t *testing.T) {
 	}
 
 	assert.NotNil(t, result)
-	assert.Equal(t, "diskus", result.Method)
+	assert.Equal(t, "walker", result.Method)
 	assert.Greater(t, result.TotalSize, int64(0))
 	assert.Greater(t, result.Duration, time.Duration(0))
 
@@ -65,9 +58,8 @@ func TestDiskusPerformanceRequirements(t *testing.T) {
 	// Extrapolating: if 1GB takes X seconds, 100GB should take 100*X seconds
 	maxExpectedFor1GB := 300 * time.Millisecond // Very generous for 1GB
 	assert.Less(t, duration, maxExpectedFor1GB,
-		"Diskus should scan 1GB much faster than 300ms to meet 100GB < 30s requirement")
+		"Walker should scan 1GB much faster than 300ms to meet 100GB < 30s requirement")
 
-	// Calculate theoretical performance for 100GB
 	theoretical100GBDuration := time.Duration(float64(duration) * 100.0)
 	t.Logf("Actual duration for ~1GB: %v", duration)
 	t.Logf("Theoretical duration for 100GB: %v", theoretical100GBDuration)
@@ -77,13 +69,9 @@ func TestDiskusPerformanceRequirements(t *testing.T) {
 // TestMemoryUsageDuringLargeScan validates memory usage stays under 100MB
 func TestMemoryUsageDuringLargeScan(t *testing.T) {
 	config := models.ScanConfig{
-		DefaultTimeout: 5 * time.Minute,
+		PerMethodTimeout: 5 * time.Minute,
 	}
-	method := NewDiskusMethod(config, nil)
-
-	if !method.Available() {
-		t.Skip("diskus not available, skipping memory test")
-	}
+	method := NewWalker(config)
 
 	// Measure memory before scan
 	runtime.GC() // Force garbage collection for accurate measurement
@@ -91,13 +79,13 @@ func TestMemoryUsageDuringLargeScan(t *testing.T) {
 	runtime.ReadMemStats(&memStatsBefore)
 
 	// Create test directory
-	tempDir, err := os.MkdirTemp("", "diskus_memory_test")
+	tempDir, err := os.MkdirTemp("", "walker_memory_test")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
 	// Create some test files
 	for i := 0; i < 50; i++ {
-		testFile, err := os.Create(tempDir + "/test_file_" + string(rune(i)) + ".txt")
+		testFile, err := os.Create(fmt.Sprintf("%s/test_file_%d.txt", tempDir, i))
 		assert.NoError(t, err)
 		testData := make([]byte, 5*1024*1024) // 5MB files
 		testFile.Write(testData)
@@ -116,8 +104,15 @@ func TestMemoryUsageDuringLargeScan(t *testing.T) {
 	var memStatsAfter runtime.MemStats
 	runtime.ReadMemStats(&memStatsAfter)
 
-	// Calculate memory usage during scan
-	memoryUsed := memStatsAfter.Alloc - memStatsBefore.Alloc
+	// Calculate memory usage during scan. Both GCs run immediately before
+	// each snapshot, but heap growth from unrelated allocations (or a GC
+	// freeing more than this scan allocated) can still make Alloc decrease
+	// between snapshots — since both are uint64, a naive subtraction would
+	// wrap around to a huge positive number instead of going negative.
+	var memoryUsed uint64
+	if memStatsAfter.Alloc > memStatsBefore.Alloc {
+		memoryUsed = memStatsAfter.Alloc - memStatsBefore.Alloc
+	}
 	maxAllowedMemory := uint64(100 * 1024 * 1024) // 100MB
 
 	t.Logf("Memory used during scan: %d bytes (%.2f MB)", memoryUsed, float64(memoryUsed)/(1024*1024))
@@ -135,19 +130,15 @@ func TestConcurrentScanningPerformance(t *testing.T) {
 	t.Skip("Full concurrency test requires complete scanner implementation")
 }
 
-// BenchmarkDiskusMethod benchmarks the diskus scanning method
-func BenchmarkDiskusMethod(b *testing.B) {
+// BenchmarkWalker benchmarks the Walker scanning method
+func BenchmarkWalker(b *testing.B) {
 	config := models.ScanConfig{
-		DefaultTimeout: 5 * time.Minute,
+		PerMethodTimeout: 5 * time.Minute,
 	}
-	method := NewDiskusMethod(config, nil)
-
-	if !method.Available() {
-		b.Skip("diskus not available, skipping benchmark")
-	}
+	method := NewWalker(config)
 
 	// Create test directory
-	tempDir, err := os.MkdirTemp("", "diskus_benchmark")
+	tempDir, err := os.MkdirTemp("", "walker_benchmark")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -155,7 +146,7 @@ func BenchmarkDiskusMethod(b *testing.B) {
 
 	// Create test files
 	for i := 0; i < 10; i++ {
-		testFile, err := os.Create(tempDir + "/bench_file_" + string(rune(i)) + ".txt")
+		testFile, err := os.Create(fmt.Sprintf("%s/bench_file_%d.txt", tempDir, i))
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -182,7 +173,7 @@ func BenchmarkCachePerformance(b *testing.B) {
 	result := &interfaces.ScanResult{
 		VolumeID:  "benchmark-volume",
 		TotalSize: 1024000,
-		Method:    "diskus",
+		Method:    "walker",
 	}
 
 	b.Run("CacheSet", func(b *testing.B) {

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mantonx/volumeviz/internal/models"
 	"github.com/mantonx/volumeviz/internal/store"
 )
 
@@ -215,8 +216,7 @@ func (eb *Broadcaster) BroadcastComprehensiveScanProgress(ctx context.Context, s
 			ErrorCount:       int(phase.ErrorCount),
 		}
 
-		// Calculate overall progress
-		overallProgress += phase.Progress
+		// Status roll-up (progress number is computed canonically below)
 		if phase.Status == "completed" {
 			completedPhases++
 		}
@@ -227,10 +227,11 @@ func (eb *Broadcaster) BroadcastComprehensiveScanProgress(ctx context.Context, s
 		}
 	}
 
-	// Calculate weighted overall progress
-	if len(phases) > 0 {
-		overallProgress = overallProgress / len(phases)
-	}
+	// Canonical overall progress — single source of truth in internal/models,
+	// weighted by phase (see models.PhaseWeights). Do NOT reintroduce a local
+	// average here; that divergence is what made the bar jump at phase
+	// boundaries.
+	overallProgress = models.OverallProgressFromScanPhases(phases)
 
 	if completedPhases == len(phases) && len(phases) > 0 {
 		overallStatus = "completed"

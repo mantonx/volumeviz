@@ -171,21 +171,26 @@ describe('useVolumeOperations', () => {
       // Trigger volume scan
       const promise = result.current.scanVolume.mutateAsync('test-volume');
 
-      // scanVolume bypasses the mutation hook and calls fetch() directly
-      // (see useVolumeOperations.ts), so isLoading is always false for it.
+      // scanVolume bypasses the React Query mutation hook and calls
+      // customFetchClient directly (see useVolumeOperations.ts), so
+      // isLoading is always false for it.
       expect(result.current.scanVolume.isLoading).toBe(false);
 
       // Wait for completion
       const response = await promise;
 
-      // scanVolume hits the scheduler's /scan endpoint, which enqueues an
-      // async scan_job and returns its id — not the size/refresh payload.
-      expect(response).toEqual({
+      // scanVolume hits the scheduler's /scan endpoint via customFetchClient,
+      // which wraps JSON responses as { data, status, headers } (matching
+      // the shape Orval-generated hooks already return) rather than the raw
+      // parsed body — the payload itself still enqueues an async scan_job
+      // and returns its id, not the size/refresh payload.
+      expect(response.data).toEqual({
         message: 'Volume scan enqueued',
         scan_id: expect.stringMatching(/^scan_test-volume_\d+$/),
         volume: 'test-volume',
         status_url: expect.any(String),
       });
+      expect(response.status).toBe(202);
 
       // Should still not be "loading" afterwards
       expect(result.current.scanVolume.isLoading).toBe(false);
@@ -379,13 +384,13 @@ describe('useVolumeOperations', () => {
       expect(backgroundSyncManager.addPendingOperation).toHaveBeenCalledWith({
         type: 'scan',
         volumeId: 'vol1',
-        data: { async: false, method: 'du' },
+        data: { async: false, method: 'walker' },
         maxRetries: 3,
       });
       expect(backgroundSyncManager.addPendingOperation).toHaveBeenCalledWith({
         type: 'scan',
         volumeId: 'vol2',
-        data: { async: false, method: 'du' },
+        data: { async: false, method: 'walker' },
         maxRetries: 3,
       });
     });

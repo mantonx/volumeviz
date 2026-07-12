@@ -1,5 +1,6 @@
 import { selectedVolumeAtom } from '@/atoms/volumes';
 import { useVolumeOperations } from '@/hooks/api/useVolumeOperations';
+import { useToast } from '@/components/ui';
 import { formatBytes } from '@/utils/formatters';
 import { cn } from '@/utils/ui';
 import { useSetAtom } from 'jotai';
@@ -28,6 +29,7 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
   const navigate = useNavigate();
   const setSelectedVolume = useSetAtom(selectedVolumeAtom);
   const { scanVolume, refreshVolumeSize } = useVolumeOperations();
+  const { error: showError } = useToast();
 
   const handleCardClick = () => {
     setSelectedVolume(volume.id);
@@ -36,12 +38,20 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
 
   const handleScan = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await scanVolume.mutateAsync(volume.id);
+    try {
+      await scanVolume.mutateAsync(volume.id);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to start scan');
+    }
   };
 
   const handleRefresh = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await refreshVolumeSize.mutateAsync(volume.id);
+    try {
+      await refreshVolumeSize.mutateAsync(volume.id);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to refresh volume size');
+    }
   };
 
   const handleExplore = (e: React.MouseEvent) => {

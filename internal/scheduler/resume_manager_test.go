@@ -47,7 +47,6 @@ func (m *MockResumeStore) Alerts() repo.AlertsRepo { return nil }
 func (m *MockResumeStore) Search() *repo.SearchRepo { return nil }
 func (m *MockResumeStore) Health(ctx context.Context) error { return nil }
 func (m *MockResumeStore) Queries() interface{} { return nil }
-func (m *MockResumeStore) Checkpoints() repo.CheckpointRepo { return nil }
 func (m *MockResumeStore) Snapshots() repo.SnapshotRepo     { return nil }
 func (m *MockResumeStore) Users() repo.UsersRepository      { return nil }
 func (m *MockResumeStore) Organizations() repo.OrganizationsRepo { return nil }

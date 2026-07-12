@@ -106,7 +106,6 @@ func (m *MockStore) Queries() interface{} {
 func (m *MockStore) Volumes() repo.VolumesRepo             { return nil }
 func (m *MockStore) Scans() repo.ScansRepo                 { return nil }
 func (m *MockStore) ScanProgress() repo.ScanProgressRepo    { return nil }
-func (m *MockStore) Checkpoints() repo.CheckpointRepo       { return nil }
 func (m *MockStore) Snapshots() repo.SnapshotRepo           { return nil }
 func (m *MockStore) Retention() repo.RetentionRepo          { return nil }
 func (m *MockStore) Stats() *repo.StatsRepo                 { return nil }

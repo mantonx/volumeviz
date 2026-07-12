@@ -18,9 +18,9 @@ export interface UseVolumeRowActionsReturn {
   /** Untrack a volume */
   untrackVolume: (volumeId: string) => Promise<void>;
   /** Scan a volume */
-  scanVolume: ReturnType<typeof useVolumeOperations>['scanVolume'];
+  scanVolume: (volumeId: string) => Promise<void>;
   /** Refresh volume size */
-  refreshVolumeSize: ReturnType<typeof useVolumeOperations>['refreshVolumeSize'];
+  refreshVolumeSize: (volumeId: string) => Promise<void>;
   /** Whether track mutation is loading */
   isTracking: boolean;
   /** Whether untrack mutation is loading */
@@ -54,7 +54,8 @@ export const useVolumeRowActions = (
 ): UseVolumeRowActionsReturn => {
   const { onRefetch } = options;
   const queryClient = useQueryClient();
-  const { scanVolume, refreshVolumeSize } = useVolumeOperations();
+  const { scanVolume: scanVolumeOp, refreshVolumeSize: refreshVolumeSizeOp } =
+    useVolumeOperations();
   const toast = useToast();
 
   const trackVolumeMutation = usePostVolumesVolumeIdTrack({
@@ -109,6 +110,30 @@ export const useVolumeRowActions = (
       }
     },
     [untrackVolumeMutation],
+  );
+
+  const scanVolume = useCallback(
+    async (volumeId: string) => {
+      try {
+        await scanVolumeOp.mutateAsync(volumeId);
+        toast.success('Scan started');
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to start scan');
+      }
+    },
+    [scanVolumeOp, toast],
+  );
+
+  const refreshVolumeSize = useCallback(
+    async (volumeId: string) => {
+      try {
+        await refreshVolumeSizeOp.mutateAsync(volumeId);
+        toast.success('Volume size refresh started');
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to refresh volume size');
+      }
+    },
+    [refreshVolumeSizeOp, toast],
   );
 
   return {

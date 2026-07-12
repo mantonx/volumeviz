@@ -117,7 +117,6 @@ type ScanConfig struct {
 	Concurrency       int
 	MaxPerVolume      int // VV_SCAN_MAX_PER_VOLUME (always 1 for this ticket)
 	TimeoutPerVolume  time.Duration
-	MethodsOrder      []string
 	BindMountsEnabled bool
 	BindAllowList     []string
 	SkipPattern       string
@@ -131,12 +130,6 @@ type ScanConfig struct {
 	OverallTimeout        time.Duration
 	IndexingTimeout       time.Duration
 	CircuitBreakerEnabled bool
-
-	// Checkpointing configuration
-	CheckpointEnabled       bool
-	CheckpointInterval      time.Duration
-	CheckpointItemThreshold int64
-	AutoResumeEnabled       bool
 
 	// Incremental scanning configuration
 	IncrementalEnabled         bool
@@ -284,7 +277,6 @@ func Load() *Config {
 			Concurrency:       getIntEnv("VV_SCAN_MAX_CONCURRENCY", 2),
 			MaxPerVolume:      getIntEnv("VV_SCAN_MAX_PER_VOLUME", 1),
 			TimeoutPerVolume:  getDurationEnv("SCAN_TIMEOUT_PER_VOLUME", 2*time.Minute),
-			MethodsOrder:      getStringSliceEnv("SCAN_METHODS_ORDER", []string{"diskus", "du", "native"}),
 			BindMountsEnabled: getBoolEnv("SCAN_BIND_MOUNTS_ENABLED", false),
 			BindAllowList:     getStringSliceEnv("SCAN_BIND_ALLOWLIST", []string{}),
 			SkipPattern:       getEnv("SCAN_SKIP_PATTERN", "^docker_|^builder_|^containerd"),
@@ -298,12 +290,6 @@ func Load() *Config {
 			OverallTimeout:        getDurationEnv("SCAN_OVERALL_TIMEOUT", 2*time.Hour),
 			IndexingTimeout:       getDurationEnv("SCAN_INDEXING_TIMEOUT", 4*time.Hour),
 			CircuitBreakerEnabled: getBoolEnv("SCAN_CIRCUIT_BREAKER_ENABLED", true),
-
-			// Checkpointing configuration
-			CheckpointEnabled:       getBoolEnv("SCAN_CHECKPOINT_ENABLED", true),
-			CheckpointInterval:      getDurationEnv("SCAN_CHECKPOINT_INTERVAL", 5*time.Minute),
-			CheckpointItemThreshold: getInt64Env("SCAN_CHECKPOINT_ITEM_THRESHOLD", 100000),
-			AutoResumeEnabled:       getBoolEnv("SCAN_AUTO_RESUME_ENABLED", true),
 
 			// Incremental scanning configuration
 			IncrementalEnabled:        getBoolEnv("SCAN_INCREMENTAL_ENABLED", true),

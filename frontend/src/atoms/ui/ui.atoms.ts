@@ -12,8 +12,29 @@ export const globalLoadingAtom = atom(false);
 // Modal states
 export const modalOpenAtom = atom<string | null>(null);
 
-// Notification state
+// Notification state — recently-shown error/warning toasts, kept around
+// after the toast itself auto-dismisses so NotificationsDropdown has
+// something durable to show for failures that never reach the backend at
+// all (e.g. a 401 before a scan job is even created has no server-side
+// scan-error row to query — see NotificationsDropdown.tsx). Capped at
+// MAX_NOTIFICATIONS most recent; populated by ToastProvider's error/warning
+// helpers, not written to directly by feature code.
 export const notificationsAtom = atom<Notification[]>([]);
+
+const MAX_NOTIFICATIONS = 10;
+
+export const addNotificationAtom = atom(
+  null,
+  (get, set, notification: Omit<Notification, 'id' | 'timestamp'>) => {
+    const current = get(notificationsAtom);
+    const next: Notification = {
+      ...notification,
+      id: `notification-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: Date.now(),
+    };
+    set(notificationsAtom, [next, ...current].slice(0, MAX_NOTIFICATIONS));
+  },
+);
 
 // Search state
 export const globalSearchTermAtom = atom('');
@@ -38,7 +59,7 @@ export const volumesViewModeAtom = atom(
   },
 );
 
-interface Notification {
+export interface Notification {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
   title: string;

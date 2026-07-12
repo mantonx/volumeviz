@@ -36,8 +36,9 @@ INSERT INTO files (
     $1, $2, $3, $4, $5, $6, $7, 
     $8, $9, $10, $11, $12, $13, 
     $14, $15, $16, $17, $18
-) ON CONFLICT (path_hash) DO UPDATE SET
+) ON CONFLICT (volume_id, path) DO UPDATE SET
     folder_id = EXCLUDED.folder_id,
+    path_hash = EXCLUDED.path_hash,
     name = EXCLUDED.name,
     extension = EXCLUDED.extension,
     mime = EXCLUDED.mime,

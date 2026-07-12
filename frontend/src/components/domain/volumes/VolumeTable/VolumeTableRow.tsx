@@ -34,10 +34,11 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import {
   VOLUME_STATUS,
-  SCAN_STATUS,
   STATUS_ICON_COLORS,
   STATUS_BADGE_CLASSES,
 } from '../shared/constants';
+import { useVolumeScanState } from '@/hooks/useVolumeScanState';
+import { VolumeRowProgressBar } from './VolumeRowProgressBar';
 import type { VolumeTableRowProps } from './VolumeTableRow.types';
 
 /**
@@ -87,11 +88,16 @@ export const VolumeTableRow: React.FC<VolumeTableRowProps> = ({
     ? Math.min((volume.size_bytes / volume.quota_bytes) * 100, 100)
     : 0;
 
+  // Single source of truth for scan state: live WebSocket atom preferred,
+  // REST scan_status as fallback. Drives both the Files cell and the under-row
+  // progress bar so they can never disagree (see useVolumeScanState).
+  const scanState = useVolumeScanState(volumeId, volume.scan_status);
+
   return (
     <tr
       key={`row-${volumeId}`}
       className={cn(
-        'hover:bg-surface-hover cursor-pointer',
+        'group relative hover:bg-surface-hover cursor-pointer',
         isSelected && 'bg-blue-50 dark:bg-blue-900/20',
       )}
     >
@@ -176,10 +182,13 @@ export const VolumeTableRow: React.FC<VolumeTableRowProps> = ({
 
       {/* Files */}
       <td className="px-6 py-4 whitespace-nowrap text-sm">
-        {volume.scan_status === SCAN_STATUS.RUNNING || volume.scan_status === SCAN_STATUS.PENDING ? (
+        {scanState.isScanning ? (
           <span className="text-blue-600 flex items-center gap-1.5">
             <Activity className="w-3.5 h-3.5 animate-pulse" />
-            <span>Scanning...</span>
+            <span>
+              Scanning
+              {scanState.progress !== null ? ` ${scanState.progress}%` : '…'}
+            </span>
           </span>
         ) : volume.file_count !== null && volume.file_count !== undefined ? (
           <div>
@@ -211,54 +220,83 @@ export const VolumeTableRow: React.FC<VolumeTableRowProps> = ({
           : '—'}
       </td>
 
-      {/* Actions dropdown */}
+      {/* Actions: primary Scan is directly visible (revealed on row
+          hover/focus); secondary actions stay in the kebab. */}
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <div onClick={(e) => e.stopPropagation()}>
-          <Dropdown
-            items={[
-              {
-                id: 'scan',
-                label: 'Scan Volume',
-                icon: ScanSearch,
-                onClick: () => onScan(volumeId),
-                disabled: volume.scan_status === SCAN_STATUS.RUNNING,
-              },
-              // Track/Untrack based on current status
-              ...(volume.is_tracked === false
-                ? [
-                    {
-                      id: 'track',
-                      label: 'Track Volume',
-                      icon: PlayCircle,
-                      onClick: () => onTrack(volumeId),
-                    },
-                  ]
-                : [
-                    {
-                      id: 'untrack',
-                      label: 'Untrack Volume',
-                      icon: PauseCircle,
-                      onClick: () => onUntrack(volumeId),
-                    },
-                  ]),
-              {
-                id: 'details',
-                label: 'View Details',
-                icon: Info,
-                onClick: () => onOpenModal(volumeId),
-              },
-              {
-                id: 'delete',
-                label: 'Delete Volume',
-                icon: Trash2,
-                onClick: () => onDelete(volumeId),
-                destructive: true,
-              },
-            ]}
-            trigger={<MoreVertical className="w-4 h-4 text-secondary" />}
-            align="right"
-          />
+        <div
+          className="flex items-center justify-end gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Primary action — Scan. Hidden at rest, revealed on row hover OR
+              when focused (keyboard/touch reachable). Stays mounted so it's
+              always in the tab order. */}
+          <button
+            type="button"
+            onClick={() => onScan(volumeId)}
+            disabled={scanState.isScanning}
+            aria-label={`Scan ${volume.name}`}
+            title={scanState.isScanning ? 'Scan in progress' : 'Scan volume'}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium',
+              'text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30',
+              'opacity-0 transition-opacity duration-150',
+              'group-hover:opacity-100 group-focus-within:opacity-100',
+              'focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500',
+              'disabled:opacity-40 disabled:cursor-not-allowed',
+              scanState.isScanning && 'opacity-100',
+            )}
+          >
+            <ScanSearch className="w-4 h-4" />
+            <span>Scan</span>
+          </button>
+
+          {/* Secondary actions — kebab, same reveal behavior. */}
+          <div className="opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100">
+            <Dropdown
+              items={[
+                // Track/Untrack based on current status
+                ...(volume.is_tracked === false
+                  ? [
+                      {
+                        id: 'track',
+                        label: 'Track Volume',
+                        icon: PlayCircle,
+                        onClick: () => onTrack(volumeId),
+                      },
+                    ]
+                  : [
+                      {
+                        id: 'untrack',
+                        label: 'Untrack Volume',
+                        icon: PauseCircle,
+                        onClick: () => onUntrack(volumeId),
+                      },
+                    ]),
+                {
+                  id: 'details',
+                  label: 'View Details',
+                  icon: Info,
+                  onClick: () => onOpenModal(volumeId),
+                },
+                {
+                  id: 'delete',
+                  label: 'Delete Volume',
+                  icon: Trash2,
+                  onClick: () => onDelete(volumeId),
+                  destructive: true,
+                },
+              ]}
+              trigger={<MoreVertical className="w-4 h-4 text-secondary" />}
+              align="right"
+            />
+          </div>
         </div>
+
+        {/* Live under-row scan progress bar. Lives inside this <td> (valid
+            table markup) but is absolutely positioned against the
+            position:relative <tr>, so it spans the FULL row width along the
+            bottom edge rather than just this cell. */}
+        <VolumeRowProgressBar scanState={scanState} />
       </td>
     </tr>
   );

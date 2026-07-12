@@ -112,8 +112,13 @@ export const customFetchClient = async <T = any>(
       }
 
       const errorData = await response.json().catch(() => ({}));
+      // Backend error responses aren't consistent on field name — some
+      // handlers use {"error": "..."}, others {"message": "..."}. Check
+      // both rather than falling back to a generic "HTTP 401" that hides
+      // the real, often actionable, reason (e.g. "Authorization header
+      // required" vs. a validation message).
       throw new FetchError(
-        errorData.message || `HTTP ${response.status}`,
+        errorData.message || errorData.error || `HTTP ${response.status}`,
         response.status,
         errorData,
       );

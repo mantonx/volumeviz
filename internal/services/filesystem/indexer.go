@@ -107,8 +107,32 @@ func (fi *FilesystemIndexer) IndexVolume(ctx context.Context, volumeID, mountpoi
 
 // IndexVolumeWithScanID performs complete filesystem indexing for a volume with scan ID for database progress tracking
 func (fi *FilesystemIndexer) IndexVolumeWithScanID(ctx context.Context, volumeID, mountpoint string, deltaMode bool, scanID string) error {
+	return fi.IndexVolumeWithKnownCounts(ctx, volumeID, mountpoint, deltaMode, scanID, nil)
+}
+
+// KnownCounts carries a file/folder count already computed elsewhere in the
+// same scan (e.g. Walker's parallel size-scan, which runs immediately before
+// filesystem indexing and already knows these numbers). When available, this
+// lets indexing report an accurate progress percentage from the start
+// instead of running its own dedicated counting pass — a full sequential
+// tree walk whose only purpose was to compute this same number a second
+// time. Pass nil when no such count is available (e.g. an on-demand or
+// resumed indexing run with no fresh scan result); progress reporting then
+// falls back to the count of already-indexed rows discovered during
+// database reconciliation, or an indeterminate percentage if that's also
+// unavailable (e.g. this volume has never been indexed before).
+type KnownCounts struct {
+	Files   int64
+	Folders int64
+}
+
+// IndexVolumeWithKnownCounts performs complete filesystem indexing for a
+// volume, using knownCounts (if non-nil) to seed accurate progress reporting
+// without a redundant pre-count walk. See KnownCounts for when to pass nil.
+func (fi *FilesystemIndexer) IndexVolumeWithKnownCounts(ctx context.Context, volumeID, mountpoint string, deltaMode bool, scanID string, knownCounts *KnownCounts) error {
 	// Use incremental walker to avoid bulk deletion hangs
 	incrementalWalker := NewIncrementalWalker(fi, volumeID)
+	incrementalWalker.knownCounts = knownCounts
 	return incrementalWalker.Walk(ctx, mountpoint, scanID)
 }
 

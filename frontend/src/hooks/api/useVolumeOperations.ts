@@ -5,6 +5,7 @@ import {
   usePostApiV1VolumesIdFilesystemIndex,
   usePostApiV1VolumesBulkScan,
 } from '@/api/orval-generated/api';
+import { customFetchClient } from '@/api/fetch-client';
 import { lastRefreshAtom } from '@/atoms/volumes';
 import { useBackgroundSync } from '@/utils/background-sync';
 
@@ -82,24 +83,19 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
   };
 
   return {
-    // Trigger full filesystem scan through scheduler (proper scan_job creation)
+    // Trigger full filesystem scan through scheduler (proper scan_job creation).
+    // POST /volumes/{id}/scan isn't in the OpenAPI spec (see FIXES_2.md #13),
+    // so there's no generated hook for it — customFetchClient is the same
+    // shared client every generated hook uses under the hood, so this still
+    // gets the Authorization header, 401 session-expiry handling, and
+    // consistent error shape everything else gets (see useFileOperations.ts
+    // for the same pattern with other spec-less endpoints).
     scanVolume: {
       mutateAsync: async (volumeId: string) => {
         if (isOnline) {
-          // Use scheduler endpoint - properly enqueues scan job
-          const response = await fetch(`/api/v1/volumes/${volumeId}/scan`, {
+          const data = await customFetchClient(`/volumes/${volumeId}/scan`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
           });
-
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to start scan');
-          }
-
-          const data = await response.json();
 
           // Invalidate queries to refresh UI
           queryClient.invalidateQueries({ queryKey: ['/api/v1/volumes'] });
@@ -154,7 +150,10 @@ export function useVolumeOperations(): UseVolumeOperationsReturn {
     },
     bulkScan: {
       mutateAsync: async (volumeIds: string[], options = {}) => {
-        const { async = false, method = 'du' } = options;
+        // method is accepted for API-shape compatibility but not currently
+        // read by the backend's async bulk-scan path — the scanner only has
+        // one method (walker; see FIXES_2.md #1l), selected server-side.
+        const { async = false, method = 'walker' } = options;
         if (isOnline) {
           return bulkScanMutation.mutateAsync({
             data: {

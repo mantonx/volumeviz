@@ -127,14 +127,18 @@ export const updateScanProgressAtom = atom(
     const current = get(scanProgressAtom);
     const existingProgress = current[volumeId];
 
-    // Ensure monotonic progress: never decrease unless scan is reset
+    // Keep progress monotonic. WebSocket messages for the same scan can arrive
+    // out of order over the network, so a message carrying a LOWER percent than
+    // one already applied is expected and harmless — we coalesce it by keeping
+    // the higher value. This is the guard doing its job, not an error, so it
+    // logs at debug level (previously a per-message console.warn that produced
+    // a flood of scary "violation" lines during any multi-volume scan).
     let adjustedProgress = progress;
     if (existingProgress && progress.overall_progress < existingProgress.overall_progress) {
-      // Only allow progress to decrease if scan_id changed (new scan started)
+      // Only allow progress to decrease if scan_id changed (new scan started).
       if (progress.scan_id === existingProgress.scan_id) {
-        // Same scan - preserve higher progress value and skip this update
-        console.warn(
-          `[Scan Progress] Monotonic violation detected for ${volumeId}: ${existingProgress.overall_progress}% → ${progress.overall_progress}%. Keeping higher value.`
+        console.debug(
+          `[Scan Progress] Out-of-order update for ${volumeId} coalesced: ${existingProgress.overall_progress}% kept over late ${progress.overall_progress}%.`
         );
         adjustedProgress = {
           ...progress,

@@ -8,6 +8,8 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
+import { useSetAtom } from 'jotai';
+import { addNotificationAtom } from '@/atoms/ui';
 
 import { Toast } from './Toast';
 import type {
@@ -105,6 +107,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
 }) => {
   const [toasts, setToasts] = useState<ToastQueueItem[]>([]);
   const nextIdRef = useRef(1);
+  const addNotification = useSetAtom(addNotificationAtom);
 
   // Core toast management
   const showToast = useCallback(
@@ -120,6 +123,20 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
         isVisible: true,
         isExiting: false,
       };
+
+      // Error/warning toasts also get a durable record in notificationsAtom
+      // — the toast itself auto-dismisses in a few seconds, but a user who
+      // wasn't looking at the screen at that moment (or a failure with no
+      // server-side trace, like a request that never reached the backend)
+      // would otherwise have zero way to check "did something go wrong
+      // recently" — see NotificationsDropdown.tsx.
+      if (config.variant === 'error' || config.variant === 'warning') {
+        addNotification({
+          type: config.variant,
+          title: config.title ?? (config.variant === 'error' ? 'Error' : 'Warning'),
+          message: config.message,
+        });
+      }
 
       setToasts((prev) => {
         const updated = [...prev, newToast];

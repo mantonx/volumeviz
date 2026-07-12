@@ -54,11 +54,6 @@ func (s *pgStore) ScanProgress() repo.ScanProgressRepo {
 	return repo.NewScanProgressRepo(s.conn.Pool)
 }
 
-// Checkpoints returns a checkpoint repository using the pool connection
-func (s *pgStore) Checkpoints() repo.CheckpointRepo {
-	return repo.NewCheckpointRepo(s.conn.Queries)
-}
-
 // Snapshots returns a snapshot repository using the pool connection
 func (s *pgStore) Snapshots() repo.SnapshotRepo {
 	return repo.NewSnapshotRepo(s.conn.Queries)
@@ -161,11 +156,6 @@ func (s *pgTxStore) ScanProgress() repo.ScanProgressRepo {
 	poolConfig.MinConns = 1
 	tmpPool, _ := pgxpool.NewWithConfig(context.Background(), poolConfig)
 	return repo.NewScanProgressRepo(tmpPool)
-}
-
-// Checkpoints returns a checkpoint repository using the transaction connection
-func (s *pgTxStore) Checkpoints() repo.CheckpointRepo {
-	return repo.NewCheckpointRepo(s.queries)
 }
 
 // Snapshots returns a snapshot repository using the transaction connection

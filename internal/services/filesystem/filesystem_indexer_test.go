@@ -29,7 +29,6 @@ func (m *MockStoreForIndexer) FileMetadata() *repo.FileMetadataRepo { return nil
 func (m *MockStoreForIndexer) Alerts() repo.AlertsRepo { return nil }
 func (m *MockStoreForIndexer) Search() *repo.SearchRepo { return nil }
 func (m *MockStoreForIndexer) ScanProgress() repo.ScanProgressRepo { return nil }
-func (m *MockStoreForIndexer) Checkpoints() repo.CheckpointRepo { return nil }
 func (m *MockStoreForIndexer) Snapshots() repo.SnapshotRepo { return nil }
 func (m *MockStoreForIndexer) Users() repo.UsersRepository { return nil }
 func (m *MockStoreForIndexer) Organizations() repo.OrganizationsRepo { return nil }

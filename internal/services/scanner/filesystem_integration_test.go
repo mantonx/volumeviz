@@ -105,7 +105,7 @@ func TestPerformFilesystemIndexing(t *testing.T) {
 	}
 
 	// Should handle gracefully when called with nil indexer
-	vs.performFilesystemIndexing(context.Background(), "test-volume", "/test/path", "scan-id")
+	vs.performFilesystemIndexing(context.Background(), "test-volume", "/test/path", "scan-id", nil)
 	assert.NotNil(t, vs) // Should not panic
 }
 

@@ -48,7 +48,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 
 	// Initialize database progress tracking if store is available
 	if vs.store != nil {
-		go func() {
+		SafeGo(vs.logger, "create-scan-job", func() {
 			ctx := context.Background()
 			scansRepo := vs.store.Scans()
 			if scansRepo != nil {
@@ -68,7 +68,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 
 				vs.initializeDatabaseProgress(ctx, scanID, volumeID)
 			}
-		}()
+		})
 	}
 
 	// Start the scan in background with panic recovery
@@ -121,12 +121,6 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 				scanID, volumeID, timeout)
 		}
 
-		// Start checkpointing if available
-		if vs.checkpointManager != nil {
-			vs.checkpointManager.StartCheckpointing(context.Background(), scanID, volumeID)
-			defer vs.checkpointManager.StopCheckpointing(scanID)
-		}
-
 		// Create context with timeout
 		scanCtx, cancel := withTimeout(context.Background(), timeout)
 		defer cancel()
@@ -176,10 +170,12 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 
 			// Update database - mark volume scan phase as failed
 			if vs.store != nil {
-				go vs.updateVolumePhaseStatus(context.Background(), scanID, "failed", err.Error())
+				SafeGo(vs.logger, "update-volume-phase-status-failed", func() {
+					vs.updateVolumePhaseStatus(context.Background(), scanID, "failed", err.Error())
+				})
 
 				// Also update scan job status
-				go func() {
+				SafeGo(vs.logger, "fail-scan-job", func() {
 					ctx := context.Background()
 					scansRepo := vs.store.Scans()
 					if scansRepo != nil {
@@ -187,7 +183,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 							vs.logger.Printf("Failed to update scan job status for scan %s: %v", scanID, updateErr)
 						}
 					}
-				}()
+				})
 			}
 		} else {
 			if vs.progressManager != nil {
@@ -204,21 +200,23 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 
 			// Update database - mark volume scan phase as completed
 			if vs.store != nil {
-				go vs.updateVolumePhaseStatus(context.Background(), scanID, "completed", "")
+				SafeGo(vs.logger, "update-volume-phase-status-completed", func() {
+					vs.updateVolumePhaseStatus(context.Background(), scanID, "completed", "")
+				})
 			}
 
 			// Trigger daily stats computation if stats service is available (async)
 			if vs.statsService != nil {
-				go func() {
+				SafeGo(vs.logger, "on-scan-completed-stats", func() {
 					if err := vs.statsService.OnScanCompleted(context.Background(), volumeID, &scanID, result.FilesystemCapacity); err != nil && vs.logger != nil {
 						vs.logger.Printf("Failed to compute daily stats for async scan %s (volume %s): %v", scanID, volumeID, err)
 					}
-				}()
+				})
 			}
 		}
 
 		// Clean up after some time (keep completed scans for a while)
-		go func() {
+		SafeGo(vs.logger, "cleanup-completed-scan", func() {
 			time.Sleep(5 * time.Minute)
 			if vs.progressManager != nil {
 				vs.progressManager.CleanupScan(scanID)
@@ -228,7 +226,7 @@ func (vs *VolumeScanner) ScanVolumeAsync(ctx context.Context, volumeID string) (
 				delete(vs.volumeToScan, volumeID)
 				vs.scanMutex.Unlock()
 			}
-		}()
+		})
 	}()
 
 	return scanID, nil
@@ -407,52 +405,13 @@ func (vs *VolumeScanner) calculatePhaseProgress(indexing *filesystem.IndexingPro
 	return progress
 }
 
-// calculateOverallProgress calculates overall progress from phases using a hybrid approach
-// that combines actual item counts with phase-specific complexity weights
+// calculateOverallProgress returns overall scan progress (0.0–1.0) using the
+// single canonical phase-weighted aggregation (models.PhaseWeights), shared by
+// every emitter. It previously used a separate item-count × complexity weighting
+// that produced different numbers than the broadcaster and REST handler — that
+// divergence is exactly what made the progress bar jump. Per-phase item-count
+// granularity now lives inside each phase's own reported Progress; this rolls
+// those up consistently with everyone else.
 func (vs *VolumeScanner) calculateOverallProgress(phases map[string]*interfaces.PhaseInfo) float64 {
-	if phases == nil {
-		return 0.0
-	}
-
-	// Complexity weights reflect the relative work per item in each phase
-	// volume_scan: 1.0 (quick metadata query)
-	// filesystem_indexing: 1.0 (file stat + DB insert)
-	// media_enrichment: 2.0 (ffprobe/exif extraction + thumbnail generation - 2x heavier)
-	complexityWeights := map[string]float64{
-		"volume_scan":         1.0,
-		"filesystem_indexing": 1.0,
-		"media_enrichment":    2.0,
-	}
-
-	var totalWeightedItems float64
-	var processedWeightedItems float64
-
-	for phaseName, phase := range phases {
-		// Get complexity weight for this phase (default to 1.0 if not specified)
-		weight := complexityWeights[phaseName]
-		if weight == 0 {
-			weight = 1.0
-		}
-
-		// Weight the items by complexity
-		totalWeightedItems += float64(phase.ItemsTotal) * weight
-		processedWeightedItems += float64(phase.ItemsProcessed) * weight
-	}
-
-	// Avoid division by zero
-	if totalWeightedItems == 0 {
-		return 0.0
-	}
-
-	progress := processedWeightedItems / totalWeightedItems
-
-	// Ensure progress is bounded [0.0, 1.0]
-	if progress > 1.0 {
-		return 1.0
-	}
-	if progress < 0.0 {
-		return 0.0
-	}
-
-	return progress
+	return overallProgressFromPhaseInfo(phases)
 }

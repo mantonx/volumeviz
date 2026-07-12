@@ -23,7 +23,7 @@ func TestLoad_DefaultValues(t *testing.T) {
 		"LIFECYCLE_INTERVAL", "LIFECYCLE_INITIAL_DELAY",
 		"EVENTS_ENABLED", "EVENTS_QUEUE_SIZE", "EVENTS_BACKOFF_MIN", "EVENTS_BACKOFF_MAX", "EVENTS_RECONCILE_INTERVAL",
 		"SCAN_ENABLED", "SCAN_INTERVAL", "SCAN_CONCURRENCY", "SCAN_TIMEOUT_PER_VOLUME",
-		"SCAN_METHODS_ORDER", "SCAN_BIND_MOUNTS_ENABLED", "SCAN_BIND_ALLOWLIST", "SCAN_SKIP_PATTERN",
+		"SCAN_BIND_MOUNTS_ENABLED", "SCAN_BIND_ALLOWLIST", "SCAN_SKIP_PATTERN",
 		"NODE_ENV",
 	}
 
@@ -110,7 +110,6 @@ func TestLoad_DefaultValues(t *testing.T) {
 	assert.Equal(t, 6*time.Hour, config.Scan.Interval)
 	assert.Equal(t, 2, config.Scan.Concurrency)
 	assert.Equal(t, 2*time.Minute, config.Scan.TimeoutPerVolume)
-	assert.Equal(t, []string{"diskus", "du", "native"}, config.Scan.MethodsOrder)
 	assert.False(t, config.Scan.BindMountsEnabled)
 	assert.Equal(t, []string{}, config.Scan.BindAllowList)
 	assert.Equal(t, "^docker_|^builder_|^containerd", config.Scan.SkipPattern)

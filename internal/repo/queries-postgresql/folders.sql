@@ -101,9 +101,10 @@ INSERT INTO folders (
     $6, $7, $8, $9,
     $10, $11, $12,
     $13, $14
-) ON CONFLICT (path_hash) DO UPDATE SET
+) ON CONFLICT (volume_id, path) DO UPDATE SET
     parent_id = EXCLUDED.parent_id,
     name = EXCLUDED.name,
+    path_hash = EXCLUDED.path_hash,
     size_bytes = EXCLUDED.size_bytes,
     size_bytes_recursive = EXCLUDED.size_bytes_recursive,
     file_count = EXCLUDED.file_count,

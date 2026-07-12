@@ -79,13 +79,17 @@ func (vs *VolumeScanner) TriggerFilesystemIndexingWithScanID(ctx context.Context
 	}
 
 	// Start indexing in a goroutine to avoid blocking
-	go vs.performFilesystemIndexingAsync(ctx, volumeID, volumePath, deltaMode, scanID)
+	SafeGo(vs.logger, "perform-filesystem-indexing-async", func() {
+		vs.performFilesystemIndexingAsync(ctx, volumeID, volumePath, deltaMode, scanID)
+	})
 
 	return nil
 }
 
-// performFilesystemIndexing performs filesystem indexing for a volume after successful scan
-func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID, volumePath, scanID string) {
+// performFilesystemIndexing performs filesystem indexing for a volume after
+// successful scan. knownCounts, when non-nil, carries the file/folder count
+// the size-scan that just ran already computed — see filesystem.KnownCounts.
+func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID, volumePath, scanID string, knownCounts *filesystem.KnownCounts) {
 	if vs.filesystemIndexer == nil {
 		return
 	}
@@ -100,14 +104,10 @@ func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID
 
 	start := time.Now()
 
-	// Use the scan ID passed in from the caller
-	// Perform filesystem indexing (delta mode for efficiency)
-	var err error
-	if scanID != "" {
-		err = vs.filesystemIndexer.IndexVolumeWithScanID(indexCtx, volumeID, volumePath, true, scanID)
-	} else {
-		err = vs.filesystemIndexer.IndexVolume(indexCtx, volumeID, volumePath, true)
-	}
+	// Perform filesystem indexing (delta mode for efficiency), seeding
+	// progress with knownCounts when available so indexing doesn't need to
+	// run its own counting pass to get an accurate progress percentage.
+	err := vs.filesystemIndexer.IndexVolumeWithKnownCounts(indexCtx, volumeID, volumePath, true, scanID, knownCounts)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -147,7 +147,7 @@ func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID
 		if volErr == nil && volume != nil && volume.OrganizationID != nil {
 			organizationID = *volume.OrganizationID
 		}
-		
+
 		if err := vs.volumesRepo.UpdateLastScanned(updateCtx, organizationID, volumeID, time.Now()); err != nil {
 			if vs.logger != nil {
 				vs.logger.Printf("Failed to update last_scanned for volume %s: %v", volumeID, err)
@@ -158,7 +158,9 @@ func (vs *VolumeScanner) performFilesystemIndexing(ctx context.Context, volumeID
 	// Trigger media enrichment if enabled
 	if vs.enrichmentManager != nil && vs.enrichmentManager.IsEnabled() {
 		// Use background context so enrichment can continue after scan completes
-		go vs.performMediaEnrichment(context.Background(), volumeID)
+		SafeGo(vs.logger, "perform-media-enrichment", func() {
+			vs.performMediaEnrichment(context.Background(), volumeID)
+		})
 	}
 }
 
@@ -236,6 +238,8 @@ func (vs *VolumeScanner) performFilesystemIndexingAsync(ctx context.Context, vol
 	// Trigger media enrichment if enabled
 	if vs.enrichmentManager != nil && vs.enrichmentManager.IsEnabled() {
 		// Use background context so enrichment can continue after scan completes
-		go vs.performMediaEnrichment(context.Background(), volumeID)
+		SafeGo(vs.logger, "perform-media-enrichment", func() {
+			vs.performMediaEnrichment(context.Background(), volumeID)
+		})
 	}
 }

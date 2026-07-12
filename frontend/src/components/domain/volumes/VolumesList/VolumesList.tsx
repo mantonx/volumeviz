@@ -4,6 +4,7 @@ import { useVolumesList } from '@/hooks/api/useVolumesList';
 import { useVolumeOperations } from '@/hooks/api/useVolumeOperations';
 import { useVolumeExport } from '@/hooks/volumes/useVolumeExport';
 import { useVolumeSelection } from '@/hooks/volumes/useVolumeSelection';
+import { useToast } from '@/components/ui';
 import { useAtom } from 'jotai';
 import { HardDrive, Plus } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -43,6 +44,7 @@ export function VolumesList({ className = '' }: VolumesListProps) {
 
   const { bulkScan } = useVolumeOperations();
   const { exportVolumes, isExporting } = useVolumeExport(filters);
+  const { error: showError } = useToast();
 
   const handleScanAllClick = () => {
     setShowScanAllConfirm(true);
@@ -55,20 +57,15 @@ export function VolumesList({ className = '' }: VolumesListProps) {
 
     if (volumeIds.length > 0) {
       try {
-        await bulkScan.mutateAsync(volumeIds, { async: true, method: 'du' });
-
-        // Poll for updates every 2 seconds for up to 30 seconds
-        let pollCount = 0;
-        const pollInterval = setInterval(() => {
-          pollCount++;
-          refetch();
-
-          if (pollCount >= 15) {
-            clearInterval(pollInterval);
-          }
-        }, 2000);
+        await bulkScan.mutateAsync(volumeIds, { async: true, method: 'walker' });
+        // Refresh is driven by VolumesPage's WebSocket listeners (real
+        // scan.progress/size/metadata events, debounced there) — no local
+        // poll here. A blind 2s/30s interval used to run in parallel with
+        // that, which on a real multi-volume bulk scan produced enough
+        // simultaneous /volumes requests to trip the backend's own rate
+        // limiter (see SCAN_UX_ARCHITECTURE.md #3b).
       } catch (error) {
-        console.error('Bulk scan failed:', error);
+        showError(error instanceof Error ? error.message : 'Bulk scan failed to start');
       }
     }
   };

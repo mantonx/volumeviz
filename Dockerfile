@@ -53,12 +53,14 @@ RUN npm run build
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS, coreutils for du command, curl for health checks,
-# and media enrichment tools:
+ARG TARGETARCH
+
+# Install ca-certificates for HTTPS, curl for health checks, and media
+# enrichment tools:
 # - ffmpeg for video/audio metadata and preview generation
 # - perl-image-exiftool for image metadata extraction
 # - vips for efficient image thumbnail generation (WebP conversion)
-RUN apk --no-cache add ca-certificates coreutils curl ffmpeg perl-image-exiftool vips vips-tools
+RUN apk --no-cache add ca-certificates curl ffmpeg perl-image-exiftool vips vips-tools
 
 WORKDIR /root/
 

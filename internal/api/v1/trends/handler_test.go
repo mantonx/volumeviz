@@ -358,11 +358,6 @@ func (m *MockStore) ScanProgress() repo.ScanProgressRepo {
 	return args.Get(0).(repo.ScanProgressRepo)
 }
 
-func (m *MockStore) Checkpoints() repo.CheckpointRepo {
-	args := m.Called()
-	return args.Get(0).(repo.CheckpointRepo)
-}
-
 func (m *MockStore) Snapshots() repo.SnapshotRepo {
 	args := m.Called()
 	return args.Get(0).(repo.SnapshotRepo)

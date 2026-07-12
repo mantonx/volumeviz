@@ -52,7 +52,9 @@ func (vs *VolumeScanner) performMediaEnrichment(ctx context.Context, volumeID st
 	start := time.Now()
 
 	// Monitor enrichment progress in background
-	go vs.monitorEnrichmentProgress(volumeID, scanID)
+	SafeGo(vs.logger, "monitor-enrichment-progress", func() {
+		vs.monitorEnrichmentProgress(volumeID, scanID)
+	})
 
 	// Perform media enrichment
 	var err error

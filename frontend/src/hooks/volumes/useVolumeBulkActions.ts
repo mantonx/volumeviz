@@ -56,7 +56,7 @@ export const useVolumeBulkActions = (
         await bulkScanMutation.mutateAsync({
           data: {
             volume_ids: volumeIds,
-            method: 'du',
+            method: 'walker',
             async: false,
           },
         });

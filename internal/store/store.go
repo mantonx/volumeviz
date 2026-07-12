@@ -18,7 +18,6 @@ type Store interface {
 	Volumes() repo.VolumesRepo
 	Scans() repo.ScansRepo
 	ScanProgress() repo.ScanProgressRepo
-	Checkpoints() repo.CheckpointRepo
 	Snapshots() repo.SnapshotRepo
 	Retention() repo.RetentionRepo
 	Stats() *repo.StatsRepo
@@ -47,7 +46,6 @@ type TxStore interface {
 	Volumes() repo.VolumesRepo
 	Scans() repo.ScansRepo
 	ScanProgress() repo.ScanProgressRepo
-	Checkpoints() repo.CheckpointRepo
 	Snapshots() repo.SnapshotRepo
 	Retention() repo.RetentionRepo
 	Stats() *repo.StatsRepo

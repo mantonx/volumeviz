@@ -7,7 +7,6 @@ import {
   addMessageToHistoryAtom,
   addSubscriptionAtom,
   clearWebSocketDataAtom,
-  lastMessageAtom,
   removeEventListenerAtom,
   removeSubscriptionAtom,
   triggerEventListenersAtom,
@@ -37,7 +36,6 @@ export function WebSocketProvider({
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
 
   // Jotai state - only use write functions, don't read to avoid loops
-  const [, setLastMessage] = useAtom(lastMessageAtom);
   const [, updateConnectionState] = useAtom(updateConnectionStateAtom);
   const [, addMessageToHistory] = useAtom(addMessageToHistoryAtom);
   const [, addSubscription] = useAtom(addSubscriptionAtom);
@@ -57,6 +55,66 @@ export function WebSocketProvider({
   // Memoize WebSocket URL to prevent reconnections
   const wsUrl = React.useMemo(() => config.url || '', [config.url]);
 
+  // Message handlers from config can change identity every render (config
+  // itself isn't memoized by callers) — keep the latest in a ref so the
+  // onMessage callback below can stay referentially stable (needed for
+  // wsOptions' own memoization) without capturing a stale closure over it.
+  const messageHandlersRef = React.useRef(mergedConfig.messageHandlers);
+  messageHandlersRef.current = mergedConfig.messageHandlers;
+
+  // Handle incoming WebSocket messages via react-use-websocket's onMessage
+  // option rather than its lastMessage/useEffect pattern. This matters: the
+  // library wraps every lastMessage update in ReactDOM.flushSync
+  // unconditionally (react-use-websocket/dist/lib/use-websocket.js's
+  // protectedSetLastMessage, no config to opt out), forcing a synchronous
+  // render on every single incoming message. Consuming lastMessage via a
+  // useEffect (the previous approach here) meant this effect's own state
+  // writes ran synchronously nested inside that forced flush — a real,
+  // twice-previously-flagged "Maximum update depth exceeded" error
+  // (FIXES.md item 9b and its follow-up note) that reproduced reliably on
+  // a real multi-volume bulk scan's burst of progress messages, even
+  // though each individual message source was already throttled to ~1/sec
+  // (see SCAN_UX_ARCHITECTURE.md #3a — the bug was about a forced
+  // synchronous flush per message, not about message frequency). onMessage
+  // is called as a plain function, before flushSync is ever invoked (see
+  // attach-listener.js's bindMessageHandler), so state updates triggered
+  // from here go through React's normal batched scheduling instead.
+  const handleMessage = React.useCallback(
+    (message: MessageEvent) => {
+      try {
+        const parsedMessage: WebSocketMessage = JSON.parse(message.data);
+
+        addMessageToHistory(parsedMessage);
+
+        triggerEventListeners({
+          eventType: parsedMessage.type,
+          data: parsedMessage.data,
+        });
+
+        messageHandlersRef.current?.forEach((handler: any) => {
+          if (handler.type === parsedMessage.type) {
+            try {
+              handler.handler(parsedMessage.data, parsedMessage);
+            } catch (error) {
+              console.error(
+                `[WebSocket] Error in message handler for ${handler.type}:`,
+                error,
+              );
+            }
+          }
+        });
+      } catch (error) {
+        console.error(
+          '[WebSocket] Failed to parse message:',
+          error,
+          'Raw:',
+          message.data,
+        );
+      }
+    },
+    [addMessageToHistory, triggerEventListeners],
+  );
+
   // Memoize WebSocket options to prevent re-creating connection
   const wsOptions = React.useMemo(
     () => ({
@@ -75,11 +133,17 @@ export function WebSocketProvider({
       onError: () => {
         console.error('[WebSocket] Connection error');
       },
+      onMessage: handleMessage,
     }),
-    [mergedConfig.shouldReconnect, mergedConfig.reconnectInterval, mergedConfig.reconnectAttempts],
+    [
+      mergedConfig.shouldReconnect,
+      mergedConfig.reconnectInterval,
+      mergedConfig.reconnectAttempts,
+      handleMessage,
+    ],
   );
 
-  const { lastMessage, readyState, sendMessage, getWebSocket } = useWebSocket(
+  const { readyState, sendMessage, getWebSocket } = useWebSocket(
     wsUrl,
     wsOptions,
   );
@@ -125,53 +189,6 @@ export function WebSocketProvider({
       return newState;
     });
   }, [readyState, updateConnectionState, clearWebSocketData]);
-
-  // Handle incoming WebSocket messages
-  useEffect(() => {
-    if (!lastMessage) return;
-
-    setLastMessage(lastMessage);
-
-    try {
-      const parsedMessage: WebSocketMessage = JSON.parse(lastMessage.data);
-
-      // Add to message history
-      addMessageToHistory(parsedMessage);
-
-      // Trigger event listeners for this message type
-      triggerEventListeners({
-        eventType: parsedMessage.type,
-        data: parsedMessage.data,
-      });
-
-      // Call configured message handlers
-      mergedConfig.messageHandlers?.forEach((handler) => {
-        if (handler.type === parsedMessage.type) {
-          try {
-            handler.handler(parsedMessage.data, parsedMessage);
-          } catch (error) {
-            console.error(
-              `[WebSocket] Error in message handler for ${handler.type}:`,
-              error,
-            );
-          }
-        }
-      });
-    } catch (error) {
-      console.error(
-        '[WebSocket] Failed to parse message:',
-        error,
-        'Raw:',
-        lastMessage.data,
-      );
-    }
-  }, [
-    lastMessage,
-    setLastMessage,
-    addMessageToHistory,
-    triggerEventListeners,
-    mergedConfig.messageHandlers,
-  ]);
 
   // Generic message sending
   const sendGenericMessage = useCallback(

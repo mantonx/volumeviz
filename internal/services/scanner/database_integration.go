@@ -85,6 +85,25 @@ func (vs *VolumeScanner) initializeDatabaseProgress(ctx context.Context, scanID,
 	if vs.logger != nil {
 		vs.logger.Printf("Database progress initialization completed for scan %s", scanID)
 	}
+
+	// Emit the initial state through the SINGLE broadcast path (DB-sourced
+	// comprehensive). The scanner no longer broadcasts from its in-memory
+	// ProgressManager map; every scan.progress message for every phase now
+	// originates from BroadcastComprehensiveScanProgress reading scan_phases,
+	// so there is one ordered stream and one wire shape per scan.
+	vs.broadcastComprehensive(ctx, scanID, volumeID)
+}
+
+// broadcastComprehensive triggers the single DB-sourced scan-progress
+// broadcast. It reads the freshly-written scan_phases rows and emits the
+// canonical payload — the one and only emitter for the size-scan side now.
+func (vs *VolumeScanner) broadcastComprehensive(ctx context.Context, scanID, volumeID string) {
+	if vs.progressBroadcaster == nil {
+		return
+	}
+	if err := vs.progressBroadcaster.BroadcastComprehensiveScanProgress(ctx, scanID, volumeID); err != nil && vs.logger != nil {
+		vs.logger.Printf("Comprehensive broadcast failed for scan %s: %v", scanID, err)
+	}
 }
 
 // updateVolumePhaseStatus updates the volume scan phase status in the database
@@ -127,6 +146,16 @@ func (vs *VolumeScanner) updateVolumePhaseStatus(ctx context.Context, scanID, st
 		// Cleanup throttler tracking for failed scan
 		if vs.progressThrottler != nil {
 			vs.progressThrottler.Cleanup(scanID)
+		}
+	}
+
+	// Emit the phase transition through the single DB-sourced broadcast path.
+	// volumeID isn't passed to this function, so resolve it from the scan job.
+	if vs.progressBroadcaster != nil {
+		if scansRepo := vs.store.Scans(); scansRepo != nil {
+			if scanJob, err := scansRepo.GetScanJobByScanID(ctx, scanID); err == nil && scanJob != nil {
+				vs.broadcastComprehensive(ctx, scanID, scanJob.VolumeID)
+			}
 		}
 	}
 }

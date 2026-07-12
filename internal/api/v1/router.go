@@ -140,6 +140,10 @@ func NewRouter(dockerSvc *dockerService.DockerService, storeInstance store.Store
 	scannerConfig.Scanning.OverallTimeout = config.Scan.OverallTimeout
 	scannerConfig.Scanning.IndexingTimeout = config.Scan.IndexingTimeout
 	scannerConfig.Scanning.CircuitBreakerEnabled = config.Scan.CircuitBreakerEnabled
+	scannerConfig.Scanning.IncrementalEnabled = config.Scan.IncrementalEnabled
+	scannerConfig.Scanning.IncrementalForceFullScan = config.Scan.IncrementalForceFullScan
+	scannerConfig.Scanning.SnapshotRetentionDays = config.Scan.SnapshotRetentionDays
+	scannerConfig.Scanning.IncrementalMaxSnapshotAge = config.Scan.IncrementalMaxSnapshotAge
 
 	// Set up filesystem indexing repositories and config
 	foldersRepo := storeInstance.Folders()
